@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver — ce qu'il embarque</title>
-<meta name="description" content="Sept branches déjà construites : modèles locaux et cloud, outils et sous-agents, réveils nocturnes, Git, navigateur embarqué, extensions et vault chiffré.">
+<title>Beaver — what it ships with</title>
+<meta name="description" content="Seven branches already in place: local and cloud models, tools and subagents, overnight wakeups, Git, embedded browser, extensions and an encrypted vault.">
+<script src="js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,37 +25,37 @@
 <nav>
   <a class="logo" href="index.html">Beaver<em>.</em></a>
   <div class="nav-pill">
-    <a href="index.html">← Le harnais</a>
+    <a href="index.html">← The harness</a>
     <a href="#forecast">Forecast</a>
     <a href="docs.html">Docs</a>
-    <span class="lang" role="group" aria-label="Langue">
-      <a class="lang-opt" href="barrage.html" hreflang="fr" aria-current="true">FR</a>
-      <a class="lang-opt" href="en/barrage.html" hreflang="en">EN</a>
+    <span class="lang" role="group" aria-label="Language">
+      <a class="lang-opt" href="fr/barrage.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="barrage.html" hreflang="en" aria-current="true">EN</a>
     </span>
-    <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+    <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
   </div>
 </nav>
 
 <section>
   <div class="sec-head">
     <div>
-      <p class="kicker">01 / Le barrage</p>
-      <h2>Sept <em>branches.</em><span class="l2">Déjà posées.</span></h2>
+      <p class="kicker">01 / The dam</p>
+      <h2>Seven <em>branches.</em><span class="l2">Already laid.</span></h2>
     </div>
-    <p class="lead"><b>Tout ça existe le jour de l'installation.</b>
-    Et tout ça, tu peux le remplacer.</p>
+    <p class="lead"><b>All of it is there the day you install.</b>
+    And all of it, you can replace.</p>
   </div>
 
   <div class="dam">
     <div class="dam-visual">
       <div class="dam-beaver" aria-hidden="true"></div>
       <div class="dam-stack" id="stack" aria-hidden="true">
-        <div class="log" style="--rot:-1.2deg">01 · Modèles</div>
-        <div class="log" style="--rot:.8deg">02 · Travail</div>
-        <div class="log" style="--rot:-.6deg">03 · Nuit</div>
+        <div class="log" style="--rot:-1.2deg">01 · Models</div>
+        <div class="log" style="--rot:.8deg">02 · Work</div>
+        <div class="log" style="--rot:-.6deg">03 · Night</div>
         <div class="log" style="--rot:1deg">04 · Git</div>
         <div class="log" style="--rot:-.9deg">05 · Web</div>
-        <div class="log" style="--rot:.7deg">06 · Harnais</div>
+        <div class="log" style="--rot:.7deg">06 · Harness</div>
         <div class="log" style="--rot:-.5deg">07 · Vault</div>
       </div>
       <div class="dam-river" aria-hidden="true"></div>
@@ -63,47 +64,47 @@
     <div class="feats">
       <article class="feat">
         <span class="num">01 /</span>
-        <h3>Tous tes <em>modèles</em></h3>
-        <p>Ollama installé et géré par Beaver, <b>onze fournisseurs cloud</b>,
-        et tes comptes web OpenAI, Grok et Kimi. Local ou distant, il construit.</p>
+        <h3>All your <em>models</em></h3>
+        <p>Ollama offered and managed by Beaver, <b>eleven cloud providers</b>,
+        and your OpenAI, Grok and Kimi web accounts. Local or remote, it builds.</p>
       </article>
       <article class="feat">
         <span class="num">02 /</span>
-        <h3>Il fait le <em>travail</em></h3>
-        <p>Fichiers, web, documents Office. Des sous-agents isolés chacun
-        dans son propre worktree Git. Un mode Plan. <b>Une mémoire qui tient</b>.</p>
+        <h3>It does the <em>work</em></h3>
+        <p>Files, web, Office documents. Subagents, each isolated in its own
+        Git worktree. A Plan mode. <b>A memory that holds</b>.</p>
       </article>
       <article class="feat">
         <span class="num">03 /</span>
-        <h3>Pendant que tu <em>dors</em></h3>
-        <p>Réveils programmés — ponctuels, quotidiens, hebdomadaires — et
-        <b>Telegram, Slack, Discord</b> pour lui parler de loin. Tu te lèves, c'est fait.</p>
+        <h3>While you <em>sleep</em></h3>
+        <p>Scheduled wakeups — one-time, daily, weekly — and
+        <b>Telegram, Slack, Discord</b> to reach it from anywhere. You get up, it's done.</p>
       </article>
       <article class="feat">
         <span class="num">04 /</span>
-        <h3>Ton code, ton <em>Git</em></h3>
-        <p>Branches, worktrees, commits, fusions, conflits guidés.
-        Et un <b>vrai terminal</b> intégré, sur les trois systèmes.</p>
+        <h3>Your code, your <em>Git</em></h3>
+        <p>Branches, worktrees, commits, merges, guided conflicts.
+        And a <b>real terminal</b> built in, on all three systems.</p>
       </article>
       <article class="feat">
         <span class="num">05 /</span>
-        <h3>Le web, <em>sur place</em></h3>
-        <p>Un Chromium embarqué qui <b>repère les serveurs qui tournent</b> et
-        affiche tes pages sans quitter Beaver. Et il reste un vrai navigateur
-        quand tu veux t'en servir comme tel. Sur macOS et Windows.</p>
+        <h3>The web, <em>right here</em></h3>
+        <p>An embedded Chromium that <b>spots the servers you have running</b> and
+        shows your pages without leaving Beaver. And it stays a real browser
+        when you want to use it as one. On macOS and Windows.</p>
       </article>
       <article class="feat">
         <span class="num">06 /</span>
-        <h3>Et tu peux tout <em>reprendre</em></h3>
-        <p>Ses outils, son prompt système, son interface : tu remplaces ce que
-        tu veux. <b><a href="index.html#harnais">C'est le harnais →</a></b></p>
+        <h3>And you can take it all <em>back</em></h3>
+        <p>Its tools, its system prompt, its interface: you replace whatever
+        you want. <b><a href="index.html#harnais">That's the harness →</a></b></p>
       </article>
       <article class="feat">
         <span class="num">07 /</span>
-        <h3>Tes secrets restent <em>secrets</em></h3>
-        <p>Coffre <b>XChaCha20-Poly1305</b>, clé maîtresse confiée au gestionnaire
-        de secrets de ton système — trousseau macOS, gestionnaire d'identifiants
-        Windows, portefeuille Linux. L'interface ne voit jamais une clé. Jamais.</p>
+        <h3>Your secrets stay <em>secret</em></h3>
+        <p><b>XChaCha20-Poly1305</b> vault, master key handed to your system's own
+        secret store — macOS Keychain, Windows Credential Manager, Linux
+        Secret Service. The interface never sees a key. Never.</p>
       </article>
     </div>
   </div>
@@ -112,20 +113,20 @@
 <section class="forecast" id="forecast">
   <div class="sec-head">
     <div>
-      <p class="kicker">02 / Le forecast</p>
-      <h2>Il voit <em>loin.</em></h2>
+      <p class="kicker">02 / Forecast</p>
+      <h2>It sees <em>far ahead.</em></h2>
     </div>
-    <p class="lead"><b>Ce que les autres agents n'ont pas.</b>
-    Un atelier de séries temporelles que l'agent sait utiliser lui-même :
-    historiques, comparaisons, scénarios, exports.</p>
+    <p class="lead"><b>What the other agents don't have.</b>
+    A time-series workshop the agent knows how to use on its own:
+    history, comparisons, scenarios, exports.</p>
   </div>
 
   <div class="chart-card">
     <div class="chart-meta">
-      <span>chronos-bolt · horizon 12 · confiance 90%</span>
+      <span>chronos-bolt · horizon 12 · confidence 90%</span>
       <span class="live">● run #047</span>
     </div>
-    <svg class="chart" id="chart" viewBox="0 0 1000 380" preserveAspectRatio="none" role="img" aria-label="Courbe historique prolongée par une prévision et son intervalle de confiance">
+    <svg class="chart" id="chart" viewBox="0 0 1000 380" preserveAspectRatio="none" role="img" aria-label="Historical curve extended by a forecast and its confidence interval">
       <defs>
         <linearGradient id="hgrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" class="gs-from"></stop>
@@ -141,9 +142,9 @@
       <line id="split" x1="0" y1="18" x2="0" y2="352" stroke-dasharray="3 6" opacity="0"></line>
     </svg>
     <div class="legend">
-      <span class="l-hist"><i></i>Historique</span>
-      <span class="l-pred"><i></i>Prédiction</span>
-      <span class="l-band"><i></i>Intervalle 90%</span>
+      <span class="l-hist"><i></i>History</span>
+      <span class="l-pred"><i></i>Prediction</span>
+      <span class="l-band"><i></i>90% interval</span>
     </div>
   </div>
 
@@ -165,32 +166,32 @@
 <section class="install" id="install">
   <div class="sec-head">
     <div>
-      <p class="kicker">03 / L'installation</p>
-      <h2>Une <em>ligne.</em></h2>
+      <p class="kicker">03 / The install</p>
+      <h2>One <em>line.</em></h2>
     </div>
-    <p class="lead">macOS, Linux et Windows. Au premier lancement, un assistant
-    te propose d'installer Ollama <b>si tu veux des modèles locaux</b> — sinon tu
-    branches tes fournisseurs cloud et tu démarres.</p>
+    <p class="lead">macOS, Linux and Windows. On first launch, a setup screen
+    offers to install Ollama <b>if you want local models</b> — otherwise you
+    plug in your cloud providers and start.</p>
   </div>
   <div class="term">
     <div class="term-bar">
       <i></i><i></i><i></i>
-      <div class="term-os" role="tablist" aria-label="Choisir le système">
+      <div class="term-os" role="tablist" aria-label="Choose your system">
         <button class="os-tab is-active" data-os="unix" type="button" role="tab" aria-selected="true">macOS / Linux</button>
         <button class="os-tab" data-os="windows" type="button" role="tab" aria-selected="false">Windows</button>
       </div>
-      <button class="copy" id="copy-install" type="button">Copier</button>
+      <button class="copy" id="copy-install" type="button">Copy</button>
     </div>
     <p class="term-body"><span class="prompt" id="prompt-char">$</span> <span id="typed"></span><span class="cursor" aria-hidden="true"></span></p>
   </div>
-  <p class="stack">Rust · Tauri 2 · React 19 · 3 systèmes · AGPL-3.0</p>
+  <p class="stack">Rust · Tauri 2 · React 19 · 3 systems · AGPL-3.0</p>
 </section>
 
 <footer class="foot">
-  <p class="foot-cta">Construis <em>ton</em> barrage.<span class="l2">Puis démonte le nôtre.</span></p>
+  <p class="foot-cta">Build <em>your</em> dam.<span class="l2">Then take ours apart.</span></p>
   <div class="foot-links">
     <div class="foot-nav">
-      <a href="index.html">Le harnais</a>
+      <a href="index.html">The harness</a>
       <a href="docs.html">Docs</a>
       <a href="https://github.com/Kevin-hDev/Beaver">GitHub</a>
     </div>

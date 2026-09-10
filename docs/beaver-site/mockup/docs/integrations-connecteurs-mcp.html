@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Connecteurs MCP</title>
-<meta name="description" content="Brancher Notion, Linear ou GitHub sur l'agent : le catalogue fermé, les deux façons de se connecter, et tout ce que Beaver verrouille.">
+<title>Beaver Docs — MCP connectors</title>
+<meta name="description" content="Plugging Notion, Linear or GitHub into the agent: the closed catalog, the two ways to connect, and everything Beaver locks down.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,131 +19,131 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Intégrations / Connecteurs MCP</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="integrations-connecteurs-mcp.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Integrations / MCP connectors</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/integrations-connecteurs-mcp.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="integrations-connecteurs-mcp.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Les connecteurs <em>externes</em></h1>
-    <p>Un connecteur donne à l'agent accès à un service extérieur : lire une page de documentation interne, créer un ticket, consulter un dépôt, chercher dans une base de connaissances. Il repose sur un protocole standard, ce qui évite à Beaver d'écrire du code spécifique par service. Côté agent, tout passe par un seul outil à deux temps — chercher, puis appeler.</p>
+    <h1>External <em>connectors</em></h1>
+    <p>A connector gives the agent access to an outside service: reading an internal documentation page, creating a ticket, browsing a repository, searching a knowledge base. It rests on a standard protocol, which saves Beaver from writing service-specific code. On the agent side, everything goes through a single two-step tool — search, then call.</p>
 
-    <h2 id="le-catalogue-est-ferme">Le catalogue est fermé</h2>
-    <p>C'est la décision la plus importante de cette page. <b>Beaver ne permet pas d'ajouter un connecteur arbitraire.</b> Seuls les connecteurs d'une liste établie peuvent être configurés, et pour ceux qui s'exécutent localement, la commande exacte est figée dans l'application — argument par argument, version par version. Impossible d'en changer un caractère.</p>
+    <h2 id="le-catalogue-est-ferme">The catalog is closed</h2>
+    <p>This is the most important decision on this page. <b>Beaver does not allow adding an arbitrary connector.</b> Only connectors from an established list can be configured, and for those that run locally, the exact command is frozen in the application — argument by argument, version by version. Not one character can be changed.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Le catalogue est fermé, et c'est délibéré. Un connecteur local est du code tiers qui tourne avec tes droits et reçoit tes jetons d'accès. Permettre d'en installer n'importe lequel reviendrait à permettre l'exécution de n'importe quoi. La plupart des outils comparables laissent cette porte ouverte ; Beaver la ferme. Ce que ça coûte : si le connecteur dont tu as besoin n'est pas dans la liste, tu ne peux pas l'ajouter — il faut passer par le terminal, ou attendre qu'il soit intégré.
+      <span class="t">Security</span>
+      The catalog is closed, and that is deliberate. A local connector is third-party code that runs with your rights and receives your access tokens. Allowing any of them to be installed would amount to allowing anything to be run. Most comparable tools leave that door open; Beaver closes it. What it costs: if the connector you need is not in the list, you cannot add it — you have to go through the terminal, or wait for it to be integrated.
     </div>
 
-    <h2 id="les-connecteurs-disponibles">Les connecteurs disponibles</h2>
-    <p>Treize services sont joints à distance, par une adresse sécurisée : <b>Gmail</b> pour le courrier, <b>Google Drive</b> pour les fichiers, <b>Google Agenda</b> pour le calendrier, <b>Notion</b> comme base de connaissances, <b>Slack</b> pour la messagerie d'équipe, <b>Linear</b> pour le suivi de tickets, <b>GitHub</b> pour les dépôts de code, <b>Figma</b> pour la conception d'interfaces, <b>Canva</b> pour la création graphique, <b>Lucid</b> pour les diagrammes, <b>Sentry</b> pour le suivi d'erreurs, <b>Vercel</b> pour l'hébergement et le déploiement, et <b>Apify</b> pour l'extraction de données web.</p>
+    <h2 id="les-connecteurs-disponibles">The available connectors</h2>
+    <p>Thirteen services are reached remotely, over a secure address: <b>Gmail</b> for mail, <b>Google Drive</b> for files, <b>Google Calendar</b> for the calendar, <b>Notion</b> as a knowledge base, <b>Slack</b> for team messaging, <b>Linear</b> for issue tracking, <b>GitHub</b> for code repositories, <b>Figma</b> for interface design, <b>Canva</b> for graphic creation, <b>Lucid</b> for diagrams, <b>Sentry</b> for error tracking, <b>Vercel</b> for hosting and deployment, and <b>Apify</b> for web data extraction.</p>
 
-    <p>Cinq services s'exécutent sur ta machine : <b>Context7</b> pour la documentation de bibliothèques à jour, <b>Hugging Face</b> pour les modèles et jeux de données, <b>Product Hunt</b> pour la veille produit, <b>Reddit</b> pour la recherche de discussions, et <b>iMessage</b> pour les messages, sur macOS uniquement.</p>
+    <p>Five services run on your machine: <b>Context7</b> for up-to-date library documentation, <b>Hugging Face</b> for models and datasets, <b>Product Hunt</b> for product watch, <b>Reddit</b> for searching discussions, and <b>iMessage</b> for messages, on macOS only.</p>
 
-    <p>Cette liste correspond à Beaver <b>1.2.2</b> ; l'écran des connecteurs de ton application fait foi.</p>
+    <p>This list matches Beaver <b>1.2.2</b>; your application's connector screen is authoritative.</p>
 
-    <h2 id="deux-facons-de-se-connecter">Deux façons de se connecter</h2>
+    <h2 id="deux-facons-de-se-connecter">Two ways to connect</h2>
 
     <table>
-      <caption class="crumb">Service distant ou service local</caption>
-      <tr><th>&nbsp;</th><th>Service distant</th><th>Service local</th></tr>
-      <tr><td>Où tourne le code</td><td>Chez le service</td><td><b>Sur ta machine</b></td></tr>
-      <tr><td>Connexion</td><td>Adresse sécurisée figée</td><td>Programme lancé localement</td></tr>
-      <tr><td>Authentification</td><td>Le plus souvent par compte</td><td>Clé placée dans l'environnement</td></tr>
-      <tr><td>Prérequis</td><td>Aucun</td><td>Un environnement d'exécution — Node, Python ou Deno selon le connecteur</td></tr>
+      <caption class="crumb">Remote service or local service</caption>
+      <tr><th>&nbsp;</th><th>Remote service</th><th>Local service</th></tr>
+      <tr><td>Where the code runs</td><td>At the service</td><td><b>On your machine</b></td></tr>
+      <tr><td>Connection</td><td>Fixed secure address</td><td>Program launched locally</td></tr>
+      <tr><td>Authentication</td><td>Usually by account</td><td>Key placed in the environment</td></tr>
+      <tr><td>Prerequisite</td><td>None</td><td>A runtime environment — Node, Python or Deno depending on the connector</td></tr>
     </table>
 
     <div class="callout">
       <span class="t">Note</span>
-      Un connecteur local demande un environnement d'exécution : Node, Python ou Deno selon le connecteur. S'il manque sur la machine, le connecteur ne démarre pas et Beaver l'annonce — « environnement requis introuvable ».
+      A local connector requires a runtime environment: Node, Python or Deno depending on the connector. If it is missing from the machine, the connector does not start and Beaver says so — "required runtime not found".
     </div>
 
-    <h2 id="ajouter-un-connecteur">Ajouter un connecteur</h2>
-    <p>Le chemin est <b>Réglages › Intégrations › Connecteurs</b>, et le parcours dépend du type. Pour un <b>service distant</b>, l'adresse est déjà connue de Beaver : il reste à s'authentifier, le plus souvent par compte — voir <a href="integrations-authentification-mcp.html">Authentification des connecteurs</a>. Pour un <b>service local</b>, la commande est déjà connue : il reste à fournir la clé d'accès du service quand il en demande une.</p>
+    <h2 id="ajouter-un-connecteur">Adding a connector</h2>
+    <p>The path is <b>Settings › Integrations › Connectors</b>, and the flow depends on the type. For a <b>remote service</b>, Beaver already knows the address: all that remains is to authenticate, usually by account — see <a href="integrations-authentification-mcp.html">Connector authentication</a>. For a <b>local service</b>, the command is already known: all that remains is to supply the service's access key when it asks for one.</p>
 
-    <p>Un connecteur mal formé est refusé à l'enregistrement : identifiant invalide, adresse non reconnue, commande non conforme, ou aucune des deux fournies. <b>La limite est de 32 connecteurs configurés.</b></p>
+    <p>A malformed connector is refused when saved: invalid identifier, unrecognized address, non-compliant command, or neither of the two supplied. <b>The limit is 32 configured connectors.</b></p>
 
-    <h2 id="activer-par-conversation">Activer par conversation</h2>
-    <p>Chaque connecteur porte un interrupteur d'activation dans les conversations, indépendant de sa configuration. La distinction vaut d'être comprise : un connecteur peut être <b>configuré et authentifié, mais éteint</b> — l'agent ne le voit alors pas du tout.</p>
+    <h2 id="activer-par-conversation">Enabling per conversation</h2>
+    <p>Each connector carries an activation switch for conversations, independent of its configuration. The distinction is worth understanding: a connector can be <b>configured and authenticated, but switched off</b> — the agent then does not see it at all.</p>
 
-    <p>C'est utile : tu gardes plusieurs connecteurs prêts et tu n'exposes que ceux qui servent au travail en cours. Chaque connecteur actif ajoute des outils que l'agent doit considérer, et cela n'est pas gratuit.</p>
+    <p>That is useful: you keep several connectors ready and only expose the ones relevant to the work at hand. Every active connector adds tools the agent has to consider, and that is not free.</p>
 
-    <h2 id="ce-qui-est-verrouille">Ce qui est verrouillé</h2>
-    <p>Le durcissement est le point fort de ce module.</p>
+    <h2 id="ce-qui-est-verrouille">What is locked down</h2>
+    <p>Hardening is this module's strong point.</p>
 
-    <p><b>Pour les services distants</b>, l'adresse doit correspondre <b>exactement</b> à celle attendue pour ce connecteur — même hôte, même chemin. Le chiffrement est obligatoire : une adresse non sécurisée est refusée. Ni port personnalisé, ni paramètres dans l'adresse. Et un connecteur ne peut pas emprunter l'adresse d'un autre : la correspondance est vérifiée par paire.</p>
+    <p><b>For remote services</b>, the address must match <b>exactly</b> the one expected for that connector — same host, same path. Encryption is mandatory: an insecure address is refused. No custom port, no parameters in the address. And one connector cannot borrow another's address: the match is checked pair by pair.</p>
 
-    <p><b>Pour les services locaux</b>, seuls <b>trois programmes</b> sont autorisés — les lanceurs de paquets Node, Python et Deno. Aucun autre, et surtout <b>aucun interpréteur de commandes</b>. La commande doit correspondre exactement à celle du catalogue, <b>y compris le numéro de version du paquet</b> : une version différente est refusée. Chaque argument est validé par motif — ni point-virgule, ni barre verticale, ni accent grave, ni substitution de commande, ni espace — si bien que les tentatives d'enchaîner une seconde commande sont rejetées. La permission « tout autoriser » est refusée pour tous, et le connecteur iMessage fait l'objet d'un contrôle renforcé : ses permissions d'exécution sont figées à la liste attendue, et <b>ajouter la permission d'écriture est refusé</b>.</p>
+    <p><b>For local services</b>, only <b>three programs</b> are allowed — the Node, Python and Deno package launchers. No other, and above all <b>no command interpreter</b>. The command must match the catalog's exactly, <b>including the package version number</b>: a different version is refused. Every argument is validated against a pattern — no semicolon, no vertical bar, no backtick, no command substitution, no space — so that attempts to chain a second command are rejected. The "allow everything" permission is refused for all of them, and the iMessage connector is subject to a reinforced check: its execution permissions are frozen to the expected list, and <b>adding write permission is refused</b>.</p>
 
-    <p><b>À l'exécution</b>, le programme est lancé sans passer par un interpréteur de commandes, avec ses arguments dans une liste. Les jetons sont transmis par variables d'environnement, dont les noms sont validés, et manipulés en mémoire protégée.</p>
+    <p><b>At runtime</b>, the program is launched without going through a command interpreter, with its arguments in a list. Tokens are passed through environment variables, whose names are validated, and handled in protected memory.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Les versions sont épinglées, et aucun interpréteur de commandes n'est jamais utilisé. Un connecteur local s'installe toujours à la version prévue par Beaver, ce qui empêche une mise à jour compromise de s'installer silencieusement. Et parce que les programmes sont lancés directement avec leurs arguments en liste, aucune chaîne de caractères n'est interprétée comme une commande.
+      <span class="t">Security</span>
+      Versions are pinned, and no command interpreter is ever used. A local connector always installs at the version Beaver expects, which prevents a compromised update from installing silently. And because programs are launched directly with their arguments in a list, no string is ever interpreted as a command.
     </div>
 
     <table>
-      <caption class="crumb">Ce que Beaver refuse à la configuration</caption>
-      <tr><th>Tentative</th><th>Résultat</th></tr>
-      <tr><td>Adresse d'un service non reconnu</td><td>Refusé</td></tr>
-      <tr><td>Adresse non chiffrée</td><td>Refusé</td></tr>
-      <tr><td>Adresse avec paramètres ou port</td><td>Refusé</td></tr>
-      <tr><td>Adresse d'un autre connecteur</td><td>Refusé</td></tr>
-      <tr><td>Programme autre que les trois autorisés</td><td>Refusé</td></tr>
-      <tr><td>Commande d'interpréteur</td><td>Refusé</td></tr>
-      <tr><td>Version de paquet différente</td><td>Refusé</td></tr>
-      <tr><td>Option supplémentaire dans la commande</td><td>Refusé</td></tr>
-      <tr><td>Enchaînement de commandes</td><td>Refusé</td></tr>
-      <tr><td>Permission « tout autoriser »</td><td>Refusé</td></tr>
-      <tr><td>Permission d'écriture ajoutée à iMessage</td><td>Refusé</td></tr>
+      <caption class="crumb">What Beaver refuses at configuration time</caption>
+      <tr><th>Attempt</th><th>Result</th></tr>
+      <tr><td>Address of an unrecognized service</td><td>Refused</td></tr>
+      <tr><td>Unencrypted address</td><td>Refused</td></tr>
+      <tr><td>Address with parameters or a port</td><td>Refused</td></tr>
+      <tr><td>Address belonging to another connector</td><td>Refused</td></tr>
+      <tr><td>Program other than the three allowed</td><td>Refused</td></tr>
+      <tr><td>Interpreter command</td><td>Refused</td></tr>
+      <tr><td>Different package version</td><td>Refused</td></tr>
+      <tr><td>Extra option in the command</td><td>Refused</td></tr>
+      <tr><td>Chained commands</td><td>Refused</td></tr>
+      <tr><td>"Allow everything" permission</td><td>Refused</td></tr>
+      <tr><td>Write permission added to iMessage</td><td>Refused</td></tr>
     </table>
 
-    <h2 id="la-gestion-des-processus">La gestion des processus</h2>
-    <p>Les connecteurs locaux tournent comme des programmes séparés, dans une réserve gérée par Beaver. <b>Huit processus au maximum</b> : au-delà, le connecteur inutilisé depuis le plus longtemps est arrêté. Un processus <b>inactif depuis 10 minutes est arrêté</b>, puis redémarré au besoin — c'est ce qui explique qu'une première requête après une pause soit plus lente. Tous sont arrêtés avec leur arbre de processus à la fermeture de Beaver. Les réponses sont bornées : <b>128 outils par connecteur</b>, description limitée à <b>250 caractères</b>, nom d'outil à <b>64</b>.</p>
+    <h2 id="la-gestion-des-processus">Process management</h2>
+    <p>Local connectors run as separate programs, in a pool Beaver manages. <b>Eight processes at most</b>: beyond that, the connector unused for the longest is stopped. A process <b>idle for 10 minutes is stopped</b>, then restarted as needed — that is why a first request after a pause is slower. All of them are stopped along with their process tree when Beaver closes. Responses are bounded: <b>128 tools per connector</b>, description capped at <b>250 characters</b>, tool name at <b>64</b>.</p>
 
     <table>
-      <caption class="crumb">Les limites des connecteurs</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Connecteurs configurés</td><td><b>32</b></td></tr>
-      <tr><td>Processus locaux simultanés</td><td><b>8</b></td></tr>
-      <tr><td>Inactivité avant arrêt d'un processus</td><td><b>10 minutes</b></td></tr>
-      <tr><td>Outils remontés par connecteur</td><td><b>128</b></td></tr>
-      <tr><td>Outils remontés dans une recherche</td><td><b>15 par connecteur</b></td></tr>
-      <tr><td>Longueur d'une description d'outil</td><td><b>250 caractères</b></td></tr>
-      <tr><td>Longueur d'un nom d'outil</td><td><b>64 caractères</b></td></tr>
-      <tr><td>Longueur d'un identifiant de connecteur</td><td><b>64 caractères</b></td></tr>
+      <caption class="crumb">The connector limits</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Configured connectors</td><td><b>32</b></td></tr>
+      <tr><td>Simultaneous local processes</td><td><b>8</b></td></tr>
+      <tr><td>Idle time before a process is stopped</td><td><b>10 minutes</b></td></tr>
+      <tr><td>Tools reported per connector</td><td><b>128</b></td></tr>
+      <tr><td>Tools reported in a search</td><td><b>15 per connector</b></td></tr>
+      <tr><td>Length of a tool description</td><td><b>250 characters</b></td></tr>
+      <tr><td>Length of a tool name</td><td><b>64 characters</b></td></tr>
+      <tr><td>Length of a connector identifier</td><td><b>64 characters</b></td></tr>
     </table>
 
-    <h2 id="pieges-frequents">Pièges fréquents</h2>
+    <h2 id="pieges-frequents">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui bloque le plus souvent</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Le connecteur voulu n'existe pas</td><td>Catalogue fermé</td><td>Passer par le terminal, ou demander son intégration</td></tr>
-      <tr><td>« Environnement requis introuvable »</td><td>Node, Python ou Deno absent de la machine</td><td>Installer l'environnement demandé</td></tr>
-      <tr><td>« Endpoint MCP non autorisé »</td><td>Adresse non reconnue pour ce connecteur</td><td>Utiliser celle proposée par Beaver</td></tr>
-      <tr><td>« Commande MCP non autorisée »</td><td>Commande ou version modifiée</td><td>Conserver celle du catalogue</td></tr>
-      <tr><td>L'agent ignore le connecteur</td><td>Configuré, mais désactivé pour les conversations</td><td>L'activer dans la conversation</td></tr>
-      <tr><td>Le connecteur met du temps à répondre la première fois</td><td>Processus arrêté après 10 minutes d'inactivité, puis redémarré</td><td>Comportement attendu</td></tr>
-      <tr><td>« Limite de connecteurs atteinte »</td><td>32 connecteurs configurés</td><td>En retirer un</td></tr>
-      <tr><td>Un connecteur s'est arrêté tout seul</td><td>Huit processus simultanés dépassés : le plus ancien est arrêté</td><td>Comportement attendu, il redémarre au besoin</td></tr>
+      <caption class="crumb">What most often blocks</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The connector you want does not exist</td><td>Closed catalog</td><td>Go through the terminal, or ask for it to be integrated</td></tr>
+      <tr><td>"Required runtime not found"</td><td>Node, Python or Deno missing from the machine</td><td>Install the runtime asked for</td></tr>
+      <tr><td>"MCP endpoint not allowed"</td><td>Address not recognized for this connector</td><td>Use the one Beaver offers</td></tr>
+      <tr><td>"MCP command not allowed"</td><td>Command or version changed</td><td>Keep the one from the catalog</td></tr>
+      <tr><td>The agent ignores the connector</td><td>Configured, but disabled for conversations</td><td>Enable it in the conversation</td></tr>
+      <tr><td>The connector takes a while to answer the first time</td><td>Process stopped after 10 minutes idle, then restarted</td><td>Expected behavior</td></tr>
+      <tr><td>"Connector limit reached"</td><td>32 configured connectors</td><td>Remove one</td></tr>
+      <tr><td>A connector stopped on its own</td><td>Eight simultaneous processes exceeded: the oldest is stopped</td><td>Expected behavior, it restarts as needed</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="outils-connecteurs.html">Connecteurs externes côté agent</a> — comment l'agent cherche puis appelle un outil de connecteur.</li>
-      <li><a href="integrations-authentification-mcp.html">Authentification des connecteurs</a> — l'autorisation par compte des services distants.</li>
-      <li><a href="integrations-centre-extensions.html">Centre d'extensions</a> — à ne pas confondre : catalogue fermé ici, code libre là-bas.</li>
-      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — le durcissement dans la vue d'ensemble.</li>
+      <li><a href="outils-connecteurs.html">External connectors on the agent side</a> — how the agent searches for and then calls a connector tool.</li>
+      <li><a href="integrations-authentification-mcp.html">Connector authentication</a> — account-based authorization for remote services.</li>
+      <li><a href="integrations-centre-extensions.html">Extension center</a> — not to be confused: a closed catalog here, free code there.</li>
+      <li><a href="reference-modele-de-securite.html">Security model</a> — the hardening in the overall picture.</li>
     </ul>
   </main>
 

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Canaux externes</title>
+<meta name="description" content="Piloter l'agent depuis Telegram, Slack ou Discord : la mise en place, la liste d'autorisation obligatoire, les limites de débit et le journal d'audit.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Intégrations / Canaux externes</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="integrations-canaux-externes.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/integrations-canaux-externes.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Piloter l'agent depuis une <em>messagerie</em></h1>
+    <p>Les canaux externes te permettent d'envoyer un message à ton agent Beaver depuis Telegram, Slack ou Discord, et de recevoir sa réponse au même endroit. L'agent tourne toujours sur ta machine — c'est seulement le point d'entrée qui change. L'usage typique : lancer une tâche depuis ton téléphone, ou consulter l'avancement d'un travail long sans être devant l'ordinateur.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Beaver doit rester ouvert sur ta machine. Ce n'est pas un service hébergé : c'est ton application locale qui écoute. Fermée, le canal ne répond plus.
+    </div>
+
+    <h2 id="les-trois-messageries">Les trois messageries</h2>
+
+    <table>
+      <caption class="crumb">Ce qu'il faut créer chez chaque messagerie</caption>
+      <tr><th>Messagerie</th><th>Ce qu'il faut créer</th></tr>
+      <tr><td><b>Telegram</b></td><td>Un bot</td></tr>
+      <tr><td><b>Slack</b></td><td>Une application dans l'espace de travail</td></tr>
+      <tr><td><b>Discord</b></td><td>Une application et un bot</td></tr>
+    </table>
+
+    <p>Jusqu'à <b>16 comptes par messagerie</b> peuvent être configurés — plusieurs bots, plusieurs espaces de travail.</p>
+
+    <h2 id="ce-quil-faut-mettre-en-place">Ce qu'il faut mettre en place</h2>
+    <ul>
+      <li>Créer le bot ou l'application chez la messagerie.</li>
+      <li>Récupérer son jeton.</li>
+      <li>Le saisir dans <b>Réglages › Intégrations › Canaux</b>.</li>
+      <li><b>Déclarer les utilisateurs autorisés</b> — obligatoire, voir la section suivante.</li>
+      <li>Choisir le fournisseur et le modèle qui serviront à répondre.</li>
+      <li>Activer le compte.</li>
+    </ul>
+
+    <p>Le jeton est vérifié auprès de la messagerie <b>avant</b> l'activation : cela distingue un jeton invalide d'un problème de réseau, avant de commencer. Les jetons sont ensuite protégés comme les clés API — coffre chiffré, clé maîtresse dans le gestionnaire de mots de passe du système, aucune lecture possible depuis l'interface. Voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+
+    <h2 id="la-liste-dautorisation">La liste d'autorisation est obligatoire</h2>
+    <p>C'est la protection la plus importante de cette page, et elle n'est pas contournable. Un canal actif <b>doit</b> déclarer au moins un utilisateur autorisé : un canal activé avec une liste vide est refusé à l'enregistrement. Et <b>le joker est interdit</b> — il n'existe aucune façon d'écrire « tout le monde ». Chaque utilisateur autorisé doit être désigné par son identifiant.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Un bot de messagerie est joignable par n'importe qui connaissant son nom. Sans liste d'autorisation, ouvrir un canal reviendrait à <b>donner à des inconnus un agent qui exécute des commandes sur ta machine</b>. Beaver rend cette configuration impossible.
+    </div>
+
+    <p>Jusqu'à <b>100 utilisateurs autorisés</b> par compte. Les doublons sont refusés, et chaque identifiant est validé.</p>
+
+    <h2 id="comment-les-conversations-sont-reliees">Comment les conversations sont reliées</h2>
+    <p>Chaque interlocuteur d'une messagerie est associé à <b>une conversation Beaver</b>, de façon stable : écrire deux fois depuis le même endroit continue la même conversation, avec son historique. Cette correspondance est enregistrée sur le disque et <b>survit au redémarrage</b> de l'application.</p>
+
+    <p>Elle est <b>bornée</b> : au-delà du nombre maximal configuré, la correspondance la plus ancienne est retirée, et l'interlocuteur concerné repart sur une conversation neuve. La limite se règle, jusqu'à <b>1 000</b>. Le format de ce fichier porte un numéro de version, et une version antérieure n'est pas réutilisée : elle est ignorée et repart de zéro plutôt que d'être réinterprétée de travers.</p>
+
+    <h2 id="les-limites-de-debit">Les limites de débit</h2>
+    <p>Trois plafonds indépendants, tous réglables, protègent chacun quelque chose de différent.</p>
+
+    <table>
+      <caption class="crumb">Les trois plafonds de débit</caption>
+      <tr><th>Plafond</th><th>Ce qu'il protège</th></tr>
+      <tr><td><b>Par utilisateur et par minute</b></td><td>Un utilisateur seul ne peut pas saturer le service</td></tr>
+      <tr><td><b>Par canal et par minute</b></td><td>Un canal actif ne prive pas les autres</td></tr>
+      <tr><td><b>Global par minute</b></td><td>La machine reste utilisable</td></tr>
+    </table>
+
+    <p>Chacun accepte jusqu'à 10 000 messages par minute, mais <b>aucun ne peut valoir zéro</b> : il y a toujours une limite active. Un message est par ailleurs limité à <b>12 000 caractères</b> au maximum configurable.</p>
+
+    <h2 id="le-journal-daudit">Le journal d'audit</h2>
+    <p>Toute activité des canaux est consignée : qui a écrit, quand, sur quel canal, et ce qui a été décidé — message traité, utilisateur refusé, limite atteinte. La durée de conservation se règle, jusqu'à <b>365 jours</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      C'est le seul moyen de répondre à « qui a parlé à mon agent, et quand ». Sur une fonctionnalité qui expose l'agent à l'extérieur, ce journal n'est pas un accessoire.
+    </div>
+
+    <h2 id="la-surveillance-du-service">La surveillance du service</h2>
+    <p>Les canaux tournent en arrière-plan et leur fonctionnement est surveillé : un superviseur les redémarre s'ils s'arrêtent, et un chien de garde détecte les blocages. Deux protections méritent une mention. <b>Une conversation est verrouillée pendant son traitement</b> : deux messages arrivés en même temps depuis le même endroit ne sont pas traités en parallèle, ce qui éviterait deux réponses entremêlées dans la même conversation. Et <b>la réponse est capturée puis envoyée</b>, plutôt que diffusée mot à mot : une messagerie n'accepte pas des centaines de modifications successives d'un même message.</p>
+
+    <h2 id="ce-qui-nest-pas-possible">Ce qui n'est pas possible</h2>
+    <ul>
+      <li><b>Les connexions par compte ne peuvent pas servir de modèle à un canal.</b> Elles supposent une personne devant l'écran pour s'authentifier, ce qui n'est pas le cas d'un message arrivé la nuit. Il faut une clé API, ou un modèle local.</li>
+      <li><b>Beaver doit être ouvert.</b> Fermer l'application coupe le canal.</li>
+      <li><b>Aucun joker dans la liste d'autorisation</b>, et un canal actif sans utilisateur autorisé est refusé.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      L'agent a les mêmes pouvoirs que devant l'écran. Un message reçu par messagerie lance un agent qui accède à tes fichiers et lance des commandes. Le mode de permission et la portée d'accès disque s'appliquent — et méritent d'être revus avant d'ouvrir un canal. Voir <a href="agent-permissions.html">Modes de permission</a> et <a href="agent-repertoire-de-travail.html">Répertoire de travail</a>.
+    </div>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Les valeurs maximales configurables</caption>
+      <tr><th>Limite</th><th>Valeur maximale</th></tr>
+      <tr><td>Comptes par messagerie</td><td><b>16</b></td></tr>
+      <tr><td>Utilisateurs autorisés par compte</td><td><b>100</b></td></tr>
+      <tr><td>Conversations associées</td><td><b>1 000</b></td></tr>
+      <tr><td>Caractères par message</td><td><b>12 000</b></td></tr>
+      <tr><td>Messages par utilisateur et par minute</td><td><b>10 000</b></td></tr>
+      <tr><td>Messages par canal et par minute</td><td><b>10 000</b></td></tr>
+      <tr><td>Messages par minute au total</td><td><b>10 000</b></td></tr>
+      <tr><td>Conservation du journal d'audit</td><td><b>365 jours</b></td></tr>
+      <tr><td>Longueur d'un nom de fournisseur ou de modèle</td><td><b>128 caractères</b></td></tr>
+    </table>
+
+    <p>Aucune de ces limites ne peut valoir zéro : une valeur nulle est refusée.</p>
+
+    <table>
+      <caption class="crumb">Ce que Beaver refuse à la configuration</caption>
+      <tr><th>Tentative</th><th>Résultat</th></tr>
+      <tr><td>Canal actif sans utilisateur autorisé</td><td><b>Refusé</b></td></tr>
+      <tr><td>Joker dans la liste d'autorisation</td><td><b>Refusé</b></td></tr>
+      <tr><td>Utilisateur en double</td><td>Refusé</td></tr>
+      <tr><td>Identifiant de compte en double</td><td>Refusé</td></tr>
+      <tr><td>Plus de 16 comptes pour une messagerie</td><td>Refusé</td></tr>
+      <tr><td>Plus de 100 utilisateurs autorisés</td><td>Refusé</td></tr>
+      <tr><td>Limite de débit à zéro</td><td>Refusé</td></tr>
+      <tr><td>Fournisseur exigeant une authentification interactive</td><td><b>Refusé</b></td></tr>
+    </table>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui bloque le plus souvent</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Configuration Gateway invalide » à l'activation</td><td>Liste d'autorisation vide, joker, ou doublon</td><td>Déclarer au moins un utilisateur, sans joker</td></tr>
+      <tr><td>Le bot ne répond pas</td><td>Beaver fermé, ou canal désactivé</td><td>Ouvrir l'application, vérifier l'activation</td></tr>
+      <tr><td>Un message est ignoré</td><td>Utilisateur absent de la liste — visible dans le journal d'audit</td><td>L'ajouter à la liste d'autorisation</td></tr>
+      <tr><td>Le bot répond puis s'arrête</td><td>Limite de débit atteinte</td><td>Relever la limite, ou attendre</td></tr>
+      <tr><td>Le modèle habituel n'est pas proposé</td><td>Modèle accessible par connexion de compte, donc inutilisable ici</td><td>Utiliser une clé API ou un modèle local</td></tr>
+      <tr><td>L'agent a perdu le fil</td><td>Correspondance retirée après dépassement de la limite de conversations</td><td>Relever le nombre de conversations associées</td></tr>
+      <tr><td>Deux réponses se mélangent</td><td>Ne devrait pas arriver : les conversations sont verrouillées pendant leur traitement</td><td>À signaler</td></tr>
+      <tr><td>La réponse arrive d'un coup, pas mot à mot</td><td>Comportement voulu : les messageries n'acceptent pas la diffusion continue</td><td>Normal</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-permissions.html">Modes de permission</a> — <b>à revoir avant d'ouvrir un canal</b>.</li>
+      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée d'accès de l'agent.</li>
+      <li><a href="modeles-fournisseurs-api.html">Fournisseurs API</a> — configurer une clé utilisable par un canal.</li>
+      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — la vue d'ensemble.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

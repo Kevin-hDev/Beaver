@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Sous-agents</title>
-<meta name="description" content="Les neuf outils de délégation : lancer un sous-agent, le suivre, et récupérer le travail d'un sous-agent codeur sans risquer ton dépôt.">
+<title>Beaver Docs — Subagents</title>
+<meta name="description" content="The nine delegation tools: launching a subagent, following it, and picking up a coding subagent's work without risking your repository.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,168 +19,168 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Sous-agents</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-sous-agents.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / Subagents</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-sous-agents.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-sous-agents.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Les neuf outils <em>de délégation.</em></h1>
-    <p>Ils forment le groupe <b>Sous-agents</b>, optionnel et <b>actif par défaut</b>. Cette page est la référence des outils ; le fonctionnement des sous-agents — sessions isolées, espaces de travail Git séparés, limites — est expliqué dans <a href="agent-sous-agents.html">Sous-agents</a>.</p>
-    <p>Le groupe est <b>indivisible</b> : impossible d'autoriser la délégation sans autoriser le suivi, ni l'inverse. Tout dépend de l'outil de délégation — s'il est absent, les huit autres sont retirés automatiquement.</p>
+    <h1>The nine <em>delegation tools.</em></h1>
+    <p>They form the <b>Subagents</b> group, optional and <b>on by default</b>. This page is the tools reference; how subagents work — isolated sessions, separate Git workspaces, limits — is explained in <a href="agent-sous-agents.html">Subagents</a>.</p>
+    <p>The group is <b>indivisible</b>: you cannot allow delegation without allowing follow-up, nor the other way round. Everything hangs on the delegation tool — if it is absent, the eight others are removed automatically.</p>
 
-    <h2 id="les-neuf-outils">Un groupe, neuf outils</h2>
+    <h2 id="les-neuf-outils">One group, nine tools</h2>
     <table>
-      <caption class="crumb">Le groupe Sous-agents</caption>
-      <tr><th>Outil</th><th>Rôle</th><th>Approbation</th></tr>
-      <tr><td><code>delegate_task</code></td><td>Lance un sous-agent</td><td>Non</td></tr>
-      <tr><td><code>list_subagents</code></td><td>Liste les sous-agents de la conversation</td><td>Non</td></tr>
-      <tr><td><code>get_subagent</code></td><td>Détail et résumé final d'un sous-agent</td><td>Non</td></tr>
-      <tr><td><code>message_subagent</code></td><td>Envoie une nouvelle instruction</td><td>Non</td></tr>
-      <tr><td><code>cancel_subagent</code></td><td>Arrête un sous-agent en cours</td><td>Non</td></tr>
-      <tr><td><code>archive_subagent</code></td><td>Archive un sous-agent terminé</td><td>Non</td></tr>
-      <tr><td><code>inspect_subagent_changes</code></td><td>Examine des modifications en attente</td><td>Non</td></tr>
-      <tr><td><code>apply_subagent_changes</code></td><td><b>Intègre</b> les modifications</td><td><b>Oui</b></td></tr>
-      <tr><td><code>discard_subagent_changes</code></td><td><b>Abandonne</b> les modifications</td><td>Non</td></tr>
+      <caption class="crumb">The Subagents group</caption>
+      <tr><th>Tool</th><th>Role</th><th>Approval</th></tr>
+      <tr><td><code>delegate_task</code></td><td>Launches a subagent</td><td>No</td></tr>
+      <tr><td><code>list_subagents</code></td><td>Lists the conversation's subagents</td><td>No</td></tr>
+      <tr><td><code>get_subagent</code></td><td>Detail and final summary of a subagent</td><td>No</td></tr>
+      <tr><td><code>message_subagent</code></td><td>Sends a new instruction</td><td>No</td></tr>
+      <tr><td><code>cancel_subagent</code></td><td>Stops a running subagent</td><td>No</td></tr>
+      <tr><td><code>archive_subagent</code></td><td>Archives a finished subagent</td><td>No</td></tr>
+      <tr><td><code>inspect_subagent_changes</code></td><td>Reviews pending changes</td><td>No</td></tr>
+      <tr><td><code>apply_subagent_changes</code></td><td><b>Integrates</b> the changes</td><td><b>Yes</b></td></tr>
+      <tr><td><code>discard_subagent_changes</code></td><td><b>Discards</b> the changes</td><td>No</td></tr>
     </table>
-    <p>Un seul de ces neuf outils demande une approbation : celui qui intègre du code écrit par un sous-agent dans ta branche. C'est le seul qui modifie durablement le projet.</p>
+    <p>Only one of these nine tools requires approval: the one that integrates code written by a subagent into your branch. It is the only one that changes the project for good.</p>
 
-    <h2 id="deleguer">Déléguer une tâche</h2>
-    <p>Deux types de sous-agents, et le choix détermine ce qu'ils peuvent faire.</p>
+    <h2 id="deleguer">Delegating a task</h2>
+    <p>Two types of subagent, and the choice determines what they can do.</p>
     <table>
-      <caption class="crumb">Explorateur et codeur</caption>
-      <tr><th>Type</th><th>Outils dont il dispose</th><th>Écrit dans le projet</th></tr>
-      <tr><td><b>Explorateur</b></td><td><b>Sept</b> : commandes d'exploration en liste blanche, lecture de fichiers, listing, recherche par motif, recherche par nom, recherche web, ouverture de page</td><td><b>Non</b></td></tr>
-      <tr><td><b>Codeur</b></td><td><b>Dix</b>, plus le chargement de skills si le groupe Skills est activé : commandes shell et pilotage d'un processus, lecture, création et modification de fichiers, listing, recherche par motif, recherche par nom, recherche web, ouverture de page</td><td><b>Oui</b>, mais à l'écart</td></tr>
+      <caption class="crumb">Explorer and coder</caption>
+      <tr><th>Type</th><th>Tools it has</th><th>Writes in the project</th></tr>
+      <tr><td><b>Explorer</b></td><td><b>Seven</b>: allow-listed exploration commands, reading files, listing, pattern search, name search, web search, opening a page</td><td><b>No</b></td></tr>
+      <tr><td><b>Coder</b></td><td><b>Ten</b>, plus skill loading if the Skills group is enabled: shell commands and driving a process, reading, creating and editing files, listing, pattern search, name search, web search, opening a page</td><td><b>Yes</b>, but off to one side</td></tr>
     </table>
-    <p>Deux points à ne pas manquer. <b>L'explorateur dispose de commandes shell</b>, contrairement à ce que « il ne fait que lire » laisse croire : ce sont des commandes d'exploration en liste blanche stricte, sans opérateur de shell, et il n'écrit toujours rien dans le projet. Et <b>le chargement de skills n'est donné qu'au codeur</b>, seulement si le groupe Skills est activé dans les réglages — couper ce groupe prive aussi tes sous-agents codeurs de leurs guides.</p>
-    <p>Autres points à retenir :</p>
+    <p>Two points not to miss. <b>The explorer does have shell commands</b>, contrary to what "it only reads" suggests: they are exploration commands on a strict allow list, with no shell operator, and it still writes nothing in the project. And <b>skill loading is given to the coder only</b>, and only if the Skills group is enabled in the settings — switching that group off also deprives your coding subagents of their guides.</p>
+    <p>Other things to remember:</p>
     <ul>
-      <li><b>Le résultat d'un sous-agent ne t'est pas montré directement.</b> Il revient à l'agent principal, qui doit le résumer. Sa conversation reste visible : tu peux l'ouvrir pour voir le détail.</li>
-      <li>Un sous-agent travaille dans sa propre conversation pendant que l'agent principal continue, et plusieurs peuvent travailler <b>en parallèle</b> sur des sous-tâches indépendantes.</li>
-      <li>L'agent a pour consigne de <b>ne pas refaire lui-même</b> le travail délégué, et de ne pas conclure avant d'avoir reçu les rapports.</li>
-      <li>La délégation est déconseillée pour les tâches courtes : lire un fichier connu, chercher une fonction précise, une opération en une ou deux étapes.</li>
-      <li><b>Un sous-agent ne peut pas déléguer.</b> La récursion est interdite : il est la seule et unique génération d'enfants de sa conversation.</li>
+      <li><b>A subagent's result is not shown to you directly.</b> It goes back to the main agent, which has to summarise it. Its conversation stays visible: you can open it to see the detail.</li>
+      <li>A subagent works in its own conversation while the main agent carries on, and several can work <b>in parallel</b> on independent subtasks.</li>
+      <li>The agent is instructed <b>not to redo the delegated work itself</b>, and not to conclude before it has received the reports.</li>
+      <li>Delegation is discouraged for short tasks: reading a known file, finding a specific function, a one- or two-step operation.</li>
+      <li><b>A subagent cannot delegate.</b> Recursion is forbidden: it is the one and only generation of children of its conversation.</li>
     </ul>
-    <p>L'instruction donnée au sous-agent doit être <b>structurée</b> — contexte, tâche, contraintes, format attendu. Un sous-agent ne voit rien de la conversation parente : ce que l'agent oublie de lui écrire, il ne peut pas le deviner, et une instruction laconique produit un résultat superficiel.</p>
-    <p>Une variante existe : réutiliser un sous-agent déjà créé plutôt que d'en lancer un neuf, ou pointer vers une définition d'agent spécialisé écrite d'avance dans le projet. Les chemins absolus et les remontées d'arborescence y sont refusés.</p>
+    <p>The instruction given to the subagent must be <b>structured</b> — context, task, constraints, expected format. A subagent sees nothing of the parent conversation: whatever the agent forgets to write down, it cannot guess, and a terse instruction produces a superficial result.</p>
+    <p>A variant exists: reusing a subagent already created rather than launching a new one, or pointing at a specialised agent definition written in advance in the project. Absolute paths and directory traversal are refused there.</p>
 
-    <h2 id="suivre">Suivre les sous-agents</h2>
+    <h2 id="suivre">Following the subagents</h2>
     <ul>
-      <li><b>Lister</b> donne pour chaque sous-agent son état, son nom, sa description et son identifiant.</li>
-      <li><b>Consulter</b> donne le détail d'un seul, avec son résumé final quand il a terminé.</li>
-      <li><b>Envoyer une instruction</b> à un sous-agent déjà lancé : s'il travaille encore, l'instruction est <b>mise en file</b> et traitée ensuite.</li>
-      <li><b>Annuler</b> arrête un sous-agent en cours ; <b>archiver</b> range un sous-agent terminé. Un sous-agent qui travaille encore doit être annulé d'abord.</li>
+      <li><b>Listing</b> gives, for each subagent, its state, its name, its description and its identifier.</li>
+      <li><b>Consulting</b> gives the detail of a single one, with its final summary once it has finished.</li>
+      <li><b>Sending an instruction</b> to a subagent already launched: if it is still working, the instruction is <b>queued</b> and handled afterwards.</li>
+      <li><b>Cancelling</b> stops a running subagent; <b>archiving</b> puts away a finished one. A subagent that is still working has to be cancelled first.</li>
     </ul>
-    <p>Tous ces outils ne voient que <b>les sous-agents de la conversation en cours</b>. Une conversation ne peut ni lister ni piloter les sous-agents d'une autre.</p>
+    <p>All these tools only see <b>the current conversation's subagents</b>. One conversation can neither list nor drive another one's subagents.</p>
 
-    <h2 id="recuperer-le-travail">Récupérer le travail d'un sous-agent codeur</h2>
-    <p>Un sous-agent codeur ne modifie <b>pas</b> le projet directement. Il travaille dans un espace Git isolé, et son travail devient un <b>changement en attente</b> — une proposition, pas une modification.</p>
-    <p>Le cycle est en trois temps :</p>
+    <h2 id="recuperer-le-travail">Picking up a coding subagent's work</h2>
+    <p>A coding subagent does <b>not</b> modify the project directly. It works in an isolated Git workspace, and its work becomes a <b>pending change</b> — a proposal, not a modification.</p>
+    <p>The cycle has three steps:</p>
     <ul>
-      <li><b>Examiner</b> — l'agent récupère le détail du changement et le différentiel complet. Aucun effet, aucune approbation.</li>
-      <li><b>Intégrer</b> — le changement est appliqué sur ta branche courante. <b>C'est l'étape approuvée.</b></li>
-      <li><b>Abandonner</b> — le changement est rejeté et sa branche temporaire supprimée.</li>
+      <li><b>Review</b> — the agent fetches the change's detail and the full diff. No effect, no approval.</li>
+      <li><b>Integrate</b> — the change is applied to your current branch. <b>This is the approved step.</b></li>
+      <li><b>Discard</b> — the change is rejected and its temporary branch deleted.</li>
     </ul>
-    <p>L'agent a pour consigne <b>d'examiner avant d'intégrer</b>, sauf si le contenu a déjà été passé en revue. Et après une intégration faite <b>à la main</b> par tes soins, la bonne pratique est d'appeler quand même l'abandon : cela nettoie le changement et sa branche temporaire, qui sinon restent sur le disque.</p>
-    <p>Les identifiants nécessaires — celui du sous-agent et celui du changement — sont fournis à l'agent dans les données du changement. Ce sont des identifiants uniques, vérifiés avant toute opération.</p>
+    <p>The agent is instructed <b>to review before integrating</b>, unless the content has already been gone over. And after an integration you did <b>by hand</b>, good practice is to call discard anyway: it cleans up the change and its temporary branch, which otherwise stay on the disk.</p>
+    <p>The identifiers needed — the subagent's and the change's — are supplied to the agent in the change's data. They are unique identifiers, checked before any operation.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      Un sous-agent codeur ne modifie jamais ton projet directement : il produit une proposition dans un espace isolé. Rien n'entre dans ta branche sans une intégration explicite — la seule opération approuvée des neuf.
+      <span class="t">Key point</span>
+      A coding subagent never modifies your project directly: it produces a proposal in an isolated workspace. Nothing enters your branch without an explicit integration — the only approved operation of the nine.
     </div>
 
-    <h2 id="ce-qui-peut-mal-tourner">Ce qui peut mal tourner</h2>
-    <p>L'intégration d'un changement touche à Git, donc à l'état réel du dépôt. Les échecs sont classés avec soin, parce qu'ils n'appellent pas la même réaction.</p>
+    <h2 id="ce-qui-peut-mal-tourner">What can go wrong</h2>
+    <p>Integrating a change touches Git, and therefore the repository's real state. Failures are classified carefully, because they do not call for the same reaction.</p>
     <table>
-      <caption class="crumb">Les échecs d'intégration et la réaction attendue</caption>
-      <tr><th>Situation</th><th>Ce que ça veut dire</th><th>Ce qu'il faut faire</th></tr>
-      <tr><td><b>Conflit</b></td><td>Le changement ne s'applique pas sur l'état actuel</td><td>Examiner et résoudre avant de poursuivre</td></tr>
-      <tr><td><b>Branche cible différente</b></td><td>La branche a changé depuis la création du changement</td><td>Revenir sur la bonne branche, ou refaire le changement</td></tr>
-      <tr><td><b>État incompatible</b></td><td>Le changement n'est ni prêt à être intégré, ni abandonnable</td><td>Examiner l'état du dépôt et du changement</td></tr>
-      <tr><td><b>Changement introuvable</b></td><td>Il n'existe plus</td><td>Rien à faire</td></tr>
-      <tr><td><b>Échec de restauration</b></td><td>Beaver n'a pas pu ramener le dépôt à son état antérieur</td><td><b>Vérifier le dépôt à la main avant toute opération Git</b></td></tr>
-      <tr><td><b>Dépendance indisponible</b></td><td>Un élément nécessaire manque</td><td>Vérifier le dépôt : l'opération a pu être partiellement appliquée</td></tr>
-      <tr><td><b>Capacité atteinte</b></td><td>Trop de projets isolés en cours</td><td>Nettoyer les changements en attente</td></tr>
+      <caption class="crumb">Integration failures and the expected reaction</caption>
+      <tr><th>Situation</th><th>What it means</th><th>What to do</th></tr>
+      <tr><td><b>Conflict</b></td><td>The change does not apply to the current state</td><td>Review and resolve before carrying on</td></tr>
+      <tr><td><b>Different target branch</b></td><td>The branch changed since the change was created</td><td>Go back to the right branch, or redo the change</td></tr>
+      <tr><td><b>Incompatible state</b></td><td>The change is neither ready to be integrated nor discardable</td><td>Review the state of the repository and of the change</td></tr>
+      <tr><td><b>Change not found</b></td><td>It no longer exists</td><td>Nothing to do</td></tr>
+      <tr><td><b>Restore failure</b></td><td>Beaver could not bring the repository back to its earlier state</td><td><b>Check the repository by hand before any Git operation</b></td></tr>
+      <tr><td><b>Dependency unavailable</b></td><td>A required element is missing</td><td>Check the repository: the operation may have been partially applied</td></tr>
+      <tr><td><b>Capacity reached</b></td><td>Too many isolated projects in flight</td><td>Clean up the pending changes</td></tr>
     </table>
-    <p>Le message d'échec d'intégration <b>dit quoi faire</b> : le changement isolé reste non résolu, il faut inspecter son état, et après une intégration manuelle appeler l'abandon pour nettoyer. <b>Aucune de ces erreurs n'est présentée comme rejouable à l'aveugle</b>, sauf la capacité atteinte : une opération Git interrompue laisse un état que seul un examen permet de connaître.</p>
+    <p>The integration failure message <b>says what to do</b>: the isolated change stays unresolved, its state has to be inspected, and after a manual integration discard should be called to clean up. <b>None of these errors is presented as blindly replayable</b>, except capacity reached: an interrupted Git operation leaves a state that only an inspection can reveal.</p>
 
-    <h2 id="les-limites">Les limites</h2>
+    <h2 id="les-limites">The limits</h2>
     <table>
-      <caption class="crumb">Combien de sous-agents, et sur combien de générations</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Sous-agents par conversation</td><td><b>4</b></td></tr>
-      <tr><td>Sous-agents actifs sur toute l'application</td><td><b>8</b></td></tr>
-      <tr><td>Générations de sous-agents</td><td><b>1</b> — un sous-agent ne délègue pas</td></tr>
+      <caption class="crumb">How many subagents, and over how many generations</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Subagents per conversation</td><td><b>4</b></td></tr>
+      <tr><td>Active subagents across the whole application</td><td><b>8</b></td></tr>
+      <tr><td>Generations of subagents</td><td><b>1</b> — a subagent does not delegate</td></tr>
     </table>
-    <p>À ne pas confondre avec la limite de <b>10 appels d'outils de lecture en parallèle</b>, qui concerne l'agent principal et n'a rien à voir avec les sous-agents.</p>
+    <p>Not to be confused with the limit of <b>10 read tool calls in parallel</b>, which concerns the main agent and has nothing to do with subagents.</p>
 
-    <h2 id="outils-par-type">Les outils par type de sous-agent</h2>
+    <h2 id="outils-par-type">The tools by subagent type</h2>
     <table>
-      <caption class="crumb">Ce dont dispose chaque type</caption>
-      <tr><th>Outil</th><th>Explorateur</th><th>Codeur</th></tr>
-      <tr><td>Lancer une commande (<code>bash</code>)</td><td><b>Oui</b>, liste blanche de lecture seule</td><td><b>Oui</b>, commandes complètes dans son espace isolé</td></tr>
-      <tr><td>Piloter un processus lancé (<code>bash_control</code>)</td><td>Non</td><td><b>Oui</b></td></tr>
-      <tr><td>Lire un fichier (<code>read_file</code>)</td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
-      <tr><td>Créer un fichier (<code>write_file</code>)</td><td>Non</td><td><b>Oui</b></td></tr>
-      <tr><td>Modifier un fichier (<code>edit_file</code>)</td><td>Non</td><td><b>Oui</b></td></tr>
-      <tr><td>Lister un dossier (<code>list_dir</code>)</td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
-      <tr><td>Chercher par motif (<code>grep</code>)</td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
-      <tr><td>Chercher par nom (<code>glob</code>)</td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
-      <tr><td>Chercher sur le web (<code>web_search</code>)</td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
-      <tr><td>Ouvrir une page (<code>web_fetch</code>)</td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
-      <tr><td>Charger un skill (<code>load_skill</code>)</td><td><b>Jamais</b></td><td><b>Oui</b>, si le groupe Skills est activé</td></tr>
-      <tr><td><b>Total</b></td><td><b>7</b></td><td><b>10</b>, ou <b>11</b> avec les skills</td></tr>
+      <caption class="crumb">What each type has</caption>
+      <tr><th>Tool</th><th>Explorer</th><th>Coder</th></tr>
+      <tr><td>Run a command (<code>bash</code>)</td><td><b>Yes</b>, read-only allow list</td><td><b>Yes</b>, full commands in its isolated workspace</td></tr>
+      <tr><td>Drive a running process (<code>bash_control</code>)</td><td>No</td><td><b>Yes</b></td></tr>
+      <tr><td>Read a file (<code>read_file</code>)</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+      <tr><td>Create a file (<code>write_file</code>)</td><td>No</td><td><b>Yes</b></td></tr>
+      <tr><td>Edit a file (<code>edit_file</code>)</td><td>No</td><td><b>Yes</b></td></tr>
+      <tr><td>List a folder (<code>list_dir</code>)</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+      <tr><td>Search by pattern (<code>grep</code>)</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+      <tr><td>Search by name (<code>glob</code>)</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+      <tr><td>Search the web (<code>web_search</code>)</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+      <tr><td>Open a page (<code>web_fetch</code>)</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+      <tr><td>Load a skill (<code>load_skill</code>)</td><td><b>Never</b></td><td><b>Yes</b>, if the Skills group is enabled</td></tr>
+      <tr><td><b>Total</b></td><td><b>7</b></td><td><b>10</b>, or <b>11</b> with skills</td></tr>
     </table>
-    <p>Un sous-agent reçoit en plus les outils fournis par les extensions installées, dans les limites de son profil : le codeur y a accès sans restriction d'effet, l'explorateur seulement à ceux déclarés en lecture seule.</p>
+    <p>A subagent additionally receives the tools supplied by the installed extensions, within the bounds of its profile: the coder has access to them with no restriction on effect, the explorer only to those declared read-only.</p>
 
-    <h2 id="shell-de-lexplorateur">Ce que l'explorateur peut lancer comme commande</h2>
-    <p>Le <code>bash</code> de l'explorateur n'est pas le <code>bash</code> ordinaire. C'est une liste blanche stricte, vérifiée avant toute exécution.</p>
+    <h2 id="shell-de-lexplorateur">What commands the explorer can run</h2>
+    <p>The explorer's <code>bash</code> is not the ordinary <code>bash</code>. It is a strict allow list, checked before any execution.</p>
     <table>
-      <caption class="crumb">Les commandes d'exploration autorisées</caption>
-      <tr><th>Commande autorisée</th><th>Contrainte</th></tr>
-      <tr><td><code>pwd</code></td><td>Sans aucun argument</td></tr>
-      <tr><td><code>ls</code></td><td>Options d'affichage seulement, chemins confinés au dossier de travail</td></tr>
-      <tr><td><code>tree</code></td><td><b><code>-L</code> obligatoire</b>, profondeur de <b>1 à 8</b>, aucune autre option</td></tr>
-      <tr><td><code>file</code>, <code>stat</code>, <code>wc</code>, <code>du</code>, <code>df</code></td><td>Options d'affichage seulement, chemins confinés</td></tr>
-      <tr><td><code>git status</code>, <code>git diff</code>, <code>git log</code>, <code>git show</code>, <code>git rev-parse</code>, <code>git ls-files</code></td><td>Options de mise en forme et de sélection seulement, chemins confinés</td></tr>
-      <tr><td><code>git remote -v</code>, <code>git tag --list</code></td><td>Exactement cette forme</td></tr>
-      <tr><td><code>git branch</code></td><td>Seules les options d'affichage : <code>-a</code>, <code>--all</code>, <code>-r</code>, <code>--remotes</code>, <code>-v</code>, <code>-vv</code>, <code>--list</code>, <code>--show-current</code></td></tr>
+      <caption class="crumb">The permitted exploration commands</caption>
+      <tr><th>Permitted command</th><th>Constraint</th></tr>
+      <tr><td><code>pwd</code></td><td>With no argument at all</td></tr>
+      <tr><td><code>ls</code></td><td>Display options only, paths confined to the working folder</td></tr>
+      <tr><td><code>tree</code></td><td><b><code>-L</code> required</b>, depth from <b>1 to 8</b>, no other option</td></tr>
+      <tr><td><code>file</code>, <code>stat</code>, <code>wc</code>, <code>du</code>, <code>df</code></td><td>Display options only, confined paths</td></tr>
+      <tr><td><code>git status</code>, <code>git diff</code>, <code>git log</code>, <code>git show</code>, <code>git rev-parse</code>, <code>git ls-files</code></td><td>Formatting and selection options only, confined paths</td></tr>
+      <tr><td><code>git remote -v</code>, <code>git tag --list</code></td><td>Exactly this form</td></tr>
+      <tr><td><code>git branch</code></td><td>Display options only: <code>-a</code>, <code>--all</code>, <code>-r</code>, <code>--remotes</code>, <code>-v</code>, <code>-vv</code>, <code>--list</code>, <code>--show-current</code></td></tr>
     </table>
-    <p>Une option hors liste est refusée avec « Option d'exploration refusée. » ; une commande ou une sous-commande hors liste, avec « Commande d'exploration refusée. » S'y ajoutent trois règles de forme : <b>aucun opérateur de shell</b> — leur seule présence fait refuser la commande —, <b>32 mots au maximum</b>, et <b>tous les chemins confinés</b> au dossier de travail du sous-agent.</p>
+    <p>An option outside the list is refused with "Exploration option refused."; a command or subcommand outside the list, with "Exploration command refused." Three shape rules come on top: <b>no shell operator</b> — their mere presence gets the command refused —, <b>32 words at most</b>, and <b>all paths confined</b> to the subagent's working folder.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Il n'existe qu'un seul contexte où ces neuf outils sont refusés : à l'intérieur d'un sous-agent, puisqu'un sous-agent ne délègue pas. Une automatisation programmée en dispose comme n'importe quelle conversation — voir <a href="outils-skills-et-automatisations.html">Skills et automatisations</a>.
+      There is only one context in which these nine tools are refused: inside a subagent, since a subagent does not delegate. A scheduled automation has them like any other conversation — see <a href="outils-skills-et-automatisations.html">Skills and automations</a>.
     </div>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Tu ne vois pas ce que le sous-agent a trouvé</td><td>Son rapport va à l'agent principal</td><td>Ouvrir sa conversation, ou demander le détail</td></tr>
-      <tr><td>« Limite de sous-agents atteinte »</td><td>4 par conversation, 8 en tout</td><td>Archiver les terminés</td></tr>
-      <tr><td>« Le changement ne s'applique pas »</td><td>Conflit avec l'état actuel</td><td>L'agent examine et résout</td></tr>
-      <tr><td>« Branche cible incompatible »</td><td>Changement de branche depuis la création</td><td>Revenir sur la bonne branche</td></tr>
-      <tr><td>Des branches temporaires traînent dans ton dépôt</td><td>Changements ni intégrés ni abandonnés</td><td>Demander l'abandon des changements en attente</td></tr>
-      <tr><td>Le sous-agent ne répond pas à un message</td><td>Il travaille : l'instruction est en file</td><td>Elle sera traitée à la fin du travail en cours</td></tr>
-      <tr><td>« Commande d'exploration refusée »</td><td>Commande hors liste blanche, ou contenant un opérateur de shell</td><td>Voulu ; confier la tâche à un sous-agent codeur</td></tr>
-      <tr><td>Ton sous-agent codeur ne charge aucun skill</td><td>Groupe Skills coupé dans les réglages</td><td>L'activer : <code>load_skill</code> n'entre dans son profil que si le groupe l'est</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>You cannot see what the subagent found</td><td>Its report goes to the main agent</td><td>Open its conversation, or ask for the detail</td></tr>
+      <tr><td>"Subagent limit reached"</td><td>4 per conversation, 8 in total</td><td>Archive the finished ones</td></tr>
+      <tr><td>"The change does not apply"</td><td>Conflict with the current state</td><td>The agent reviews and resolves</td></tr>
+      <tr><td>"Incompatible target branch"</td><td>Branch changed since creation</td><td>Go back to the right branch</td></tr>
+      <tr><td>Temporary branches are lying around in your repository</td><td>Changes neither integrated nor discarded</td><td>Ask for the pending changes to be discarded</td></tr>
+      <tr><td>The subagent does not answer a message</td><td>It is working: the instruction is queued</td><td>It will be handled when the current work ends</td></tr>
+      <tr><td>"Exploration command refused"</td><td>Command outside the allow list, or containing a shell operator</td><td>Intended; hand the task to a coding subagent</td></tr>
+      <tr><td>Your coding subagent loads no skill</td><td>Skills group switched off in the settings</td><td>Turn it on: <code>load_skill</code> only enters its profile if the group is on</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-sous-agents.html">Sous-agents</a> — le fonctionnement, les sessions isolées, les espaces de travail.</li>
-      <li><a href="outils-branches-git.html">Branches Git</a> — les opérations Git de l'agent principal.</li>
-      <li><a href="agent-permissions.html">Modes de permission</a> — pourquoi seule l'intégration demande une approbation.</li>
+      <li><a href="agent-sous-agents.html">Subagents</a> — how it works, the isolated sessions, the workspaces.</li>
+      <li><a href="outils-branches-git.html">Git branches</a> — the main agent's Git operations.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — why only integration requires approval.</li>
     </ul>
   </main>
 

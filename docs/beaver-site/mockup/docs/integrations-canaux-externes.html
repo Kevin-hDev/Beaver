@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Canaux externes</title>
-<meta name="description" content="Piloter l'agent depuis Telegram, Slack ou Discord : la mise en place, la liste d'autorisation obligatoire, les limites de débit et le journal d'audit.">
+<title>Beaver Docs — External channels</title>
+<meta name="description" content="Driving the agent from Telegram, Slack or Discord: the setup, the mandatory allowlist, the rate limits and the audit log.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,155 +19,155 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Intégrations / Canaux externes</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="integrations-canaux-externes.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Integrations / External channels</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/integrations-canaux-externes.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="integrations-canaux-externes.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Piloter l'agent depuis une <em>messagerie</em></h1>
-    <p>Les canaux externes te permettent d'envoyer un message à ton agent Beaver depuis Telegram, Slack ou Discord, et de recevoir sa réponse au même endroit. L'agent tourne toujours sur ta machine — c'est seulement le point d'entrée qui change. L'usage typique : lancer une tâche depuis ton téléphone, ou consulter l'avancement d'un travail long sans être devant l'ordinateur.</p>
+    <h1>Driving the agent from a <em>messaging app</em></h1>
+    <p>External channels let you send a message to your Beaver agent from Telegram, Slack or Discord, and receive its answer in the same place. The agent still runs on your machine — only the entry point changes. The typical use: starting a task from your phone, or checking on the progress of long-running work without being in front of the computer.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Beaver doit rester ouvert sur ta machine. Ce n'est pas un service hébergé : c'est ton application locale qui écoute. Fermée, le canal ne répond plus.
+      <span class="t">Warning</span>
+      Beaver must stay open on your machine. This is not a hosted service: it is your local application that listens. Closed, the channel no longer answers.
     </div>
 
-    <h2 id="les-trois-messageries">Les trois messageries</h2>
+    <h2 id="les-trois-messageries">The three messaging apps</h2>
 
     <table>
-      <caption class="crumb">Ce qu'il faut créer chez chaque messagerie</caption>
-      <tr><th>Messagerie</th><th>Ce qu'il faut créer</th></tr>
-      <tr><td><b>Telegram</b></td><td>Un bot</td></tr>
-      <tr><td><b>Slack</b></td><td>Une application dans l'espace de travail</td></tr>
-      <tr><td><b>Discord</b></td><td>Une application et un bot</td></tr>
+      <caption class="crumb">What you have to create at each messaging app</caption>
+      <tr><th>Messaging app</th><th>What you have to create</th></tr>
+      <tr><td><b>Telegram</b></td><td>A bot</td></tr>
+      <tr><td><b>Slack</b></td><td>An application in the workspace</td></tr>
+      <tr><td><b>Discord</b></td><td>An application and a bot</td></tr>
     </table>
 
-    <p>Jusqu'à <b>16 comptes par messagerie</b> peuvent être configurés — plusieurs bots, plusieurs espaces de travail.</p>
+    <p>Up to <b>16 accounts per messaging app</b> can be configured — several bots, several workspaces.</p>
 
-    <h2 id="ce-quil-faut-mettre-en-place">Ce qu'il faut mettre en place</h2>
+    <h2 id="ce-quil-faut-mettre-en-place">What you have to set up</h2>
     <ul>
-      <li>Créer le bot ou l'application chez la messagerie.</li>
-      <li>Récupérer son jeton.</li>
-      <li>Le saisir dans <b>Réglages › Intégrations › Canaux</b>.</li>
-      <li><b>Déclarer les utilisateurs autorisés</b> — obligatoire, voir la section suivante.</li>
-      <li>Choisir le fournisseur et le modèle qui serviront à répondre.</li>
-      <li>Activer le compte.</li>
+      <li>Create the bot or the application at the messaging app.</li>
+      <li>Retrieve its token.</li>
+      <li>Enter it in <b>Settings › Integrations › Channels</b>.</li>
+      <li><b>Declare the allowed users</b> — mandatory, see the next section.</li>
+      <li>Choose the provider and the model that will be used to answer.</li>
+      <li>Enable the account.</li>
     </ul>
 
-    <p>Le jeton est vérifié auprès de la messagerie <b>avant</b> l'activation : cela distingue un jeton invalide d'un problème de réseau, avant de commencer. Les jetons sont ensuite protégés comme les clés API — coffre chiffré, clé maîtresse dans le gestionnaire de mots de passe du système, aucune lecture possible depuis l'interface. Voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+    <p>The token is checked with the messaging app <b>before</b> activation: that tells an invalid token apart from a network problem, before starting. Tokens are then protected like API keys — encrypted vault, master key in the system password manager, no reading possible from the interface. See <a href="reference-coffre-et-cles.html">The vault and API keys</a>.</p>
 
-    <h2 id="la-liste-dautorisation">La liste d'autorisation est obligatoire</h2>
-    <p>C'est la protection la plus importante de cette page, et elle n'est pas contournable. Un canal actif <b>doit</b> déclarer au moins un utilisateur autorisé : un canal activé avec une liste vide est refusé à l'enregistrement. Et <b>le joker est interdit</b> — il n'existe aucune façon d'écrire « tout le monde ». Chaque utilisateur autorisé doit être désigné par son identifiant.</p>
+    <h2 id="la-liste-dautorisation">The allowlist is mandatory</h2>
+    <p>This is the most important protection on this page, and there is no way around it. An active channel <b>must</b> declare at least one allowed user: a channel enabled with an empty list is refused when saved. And <b>the wildcard is forbidden</b> — there is no way to write "everyone". Every allowed user has to be named by their identifier.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Un bot de messagerie est joignable par n'importe qui connaissant son nom. Sans liste d'autorisation, ouvrir un canal reviendrait à <b>donner à des inconnus un agent qui exécute des commandes sur ta machine</b>. Beaver rend cette configuration impossible.
+      <span class="t">Security</span>
+      A messaging bot can be reached by anyone who knows its name. Without an allowlist, opening a channel would amount to <b>handing strangers an agent that runs commands on your machine</b>. Beaver makes that configuration impossible.
     </div>
 
-    <p>Jusqu'à <b>100 utilisateurs autorisés</b> par compte. Les doublons sont refusés, et chaque identifiant est validé.</p>
+    <p>Up to <b>100 allowed users</b> per account. Duplicates are refused, and every identifier is validated.</p>
 
-    <h2 id="comment-les-conversations-sont-reliees">Comment les conversations sont reliées</h2>
-    <p>Chaque interlocuteur d'une messagerie est associé à <b>une conversation Beaver</b>, de façon stable : écrire deux fois depuis le même endroit continue la même conversation, avec son historique. Cette correspondance est enregistrée sur le disque et <b>survit au redémarrage</b> de l'application.</p>
+    <h2 id="comment-les-conversations-sont-reliees">How conversations are tied together</h2>
+    <p>Each correspondent on a messaging app is associated with <b>one Beaver conversation</b>, in a stable way: writing twice from the same place continues the same conversation, with its history. That mapping is recorded on disk and <b>survives a restart</b> of the application.</p>
 
-    <p>Elle est <b>bornée</b> : au-delà du nombre maximal configuré, la correspondance la plus ancienne est retirée, et l'interlocuteur concerné repart sur une conversation neuve. La limite se règle, jusqu'à <b>1 000</b>. Le format de ce fichier porte un numéro de version, et une version antérieure n'est pas réutilisée : elle est ignorée et repart de zéro plutôt que d'être réinterprétée de travers.</p>
+    <p>It is <b>bounded</b>: beyond the maximum number configured, the oldest mapping is removed, and the correspondent concerned starts over on a fresh conversation. The limit is adjustable, up to <b>1,000</b>. That file's format carries a version number, and an earlier version is not reused: it is ignored and starts from scratch rather than being misread.</p>
 
-    <h2 id="les-limites-de-debit">Les limites de débit</h2>
-    <p>Trois plafonds indépendants, tous réglables, protègent chacun quelque chose de différent.</p>
+    <h2 id="les-limites-de-debit">The rate limits</h2>
+    <p>Three independent caps, all adjustable, each protecting something different.</p>
 
     <table>
-      <caption class="crumb">Les trois plafonds de débit</caption>
-      <tr><th>Plafond</th><th>Ce qu'il protège</th></tr>
-      <tr><td><b>Par utilisateur et par minute</b></td><td>Un utilisateur seul ne peut pas saturer le service</td></tr>
-      <tr><td><b>Par canal et par minute</b></td><td>Un canal actif ne prive pas les autres</td></tr>
-      <tr><td><b>Global par minute</b></td><td>La machine reste utilisable</td></tr>
+      <caption class="crumb">The three rate caps</caption>
+      <tr><th>Cap</th><th>What it protects</th></tr>
+      <tr><td><b>Per user per minute</b></td><td>A single user cannot saturate the service</td></tr>
+      <tr><td><b>Per channel per minute</b></td><td>An active channel does not starve the others</td></tr>
+      <tr><td><b>Global per minute</b></td><td>The machine stays usable</td></tr>
     </table>
 
-    <p>Chacun accepte jusqu'à 10 000 messages par minute, mais <b>aucun ne peut valoir zéro</b> : il y a toujours une limite active. Un message est par ailleurs limité à <b>12 000 caractères</b> au maximum configurable.</p>
+    <p>Each one accepts up to 10,000 messages per minute, but <b>none can be zero</b>: there is always an active limit. A message is otherwise limited to <b>12,000 characters</b> at the maximum configurable value.</p>
 
-    <h2 id="le-journal-daudit">Le journal d'audit</h2>
-    <p>Toute activité des canaux est consignée : qui a écrit, quand, sur quel canal, et ce qui a été décidé — message traité, utilisateur refusé, limite atteinte. La durée de conservation se règle, jusqu'à <b>365 jours</b>.</p>
+    <h2 id="le-journal-daudit">The audit log</h2>
+    <p>All channel activity is recorded: who wrote, when, on which channel, and what was decided — message handled, user refused, limit reached. The retention period is adjustable, up to <b>365 days</b>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      C'est le seul moyen de répondre à « qui a parlé à mon agent, et quand ». Sur une fonctionnalité qui expose l'agent à l'extérieur, ce journal n'est pas un accessoire.
+      It is the only way to answer "who talked to my agent, and when". On a feature that exposes the agent to the outside, that log is not an accessory.
     </div>
 
-    <h2 id="la-surveillance-du-service">La surveillance du service</h2>
-    <p>Les canaux tournent en arrière-plan et leur fonctionnement est surveillé : un superviseur les redémarre s'ils s'arrêtent, et un chien de garde détecte les blocages. Deux protections méritent une mention. <b>Une conversation est verrouillée pendant son traitement</b> : deux messages arrivés en même temps depuis le même endroit ne sont pas traités en parallèle, ce qui éviterait deux réponses entremêlées dans la même conversation. Et <b>la réponse est capturée puis envoyée</b>, plutôt que diffusée mot à mot : une messagerie n'accepte pas des centaines de modifications successives d'un même message.</p>
+    <h2 id="la-surveillance-du-service">Monitoring the service</h2>
+    <p>Channels run in the background and their operation is monitored: a supervisor restarts them if they stop, and a watchdog detects hangs. Two protections deserve a mention. <b>A conversation is locked while it is being handled</b>: two messages arriving at the same time from the same place are not handled in parallel, which would otherwise produce two answers tangled together in the same conversation. And <b>the answer is captured then sent</b>, rather than streamed word by word: a messaging app does not accept hundreds of successive edits to the same message.</p>
 
-    <h2 id="ce-qui-nest-pas-possible">Ce qui n'est pas possible</h2>
+    <h2 id="ce-qui-nest-pas-possible">What is not possible</h2>
     <ul>
-      <li><b>Les connexions par compte ne peuvent pas servir de modèle à un canal.</b> Elles supposent une personne devant l'écran pour s'authentifier, ce qui n'est pas le cas d'un message arrivé la nuit. Il faut une clé API, ou un modèle local.</li>
-      <li><b>Beaver doit être ouvert.</b> Fermer l'application coupe le canal.</li>
-      <li><b>Aucun joker dans la liste d'autorisation</b>, et un canal actif sans utilisateur autorisé est refusé.</li>
+      <li><b>Account sign-ins cannot serve as a channel's model.</b> They assume a person in front of the screen to authenticate, which is not the case for a message arriving at night. You need an API key, or a local model.</li>
+      <li><b>Beaver has to be open.</b> Closing the application cuts the channel off.</li>
+      <li><b>No wildcard in the allowlist</b>, and an active channel with no allowed user is refused.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      L'agent a les mêmes pouvoirs que devant l'écran. Un message reçu par messagerie lance un agent qui accède à tes fichiers et lance des commandes. Le mode de permission et la portée d'accès disque s'appliquent — et méritent d'être revus avant d'ouvrir un canal. Voir <a href="agent-permissions.html">Modes de permission</a> et <a href="agent-repertoire-de-travail.html">Répertoire de travail</a>.
+      <span class="t">Security</span>
+      The agent has the same powers as in front of the screen. A message received through a messaging app starts an agent that reaches your files and runs commands. The permission mode and the disk access scope apply — and are worth reviewing before opening a channel. See <a href="agent-permissions.html">Permission modes</a> and <a href="agent-repertoire-de-travail.html">Working directory</a>.
     </div>
 
-    <h2 id="les-limites">Les limites</h2>
+    <h2 id="les-limites">The limits</h2>
 
     <table>
-      <caption class="crumb">Les valeurs maximales configurables</caption>
-      <tr><th>Limite</th><th>Valeur maximale</th></tr>
-      <tr><td>Comptes par messagerie</td><td><b>16</b></td></tr>
-      <tr><td>Utilisateurs autorisés par compte</td><td><b>100</b></td></tr>
-      <tr><td>Conversations associées</td><td><b>1 000</b></td></tr>
-      <tr><td>Caractères par message</td><td><b>12 000</b></td></tr>
-      <tr><td>Messages par utilisateur et par minute</td><td><b>10 000</b></td></tr>
-      <tr><td>Messages par canal et par minute</td><td><b>10 000</b></td></tr>
-      <tr><td>Messages par minute au total</td><td><b>10 000</b></td></tr>
-      <tr><td>Conservation du journal d'audit</td><td><b>365 jours</b></td></tr>
-      <tr><td>Longueur d'un nom de fournisseur ou de modèle</td><td><b>128 caractères</b></td></tr>
+      <caption class="crumb">The maximum configurable values</caption>
+      <tr><th>Limit</th><th>Maximum value</th></tr>
+      <tr><td>Accounts per messaging app</td><td><b>16</b></td></tr>
+      <tr><td>Allowed users per account</td><td><b>100</b></td></tr>
+      <tr><td>Associated conversations</td><td><b>1,000</b></td></tr>
+      <tr><td>Characters per message</td><td><b>12,000</b></td></tr>
+      <tr><td>Messages per user per minute</td><td><b>10,000</b></td></tr>
+      <tr><td>Messages per channel per minute</td><td><b>10,000</b></td></tr>
+      <tr><td>Messages per minute in total</td><td><b>10,000</b></td></tr>
+      <tr><td>Audit log retention</td><td><b>365 days</b></td></tr>
+      <tr><td>Length of a provider or model name</td><td><b>128 characters</b></td></tr>
     </table>
 
-    <p>Aucune de ces limites ne peut valoir zéro : une valeur nulle est refusée.</p>
+    <p>None of these limits can be zero: a null value is refused.</p>
 
     <table>
-      <caption class="crumb">Ce que Beaver refuse à la configuration</caption>
-      <tr><th>Tentative</th><th>Résultat</th></tr>
-      <tr><td>Canal actif sans utilisateur autorisé</td><td><b>Refusé</b></td></tr>
-      <tr><td>Joker dans la liste d'autorisation</td><td><b>Refusé</b></td></tr>
-      <tr><td>Utilisateur en double</td><td>Refusé</td></tr>
-      <tr><td>Identifiant de compte en double</td><td>Refusé</td></tr>
-      <tr><td>Plus de 16 comptes pour une messagerie</td><td>Refusé</td></tr>
-      <tr><td>Plus de 100 utilisateurs autorisés</td><td>Refusé</td></tr>
-      <tr><td>Limite de débit à zéro</td><td>Refusé</td></tr>
-      <tr><td>Fournisseur exigeant une authentification interactive</td><td><b>Refusé</b></td></tr>
+      <caption class="crumb">What Beaver refuses at configuration time</caption>
+      <tr><th>Attempt</th><th>Result</th></tr>
+      <tr><td>Active channel with no allowed user</td><td><b>Refused</b></td></tr>
+      <tr><td>Wildcard in the allowlist</td><td><b>Refused</b></td></tr>
+      <tr><td>Duplicate user</td><td>Refused</td></tr>
+      <tr><td>Duplicate account identifier</td><td>Refused</td></tr>
+      <tr><td>More than 16 accounts for one messaging app</td><td>Refused</td></tr>
+      <tr><td>More than 100 allowed users</td><td>Refused</td></tr>
+      <tr><td>Rate limit at zero</td><td>Refused</td></tr>
+      <tr><td>Provider requiring interactive authentication</td><td><b>Refused</b></td></tr>
     </table>
 
-    <h2 id="pieges-frequents">Pièges fréquents</h2>
+    <h2 id="pieges-frequents">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui bloque le plus souvent</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Configuration Gateway invalide » à l'activation</td><td>Liste d'autorisation vide, joker, ou doublon</td><td>Déclarer au moins un utilisateur, sans joker</td></tr>
-      <tr><td>Le bot ne répond pas</td><td>Beaver fermé, ou canal désactivé</td><td>Ouvrir l'application, vérifier l'activation</td></tr>
-      <tr><td>Un message est ignoré</td><td>Utilisateur absent de la liste — visible dans le journal d'audit</td><td>L'ajouter à la liste d'autorisation</td></tr>
-      <tr><td>Le bot répond puis s'arrête</td><td>Limite de débit atteinte</td><td>Relever la limite, ou attendre</td></tr>
-      <tr><td>Le modèle habituel n'est pas proposé</td><td>Modèle accessible par connexion de compte, donc inutilisable ici</td><td>Utiliser une clé API ou un modèle local</td></tr>
-      <tr><td>L'agent a perdu le fil</td><td>Correspondance retirée après dépassement de la limite de conversations</td><td>Relever le nombre de conversations associées</td></tr>
-      <tr><td>Deux réponses se mélangent</td><td>Ne devrait pas arriver : les conversations sont verrouillées pendant leur traitement</td><td>À signaler</td></tr>
-      <tr><td>La réponse arrive d'un coup, pas mot à mot</td><td>Comportement voulu : les messageries n'acceptent pas la diffusion continue</td><td>Normal</td></tr>
+      <caption class="crumb">What most often blocks</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>"Invalid Gateway configuration" on activation</td><td>Empty allowlist, wildcard, or duplicate</td><td>Declare at least one user, with no wildcard</td></tr>
+      <tr><td>The bot does not answer</td><td>Beaver closed, or channel disabled</td><td>Open the application, check that it is enabled</td></tr>
+      <tr><td>A message is ignored</td><td>User missing from the list — visible in the audit log</td><td>Add them to the allowlist</td></tr>
+      <tr><td>The bot answers then stops</td><td>Rate limit reached</td><td>Raise the limit, or wait</td></tr>
+      <tr><td>The usual model is not offered</td><td>Model reached through an account sign-in, so unusable here</td><td>Use an API key or a local model</td></tr>
+      <tr><td>The agent has lost the thread</td><td>Mapping removed after the conversation limit was exceeded</td><td>Raise the number of associated conversations</td></tr>
+      <tr><td>Two answers get mixed up</td><td>Should not happen: conversations are locked while they are handled</td><td>Worth reporting</td></tr>
+      <tr><td>The answer arrives all at once, not word by word</td><td>Intended behavior: messaging apps do not accept continuous streaming</td><td>Normal</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-permissions.html">Modes de permission</a> — <b>à revoir avant d'ouvrir un canal</b>.</li>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée d'accès de l'agent.</li>
-      <li><a href="modeles-fournisseurs-api.html">Fournisseurs API</a> — configurer une clé utilisable par un canal.</li>
-      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — la vue d'ensemble.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — <b>worth reviewing before opening a channel</b>.</li>
+      <li><a href="agent-repertoire-de-travail.html">Working directory</a> — the agent's access scope.</li>
+      <li><a href="modeles-fournisseurs-api.html">API providers</a> — configuring a key a channel can use.</li>
+      <li><a href="reference-modele-de-securite.html">Security model</a> — the overall picture.</li>
     </ul>
   </main>
 

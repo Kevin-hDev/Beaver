@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Préférences</title>
-<meta name="description" content="Les trois onglets de la section Préférences : apparence, langues et démarrage, mascotte de bureau, et la liste des raccourcis clavier.">
+<title>Beaver Docs — Preferences</title>
+<meta name="description" content="The three tabs of the Preferences section: appearance, languages and startup, the desktop mascot, and the list of keyboard shortcuts.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,181 +19,181 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Réglages / Préférences</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="reglages-preferences.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Settings / Preferences</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reglages-preferences.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reglages-preferences.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Apparence, langues et <em>démarrage</em></h1>
-    <p>La section Préférences règle ce que tu vois et la façon dont tu navigues. Cette page décrit les champs : où ils sont, ce qu'ils valent par défaut, et où leur valeur est enregistrée — ce dernier point ayant une conséquence concrète le jour d'une réinstallation.</p>
+    <h1>Appearance, languages and <em>startup</em></h1>
+    <p>The Preferences section sets what you see and how you navigate. This page describes the fields: where they are, what their defaults are, and where their value is saved — that last point having a concrete consequence the day you reinstall.</p>
 
-    <h2 id="ce-que-contient-la-section">Ce que contient la section</h2>
-
-    <table>
-      <caption class="crumb">Les trois onglets de la section Préférences</caption>
-      <tr><th>Onglet</th><th>Ce qu'on y règle</th></tr>
-      <tr><td><b>Général</b></td><td>Thème, texte, langues, aperçu des liens, lancement au démarrage</td></tr>
-      <tr><td><b>Mascotte</b></td><td>Le personnage animé posé sur le bureau</td></tr>
-      <tr><td><b>Raccourcis clavier</b></td><td>La liste des raccourcis, <b>en consultation seule</b></td></tr>
-    </table>
-
-    <h2 id="general-apparence">Général — l'apparence</h2>
-    <p>Quatre réglages, réunis dans une première carte.</p>
-
-    <p><b>Thème</b> — « Apparence de l'application ». Une grille de vignettes, chacune montrant un aperçu miniature. <b>Sept choix</b> sont livrés avec Beaver.</p>
+    <h2 id="ce-que-contient-la-section">What the section contains</h2>
 
     <table>
-      <caption class="crumb">Les sept thèmes livrés avec Beaver</caption>
-      <tr><th>Libellé affiché</th><th>Fond</th></tr>
-      <tr><td><b>Clair</b></td><td>Clair</td></tr>
-      <tr><td><b>Sombre</b></td><td>Sombre</td></tr>
-      <tr><td><b>Émeraude nocturne</b></td><td>Sombre</td></tr>
-      <tr><td><b>Cobalt givré</b></td><td>Clair</td></tr>
-      <tr><td><b>Brume astrale</b></td><td>Sombre</td></tr>
-      <tr><td><b>Éclipse écarlate</b></td><td>Sombre</td></tr>
-      <tr><td><b>Système</b></td><td>Suit le réglage du système d'exploitation</td></tr>
+      <caption class="crumb">The three tabs of the Preferences section</caption>
+      <tr><th>Tab</th><th>What you set there</th></tr>
+      <tr><td><b>General</b></td><td>Theme, text, languages, link previews, launch at startup</td></tr>
+      <tr><td><b>Mascot</b></td><td>The animated character sitting on the desktop</td></tr>
+      <tr><td><b>Keyboard Shortcuts</b></td><td>The list of shortcuts, <b>read-only</b></td></tr>
     </table>
 
-    <p>Le choix <b>Système</b> est affiché en dernier, avec une vignette coupée en deux — moitié claire, moitié sombre. Il ne fige rien : il suit le mode clair ou sombre du système et bascule avec lui.</p>
-    <p>Une extension installée peut <b>ajouter ses propres thèmes</b>. Ils apparaissent dans la même grille, après les sept thèmes natifs, avec le nom de l'extension qui les fournit affiché sous le libellé.</p>
+    <h2 id="general-apparence">General — appearance</h2>
+    <p>Four settings, gathered in a first card.</p>
 
-    <p><b>Taille de police</b> — « Taille de base de l'interface en pixels ». Un champ numérique avec deux flèches. La valeur est bornée <b>de 10 à 24 pixels</b>, <b>18 par défaut</b>. Une valeur hors bornes est ramenée dans l'intervalle plutôt que refusée. Les flèches haut et bas du clavier la font varier d'un pixel. Ce réglage a aussi ses raccourcis, décrits plus bas.</p>
+    <p><b>Theme</b> — “App appearance”. A grid of tiles, each showing a miniature preview. <b>Seven choices</b> ship with Beaver.</p>
 
-    <p><b>Police d'écriture</b> — « Police utilisée dans l'application ». <b>Sept choix</b> : System Default, JetBrains Mono, Helvetica Neue, Menlo, UI Monospace, Pacifico, Rancho. Les deux dernières sont des écritures manuscrites ; les trois du milieu sont des polices à chasse fixe, adaptées au code.</p>
+    <table>
+      <caption class="crumb">The seven themes shipped with Beaver</caption>
+      <tr><th>Label shown</th><th>Background</th></tr>
+      <tr><td><b>Light</b></td><td>Light</td></tr>
+      <tr><td><b>Dark</b></td><td>Dark</td></tr>
+      <tr><td><b>Emerald Night</b></td><td>Dark</td></tr>
+      <tr><td><b>Frosted Cobalt</b></td><td>Light</td></tr>
+      <tr><td><b>Astral Mist</b></td><td>Dark</td></tr>
+      <tr><td><b>Crimson Eclipse</b></td><td>Dark</td></tr>
+      <tr><td><b>System</b></td><td>Follows the operating system's setting</td></tr>
+    </table>
 
-    <p><b>Thème de code</b> — « Coloration des blocs de code et previews ». <b>Cinq choix</b> : Défaut, GitHub, One Dark Pro, Tokyo Night, Catppuccin. Chacun existe en variante claire et sombre, choisie automatiquement selon le thème de l'application. Un <b>aperçu en direct</b> est affiché juste sous la carte : un extrait de code coloré qui se met à jour au changement.</p>
+    <p>The <b>System</b> choice is shown last, with a tile cut in two — half light, half dark. It fixes nothing: it follows the system's light or dark mode and switches with it.</p>
+    <p>An installed extension can <b>add its own themes</b>. They appear in the same grid, after the seven native themes, with the name of the extension providing them shown under the label.</p>
 
-    <p>Ce que chaque thème change visuellement est détaillé dans <a href="reference-themes.html">Thèmes et apparence</a>.</p>
+    <p><b>Font size</b> — “Base interface size in pixels”. A numeric field with two arrows. The value is bounded <b>from 10 to 24 pixels</b>, <b>18 by default</b>. A value outside the bounds is brought back into range rather than refused. The up and down arrow keys change it by one pixel. This setting also has its shortcuts, described further down.</p>
 
-    <h2 id="general-langues">Général — les langues</h2>
-    <p>Deux réglages distincts, qui ne concernent pas la même chose.</p>
-    <p><b>Langue</b> — « Langue de l'interface ». Les <b>sept langues</b> de Beaver : English, Français, Deutsch, Español, Italiano, 中文, 日本語. Le changement est <b>immédiat</b>, sans redémarrage.</p>
-    <p><b>Langue de réponse du LLM</b> — « Langue dans laquelle le modèle IA répondra ». Les mêmes sept langues, plus une valeur vide affichée <code>—</code>, qui est le défaut. Sans valeur ici, le modèle répond comme il l'entend — le plus souvent dans la langue de la question.</p>
-    <p><b>Aperçu des liens</b> — « Afficher une carte d'aperçu pour les URL dans le chat ». Un interrupteur, <b>activé par défaut</b>.</p>
+    <p><b>Font family</b> — “Font used in the app”. <b>Seven choices</b>: System Default, JetBrains Mono, Helvetica Neue, Menlo, UI Monospace, Pacifico, Rancho. The last two are handwriting faces; the middle three are fixed-width fonts, suited to code.</p>
+
+    <p><b>Code theme</b> — “Coloring of code blocks and previews”. <b>Five choices</b>: Défaut, GitHub, One Dark Pro, Tokyo Night, Catppuccin. Each exists in a light and a dark variant, chosen automatically according to the application's theme. A <b>live preview</b> is shown just below the card: a colored code excerpt that updates as you change it.</p>
+
+    <p>What each theme changes visually is detailed in <a href="reference-themes.html">Themes and appearance</a>.</p>
+
+    <h2 id="general-langues">General — languages</h2>
+    <p>Two distinct settings, which don't concern the same thing.</p>
+    <p><b>Language</b> — “Interface language”. Beaver's <b>seven languages</b>: English, Français, Deutsch, Español, Italiano, 中文, 日本語. The change is <b>immediate</b>, with no restart.</p>
+    <p><b>LLM response language</b> — “Language the AI model will respond in”. The same seven languages, plus an empty value shown as <code>—</code>, which is the default. With no value here, the model answers as it sees fit — most often in the language of the question.</p>
+    <p><b>Link previews</b> — “Show a preview card for URLs in chat”. A switch, <b>on by default</b>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Deux langues, deux réglages. <b>Langue</b> change les menus et les textes de Beaver. <b>Langue de réponse du LLM</b> demande au modèle de répondre dans une langue donnée. Les deux sont indépendants : tu peux travailler dans une interface en français avec un agent qui répond en anglais, ou l'inverse. Les sept langues sont détaillées dans <a href="reference-langues.html">Langues</a>.
+      Two languages, two settings. <b>Language</b> changes Beaver's menus and texts. <b>LLM response language</b> asks the model to answer in a given language. The two are independent: you can work in a French interface with an agent that answers in English, or the other way round. The seven languages are detailed in <a href="reference-langues.html">Languages</a>.
     </div>
 
-    <h2 id="general-demarrage">Général — le démarrage</h2>
-    <p>Deux interrupteurs, dans une dernière carte.</p>
-    <p><b>Lancer au démarrage</b> — « Ouvrir Beaver automatiquement au démarrage du système ». <b>Désactivé par défaut</b>. L'activer ou le désactiver déclenche une synchronisation avec le système d'exploitation : c'est là que Beaver s'inscrit ou se retire de la liste des programmes lancés à l'ouverture de session.</p>
-    <p><b>Démarrage masqué</b> — « Démarrer en arrière-plan sans ouvrir la fenêtre ». <b>Désactivé par défaut</b>, et <b>inutilisable tant que le précédent est éteint</b> : l'interrupteur est alors grisé.</p>
-    <p>Ce lien de dépendance est appliqué à trois niveaux : dans l'affichage, à l'enregistrement, et une troisième fois côté moteur, qui remet la valeur à zéro quoi qu'il arrive si le lancement au démarrage est éteint. Autrement dit, il n'existe aucun chemin — pas même un fichier de configuration édité à la main — qui produise un « démarrage masqué » sans « lancement au démarrage ».</p>
+    <h2 id="general-demarrage">General — startup</h2>
+    <p>Two switches, in a last card.</p>
+    <p><b>Launch at startup</b> — “Open Beaver automatically at system startup”. <b>Off by default</b>. Turning it on or off triggers a synchronisation with the operating system: that's where Beaver adds itself to, or removes itself from, the list of programs launched when the session opens.</p>
+    <p><b>Start hidden</b> — “Start in the background without opening the window”. <b>Off by default</b>, and <b>unusable while the previous one is off</b>: the switch is then greyed out.</p>
+    <p>This dependency is enforced at three levels: in the display, on saving, and a third time on the engine side, which resets the value whatever happens if launch at startup is off. In other words, there is no path — not even a configuration file edited by hand — that produces a “start hidden” without a “launch at startup”.</p>
 
-    <h2 id="mascotte">Onglet Mascotte</h2>
-    <p>L'onglet s'ouvre sur un <b>aperçu animé</b> du personnage sélectionné, avec son nom et une mention d'état : <b>« Aperçu animé »</b> quand l'animation tourne, <b>« Animation en pause »</b> sinon.</p>
-    <p>Puis une carte <b>« Réglages »</b> avec deux contrôles :</p>
+    <h2 id="mascotte">Mascot tab</h2>
+    <p>The tab opens on an <b>animated preview</b> of the selected character, with its name and a status mention: <b>“Animated preview”</b> when the animation is running, <b>“Animation paused”</b> otherwise.</p>
+    <p>Then a <b>“Settings”</b> card with two controls:</p>
     <ul>
-      <li><b>Afficher la mascotte</b> — « Garder la mascotte visible au-dessus du bureau et des autres applications ». <b>Désactivée par défaut</b>.</li>
-      <li><b>Taille</b> — « Ajuster la taille de la mascotte à l'écran ». Un curseur gradué <b>de 70 % à 140 %</b>, <b>100 % par défaut</b>. La valeur en pourcentage est affichée à côté du curseur.</li>
+      <li><b>Show mascot</b> — “Keep the mascot visible above the desktop and other applications”. <b>Off by default</b>.</li>
+      <li><b>Size</b> — “Adjust the mascot size on screen”. A slider graduated <b>from 70% to 140%</b>, <b>100% by default</b>. The percentage value is shown next to the slider.</li>
     </ul>
-    <p>Enfin une section <b>« Collection »</b> : une grille de <b>huit personnages</b>, chacun avec son portrait, son nom et une phrase de description. Le personnage actif porte la mention « Sélectionnée ».</p>
+    <p>Finally a <b>“Collection”</b> section: a grid of <b>eight characters</b>, each with its portrait, its name and a one-sentence description. The active character carries the mention “Selected”.</p>
 
     <table>
-      <caption class="crumb">Les huit personnages de la collection</caption>
-      <tr><th>Nom</th><th>Description affichée</th></tr>
-      <tr><td><b>Beaver</b></td><td>La mascotte principale de Beaver</td></tr>
-      <tr><td><b>Circuit</b></td><td>Un renne développeur calme et curieux</td></tr>
-      <tr><td><b>Kova</b></td><td>Un jeune combattant low-poly calme et déterminé</td></tr>
-      <tr><td><b>Nival</b></td><td>Un jeune ninja du givre calme, vif et déterminé</td></tr>
-      <tr><td><b>Mokai</b></td><td>Un singe guerrier mystique, agile et concentré</td></tr>
-      <tr><td><b>Volt</b></td><td>Un explorateur cybernétique vif et optimiste</td></tr>
-      <tr><td><b>Raku</b></td><td>Un jeune pirate audacieux et curieux</td></tr>
-      <tr><td><b>Pico</b></td><td>Un petit robot assistant joyeux et expressif</td></tr>
+      <caption class="crumb">The eight characters of the collection</caption>
+      <tr><th>Name</th><th>Description shown</th></tr>
+      <tr><td><b>Beaver</b></td><td>Beaver's main mascot</td></tr>
+      <tr><td><b>Circuit</b></td><td>A calm and curious developer reindeer</td></tr>
+      <tr><td><b>Kova</b></td><td>A calm and determined young low-poly fighter</td></tr>
+      <tr><td><b>Nival</b></td><td>A calm, agile and determined young frost ninja</td></tr>
+      <tr><td><b>Mokai</b></td><td>An agile and focused mystical monkey warrior</td></tr>
+      <tr><td><b>Volt</b></td><td>A lively and optimistic cybernetic explorer</td></tr>
+      <tr><td><b>Raku</b></td><td>A bold and curious young pirate</td></tr>
+      <tr><td><b>Pico</b></td><td>A cheerful and expressive little robot assistant</td></tr>
     </table>
 
     <div class="callout">
       <span class="t">Note</span>
-      La mascotte vit en dehors de la fenêtre. Une fois activée, elle se pose au-dessus du bureau et des autres applications, pas à l'intérieur de Beaver. Elle se déplace à la souris et sa position est mémorisée. Son comportement et ses animations sont dans <a href="interface-mascotte.html">Mascotte</a>.
+      The mascot lives outside the window. Once enabled, it sits above the desktop and the other applications, not inside Beaver. It is moved with the mouse and its position is remembered. Its behavior and its animations are in <a href="interface-mascotte.html">Mascot</a>.
     </div>
 
-    <h2 id="raccourcis-clavier">Onglet Raccourcis clavier</h2>
-    <p>Une simple liste : l'action à gauche, la combinaison de touches à droite. Les touches affichées <b>s'adaptent au système</b> — <code>Cmd</code> sur Mac, <code>Ctrl</code> ailleurs ; <code>Option</code> sur Mac, <code>Alt</code> ailleurs.</p>
-    <p><b>Cet écran est en consultation seule.</b> Aucun raccourci n'est modifiable, et il n'existe aucun bouton pour en changer un.</p>
-    <p><b>Vingt raccourcis</b>, dans l'ordre d'affichage, en notation Mac :</p>
+    <h2 id="raccourcis-clavier">Keyboard Shortcuts tab</h2>
+    <p>A plain list: the action on the left, the key combination on the right. The keys shown <b>adapt to the system</b> — <code>Cmd</code> on Mac, <code>Ctrl</code> elsewhere; <code>Option</code> on Mac, <code>Alt</code> elsewhere.</p>
+    <p><b>This screen is read-only.</b> No shortcut can be changed, and there is no button to change one.</p>
+    <p><b>Twenty shortcuts</b>, in display order, in Mac notation:</p>
 
     <table>
-      <caption class="crumb">Les vingt raccourcis affichés, en notation Mac</caption>
-      <tr><th>Libellé affiché</th><th>Touches</th></tr>
-      <tr><td>Ouvrir/fermer le terminal</td><td><code>Cmd</code> + <code>J</code></td></tr>
-      <tr><td>Ouvrir/fermer la sidebar</td><td><code>Cmd</code> + <code>B</code></td></tr>
-      <tr><td>Précédent</td><td><code>Cmd</code> + <code>◀</code></td></tr>
-      <tr><td>Suivant</td><td><code>Cmd</code> + <code>▶</code></td></tr>
-      <tr><td>Nouvelle session</td><td><code>Option</code> + <code>Cmd</code> + <code>N</code></td></tr>
-      <tr><td>Rechercher une conversation</td><td><code>Cmd</code> + <code>G</code></td></tr>
-      <tr><td>Ouvrir/fermer le panneau de prévisualisation</td><td><code>Option</code> + <code>Cmd</code> + <code>B</code></td></tr>
-      <tr><td>Ouvrir les réglages</td><td><code>Cmd</code> + <code>,</code></td></tr>
-      <tr><td>Rechercher dans la conversation</td><td><code>Cmd</code> + <code>F</code></td></tr>
-      <tr><td>Placer le curseur dans le champ de discussion</td><td><code>Cmd</code> + <code>L</code></td></tr>
-      <tr><td>Changer d'onglet de session</td><td><code>Cmd</code> + <code>1–9</code></td></tr>
-      <tr><td>Modifier les permissions</td><td><code>Shift</code> + <code>Tab</code></td></tr>
-      <tr><td>Envoyer le message</td><td><code>Enter</code></td></tr>
-      <tr><td>Ajouter une nouvelle ligne</td><td><code>Shift</code> + <code>Enter</code></td></tr>
-      <tr><td>Arrêter la réponse</td><td><code>Esc</code> <code>Esc</code></td></tr>
-      <tr><td>Valider et relancer le message modifié</td><td><code>Cmd</code> + <code>Enter</code></td></tr>
-      <tr><td>Annuler la modification</td><td><code>Esc</code></td></tr>
-      <tr><td>Agrandir l'interface</td><td><code>Cmd</code> + <code>+</code></td></tr>
-      <tr><td>Réduire l'interface</td><td><code>Cmd</code> + <code>-</code></td></tr>
-      <tr><td>Rétablir la taille de l'interface</td><td><code>Cmd</code> + <code>0</code></td></tr>
+      <caption class="crumb">The twenty shortcuts shown, in Mac notation</caption>
+      <tr><th>Label shown</th><th>Keys</th></tr>
+      <tr><td>Toggle terminal</td><td><code>Cmd</code> + <code>J</code></td></tr>
+      <tr><td>Toggle sidebar</td><td><code>Cmd</code> + <code>B</code></td></tr>
+      <tr><td>Go back</td><td><code>Cmd</code> + <code>◀</code></td></tr>
+      <tr><td>Go forward</td><td><code>Cmd</code> + <code>▶</code></td></tr>
+      <tr><td>New session</td><td><code>Option</code> + <code>Cmd</code> + <code>N</code></td></tr>
+      <tr><td>Search conversations</td><td><code>Cmd</code> + <code>G</code></td></tr>
+      <tr><td>Toggle file preview panel</td><td><code>Option</code> + <code>Cmd</code> + <code>B</code></td></tr>
+      <tr><td>Open settings</td><td><code>Cmd</code> + <code>,</code></td></tr>
+      <tr><td>Search within conversation</td><td><code>Cmd</code> + <code>F</code></td></tr>
+      <tr><td>Focus the chat input</td><td><code>Cmd</code> + <code>L</code></td></tr>
+      <tr><td>Switch session tab</td><td><code>Cmd</code> + <code>1–9</code></td></tr>
+      <tr><td>Change permissions</td><td><code>Shift</code> + <code>Tab</code></td></tr>
+      <tr><td>Send message</td><td><code>Enter</code></td></tr>
+      <tr><td>Insert a new line</td><td><code>Shift</code> + <code>Enter</code></td></tr>
+      <tr><td>Stop response</td><td><code>Esc</code> <code>Esc</code></td></tr>
+      <tr><td>Submit and rerun edited message</td><td><code>Cmd</code> + <code>Enter</code></td></tr>
+      <tr><td>Cancel message editing</td><td><code>Esc</code></td></tr>
+      <tr><td>Increase interface size</td><td><code>Cmd</code> + <code>+</code></td></tr>
+      <tr><td>Decrease interface size</td><td><code>Cmd</code> + <code>-</code></td></tr>
+      <tr><td>Reset interface size</td><td><code>Cmd</code> + <code>0</code></td></tr>
     </table>
 
-    <p>Deux remarques sur cette liste. <b>« Arrêter la réponse » demande deux appuis sur Échap</b>, ce que l'écran affiche par deux touches côte à côte : ce n'est pas une coquille. Et <b>les trois derniers raccourcis pilotent le même réglage que « Taille de police »</b> de l'onglet Général — agrandir l'interface au clavier fait bouger la valeur dans les réglages, et réciproquement.</p>
+    <p>Two remarks about this list. <b>“Stop response” takes two presses of Escape</b>, which the screen shows as two keys side by side: it isn't a typo. And <b>the last three shortcuts drive the same setting as “Font size”</b> in the General tab — enlarging the interface from the keyboard moves the value in the settings, and the other way round.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Les raccourcis clavier ne sont pas personnalisables. L'onglet les affiche, il ne les modifie pas, et il n'existe aucun autre moyen d'en changer un dans l'application. Chaque raccourci est expliqué dans <a href="reference-raccourcis-clavier.html">Raccourcis clavier</a>.
+      <span class="t">Warning</span>
+      Keyboard shortcuts can't be customised. The tab displays them, it doesn't change them, and there is no other way to change one in the application. Each shortcut is explained in <a href="reference-raccourcis-clavier.html">Keyboard shortcuts</a>.
     </div>
 
-    <h2 id="ou-chaque-reglage-est-enregistre">Où chaque réglage est enregistré</h2>
-    <p>Tous les réglages de cette section ne se sauvegardent pas au même endroit, et certains ne suivent pas quand tu copies ton dossier de données.</p>
+    <h2 id="ou-chaque-reglage-est-enregistre">Where each setting is saved</h2>
+    <p>Not every setting in this section is saved in the same place, and some don't follow when you copy your data folder.</p>
 
     <table>
-      <caption class="crumb">L'endroit où chaque préférence est écrite</caption>
-      <tr><th>Réglage</th><th>Enregistré</th></tr>
-      <tr><td>Thème</td><td>Côté application, sur cette machine</td></tr>
-      <tr><td>Taille de police</td><td>Côté application, sur cette machine</td></tr>
-      <tr><td>Police d'écriture</td><td>Côté application, sur cette machine</td></tr>
-      <tr><td>Thème de code</td><td>Côté application, sur cette machine</td></tr>
-      <tr><td>Langue de l'interface</td><td>Côté application, sur cette machine</td></tr>
-      <tr><td>Langue de réponse du LLM</td><td>Dans le fichier de configuration du dossier de données</td></tr>
-      <tr><td>Aperçu des liens</td><td>Dans le fichier de configuration <b>et</b> côté application</td></tr>
-      <tr><td>Lancer au démarrage</td><td>Dans le fichier de configuration <b>et</b> dans le système d'exploitation</td></tr>
-      <tr><td>Démarrage masqué</td><td>Dans le fichier de configuration</td></tr>
-      <tr><td>Mascotte (activation, taille, personnage, position)</td><td>Dans le fichier de configuration</td></tr>
+      <caption class="crumb">Where each preference is written</caption>
+      <tr><th>Setting</th><th>Saved</th></tr>
+      <tr><td>Theme</td><td>On the application side, on this machine</td></tr>
+      <tr><td>Font size</td><td>On the application side, on this machine</td></tr>
+      <tr><td>Font family</td><td>On the application side, on this machine</td></tr>
+      <tr><td>Code theme</td><td>On the application side, on this machine</td></tr>
+      <tr><td>Interface language</td><td>On the application side, on this machine</td></tr>
+      <tr><td>LLM response language</td><td>In the configuration file of the data folder</td></tr>
+      <tr><td>Link previews</td><td>In the configuration file <b>and</b> on the application side</td></tr>
+      <tr><td>Launch at startup</td><td>In the configuration file <b>and</b> in the operating system</td></tr>
+      <tr><td>Start hidden</td><td>In the configuration file</td></tr>
+      <tr><td>Mascot (enabled, size, character, position)</td><td>In the configuration file</td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Le thème et la langue de l'interface ne sont pas dans ton dossier de données. Ils sont enregistrés côté application, avec l'apparence et la taille du texte. Une réinstallation, ou un dossier de données copié sur une autre machine, les ramène à leur valeur par défaut. Les conversations, les clés et les réglages de l'agent, eux, suivent.
+      <span class="t">Warning</span>
+      The theme and the interface language aren't in your data folder. They are saved on the application side, along with the appearance and the text size. A reinstall, or a data folder copied to another machine, brings them back to their default value. The conversations, the keys and the agent settings do follow.
     </div>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Les surprises les plus courantes de la section Préférences</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« J'ai mis l'interface en français mais l'agent répond en anglais »</td><td>Ce sont deux réglages distincts</td><td>Renseigner <b>Langue de réponse du LLM</b> dans Général</td></tr>
-      <tr><td>« Le démarrage masqué est grisé »</td><td>Il dépend de <b>Lancer au démarrage</b>, éteint</td><td>Activer d'abord le lancement au démarrage</td></tr>
-      <tr><td>« J'ai activé le démarrage masqué mais la fenêtre s'ouvre quand même »</td><td>Le lancement au démarrage a été désactivé ensuite, ce qui remet le démarrage masqué à zéro</td><td>Réactiver les deux</td></tr>
-      <tr><td>« Le texte est illisible, trop petit ou trop grand »</td><td>La taille est bornée entre 10 et 24 pixels</td><td><code>Cmd</code>/<code>Ctrl</code> + <code>0</code> rétablit 18 pixels</td></tr>
-      <tr><td>« Mes thèmes et ma langue ont disparu après réinstallation »</td><td>Ils ne sont pas dans le dossier de données</td><td>Les régler à nouveau ; comportement attendu</td></tr>
-      <tr><td>« Un thème que je n'ai pas installé apparaît dans la grille »</td><td>Il vient d'une extension ; le nom de sa source est écrit sous la vignette</td><td>Le retirer en désactivant l'extension</td></tr>
-      <tr><td>« La mascotte a disparu de mon écran »</td><td>Elle est désactivée par défaut, ou déplacée hors du champ visible</td><td>La réactiver dans Préférences › Mascotte</td></tr>
-      <tr><td>« Je veux changer un raccourci clavier »</td><td>Ce n'est pas prévu dans l'application</td><td>Aucune résolution pour l'instant</td></tr>
+      <caption class="crumb">The most common surprises in the Preferences section</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“I set the interface to French but the agent answers in English”</td><td>These are two distinct settings</td><td>Fill in <b>LLM response language</b> in General</td></tr>
+      <tr><td>“Start hidden is greyed out”</td><td>It depends on <b>Launch at startup</b>, which is off</td><td>Turn on launch at startup first</td></tr>
+      <tr><td>“I turned on start hidden but the window opens anyway”</td><td>Launch at startup was turned off afterwards, which resets start hidden</td><td>Turn both back on</td></tr>
+      <tr><td>“The text is unreadable, too small or too big”</td><td>The size is bounded between 10 and 24 pixels</td><td><code>Cmd</code>/<code>Ctrl</code> + <code>0</code> restores 18 pixels</td></tr>
+      <tr><td>“My themes and my language disappeared after reinstalling”</td><td>They aren't in the data folder</td><td>Set them again; expected behavior</td></tr>
+      <tr><td>“A theme I didn't install appears in the grid”</td><td>It comes from an extension; the name of its source is written under the tile</td><td>Remove it by disabling the extension</td></tr>
+      <tr><td>“The mascot has disappeared from my screen”</td><td>It's off by default, or moved out of the visible area</td><td>Turn it back on in Preferences › Mascot</td></tr>
+      <tr><td>“I want to change a keyboard shortcut”</td><td>That isn't provided for in the application</td><td>No fix for now</td></tr>
     </table>
 
-    <p>Pour retrouver un autre réglage, voir <a href="reglages-vue-densemble.html">Vue d'ensemble des réglages</a>. Le modèle par défaut, l'accès aux fichiers et l'icône de la barre système sont dans <a href="reglages-agent.html">Agent</a>.</p>
+    <p>To find another setting, see <a href="reglages-vue-densemble.html">Settings overview</a>. The default model, file access and the system tray icon are in <a href="reglages-agent.html">Agent</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

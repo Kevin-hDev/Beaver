@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Authentification des connecteurs</title>
-<meta name="description" content="Autoriser Beaver à accéder à ton Notion ou à ton GitHub : le parcours, ce que Beaver ne voit jamais, où vont les jetons et comment révoquer l'accès.">
+<title>Beaver Docs — Connector authentication</title>
+<meta name="description" content="Authorizing Beaver to reach your Notion or your GitHub: the flow, what Beaver never sees, where the tokens go and how to revoke access.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,110 +19,110 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Intégrations / Authentification</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="integrations-authentification-mcp.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Integrations / Authentication</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/integrations-authentification-mcp.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="integrations-authentification-mcp.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Autoriser un <em>connecteur</em></h1>
-    <p>Un connecteur distant accède à des données personnelles ou d'entreprise : messages, documents, tickets, dépôts. Il faut donc l'autoriser explicitement, service par service. Beaver utilise pour cela le mécanisme standard d'autorisation déléguée : tu t'authentifies <b>chez le service</b>, qui remet à Beaver un jeton d'accès limité et révocable.</p>
+    <h1>Authorizing a <em>connector</em></h1>
+    <p>A remote connector reaches personal or company data: messages, documents, tickets, repositories. So it has to be authorized explicitly, service by service. For that, Beaver uses the standard delegated authorization mechanism: you authenticate <b>with the service</b>, which hands Beaver a limited, revocable access token.</p>
 
-    <h2 id="le-parcours">Le parcours</h2>
+    <h2 id="le-parcours">The flow</h2>
     <ul>
-      <li>Depuis <b>Réglages › Intégrations › Connecteurs</b>, tu lances la connexion du service.</li>
-      <li>Beaver ouvre ton navigateur sur la page du service.</li>
-      <li>Tu t'y authentifies et tu acceptes les accès demandés.</li>
-      <li>Le service renvoie vers Beaver, qui reçoit la réponse sur un petit serveur local <b>actif uniquement pendant la connexion</b>.</li>
-      <li>Beaver échange cette réponse contre un jeton d'accès et le range dans son coffre.</li>
-      <li>Le navigateur affiche une page de confirmation.</li>
+      <li>From <b>Settings › Integrations › Connectors</b>, you start the service's sign-in.</li>
+      <li>Beaver opens your browser on the service's page.</li>
+      <li>You authenticate there and accept the access requested.</li>
+      <li>The service redirects back to Beaver, which receives the reply on a small local server <b>active only during the sign-in</b>.</li>
+      <li>Beaver exchanges that reply for an access token and stores it in its vault.</li>
+      <li>The browser shows a confirmation page.</li>
     </ul>
 
-    <p>La connexion est abandonnée au bout de <b>5 minutes</b> sans réponse. Jusqu'à <b>5 connexions</b> peuvent être en cours en même temps, et une connexion déjà lancée pour le même service n'est pas dupliquée.</p>
+    <p>The sign-in is abandoned after <b>5 minutes</b> without a reply. Up to <b>5 sign-ins</b> can be in progress at the same time, and a sign-in already started for the same service is not duplicated.</p>
 
-    <h2 id="ce-que-beaver-ne-voit-jamais">Ce que Beaver ne voit jamais</h2>
-    <p><b>Beaver ne voit jamais tes identifiants.</b> Ni le mot de passe, ni le second facteur. L'authentification se déroule entièrement sur le site du service, dans ton navigateur.</p>
+    <h2 id="ce-que-beaver-ne-voit-jamais">What Beaver never sees</h2>
+    <p><b>Beaver never sees your credentials.</b> Neither the password, nor the second factor. Authentication takes place entirely on the service's site, in your browser.</p>
 
-    <p>Ce que Beaver reçoit est un <b>jeton d'accès</b> : une autorisation limitée à ce que le service a accepté d'accorder, révocable à tout moment depuis ton compte, et sans rapport avec ton mot de passe.</p>
+    <p>What Beaver receives is an <b>access token</b>: an authorization limited to what the service agreed to grant, revocable at any time from your account, and unrelated to your password.</p>
 
-    <h2 id="les-protections-de-lechange">Les protections de l'échange</h2>
-    <p><b>Les adresses d'authentification sont vérifiées par service.</b> Beaver découvre automatiquement les adresses d'autorisation du service, mais il refuse toute adresse qui ne relève pas du domaine attendu pour ce connecteur précis : une adresse Notion présentée pour une connexion Sentry est refusée. C'est ce qui empêche un service compromis de rediriger l'authentification ailleurs.</p>
+    <h2 id="les-protections-de-lechange">The protections around the exchange</h2>
+    <p><b>Authentication addresses are checked per service.</b> Beaver automatically discovers the service's authorization addresses, but it refuses any address that does not belong to the domain expected for that particular connector: a Notion address presented for a Sentry sign-in is refused. That is what stops a compromised service from redirecting authentication elsewhere.</p>
 
-    <p>Le <b>chiffrement est obligatoire</b>, et aucune adresse contenant des identifiants n'est acceptée. La demande est <b>liée à la session</b> par un secret à usage unique généré au moment du départ : un tiers qui intercepterait la réponse du service ne pourrait rien en faire. Le serveur local <b>n'écoute que sur ta machine</b>, sur un port choisi au hasard, uniquement pendant la connexion, et les requêtes qu'il accepte sont bornées en taille.</p>
+    <p><b>Encryption is mandatory</b>, and no address containing credentials is accepted. The request is <b>tied to the session</b> by a single-use secret generated at the start: a third party intercepting the service's reply could do nothing with it. The local server <b>listens only on your machine</b>, on a randomly chosen port, only during the sign-in, and the requests it accepts are size-bounded.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Ces vérifications s'appliquent aussi au <b>renouvellement</b>, pas seulement à la première connexion : l'adresse est revalidée à chaque échange. Un service compromis ne peut donc pas détourner l'authentification plus tard.
+      <span class="t">Security</span>
+      These checks also apply to <b>renewal</b>, not just to the first sign-in: the address is revalidated at every exchange. A compromised service therefore cannot hijack authentication later on.
     </div>
 
     <table>
-      <caption class="crumb">Ce que Beaver refuse pendant l'échange</caption>
-      <tr><th>Tentative</th><th>Résultat</th></tr>
-      <tr><td>Adresse d'authentification hors du domaine du service</td><td><b>Refusé</b></td></tr>
-      <tr><td>Adresse d'un autre connecteur</td><td><b>Refusé</b></td></tr>
-      <tr><td>Adresse non chiffrée</td><td><b>Refusé</b></td></tr>
-      <tr><td>Adresse contenant des identifiants</td><td><b>Refusé</b></td></tr>
-      <tr><td>Réponse sans le secret de session attendu</td><td><b>Refusé</b></td></tr>
-      <tr><td>Réponse trop volumineuse</td><td><b>Refusé</b></td></tr>
+      <caption class="crumb">What Beaver refuses during the exchange</caption>
+      <tr><th>Attempt</th><th>Result</th></tr>
+      <tr><td>Authentication address outside the service's domain</td><td><b>Refused</b></td></tr>
+      <tr><td>Address belonging to another connector</td><td><b>Refused</b></td></tr>
+      <tr><td>Unencrypted address</td><td><b>Refused</b></td></tr>
+      <tr><td>Address containing credentials</td><td><b>Refused</b></td></tr>
+      <tr><td>Reply without the expected session secret</td><td><b>Refused</b></td></tr>
+      <tr><td>Reply too large</td><td><b>Refused</b></td></tr>
     </table>
 
-    <h2 id="ou-vont-les-jetons">Où vont les jetons</h2>
-    <p><b>Dans le coffre chiffré</b>, comme les clés API et les connexions par compte : chiffrement sur le disque, clé maîtresse dans le gestionnaire de mots de passe du système, aucune commande de lecture exposée à l'interface, mémoire protégée et effacée après usage. Chaque connecteur a <b>son entrée distincte</b> : déconnecter l'un ne touche pas aux autres. Le détail du coffre est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+    <h2 id="ou-vont-les-jetons">Where the tokens go</h2>
+    <p><b>Into the encrypted vault</b>, like the API keys and the account sign-ins: encryption on disk, master key in the system password manager, no read command exposed to the interface, memory protected and erased after use. Each connector has <b>its own separate entry</b>: signing out of one does not touch the others. The vault is detailed in <a href="reference-coffre-et-cles.html">The vault and API keys</a>.</p>
 
-    <h2 id="le-renouvellement">Le renouvellement</h2>
-    <p>Un jeton d'accès expire. Beaver le renouvelle automatiquement, <b>30 secondes avant l'expiration réelle</b> — cette marge évite qu'une requête partie juste avant échoue en vol. Tu n'as rien à faire : une autorisation accordée reste valable jusqu'à ce que tu la révoques ou que le service l'invalide.</p>
+    <h2 id="le-renouvellement">Renewal</h2>
+    <p>An access token expires. Beaver renews it automatically, <b>30 seconds before the actual expiry</b> — that margin stops a request that left just before from failing in flight. You have nothing to do: an authorization granted stays valid until you revoke it or the service invalidates it.</p>
 
-    <p>Deux détails de conception évitent des problèmes réels. <b>Un seul renouvellement à la fois par connecteur</b> : si plusieurs requêtes constatent en même temps qu'un jeton est périmé, une seule le renouvelle et les autres attendent le résultat — sans cela, plusieurs renouvellements simultanés peuvent invalider les jetons les uns des autres, car certains services n'en acceptent qu'un à la fois. Et <b>le jeton est revérifié après avoir obtenu le tour</b> : un autre appel l'a peut-être déjà renouvelé entre-temps, auquel cas aucun échange inutile n'a lieu. Quand un service ne renvoie pas de nouveau jeton de renouvellement, l'ancien est conservé — certains ne le renvoient qu'une fois.</p>
+    <p>Two design details avoid real problems. <b>One renewal at a time per connector</b>: if several requests notice at the same moment that a token has expired, only one renews it and the others wait for the result — without that, several simultaneous renewals can invalidate each other's tokens, because some services only accept one at a time. And <b>the token is checked again after getting its turn</b>: another call may have renewed it in the meantime, in which case no pointless exchange happens. When a service does not return a new refresh token, the old one is kept — some only return it once.</p>
 
-    <h2 id="revoquer-lacces">Révoquer l'accès</h2>
-    <p>Deux endroits, et il faut les distinguer. <b>Dans Beaver</b>, la déconnexion efface les jetons du coffre et le connecteur redevient non authentifié. <b>Chez le service</b>, la page de sécurité de ton compte permet de retirer l'autorisation accordée à Beaver : c'est la révocation réelle, celle qui vaut même si des jetons subsistaient ailleurs.</p>
+    <h2 id="revoquer-lacces">Revoking access</h2>
+    <p>Two places, and they have to be told apart. <b>In Beaver</b>, signing out erases the tokens from the vault and the connector becomes unauthenticated again. <b>At the service</b>, your account's security page lets you withdraw the authorization granted to Beaver: that is the real revocation, the one that holds even if tokens survived somewhere else.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Se déconnecter dans Beaver ne suffit pas toujours. Pour couper l'accès complètement, révoque aussi l'autorisation depuis la page de sécurité de ton compte chez le service. Fais les deux.
+      <span class="t">Warning</span>
+      Signing out in Beaver is not always enough. To cut access off completely, also revoke the authorization from your account's security page at the service. Do both.
     </div>
 
-    <h2 id="les-limites">Les limites</h2>
+    <h2 id="les-limites">The limits</h2>
 
     <table>
-      <caption class="crumb">Les bornes de l'autorisation</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Délai d'une connexion</td><td><b>5 minutes</b></td></tr>
-      <tr><td>Connexions simultanées</td><td><b>5</b></td></tr>
-      <tr><td>Marge avant renouvellement</td><td><b>30 secondes</b></td></tr>
-      <tr><td>Renouvellements simultanés par connecteur</td><td><b>1</b></td></tr>
-      <tr><td>Taille d'une requête au serveur local</td><td><b>4 Ko</b></td></tr>
-      <tr><td>Délai d'un échange avec le service</td><td><b>15 secondes</b></td></tr>
+      <caption class="crumb">The bounds of the authorization</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Timeout of a sign-in</td><td><b>5 minutes</b></td></tr>
+      <tr><td>Simultaneous sign-ins</td><td><b>5</b></td></tr>
+      <tr><td>Margin before renewal</td><td><b>30 seconds</b></td></tr>
+      <tr><td>Simultaneous renewals per connector</td><td><b>1</b></td></tr>
+      <tr><td>Size of a request to the local server</td><td><b>4 KB</b></td></tr>
+      <tr><td>Timeout of an exchange with the service</td><td><b>15 seconds</b></td></tr>
     </table>
 
-    <h2 id="pieges-frequents">Pièges fréquents</h2>
+    <h2 id="pieges-frequents">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui bloque le plus souvent</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Rien ne se passe après l'autorisation dans le navigateur</td><td>La réponse n'a pas atteint Beaver</td><td>Vérifier qu'un pare-feu ne bloque pas les connexions locales</td></tr>
-      <tr><td>« La connexion a expiré »</td><td>Plus de 5 minutes se sont écoulées</td><td>Recommencer</td></tr>
-      <tr><td>« Endpoint OAuth non autorisé »</td><td>Le service annonce une adresse hors de son domaine</td><td>Refus volontaire ; à signaler si le service est légitime</td></tr>
-      <tr><td>Le connecteur a cessé de fonctionner</td><td>Autorisation révoquée chez le service, ou mot de passe changé</td><td>Se reconnecter</td></tr>
-      <tr><td>« Token expiré et pas de refresh »</td><td>Le service n'a pas fourni de jeton de renouvellement</td><td>Se reconnecter</td></tr>
-      <tr><td>Le service liste toujours Beaver après une déconnexion</td><td>La déconnexion locale ne révoque pas côté service</td><td>Révoquer depuis la page de sécurité du compte</td></tr>
+      <caption class="crumb">What most often blocks</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>Nothing happens after authorizing in the browser</td><td>The reply did not reach Beaver</td><td>Check that a firewall is not blocking local connections</td></tr>
+      <tr><td>"The connection has expired"</td><td>More than 5 minutes have gone by</td><td>Start over</td></tr>
+      <tr><td>"OAuth endpoint not allowed"</td><td>The service announces an address outside its domain</td><td>Deliberate refusal; worth reporting if the service is legitimate</td></tr>
+      <tr><td>The connector stopped working</td><td>Authorization revoked at the service, or password changed</td><td>Sign in again</td></tr>
+      <tr><td>"Token expired and no refresh"</td><td>The service did not supply a refresh token</td><td>Sign in again</td></tr>
+      <tr><td>The service still lists Beaver after signing out</td><td>Signing out locally does not revoke on the service's side</td><td>Revoke from the account's security page</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — configurer un connecteur, et ce que Beaver verrouille.</li>
-      <li><a href="outils-connecteurs.html">Connecteurs externes côté agent</a> — comment l'agent s'en sert.</li>
-      <li><a href="modeles-connexion-par-compte.html">Connexion par compte</a> — le même mécanisme, appliqué aux modèles.</li>
-      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — où vivent les jetons.</li>
-      <li><a href="reference-confidentialite.html">Confidentialité</a> — ce qui sort de la machine.</li>
+      <li><a href="integrations-connecteurs-mcp.html">MCP connectors</a> — configuring a connector, and what Beaver locks down.</li>
+      <li><a href="outils-connecteurs.html">External connectors on the agent side</a> — how the agent uses them.</li>
+      <li><a href="modeles-connexion-par-compte.html">Account sign-in</a> — the same mechanism, applied to models.</li>
+      <li><a href="reference-coffre-et-cles.html">The vault and API keys</a> — where the tokens live.</li>
+      <li><a href="reference-confidentialite.html">Privacy</a> — what leaves the machine.</li>
     </ul>
   </main>
 

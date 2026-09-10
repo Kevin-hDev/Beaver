@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Remplacer un outil</title>
-<meta name="description" content="Comment une extension prend la place d'un outil natif de Beaver, ce que le modèle voit alors, et quelles protections cessent de s'appliquer.">
+<title>Beaver Docs — Replacing a tool</title>
+<meta name="description" content="How an extension takes the place of a native Beaver tool, what the model then sees, and which protections stop applying.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,152 +19,152 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Intégrations / Remplacer un outil</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="integrations-remplacer-un-outil.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Integrations / Replacing a tool</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/integrations-remplacer-un-outil.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="integrations-remplacer-un-outil.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Remplacer un <em>outil</em></h1>
-    <p>Une extension peut prendre la place d'un outil de Beaver. À partir de ce moment, le modèle ne voit plus qu'un seul outil sous ce nom : celui de l'extension. Il ne sait pas qu'un remplacement a eu lieu, et il ne peut pas demander l'outil d'origine. Cette page dit comment ça marche, ce que ça engage, et comment revenir en arrière.</p>
+    <h1>Replacing a <em>tool</em></h1>
+    <p>An extension can take the place of a Beaver tool. From that moment on, the model sees only one tool under that name: the extension's. It does not know a replacement happened, and it cannot ask for the original tool. This page says how it works, what it commits you to, and how to go back.</p>
 
-    <h2 id="ce-que-remplacer-veut-dire">Ce que « remplacer » veut dire exactement</h2>
-    <p>Le mécanisme est une substitution par le nom, pas un ajout. Beaver construit la liste des outils du cœur, puis y injecte ceux des extensions : quand un nom existe déjà, l'outil de l'extension <b>prend sa place dans la liste</b>, il n'est pas ajouté à côté. L'outil d'origine n'est pas perdu pour autant — Beaver le range dans la définition de remplacement, en repli, et s'en ressert dans les cas décrits plus bas.</p>
+    <h2 id="ce-que-remplacer-veut-dire">What "replace" means exactly</h2>
+    <p>The mechanism is a substitution by name, not an addition. Beaver builds the list of core tools, then injects the extensions' tools into it: when a name already exists, the extension's tool <b>takes its place in the list</b>, it is not added alongside. The original tool is not lost for all that — Beaver stores it inside the replacement definition, as a fallback, and uses it again in the cases described below.</p>
 
-    <p>Un outil ordinaire d'extension est toujours préfixé par l'identifiant de son extension, sous la forme <code>mon-extension.mon-outil</code>. Un remplacement est <b>le seul cas où une extension publie un outil sans préfixe</b>. Le code s'écrit comme un outil ordinaire — un nom, une description, un schéma de paramètres, une classe d'effet, une fonction d'exécution ; seul le point d'entrée change, <code>beaver.unstable.registerReplacement(...)</code> au lieu de <code>beaver.registerTool(...)</code>.</p>
+    <p>An ordinary extension tool is always prefixed with its extension's identifier, in the form <code>my-extension.my-tool</code>. A replacement is <b>the only case where an extension publishes a tool without a prefix</b>. The code is written like an ordinary tool — a name, a description, a parameter schema, an effect class, an execution function; only the entry point changes, <code>beaver.unstable.registerReplacement(...)</code> instead of <code>beaver.registerTool(...)</code>.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Le remplacement repose sur l'API avancée, que le contrat de Beaver décrit lui-même comme <b>instable</b> : « L'API avancée est instable et peut changer entre deux versions de Beaver. » Le comportement en l'absence de correspondance de nom porte la même mention : « Ce comportement est instable et peut changer entre versions. » Une extension qui remplace un outil peut donc cesser de fonctionner, ou changer de comportement, à la mise à jour suivante — sans que cela constitue une régression.
+      <span class="t">Warning</span>
+      Replacement rests on the advanced API, which Beaver's own contract describes as <b>unstable</b>: "The advanced API is unstable and may change between Beaver versions." The behavior when no name matches carries the same note: "This behavior is unstable and may change between versions." An extension that replaces a tool can therefore stop working, or change behavior, at the next update — without that counting as a regression.
     </div>
 
-    <h2 id="le-prerequis-le-niveau-avance">Le prérequis : le niveau avancé</h2>
-    <p>Le remplacement n'est accessible qu'aux extensions dont le manifeste déclare <code>"apiLevel": "advanced"</code>. Le contrôle a lieu <b>deux fois</b>, et les deux échecs ne se ressemblent pas.</p>
+    <h2 id="le-prerequis-le-niveau-avance">The prerequisite: the advanced level</h2>
+    <p>Replacement is only available to extensions whose manifest declares <code>"apiLevel": "advanced"</code>. The check happens <b>twice</b>, and the two failures do not look alike.</p>
 
     <table>
-      <caption class="crumb">Les deux contrôles du niveau avancé</caption>
-      <tr><th>Où</th><th>Ce qui se passe si le niveau n'est pas <code>advanced</code></th></tr>
-      <tr><td>Dans l'extension, à l'enregistrement</td><td>L'appel échoue immédiatement avec l'erreur <code>advanced_api_required</code></td></tr>
-      <tr><td>Dans Beaver, à la réception</td><td><b>Toutes</b> les contributions de l'extension sont refusées, pas seulement le remplacement, avec le message « Le mode avancé est requis pour remplacer un outil intégré »</td></tr>
+      <caption class="crumb">The two advanced-level checks</caption>
+      <tr><th>Where</th><th>What happens if the level is not <code>advanced</code></th></tr>
+      <tr><td>In the extension, at registration time</td><td>The call fails immediately with the error <code>advanced_api_required</code></td></tr>
+      <tr><td>In Beaver, on receipt</td><td><b>All</b> of the extension's contributions are refused, not just the replacement, with the message "Advanced mode is required to replace a built-in tool"</td></tr>
     </table>
 
-    <p>Le second contrôle est celui qui compte : le premier vit dans le code de l'extension, donc dans un processus que Beaver ne contrôle pas. Le second est côté Beaver, il s'applique quoi qu'ait fait l'extension, et il rejette le lot entier de ses contributions.</p>
+    <p>The second check is the one that counts: the first lives in the extension's code, so in a process Beaver does not control. The second is on Beaver's side, it applies whatever the extension did, and it rejects the entire batch of its contributions.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Le niveau avancé n'est pas une clé passe-partout. Il ouvre le remplacement d'outils et l'interface avancée — rien d'autre. L'appel générique <code>beaver.unstable.call(...)</code> existe pour de futures méthodes déclarées avancées, mais le contrat actuel n'en publie aucune : les douze méthodes exposées sont toutes de niveau stable, et tout appel à <code>unstable.call</code> est aujourd'hui rejeté avec <code>core_method_unavailable</code>.
+      The advanced level is not a skeleton key. It opens up tool replacement and the advanced interface — nothing else. The generic call <code>beaver.unstable.call(...)</code> exists for future methods declared advanced, but the current contract publishes none: the twelve exposed methods are all at the stable level, and any call to <code>unstable.call</code> is rejected today with <code>core_method_unavailable</code>.
     </div>
 
-    <h2 id="aucune-liste-doutils-remplacables">Il n'existe aucune liste des outils remplaçables</h2>
-    <p>C'est le point le plus important de la page. Beaver ne tient <b>aucune liste blanche</b> de points de remplacement. La règle est mécanique : si le nom déclaré correspond à un outil du catalogue du moment, la définition de l'extension le recouvre ; si le nom ne correspond à rien, la définition <b>devient un nouvel outil, publié sans préfixe</b>.</p>
+    <h2 id="aucune-liste-doutils-remplacables">There is no list of replaceable tools</h2>
+    <p>This is the most important point on the page. Beaver keeps <b>no allowlist</b> of replacement points. The rule is mechanical: if the declared name matches a tool in the catalog of the moment, the extension's definition covers it; if the name matches nothing, the definition <b>becomes a new tool, published without a prefix</b>.</p>
 
-    <p>Deux conséquences directes. <b>Une faute de frappe ne produit aucune erreur</b> — elle produit un outil. Et le catalogue de référence est celui de la <b>version installée</b> : il compte 14 outils verrouillés, dont <code>bash</code>, <code>bash_control</code>, <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_dir</code>, <code>grep</code>, <code>glob</code>, <code>web_search</code>, <code>web_fetch</code> et <code>search_mcp_tools</code>, plus 32 outils optionnels. Un outil qui disparaît ou change de nom dans une version suivante transforme silencieusement un remplacement en outil supplémentaire.</p>
+    <p>Two direct consequences. <b>A typo produces no error</b> — it produces a tool. And the reference catalog is the one of the <b>installed version</b>: it holds 14 locked tools, among them <code>bash</code>, <code>bash_control</code>, <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_dir</code>, <code>grep</code>, <code>glob</code>, <code>web_search</code>, <code>web_fetch</code> and <code>search_mcp_tools</code>, plus 32 optional tools. A tool that disappears or is renamed in a later version silently turns a replacement into an extra tool.</p>
 
-    <h2 id="quand-loutil-dorigine-revient">Quand l'outil d'origine revient</h2>
-    <p>Un remplacement enregistré n'est pas un remplacement permanent. Beaver revient à l'outil d'origine dans plusieurs situations, sans le dire au modèle. Deux conditions commandent tout : l'extension doit être <b>activée et approuvée</b> — l'index des outils d'extension ne retient que les fiches qui remplissent les deux critères — et elle doit être <b>retenue dans la conversation en cours</b>, car Beaver ne charge pas toutes les extensions dans toutes les conversations : il choisit celles qui tiennent dans le budget d'outils du modèle.</p>
+    <h2 id="quand-loutil-dorigine-revient">When the original tool comes back</h2>
+    <p>A registered replacement is not a permanent replacement. Beaver goes back to the original tool in several situations, without telling the model. Two conditions govern everything: the extension has to be <b>enabled and approved</b> — the extension tool index only keeps entries that meet both criteria — and it has to be <b>selected for the current conversation</b>, because Beaver does not load every extension into every conversation: it picks the ones that fit within the model's tool budget.</p>
 
-    <p>Un détail favorable au remplacement mérite d'être dit : <b>un remplacement ne consomme pas de place dans ce budget</b>. Le décompte exclut les définitions qui portent un repli. Une extension dont tous les outils sont des remplacements pèse donc zéro.</p>
+    <p>One detail in replacement's favor deserves saying: <b>a replacement uses up no room in that budget</b>. The count excludes definitions that carry a fallback. An extension whose tools are all replacements therefore weighs nothing.</p>
 
     <table>
-      <caption class="crumb">Ce que le modèle reçoit selon la situation</caption>
-      <tr><th>Situation</th><th>Ce que le modèle reçoit</th></tr>
-      <tr><td>Extension activée, approuvée et retenue dans la conversation</td><td>L'outil de l'extension, sous le nom d'origine</td></tr>
-      <tr><td>Extension désactivée ou non approuvée</td><td>L'outil d'origine de Beaver</td></tr>
-      <tr><td>Extension non retenue dans la conversation</td><td>L'outil d'origine, restauré depuis le repli</td></tr>
-      <tr><td>L'outil d'origine est désactivé dans les réglages</td><td>Aucun des deux</td></tr>
-      <tr><td>Mode Chatbot</td><td>L'outil d'origine ; ce mode n'expose que la recherche et la lecture web, et ignore les extensions</td></tr>
-      <tr><td>Route de fournisseur qui refuse les extensions</td><td>L'outil d'origine, restauré depuis le repli, avec un avis affiché</td></tr>
-      <tr><td>Registre d'extensions indisponible</td><td>Uniquement les outils natifs encore admissibles, avec un avertissement</td></tr>
+      <caption class="crumb">What the model receives depending on the situation</caption>
+      <tr><th>Situation</th><th>What the model receives</th></tr>
+      <tr><td>Extension enabled, approved and selected for the conversation</td><td>The extension's tool, under the original name</td></tr>
+      <tr><td>Extension disabled or not approved</td><td>Beaver's original tool</td></tr>
+      <tr><td>Extension not selected for the conversation</td><td>The original tool, restored from the fallback</td></tr>
+      <tr><td>The original tool is disabled in the settings</td><td>Neither of the two</td></tr>
+      <tr><td>Chatbot mode</td><td>The original tool; that mode only exposes web search and web reading, and ignores extensions</td></tr>
+      <tr><td>Provider route that refuses extensions</td><td>The original tool, restored from the fallback, with a notice shown</td></tr>
+      <tr><td>Extension registry unavailable</td><td>Only the native tools still eligible, with a warning</td></tr>
     </table>
 
-    <h2 id="activation-confirmations-mode-plan">Activation, confirmations et mode Plan</h2>
-    <p><b>Le remplacement obéit au réglage d'activation de l'outil d'origine.</b> Si tu as désactivé l'outil dans les réglages, le remplacement est désactivé avec lui. C'est cohérent : désactiver <code>web_search</code> doit couper la recherche web, pas la déléguer à quelqu'un d'autre.</p>
+    <h2 id="activation-confirmations-mode-plan">Activation, confirmations and Plan mode</h2>
+    <p><b>The replacement obeys the original tool's enablement setting.</b> If you disabled the tool in the settings, the replacement is disabled with it. That is consistent: disabling <code>web_search</code> must cut web search off, not delegate it to someone else.</p>
 
-    <p><b>Les confirmations viennent de la classe d'effet déclarée par l'extension, pas de l'outil remplacé.</b> Dès qu'un outil est connu de l'index des extensions, Beaver décide de demander ou non une confirmation uniquement d'après sa classe d'effet, et court-circuite entièrement la logique de l'outil d'origine.</p>
+    <p><b>Confirmations come from the effect class the extension declares, not from the tool being replaced.</b> As soon as a tool is known to the extension index, Beaver decides whether or not to ask for confirmation solely from its effect class, bypassing the original tool's logic entirely.</p>
 
     <table>
-      <caption class="crumb">Ce que chaque classe d'effet déclenche</caption>
-      <tr><th>Valeur déclarée</th><th>Libellé affiché</th><th>Confirmation</th><th>Mode Plan</th><th>Accord mémorisable</th></tr>
-      <tr><td><code>read-only</code></td><td>Lecture seule</td><td>Non</td><td><b>Oui</b></td><td>Non</td></tr>
-      <tr><td><code>external-read</code></td><td>Lecture externe</td><td>Oui</td><td>Non</td><td>Oui</td></tr>
-      <tr><td><code>local-write</code></td><td>Écriture locale</td><td>Oui</td><td>Non</td><td>Oui</td></tr>
-      <tr><td><code>external-write</code></td><td>Écriture externe</td><td>Oui</td><td>Non</td><td>Oui</td></tr>
-      <tr><td><code>process</code></td><td>Processus</td><td>Oui</td><td>Non</td><td>Non</td></tr>
-      <tr><td><code>secret</code></td><td>Accès aux secrets</td><td>Oui</td><td>Non</td><td>Non</td></tr>
-      <tr><td><code>unknown</code></td><td>Effet inconnu</td><td>Oui</td><td>Non</td><td>Non</td></tr>
+      <caption class="crumb">What each effect class triggers</caption>
+      <tr><th>Declared value</th><th>Label shown</th><th>Confirmation</th><th>Plan mode</th><th>Consent can be remembered</th></tr>
+      <tr><td><code>read-only</code></td><td>Read only</td><td>No</td><td><b>Yes</b></td><td>No</td></tr>
+      <tr><td><code>external-read</code></td><td>External read</td><td>Yes</td><td>No</td><td>Yes</td></tr>
+      <tr><td><code>local-write</code></td><td>Local write</td><td>Yes</td><td>No</td><td>Yes</td></tr>
+      <tr><td><code>external-write</code></td><td>External write</td><td>Yes</td><td>No</td><td>Yes</td></tr>
+      <tr><td><code>process</code></td><td>Process</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td><code>secret</code></td><td>Secret access</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td><code>unknown</code></td><td>Unknown effect</td><td>Yes</td><td>No</td><td>No</td></tr>
     </table>
 
-    <p>Un effet absent, mal orthographié ou inconnu n'est pas refusé : il devient <code>unknown</code>, la classe la plus restrictive. Le processus qui héberge l'extension normalise déjà la valeur, et Beaver la revalide de son côté.</p>
+    <p>A missing, misspelled or unknown effect is not refused: it becomes <code>unknown</code>, the most restrictive class. The process hosting the extension already normalizes the value, and Beaver revalidates it on its own side.</p>
 
-    <p><b>En mode Plan, c'est aussi la classe d'effet qui décide.</b> Ce mode autorise normalement une liste fermée d'outils de lecture ; pour un outil d'extension, cette liste est ignorée et c'est la politique de l'effet qui s'applique. Seule la classe <code>read-only</code> y est autorisée. Conséquence dans les deux sens : remplacer un outil autorisé en mode Plan par un outil déclaré <code>local-write</code> <b>le retire du mode Plan</b> ; remplacer un outil interdit en mode Plan par un outil déclaré <code>read-only</code> <b>l'y fait entrer</b>.</p>
+    <p><b>In Plan mode, the effect class decides too.</b> That mode normally allows a closed list of reading tools; for an extension tool, that list is ignored and the effect policy applies instead. Only the <code>read-only</code> class is allowed there. The consequence runs both ways: replacing a tool allowed in Plan mode with a tool declared <code>local-write</code> <b>takes it out of Plan mode</b>; replacing a tool forbidden in Plan mode with a tool declared <code>read-only</code> <b>brings it in</b>.</p>
 
-    <h2 id="ce-que-cela-engage">Ce que cela engage vraiment</h2>
-    <p>Cette section n'est pas une précaution de rédaction. Elle décrit ce que le code fait. Une extension n'est pas isolée : c'est du code exécuté avec les droits de ton compte, avec l'accès complet à Node.js — fichiers, réseau, processus.</p>
+    <h2 id="ce-que-cela-engage">What this really commits you to</h2>
+    <p>This section is not editorial caution. It describes what the code does. An extension is not isolated: it is code run with your account's rights, with full access to Node.js — files, network, processes.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Remplacer <code>bash</code> ou la recherche web est l'acte le plus engageant de l'application. L'outil remplaçant reçoit <b>chaque commande que l'agent voulait exécuter</b>, ou <b>chaque requête de recherche</b>, plus le dossier de travail de la conversation. Il peut exécuter autre chose, envoyer ailleurs, ou renvoyer un résultat fabriqué : le modèle n'a aucun moyen de s'en apercevoir, et toi non plus. N'installe un remplacement que si tu as lu le code de l'extension et de ses dépendances, et que tu acceptes de refaire cette lecture à chaque mise à jour.
+      <span class="t">Security</span>
+      Replacing <code>bash</code> or web search is the most committing act in the application. The replacing tool receives <b>every command the agent meant to run</b>, or <b>every search query</b>, plus the conversation's working directory. It can run something else, send it elsewhere, or return a fabricated result: the model has no way of noticing, and neither do you. Only install a replacement if you have read the code of the extension and its dependencies, and you accept doing that reading again at every update.
     </div>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Les gardes de l'outil d'origine ne suivent pas. Un remplacement n'hérite d'aucune des protections écrites pour l'outil qu'il recouvre. Deux exemples : un remplacement de <code>bash</code> ne passe plus par l'analyse qui distingue une commande sûre d'une commande à confirmer ; un remplacement de la recherche web déclaré <code>external-read</code> réutilise le dialogue de confirmation de <code>web_fetch</code> <b>mais pas son filtre anti-SSRF</b> — le code approuvé garde son accès réseau direct. Après un remplacement, ce qui te protège est uniquement la classe d'effet que l'extension a déclarée elle-même.
+      <span class="t">Warning</span>
+      The original tool's guards do not come along. A replacement inherits none of the protections written for the tool it covers. Two examples: a replacement for <code>bash</code> no longer goes through the analysis that tells a safe command from one needing confirmation; a replacement for web search declared <code>external-read</code> reuses <code>web_fetch</code>'s confirmation dialog <b>but not its anti-SSRF filter</b> — approved code keeps its direct network access. After a replacement, what protects you is only the effect class the extension declared itself.
     </div>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Un remplacement déclaré <code>read-only</code> ne demande jamais rien. C'est la seule classe sans confirmation, et la seule autorisée en mode Plan. Rien n'empêche une extension de déclarer <code>read-only</code> sur un outil qui remplace <code>bash</code> : le résultat est un outil tiers qui exécute ce qu'il veut, sans dialogue, y compris pendant une phase de planification censée ne rien modifier. La classe d'effet est une déclaration de l'auteur, <b>pas une vérification de Beaver</b>.
+      <span class="t">Warning</span>
+      A replacement declared <code>read-only</code> never asks for anything. It is the only class without confirmation, and the only one allowed in Plan mode. Nothing stops an extension from declaring <code>read-only</code> on a tool that replaces <code>bash</code>: the result is a third-party tool that runs whatever it likes, with no dialog, including during a planning phase that is meant to change nothing. The effect class is a declaration by the author, <b>not a check by Beaver</b>.
     </div>
 
-    <h2 id="diagnostiquer-un-remplacement">Diagnostiquer un remplacement</h2>
-    <p><b>Dans l'application.</b> La fiche de l'extension — <b>Réglages › Extensions</b>, puis la fiche, section <b>Contributions enregistrées</b> — liste chaque outil avec son nom, sa classe d'effet traduite, et l'étiquette <b>Remplace un outil intégré</b> quand c'en est un. C'est le seul endroit où l'information est affichée telle quelle.</p>
+    <h2 id="diagnostiquer-un-remplacement">Diagnosing a replacement</h2>
+    <p><b>In the application.</b> The extension's entry — <b>Settings › Extensions</b>, then the entry, <b>Registered contributions</b> section — lists every tool with its name, its translated effect class, and the label <b>Replaces a built-in tool</b> when it is one. That is the only place where the information is shown as such.</p>
 
-    <p><b>Depuis l'agent.</b> Deux outils existent, tous deux toujours présents et autorisés en mode Plan : <code>list_extensions</code>, qui liste les extensions connues, et <code>inspect_extensions</code>, qui détaille une ou plusieurs extensions par identifiant avec leurs outils, skills et ressources. Leur limite est à connaître : <code>inspect_extensions</code> renvoie pour chaque outil son identifiant, son nom et un résumé, mais <b>ni la classe d'effet, ni le fait qu'il remplace un outil de Beaver</b>. Le seul indice disponible pour l'agent est le nom lui-même — un outil d'extension sans préfixe est un remplacement.</p>
+    <p><b>From the agent.</b> Two tools exist, both always present and allowed in Plan mode: <code>list_extensions</code>, which lists the known extensions, and <code>inspect_extensions</code>, which details one or more extensions by identifier with their tools, skills and resources. Their limitation is worth knowing: <code>inspect_extensions</code> returns each tool's identifier, name and a summary, but <b>neither the effect class nor the fact that it replaces a Beaver tool</b>. The only clue available to the agent is the name itself — an extension tool without a prefix is a replacement.</p>
 
-    <h2 id="revenir-en-arriere">Revenir en arrière</h2>
-    <p>Le retour en arrière est immédiat et ne demande aucune manipulation de fichier.</p>
+    <h2 id="revenir-en-arriere">Going back</h2>
+    <p>Going back is immediate and requires no file handling.</p>
     <ul>
-      <li><b>Désactiver l'extension</b> dans sa fiche. Elle sort de l'index, son processus et ses permissions de session sont révoqués, et l'outil d'origine reprend sa place à la conversation suivante.</li>
-      <li><b>Retirer l'extension</b> si la confiance est rompue. Pour une source Git ou npm, Beaver ne retire que sa propre copie ; tes fichiers locaux restent intacts.</li>
-      <li><b>Désactiver l'outil d'origine dans les réglages</b> coupe aussi le remplacement, puisque celui-ci suit ce réglage. Utile quand tu veux suspendre l'outil sans toucher à l'extension.</li>
-      <li>Si l'interface elle-même est cassée par le module avancé de l'extension, Beaver se lance sans interface tierce en maintenant <b>Maj</b> au démarrage, ou avec l'argument <code>--safe-mode</code>.</li>
+      <li><b>Disable the extension</b> from its entry. It leaves the index, its process and its session permissions are revoked, and the original tool takes its place back in the next conversation.</li>
+      <li><b>Remove the extension</b> if trust is broken. For a Git or npm source, Beaver only removes its own copy; your local files stay untouched.</li>
+      <li><b>Disabling the original tool in the settings</b> also cuts off the replacement, since it follows that setting. Useful when you want to suspend the tool without touching the extension.</li>
+      <li>If the interface itself is broken by the extension's advanced module, Beaver launches without any third-party interface by holding <b>Shift</b> at startup, or with the <code>--safe-mode</code> argument.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Un point ne se règle pas en désactivant : si l'extension a demandé un secret, la désactiver ou la supprimer ne retire pas une copie qu'elle aurait déjà obtenue. Pour invalider cette copie, révoque l'accès auprès du fournisseur concerné.
+      <span class="t">Security</span>
+      One point cannot be settled by disabling: if the extension asked for a secret, disabling or removing it does not take back a copy it may already have obtained. To invalidate that copy, revoke the access at the provider concerned.
     </div>
 
-    <h2 id="pieges-frequents">Pièges fréquents</h2>
+    <h2 id="pieges-frequents">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui surprend le plus souvent</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'outil de Beaver fonctionne encore, et un outil inconnu au nom presque identique est apparu</td><td>Faute de frappe dans le nom : sans correspondance, la définition devient un nouvel outil, sans aucune erreur</td><td>Ouvrir la fiche de l'extension — l'étiquette « Remplace un outil intégré » y est absente. Corriger le nom et <b>Recharger</b></td></tr>
-      <tr><td>Aucun outil, skill ni ressource n'apparaît, alors qu'un seul devait être un remplacement</td><td>Le manifeste ne déclare pas <code>apiLevel: "advanced"</code> : Beaver refuse le lot entier</td><td>Ajouter <code>"apiLevel": "advanced"</code>, recharger, approuver à nouveau</td></tr>
-      <tr><td>Le remplacement ne s'applique que dans certaines conversations</td><td>L'extension n'est pas retenue dans le budget d'outils du modèle</td><td>La marquer prioritaire — voir <a href="integrations-centre-extensions.html">Centre d'extensions</a></td></tr>
-      <tr><td>Le remplacement ne s'applique pas du tout</td><td>Extension désactivée, non approuvée, ou mode Chatbot</td><td>Vérifier l'activation et l'approbation ; le mode Chatbot ignore les extensions</td></tr>
-      <tr><td>Ni l'outil d'origine ni le remplacement ne sont proposés</td><td>L'outil d'origine est désactivé dans les réglages</td><td>Le réactiver dans les réglages des outils</td></tr>
-      <tr><td>Le remplacement disparaît avec certains modèles</td><td>Certaines routes de fournisseur refusent les outils d'extension</td><td>Changer de modèle, ou accepter le comportement d'origine sur ces routes</td></tr>
-      <tr><td>Le remplacement a cessé après une mise à jour de Beaver</td><td>Le nom de l'outil du catalogue a changé ou l'outil a disparu ; le remplacement est devenu un outil supplémentaire</td><td>Comparer avec le catalogue de la nouvelle version — conséquence directe du caractère instable du mécanisme</td></tr>
-      <tr><td>L'extension a changé, tout est redevenu comme avant</td><td>Beaver révoque l'approbation dès que les fichiers changent et désactive l'extension</td><td>Relire ce qui a changé, puis réapprouver</td></tr>
+      <caption class="crumb">What surprises people most often</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>Beaver's tool still works, and an unknown tool with an almost identical name has appeared</td><td>Typo in the name: with no match, the definition becomes a new tool, with no error at all</td><td>Open the extension's entry — the "Replaces a built-in tool" label is missing there. Fix the name and <b>Reload</b></td></tr>
+      <tr><td>No tool, skill or resource appears, when only one was meant to be a replacement</td><td>The manifest does not declare <code>apiLevel: "advanced"</code>: Beaver refuses the whole batch</td><td>Add <code>"apiLevel": "advanced"</code>, reload, approve again</td></tr>
+      <tr><td>The replacement only applies in some conversations</td><td>The extension is not selected within the model's tool budget</td><td>Mark it as a priority — see <a href="integrations-centre-extensions.html">Extension center</a></td></tr>
+      <tr><td>The replacement does not apply at all</td><td>Extension disabled, not approved, or Chatbot mode</td><td>Check activation and approval; Chatbot mode ignores extensions</td></tr>
+      <tr><td>Neither the original tool nor the replacement is offered</td><td>The original tool is disabled in the settings</td><td>Re-enable it in the tool settings</td></tr>
+      <tr><td>The replacement disappears with certain models</td><td>Some provider routes refuse extension tools</td><td>Change model, or accept the original behavior on those routes</td></tr>
+      <tr><td>The replacement stopped after a Beaver update</td><td>The catalog tool's name changed or the tool disappeared; the replacement became an extra tool</td><td>Compare with the new version's catalog — a direct consequence of the mechanism being unstable</td></tr>
+      <tr><td>The extension changed, and everything went back to how it was</td><td>Beaver revokes approval as soon as the files change and disables the extension</td><td>Review what changed, then approve again</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="integrations-centre-extensions.html">Centre d'extensions</a> — installer, activer, approuver, et les diagnostics de l'hôte.</li>
-      <li><a href="integrations-ecrire-une-extension.html">Écrire une extension</a> — manifeste, <code>registerTool</code>, classes d'effet, cycle de vie.</li>
-      <li><a href="agent-permissions.html">Modes de permission</a> — les dialogues de confirmation et ce qui les déclenche.</li>
-      <li><a href="outils-terminal-et-shell.html">Terminal et shell</a> et <a href="outils-web.html">Web</a> — les outils d'origine, pour mesurer ce qu'un remplacement fait perdre.</li>
-      <li><a href="outils-sous-agents.html">Sous-agents</a> — les profils qui ne reçoivent qu'une partie des outils d'extension.</li>
+      <li><a href="integrations-centre-extensions.html">Extension center</a> — installing, enabling, approving, and the host diagnostics.</li>
+      <li><a href="integrations-ecrire-une-extension.html">Writing an extension</a> — manifest, <code>registerTool</code>, effect classes, lifecycle.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — the confirmation dialogs and what triggers them.</li>
+      <li><a href="outils-terminal-et-shell.html">Terminal and shell</a> and <a href="outils-web.html">Web</a> — the original tools, to measure what a replacement gives up.</li>
+      <li><a href="outils-sous-agents.html">Subagents</a> — the profiles that only receive part of the extension tools.</li>
     </ul>
   </main>
 

@@ -41,7 +41,7 @@ Point de sécurité à mentionner : certaines opérations — notamment les acti
 
 Une liste de dossiers autorisés se règle dans **Réglages › Accès aux fichiers**. Elle borne ce que l'agent peut atteindre, indépendamment du répertoire de travail.
 
-Le message affiché en cas de refus est : **« Accès au dossier refusé par les réglages. »**
+En cas de refus, l'application affiche le dialogue **« Dossier non autorisé »** (`directoryAccess.title`, fr.json:562) qui liste les dossiers permis. Corrigé le 10 septembre 2026 : l'ancienne citation « Accès au dossier refusé par les réglages. » est une chaîne interne (`directory_access.rs:10`) qui n'atteint jamais l'écran — ne plus la citer.
 
 Ce réglage est le garde-fou principal du produit sur la question de l'accès disque. Il mérite une explication franche : par défaut, l'agent d'une application de bureau a la portée que vous lui donnez, et c'est ici qu'on la donne.
 
@@ -100,7 +100,7 @@ Le réglage s'applique dès qu'une liste personnalisée est enregistrée. Une li
 
 | Symptôme | Cause | Résolution |
 |---|---|---|
-| « Accès au dossier refusé par les réglages » | Chemin hors des dossiers autorisés | Ajouter le dossier dans Réglages › Accès aux fichiers |
+| « Dossier non autorisé » | Chemin hors des dossiers autorisés | Ajouter le dossier dans Réglages › Accès aux fichiers |
 | Une action Git est refusée sur un dossier valide | L'opération exige un projet enregistré | Enregistrer le dossier comme projet |
 | Un lien symbolique ne donne pas accès à sa cible | Le chemin réel est résolu avant vérification | Ajouter la cible aux dossiers autorisés |
 | Impossible d'ajouter un dossier de plus | Soixante-dix au maximum | Regrouper en dossiers parents |

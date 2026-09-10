@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Le moteur local</title>
-<meta name="description" content="Comment Beaver installe, lance et surveille son moteur Ollama, et ce qu'il fait quand un moteur tourne déjà sur ta machine.">
+<title>Beaver Docs — The local engine</title>
+<meta name="description" content="How Beaver installs, starts and monitors its Ollama engine, and what it does when an engine is already running on your machine.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,197 +19,197 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Modèles / Moteur local</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="modeles-moteur-local.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Models / Local engine</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/modeles-moteur-local.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="modeles-moteur-local.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Le <em>moteur</em> qui fait tourner tes modèles</h1>
-    <p>Les modèles locaux ont besoin d'un moteur d'exécution : Beaver embarque le sien, et sait reconnaître celui que tu as peut-être déjà. Cette page explique ce qu'il installe, ce qu'il réutilise, ce qu'il règle, et ce qu'il refuse de faire quand quelque chose cloche.</p>
+    <h1>The <em>engine</em> that runs your models</h1>
+    <p>Local models need a runtime engine: Beaver ships its own, and knows how to recognize the one you may already have. This page explains what it installs, what it reuses, what it configures, and what it refuses to do when something is off.</p>
 
-    <h2 id="ce-que-beaver-installe">Ce que Beaver installe</h2>
-    <p>Beaver installe son propre moteur Ollama dans son dossier de données, sous <code>~/.local/share/cl-go-dash/ollama-bundle/</code> — le même chemin sur les trois systèmes. <b>Le téléchargement n'a jamais lieu tout seul</b> : il est proposé au premier lancement, ou déclenché quand tu veux depuis <b>Réglages › Ollama</b>. Tant que tu ne le demandes pas, rien n'est installé et Beaver s'en tient aux modèles distants.</p>
+    <h2 id="ce-que-beaver-installe">What Beaver installs</h2>
+    <p>Beaver installs its own Ollama engine in its data folder, under <code>~/.local/share/cl-go-dash/ollama-bundle/</code> — the same path on all three systems. <b>The download never happens on its own</b>: it is offered at first launch, or triggered whenever you want from <b>Settings › Ollama</b>. As long as you do not ask for it, nothing is installed and Beaver sticks to remote models.</p>
     <ul>
-      <li><b>Aucune installation système n'est nécessaire.</b> Tu n'as pas à installer Ollama séparément, ni même à connaître son existence.</li>
-      <li><b>Le moteur de Beaver n'écrase pas une installation existante.</b> Le programme du moteur vit dans le dossier de Beaver, avec ses propres réglages. Ses <b>modèles</b>, en revanche, sont bien ceux d'Ollama.</li>
+      <li><b>No system installation is needed.</b> You do not have to install Ollama separately, nor even know it exists.</li>
+      <li><b>Beaver's engine does not overwrite an existing installation.</b> The engine program lives in Beaver's folder, with settings of its own. Its <b>models</b>, on the other hand, are indeed Ollama's.</li>
     </ul>
-    <p>Le téléchargement ne peut venir que <b>d'une seule adresse</b> : les publications officielles d'Ollama sur <code>github.com</code>, en <code>https</code> uniquement. Toute autre origine — autre domaine, autre port, adresse portant des identifiants ou des paramètres — est refusée avant même la connexion. <b>L'archive est ensuite vérifiée par son empreinte SHA-256</b> ; si elle ne correspond pas, elle est rejetée et rien n'est installé.</p>
+    <p>The download can only come from <b>a single address</b>: Ollama's official releases on <code>github.com</code>, over <code>https</code> only. Any other origin — another domain, another port, an address carrying credentials or parameters — is refused before the connection is even opened. <b>The archive is then verified by its SHA-256 fingerprint</b>; if it does not match, it is rejected and nothing is installed.</p>
 
     <table>
-      <caption class="crumb">L'archive attendue selon la plateforme</caption>
-      <tr><th>Plateforme</th><th>Archive attendue</th></tr>
+      <caption class="crumb">The expected archive by platform</caption>
+      <tr><th>Platform</th><th>Expected archive</th></tr>
       <tr><td>macOS</td><td><code>ollama-darwin.tgz</code></td></tr>
       <tr><td>Windows</td><td><code>ollama-windows-amd64.zip</code></td></tr>
       <tr><td>Linux</td><td><code>ollama-linux-amd64.tar.zst</code></td></tr>
-      <tr><td>Linux avec carte AMD détectée</td><td>la même, plus <code>ollama-linux-amd64-rocm.tar.zst</code></td></tr>
+      <tr><td>Linux with an AMD card detected</td><td>the same, plus <code>ollama-linux-amd64-rocm.tar.zst</code></td></tr>
     </table>
 
-    <p>Une fois installé, le moteur laisse un <b>reçu</b> dans son dossier : la version installée et l'empreinte de son exécutable. <b>À chaque démarrage, Beaver recalcule cette empreinte et la compare au reçu.</b> Si les deux ne correspondent pas, il refuse de lancer le moteur et passe en reprise plutôt que d'exécuter un binaire dont il ne sait rien.</p>
+    <p>Once installed, the engine leaves a <b>receipt</b> in its folder: the installed version and the fingerprint of its executable. <b>At every start, Beaver recomputes that fingerprint and compares it with the receipt.</b> If the two do not match, it refuses to launch the engine and switches to recovery rather than running a binary it knows nothing about.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Tu n'as jamais à installer Ollama toi-même : Beaver récupère et gère son propre moteur, sans manipulation ni terminal. Mais il ne le fait que si tu le lui demandes — au premier lancement, ou plus tard depuis Réglages › Ollama.
+      You never have to install Ollama yourself: Beaver fetches and manages its own engine, with no manual step and no terminal. But it only does so if you ask — at first launch, or later from Settings › Ollama.
     </div>
 
-    <h2 id="si-tu-as-deja-ollama">Si tu as déjà Ollama</h2>
-    <p><b>Avant de lancer quoi que ce soit, Beaver regarde si un moteur Ollama répond déjà sur le port habituel — <code>127.0.0.1:11434</code>.</b> Si c'est le cas, il l'adopte et <b>ne lance pas de second moteur</b>.</p>
-    <p>La vérification se fait en deux temps. <b>À la détection</b>, Beaver se contente d'ouvrir une connexion sur ce port, avec un délai de <b>250 millisecondes</b> : ce qui répond est considéré comme un moteur existant. <b>Ensuite, la surveillance vérifie réellement</b> : toutes les <b>2 secondes</b>, Beaver interroge l'adresse de version du moteur. Si elle ne répond pas, le moteur est marqué indisponible et la fonctionnalité disparaît de l'application plutôt que d'échouer plus tard.</p>
-    <p>En pratique :</p>
+    <h2 id="si-tu-as-deja-ollama">If you already have Ollama</h2>
+    <p><b>Before launching anything, Beaver checks whether an Ollama engine already answers on the usual port — <code>127.0.0.1:11434</code>.</b> If so, it adopts it and <b>does not start a second engine</b>.</p>
+    <p>The check happens in two stages. <b>At detection time</b>, Beaver merely opens a connection on that port, with a <b>250 millisecond</b> timeout: whatever answers is treated as an existing engine. <b>Then the monitoring really verifies</b>: every <b>2 seconds</b>, Beaver queries the engine's version endpoint. If it does not answer, the engine is marked unavailable and the feature disappears from the application rather than failing later.</p>
+    <p>In practice:</p>
     <ul>
-      <li>Les modèles déjà téléchargés par l'application Ollama officielle sont <b>immédiatement disponibles</b> dans Beaver. Rien à retélécharger.</li>
-      <li>Il n'y a <b>jamais deux moteurs en mémoire</b> — donc pas de modèle chargé deux fois, ni de mémoire vidéo occupée en double.</li>
-      <li><b>Les réglages de Beaver ne s'appliquent pas</b> à un moteur qu'il n'a pas lancé : le moteur existant garde sa propre configuration. Si tu règles l'accélération matérielle ou le multi-modèle dans Beaver, tu ne verras aucun effet.</li>
-      <li>Certaines opérations sont <b>réservées au moteur possédé</b> : créer un modèle personnalisé, par exemple, est refusé quand Beaver n'a pas lancé le moteur lui-même.</li>
+      <li>Models already downloaded by the official Ollama application are <b>immediately available</b> in Beaver. Nothing to download again.</li>
+      <li>There are <b>never two engines in memory</b> — so no model loaded twice, and no video memory taken up twice.</li>
+      <li><b>Beaver's settings do not apply</b> to an engine it did not start: the existing engine keeps its own configuration. If you set hardware acceleration or multi-model in Beaver, you will see no effect.</li>
+      <li>Some operations are <b>reserved for an owned engine</b>: creating a custom model, for instance, is refused when Beaver did not start the engine itself.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Si tu as déjà Ollama, Beaver le réutilise. Tes modèles sont immédiatement disponibles et il n'y a jamais deux moteurs en mémoire — mais en contrepartie, les réglages de moteur de Beaver restent sans effet sur cette installation-là.
+      <span class="t">Warning</span>
+      If you already have Ollama, Beaver reuses it. Your models are immediately available and there are never two engines in memory — but in exchange, Beaver's engine settings have no effect on that installation.
     </div>
 
-    <h2 id="le-port">Le port choisi</h2>
-    <p>Beaver ne s'impose jamais sur le port habituel d'Ollama.</p>
+    <h2 id="le-port">The port chosen</h2>
+    <p>Beaver never forces itself onto Ollama's usual port.</p>
     <ul>
-      <li><b>Le port du moteur lancé par Beaver est attribué par le système d'exploitation.</b> Beaver demande « un port libre, n'importe lequel », retient celui qu'on lui donne, et recommence au plus <b>3 fois</b> si le port obtenu ne convient pas. Il n'y a <b>aucune plage de ports fixée</b>.</li>
-      <li><b>Le port 11434 ne sert qu'à la détection</b> d'un moteur déjà en cours d'exécution. Le moteur lancé par Beaver ne l'utilise pas.</li>
+      <li><b>The port of the engine Beaver starts is assigned by the operating system.</b> Beaver asks for "a free port, any of them", keeps the one it is given, and retries at most <b>3 times</b> if the port obtained does not fit. There is <b>no fixed port range</b>.</li>
+      <li><b>Port 11434 is only used for detecting</b> an engine that is already running. The engine Beaver starts does not use it.</li>
     </ul>
-    <p>Le moteur n'écoute que sur <code>127.0.0.1</code>. <b>Il n'est joignable depuis aucun autre appareil du réseau.</b></p>
+    <p>The engine listens only on <code>127.0.0.1</code>. <b>It cannot be reached from any other device on the network.</b></p>
 
-    <h2 id="les-reglages-du-moteur">Les réglages appliqués au moteur</h2>
-    <p>Quand Beaver lance son propre moteur, il lui impose une configuration. <b>Elle tient en cinq valeurs, et rien d'autre.</b></p>
+    <h2 id="les-reglages-du-moteur">The settings applied to the engine</h2>
+    <p>When Beaver starts its own engine, it imposes a configuration on it. <b>It comes down to five values, and nothing else.</b></p>
 
     <table>
-      <caption class="crumb">Les cinq réglages imposés au moteur lancé par Beaver</caption>
-      <tr><th>Réglage</th><th>Valeur</th><th>Pourquoi</th></tr>
-      <tr><td>Adresse d'écoute</td><td><code>127.0.0.1:&lt;port attribué par le système&gt;</code></td><td>Rien n'est exposé au réseau</td></tr>
-      <tr><td>Dossier des modèles</td><td>Le dossier Ollama de la machine, vérifié avant lancement</td><td>Modèles partagés, jamais dupliqués</td></tr>
-      <tr><td>Modèles distants d'Ollama</td><td><b>Désactivés</b></td><td>Le local reste local</td></tr>
-      <tr><td>Modèles chargés en même temps</td><td><b>1</b>, ou libre si le multi-modèle est activé</td><td>Éviter la saturation mémoire</td></tr>
-      <tr><td>Bibliothèque de calcul</td><td><b>Processeur</b> en mode processeur seul, <b>détection automatique</b> sinon</td><td>Machines sans carte graphique utilisable</td></tr>
+      <caption class="crumb">The five settings imposed on the engine Beaver starts</caption>
+      <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+      <tr><td>Listening address</td><td><code>127.0.0.1:&lt;port assigned by the system&gt;</code></td><td>Nothing is exposed to the network</td></tr>
+      <tr><td>Models folder</td><td>The machine's Ollama folder, checked before launch</td><td>Models shared, never duplicated</td></tr>
+      <tr><td>Ollama's remote models</td><td><b>Disabled</b></td><td>Local stays local</td></tr>
+      <tr><td>Models loaded at the same time</td><td><b>1</b>, or unlimited if multi-model is enabled</td><td>Avoid saturating memory</td></tr>
+      <tr><td>Compute library</td><td><b>Processor</b> in CPU-only mode, <b>automatic detection</b> otherwise</td><td>Machines without a usable graphics card</td></tr>
     </table>
 
-    <p>Trois de ces lignes méritent une explication. <b>Les modèles distants d'Ollama sont désactivés</b> : Ollama propose d'exécuter certains modèles sur ses propres serveurs, et Beaver coupe cette possibilité — quand une conversation utilise un modèle local, elle est réellement locale. <b>Un seul modèle est chargé en mémoire à la fois</b>, sauf si tu actives le multi-modèle dans les réglages avancés ; sur une machine ordinaire, deux modèles chargés saturent la mémoire vidéo. Et <b>le mode processeur seul se force explicitement</b> : par défaut Beaver laisse le moteur détecter le matériel tout seul.</p>
+    <p>Three of those lines deserve an explanation. <b>Ollama's remote models are disabled</b>: Ollama offers to run certain models on its own servers, and Beaver cuts that possibility off — when a conversation uses a local model, it really is local. <b>A single model is loaded in memory at a time</b>, unless you enable multi-model in the advanced settings; on an ordinary machine, two loaded models saturate video memory. And <b>CPU-only mode is forced explicitly</b>: by default Beaver lets the engine detect the hardware on its own.</p>
 
-    <p><b>Combien de temps un modèle reste en mémoire</b> après usage se règle aussi, mais autrement : ce n'est pas une consigne donnée au moteur au lancement, c'est une valeur <b>transmise à chaque requête</b>. Elle vaut <b>5 minutes</b> par défaut. Deux valeurs particulières :</p>
+    <p><b>How long a model stays in memory</b> after use is also configurable, but differently: it is not an instruction given to the engine at launch, it is a value <b>sent with every request</b>. It defaults to <b>5 minutes</b>. Two values are special:</p>
     <ul>
-      <li><b>Indéfiniment</b> — le modèle ne quitte plus la mémoire. Il répond instantanément à la question suivante, au prix de la mémoire occupée en permanence.</li>
-      <li><b>Aucune persistance</b> — le modèle est déchargé, et Beaver demande en plus explicitement au moteur de libérer la mémoire à la fin du tour de conversation.</li>
+      <li><b>Indefinitely</b> — the model never leaves memory. It answers the next question instantly, at the cost of memory taken up permanently.</li>
+      <li><b>No persistence</b> — the model is unloaded, and Beaver additionally asks the engine explicitly to free the memory at the end of the conversation turn.</li>
     </ul>
-    <p>Comme cette valeur voyage avec chaque requête et non avec le moteur, <b>c'est le seul réglage de moteur qui fonctionne aussi quand Beaver réutilise un moteur système.</b></p>
+    <p>Because that value travels with each request rather than with the engine, <b>it is the only engine setting that also works when Beaver reuses a system engine.</b></p>
 
     <table>
-      <caption class="crumb">Les deux réglages transmis à chaque requête plutôt qu'au moteur</caption>
-      <tr><th>Réglage</th><th>Où il agit</th><th>Valeur par défaut</th></tr>
-      <tr><td>Persistance d'un modèle en mémoire</td><td>Transmis à chaque requête</td><td><b>5 minutes</b></td></tr>
-      <tr><td>Taille de contexte</td><td>Transmise à chaque requête, déduite de la mémoire</td><td><b>8 192 à 32 768 jetons</b></td></tr>
+      <caption class="crumb">The two settings sent with each request rather than to the engine</caption>
+      <tr><th>Setting</th><th>Where it acts</th><th>Default value</th></tr>
+      <tr><td>How long a model stays in memory</td><td>Sent with each request</td><td><b>5 minutes</b></td></tr>
+      <tr><td>Context size</td><td>Sent with each request, derived from memory</td><td><b>8,192 to 32,768 tokens</b></td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Un modèle local est vraiment local. Beaver désactive les modèles distants proposés par Ollama, et le moteur n'écoute que sur <code>127.0.0.1</code>, sur un port que le système lui attribue. Rien ne quitte ta machine, aucun autre appareil ne peut s'y connecter.
+      <span class="t">Security</span>
+      A local model is truly local. Beaver disables the remote models Ollama offers, and the engine listens only on <code>127.0.0.1</code>, on a port the system assigns to it. Nothing leaves your machine, and no other device can connect to it.
     </div>
 
-    <h2 id="ou-vivent-les-modeles">Où vivent les modèles</h2>
-    <p>Le dossier des modèles est <b>celui d'Ollama, pas un dossier propre à Beaver</b> :</p>
+    <h2 id="ou-vivent-les-modeles">Where the models live</h2>
+    <p>The models folder is <b>Ollama's, not a folder of Beaver's own</b>:</p>
     <ul>
-      <li>si la variable d'environnement <code>OLLAMA_MODELS</code> est définie sur ta machine, Beaver la respecte ;</li>
-      <li>sinon, il utilise l'emplacement habituel d'Ollama, <code>~/.ollama/models</code>.</li>
+      <li>if the <code>OLLAMA_MODELS</code> environment variable is set on your machine, Beaver honors it;</li>
+      <li>otherwise, it uses Ollama's usual location, <code>~/.ollama/models</code>.</li>
     </ul>
-    <p>Autrement dit, <b>les modèles sont partagés avec l'application Ollama officielle</b>, que Beaver lance son propre moteur ou réutilise celui du système. Rien n'est dupliqué — et une suppression vaut des deux côtés.</p>
-    <p>Beaver refuse de démarrer si ce dossier chevauche l'un de ses propres dossiers de travail : sans ce garde-fou, une mise à jour du moteur pourrait effacer des modèles.</p>
+    <p>In other words, <b>models are shared with the official Ollama application</b>, whether Beaver starts its own engine or reuses the system one. Nothing is duplicated — and a deletion counts on both sides.</p>
+    <p>Beaver refuses to start if that folder overlaps one of its own working folders: without that guardrail, an engine update could erase models.</p>
 
-    <h2 id="contexte-et-materiel">La taille de contexte s'adapte au matériel</h2>
-    <p>Beaver mesure la mémoire disponible et en déduit la taille de contexte des modèles locaux.</p>
-
-    <table>
-      <caption class="crumb">Le contexte accordé aux modèles locaux selon la mémoire détectée</caption>
-      <tr><th>Mémoire détectée</th><th>Contexte accordé</th></tr>
-      <tr><td><b>24 Go ou plus</b></td><td><b>32 768 jetons</b></td></tr>
-      <tr><td><b>12 Go à 24 Go</b></td><td><b>24 576 jetons</b></td></tr>
-      <tr><td>Moins de 12 Go, ou indétectable</td><td><b>8 192 jetons</b></td></tr>
-    </table>
-
-    <p>Quand la mémoire ne peut pas être mesurée, Beaver prend la valeur la plus basse : mieux vaut un contexte modeste qui fonctionne qu'un contexte ambitieux qui fait échouer le chargement.</p>
-    <p>Sur les Mac à puce Apple, la mémoire mesurée est la <b>mémoire unifiée</b> — celle que le processeur et la partie graphique se partagent. Un Mac de 16 Go entre donc dans le palier intermédiaire. <b>Sur un Mac à processeur Intel, la mémoire n'est pas mesurée du tout</b> : le contexte tombe au palier de 8 192 jetons. La mesure est rafraîchie toutes les <b>10 secondes</b> en arrière-plan, ce qui alimente aussi l'indicateur de mémoire de l'application.</p>
+    <h2 id="contexte-et-materiel">Context size adapts to the hardware</h2>
+    <p>Beaver measures the available memory and derives the context size of local models from it.</p>
 
     <table>
-      <caption class="crumb">Comment la carte graphique est détectée</caption>
-      <tr><th>Plateforme</th><th>Méthode</th><th>Fabricants reconnus</th></tr>
-      <tr><td>macOS</td><td>Interrogation du processeur</td><td>Apple</td></tr>
-      <tr><td>Linux</td><td>Lecture des identifiants matériels du système</td><td>AMD, NVIDIA, Intel</td></tr>
-      <tr><td>Windows</td><td>Interrogation du gestionnaire de périphériques</td><td>NVIDIA, AMD, Intel</td></tr>
+      <caption class="crumb">The context granted to local models according to the memory detected</caption>
+      <tr><th>Memory detected</th><th>Context granted</th></tr>
+      <tr><td><b>24 GB or more</b></td><td><b>32,768 tokens</b></td></tr>
+      <tr><td><b>12 GB to 24 GB</b></td><td><b>24,576 tokens</b></td></tr>
+      <tr><td>Less than 12 GB, or undetectable</td><td><b>8,192 tokens</b></td></tr>
+    </table>
+
+    <p>When memory cannot be measured, Beaver takes the lowest value: a modest context that works beats an ambitious one that makes loading fail.</p>
+    <p>On Apple silicon Macs, the memory measured is the <b>unified memory</b> — the memory the processor and the graphics part share. A 16 GB Mac therefore falls into the middle tier. <b>On an Intel Mac, memory is not measured at all</b>: the context drops to the 8,192 token tier. The measurement is refreshed every <b>10 seconds</b> in the background, which also feeds the application's memory indicator.</p>
+
+    <table>
+      <caption class="crumb">How the graphics card is detected</caption>
+      <tr><th>Platform</th><th>Method</th><th>Vendors recognized</th></tr>
+      <tr><td>macOS</td><td>Querying the processor</td><td>Apple</td></tr>
+      <tr><td>Linux</td><td>Reading the system's hardware identifiers</td><td>AMD, NVIDIA, Intel</td></tr>
+      <tr><td>Windows</td><td>Querying the device manager</td><td>NVIDIA, AMD, Intel</td></tr>
     </table>
 
     <table>
-      <caption class="crumb">Comment la mémoire est mesurée</caption>
-      <tr><th>Plateforme</th><th>Source, par ordre de préférence</th></tr>
-      <tr><td>macOS (puce Apple)</td><td>Mémoire unifiée du système</td></tr>
-      <tr><td>macOS (processeur Intel)</td><td><b>Aucune</b> — la mémoire n'est pas mesurée</td></tr>
-      <tr><td>Linux</td><td>Outil NVIDIA, puis informations mémoire du pilote graphique</td></tr>
-      <tr><td>Windows</td><td>Outil NVIDIA, puis registre système, puis compteurs de performance</td></tr>
+      <caption class="crumb">How memory is measured</caption>
+      <tr><th>Platform</th><th>Source, in order of preference</th></tr>
+      <tr><td>macOS (Apple silicon)</td><td>The system's unified memory</td></tr>
+      <tr><td>macOS (Intel processor)</td><td><b>None</b> — memory is not measured</td></tr>
+      <tr><td>Linux</td><td>NVIDIA tool, then the graphics driver's memory information</td></tr>
+      <tr><td>Windows</td><td>NVIDIA tool, then the system registry, then performance counters</td></tr>
     </table>
 
-    <p>Le fabricant détecté sert aussi au téléchargement : une carte AMD sous Linux fait récupérer l'archive ROCm en plus de l'archive standard. Pour choisir une taille de modèle adaptée à ta machine, voir <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+    <p>The vendor detected also drives the download: an AMD card on Linux causes the ROCm archive to be fetched in addition to the standard one. To pick a model size suited to your machine, see <a href="modeles-materiel.html">Hardware and VRAM</a>.</p>
 
-    <h2 id="demarrage-et-reprise">Le démarrage et la reprise après panne</h2>
-    <p>L'ordre des opérations explique pourquoi Beaver refuse parfois de démarrer le moteur au lieu de le faire mal :</p>
+    <h2 id="demarrage-et-reprise">Startup and recovery after a crash</h2>
+    <p>The order of operations explains why Beaver sometimes refuses to start the engine instead of doing it badly:</p>
     <ul>
-      <li><b>Une passe de reprise d'abord.</b> Si une installation ou une mise à jour du moteur a été interrompue, elle est reprise ou annulée avant toute autre chose. Tant qu'elle ne se termine pas, le moteur reste bloqué et Beaver le dit plutôt que de lancer un moteur à moitié installé.</li>
-      <li><b>Le reçu de processus est relu.</b> Si un moteur lancé par une session précédente tourne encore, il est arrêté et récupéré ; s'il a disparu, le reçu est supprimé.</li>
-      <li><b>La détection d'un moteur existant.</b></li>
-      <li><b>Le lancement</b>, si aucun moteur n'a été trouvé.</li>
-      <li><b>La vérification.</b> Beaver accorde <b>10 secondes</b> au moteur pour se mettre à écouter <b>et</b> répondre la version attendue. Si l'une des deux échoue, le processus est arrêté et le démarrage est déclaré en échec — il n'est jamais publié comme disponible « au cas où ».</li>
+      <li><b>A recovery pass first.</b> If an engine installation or update was interrupted, it is resumed or rolled back before anything else. Until it completes, the engine stays blocked and Beaver says so rather than launching a half-installed engine.</li>
+      <li><b>The process receipt is read back.</b> If an engine started by a previous session is still running, it is stopped and reclaimed; if it is gone, the receipt is deleted.</li>
+      <li><b>Detection of an existing engine.</b></li>
+      <li><b>The launch</b>, if no engine was found.</li>
+      <li><b>The verification.</b> Beaver grants the engine <b>10 seconds</b> to start listening <b>and</b> return the expected version. If either fails, the process is stopped and startup is declared failed — it is never published as available "just in case".</li>
     </ul>
-    <p>Le reçu de processus est le mécanisme qui empêche les moteurs orphelins de s'accumuler. Il est écrit <b>avant que le moteur ne soit autorisé à démarrer réellement</b> : le processus est créé puis retenu, bloqué, tant que Beaver n'a pas enregistré son reçu sur le disque. Il n'existe donc aucun instant où un moteur tourne sans que Beaver sache le reconnaître.</p>
-    <p>Le reçu contient de quoi l'identifier sans ambiguïté : identifiant du processus, instant exact de son démarrage, portée système, et empreinte du moteur installé. <b>Ces quatre éléments doivent tous correspondre pour que Beaver arrête un processus.</b> Un identifiant de processus est réutilisé par le système : sans cette vérification, Beaver risquerait de tuer un programme sans rapport qui aurait hérité du même numéro.</p>
+    <p>The process receipt is the mechanism that stops orphaned engines from piling up. It is written <b>before the engine is allowed to actually start</b>: the process is created then held, blocked, until Beaver has recorded its receipt on disk. So there is no moment at which an engine runs without Beaver being able to recognize it.</p>
+    <p>The receipt holds enough to identify it unambiguously: process identifier, exact start time, system scope, and the fingerprint of the installed engine. <b>All four must match for Beaver to stop a process.</b> A process identifier gets reused by the system: without that check, Beaver would risk killing an unrelated program that had inherited the same number.</p>
 
     <table>
-      <caption class="crumb">Les délais du moteur</caption>
-      <tr><th>Étape</th><th>Délai</th></tr>
-      <tr><td>Sonde de détection d'un moteur existant</td><td><b>250 ms</b></td></tr>
-      <tr><td>Attente qu'un moteur lancé soit prêt et réponde la bonne version</td><td><b>10 secondes</b></td></tr>
-      <tr><td>Intervalle de surveillance</td><td><b>2 secondes</b></td></tr>
-      <tr><td>Délai d'une vérification de santé</td><td><b>2 secondes</b></td></tr>
-      <tr><td>Réserve d'arrêt à la fermeture</td><td><b>3 secondes</b></td></tr>
-      <tr><td>Rafraîchissement de la mesure de mémoire</td><td><b>10 secondes</b></td></tr>
-      <tr><td>Tentatives d'obtention d'un port</td><td><b>3</b></td></tr>
+      <caption class="crumb">The engine's timeouts</caption>
+      <tr><th>Step</th><th>Timeout</th></tr>
+      <tr><td>Probe detecting an existing engine</td><td><b>250 ms</b></td></tr>
+      <tr><td>Waiting for a started engine to be ready and return the right version</td><td><b>10 seconds</b></td></tr>
+      <tr><td>Monitoring interval</td><td><b>2 seconds</b></td></tr>
+      <tr><td>Health check timeout</td><td><b>2 seconds</b></td></tr>
+      <tr><td>Shutdown allowance on quit</td><td><b>3 seconds</b></td></tr>
+      <tr><td>Memory measurement refresh</td><td><b>10 seconds</b></td></tr>
+      <tr><td>Attempts to obtain a port</td><td><b>3</b></td></tr>
     </table>
 
-    <h2 id="arret-et-traces">L'arrêt, le nettoyage et les traces</h2>
+    <h2 id="arret-et-traces">Shutdown, cleanup and logs</h2>
     <ul>
-      <li>À la fermeture de Beaver, le moteur qu'il a lancé est arrêté <b>avec tout son arbre de processus</b> — groupe de processus sous macOS et Linux, objet de travail système sous Windows.</li>
-      <li>Un moteur <b>réutilisé n'est jamais arrêté</b> : Beaver ne coupe pas un processus qu'il n'a pas démarré.</li>
-      <li>La fermeture réserve <b>3 secondes</b> à cette opération dans son budget global. Un moteur qui ne rend pas la main dans ce délai n'empêche pas l'application de se fermer.</li>
-      <li>Sous Linux, le moteur lancé reçoit en plus une consigne du noyau : <b>si Beaver disparaît brutalement, le système tue le moteur avec lui.</b></li>
+      <li>When Beaver closes, the engine it started is stopped <b>along with its whole process tree</b> — process group on macOS and Linux, system job object on Windows.</li>
+      <li>A <b>reused engine is never stopped</b>: Beaver does not kill a process it did not start.</li>
+      <li>Shutdown reserves <b>3 seconds</b> for that operation within its global budget. An engine that does not hand back control in time does not prevent the application from closing.</li>
+      <li>On Linux, the started engine additionally receives a kernel instruction: <b>if Beaver disappears abruptly, the system kills the engine with it.</b></li>
     </ul>
-    <p><b>Le moteur n'écrit aucun fichier de traces.</b> Sa sortie n'est redirigée nulle part. Ce qui reste disponible pour comprendre une panne, ce sont <b>les traces de Beaver lui-même</b> : chaque étape du moteur y est consignée avec un <b>code d'erreur nommé</b> — moteur absent, reprise nécessaire, stockage indisponible, démarrage échoué, arrêt échoué, conflit de dossier de modèles. C'est ce code qu'il faut relever pour un signalement.</p>
+    <p><b>The engine writes no log file.</b> Its output is redirected nowhere. What remains available to understand a failure is <b>Beaver's own logs</b>: every engine step is recorded there with a <b>named error code</b> — engine missing, recovery required, storage unavailable, start failed, stop failed, models folder conflict. That code is what to note down for a bug report.</p>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Les symptômes les plus courants et leur cause</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Le moteur n'est pas installé »</td><td>Téléchargement interrompu, ou dossier du moteur absent</td><td>Relancer l'installation depuis les réglages</td></tr>
-      <tr><td>Le moteur refuse de démarrer après un plantage</td><td>Une installation ou une mise à jour interrompue doit être reprise avant tout démarrage</td><td>Relancer l'application ; la reprise se fait au démarrage</td></tr>
-      <tr><td>Les réglages de moteur ne changent rien</td><td>Beaver réutilise un moteur système</td><td>Quitter l'application Ollama officielle, puis relancer Beaver</td></tr>
-      <tr><td>Impossible de créer un modèle personnalisé</td><td>L'opération demande un moteur lancé par Beaver</td><td>Quitter l'application Ollama officielle, puis relancer Beaver</td></tr>
-      <tr><td>Le chargement du modèle échoue</td><td>Mémoire insuffisante pour le modèle choisi</td><td>Modèle plus petit, ou version plus compressée</td></tr>
-      <tr><td>Le premier message est très lent</td><td>Chargement du modèle en mémoire</td><td>Normal ; augmenter la persistance en mémoire pour éviter le rechargement</td></tr>
-      <tr><td>La carte graphique n'est pas utilisée</td><td>Fabricant non reconnu, ou pilotes absents</td><td>Forcer le mode processeur si besoin ; il n'y a pas de journal du moteur à consulter</td></tr>
-      <tr><td>Un processus reste en arrière-plan</td><td>Arrêt brutal</td><td>Il est reconnu par son reçu et arrêté au démarrage suivant</td></tr>
-      <tr><td>Deux modèles saturent la mémoire</td><td>Multi-modèle activé</td><td>Le désactiver dans les réglages avancés</td></tr>
+      <caption class="crumb">The most common symptoms and their cause</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>"The engine is not installed"</td><td>Download interrupted, or the engine folder is missing</td><td>Restart the installation from the settings</td></tr>
+      <tr><td>The engine refuses to start after a crash</td><td>An interrupted installation or update has to be resumed before any start</td><td>Restart the application; recovery happens at startup</td></tr>
+      <tr><td>Engine settings change nothing</td><td>Beaver is reusing a system engine</td><td>Quit the official Ollama application, then restart Beaver</td></tr>
+      <tr><td>Creating a custom model is impossible</td><td>The operation requires an engine started by Beaver</td><td>Quit the official Ollama application, then restart Beaver</td></tr>
+      <tr><td>Loading the model fails</td><td>Not enough memory for the chosen model</td><td>A smaller model, or a more compressed version</td></tr>
+      <tr><td>The first message is very slow</td><td>The model is being loaded into memory</td><td>Normal; increase the time it stays in memory to avoid reloading</td></tr>
+      <tr><td>The graphics card is not used</td><td>Vendor not recognized, or drivers missing</td><td>Force CPU mode if needed; there is no engine log to consult</td></tr>
+      <tr><td>A process stays in the background</td><td>Abrupt shutdown</td><td>It is recognized by its receipt and stopped at the next start</td></tr>
+      <tr><td>Two models saturate memory</td><td>Multi-model enabled</td><td>Disable it in the advanced settings</td></tr>
     </table>
 
-    <p>Pour installer et supprimer des modèles, voir <a href="modeles-modeles-locaux.html">Modèles locaux</a> ; pour les régler un par un, <a href="modeles-personnalisation.html">Personnalisation</a>. Le téléchargement initial est décrit dans <a href="demarrage-premier-lancement.html">Premier lancement</a>.</p>
+    <p>To install and remove models, see <a href="modeles-modeles-locaux.html">Local models</a>; to tune them one by one, <a href="modeles-personnalisation.html">Customization</a>. The initial download is described in <a href="demarrage-premier-lancement.html">First launch</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Réglages des intégrations</title>
-<meta name="description" content="Les quatre onglets de la section Intégrations : fournisseurs de modèles, connecteurs MCP, canaux externes et extensions, et ce qu'ils ont en commun côté secrets.">
+<title>Beaver Docs — Integration settings</title>
+<meta name="description" content="The four tabs of the Integrations section: model providers, MCP connectors, external channels and extensions, and what they share on the secrets side.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,126 +19,126 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Réglages / Intégrations</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="reglages-integrations.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Settings / Integrations</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reglages-integrations.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reglages-integrations.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Ce à quoi Beaver se <em>branche</em></h1>
-    <p>Quatre onglets, quatre questions distinctes : avec quoi Beaver produit ses réponses, à quels services l'agent peut parler, par où on peut lui écrire, et quel code tiers tourne à l'intérieur. Cette page est une carte : elle dit comment les quatre écrans sont organisés et lequel ouvrir pour quoi.</p>
+    <h1>What Beaver <em>plugs into</em></h1>
+    <p>Four tabs, four distinct questions: what Beaver produces its answers with, which services the agent can talk to, where you can write to it from, and what third-party code runs inside. This page is a map: it says how the four screens are organised and which one to open for what.</p>
 
-    <h2 id="ce-que-contient-la-section">Ce que contient la section</h2>
+    <h2 id="ce-que-contient-la-section">What the section contains</h2>
 
     <table>
-      <caption class="crumb">Les quatre onglets de la section Intégrations</caption>
-      <tr><th>Onglet</th><th>La question à laquelle il répond</th></tr>
-      <tr><td><b>Providers</b></td><td>Avec quoi Beaver produit-il ses réponses ?</td></tr>
-      <tr><td><b>Connecteurs</b></td><td>À quels services extérieurs l'agent peut-il parler ?</td></tr>
-      <tr><td><b>Canaux</b></td><td>Par où peut-on écrire à Beaver depuis l'extérieur ?</td></tr>
-      <tr><td><b>Extensions</b></td><td>Quel code tiers tourne dans Beaver ?</td></tr>
+      <caption class="crumb">The four tabs of the Integrations section</caption>
+      <tr><th>Tab</th><th>The question it answers</th></tr>
+      <tr><td><b>Providers</b></td><td>What does Beaver produce its answers with?</td></tr>
+      <tr><td><b>Connectors</b></td><td>Which outside services can the agent talk to?</td></tr>
+      <tr><td><b>Channels</b></td><td>Where can Beaver be written to from outside?</td></tr>
+      <tr><td><b>Extensions</b></td><td>What third-party code runs inside Beaver?</td></tr>
     </table>
 
-    <p>La distinction entre <b>Connecteurs</b> et <b>Canaux</b> est celle qu'on comprend le moins vite. Elle tient au <b>sens de la conversation</b> : un connecteur est un service que <b>l'agent va consulter</b> — « Permettez aux LLM de se connecter à d'autres applications et services » — tandis qu'un canal est une messagerie <b>depuis laquelle on écrit à Beaver</b> — « Connectez des bots de messagerie pour communiquer avec les LLM. »</p>
+    <p>The distinction between <b>Connectors</b> and <b>Channels</b> is the one that takes longest to grasp. It comes down to <b>the direction of the conversation</b>: a connector is a service <b>the agent goes and consults</b> — “Allow LLMs to connect to other apps and services” — whereas a channel is a messaging app <b>you write to Beaver from</b> — “Connect messaging bots to communicate with LLMs.”</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Connecteur ou canal ? Un <b>connecteur</b> est un service que l'agent va consulter pour toi. Un <b>canal</b> est une messagerie depuis laquelle tu écris à Beaver. Les deux se configurent dans cette section, mais ils ne servent pas du tout à la même chose.
+      Connector or channel? A <b>connector</b> is a service the agent goes and consults for you. A <b>channel</b> is a messaging app you write to Beaver from. Both are configured in this section, but they don't serve the same purpose at all.
     </div>
 
-    <h2 id="organisation-commune">Une organisation commune aux quatre onglets</h2>
-    <p>Les quatre écrans suivent le même schéma, ce qui rend la section prévisible :</p>
+    <h2 id="organisation-commune">One organisation shared by the four tabs</h2>
+    <p>The four screens follow the same pattern, which makes the section predictable:</p>
     <ul>
-      <li><b>une liste</b> de ce qui est déjà configuré ;</li>
-      <li><b>un bouton d'ajout</b> en haut à droite du panneau, qui ouvre un catalogue à parcourir ;</li>
-      <li><b>une fiche de détail</b> quand on sélectionne un élément, avec un lien de retour vers la liste ;</li>
-      <li><b>un message d'état vide</b> quand rien n'est configuré.</li>
+      <li><b>a list</b> of what is already configured;</li>
+      <li><b>an add button</b> at the top right of the panel, which opens a catalog to browse;</li>
+      <li><b>a detail card</b> when an item is selected, with a link back to the list;</li>
+      <li><b>an empty-state message</b> when nothing is configured.</li>
     </ul>
-    <p>Les boutons d'ajout portent des libellés parallèles : <b>« Connecteurs API »</b> pour les fournisseurs, <b>« Parcourir les connecteurs »</b>, <b>« Parcourir les canaux »</b>.</p>
+    <p>The add buttons carry parallel labels: <b>“API Connectors”</b> for the providers, <b>“Browse connectors”</b>, <b>“Browse channels”</b>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Une liste vide n'est pas une impasse. Le bouton d'ajout est en haut à droite du panneau, présent même quand rien n'est configuré : c'est par lui qu'on parcourt le catalogue.
+      An empty list isn't a dead end. The add button is at the top right of the panel, present even when nothing is configured: that's how you browse the catalog.
     </div>
 
-    <h2 id="onglet-providers">Onglet Providers</h2>
-    <p>Le seul onglet de la section à porter deux sous-onglets.</p>
+    <h2 id="onglet-providers">Providers tab</h2>
+    <p>The only tab in the section with two sub-tabs.</p>
 
     <table>
-      <caption class="crumb">Les deux sous-onglets de l'onglet Providers</caption>
-      <tr><th>Libellé affiché</th><th>Ce qu'on y fait</th></tr>
-      <tr><td><b>Clés API</b></td><td>Enregistrer une clé chez un fournisseur</td></tr>
-      <tr><td><b>OAuth</b></td><td>Se connecter avec un compte web existant</td></tr>
+      <caption class="crumb">The two sub-tabs of the Providers tab</caption>
+      <tr><th>Label shown</th><th>What you do there</th></tr>
+      <tr><td><b>API Keys</b></td><td>Save a key with a provider</td></tr>
+      <tr><td><b>OAuth</b></td><td>Sign in with an existing web account</td></tr>
     </table>
 
-    <p>Ce sont deux façons de se connecter au même genre de service, et le choix entre les deux est un vrai sujet : voir <a href="modeles-fournisseurs-api.html">Fournisseurs API</a> et <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.</p>
-    <p>Le sous-onglet <b>Clés API</b> liste les fournisseurs déjà configurés, chacun avec son icône et son nom. Un bouton <b>« Connecteurs API »</b> ouvre le catalogue complet des fournisseurs disponibles ; en choisir un ouvre une fenêtre de configuration où l'on colle la clé. La fiche d'un fournisseur configuré propose de <b>modifier</b> la clé ou de la <b>supprimer</b>.</p>
-    <p>Le sous-onglet <b>OAuth</b> liste les comptes web connectés et permet de s'y connecter ou de s'en déconnecter.</p>
+    <p>These are two ways of connecting to the same kind of service, and the choice between them is a real subject: see <a href="modeles-fournisseurs-api.html">API providers</a> and <a href="modeles-connexion-par-compte.html">Account sign-in</a>.</p>
+    <p>The <b>API Keys</b> sub-tab lists the providers already configured, each with its icon and its name. An <b>“API Connectors”</b> button opens the full catalog of available providers; choosing one opens a configuration window where you paste the key. A configured provider's card offers to <b>edit</b> the key or <b>delete</b> it.</p>
+    <p>The <b>OAuth</b> sub-tab lists the connected web accounts and lets you sign in or sign out of them.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Une clé API enregistrée ne peut plus être affichée — y compris par Beaver. Il n'existe aucune commande capable de la relire. Note-la ailleurs si tu en as besoin, ou génère-en une nouvelle chez le fournisseur. La démonstration complète est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.
+      <span class="t">Warning</span>
+      A saved API key can never be displayed again — including by Beaver. There is no command capable of reading it back. Note it down elsewhere if you need it, or generate a new one with the provider. The full demonstration is in <a href="reference-coffre-et-cles.html">The vault and API keys</a>.
     </div>
 
-    <h2 id="onglet-connecteurs">Onglet Connecteurs</h2>
-    <p>La liste des connecteurs MCP configurés, avec un bouton <b>« Parcourir les connecteurs »</b> qui ouvre un catalogue. La fiche d'un connecteur propose trois actions : <b>connecter ou déconnecter</b> — la déconnexion passe par une confirmation —, <b>supprimer</b> le connecteur, et revenir à la liste.</p>
-    <p>Quand la liste est vide, le message dépend de la cause : « aucun connecteur » si tout va bien, un message d'erreur de chargement si la lecture a échoué. La distinction est utile : une liste vide et une liste illisible ne demandent pas la même action.</p>
-    <p><b>Un connecteur configuré est immédiatement disponible pour l'agent.</b> Le groupe d'outils <b>Connecteurs externes</b> fait partie des cinq groupes verrouillés, toujours actifs — sa description le dit mot pour mot : « Permet à l'agent d'utiliser les connecteurs externes que tu as configurés dans l'onglet Connecteurs. »</p>
-    <p>Le détail est dans <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>, leur autorisation dans <a href="integrations-authentification-mcp.html">Authentification des connecteurs</a>, et la façon dont l'agent s'en sert dans <a href="outils-connecteurs.html">Connecteurs externes</a>.</p>
+    <h2 id="onglet-connecteurs">Connectors tab</h2>
+    <p>The list of configured MCP connectors, with a <b>“Browse connectors”</b> button that opens a catalog. A connector's card offers three actions: <b>connect or disconnect</b> — disconnecting goes through a confirmation —, <b>delete</b> the connector, and go back to the list.</p>
+    <p>When the list is empty, the message depends on the cause: no connectors if all is well, a loading error message if the read failed. The distinction is useful: an empty list and an unreadable list don't call for the same action.</p>
+    <p><b>A configured connector is immediately available to the agent.</b> The <b>External connectors</b> tool group is one of the five locked groups, always active — its description says so word for word: “Lets the agent use the external connectors you configured in the Connectors tab.”</p>
+    <p>The detail is in <a href="integrations-connecteurs-mcp.html">MCP connectors</a>, their authorization in <a href="integrations-authentification-mcp.html">Connector authentication</a>, and the way the agent uses them in <a href="outils-connecteurs.html">External connectors</a>.</p>
 
-    <h2 id="onglet-canaux">Onglet Canaux</h2>
-    <p>Même structure : liste des canaux configurés, bouton <b>« Parcourir les canaux »</b>, fiche de détail avec configuration et suppression.</p>
-    <p>Une particularité par rapport aux deux onglets précédents : la fiche affiche <b>l'état de santé</b> du canal, relevé en continu. Un canal peut être configuré et hors service — c'est une information que ni les connecteurs ni les fournisseurs n'exposent de la même façon.</p>
-    <p>Un canal se configure <b>par compte</b> : plusieurs comptes sur la même messagerie sont donc possibles. Le détail est dans <a href="integrations-canaux-externes.html">Canaux externes</a>.</p>
+    <h2 id="onglet-canaux">Channels tab</h2>
+    <p>Same structure: list of configured channels, <b>“Browse channels”</b> button, detail card with configuration and deletion.</p>
+    <p>One particularity compared with the two previous tabs: the card shows the channel's <b>health state</b>, monitored continuously. A channel can be configured and out of service — that's information neither the connectors nor the providers expose in the same way.</p>
+    <p>A channel is configured <b>per account</b>: several accounts on the same messaging app are therefore possible. The detail is in <a href="integrations-canaux-externes.html">External channels</a>.</p>
 
-    <h2 id="onglet-extensions">Onglet Extensions</h2>
-    <p>Le plus riche des quatre, et le seul <b>protégé par le contrat des extensions</b> : aucune extension ne peut le retirer ni le remplacer. Le raisonnement mérite d'être écrit — on ne peut pas installer une extension qui te priverait du moyen de la désinstaller.</p>
+    <h2 id="onglet-extensions">Extensions tab</h2>
+    <p>The richest of the four, and the only one <b>protected by the extension contract</b>: no extension can remove or replace it. The reasoning deserves writing down — you can't install an extension that would deprive you of the means to uninstall it.</p>
 
     <table>
-      <caption class="crumb">Les trois sections de l'onglet Extensions</caption>
-      <tr><th>Libellé affiché</th><th>Contenu</th></tr>
-      <tr><td><b>Plugins</b></td><td>« Les plugins officiels de Beaver, distincts des Tools internes. »</td></tr>
-      <tr><td><b>Extensions</b></td><td>« Ajoutez du code local ou installez une extension depuis Git ou npm. »</td></tr>
-      <tr><td><b>Hôte</b></td><td>L'état du processus qui exécute les extensions</td></tr>
+      <caption class="crumb">The three sections of the Extensions tab</caption>
+      <tr><th>Label shown</th><th>Content</th></tr>
+      <tr><td><b>Plugins</b></td><td>“Official Beaver plugins, separate from internal Tools.”</td></tr>
+      <tr><td><b>Extensions</b></td><td>“Add local code or install an extension from Git or npm.”</td></tr>
+      <tr><td><b>Host</b></td><td>The state of the process that runs the extensions</td></tr>
     </table>
 
-    <p>Chaque section a son état vide écrit : « La suite officielle de plugins apparaîtra ici lorsqu'elle sera disponible. » pour les plugins, « Aucune extension personnalisée. » pour les extensions.</p>
-    <p>Les actions disponibles sur une extension : <b>activer ou désactiver</b>, <b>afficher ou non dans le chat</b>, <b>ouvrir sa source</b>, <b>mettre à jour</b>, <b>supprimer</b>, <b>recharger</b>, et pour celles qui ont échoué à se charger, <b>réessayer</b> ou <b>rester désactivée</b>. Certaines extensions sont <b>protégées contre la suppression</b>.</p>
-    <p>Deux mécanismes de reprise existent pour le cas — réel — d'une extension qui empêche l'application de fonctionner : une <b>récupération</b> de l'hôte et la <b>restauration d'un instantané</b> antérieur. Le détail est dans <a href="integrations-centre-extensions.html">Centre d'extensions</a>, et écrire la sienne dans <a href="integrations-ecrire-une-extension.html">Écrire une extension</a>.</p>
+    <p>Each section has its empty state written: “The official plugin suite will appear here when it becomes available.” for the plugins, “No custom extensions.” for the extensions.</p>
+    <p>The actions available on an extension: <b>enable or disable</b>, <b>show or hide in the chat</b>, <b>open its source</b>, <b>update</b>, <b>delete</b>, <b>reload</b>, and for those that failed to load, <b>try again</b> or <b>stay disabled</b>. Some extensions are <b>protected against deletion</b>.</p>
+    <p>Two recovery mechanisms exist for the — real — case of an extension preventing the application from working: a <b>recovery</b> of the host and the <b>restoration of an earlier snapshot</b>. The detail is in <a href="integrations-centre-extensions.html">Extension center</a>, and writing your own in <a href="integrations-ecrire-une-extension.html">Writing an extension</a>.</p>
 
-    <h2 id="cote-securite">Ce que les quatre onglets ont en commun côté sécurité</h2>
-    <p><b>Tout ce qui est secret dans ces quatre écrans va au même endroit</b> : le coffre chiffré de Beaver. Clés API des fournisseurs, jetons des comptes web, jetons OAuth des connecteurs, variables d'environnement secrètes des connecteurs, jetons des canaux — chacun a son entrée dans le coffre, et aucune n'est relisible par l'interface. L'inventaire complet est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
-    <p><b>Une exception, et elle est délibérée</b> : une extension approuvée peut demander au coffre une clé de fournisseur, un jeton de connecteur ou un jeton de canal. Le coffre protège tes secrets du reste du système, pas du code que tu as toi-même autorisé. C'est pourquoi l'activation d'une extension demande une confirmation explicite — et c'est ce qui distingue l'onglet Extensions des trois autres.</p>
+    <h2 id="cote-securite">What the four tabs have in common on the security side</h2>
+    <p><b>Everything secret in these four screens goes to the same place</b>: Beaver's encrypted vault. Providers' API keys, web account tokens, connectors' OAuth tokens, connectors' secret environment variables, channel tokens — each has its entry in the vault, and none can be read back by the interface. The full inventory is in <a href="reference-coffre-et-cles.html">The vault and API keys</a>.</p>
+    <p><b>One exception, and it is deliberate</b>: an approved extension can ask the vault for a provider key, a connector token or a channel token. The vault protects your secrets from the rest of the system, not from code you authorized yourself. That's why enabling an extension asks for an explicit confirmation — and that's what sets the Extensions tab apart from the other three.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Une extension activée peut demander tes secrets. Clés de fournisseurs, jetons de connecteurs, jetons de canaux : le coffre les remet au code que tu as approuvé. C'est la raison de la confirmation demandée à l'activation, et la raison pour laquelle l'onglet Extensions ne peut jamais être retiré par une extension.
+      <span class="t">Warning</span>
+      An enabled extension can ask for your secrets. Provider keys, connector tokens, channel tokens: the vault hands them to the code you approved. That's the reason for the confirmation asked when enabling one, and the reason the Extensions tab can never be removed by an extension.
     </div>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Les surprises les plus courantes de la section Intégrations</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Je ne trouve pas où saisir ma clé API »</td><td>Ce n'est pas un onglet : c'est le sous-onglet <b>Clés API</b> de <b>Providers</b></td><td>Ouvrir Providers, puis Clés API</td></tr>
-      <tr><td>« Je ne retrouve plus ma clé enregistrée »</td><td>Aucune commande ne permet de relire une clé</td><td>Générer une nouvelle clé chez le fournisseur</td></tr>
-      <tr><td>« J'ai supprimé ma clé dans Beaver, est-elle révoquée ? »</td><td>Non : elle reste valable chez le fournisseur</td><td>La supprimer sur le site du fournisseur</td></tr>
-      <tr><td>« Mon connecteur est configuré mais l'agent ne l'utilise pas »</td><td>Un connecteur configuré doit aussi être <b>connecté</b></td><td>Ouvrir sa fiche et le connecter</td></tr>
-      <tr><td>« Mon canal est configuré mais rien n'arrive »</td><td>Un canal peut être configuré et hors service ; sa fiche affiche son état de santé</td><td>Voir <a href="integrations-canaux-externes.html">Canaux externes</a></td></tr>
-      <tr><td>« La liste des connecteurs est vide alors que j'en avais »</td><td>Le message distingue une liste vide d'une erreur de lecture</td><td>Lire le message affiché</td></tr>
-      <tr><td>« Je veux supprimer une extension et le bouton n'est pas là »</td><td>Certaines extensions sont protégées contre la suppression</td><td>Voir <a href="integrations-centre-extensions.html">Centre d'extensions</a></td></tr>
-      <tr><td>« Une extension empêche Beaver de fonctionner »</td><td>Des mécanismes de récupération existent dans la section <b>Hôte</b></td><td>Même page</td></tr>
+      <caption class="crumb">The most common surprises in the Integrations section</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“I can't find where to enter my API key”</td><td>It isn't a tab: it's the <b>API Keys</b> sub-tab of <b>Providers</b></td><td>Open Providers, then API Keys</td></tr>
+      <tr><td>“I can't find my saved key any more”</td><td>No command allows a key to be read back</td><td>Generate a new key with the provider</td></tr>
+      <tr><td>“I deleted my key in Beaver, is it revoked?”</td><td>No: it remains valid with the provider</td><td>Delete it on the provider's site</td></tr>
+      <tr><td>“My connector is configured but the agent doesn't use it”</td><td>A configured connector must also be <b>connected</b></td><td>Open its card and connect it</td></tr>
+      <tr><td>“My channel is configured but nothing arrives”</td><td>A channel can be configured and out of service; its card shows its health state</td><td>See <a href="integrations-canaux-externes.html">External channels</a></td></tr>
+      <tr><td>“The connector list is empty although I had some”</td><td>The message distinguishes an empty list from a read error</td><td>Read the message shown</td></tr>
+      <tr><td>“I want to delete an extension and the button isn't there”</td><td>Some extensions are protected against deletion</td><td>See <a href="integrations-centre-extensions.html">Extension center</a></td></tr>
+      <tr><td>“An extension is preventing Beaver from working”</td><td>Recovery mechanisms exist in the <b>Host</b> section</td><td>Same page</td></tr>
     </table>
 
-    <p>Pour retrouver un autre réglage, voir <a href="reglages-vue-densemble.html">Vue d'ensemble des réglages</a>. Le groupe d'outils <b>Connecteurs externes</b> est décrit dans <a href="reglages-agent.html">Agent</a>.</p>
+    <p>To find another setting, see <a href="reglages-vue-densemble.html">Settings overview</a>. The <b>External connectors</b> tool group is described in <a href="reglages-agent.html">Agent</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

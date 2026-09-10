@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Les réglages, écran par écran</title>
-<meta name="description" content="Où se règle telle chose dans Beaver : les cinq sections, les dix-sept onglets livrés, et un index inverse pour trouver un réglage en une ligne.">
+<title>Beaver Docs — Settings, screen by screen</title>
+<meta name="description" content="Where each thing is set in Beaver: the five sections, the seventeen tabs shipped, and a reverse index to find a setting in one line.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,204 +19,204 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Réglages / Vue d'ensemble</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="reglages-vue-densemble.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Settings / Overview</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reglages-vue-densemble.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reglages-vue-densemble.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Les réglages, écran par <em>écran</em></h1>
-    <p>Cette page répond à une seule question : où se règle telle chose ? Elle donne la carte complète des cinq sections et des dix-sept onglets livrés avec Beaver, puis un index inverse qui part de ce que tu veux faire. Les cinq autres pages de cette section disent ce que chaque réglage fait vraiment.</p>
+    <h1>Settings, screen by <em>screen</em></h1>
+    <p>This page answers a single question: where is a given thing set? It gives the complete map of the five sections and the seventeen tabs shipped with Beaver, then a reverse index that starts from what you want to do. The five other pages in this section say what each setting really does.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      C'est un sommaire, pas un manuel. Si tu sais déjà où aller, le tableau « Je cherche à régler… » plus bas te répond en une ligne.
+      This is a table of contents, not a manual. If you already know where to go, the “I'm looking to set…” table further down answers in one line.
     </div>
 
-    <h2 id="ouvrir-les-reglages">Ouvrir les réglages</h2>
-    <p>Les réglages sont l'un des <b>quatre onglets principaux</b> de Beaver, aux côtés de l'Agent, du Heartbeat et de la Personnalité. Dans la barre latérale, l'onglet porte le nom <b>Paramètres</b>.</p>
-    <p>Deux chemins pour y arriver :</p>
+    <h2 id="ouvrir-les-reglages">Opening the settings</h2>
+    <p>Settings are one of Beaver's <b>four main tabs</b>, alongside Agent, Heartbeat and Personality. In the sidebar, the tab is named <b>Settings</b>.</p>
+    <p>Two ways to get there:</p>
     <ul>
-      <li>cliquer sur l'onglet dans la barre latérale ;</li>
-      <li>le raccourci <b><code>Cmd</code> + <code>,</code></b> sur Mac, <b><code>Ctrl</code> + <code>,</code></b> ailleurs.</li>
+      <li>click the tab in the sidebar;</li>
+      <li>the shortcut <b><code>Cmd</code> + <code>,</code></b> on Mac, <b><code>Ctrl</code> + <code>,</code></b> elsewhere.</li>
     </ul>
 
-    <h2 id="comment-lecran-est-organise">Comment l'écran est organisé</h2>
-    <p>L'écran se lit en deux colonnes : à gauche la liste des onglets, groupés sous cinq en-têtes de section ; à droite le contenu de l'onglet sélectionné.</p>
-    <p>Trois comportements à connaître :</p>
+    <h2 id="comment-lecran-est-organise">How the screen is organised</h2>
+    <p>The screen reads in two columns: on the left the list of tabs, grouped under five section headers; on the right the content of the selected tab.</p>
+    <p>Three behaviors worth knowing:</p>
     <ul>
-      <li><b>Les en-têtes de section ne sont pas cliquables.</b> Ce n'est pas un oubli : ils sont volontairement privés de rôle de bouton et d'ordre de tabulation, pour que la navigation au clavier ne s'arrête pas sur une ligne qui n'ouvre rien.</li>
-      <li><b>La liste se parcourt aux flèches du clavier.</b> Les flèches passent d'un onglet au suivant à travers toutes les sections confondues, dans l'ordre d'affichage.</li>
-      <li><b>L'onglet ouvert est mémorisé</b>, avec le détail de ta position : fournisseur sélectionné, connecteur ouvert, modèle Ollama affiché, vue du catalogue de modèles distants. Revenir dans les réglages te ramène là où tu étais.</li>
+      <li><b>Section headers aren't clickable.</b> That isn't an oversight: they are deliberately given no button role and no tab order, so that keyboard navigation doesn't stop on a line that opens nothing.</li>
+      <li><b>The list is browsed with the arrow keys.</b> The arrows move from one tab to the next across all sections at once, in display order.</li>
+      <li><b>The open tab is remembered</b>, along with where exactly you were: selected provider, open connector, Ollama model displayed, remote model catalog view. Coming back to settings brings you back where you left off.</li>
     </ul>
 
-    <h2 id="les-cinq-sections">Les cinq sections, d'un coup d'œil</h2>
-    <p>L'ordre des sections et des onglets n'est pas un accident d'affichage : il est déclaré une seule fois et tout l'écran en découle. Le regroupement suit un principe simple — <b>les réglages sont groupés par objet configuré</b> : les modèles, les connexions, le comportement de l'agent, les préférences, le cycle de vie de l'application.</p>
+    <h2 id="les-cinq-sections">The five sections at a glance</h2>
+    <p>The order of sections and tabs isn't a display accident: it is declared once and the whole screen follows from it. The grouping follows a simple principle — <b>settings are grouped by the object being configured</b>: the models, the connections, the agent's behavior, the preferences, the application's life cycle.</p>
 
     <table>
-      <caption class="crumb">Les cinq sections des réglages et ce qu'elles couvrent</caption>
-      <tr><th>Section</th><th>Onglets</th><th>Ce qu'on y règle</th></tr>
-      <tr><td><b>Préférences</b></td><td>3</td><td>Ce que tu vois et la façon dont tu navigues</td></tr>
-      <tr><td><b>Agent</b></td><td>4</td><td>Ce que l'agent sait, dit et a le droit de faire</td></tr>
-      <tr><td><b>Modèles</b></td><td>3</td><td>Les moteurs qui produisent les réponses</td></tr>
-      <tr><td><b>Intégrations</b></td><td>4</td><td>Ce à quoi Beaver se connecte à l'extérieur</td></tr>
-      <tr><td><b>Application</b></td><td>3</td><td>Le logiciel lui-même : version, mises à jour, archives</td></tr>
+      <caption class="crumb">The five settings sections and what they cover</caption>
+      <tr><th>Section</th><th>Tabs</th><th>What you set there</th></tr>
+      <tr><td><b>Preferences</b></td><td>3</td><td>What you see and how you navigate</td></tr>
+      <tr><td><b>Agent</b></td><td>4</td><td>What the agent knows, says and is allowed to do</td></tr>
+      <tr><td><b>Models</b></td><td>3</td><td>The engines that produce the answers</td></tr>
+      <tr><td><b>Integrations</b></td><td>4</td><td>What Beaver connects to on the outside</td></tr>
+      <tr><td><b>Application</b></td><td>3</td><td>The software itself: version, updates, archives</td></tr>
     </table>
 
-    <p><b>Dix-sept onglets au total</b>, sur une installation sans extension : une extension peut en ajouter, en retirer ou en déplacer.</p>
+    <p><b>Seventeen tabs in total</b>, on an installation with no extension: an extension can add some, remove some or move some.</p>
 
-    <h2 id="section-preferences">Section Préférences</h2>
+    <h2 id="section-preferences">Preferences section</h2>
 
     <table>
-      <caption class="crumb">Les trois onglets de la section Préférences</caption>
-      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
-      <tr><td><b>Général</b></td><td>Thème, taille et police de l'interface, thème de code, langue de l'interface, langue de réponse du modèle, aperçu des liens, lancement au démarrage</td></tr>
-      <tr><td><b>Mascotte</b></td><td>Activer la mascotte de bureau, régler sa taille, choisir parmi huit personnages</td></tr>
-      <tr><td><b>Raccourcis clavier</b></td><td>La liste des vingt raccourcis de l'application, en consultation seule</td></tr>
+      <caption class="crumb">The three tabs of the Preferences section</caption>
+      <tr><th>Tab</th><th>What it contains</th></tr>
+      <tr><td><b>General</b></td><td>Theme, interface size and font, code theme, interface language, model reply language, link previews, launch at startup</td></tr>
+      <tr><td><b>Mascot</b></td><td>Enable the desktop mascot, set its size, choose among eight characters</td></tr>
+      <tr><td><b>Keyboard Shortcuts</b></td><td>The list of the application's twenty shortcuts, read-only</td></tr>
     </table>
 
-    <p>Le détail est dans <a href="reglages-preferences.html">Préférences</a>.</p>
+    <p>The detail is in <a href="reglages-preferences.html">Preferences</a>.</p>
 
-    <h2 id="section-agent">Section Agent</h2>
+    <h2 id="section-agent">Agent section</h2>
 
     <table>
-      <caption class="crumb">Les quatre onglets de la section Agent</caption>
-      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
-      <tr><td><b>Mémoire</b></td><td>Mode mémoire, budget de contexte, consultation des mémoires enregistrées</td></tr>
-      <tr><td><b>System prompt</b></td><td>Les instructions système globales : celles de Beaver, celles d'Ollama, ou les tiennes</td></tr>
-      <tr><td><b>Outils</b></td><td>Les groupes d'outils : cinq toujours actifs, les autres activables</td></tr>
-      <tr><td><b>Avancé</b></td><td>Import depuis un autre assistant, icône dans la barre système, modèle par défaut, moteur Ollama, <b>accès fichiers</b>, fichiers des sessions</td></tr>
+      <caption class="crumb">The four tabs of the Agent section</caption>
+      <tr><th>Tab</th><th>What it contains</th></tr>
+      <tr><td><b>Memory</b></td><td>Memory mode, context budget, reviewing the saved memories</td></tr>
+      <tr><td><b>System prompt</b></td><td>The global system instructions: Beaver's, Ollama's, or your own</td></tr>
+      <tr><td><b>Tools</b></td><td>The tool groups: five always active, the rest switchable</td></tr>
+      <tr><td><b>Advanced</b></td><td>Import from another assistant, system tray icon, default model, Ollama engine, <b>File Access</b>, session files</td></tr>
     </table>
 
-    <p>Le détail est dans <a href="reglages-agent.html">Agent</a>.</p>
+    <p>The detail is in <a href="reglages-agent.html">Agent</a>.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Deux réglages ne sont pas là où on les cherche. <b>Accès fichiers</b> — les dossiers ouverts à l'agent — est dans <b>Agent › Avancé</b>, pas dans Application. Et tout ce qui concerne le moteur Ollama — libération de la mémoire, processeur ou carte graphique, plusieurs modèles à la fois — est aussi dans <b>Agent › Avancé</b>, pas dans Modèles › Ollama, qui ne gère que les modèles eux-mêmes.
+      <span class="t">Warning</span>
+      Two settings aren't where you'd look for them. <b>File Access</b> — the folders opened to the agent — is in <b>Agent › Advanced</b>, not in Application. And everything about the Ollama engine — memory release, processor or graphics card, several models at once — is also in <b>Agent › Advanced</b>, not in Models › Ollama, which only handles the models themselves.
     </div>
 
-    <h2 id="section-modeles">Section Modèles</h2>
+    <h2 id="section-modeles">Models section</h2>
 
     <table>
-      <caption class="crumb">Les trois onglets de la section Modèles</caption>
-      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
-      <tr><td><b>Ollama</b></td><td>Installer et gérer les modèles locaux, personnaliser leur Modelfile</td></tr>
-      <tr><td><b>Forecast</b></td><td>Les modèles de prévision installés et leur configuration</td></tr>
-      <tr><td><b>LLM</b></td><td>Le catalogue consultable des modèles distants : capacités, tailles de contexte, coûts</td></tr>
+      <caption class="crumb">The three tabs of the Models section</caption>
+      <tr><th>Tab</th><th>What it contains</th></tr>
+      <tr><td><b>Ollama</b></td><td>Install and manage local models, customise their Modelfile</td></tr>
+      <tr><td><b>Forecast</b></td><td>The forecast models installed and their configuration</td></tr>
+      <tr><td><b>LLM</b></td><td>The browsable catalog of remote models: capabilities, context sizes, costs</td></tr>
     </table>
 
-    <p>Le détail est dans <a href="reglages-modeles.html">Modèles</a>.</p>
+    <p>The detail is in <a href="reglages-modeles.html">Models</a>.</p>
 
-    <h2 id="section-integrations">Section Intégrations</h2>
+    <h2 id="section-integrations">Integrations section</h2>
 
     <table>
-      <caption class="crumb">Les quatre onglets de la section Intégrations</caption>
-      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
-      <tr><td><b>Providers</b></td><td>Tes connexions aux fournisseurs de modèles : clés API d'un côté, comptes web de l'autre</td></tr>
-      <tr><td><b>Connecteurs</b></td><td>Les connecteurs MCP, leur configuration et leur autorisation</td></tr>
-      <tr><td><b>Canaux</b></td><td>Les canaux externes qui peuvent parler à Beaver</td></tr>
-      <tr><td><b>Extensions</b></td><td>Les extensions installées, leurs droits, et l'état de leur hôte</td></tr>
+      <caption class="crumb">The four tabs of the Integrations section</caption>
+      <tr><th>Tab</th><th>What it contains</th></tr>
+      <tr><td><b>Providers</b></td><td>Your connections to model providers: API keys on one side, web accounts on the other</td></tr>
+      <tr><td><b>Connectors</b></td><td>The MCP connectors, their configuration and their authorization</td></tr>
+      <tr><td><b>Channels</b></td><td>The external channels that can talk to Beaver</td></tr>
+      <tr><td><b>Extensions</b></td><td>The installed extensions, their rights, and the state of their host</td></tr>
     </table>
 
-    <p>Le détail est dans <a href="reglages-integrations.html">Intégrations</a>.</p>
+    <p>The detail is in <a href="reglages-integrations.html">Integrations</a>.</p>
 
-    <h2 id="section-application">Section Application</h2>
+    <h2 id="section-application">Application section</h2>
 
     <table>
-      <caption class="crumb">Les trois onglets de la section Application</caption>
-      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
-      <tr><td><b>Mises à jour</b></td><td>Les versions installées de Beaver et d'Ollama, et l'installation des nouvelles</td></tr>
-      <tr><td><b>Chats archivés</b></td><td>Retrouver, désarchiver ou supprimer définitivement une conversation archivée</td></tr>
-      <tr><td><b>À propos</b></td><td>Version de Beaver, version de Tauri, système, lien vers le dépôt</td></tr>
+      <caption class="crumb">The three tabs of the Application section</caption>
+      <tr><th>Tab</th><th>What it contains</th></tr>
+      <tr><td><b>Updates</b></td><td>The installed versions of Beaver and Ollama, and the installation of new ones</td></tr>
+      <tr><td><b>Archived chats</b></td><td>Find, unarchive or permanently delete an archived conversation</td></tr>
+      <tr><td><b>About</b></td><td>Beaver version, Tauri version, system, link to the repository</td></tr>
     </table>
 
-    <p>Le détail est dans <a href="reglages-application.html">Application</a>.</p>
+    <p>The detail is in <a href="reglages-application.html">Application</a>.</p>
 
-    <h2 id="sous-onglets">Les onglets qui ont eux-mêmes des sous-onglets</h2>
-    <p>Quatre onglets se subdivisent. Leurs sous-onglets s'affichent en haut du panneau de droite.</p>
+    <h2 id="sous-onglets">The tabs that have sub-tabs of their own</h2>
+    <p>Four tabs subdivide. Their sub-tabs are shown at the top of the right-hand panel.</p>
 
     <table>
-      <caption class="crumb">Les onglets divisés en sous-onglets</caption>
-      <tr><th>Onglet</th><th>Sous-onglets affichés</th></tr>
-      <tr><td><b>Ollama</b></td><td>Modelfile · Modèles</td></tr>
+      <caption class="crumb">The tabs split into sub-tabs</caption>
+      <tr><th>Tab</th><th>Sub-tabs shown</th></tr>
+      <tr><td><b>Ollama</b></td><td>Modelfile · Models</td></tr>
       <tr><td><b>Forecast</b></td><td>Config · Models</td></tr>
-      <tr><td><b>Providers</b></td><td>Clés API · OAuth</td></tr>
-      <tr><td><b>Extensions</b></td><td>Plugins · Extensions · Hôte</td></tr>
+      <tr><td><b>Providers</b></td><td>API Keys · OAuth</td></tr>
+      <tr><td><b>Extensions</b></td><td>Plugins · Extensions · Host</td></tr>
     </table>
 
-    <h2 id="ce-quune-extension-peut-changer">Ce qu'une extension peut changer dans cet écran</h2>
-    <p>La liste des onglets n'est pas figée : une extension installée peut <b>ajouter son propre onglet de réglages</b> dans n'importe laquelle des cinq sections, et il apparaît dans la liste de gauche comme les autres. Elle peut aussi <b>retirer, remplacer ou déplacer</b> un onglet existant — avec deux exceptions verrouillées par le contrat des extensions lui-même.</p>
+    <h2 id="ce-quune-extension-peut-changer">What an extension can change in this screen</h2>
+    <p>The list of tabs isn't fixed: an installed extension can <b>add its own settings tab</b> in any of the five sections, and it appears in the left-hand list like the others. It can also <b>remove, replace or move</b> an existing tab — with two exceptions locked by the extension contract itself.</p>
 
     <table>
-      <caption class="crumb">Les deux éléments qu'aucune extension ne peut retirer</caption>
-      <tr><th>Élément protégé</th><th>Opérations interdites</th></tr>
-      <tr><td>L'onglet principal <b>Paramètres</b></td><td>Retrait, remplacement</td></tr>
-      <tr><td>L'onglet de réglages <b>Extensions</b></td><td>Retrait, remplacement</td></tr>
+      <caption class="crumb">The two elements no extension can remove</caption>
+      <tr><th>Protected element</th><th>Forbidden operations</th></tr>
+      <tr><td>The main <b>Settings</b> tab</td><td>Removal, replacement</td></tr>
+      <tr><td>The <b>Extensions</b> settings tab</td><td>Removal, replacement</td></tr>
     </table>
 
-    <p>Le raisonnement tient en une phrase : <b>on ne peut pas installer une extension qui t'enlèverait le moyen de la désinstaller.</b> Une tentative de modification sur ces deux éléments est rejetée. Une limite chiffrée existe par ailleurs : <b>128 occupants par emplacement</b> au maximum.</p>
+    <p>The reasoning fits in one sentence: <b>you can't install an extension that would take away your means of uninstalling it.</b> An attempt to modify these two elements is rejected. A numeric limit exists as well: <b>128 occupants per slot</b> at most.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Un onglet supplémentaire peut apparaître dans n'importe laquelle des cinq sections. Il vient de l'extension, pas de Beaver, et disparaît avec elle. Ce qu'une extension a le droit de faire est détaillé dans <a href="integrations-centre-extensions.html">Centre d'extensions</a>.
+      An extra tab can appear in any of the five sections. It comes from the extension, not from Beaver, and disappears with it. What an extension is allowed to do is detailed in <a href="integrations-centre-extensions.html">Extension center</a>.
     </div>
 
-    <h2 id="je-cherche-a-regler">« Je cherche à régler… »</h2>
-    <p>L'index inverse : tu pars de ce que tu veux faire, il te donne l'onglet.</p>
+    <h2 id="je-cherche-a-regler">“I'm looking to set…”</h2>
+    <p>The reverse index: you start from what you want to do, it gives you the tab.</p>
 
     <table>
-      <caption class="crumb">Où se règle chaque chose, par intention</caption>
-      <tr><th>Je veux…</th><th>Section › Onglet</th></tr>
-      <tr><td>Changer le thème sombre ou clair</td><td>Préférences › <b>Général</b></td></tr>
-      <tr><td>Changer la langue de l'application</td><td>Préférences › <b>Général</b></td></tr>
-      <tr><td>Faire répondre le modèle dans une autre langue</td><td>Préférences › <b>Général</b></td></tr>
-      <tr><td>Lancer Beaver au démarrage de la machine</td><td>Préférences › <b>Général</b></td></tr>
-      <tr><td>Agrandir le texte de l'interface</td><td>Préférences › <b>Général</b></td></tr>
-      <tr><td>Faire disparaître la mascotte</td><td>Préférences › <b>Mascotte</b></td></tr>
-      <tr><td>Retrouver un raccourci clavier</td><td>Préférences › <b>Raccourcis clavier</b></td></tr>
-      <tr><td>Empêcher l'agent de retenir des choses</td><td>Agent › <b>Mémoire</b></td></tr>
-      <tr><td>Remplacer les instructions système</td><td>Agent › <b>System prompt</b></td></tr>
-      <tr><td>Interdire un outil à l'agent</td><td>Agent › <b>Outils</b></td></tr>
-      <tr><td>Restreindre les dossiers accessibles à l'agent</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Choisir le modèle par défaut des nouvelles conversations</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Enlever l'icône de la barre système</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Choisir où sont écrits les livrables des sessions</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Ouvrir le dossier de données de Beaver</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Décider quand un modèle local libère la mémoire</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Forcer le processeur au lieu de la carte graphique</td><td>Agent › <b>Avancé</b></td></tr>
-      <tr><td>Installer ou supprimer un modèle local</td><td>Modèles › <b>Ollama</b></td></tr>
-      <tr><td>Comparer les capacités de deux modèles distants</td><td>Modèles › <b>LLM</b></td></tr>
-      <tr><td>Saisir une clé API</td><td>Intégrations › <b>Providers</b> › Clés API</td></tr>
-      <tr><td>Me connecter avec un compte web</td><td>Intégrations › <b>Providers</b> › OAuth</td></tr>
-      <tr><td>Ajouter un connecteur MCP</td><td>Intégrations › <b>Connecteurs</b></td></tr>
-      <tr><td>Installer une extension</td><td>Intégrations › <b>Extensions</b></td></tr>
-      <tr><td>Mettre Beaver à jour</td><td>Application › <b>Mises à jour</b></td></tr>
-      <tr><td>Retrouver une conversation archivée</td><td>Application › <b>Chats archivés</b></td></tr>
-      <tr><td>Connaître ma version de Beaver</td><td>Application › <b>À propos</b></td></tr>
+      <caption class="crumb">Where each thing is set, by intent</caption>
+      <tr><th>I want to…</th><th>Section › Tab</th></tr>
+      <tr><td>Change the dark or light theme</td><td>Preferences › <b>General</b></td></tr>
+      <tr><td>Change the application's language</td><td>Preferences › <b>General</b></td></tr>
+      <tr><td>Make the model answer in another language</td><td>Preferences › <b>General</b></td></tr>
+      <tr><td>Launch Beaver when the machine starts</td><td>Preferences › <b>General</b></td></tr>
+      <tr><td>Enlarge the interface text</td><td>Preferences › <b>General</b></td></tr>
+      <tr><td>Make the mascot go away</td><td>Preferences › <b>Mascot</b></td></tr>
+      <tr><td>Find a keyboard shortcut</td><td>Preferences › <b>Keyboard Shortcuts</b></td></tr>
+      <tr><td>Stop the agent from remembering things</td><td>Agent › <b>Memory</b></td></tr>
+      <tr><td>Replace the system instructions</td><td>Agent › <b>System prompt</b></td></tr>
+      <tr><td>Forbid a tool to the agent</td><td>Agent › <b>Tools</b></td></tr>
+      <tr><td>Restrict the folders the agent can reach</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Choose the default model for new conversations</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Remove the system tray icon</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Choose where session deliverables are written</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Open Beaver's data folder</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Decide when a local model releases memory</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Force the processor instead of the graphics card</td><td>Agent › <b>Advanced</b></td></tr>
+      <tr><td>Install or remove a local model</td><td>Models › <b>Ollama</b></td></tr>
+      <tr><td>Compare the capabilities of two remote models</td><td>Models › <b>LLM</b></td></tr>
+      <tr><td>Enter an API key</td><td>Integrations › <b>Providers</b> › API Keys</td></tr>
+      <tr><td>Sign in with a web account</td><td>Integrations › <b>Providers</b> › OAuth</td></tr>
+      <tr><td>Add an MCP connector</td><td>Integrations › <b>Connectors</b></td></tr>
+      <tr><td>Install an extension</td><td>Integrations › <b>Extensions</b></td></tr>
+      <tr><td>Update Beaver</td><td>Application › <b>Updates</b></td></tr>
+      <tr><td>Find an archived conversation</td><td>Application › <b>Archived chats</b></td></tr>
+      <tr><td>Know my Beaver version</td><td>Application › <b>About</b></td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui surprend le plus souvent dans l'écran des réglages</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Je ne trouve pas où limiter les dossiers de l'agent »</td><td>Le réglage est dans <b>Agent › Avancé</b>, pas dans Application</td><td>Voir <a href="reglages-agent.html">Agent</a></td></tr>
-      <tr><td>« L'onglet Ollama ne propose aucun réglage du moteur »</td><td>Cet onglet gère les modèles ; le moteur se règle dans <b>Agent › Avancé</b></td><td>Voir <a href="reglages-agent.html">Agent</a></td></tr>
-      <tr><td>« Un onglet a disparu de mes réglages »</td><td>Une extension installée peut retirer un onglet, sauf Paramètres et Extensions</td><td>Désactiver l'extension depuis Intégrations › Extensions</td></tr>
-      <tr><td>« Un onglet que je ne connais pas est apparu »</td><td>Il vient d'une extension installée</td><td>Même écran</td></tr>
-      <tr><td>« Le clic sur un titre de section ne fait rien »</td><td>Les en-têtes ne sont pas des destinations, volontairement</td><td>Comportement attendu</td></tr>
-      <tr><td>« Je cherche un onglet Clés API dans la liste »</td><td>Ce n'est pas un onglet de premier niveau : c'est un sous-onglet de <b>Providers</b></td><td>Ouvrir Providers, puis Clés API</td></tr>
+      <caption class="crumb">What surprises people most often in the settings screen</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“I can't find where to limit the agent's folders”</td><td>The setting is in <b>Agent › Advanced</b>, not in Application</td><td>See <a href="reglages-agent.html">Agent</a></td></tr>
+      <tr><td>“The Ollama tab offers no engine setting”</td><td>That tab manages the models; the engine is set in <b>Agent › Advanced</b></td><td>See <a href="reglages-agent.html">Agent</a></td></tr>
+      <tr><td>“A tab has disappeared from my settings”</td><td>An installed extension can remove a tab, except Settings and Extensions</td><td>Disable the extension from Integrations › Extensions</td></tr>
+      <tr><td>“A tab I don't recognise has appeared”</td><td>It comes from an installed extension</td><td>Same screen</td></tr>
+      <tr><td>“Clicking a section title does nothing”</td><td>Headers aren't destinations, deliberately</td><td>Expected behavior</td></tr>
+      <tr><td>“I'm looking for an API Keys tab in the list”</td><td>It isn't a top-level tab: it's a sub-tab of <b>Providers</b></td><td>Open Providers, then API Keys</td></tr>
     </table>
 
-    <p>Pour la disposition générale de l'application, voir <a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a>. Les vingt raccourcis sont détaillés dans <a href="reference-raccourcis-clavier.html">Raccourcis clavier</a>.</p>
+    <p>For the general layout of the application, see <a href="interface-vue-densemble.html">Interface overview</a>. The twenty shortcuts are detailed in <a href="reference-raccourcis-clavier.html">Keyboard shortcuts</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

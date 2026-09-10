@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Panneau latéral</title>
-<meta name="description" content="La zone à droite de la conversation affiche une seule chose à la fois : prévisualisation, navigateur ou Forecast.">
+<title>Beaver Docs — Side panel</title>
+<meta name="description" content="The area to the right of the conversation shows one thing at a time: file preview, browser or Forecast.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,73 +19,73 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Interface / Panneau latéral</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="interface-panneau-lateral.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Interface / Side panel</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/interface-panneau-lateral.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="interface-panneau-lateral.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Un <em>seul</em> contenu à la fois</h1>
-    <p>Le panneau latéral est la zone à droite de la conversation. Prévisualisation, navigateur et Forecast s'y partagent le même espace : ouvrir l'un remplace l'autre. Ce n'est pas un bug, c'est une contrainte de place assumée — et c'est la première chose à savoir avant d'y toucher.</p>
+    <h1>One <em>single</em> thing at a time</h1>
+    <p>The side panel is the area to the right of the conversation. File preview, browser and Forecast share the same space: opening one replaces the other. This is not a bug, it is a deliberate space constraint — and it is the first thing to know before touching it.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Ouvrir le navigateur fait disparaître ton aperçu de fichier. Rien n'est perdu : il suffit de rebasculer sur Prévisualisation.
+      Opening the browser makes your file preview disappear. Nothing is lost: just switch back to File preview.
     </div>
 
-    <h2 id="a-quoi-il-sert">Ce que contient le panneau</h2>
-    <p>Il sert à consulter sans quitter le fil de la conversation : un fichier, une page web, un graphique de prévision.</p>
+    <h2 id="a-quoi-il-sert">What the panel holds</h2>
+    <p>It is there to let you look at things without leaving the thread of the conversation: a file, a web page, a forecast chart.</p>
 
-    <h2 id="les-trois-modes">Les trois modes</h2>
+    <h2 id="les-trois-modes">The three modes</h2>
 
     <table>
-      <caption class="crumb">Les trois contenus possibles du panneau latéral</caption>
-      <tr><th>Mode</th><th>Contenu</th><th>Disponibilité</th></tr>
-      <tr><td><b>Prévisualisation</b></td><td>Fichiers, images, tableurs, documents</td><td>Partout — mode par défaut</td></tr>
-      <tr><td><b>Navigateur</b></td><td>Navigateur web intégré</td><td>macOS et Windows</td></tr>
-      <tr><td><b>Forecast</b></td><td>Espace de prévision de séries temporelles</td><td>Partout</td></tr>
+      <caption class="crumb">The three possible contents of the side panel</caption>
+      <tr><th>Mode</th><th>Content</th><th>Availability</th></tr>
+      <tr><td><b>File preview</b></td><td>Files, images, spreadsheets, documents</td><td>Everywhere — default mode</td></tr>
+      <tr><td><b>Browser</b></td><td>Integrated web browser</td><td>macOS and Windows</td></tr>
+      <tr><td><b>Forecast</b></td><td>Time-series forecasting workspace</td><td>Everywhere</td></tr>
     </table>
 
-    <p>Le mode <b>Prévisualisation</b> est actif par défaut. Chacun a sa page : <a href="interface-fichiers-et-previews.html">Fichiers et prévisualisations</a>, <a href="interface-navigateur.html">Navigateur intégré</a> et <a href="outils-forecast.html">Forecast</a>.</p>
+    <p><b>File preview</b> mode is active by default. Each one has its own page: <a href="interface-fichiers-et-previews.html">Files and previews</a>, <a href="interface-navigateur.html">Integrated browser</a> and <a href="outils-forecast.html">Forecast</a>.</p>
 
-    <h2 id="basculer">Basculer d'un mode à l'autre</h2>
+    <h2 id="basculer">Switching from one mode to another</h2>
     <ul>
-      <li>Un sélecteur dédié, dans l'interface de la conversation.</li>
-      <li>Raccourci <b>⌥⌘B</b> (Alt+Ctrl+B) pour afficher ou masquer le panneau.</li>
+      <li>A dedicated selector, in the conversation interface.</li>
+      <li>Shortcut <b>⌥⌘B</b> (Alt+Ctrl+B) to show or hide the panel.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      L'écran <b>Réglages › Raccourcis</b> annonce un raccourci erroné pour cette action. C'est bien <b>⌥⌘B</b> qui fonctionne. Voir <a href="reference-raccourcis-clavier.html">Raccourcis clavier</a>.
+      <span class="t">Warning</span>
+      The <b>Settings › Keyboard Shortcuts</b> screen advertises the wrong shortcut for this action. <b>⌥⌘B</b> is the one that works. See <a href="reference-raccourcis-clavier.html">Keyboard shortcuts</a>.
     </div>
 
-    <h2 id="redimensionner-et-masquer">Redimensionner et masquer</h2>
+    <h2 id="redimensionner-et-masquer">Resizing and hiding</h2>
     <ul>
-      <li>La largeur du panneau se règle par glissement, avec une largeur minimale imposée : au-delà, il ne se réduit plus, il se masque.</li>
-      <li>La barre latérale gauche se masque avec <b>⌘B</b> (Ctrl+B), ce qui laisse plus de place au reste.</li>
+      <li>The panel width is set by dragging, with an enforced minimum width: beyond that, it stops shrinking and hides instead.</li>
+      <li>The left sidebar hides with <b>⌘B</b> (Ctrl+B), which leaves more room for the rest.</li>
     </ul>
 
-    <h2 id="comportement-automatique">Le comportement automatique</h2>
-    <p>L'application ajuste la disposition selon la largeur disponible. Quand la fenêtre devient trop étroite pour afficher confortablement la barre latérale, la conversation et le panneau, la barre latérale se replie d'elle-même et la conversation passe en affichage compact. Élargir la fenêtre, ou <b>⌘B</b>, la ramène.</p>
+    <h2 id="comportement-automatique">The automatic behavior</h2>
+    <p>The application adjusts the layout to the available width. When the window becomes too narrow to comfortably show the sidebar, the conversation and the panel, the sidebar folds away on its own and the conversation switches to a compact display. Widening the window, or <b>⌘B</b>, brings it back.</p>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'aperçu disparaît en ouvrant le navigateur</td><td>Les trois modes partagent le panneau</td><td>Rebasculer sur Prévisualisation</td></tr>
-      <tr><td>Le mode Navigateur est absent</td><td>Système Linux</td><td>Non disponible</td></tr>
-      <tr><td>La barre latérale se replie seule</td><td>Fenêtre trop étroite</td><td>Élargir la fenêtre, ou <b>⌘B</b></td></tr>
-      <tr><td>Le panneau ne se réduit pas davantage</td><td>Largeur minimale imposée</td><td>Masquer le panneau</td></tr>
-      <tr><td><b>⌥⌘B</b> ne fonctionne pas</td><td>Pas de conversation active, ou curseur dans un champ de saisie</td><td>Cliquer hors du champ</td></tr>
+      <caption class="crumb">Common symptoms and what to make of them</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The preview disappears when opening the browser</td><td>The three modes share the panel</td><td>Switch back to File preview</td></tr>
+      <tr><td>Browser mode is missing</td><td>Linux system</td><td>Not available</td></tr>
+      <tr><td>The sidebar folds away on its own</td><td>Window too narrow</td><td>Widen the window, or <b>⌘B</b></td></tr>
+      <tr><td>The panel will not shrink any further</td><td>Enforced minimum width</td><td>Hide the panel</td></tr>
+      <tr><td><b>⌥⌘B</b> does not work</td><td>No active conversation, or the cursor is in an input field</td><td>Click outside the field</td></tr>
     </table>
   </main>
 

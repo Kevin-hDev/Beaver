@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Premier lancement</title>
-<meta name="description" content="Ce qui se passe au premier démarrage de Beaver : le dossier de données créé, la migration automatique, le téléchargement d'Ollama proposé — et passable — et le mode de permission initial.">
+<title>Beaver Docs — First launch</title>
+<meta name="description" content="What happens when Beaver starts for the first time: the data folder created, the automatic migration, the Ollama download offered — and skippable — and the initial permission mode.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,187 +19,183 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Premier lancement</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-premier-lancement.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / First launch</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-premier-lancement.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-premier-lancement.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Le premier <em>lancement</em></h1>
-    <p>Au premier démarrage, Beaver crée son dossier de données, reprend
-    éventuellement celles d'une installation antérieure, te fait traverser un
-    parcours d'accueil et te propose d'installer Ollama — une proposition que tu
-    peux refuser. Voici ce qui arrive sur ton disque, et dans quel état tu
-    démarres.</p>
+    <h1>The first <em>launch</em></h1>
+    <p>On first start, Beaver creates its data folder, possibly picks up the data
+    from an earlier installation, walks you through an onboarding flow and offers
+    to install Ollama — an offer you may decline. Here is what lands on your
+    disk, and the state you start from.</p>
 
-    <h2 id="sequence">La séquence de démarrage</h2>
+    <h2 id="sequence">The startup sequence</h2>
     <ul>
-      <li><b>Écran d'attente</b> — l'icône de l'application s'affiche pendant le
-      chargement de l'interface. Le fond s'adapte au thème clair ou sombre retenu
-      du lancement précédent, et disparaît sans transition dès que l'application
-      est prête.</li>
-      <li><b>Initialisation du stockage</b> — création du dossier de données et
-      de sa structure s'ils n'existent pas, migration éventuelle depuis un ancien
-      emplacement.</li>
-      <li><b>Parcours d'accueil</b> — quatre à cinq étapes selon qu'Ollama est
-      déjà présent, décrites dans
-      <a href="demarrage-parcours-accueil.html">Parcours d'accueil</a>.</li>
-      <li><b>Application</b> — la fenêtre principale.</li>
+      <li><b>Splash screen</b> — the application icon is shown while the
+      interface loads. The background follows the light or dark theme kept from
+      the previous launch, and disappears with no transition as soon as the
+      application is ready.</li>
+      <li><b>Storage initialization</b> — creation of the data folder and its
+      structure if they do not exist, possible migration from an older
+      location.</li>
+      <li><b>Onboarding flow</b> — four to five steps depending on whether Ollama
+      is already present, described in
+      <a href="demarrage-parcours-accueil.html">Onboarding flow</a>.</li>
+      <li><b>Application</b> — the main window.</li>
     </ul>
 
-    <h2 id="dossier-de-donnees">Le dossier de données</h2>
-    <p>C'est le <b>même chemin sur les trois systèmes</b>.</p>
+    <h2 id="dossier-de-donnees">The data folder</h2>
+    <p>It is the <b>same path on all three systems</b>.</p>
 
     <table>
-      <caption class="crumb">Où vivent tes données</caption>
-      <tr><th>Système</th><th>Chemin</th></tr>
+      <caption class="crumb">Where your data lives</caption>
+      <tr><th>System</th><th>Path</th></tr>
       <tr><td>macOS</td><td><code>~/.local/share/cl-go-dash/</code></td></tr>
       <tr><td>Linux</td><td><code>~/.local/share/cl-go-dash/</code></td></tr>
-      <tr><td>Windows</td><td><code>C:\Users\&lt;utilisateur&gt;\.local\share\cl-go-dash\</code></td></tr>
+      <tr><td>Windows</td><td><code>C:\Users\&lt;user&gt;\.local\share\cl-go-dash\</code></td></tr>
     </table>
 
-    <p>Deux choses surprennent, autant les dire tout de suite. Le nom
-    <code>cl-go-dash</code> est un <b>identifiant historique</b> : l'application
-    s'est appelée CL-GO avant de devenir Beaver, et changer le nom du dossier
-    aurait obligé à déplacer les données de tous les utilisateurs existants.
-    Beaver ne déplace, ne copie et ne recrée rien. Et sous Windows,
-    l'emplacement est inhabituel : tu chercherais plutôt dans
-    <code>%APPDATA%</code>, où il n'y a rien.</p>
+    <p>Two things are surprising, so let us get them out of the way. The name
+    <code>cl-go-dash</code> is a <b>historical identifier</b>: the application was
+    called CL-GO before becoming Beaver, and changing the folder name would have
+    forced a move of every existing user's data. Beaver moves, copies and
+    recreates nothing. And on Windows, the location is unusual: you would rather
+    look in <code>%APPDATA%</code>, where there is nothing.</p>
 
     <div class="callout">
-      <span class="t">Pourquoi ce nom de dossier</span>
-      Le dossier s'appelle <code>cl-go-dash</code>, l'ancien nom du projet. Il
-      est conservé tel quel pour que les installations existantes continuent de
-      fonctionner sans déplacement de données.
+      <span class="t">Why this folder name</span>
+      The folder is called <code>cl-go-dash</code>, the project's former name. It
+      is kept as is so that existing installations keep working without moving
+      any data.
     </div>
 
-    <h2 id="ce-qui-est-cree">Ce qui est créé</h2>
-    <p><b>Dossiers</b> : <code>memory/core</code>, <code>inbox</code>,
+    <h2 id="ce-qui-est-cree">What gets created</h2>
+    <p><b>Folders</b>: <code>memory/core</code>, <code>inbox</code>,
     <code>skills</code>, <code>agent-sessions</code>,
     <code>tool-results</code>, <code>translations</code>,
     <code>logs</code>.</p>
 
     <table>
-      <caption class="crumb">Fichiers créés avec leur valeur initiale</caption>
-      <tr><th>Fichier</th><th>Valeur initiale</th></tr>
+      <caption class="crumb">Files created with their initial value</caption>
+      <tr><th>File</th><th>Initial value</th></tr>
       <tr><td><code>config.json</code></td><td><code>{}</code></td></tr>
       <tr><td><code>agent-settings.json</code></td><td><code>{"permissionMode":"auto"}</code></td></tr>
       <tr><td><code>configured-providers.json</code></td><td><code>[]</code></td></tr>
       <tr><td><code>favorite-models.json</code></td><td><code>[]</code></td></tr>
       <tr><td><code>projects.json</code></td><td><code>[]</code></td></tr>
       <tr><td><code>inbox/pending.json</code></td><td><code>[]</code></td></tr>
-      <tr><td><code>personality-injection.json</code></td><td>Quatre fichiers de personnalité, tous désactivés : <code>identity.md</code>, <code>principles.md</code>, <code>user.md</code>, <code>idea-discovery.md</code></td></tr>
+      <tr><td><code>personality-injection.json</code></td><td>Four personality files, all disabled: <code>identity.md</code>, <code>principles.md</code>, <code>user.md</code>, <code>idea-discovery.md</code></td></tr>
     </table>
 
-    <p>Cinq fichiers sont créés <b>vides</b> : <code>AGENTS.md</code>,
+    <p>Five files are created <b>empty</b>: <code>AGENTS.md</code>,
     <code>memory/core/identity.md</code>, <code>memory/core/principles.md</code>,
-    <code>memory/core/user.md</code> et <code>inbox/idea-discovery.md</code>. Le
-    fichier <code>terminal-tabs.json</code> n'apparaît, lui, qu'à ta première
-    utilisation du terminal. Un composant supplémentaire est également installé à
-    ce moment : le moteur de prévision local.</p>
+    <code>memory/core/user.md</code> and <code>inbox/idea-discovery.md</code>. The
+    <code>terminal-tabs.json</code> file, for its part, appears only the first
+    time you use the terminal. One additional component is installed at that
+    moment too: the local forecasting engine.</p>
 
     <div class="callout">
-      <span class="t">Le mode de permission par défaut</span>
-      À la première installation, Beaver est en <b>Accès complet</b> : l'agent
-      exécute ses outils sans demander confirmation. Si tu préfères valider
-      chaque action, passe en <b>Demander l'autorisation</b> avant de lancer ta
-      première tâche — voir
-      <a href="agent-permissions.html">Modes de permission</a>.
+      <span class="t">The default permission mode</span>
+      On a fresh installation, Beaver is in <b>Full access</b>: the agent runs
+      its tools without asking for confirmation. If you prefer to approve every
+      action, switch to <b>Ask permission</b> before starting your first task —
+      see <a href="agent-permissions.html">Permission modes</a>.
     </div>
 
-    <h2 id="migration">La migration depuis une installation antérieure</h2>
-    <p>Trois migrations automatiques existent, chacune marquée par un fichier
-    témoin pour ne pas se répéter.</p>
+    <h2 id="migration">Migration from an earlier installation</h2>
+    <p>Three automatic migrations exist, each marked by a witness file so it does
+    not repeat.</p>
 
     <table>
-      <caption class="crumb">Anciens emplacements repris automatiquement</caption>
-      <tr><th>Origine</th><th>Témoin déposé</th></tr>
-      <tr><td><code>~/.local/share/cl-go</code> (ancien nom du projet)</td><td><code>.migrated-from-cl-go</code></td></tr>
+      <caption class="crumb">Old locations picked up automatically</caption>
+      <tr><th>Origin</th><th>Witness file written</th></tr>
+      <tr><td><code>~/.local/share/cl-go</code> (project's former name)</td><td><code>.migrated-from-cl-go</code></td></tr>
       <tr><td><code>~/Library/Application Support/cl-go-dash</code> (macOS)</td><td><code>.migrated-from-appsupport</code></td></tr>
       <tr><td><code>%APPDATA%\cl-go-dash</code> (Windows)</td><td><code>.migrated-from-appdata</code></td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Tes données existantes sont conservées</span>
-      Si tu utilisais déjà CL-GO, ou une version antérieure de Beaver rangeant
-      ses données ailleurs, tes conversations et tes réglages sont repris
-      automatiquement au premier démarrage. Il n'y a rien à faire à la main.
+      <span class="t">Your existing data is kept</span>
+      If you were already using CL-GO, or an earlier version of Beaver storing
+      its data elsewhere, your conversations and settings are picked up
+      automatically on first start. There is nothing to do by hand.
     </div>
 
-    <h2 id="telechargement-ollama">Le téléchargement d'Ollama</h2>
-    <p>Ollama n'est pas inclus dans l'application, et il n'est jamais téléchargé
-    dans ton dos : le parcours d'accueil t'affiche un bouton, et rien ne part
-    tant que tu ne l'as pas cliqué. <b>Tu peux passer l'étape</b> — Beaver
-    fonctionne alors avec les modèles distants, par clé API ou par compte web
-    connecté. Si tu changes d'avis plus tard, l'installation se lance depuis
-    <b>Réglages › Ollama</b>.</p>
-    <p>Beaver considère le moteur comme disponible si le port <b>11434</b> est
-    ouvert, ou si le binaire existe déjà dans
-    <code>~/.local/share/cl-go-dash/ollama-bundle/</code>. Si un démon Ollama
-    tourne déjà — parce qu'Ollama est installé séparément — Beaver l'utilise tel
-    quel et ne propose aucun téléchargement.</p>
-    <p>Ce qui suit décrit ce qui se passe <b>si</b> tu acceptes le
-    téléchargement.</p>
+    <h2 id="telechargement-ollama">The Ollama download</h2>
+    <p>Ollama is not included in the application, and it is never downloaded
+    behind your back: the onboarding flow shows you a button, and nothing leaves
+    until you have clicked it. <b>You can skip the step</b> — Beaver then works
+    with remote models, through an API key or a connected web account. If you
+    change your mind later, the installation can be started from
+    <b>Settings › Ollama</b>.</p>
+    <p>Beaver considers the engine available if port <b>11434</b> is open, or if
+    the binary already exists in
+    <code>~/.local/share/cl-go-dash/ollama-bundle/</code>. If an Ollama daemon is
+    already running — because Ollama is installed separately — Beaver uses it as
+    is and offers no download.</p>
+    <p>What follows describes what happens <b>if</b> you accept the
+    download.</p>
 
     <table>
-      <caption class="crumb">Archive téléchargée selon le système</caption>
-      <tr><th>Système</th><th>Archive</th><th>Choix selon le GPU</th></tr>
-      <tr><td>macOS</td><td><code>ollama-darwin.tgz</code></td><td>Non — Metal est intégré</td></tr>
-      <tr><td>Windows</td><td><code>ollama-windows-amd64.zip</code></td><td>Non — archive unique</td></tr>
-      <tr><td>Linux</td><td><code>ollama-linux-amd64.tar.zst</code> ou la variante ROCm</td><td>Oui — détection du constructeur du GPU</td></tr>
+      <caption class="crumb">Archive downloaded per system</caption>
+      <tr><th>System</th><th>Archive</th><th>Choice depending on the GPU</th></tr>
+      <tr><td>macOS</td><td><code>ollama-darwin.tgz</code></td><td>No — Metal is built in</td></tr>
+      <tr><td>Windows</td><td><code>ollama-windows-amd64.zip</code></td><td>No — single archive</td></tr>
+      <tr><td>Linux</td><td><code>ollama-linux-amd64.tar.zst</code> or the ROCm variant</td><td>Yes — GPU vendor detection</td></tr>
     </table>
 
-    <p>Le téléchargement est contrôlé de bout en bout : la taille exacte est
-    annoncée par une requête préalable puis vérifiée <b>à l'octet près</b> à la
-    réception, avec un plafond de <b>3 Gio</b> et un délai maximal de <b>1800
-    secondes</b> ; l'empreinte <b>SHA-256</b> est comparée en temps constant à
-    celle publiée par le projet Ollama ; la présence du binaire est vérifiée
-    après extraction ; l'archive temporaire et le dossier de destination sont
-    nettoyés en cas d'échec.</p>
-    <p><b>Refuser n'a aucune conséquence durable.</b> L'application reste
-    pleinement utilisable avec des modèles distants, et le bouton d'installation
-    t'attend dans <b>Réglages › Ollama</b> le jour où tu en veux un local.</p>
+    <p>The download is checked end to end: the exact size is announced by a
+    preliminary request then verified <b>to the byte</b> on receipt, with a cap of
+    <b>3 GiB</b> and a maximum delay of <b>1800 seconds</b>; the <b>SHA-256</b>
+    fingerprint is compared in constant time against the one published by the
+    Ollama project; the presence of the binary is checked after extraction; the
+    temporary archive and the destination folder are cleaned up on failure.</p>
+    <p><b>Declining has no lasting consequence.</b> The application stays fully
+    usable with remote models, and the install button waits for you in
+    <b>Settings › Ollama</b> the day you want a local one.</p>
 
-    <h2 id="instance-unique">Une seule instance à la fois</h2>
-    <p>Lancer Beaver une seconde fois ne crée pas de deuxième fenêtre : le focus
-    revient sur celle qui est déjà ouverte. Le comportement est identique sur les
-    trois systèmes.</p>
+    <h2 id="instance-unique">One instance at a time</h2>
+    <p>Launching Beaver a second time does not create a second window: focus
+    returns to the one already open. The behavior is identical on all three
+    systems.</p>
 
-    <h2 id="bouton-de-fermeture">Le bouton de fermeture</h2>
+    <h2 id="bouton-de-fermeture">The close button</h2>
     <table>
-      <caption class="crumb">Ce que fait la fermeture selon le système</caption>
-      <tr><th>Système</th><th>Clic sur la fermeture</th><th>Effet</th></tr>
-      <tr><td>macOS</td><td>Pastille rouge</td><td><b>Masque la fenêtre</b>, l'application reste dans le Dock. Un clic sur l'icône du Dock la ramène. <code>Cmd+Q</code> quitte réellement.</td></tr>
-      <tr><td>Windows</td><td>Croix</td><td>Quitte l'application et arrête Ollama</td></tr>
-      <tr><td>Linux</td><td>Croix</td><td>Quitte l'application et arrête Ollama</td></tr>
+      <caption class="crumb">What closing does per system</caption>
+      <tr><th>System</th><th>Click on close</th><th>Effect</th></tr>
+      <tr><td>macOS</td><td>Red dot</td><td><b>Hides the window</b>, the application stays in the Dock. A click on the Dock icon brings it back. <code>Cmd+Q</code> genuinely quits.</td></tr>
+      <tr><td>Windows</td><td>Cross</td><td>Quits the application and stops Ollama</td></tr>
+      <tr><td>Linux</td><td>Cross</td><td>Quits the application and stops Ollama</td></tr>
     </table>
 
-    <p>Le comportement macOS est conforme aux usages du système, mais surprend
-    quand on vient de Windows : l'application semble fermée alors qu'elle tourne
-    encore.</p>
+    <p>The macOS behavior follows the system's conventions, but surprises anyone
+    coming from Windows: the application looks closed while it is still
+    running.</p>
 
-    <h2 id="pieges">Si quelque chose cloche</h2>
+    <h2 id="pieges">If something goes wrong</h2>
     <table>
-      <caption class="crumb">Symptômes du premier démarrage</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'écran de configuration d'Ollama échoue</td><td>Pas de connexion, ou GitHub injoignable</td><td>Réessayer plus tard ; l'étape est reprenable</td></tr>
-      <tr><td>Le téléchargement s'arrête tout de suite</td><td>Taille reçue différente de la taille annoncée, ou empreinte SHA-256 qui ne correspond pas</td><td>Réseau intercepté par un portail captif ou un proxy</td></tr>
-      <tr><td>Sous Windows, le téléchargement de modèle échoue</td><td>L'accès contrôlé aux dossiers bloque <code>ollama.exe</code></td><td>Cliquer « Autoriser » dans la notification</td></tr>
-      <tr><td>L'application semble fermée mais tourne encore (macOS)</td><td>La fermeture masque la fenêtre</td><td>Cliquer l'icône du Dock, ou <code>Cmd+Q</code> pour quitter</td></tr>
-      <tr><td>Un second lancement ne fait rien</td><td>Instance unique</td><td>Normal : le focus revient sur la fenêtre existante</td></tr>
-      <tr><td>Données introuvables sous Windows</td><td>Emplacement inhabituel</td><td><code>C:\Users\&lt;utilisateur&gt;\.local\share\cl-go-dash\</code></td></tr>
+      <caption class="crumb">First-start symptoms</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The Ollama configuration screen fails</td><td>No connection, or GitHub unreachable</td><td>Try again later; the step can be resumed</td></tr>
+      <tr><td>The download stops right away</td><td>Received size differs from the announced size, or the SHA-256 fingerprint does not match</td><td>Network intercepted by a captive portal or a proxy</td></tr>
+      <tr><td>On Windows, the model download fails</td><td>Controlled folder access is blocking <code>ollama.exe</code></td><td>Click “Allow” in the notification</td></tr>
+      <tr><td>The application looks closed but is still running (macOS)</td><td>Closing hides the window</td><td>Click the Dock icon, or <code>Cmd+Q</code> to quit</td></tr>
+      <tr><td>A second launch does nothing</td><td>Single instance</td><td>Normal: focus returns to the existing window</td></tr>
+      <tr><td>Data nowhere to be found on Windows</td><td>Unusual location</td><td><code>C:\Users\&lt;user&gt;\.local\share\cl-go-dash\</code></td></tr>
     </table>
 
-    <p>La gestion du démon Ollama après installation est décrite dans
-    <a href="modeles-moteur-local.html">Moteur local</a>.</p>
+    <p>Managing the Ollama daemon after installation is described in
+    <a href="modeles-moteur-local.html">Local engine</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

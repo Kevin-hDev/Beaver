@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Pièces jointes</title>
-<meta name="description" content="Joindre un fichier à un message : les limites, l'autorisation signée qui protège chaque chemin, et quand il vaut mieux laisser l'agent lire le fichier.">
+<title>Beaver Docs — Attachments</title>
+<meta name="description" content="Attaching a file to a message: the limits, the signed authorization that protects each path, and when it is better to let the agent read the file.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,79 +19,79 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Agent / Pièces jointes</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="agent-pieces-jointes.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Agent / Attachments</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/agent-pieces-jointes.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="agent-pieces-jointes.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Pièces <em>jointes</em></h1>
-    <p>Tu peux attacher des fichiers à un message : l'agent y accède pour la conversation. Cette page décrit les limites, le mécanisme qui protège chaque fichier joint, et le cas où joindre ne sert à rien.</p>
+    <h1><em>Attachments</em></h1>
+    <p>You can attach files to a message: the agent gets access to them for the conversation. This page describes the limits, the mechanism that protects each attached file, and the case where attaching serves no purpose.</p>
 
-    <h2 id="limites">Les limites</h2>
+    <h2 id="limites">The limits</h2>
     <table>
-      <caption class="crumb">Valeurs de référence</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Pièces jointes</td><td><b>15</b></td></tr>
-      <tr><td>Taille d'une pièce jointe</td><td><b>20 Mo</b></td></tr>
-      <tr><td>Longueur d'un chemin</td><td>4 096 octets</td></tr>
+      <caption class="crumb">Reference values</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Attachments</td><td><b>15</b></td></tr>
+      <tr><td>Size of an attachment</td><td><b>20 MB</b></td></tr>
+      <tr><td>Length of a path</td><td>4,096 bytes</td></tr>
     </table>
-    <p>Un fichier au-delà de 20 Mo est refusé. S'il se trouve dans un dossier autorisé, laisse-le où il est : l'agent le lira avec ses outils.</p>
+    <p>A file over 20 MB is refused. If it sits in an allowed folder, leave it where it is: the agent will read it with its tools.</p>
 
-    <h2 id="autorisation">Comment l'accès est autorisé</h2>
-    <p>Joindre un fichier ne rend pas ce fichier librement accessible. Chaque chemin reçoit une <b>autorisation signée</b> :</p>
+    <h2 id="autorisation">How access is authorized</h2>
+    <p>Attaching a file does not make that file freely accessible. Each path receives a <b>signed authorization</b>:</p>
     <ul>
-      <li>elle est calculée avec une clé conservée dans le <b>coffre chiffré</b> ;</li>
-      <li>elle est <b>vérifiée à chaque accès</b> ;</li>
-      <li>le chemin est <b>résolu</b> — liens et raccourcis compris — avant d'être autorisé ;</li>
-      <li>une autorisation qui ne correspond pas donne l'erreur <code>attachment_access_denied</code>.</li>
+      <li>it is computed with a key kept in the <b>encrypted vault</b>;</li>
+      <li>it is <b>checked on every access</b>;</li>
+      <li>the path is <b>resolved</b> — links and shortcuts included — before being authorized;</li>
+      <li>an authorization that does not match yields the error <code>attachment_access_denied</code>.</li>
     </ul>
     <div class="callout">
-      <span class="t">Une pièce jointe donne accès à un seul fichier</span>
-      Joindre un fichier autorise l'accès à ce fichier précis, pas au dossier qui le contient. Un chemin fabriqué ou modifié ne passe pas.
+      <span class="t">An attachment grants access to a single file</span>
+      Attaching a file authorizes access to that specific file, not to the folder containing it. A fabricated or altered path does not go through.
     </div>
 
-    <h2 id="redemarrage">Ce qui se passe au redémarrage</h2>
-    <p>Les autorisations peuvent être restaurées au lancement suivant, pour que les pièces jointes d'une conversation reprise restent accessibles.</p>
+    <h2 id="redemarrage">What happens on restart</h2>
+    <p>Authorizations can be restored on the next launch, so that the attachments of a resumed conversation remain accessible.</p>
 
-    <h2 id="joindre-ou-lire">Pièce jointe ou lecture de fichier ?</h2>
+    <h2 id="joindre-ou-lire">Attachment or file read?</h2>
     <table>
-      <caption class="crumb">Deux façons de donner un fichier à l'agent</caption>
-      <tr><th></th><th>Pièce jointe</th><th>Lecture par l'agent</th></tr>
-      <tr><td>Le fichier peut être n'importe où</td><td>Oui</td><td>Non, il doit être dans un dossier autorisé</td></tr>
-      <tr><td>Taille</td><td>20 Mo au maximum</td><td>Selon l'outil employé</td></tr>
-      <tr><td>Nombre</td><td>15 par message</td><td>Sans limite fixe</td></tr>
-      <tr><td>Autorisation</td><td>Signée, par fichier</td><td>Portée d'accès disque</td></tr>
+      <caption class="crumb">Two ways of giving a file to the agent</caption>
+      <tr><th></th><th>Attachment</th><th>Read by the agent</th></tr>
+      <tr><td>The file can be anywhere</td><td>Yes</td><td>No, it must be in an allowed folder</td></tr>
+      <tr><td>Size</td><td>20 MB at most</td><td>Depends on the tool used</td></tr>
+      <tr><td>Number</td><td>15 per message</td><td>No fixed limit</td></tr>
+      <tr><td>Authorization</td><td>Signed, per file</td><td>Disk access scope</td></tr>
     </table>
-    <p>La pièce jointe sert au <b>fichier isolé</b>, hors de tes dossiers de travail : un document reçu, une capture, un export téléchargé.</p>
+    <p>Attachments are for the <b>isolated file</b>, outside your working folders: a document you received, a screenshot, a downloaded export.</p>
     <div class="callout">
-      <span class="t">Inutile de joindre un fichier du projet</span>
-      Si le fichier se trouve dans un dossier auquel l'agent a accès, il peut le lire directement — sans limite de 20 Mo ni de nombre. Voir <a href="agent-repertoire-de-travail.html">Répertoire de travail</a>.
+      <span class="t">No need to attach a project file</span>
+      If the file sits in a folder the agent has access to, it can read it directly — with no 20 MB limit and no count limit. See <a href="agent-repertoire-de-travail.html">Working folder</a>.
     </div>
 
-    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <h2 id="pieges">What surprises people most often</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Un fichier est refusé</td><td>Plus de 20 Mo</td><td>Le laisser dans un dossier autorisé et demander à l'agent de le lire</td></tr>
-      <tr><td>Impossible d'ajouter une pièce de plus</td><td>Quinze au maximum</td><td>Envoyer en plusieurs messages</td></tr>
-      <tr><td>« Accès à la pièce jointe refusé »</td><td>Autorisation invalide, fichier déplacé ou supprimé</td><td>Joindre le fichier à nouveau</td></tr>
-      <tr><td>Une pièce jointe d'une ancienne conversation n'est plus lisible</td><td>Fichier déplacé, ou autorisation non restaurée</td><td>La joindre à nouveau</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>A file is refused</td><td>Over 20 MB</td><td>Leave it in an allowed folder and ask the agent to read it</td></tr>
+      <tr><td>Cannot add another attachment</td><td>Fifteen at most</td><td>Send them across several messages</td></tr>
+      <tr><td>“Attachment access denied”</td><td>Invalid authorization, file moved or deleted</td><td>Attach the file again</td></tr>
+      <tr><td>An attachment from an old conversation is no longer readable</td><td>File moved, or authorization not restored</td><td>Attach it again</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée d'accès disque.</li>
-      <li><a href="outils-fichiers.html">Outils fichiers</a> — comment l'agent lit un fichier.</li>
-      <li><a href="interface-fichiers-et-previews.html">Fichiers et prévisualisations</a> — parcourir et prévisualiser depuis l'application.</li>
+      <li><a href="agent-repertoire-de-travail.html">Working folder</a> — the disk access scope.</li>
+      <li><a href="outils-fichiers.html">File tools</a> — how the agent reads a file.</li>
+      <li><a href="interface-fichiers-et-previews.html">Files and previews</a> — browsing and previewing from the application.</li>
     </ul>
   </main>
 

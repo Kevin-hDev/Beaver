@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Prompt système et extensions</title>
+<meta name="description" content="Ce qu'une extension peut et ne peut pas faire des instructions données au modèle, et où se règle réellement la personnalisation du prompt système.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Intégrations / Prompt système</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="integrations-prompt-systeme.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/integrations-prompt-systeme.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Prompt système et <em>extensions</em></h1>
+    <p>La réponse courte tient en une phrase : <b>une extension ne touche pas au prompt système</b>, ni pour le lire, ni pour l'écrire, ni pour s'y insérer. Modifier, remplacer ou désactiver le prompt système est une fonctionnalité native de Beaver, sans rapport avec les extensions. Cette page dit où se règle la personnalisation, ce que les extensions font réellement autour du prompt, et par quel chemin leur texte atteint quand même le modèle.</p>
+
+    <h2 id="la-personnalisation-est-native">La personnalisation du prompt système est native</h2>
+    <p>Beaver permet de consulter, modifier, remplacer et désactiver le prompt système. Ce réglage vit dans l'application. Le prompt effectivement envoyé se calcule à partir de tes réglages enregistrés, du nom du modèle, du mode, du niveau de détail, du prompt natif du modèle Ollama le cas échéant, et du prompt par défaut de Beaver. Quatre états sont possibles : par défaut, prompt Beaver, personnalisé, désactivé.</p>
+
+    <p><b>Aucune extension ne figure parmi ces entrées.</b> Le mécanisme complet — modes, portées, prompts natifs Ollama, comment modifier et restaurer — est décrit dans <a href="agent-prompts-systeme.html">Prompts système</a>. C'est la page à lire si tu cherches à changer les instructions données au modèle.</p>
+
+    <h2 id="ce-quune-extension-peut-faire">Ce qu'une extension peut faire, et ce qu'elle ne peut pas</h2>
+    <p>Une extension communique avec Beaver par un canal fermé : une liste de méthodes déclarée dans un contrat, et rien d'autre. Cette liste est écrite une seule fois — la version utilisée par Beaver est produite à la compilation à partir du même fichier de contrat que celui lu par l'extension. Il n'existe donc pas de seconde liste, plus permissive, ailleurs.</p>
+
+    <p>Les <b>douze méthodes</b> qu'une extension peut appeler sont <code>app.info</code>, <code>sessions.list</code>, <code>sessions.get</code>, <code>projects.list</code>, <code>mcp.connectors.list</code>, <code>mcp.tool.call</code>, <code>channels.config.get</code>, <code>secrets.provider.get</code>, <code>secrets.mcp.oauth.get</code>, <code>secrets.mcp.env.get</code>, <code>secrets.channel.get</code> et <code>host.load.stage</code>. Aucune ne concerne les prompts ni les réglages de l'agent ; tout autre nom renvoie une erreur.</p>
+
+    <p>Ce qu'une extension peut déclarer : des outils, des skills, des ressources, des éléments d'interface, et l'écoute d'événements. En mode avancé, elle peut en plus recouvrir un outil natif — ce qui ne concerne <b>que les outils</b>, et fait l'objet de sa propre page. Côté événements, un seul existe, <code>session.turn.started</code> : il signale qu'un tour de conversation a commencé, il ne permet pas d'intervenir dans la construction du prompt.</p>
+
+    <table>
+      <caption class="crumb">Ce qu'une extension peut et ne peut pas faire vis-à-vis du prompt système</caption>
+      <tr><th>Capacité</th><th>Disponible ?</th></tr>
+      <tr><td>Remplacer le prompt système</td><td><b>Non</b></td></tr>
+      <tr><td>Lire le prompt système</td><td><b>Non</b></td></tr>
+      <tr><td>Ajouter du texte au prompt système</td><td><b>Non</b></td></tr>
+      <tr><td>Intercepter la construction du prompt</td><td><b>Non</b></td></tr>
+      <tr><td>Lire ou modifier les réglages de prompt</td><td><b>Non</b></td></tr>
+      <tr><td>Recouvrir un <b>outil</b> natif</td><td><b>Oui</b>, en mode avancé</td></tr>
+      <tr><td>Fournir un skill que le modèle peut charger</td><td><b>Oui</b></td></tr>
+      <tr><td>Fournir des descriptions d'outils lues par le modèle</td><td><b>Oui</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      La porte « avancée » est fermée, pas entrouverte. Une extension déclarée en mode avancé dispose d'un appel générique, <code>beaver.unstable.call(...)</code>. On pourrait croire qu'il donne accès à des fonctions cachées du cœur de Beaver : ce n'est pas le cas. Cet appel n'accepte que les méthodes marquées « avancées » dans le contrat, et <b>aucune méthode du contrat actuel ne porte ce marquage</b> — les douze méthodes déclarées sont toutes stables. L'ensemble des méthodes que <code>unstable.call</code> peut atteindre est donc vide aujourd'hui.
+    </div>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Ne confonds pas deux mécanismes qui portent le même nom. « Remplacement » désigne dans Beaver le fait pour une extension de recouvrir un <b>outil</b> natif — la recherche web, par exemple. Cela ne concerne à aucun moment le prompt système. Voir <a href="integrations-remplacer-un-outil.html">Remplacer un outil</a>.
+    </div>
+
+    <h2 id="le-paragraphe-ajoute-par-beaver">Le seul texte que Beaver ajoute à cause des extensions</h2>
+    <p>Il existe bien un paragraphe ajouté au prompt système à cause des extensions — mais <b>il est écrit par Beaver, pas par une extension</b>, et son texte est fixe. Il est ajouté à la fin du message système, <b>en mode Agent uniquement</b> ; en mode Chatbot, il n'est pas ajouté. Il n'apparaît que si <b>les deux</b> outils de découverte sont actifs, <code>list_extensions</code> et <code>inspect_extensions</code> ; si un seul manque, rien n'est ajouté.</p>
+
+    <p>Son contenu explique au modèle comment consulter le catalogue d'extensions : inspecter directement 1 à 4 identifiants exacts, n'utiliser la liste complète que pour la vue d'ensemble, et ne jamais chercher une extension par mot-clé. Ce texte est en anglais dans le code, comme le reste du prompt système.</p>
+
+    <h2 id="comment-un-texte-dextension-atteint-le-modele">Comment un texte d'extension atteint quand même le modèle</h2>
+    <p>C'est le point important pour la sécurité, et il ne passe pas par le prompt système.</p>
+
+    <p><b>Les skills d'extension n'entrent pas dans le prompt système.</b> Le prompt contient une liste des skills disponibles, construite depuis le catalogue global — et ce catalogue exclut explicitement les skills d'extension : toute entrée dont l'identifiant commence par <code>extension:</code> en est retirée. Le commentaire qui accompagne le filtre dit pourquoi : cet espace de noms est autorisé session par session et ne doit jamais entrer dans le catalogue global.</p>
+
+    <p><b>En revanche, le contenu d'un skill d'extension entre dans la conversation quand le modèle le charge.</b> Le modèle demande un skill par son identifiant ; si celui-ci commence par <code>extension:</code>, Beaver charge le fichier Markdown fourni par l'extension. Deux garde-fous encadrent ce chargement : le texte est préfixé par sa provenance, sous la forme <code>Skill source: &lt;identifiant de l'extension&gt;</code>, si bien que le modèle voit d'où vient l'instruction ; et le chargement est refusé si la session écarte les extensions.</p>
+
+    <p>Les <b>descriptions déclarées par l'extension</b> sont également du texte tiers vu par le modèle : la description d'un outil est obligatoire, non vide et bornée. C'est par ces descriptions qu'un outil d'extension se présente au modèle.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      C'est là toute la différence. Le contenu d'une extension atteint le modèle <b>à l'intérieur de la conversation</b>, après le prompt système, et signé par sa provenance. Il reste un texte que le prompt système encadre, au lieu de devenir le cadre lui-même. Le prompt système est le seul texte que le modèle reçoit avant tout contenu extérieur : c'est lui qui fixe les règles auxquelles le reste est censé obéir, y compris celles qui encadrent l'usage des outils.
+    </div>
+
+    <h2 id="ordre-dassemblage">Où se place ce paragraphe dans le message système</h2>
+    <p>En mode Agent, le message système s'assemble dans cet ordre.</p>
+
+    <table>
+      <caption class="crumb">Ordre d'assemblage du message système en mode Agent</caption>
+      <tr><th>Rang</th><th>Élément ajouté</th><th>Origine</th></tr>
+      <tr><td>1</td><td>Prompt résolu selon tes réglages</td><td>Beaver ou toi</td></tr>
+      <tr><td>2</td><td>Paragraphe de découverte des extensions</td><td>Beaver, texte fixe</td></tr>
+      <tr><td>3</td><td>Liste des skills disponibles (<b>sans</b> ceux des extensions)</td><td>Beaver</td></tr>
+      <tr><td>4</td><td><code>AGENTS.md</code> et personnalité</td><td>Toi</td></tr>
+      <tr><td>5</td><td>Langue de réponse</td><td>Réglage</td></tr>
+      <tr><td>6</td><td>Mémoire, contexte git, dossier de sorties, mode Plan</td><td>Beaver</td></tr>
+    </table>
+
+    <h2 id="les-limites">Les limites du texte fourni par une extension</h2>
+
+    <table>
+      <caption class="crumb">Ce qui borne le texte d'une extension</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Longueur d'une description d'outil, de skill ou de ressource</td><td><b>2 000</b> caractères</td></tr>
+      <tr><td>Outils par extension</td><td><b>64</b></td></tr>
+      <tr><td>Skills par extension</td><td><b>32</b></td></tr>
+      <tr><td>Ressources par extension</td><td><b>64</b></td></tr>
+      <tr><td>Taille d'une ressource texte</td><td><b>262 144</b> octets</td></tr>
+      <tr><td>Événements écoutés par extension</td><td><b>64</b></td></tr>
+      <tr><td>Durée maximale d'un gestionnaire d'événement</td><td><b>5 000</b> ms</td></tr>
+    </table>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui égare le plus souvent</caption>
+      <tr><th>Piège</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Chercher dans les extensions le moyen de changer le prompt système</td><td>Le sujet paraît naturellement lié aux extensions</td><td>Le réglage est natif — voir <a href="agent-prompts-systeme.html">Prompts système</a></td></tr>
+      <tr><td>Croire que le mode avancé ouvre des fonctions supplémentaires du cœur</td><td>Le nom <code>unstable.call</code> le suggère</td><td>Aucune méthode avancée n'est publiée aujourd'hui</td></tr>
+      <tr><td>Attendre qu'un skill d'extension apparaisse dans la liste des skills du prompt</td><td>Les skills d'extension sont volontairement hors du catalogue global</td><td>Ils se découvrent par les outils d'extension et se chargent par leur identifiant <code>extension:</code></td></tr>
+      <tr><td>S'étonner que le paragraphe sur les extensions n'apparaisse pas</td><td>Il ne s'ajoute qu'en mode Agent, et seulement si les deux outils de découverte sont actifs</td><td>Comportement voulu</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-prompts-systeme.html">Prompts système</a> — la page qui traite réellement du sujet : modes, niveaux, portées, les quatre états, les prompts natifs Ollama, comment modifier et restaurer.</li>
+      <li><a href="agent-instructions-permanentes.html">Instructions permanentes</a> — <code>AGENTS.md</code> et la personnalité, l'autre texte qui rejoint le message système.</li>
+      <li><a href="integrations-centre-extensions.html">Centre d'extensions</a> — installer, activer et approuver une extension.</li>
+      <li><a href="integrations-remplacer-un-outil.html">Remplacer un outil</a> — le mécanisme de remplacement, qui ne concerne que les outils.</li>
+      <li><a href="integrations-ecrire-une-extension.html">Écrire une extension</a> — l'interface offerte aux auteurs, dont les skills et les ressources.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Dépannage installation</title>
+<meta name="description" content="L'installation a échoué ou l'application ne démarre pas : les symptômes, leur cause réelle, et ce qui n'a pas de solution.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Référence / Dépannage installation</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reference-depannage-installation.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/reference-depannage-installation.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+  <main class="doc">
+    <h1>Quand ça <em>coince</em></h1>
+    <p>Cette page est rangée par symptôme, pas par système : cherche la phrase que tu as sous les yeux. Elle ne réexplique aucune procédure d'installation — les pages <a href="demarrage-installation-macos.html">Installation macOS</a>, <a href="demarrage-installation-windows.html">Installation Windows</a> et <a href="demarrage-installation-linux.html">Installation Linux</a> font autorité là-dessus. Certains échecs listés ici n'ont pas de solution ; c'est dit franchement à chaque fois.</p>
+    <h2 id="trois-causes">Les trois causes qui expliquent la moitié des cas</h2>
+    <ul>
+      <li><b>Beaver n'est signé par aucun certificat de signature de code.</b> C'est la cause de tout ce que macOS et Windows affichent comme mise en garde.</li>
+      <li><b>Une seule architecture est distribuée par système</b> : <code>aarch64-apple-darwin</code>, <code>x86_64-unknown-linux-gnu</code>, <code>x86_64-pc-windows-msvc</code>. Un Mac Intel, un PC ARM, un Linux ARM ou un Linux hors famille Debian n'ont pas de fichier à installer.</li>
+      <li><b>Le premier lancement n'a besoin d'Internet que si tu acceptes d'installer le moteur Ollama</b> — le téléchargement est proposé, jamais imposé, et se rattrape depuis Réglages › Ollama. Tout le reste de l'installation est local.</li>
+    </ul>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Aucune signature, et c'est permanent.</b> macOS et Windows afficheront une mise en garde à la première ouverture. Ce n'est pas un incident : c'est le cas de tous les logiciels libres distribués sans certificat, qui est payant et nominatif. Les sections ci-dessous expliquent quoi cliquer.
+    </div>
+    <h2 id="macos-gatekeeper">macOS — « Beaver ne peut pas être ouvert »</h2>
+    <p><b>Le symptôme.</b> Au double-clic, macOS refuse d'ouvrir l'application et parle d'un développeur non identifié, ou d'une application dont l'origine ne peut pas être vérifiée.</p>
+    <p><b>La cause.</b> L'application porte une signature ad hoc et n'est pas notarisée. Quand le fichier <code>.dmg</code> est téléchargé par un navigateur, macOS lui pose son marquage de quarantaine, et Gatekeeper bloque.</p>
+    <p><b>Ce qu'il faut faire</b>, dans cet ordre :</p>
+    <ul>
+      <li><b>réinstaller par le script</b>, qui est la voie recommandée : il télécharge par <code>curl</code>, ce qui ne pose pas le marquage de quarantaine. La commande complète est sur <a href="demarrage-installation-macos.html">Installation macOS</a> ;</li>
+      <li><b>ou débloquer l'application déjà installée</b> : clic droit sur <b>Beaver</b> dans le dossier Applications, puis « Ouvrir », et confirmer dans la boîte de dialogue ;</li>
+      <li><b>ou passer par les Réglages Système</b> : Confidentialité et sécurité, faire défiler jusqu'au message concernant Beaver, puis « Ouvrir quand même ».</li>
+    </ul>
+    <h2 id="macos-script">macOS et Linux — le script s'arrête avec un message</h2>
+    <p>Le script n'affiche qu'une poignée de messages, tous précédés d'une croix rouge. Les voici tous, avec leur cause réelle.</p>
+    <table>
+      <caption class="crumb">Les messages du script d'installation macOS et Linux</caption>
+      <tr><th>Message affiché</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Système non pris en charge. »</td><td>Architecture hors <code>Darwin:arm64</code>, <code>Darwin:aarch64</code>, <code>Linux:x86_64</code>, <code>Linux:amd64</code></td><td><b>Aucune</b> : pas de fichier d'installation pour cette machine</td></tr>
+      <tr><td>« curl est requis. »</td><td><code>/usr/bin/curl</code> absent ou non exécutable</td><td>Installer <code>curl</code> sous Linux ; sous macOS, il est présent d'origine — son absence signale une machine modifiée</td></tr>
+      <tr><td>« Droits administrateur requis. »</td><td>Pas de <code>sudo</code> et compte non administrateur</td><td>Choisir un dossier d'installation dans ton dossier personnel : le script accepte tout chemin absolu</td></tr>
+      <tr><td>« Impossible de récupérer la version. »</td><td>L'API GitHub n'a pas répondu</td><td>Vérifier la connexion, le proxy, le pare-feu</td></tr>
+      <tr><td>« Version de Beaver invalide. » / « incomplète. »</td><td>La release publiée ne contient pas les fichiers attendus</td><td>Signaler le problème ; ne pas contourner</td></tr>
+      <tr><td>« Manifeste de mise à jour invalide. »</td><td>Le fichier d'empreintes de la release est absent ou malformé</td><td>Signaler le problème</td></tr>
+      <tr><td>« Téléchargement impossible. »</td><td>Le téléchargement a échoué ou dépassé <b>1800 secondes</b></td><td>Relancer ; vérifier le débit</td></tr>
+      <tr><td>« Téléchargement invalide. »</td><td>Taille ou empreinte SHA-256 différente de celle annoncée</td><td>Relancer une fois ; si ça persiste, signaler</td></tr>
+      <tr><td>« Une application est déjà installée. Utilise sa mise à jour intégrée. »</td><td><code>Beaver.app</code>, <code>CL-GO.app</code>, ou le paquet <code>beaver</code> ou <code>cl-go</code> déjà présent</td><td>Passer par la mise à jour intégrée, ou retirer l'ancienne installation</td></tr>
+      <tr><td>« Répertoire d'installation invalide. »</td><td>Chemin non absolu, trop long, avec caractère de contrôle ou segment <code>..</code></td><td>Saisir un chemin absolu simple</td></tr>
+      <tr><td>« Paquet d'installation invalide. »</td><td>Une des six métadonnées du <code>.deb</code> ne correspond pas</td><td>Signaler : le fichier publié ne correspond pas au script</td></tr>
+      <tr><td>« Installation impossible. »</td><td>Montage, vérification du contenu, copie ou installation du paquet en échec</td><td>Relancer ; vérifier l'espace disque et les droits sur le dossier choisi</td></tr>
+    </table>
+    <p>Le script est réservé à une <b>première installation</b> : il refuse de mettre à jour, par conception. Sur un Mac à processeur Intel, « Système non pris en charge » n'a aucune solution — aucun fichier d'installation Intel n'est construit.</p>
+    <h2 id="windows-smartscreen">Windows — « Windows a protégé votre ordinateur »</h2>
+    <p><b>Le symptôme.</b> Au lancement de l'installeur <code>Beaver_X.Y.Z_x64-setup.exe</code>, Windows affiche un écran bleu et ne propose que « Ne pas exécuter ».</p>
+    <p><b>La cause.</b> La même que sur macOS : aucun certificat de signature de code. SmartScreen se déclenche sur un exécutable non signé qu'il ne connaît pas encore.</p>
+    <p><b>Ce qu'il faut faire.</b> Cliquer sur <b>« Informations complémentaires »</b> — le lien est discret, sous le texte —, puis sur <b>« Exécuter quand même »</b>. Cet avertissement est permanent, pas un incident.</p>
+    <h2 id="windows-script">Windows — le script s'arrête sans explication</h2>
+    <p><b>Le symptôme.</b> Le script PowerShell affiche une seule ligne, « ERREUR Installation impossible. », et s'arrête. C'est volontairement <b>le seul message d'erreur du script</b> : tous ses contrôles échouent sur la même sortie générique, et il ne dit jamais lequel a échoué.</p>
+    <p>Les contrôles qui peuvent produire ce message : une <b>architecture différente de <code>AMD64</code></b> ; un <b>dossier d'installation refusé</b> — il doit commencer par une lettre de lecteur suivie de <code>:\</code>, faire au plus <b>1024 caractères</b>, ne contenir ni <code>*</code> <code>?</code> <code>&lt;</code> <code>&gt;</code> <code>|</code> <code>"</code>, ni caractère de contrôle, ni segment <code>..</code> ; une <b>empreinte ou une taille non conformes</b> au manifeste de la release ; ou un <b>installeur silencieux qui retourne un code d'erreur</b>.</p>
+    <p><b>Ce qu'il faut faire</b>, dans cet ordre : relancer la commande une fois, car un téléchargement interrompu produit le même message et réussit souvent au deuxième essai ; réessayer avec le dossier proposé par défaut, <code>%LOCALAPPDATA%\Beaver</code>, plutôt qu'un dossier personnalisé — c'est la cause la plus fréquente et la plus silencieuse ; si l'échec persiste, installer par l'installeur téléchargé depuis la page des releases, qui affiche ses propres erreurs.</p>
+    <div class="callout">
+      <span class="t">Note</span>
+      L'installeur Windows est configuré en mode « utilisateur courant ». Il n'a <b>pas</b> besoin de droits administrateur, et il installe pour le compte Windows en cours seulement.
+    </div>
+    <h2 id="linux-distribution">Linux — ma distribution n'est pas prise en charge</h2>
+    <p><b>Le symptôme.</b> Le script affiche « Système non pris en charge. », ou aucun paquet ne correspond à ta distribution sur la page des releases.</p>
+    <p><b>La cause, sans ambiguïté.</b> Beaver ne distribue qu'un <b>paquet Debian pour l'architecture x64</b>. Le script n'accepte que <code>Linux:x86_64</code> et <code>Linux:amd64</code>, ne construit que le nom de fichier <code>_amd64.deb</code>, vérifie le paquet avec <code>dpkg-deb</code> et l'installe avec <code>apt-get</code>. Aucun autre gestionnaire de paquets n'est appelé.</p>
+    <p><b>Ce qu'il faut faire.</b> Il n'y a aucune solution sur Fedora, RHEL, Arch, openSUSE ou toute distribution hors famille Debian : il n'existe pas de paquet pour elles. Les deux options honnêtes sont d'utiliser une distribution de la famille Debian — Debian, Ubuntu et dérivées — ou d'attendre et de suivre le dépôt.</p>
+    <h2 id="linux-dependances">Linux — dépendances et paquet refusé</h2>
+    <p><b>« Paquet d'installation invalide. »</b> Avant d'installer, le script contrôle six métadonnées du paquet : <code>Package</code> vaut <code>beaver</code>, <code>Architecture</code> vaut <code>amd64</code>, <code>Version</code> est identique à celle annoncée par la release, et <code>Provides</code>, <code>Conflicts</code>, <code>Replaces</code> valent tous <code>cl-go</code>. Un seul écart fait échouer l'installation. Ce n'est <b>pas</b> un problème de machine : le fichier publié ne correspond pas à ce que le script attend. Signale-le au projet en indiquant la version, et n'installe pas le paquet à la main pour contourner.</p>
+    <p><b>L'application ne démarre pas après un <code>dpkg -i</code>.</b> <code>dpkg</code> n'installe pas les dépendances manquantes et laisse un paquet configuré à moitié. Le script, lui, passe par <code>apt-get</code>, qui les résout. Pour réparer :</p>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> sudo apt install -f</pre>
+    </div>
+    <p>Ou, mieux, réinstaller proprement en remplaçant <code>X.Y.Z</code> par le numéro de version du fichier téléchargé :</p>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> sudo apt install ./Beaver_X.Y.Z_amd64.deb</pre>
+    </div>
+    <p><b>Installation réussie, mais rien ne se lance.</b> Le binaire ne s'appelle pas <code>beaver</code> : taper <code>beaver</code> dans un terminal n'obtient rien. Lance depuis le menu des applications, ou tape <code>cl-go-dash</code>.</p>
+    <h2 id="ollama-echec">Le téléchargement d'Ollama échoue</h2>
+    <p><b>Le symptôme.</b> L'écran <b>« Configuration d'Ollama »</b> affiche « L'installation a échoué. Détails ci-dessous. » suivi d'une phrase. C'est cette phrase-là qui identifie la cause.</p>
+    <table>
+      <caption class="crumb">Les messages d'erreur d'Ollama à l'installation</caption>
+      <tr><th>Phrase affichée</th><th>Ce qui s'est réellement passé</th><th>Ce qu'il faut faire</th></tr>
+      <tr><td>« Le téléchargement d'Ollama a échoué. Vérifie la connexion puis réessaie. »</td><td>Réseau injoignable, réponse inattendue, ou taille reçue différente de celle annoncée</td><td>Relancer ; vérifier réseau et proxy</td></tr>
+      <tr><td>« Le fichier téléchargé n'a pas passé la vérification d'intégrité. »</td><td>L'empreinte SHA-256 du fichier reçu ne correspond pas à celle publiée par le projet Ollama</td><td>Relancer une fois ; si ça persiste, suspecter un proxy qui modifie les téléchargements</td></tr>
+      <tr><td>« L'extraction d'Ollama a échoué. »</td><td>L'archive n'a pas pu être décompressée</td><td>Vérifier l'espace disque, puis relancer</td></tr>
+      <tr><td>« Le stockage d'Ollama est inaccessible. Vérifie l'espace libre et les autorisations. »</td><td>Écriture impossible dans le dossier de données</td><td>Voir « Erreur d'initialisation des données » plus bas</td></tr>
+      <tr><td>« L'installation d'Ollama est endommagée ou incompatible. »</td><td>Le contenu installé n'est pas celui attendu</td><td>Relancer l'installation depuis Réglages › Ollama</td></tr>
+      <tr><td>« L'installation d'Ollama doit être réparée avant de continuer. »</td><td>Une installation précédente s'est interrompue à un point qui exige une reprise explicite</td><td>Bouton « Réessayer » dans Réglages › Ollama</td></tr>
+      <tr><td>« La réparation d'Ollama est temporairement impossible. Réessaie. »</td><td>Une autre opération occupe le dossier</td><td>Attendre quelques secondes, réessayer</td></tr>
+      <tr><td>« Une autre opération Ollama est déjà en cours. »</td><td>Deux installations lancées en même temps</td><td>Attendre la fin de la première</td></tr>
+      <tr><td>« L'opération Ollama a été annulée. »</td><td>Bouton « Annuler » utilisé</td><td>Relancer quand tu veux</td></tr>
+      <tr><td>« Ollama n'a pas répondu avant la fin du délai. »</td><td>Le moteur a été installé mais n'a pas répondu dans les <b>45 secondes</b></td><td>Relancer ; sur une machine lente, c'est fréquent au premier démarrage</td></tr>
+      <tr><td>« Ollama n'a pas pu démarrer. »</td><td>Le processus n'a pas pu être lancé</td><td>Redémarrer Beaver</td></tr>
+      <tr><td>« Ollama n'est pas installé par Beaver. »</td><td>Aucune installation présente</td><td>Lancer le téléchargement depuis Réglages › Ollama</td></tr>
+    </table>
+    <p>Dans tous ces cas, la marche à suivre est la même : <b>cliquer de nouveau sur « Télécharger Ollama »</b> — un échec réseau ne laisse aucun fichier partiel derrière lui —, ou <b>cliquer sur « Passer »</b> pour entrer dans l'application tout de suite. Beaver reste pleinement utilisable avec des modèles distants ; seul le moteur local manque. Tu reprends plus tard dans <b>Réglages › Ollama</b> : tant que le moteur n'est pas installé, cet onglet affiche exactement le même écran.</p>
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Passer n'est pas définitif — mais ça ne revient pas tout seul.</b> Si tu passes l'installation du moteur local, l'écran ne réapparaîtra <b>pas</b> au démarrage suivant. Tu le retrouves à tout moment dans <b>Réglages › Ollama</b>, et nulle part ailleurs.
+    </div>
+    <h2 id="ollama-interrompu">Le téléchargement d'Ollama a été interrompu</h2>
+    <p><b>Le symptôme.</b> L'ordinateur s'est éteint, l'application a été fermée, ou tu as annulé pendant la barre de progression. Au lancement suivant, Réglages › Ollama affiche soit une progression, soit un message d'erreur avec un bouton <b>« Réessayer »</b>.</p>
+    <p><b>Ce qui se passe.</b> L'installation d'Ollama est une opération en plusieurs phases — préparation, téléchargement, vérification, installation, validation, finalisation, démarrage. Chaque phase travaille dans un dossier distinct <b>à côté</b> de l'installation active, jamais dessus. L'installation utilisable n'est remplacée qu'à la toute fin.</p>
+    <p><b>Ce qu'il faut faire.</b> Redémarrer Beaver : une reprise s'exécute automatiquement au démarrage, avant toute tentative de lancer le moteur, et dans la plupart des cas il n'y a rien d'autre à faire. Si l'écran affiche un bouton « Réessayer », clique dessus. Si le message est « La réparation d'Ollama est temporairement impossible », attends quelques secondes : une autre opération occupe le dossier.</p>
+    <p>C'est rassurant et c'est vrai : <b>une interruption ne laisse jamais une installation à moitié remplacée.</b> Le nouvel état est construit à côté de l'ancien et ne prend sa place qu'une fois complet ; les restes d'une tentative abandonnée sont mis au rebut puis supprimés à la reprise.</p>
+    <h2 id="pas-de-reseau">La machine n'a pas de réseau</h2>
+    <p><b>Le symptôme.</b> L'installation de l'application réussit, mais l'écran « Configuration d'Ollama » échoue immédiatement avec « Le téléchargement d'Ollama a échoué. Vérifie la connexion puis réessaie. »</p>
+    <p><b>La cause.</b> Ollama n'est pas embarqué dans l'application. Beaver interroge la dernière release publiée du projet Ollama sur <code>github.com</code>, puis lit son fichier d'empreintes et la taille de chaque archive. Sans réseau, ces requêtes échouent.</p>
+    <p><b>Ce qui fonctionne quand même :</b> l'application s'installe et démarre, le dossier de données et toute sa structure sont créés localement, et le moteur de prévision local est installé depuis les fichiers livrés avec l'application, sans réseau. Seule l'étape Ollama échoue.</p>
+    <p><b>Ce qu'il faut faire.</b> Cliquer sur « Passer » et utiliser l'application, puis reprendre dans Réglages › Ollama une fois connecté. <b>Sur un réseau d'entreprise ou derrière un portail captif</b>, vérifie que <code>github.com</code> est joignable : Beaver n'accepte que des adresses <code>https</code> sur <code>github.com</code>, sans port, sans identifiant, sans paramètre — un proxy qui réécrit l'adresse ou renvoie une page d'authentification fait échouer l'étape.</p>
+    <p>Si un moteur Ollama est déjà installé séparément sur ta machine et qu'il tourne, Beaver le réutilise et ne télécharge rien : voir <a href="demarrage-premier-lancement.html">Premier lancement</a>.</p>
+    <h2 id="erreur-initialisation">« Erreur d'initialisation des données »</h2>
+    <p><b>Le symptôme.</b> L'application ne démarre pas, ou s'arrête au tout début du démarrage, avec ce message.</p>
+    <p><b>La cause.</b> Beaver crée son dossier de données et sa structure avant l'affichage de la fenêtre. Cette étape échoue si le dossier ne peut pas être créé, si les droits ne peuvent pas être posés, ou si l'écriture d'un fichier échoue.</p>
+    <p>Le dossier de données est <b>le même sur les trois systèmes</b> : <code>~/.local/share/cl-go-dash/</code>, soit <code>C:\Users\&lt;ton compte&gt;\.local\share\cl-go-dash\</code> sous Windows. <b>Ce n'est pas <code>%APPDATA%</code></b> — un utilisateur Windows cherchera au mauvais endroit. Beaver y pose des droits stricts, dossiers en <code>0700</code> et fichiers en <code>0600</code> sur macOS et Linux, liste de contrôle d'accès restreinte sur Windows, et les répare à chaque démarrage.</p>
+    <p><b>Ce qu'il faut faire</b>, dans cet ordre : vérifier l'espace libre du disque de démarrage, car un disque plein produit exactement ce message ; vérifier que ton dossier personnel est accessible en écriture, avec <code>ls -ld ~/.local/share/cl-go-dash</code> sur macOS et Linux — le dossier doit appartenir à ton compte ; si le dossier de données a été copié depuis une autre machine ou restauré depuis une sauvegarde, ses propriétaires peuvent être faux :</p>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> sudo chown -R "$USER" ~/.local/share/cl-go-dash</pre>
+    </div>
+    <p>Un dernier cas : sur un dossier personnel monté en réseau ou sur un volume chiffré, les droits <code>0700</code> et <code>0600</code> ne peuvent pas toujours être posés. Il n'y a pas de contournement raisonnable — c'est un cas à signaler au projet.</p>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>L'espace disque n'est pas vérifié.</b> Beaver ne contrôle pas l'espace libre avant de télécharger le moteur local. Sur un disque presque plein, l'échec se présente comme un problème de téléchargement ou d'extraction, pas comme un manque de place. Vérifie ton espace libre avant de relancer.
+    </div>
+    <h2 id="gpu-non-detecte">Le GPU n'est pas détecté</h2>
+    <p><b>Le symptôme.</b> L'installation réussit, mais les modèles locaux sont très lents, et Beaver ne prévient jamais qu'un modèle est trop gros pour la carte graphique.</p>
+    <p><b>Deux mécanismes distincts, à ne pas confondre.</b> La <b>détection du constructeur</b> sert uniquement, sous Linux, à choisir l'archive à télécharger : Beaver lit les identifiants constructeur dans <code>/sys/class/drm/*/device/vendor</code>. Une carte AMD reconnue déclenche le téléchargement d'une archive supplémentaire ; si la détection échoue, seule l'archive de base est téléchargée et l'accélération AMD n'est pas installée. Sous macOS la détection lit la marque du processeur, sous Windows elle interroge la liste des cartes vidéo.</p>
+    <p>La <b>mesure de la mémoire graphique</b>, elle, décide de la taille de contexte par défaut, en trois paliers : <b>32 768 jetons</b> au-dessus de 24 000 Mo, <b>24 576 jetons</b> au-dessus de 12 000 Mo, <b>8 192 jetons</b> en dessous — et <b>8 192 également quand la mesure échoue</b>. Une mémoire non mesurée ne se voit donc pas : elle se traduit par un contexte réduit au minimum. Deuxième conséquence, plus discrète : l'avertissement « ce modèle ne tient pas dans ta mémoire » <b>ne s'affiche jamais</b> quand la mesure a échoué, parce que le contrôle répond alors que ça tient.</p>
+    <p><b>Ce qu'il faut faire.</b> Sous Linux avec une carte AMD, vérifier que la carte est vue par le système avec <code>ls /sys/class/drm/</code> : si rien n'y correspond, le pilote graphique n'est pas chargé, et c'est un problème de système, pas de Beaver. Sous Windows avec une carte NVIDIA, le pilote doit être installé : c'est lui qui fournit le nom de la carte. Sous Linux avec une carte NVIDIA, il faut un pilote <b>531 ou supérieur</b> ; CUDA est fourni dans l'archive Ollama. Si le contexte reste à 8 192 jetons alors que ta machine a plus de 12 Go de mémoire graphique, la mesure a échoué : ce n'est pas réglable depuis l'application, signale le problème avec le modèle exact de la carte. Voir aussi <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Le moteur local n'écrit pas de journal.</b> Contrairement à ce que suggèrent d'anciennes documentations, le moteur Ollama lancé par Beaver n'écrit aucun fichier de traces : sa sortie va vers <code>/dev/null</code> sur macOS et Linux. Il n'y a pas de journal du moteur à consulter en cas de lenteur.
+    </div>
+    <h2 id="desinstaller">Désinstaller, et ce qui reste après</h2>
+    <p><b>Le dossier de données est indépendant de l'application installée.</b> C'est voulu : c'est ce qui permet aux mises à jour de ne rien perdre. Réinstaller après une suppression partielle reprend donc tes conversations, tes réglages et tes clés tels quels.</p>
+    <table>
+      <caption class="crumb">Retirer l'application, système par système</caption>
+      <tr><th>Système</th><th>Comment</th></tr>
+      <tr><td>macOS</td><td>Jeter <b>Beaver</b> du dossier d'installation choisi — <code>/Applications</code> par défaut</td></tr>
+      <tr><td>Linux</td><td><code>sudo apt remove beaver</code> — le nom du paquet est <code>beaver</code></td></tr>
+      <tr><td>Windows</td><td>Paramètres › Applications, ou le désinstalleur posé dans le dossier d'installation</td></tr>
+    </table>
+    <p><b>Ce qui reste sur le disque après cette suppression :</b> le <b>dossier de données</b> <code>~/.local/share/cl-go-dash/</code> — conversations, mémoire, réglages, projets, coffre chiffré, et l'installation d'Ollama ; les <b>modèles Ollama téléchargés</b>, dans <code>~/.ollama/models</code>, de loin le plus volumineux et en dehors du dossier de données ; les <b>entrées du gestionnaire de secrets du système</b>, dont la clé maîtresse du coffre sous le service <code>cl-go-dash</code>.</p>
+    <p>Pour tout retirer : supprime l'application, puis le dossier de données, puis <code>~/.ollama</code> si tu ne t'en sers pas ailleurs — <b>attention</b>, ce dossier est partagé avec toute autre installation d'Ollama sur la machine —, puis les entrées du gestionnaire de secrets, en cherchant <code>cl-go-dash</code> dans le Trousseau d'accès sur macOS, dans le gestionnaire de mots de passe du bureau sur Linux, dans le Gestionnaire d'identification sur Windows.</p>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Tes données survivent à la désinstallation.</b> Supprimer l'application ne supprime ni tes conversations, ni tes clés, ni tes modèles : ils vivent dans un dossier séparé. La dernière étape, celle du gestionnaire de secrets, est celle qu'on oublie — sans elle, la clé maîtresse du coffre reste dans ton trousseau. Elle ne déchiffre plus rien une fois <code>secrets.enc</code> supprimé, mais elle n'a plus aucune raison d'être là. La procédure complète est dans <a href="reference-confidentialite.html">Confidentialité</a>.
+    </div>
+    <h2 id="reparable-ou-non">Réparable, ou pas</h2>
+    <table>
+      <caption class="crumb">Où ça bloque, et si tu peux y faire quelque chose</caption>
+      <tr><th>Symptôme</th><th>Réparable</th><th>Issue</th></tr>
+      <tr><td>Mac Intel, PC ARM, Linux ARM</td><td><b>Non</b></td><td>Aucun fichier d'installation construit pour ces machines</td></tr>
+      <tr><td>Distribution hors famille Debian</td><td><b>Non</b></td><td>Seul un paquet <code>.deb</code> x64 est publié</td></tr>
+      <tr><td>Avertissement Gatekeeper</td><td>Oui</td><td>Clic droit › Ouvrir, ou installer par le script</td></tr>
+      <tr><td>Avertissement SmartScreen</td><td>Oui</td><td>Informations complémentaires › Exécuter quand même</td></tr>
+      <tr><td>Téléchargement d'Ollama échoué</td><td>Oui</td><td>Relancer, ou passer et reprendre plus tard</td></tr>
+      <tr><td>Installation d'Ollama interrompue</td><td>Oui</td><td>Redémarrer Beaver, puis « Réessayer » si demandé</td></tr>
+      <tr><td>« Erreur d'initialisation des données »</td><td>Souvent</td><td>Espace disque, droits sur le dossier personnel</td></tr>
+      <tr><td>Mémoire graphique non mesurée</td><td><b>Non</b></td><td>Contexte réduit à 8 192 jetons, aucun avertissement de taille de modèle</td></tr>
+      <tr><td>« Paquet d'installation invalide. »</td><td><b>Non</b></td><td>À signaler au projet</td></tr>
+    </table>
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="demarrage-prerequis.html">Prérequis</a> — compatibilité matérielle, architectures, dépendances.</li>
+      <li><a href="demarrage-premier-lancement.html">Premier lancement</a> — ce qui est créé sur le disque, et la détection d'un Ollama déjà présent.</li>
+      <li><a href="demarrage-parcours-accueil.html">Parcours d'accueil</a> — l'étape Ollama et la façon de la passer.</li>
+      <li><a href="demarrage-mise-a-jour.html">Mise à jour</a> — les échecs de mise à jour, qui ne relèvent pas de cette page.</li>
+      <li><a href="modeles-moteur-local.html">Moteur local</a> — le moteur une fois installé.</li>
+    </ul>
+  </main>
+  <div class="toc" id="docs-toc"></div>
+</div>
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

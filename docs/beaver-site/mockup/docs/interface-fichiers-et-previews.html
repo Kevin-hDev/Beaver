@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Fichiers et prévisualisations</title>
-<meta name="description" content="L'arbre de fichiers, la surveillance des modifications, les formats prévisualisables et leurs limites de taille.">
+<title>Beaver Docs — Files and previews</title>
+<meta name="description" content="The file tree, change watching, the previewable formats and their size limits.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,105 +19,105 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Interface / Fichiers et prévisualisations</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="interface-fichiers-et-previews.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Interface / Files and previews</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/interface-fichiers-et-previews.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="interface-fichiers-et-previews.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Consulter sans <em>sortir</em></h1>
-    <p>L'arbre de fichiers te fait naviguer dans le répertoire de travail de la conversation, et un clic ouvre la prévisualisation du fichier dans le panneau latéral. Cette page dit ce qui est prévisualisable, jusqu'à quelle taille, et ce qui se passe au-delà.</p>
+    <h1>Look without <em>leaving</em></h1>
+    <p>The file tree lets you browse the conversation's working directory, and one click opens the file's preview in the side panel. This page says what can be previewed, up to what size, and what happens beyond that.</p>
 
-    <h2 id="l-arbre-de-fichiers">L'arbre de fichiers</h2>
-    <p>Il affiche le répertoire de travail de la conversation. Un clic sur un fichier ouvre sa prévisualisation dans le <a href="interface-panneau-lateral.html">panneau latéral</a>. Ce que l'arbre montre dépend donc du <a href="agent-repertoire-de-travail.html">répertoire de travail</a> choisi pour cette conversation.</p>
+    <h2 id="l-arbre-de-fichiers">The file tree</h2>
+    <p>It shows the conversation's working directory. A click on a file opens its preview in the <a href="interface-panneau-lateral.html">side panel</a>. What the tree shows therefore depends on the <a href="agent-repertoire-de-travail.html">working directory</a> chosen for that conversation.</p>
 
-    <h2 id="surveillance-des-modifications">La surveillance des modifications</h2>
+    <h2 id="surveillance-des-modifications">Change watching</h2>
     <ul>
-      <li>Les changements sur le disque sont détectés automatiquement, via les notifications natives de chaque système.</li>
-      <li>Un délai de regroupement de <b>200 millisecondes</b> évite de recalculer l'affichage à chaque écriture : une compilation qui touche cent fichiers ne provoque pas cent rafraîchissements.</li>
+      <li>Changes on disk are detected automatically, through each system's native notifications.</li>
+      <li>A grouping delay of <b>200 milliseconds</b> avoids recomputing the display on every write: a build that touches a hundred files does not cause a hundred refreshes.</li>
     </ul>
 
-    <h2 id="les-previsualisations">Les prévisualisations</h2>
-    <p>Quatre familles, chacune avec son traitement :</p>
+    <h2 id="les-previsualisations">The previews</h2>
+    <p>Four families, each with its own handling:</p>
     <ul>
-      <li><b>Texte</b> — affichage direct, avec coloration syntaxique selon le thème de code choisi.</li>
-      <li><b>Images</b> — affichage direct.</li>
-      <li><b>Tableurs</b> — rendu tabulaire, avec choix de la feuille pour les classeurs qui en comptent plusieurs.</li>
-      <li><b>Documents</b> — extraction du contenu, pour les formats <code>docx</code> et <code>pdf</code>.</li>
+      <li><b>Text</b> — direct display, with syntax highlighting following the chosen code theme.</li>
+      <li><b>Images</b> — direct display.</li>
+      <li><b>Spreadsheets</b> — tabular rendering, with a sheet picker for workbooks that have several.</li>
+      <li><b>Documents</b> — content extraction, for the <code>docx</code> and <code>pdf</code> formats.</li>
     </ul>
-    <p>S'y ajoutent les <b>aperçus de liens</b> : quand une réponse contient une URL, Beaver peut en afficher un résumé.</p>
+    <p>On top of that come <b>link previews</b>: when a reply contains a URL, Beaver can show a summary of it.</p>
 
-    <h2 id="formats-acceptes">Les formats acceptés</h2>
+    <h2 id="formats-acceptes">The accepted formats</h2>
 
     <table>
-      <caption class="crumb">Ce que le panneau sait afficher, et jusqu'à quelle taille</caption>
-      <tr><th>Famille</th><th>Extensions</th><th>Limite</th></tr>
-      <tr><td>Texte</td><td>Formats texte courants</td><td><b>2 Mo</b></td></tr>
-      <tr><td>Tableur</td><td><code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code></td><td><b>50 Mo</b></td></tr>
-      <tr><td>Document</td><td><code>docx</code>, <code>pdf</code></td><td><b>50 Mo</b></td></tr>
-      <tr><td>Image</td><td>Formats image courants</td><td>—</td></tr>
+      <caption class="crumb">What the panel can display, and up to what size</caption>
+      <tr><th>Family</th><th>Extensions</th><th>Limit</th></tr>
+      <tr><td>Text</td><td>Common text formats</td><td><b>2 MB</b></td></tr>
+      <tr><td>Spreadsheet</td><td><code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code></td><td><b>50 MB</b></td></tr>
+      <tr><td>Document</td><td><code>docx</code>, <code>pdf</code></td><td><b>50 MB</b></td></tr>
+      <tr><td>Image</td><td>Common image formats</td><td>—</td></tr>
     </table>
 
-    <p>Tout autre format renvoie « Format non supporté ».</p>
+    <p>Any other format shows the generic notice “The file could not be read. It may have been deleted or moved.”</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Documents : <code>docx</code> et <code>pdf</code> uniquement. Un <code>.doc</code> ancien, un <code>.odt</code> ou un <code>.rtf</code> ne sont pas prévisualisables.
+      <span class="t">Warning</span>
+      Documents: <code>docx</code> and <code>pdf</code> only. An old <code>.doc</code>, an <code>.odt</code> or an <code>.rtf</code> cannot be previewed.
     </div>
 
-    <h2 id="limites-de-taille">Les limites de taille</h2>
-    <p>Au-delà des trois plafonds du tableau ci-dessus :</p>
+    <h2 id="limites-de-taille">The size limits</h2>
+    <p>Beyond the three caps in the table above:</p>
     <ul>
-      <li><b>500 lignes</b> affichées par défaut pour un tableur, <b>5 000</b> au maximum.</li>
-      <li>Longueur d'un chemin : <b>4 096 caractères</b>.</li>
-      <li>Vérification d'existence en lot : <b>500 fichiers</b> par appel.</li>
+      <li><b>500 rows</b> displayed by default for a spreadsheet, <b>5,000</b> at most.</li>
+      <li>Path length: <b>4,096 characters</b>.</li>
+      <li>Batch existence check: <b>500 files</b> per call.</li>
     </ul>
 
     <table>
-      <caption class="crumb">Bornes d'affichage des tableurs</caption>
-      <tr><th>Réglage</th><th>Valeur</th></tr>
-      <tr><td>Lignes affichées par défaut</td><td>500</td></tr>
-      <tr><td>Lignes affichées au maximum</td><td>5 000</td></tr>
-      <tr><td>Choix de la feuille</td><td>Oui</td></tr>
+      <caption class="crumb">Spreadsheet display bounds</caption>
+      <tr><th>Setting</th><th>Value</th></tr>
+      <tr><td>Rows displayed by default</td><td>500</td></tr>
+      <tr><td>Rows displayed at most</td><td>5,000</td></tr>
+      <tr><td>Sheet picker</td><td>Yes</td></tr>
     </table>
 
     <div class="callout">
       <span class="t">Note</span>
-      Deux mégaoctets pour le texte : au-delà, ouvre le fichier dans un éditeur externe. Un journal ou un jeu de données dépasse vite cette taille.
+      Two megabytes for text: beyond that, open the file in an external editor. A log or a dataset passes that size quickly.
     </div>
 
-    <h2 id="editeur-externe">Ouvrir dans un éditeur externe</h2>
+    <h2 id="editeur-externe">Opening in an external editor</h2>
     <ul>
-      <li>Beaver détecte les éditeurs installés et te propose d'ouvrir le fichier dans l'un d'eux.</li>
-      <li>La détection est propre à chaque système : macOS, Windows et Linux ont chacun la leur.</li>
-      <li>Le chemin de l'éditeur est validé avant lancement.</li>
+      <li>Beaver detects the installed editors and offers to open the file in one of them.</li>
+      <li>Detection is specific to each system: macOS, Windows and Linux each have their own.</li>
+      <li>The editor's path is validated before launch.</li>
     </ul>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Format non supporté »</td><td>Extension hors des listes ci-dessus</td><td>Ouvrir dans un éditeur externe</td></tr>
-      <tr><td>Un gros fichier texte refuse de s'ouvrir</td><td>Plafond de 2 Mo</td><td>Éditeur externe</td></tr>
-      <tr><td>Un tableur est tronqué</td><td>500 lignes par défaut</td><td>Augmenter jusqu'à 5 000, ou ouvrir dans un tableur</td></tr>
-      <tr><td>L'arbre ne reflète pas un changement</td><td>Regroupement de 200 ms, ou surveillance non déclenchée</td><td>Attendre, puis rafraîchir</td></tr>
-      <tr><td>Aucun éditeur externe proposé</td><td>Aucun éditeur reconnu sur le système</td><td>Ouvrir le fichier manuellement</td></tr>
+      <caption class="crumb">Common symptoms and what to make of them</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“The file could not be read. It may have been deleted or moved.”</td><td>Extension outside the lists above</td><td>Open in an external editor</td></tr>
+      <tr><td>A large text file refuses to open</td><td>Cap of 2 MB</td><td>External editor</td></tr>
+      <tr><td>A spreadsheet is truncated</td><td>500 rows by default</td><td>Raise it up to 5,000, or open it in a spreadsheet application</td></tr>
+      <tr><td>The tree does not reflect a change</td><td>200 ms grouping, or watching not triggered</td><td>Wait, then refresh</td></tr>
+      <tr><td>No external editor offered</td><td>No recognized editor on the system</td><td>Open the file manually</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="interface-panneau-lateral.html">Panneau latéral</a> — où s'affichent les prévisualisations</li>
-      <li><a href="outils-tableurs.html">Tableurs</a> et <a href="outils-documents.html">Documents</a> — ce que l'agent, lui, sait lire et écrire</li>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — ce que l'arbre affiche</li>
+      <li><a href="interface-panneau-lateral.html">Side panel</a> — where the previews are shown</li>
+      <li><a href="outils-tableurs.html">Spreadsheets</a> and <a href="outils-documents.html">Documents</a> — what the agent itself can read and write</li>
+      <li><a href="agent-repertoire-de-travail.html">Working directory</a> — what the tree shows</li>
     </ul>
   </main>
 

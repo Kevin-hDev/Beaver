@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Langues</title>
-<meta name="description" content="Les sept langues de Beaver, et pourquoi la langue de l'interface et celle des réponses de l'agent sont deux réglages différents.">
+<title>Beaver Docs — Languages</title>
+<meta name="description" content="Beaver's seven languages, and why the interface language and the agent's response language are two different settings.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,80 +19,80 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Référence / Langues</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="reference-langues.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Reference / Languages</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reference-langues.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reference-langues.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Sept langues, <em>deux</em> réglages</h1>
-    <p>Beaver parle sept langues. Mais il y a deux réglages de langue distincts, et ils ne font pas la même chose : celui de l'interface, et celui des réponses de l'agent. Changer l'un ne change pas l'autre.</p>
+    <h1>Seven languages, <em>two</em> settings</h1>
+    <p>Beaver speaks seven languages. But there are two separate language settings, and they do not do the same thing: the one for the interface, and the one for the agent's answers. Changing one does not change the other.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Mettre l'interface en français ne fait pas répondre l'agent en français. Si tu veux des réponses dans ta langue, choisis aussi la <b>langue des réponses</b>, dans le même écran de réglages.
+      <span class="t">Warning</span>
+      Setting the interface to French does not make the agent answer in French. If you want answers in your language, also choose the <b>LLM response language</b>, in the same settings screen.
     </div>
 
-    <h2 id="la-langue-de-l-interface">La langue de l'interface</h2>
-    <p>Elle pilote les menus, les boutons et les messages de l'application. <b>Sept langues</b> : français, anglais, allemand, espagnol, italien, chinois, japonais.</p>
+    <h2 id="la-langue-de-l-interface">The interface language</h2>
+    <p>It drives the app's menus, buttons and messages. <b>Seven languages</b>: French, English, German, Spanish, Italian, Chinese, Japanese.</p>
     <ul>
-      <li>Le changement est <b>immédiat</b>, sans redémarrage.</li>
-      <li>Le choix est mémorisé par l'application.</li>
-      <li>Il est proposé pendant le <a href="demarrage-parcours-accueil.html">parcours d'accueil</a>, et se modifie ensuite dans <b>Réglages › Général</b>.</li>
+      <li>The change is <b>immediate</b>, with no restart.</li>
+      <li>The choice is remembered by the app.</li>
+      <li>It is offered during the <a href="demarrage-parcours-accueil.html">onboarding journey</a>, and can then be changed in <b>Settings › General</b>.</li>
     </ul>
 
-    <h2 id="la-langue-des-reponses">La langue des réponses de l'agent</h2>
-    <p>Les <b>sept mêmes langues</b>, plus une option vide affichée « <b>—</b> ». Cette option vide signifie <b>aucune consigne</b> : l'agent répond dans la langue qui lui semble appropriée, généralement celle de ton message.</p>
-    <p>Quand une langue est choisie, la consigne est transmise au modèle dans ses instructions.</p>
+    <h2 id="la-langue-des-reponses">The agent's response language</h2>
+    <p>The <b>same seven languages</b>, plus an empty option shown as “<b>—</b>”. That empty option means <b>no instruction</b>: the agent answers in whatever language seems appropriate, usually the one your message is written in.</p>
+    <p>When a language is chosen, the instruction is passed to the model in its instructions.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      C'est une <b>consigne</b>, pas une garantie. Un modèle local de petite taille peut s'en écarter, surtout sur des réponses longues ou techniques. La langue de l'interface, elle, est garantie.
+      This is an <b>instruction</b>, not a guarantee. A small local model may drift away from it, especially on long or technical answers. The interface language, on the other hand, is guaranteed.
     </div>
 
-    <h2 id="les-deux-reglages">Les deux réglages, côte à côte</h2>
+    <h2 id="les-deux-reglages">The two settings, side by side</h2>
 
     <table>
-      <caption class="crumb">Ce que change chacun des deux réglages</caption>
-      <tr><th>&nbsp;</th><th>Langue de l'interface</th><th>Langue des réponses</th></tr>
-      <tr><td>Ce que ça change</td><td>Menus, boutons, messages de l'application</td><td>La langue dans laquelle l'agent écrit</td></tr>
-      <tr><td>Effet</td><td>Immédiat et garanti</td><td>Consigne transmise au modèle, non garantie</td></tr>
-      <tr><td>Option « aucune »</td><td>Non</td><td>Oui, l'option « — »</td></tr>
-      <tr><td>Emplacement</td><td>Réglages › Général</td><td>Réglages › Général</td></tr>
+      <caption class="crumb">What each of the two settings changes</caption>
+      <tr><th>&nbsp;</th><th>Interface language</th><th>Response language</th></tr>
+      <tr><td>What it changes</td><td>The app's menus, buttons and messages</td><td>The language the agent writes in</td></tr>
+      <tr><td>Effect</td><td>Immediate and guaranteed</td><td>An instruction passed to the model, not guaranteed</td></tr>
+      <tr><td>“None” option</td><td>No</td><td>Yes, the “—” option</td></tr>
+      <tr><td>Location</td><td>Settings › General</td><td>Settings › General</td></tr>
     </table>
 
-    <h2 id="ce-qui-n-est-pas-traduit">Ce qui n'est pas traduit</h2>
-    <p>Quatre catégories de texte échappent par nature au réglage de langue de l'interface.</p>
+    <h2 id="ce-qui-n-est-pas-traduit">What is not translated</h2>
+    <p>Four categories of text are by nature outside the reach of the interface language setting.</p>
     <ul>
-      <li><b>Les réponses des modèles</b>, qui dépendent du modèle et de la consigne de langue.</li>
-      <li><b>Les messages d'erreur renvoyés par les fournisseurs distants</b>, écrits par eux.</li>
-      <li><b>Les noms de modèles, de fournisseurs et de connecteurs.</b></li>
-      <li><b>Le contenu de tes propres fichiers</b> d'instructions et de mémoire.</li>
+      <li><b>The models' answers</b>, which depend on the model and on the language instruction.</li>
+      <li><b>The error messages returned by remote providers</b>, written by them.</li>
+      <li><b>The names of models, providers and connectors.</b></li>
+      <li><b>The content of your own</b> instruction and memory files.</li>
     </ul>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common traps</h2>
 
     <table>
-      <caption class="crumb">Symptômes courants et ce qu'il faut faire</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'interface est en français, l'agent répond en anglais</td><td>Deux réglages distincts</td><td>Régler aussi la langue des réponses</td></tr>
-      <tr><td>L'agent dérive vers l'anglais en cours de conversation</td><td>Le modèle s'écarte de la consigne</td><td>Essayer un modèle plus grand, ou le rappeler dans le message</td></tr>
-      <tr><td>Un texte reste en anglais dans l'interface</td><td>Élément provenant d'un service externe, ou nom propre</td><td>Voir la section ci-dessus</td></tr>
+      <caption class="crumb">Common symptoms and what to do</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The interface is in French, the agent answers in English</td><td>Two separate settings</td><td>Set the response language as well</td></tr>
+      <tr><td>The agent drifts into English during a conversation</td><td>The model departs from the instruction</td><td>Try a larger model, or restate it in your message</td></tr>
+      <tr><td>Some text stays in English in the interface</td><td>An item coming from an external service, or a proper name</td><td>See the section above</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="reference-themes.html">Thèmes et apparence</a> — l'autre moitié de Réglages › Général.</li>
-      <li><a href="demarrage-parcours-accueil.html">Parcours d'accueil</a> — le choix initial de la langue.</li>
-      <li><a href="agent-prompts-systeme.html">Prompts système</a> — où s'insère la consigne de langue.</li>
+      <li><a href="reference-themes.html">Themes and appearance</a> — the other half of Settings › General.</li>
+      <li><a href="demarrage-parcours-accueil.html">Onboarding</a> — the initial language choice.</li>
+      <li><a href="agent-prompts-systeme.html">System prompts</a> — where the language instruction is inserted.</li>
     </ul>
   </main>
 

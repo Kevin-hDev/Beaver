@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Mise à jour</title>
-<meta name="description" content="Comment Beaver détecte et installe ses mises à jour, ce qu'il vérifie avant, et ce qui n'est jamais touché au passage.">
+<title>Beaver Docs — Updating</title>
+<meta name="description" content="How Beaver detects and installs its updates, what it checks beforehand, and what is never touched along the way.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,127 +19,123 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Mise à jour</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-mise-a-jour.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / Updating</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-mise-a-jour.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-mise-a-jour.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Mettre à jour <em>Beaver</em></h1>
-    <p>Beaver se met à jour depuis les releases de son dépôt GitHub, après avoir
-    vérifié quatre éléments du fichier téléchargé. Cette page dit comment ça se
-    déclenche, ce qui est contrôlé, et ce qui reste intact.</p>
+    <h1>Updating <em>Beaver</em></h1>
+    <p>Beaver updates itself from the releases of its GitHub repository, after
+    checking four elements of the downloaded file. This page says how it is
+    triggered, what is checked, and what stays untouched.</p>
 
-    <h2 id="detection">Comment les mises à jour sont détectées</h2>
-    <p>Beaver interroge la <b>dernière release publiée du dépôt GitHub
-    officiel</b>, <b>au lancement puis toutes les heures</b>, et compare ta
-    version locale au tag de la release. Quand une mise à jour existe, une
-    notification apparaît, avec une barre de progression pendant le
-    téléchargement.</p>
-    <p>Cette vérification fonctionne sans authentification parce que le dépôt est
-    public : c'est une contrainte assumée du projet.</p>
+    <h2 id="detection">How updates are detected</h2>
+    <p>Beaver queries the <b>latest published release of the official GitHub
+    repository</b>, <b>at launch and then every hour</b>, and compares your local
+    version to the release tag. When an update exists, a notification appears,
+    with a progress bar during the download.</p>
+    <p>This check works without authentication because the repository is public:
+    that is a deliberate constraint of the project.</p>
 
-    <h2 id="verifications">Ce qui est vérifié avant installation</h2>
-    <p>C'est ce qui explique qu'une mise à jour puisse être refusée. L'asset
-    attendu dépend du système : <code>.dmg</code> sur macOS, <code>.deb</code>
-    sur Linux, <code>-setup.exe</code> sur Windows. Beaver exige que le fichier
-    <code>update-manifest.json</code> de la release confirme <b>quatre
-    éléments</b> :</p>
+    <h2 id="verifications">What is checked before installing</h2>
+    <p>This is what explains why an update can be refused. The expected asset
+    depends on the system: <code>.dmg</code> on macOS, <code>.deb</code> on
+    Linux, <code>-setup.exe</code> on Windows. Beaver requires the release's
+    <code>update-manifest.json</code> file to confirm <b>four elements</b>:</p>
     <ul>
-      <li>la même <b>version</b> que celle annoncée ;</li>
-      <li>le même <b>nom de fichier</b> ;</li>
-      <li>la même <b>taille</b> ;</li>
-      <li>l'<b>empreinte SHA-256</b> attendue.</li>
+      <li>the same <b>version</b> as the one announced;</li>
+      <li>the same <b>file name</b>;</li>
+      <li>the same <b>size</b>;</li>
+      <li>the expected <b>SHA-256 fingerprint</b>.</li>
     </ul>
-    <p>Si un seul de ces éléments ne correspond pas, la mise à jour n'est pas
-    proposée. Le téléchargement est plafonné en taille, et l'empreinte est
-    revérifiée après réception. Le principe : <b>en cas de doute, Beaver refuse
-    de se mettre à jour plutôt que d'installer un fichier non vérifié.</b></p>
+    <p>If a single one of these does not match, the update is not offered. The
+    download is capped in size, and the fingerprint is re-checked on receipt. The
+    principle: <b>when in doubt, Beaver refuses to update rather than install an
+    unverified file.</b></p>
 
-    <h2 id="installation">L'installation selon le système</h2>
-    <p>Un point commun aux trois systèmes : Beaver copie un <b>programme
-    d'assistance autonome</b> dans un fichier temporaire, se ferme, et laisse ce
-    programme faire le travail. L'assistance attend la fermeture complète de
-    l'application avant de toucher quoi que ce soit, et n'utilise <b>aucun shell
-    intermédiaire</b>.</p>
-    <p>Point important si tu as installé Beaver ailleurs que dans le dossier
-    proposé : <b>la mise à jour remplace l'installation réellement lancée</b>,
-    pas un chemin par défaut. Tu ne te retrouves pas avec deux copies.</p>
+    <h2 id="installation">The installation per system</h2>
+    <p>One thing common to all three systems: Beaver copies a <b>standalone
+    helper program</b> into a temporary file, closes itself, and lets that
+    program do the work. The helper waits for the application to fully close
+    before touching anything, and uses <b>no intermediate shell</b>.</p>
+    <p>An important point if you installed Beaver somewhere other than the
+    suggested folder: <b>the update replaces the installation actually
+    running</b>, not a default path. You do not end up with two copies.</p>
 
     <table>
-      <caption class="crumb">Déroulement de l'installation par système</caption>
-      <tr><th>Système</th><th>Fichier</th><th>Déroulement</th></tr>
-      <tr><td>macOS</td><td><code>.dmg</code></td><td>Montage en lecture seule, vérification du bundle, préparation de la copie, conservation de l'ancienne version, bascule, vérification du redémarrage</td></tr>
-      <tr><td>Linux</td><td><code>.deb</code></td><td>Installation par le gestionnaire de paquets avec élévation de privilèges, arguments passés séparément, vérification du redémarrage</td></tr>
-      <tr><td>Windows</td><td><code>-setup.exe</code></td><td>Installeur silencieux dans le dossier d'installation courant, vérification du redémarrage</td></tr>
+      <caption class="crumb">How the installation proceeds per system</caption>
+      <tr><th>System</th><th>File</th><th>Sequence</th></tr>
+      <tr><td>macOS</td><td><code>.dmg</code></td><td>Read-only mount, bundle verification, copy prepared, old version kept, switch over, restart verified</td></tr>
+      <tr><td>Linux</td><td><code>.deb</code></td><td>Installation through the package manager with elevated privileges, arguments passed separately, restart verified</td></tr>
+      <tr><td>Windows</td><td><code>-setup.exe</code></td><td>Silent installer into the current installation folder, restart verified</td></tr>
     </table>
 
-    <h2 id="si-ca-echoue">Si l'installation échoue</h2>
-    <p>Si l'application ne redémarre pas après une mise à jour, réinstalle
-    manuellement la dernière version que tu savais fonctionnelle, depuis sa
-    release GitHub. <b>Tes données ne sont pas touchées</b> et sont reprises par
-    la version réinstallée.</p>
+    <h2 id="si-ca-echoue">If the installation fails</h2>
+    <p>If the application does not restart after an update, manually reinstall
+    the last version you knew to be working, from its GitHub release. <b>Your
+    data is not touched</b> and is picked up by the reinstalled version.</p>
 
     <div class="callout">
-      <span class="t">Ne pas utiliser le script d'installation</span>
-      Le script de première installation refuse de remplacer une installation
-      existante. Passe par la mise à jour intégrée.
+      <span class="t">Do not use the install script</span>
+      The first-installation script refuses to replace an existing installation.
+      Go through the built-in update.
     </div>
 
-    <h2 id="modeles-ollama">Les mises à jour des modèles Ollama</h2>
-    <p>C'est un mécanisme distinct de celui de l'application, à ne pas confondre
-    avec lui. Beaver liste les modèles installés et interroge le registre pour
-    chaque famille ; la comparaison porte sur les <b>empreintes</b>, pas sur un
-    numéro de version. Les modèles ayant une mise à jour disponible sont
-    signalés, et la vérification est relancée après chaque téléchargement de
-    modèle.</p>
+    <h2 id="modeles-ollama">Ollama model updates</h2>
+    <p>This is a mechanism separate from the application's, not to be confused
+    with it. Beaver lists the installed models and queries the registry for each
+    family; the comparison is on <b>digests</b>, not on a version number. Models
+    with an update available are flagged, and the check is run again after every
+    model download.</p>
 
     <table>
-      <caption class="crumb">Deux systèmes de mise à jour, à ne pas confondre</caption>
-      <tr><th></th><th>Application</th><th>Modèles Ollama</th></tr>
-      <tr><td>Source</td><td>Releases GitHub</td><td>Registre Ollama</td></tr>
-      <tr><td>Comparaison</td><td>Numéro de version</td><td>Empreinte</td></tr>
-      <tr><td>Fréquence</td><td>Au lancement, puis chaque heure</td><td>Au lancement et après chaque téléchargement</td></tr>
-      <tr><td>Redémarrage</td><td>Oui</td><td>Non</td></tr>
+      <caption class="crumb">Two update systems, not to be confused</caption>
+      <tr><th></th><th>Application</th><th>Ollama models</th></tr>
+      <tr><td>Source</td><td>GitHub releases</td><td>Ollama registry</td></tr>
+      <tr><td>Comparison</td><td>Version number</td><td>Digest</td></tr>
+      <tr><td>Frequency</td><td>At launch, then every hour</td><td>At launch and after every download</td></tr>
+      <tr><td>Restart</td><td>Yes</td><td>No</td></tr>
     </table>
 
-    <h2 id="ce-qui-n-est-pas-touche">Ce qui n'est jamais touché</h2>
-    <p>C'est la question qu'on se pose avant de cliquer. Une mise à jour ne
-    touche ni tes conversations, ni ta mémoire, ni tes clés API et ton coffre, ni
-    tes réglages, ni tes modèles Ollama téléchargés. Le dossier de données est
-    indépendant de l'application installée.</p>
+    <h2 id="ce-qui-n-est-pas-touche">What is never touched</h2>
+    <p>This is the question you ask yourself before clicking. An update touches
+    neither your conversations, nor your memory, nor your API keys and your
+    vault, nor your settings, nor your downloaded Ollama models. The data folder
+    is independent of the installed application.</p>
 
     <div class="callout">
-      <span class="t">Tes données sont conservées</span>
-      Une mise à jour ne touche ni tes conversations, ni ta mémoire, ni tes clés,
-      ni tes modèles. Elles vivent dans un dossier séparé de l'application.
+      <span class="t">Your data is kept</span>
+      An update touches neither your conversations, nor your memory, nor your
+      keys, nor your models. They live in a folder separate from the
+      application.
     </div>
 
-    <h2 id="pieges">Si quelque chose cloche</h2>
+    <h2 id="pieges">If something goes wrong</h2>
     <table>
-      <caption class="crumb">Symptômes liés aux mises à jour</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Aucune mise à jour proposée alors qu'une release existe</td><td>Un contrôle du manifeste a échoué : version, nom, taille ou empreinte</td><td>Attendre une correction de la release ; c'est un refus volontaire</td></tr>
-      <tr><td>La vérification échoue systématiquement</td><td>API GitHub injoignable, proxy ou pare-feu</td><td>Vérifier l'accès réseau à <code>api.github.com</code></td></tr>
-      <tr><td>L'application ne redémarre pas après mise à jour</td><td>Installation défaillante</td><td>Réinstaller manuellement la dernière version fonctionnelle</td></tr>
-      <tr><td>Deux versions installées</td><td>Ne devrait pas arriver : la mise à jour remplace l'installation lancée</td><td>Signaler le problème</td></tr>
-      <tr><td>Notification de mise à jour de modèle confondue avec celle de l'application</td><td>Deux mécanismes distincts</td><td>Voir le tableau ci-dessus</td></tr>
+      <caption class="crumb">Update-related symptoms</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>No update offered even though a release exists</td><td>A manifest check failed: version, name, size or fingerprint</td><td>Wait for the release to be fixed; this is a deliberate refusal</td></tr>
+      <tr><td>The check fails every time</td><td>GitHub API unreachable, proxy or firewall</td><td>Check network access to <code>api.github.com</code></td></tr>
+      <tr><td>The application does not restart after an update</td><td>Faulty installation</td><td>Manually reinstall the last working version</td></tr>
+      <tr><td>Two versions installed</td><td>Should not happen: the update replaces the running installation</td><td>Report the problem</td></tr>
+      <tr><td>A model update notification mistaken for the application's</td><td>Two separate mechanisms</td><td>See the table above</td></tr>
     </table>
 
-    <p>Les procédures d'installation par système sont dans
+    <p>The installation procedures per system are in
     <a href="demarrage-installation-macos.html">macOS</a>,
-    <a href="demarrage-installation-linux.html">Linux</a> et
-    <a href="demarrage-installation-windows.html">Windows</a>. La mise à jour des
-    modèles est détaillée dans
-    <a href="modeles-modeles-locaux.html">Modèles locaux</a>.</p>
+    <a href="demarrage-installation-linux.html">Linux</a> and
+    <a href="demarrage-installation-windows.html">Windows</a>. Updating models is
+    detailed in
+    <a href="modeles-modeles-locaux.html">Local models</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

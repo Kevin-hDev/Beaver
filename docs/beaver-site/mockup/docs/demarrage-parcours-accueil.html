@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Parcours d'accueil</title>
-<meta name="description" content="Les quatre à cinq étapes proposées au premier démarrage de Beaver, ce qu'on peut passer, et où retrouver chaque réglage ensuite.">
+<title>Beaver Docs — Onboarding flow</title>
+<meta name="description" content="The four to five steps offered when Beaver starts for the first time, what can be skipped, and where to find each setting afterwards.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,125 +19,123 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Parcours d'accueil</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-parcours-accueil.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / Onboarding flow</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-parcours-accueil.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-parcours-accueil.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Le parcours d'<em>accueil</em></h1>
-    <p>Au premier démarrage, Beaver te fait traverser quatre ou cinq écrans :
-    préférences, import depuis un autre assistant, connexion d'un fournisseur, et
-    installation du moteur local si nécessaire. Rien n'y est obligatoire.</p>
+    <h1>The <em>onboarding</em> flow</h1>
+    <p>On first start, Beaver walks you through four or five screens:
+    preferences, import from another assistant, connecting a provider, and
+    installing the local engine if needed. None of it is mandatory.</p>
 
     <div class="callout">
-      <span class="t">Rien n'est définitif</span>
-      Aucune étape du parcours d'accueil n'est obligatoire. Tout ce qui y est
-      proposé se retrouve dans les réglages.
+      <span class="t">Nothing is permanent</span>
+      No step in the onboarding flow is mandatory. Everything offered there can
+      be found again in the settings.
     </div>
 
-    <h2 id="vue-d-ensemble">Vue d'ensemble</h2>
-    <p>Le parcours compte <b>quatre ou cinq étapes</b>, présentées en
-    diapositives horizontales. La cinquième — Ollama — <b>n'apparaît que si
-    Ollama n'est pas déjà disponible</b> sur ta machine. Aucune étape n'est
-    bloquante : tu peux traverser le parcours sans rien configurer et tout faire
-    plus tard dans les réglages.</p>
+    <h2 id="vue-d-ensemble">Overview</h2>
+    <p>The flow has <b>four or five steps</b>, presented as horizontal slides.
+    The fifth — Ollama — <b>only appears if Ollama is not already available</b>
+    on your machine. No step blocks you: you can go through the whole flow
+    without configuring anything and do it all later in the settings.</p>
 
     <table>
-      <caption class="crumb">Les étapes, dans l'ordre</caption>
-      <tr><th>Ordre</th><th>Étape</th><th>Ce qu'on y fait</th><th>Facultative</th></tr>
-      <tr><td>1</td><td>Bienvenue</td><td>Rien, écran de présentation</td><td>—</td></tr>
-      <tr><td>2</td><td>Préférences</td><td>Thème et langue</td><td>Oui</td></tr>
-      <tr><td>3</td><td>Import</td><td>Reprendre instructions, skills et règles d'un autre assistant</td><td>Oui</td></tr>
-      <tr><td>4</td><td>Fournisseur</td><td>Saisir une clé API</td><td>Oui</td></tr>
-      <tr><td>5</td><td>Ollama</td><td>Télécharger le moteur local</td><td>Oui, et affichée seulement si nécessaire</td></tr>
+      <caption class="crumb">The steps, in order</caption>
+      <tr><th>Order</th><th>Step</th><th>What you do there</th><th>Optional</th></tr>
+      <tr><td>1</td><td>Welcome</td><td>Nothing, an introduction screen</td><td>—</td></tr>
+      <tr><td>2</td><td>Preferences</td><td>Theme and language</td><td>Yes</td></tr>
+      <tr><td>3</td><td>Import</td><td>Bring over instructions, skills and rules from another assistant</td><td>Yes</td></tr>
+      <tr><td>4</td><td>Provider</td><td>Enter an API key</td><td>Yes</td></tr>
+      <tr><td>5</td><td>Ollama</td><td>Download the local engine</td><td>Yes, and shown only when needed</td></tr>
     </table>
 
-    <h2 id="bienvenue">Étape 1 — Bienvenue</h2>
-    <p>Un écran de présentation avec l'illustration du castor, un titre, une
-    description et un bouton pour commencer. Rien à saisir.</p>
+    <h2 id="bienvenue">Step 1 — Welcome</h2>
+    <p>An introduction screen with the beaver illustration, a title, a
+    description and a button to begin. Nothing to enter.</p>
 
-    <h2 id="preferences">Étape 2 — Préférences</h2>
-    <p>Deux réglages, et deux seulement : le <b>thème</b>, parmi ceux
-    disponibles, et la <b>langue</b>, parmi les sept langues de l'interface. On
-    les retrouve ensuite dans Réglages › Général.</p>
+    <h2 id="preferences">Step 2 — Preferences</h2>
+    <p>Two settings, and two only: the <b>theme</b>, among those available, and
+    the <b>language</b>, among the interface's seven languages. You find them
+    again afterwards in Settings › General.</p>
 
-    <h2 id="import">Étape 3 — Import depuis un autre assistant</h2>
-    <p>Cette étape propose de reprendre les instructions, les skills et les
-    règles depuis une autre application d'agent déjà installée. <b>Neuf</b>
-    sources sont reconnues, détaillées dans
-    <a href="demarrage-importer.html">Importer d'un autre agent</a>.</p>
+    <h2 id="import">Step 3 — Import from another assistant</h2>
+    <p>This step offers to bring over the instructions, skills and rules from
+    another agent application already installed. <b>Nine</b> sources are
+    recognized, detailed in
+    <a href="demarrage-importer.html">Importing from another agent</a>.</p>
 
-    <h2 id="fournisseur">Étape 4 — Connexion d'un fournisseur</h2>
-    <p>Une <b>grille de cartes</b>, une par fournisseur de modèles, avec son
-    icône, son nom et une courte description. Seuls les fournisseurs de catégorie
-    LLM sont affichés, <b>32 au maximum</b>. Ceux qui sont déjà configurés
-    portent la mention « Connecté ».</p>
-    <p>Tu sélectionnes une carte, tu saisis la clé, tu enregistres ; un lien mène
-    à la page de création de clé du fournisseur. La clé saisie est effacée du
-    champ dès que tu quittes l'étape.</p>
+    <h2 id="fournisseur">Step 4 — Connecting a provider</h2>
+    <p>A <b>grid of cards</b>, one per model provider, with its icon, its name
+    and a short description. Only providers in the LLM category are shown,
+    <b>32 at most</b>. Those already configured carry the label
+    “Connected”.</p>
+    <p>You select a card, you enter the key, you save; a link leads to the
+    provider's key creation page. The key you entered is cleared from the field
+    as soon as you leave the step.</p>
 
     <div class="callout">
-      <span class="t">Sans clé API</span>
-      Tu peux traverser cette étape sans rien saisir. Beaver fonctionne avec un
-      modèle local, sans compte ni clé.
+      <span class="t">Without an API key</span>
+      You can go through this step without entering anything. Beaver works with a
+      local model, with no account and no key.
     </div>
 
-    <h2 id="ollama">Étape 5 — Ollama, si nécessaire</h2>
-    <p>Cette étape <b>n'apparaît pas</b> si un démon Ollama est déjà disponible,
-    ou si le binaire est déjà présent dans le dossier de données. Sinon, elle
-    propose le téléchargement et l'installation d'Ollama, et peut être passée :
-    l'application reste utilisable avec des modèles distants uniquement. Le
-    détail du téléchargement est dans
-    <a href="demarrage-premier-lancement.html">Premier lancement</a>.</p>
+    <h2 id="ollama">Step 5 — Ollama, if needed</h2>
+    <p>This step <b>does not appear</b> if an Ollama daemon is already available,
+    or if the binary is already present in the data folder. Otherwise, it offers
+    to download and install Ollama, and can be skipped: the application stays
+    usable with remote models only. The download is detailed in
+    <a href="demarrage-premier-lancement.html">First launch</a>.</p>
 
-    <h2 id="revenir-en-arriere">Revenir en arrière, passer une étape</h2>
-    <p>Les étapes Import et Fournisseur proposent un retour en arrière.
-    L'enchaînement s'adapte : si l'étape Ollama n'est pas nécessaire, valider
-    l'étape Fournisseur termine directement le parcours.</p>
+    <h2 id="revenir-en-arriere">Going back, skipping a step</h2>
+    <p>The Import and Provider steps offer a way back. The sequence adapts: if
+    the Ollama step is not needed, confirming the Provider step ends the flow
+    directly.</p>
 
     <div class="callout">
-      <span class="t">Le mode de permission n'est pas demandé ici</span>
-      Le parcours d'accueil ne propose pas de choisir un mode de permission :
-      l'application démarre en <b>Accès complet</b>, où l'agent exécute ses
-      outils sans demander confirmation. C'est à changer dans les réglages si tu
-      préfères valider chaque action.
+      <span class="t">The permission mode is not asked for here</span>
+      The onboarding flow does not offer a choice of permission mode: the
+      application starts in <b>Full access</b>, where the agent runs its tools
+      without asking for confirmation. Change it in the settings if you prefer to
+      approve every action.
     </div>
 
-    <h2 id="refaire-plus-tard">Refaire ces réglages plus tard</h2>
+    <h2 id="refaire-plus-tard">Redoing these settings later</h2>
     <table>
-      <caption class="crumb">Où retrouver chaque réglage après le parcours</caption>
-      <tr><th>Réglage</th><th>Emplacement</th></tr>
-      <tr><td>Thème</td><td>Réglages › Général</td></tr>
-      <tr><td>Langue</td><td>Réglages › Général</td></tr>
-      <tr><td>Clés de fournisseurs</td><td>Réglages › Fournisseurs</td></tr>
-      <tr><td>Ollama</td><td>Réglages › Ollama</td></tr>
+      <caption class="crumb">Where to find each setting after the flow</caption>
+      <tr><th>Setting</th><th>Location</th></tr>
+      <tr><td>Theme</td><td>Settings › General</td></tr>
+      <tr><td>Language</td><td>Settings › General</td></tr>
+      <tr><td>Provider keys</td><td>Settings › Providers</td></tr>
+      <tr><td>Ollama</td><td>Settings › Ollama</td></tr>
     </table>
 
-    <h2 id="pieges">Si quelque chose cloche</h2>
+    <h2 id="pieges">If something goes wrong</h2>
     <table>
-      <caption class="crumb">Symptômes pendant le parcours</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>La grille de fournisseurs reste vide</td><td>Le catalogue n'a pas pu être chargé</td><td>Passer l'étape et configurer plus tard dans les réglages</td></tr>
-      <tr><td>L'étape Ollama n'apparaît pas</td><td>Ollama est déjà disponible sur la machine</td><td>Normal : Beaver réutilise l'installation existante</td></tr>
-      <tr><td>Le parcours ne réapparaît pas au lancement suivant</td><td>Il ne s'affiche qu'une fois</td><td>Tous les réglages restent accessibles dans Réglages</td></tr>
-      <tr><td>La clé saisie semble perdue en revenant en arrière</td><td>Le champ est vidé au changement de fournisseur et en fin d'étape</td><td>Vérifier dans Réglages › Fournisseurs que la clé est bien enregistrée</td></tr>
+      <caption class="crumb">Symptoms during the flow</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The provider grid stays empty</td><td>The catalog could not be loaded</td><td>Skip the step and configure later in the settings</td></tr>
+      <tr><td>The Ollama step does not appear</td><td>Ollama is already available on the machine</td><td>Normal: Beaver reuses the existing installation</td></tr>
+      <tr><td>The flow does not come back on the next launch</td><td>It is shown only once</td><td>Every setting stays reachable in Settings</td></tr>
+      <tr><td>The key you entered seems lost when going back</td><td>The field is cleared when switching provider and at the end of the step</td><td>Check in Settings › Providers that the key is indeed saved</td></tr>
     </table>
 
-    <p>Pour configurer une clé après coup, voir
-    <a href="modeles-fournisseurs-api.html">Fournisseurs API</a> et
-    <a href="modeles-connexion-par-compte.html">Connexion par compte</a>. Pour le
-    thème et la langue,
-    <a href="reference-themes.html">Thèmes et apparence</a> et
-    <a href="reference-langues.html">Langues</a>.</p>
+    <p>To configure a key afterwards, see
+    <a href="modeles-fournisseurs-api.html">API providers</a> and
+    <a href="modeles-connexion-par-compte.html">Account sign-in</a>. For the
+    theme and the language,
+    <a href="reference-themes.html">Themes and appearance</a> and
+    <a href="reference-langues.html">Languages</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

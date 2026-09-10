@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Choisir son modèle</title>
+<meta name="description" content="Modèle local, clé API ou compte web : ce qui change vraiment entre les trois voies, et laquelle choisir selon ta situation.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Démarrage / Choisir son modèle</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="demarrage-choisir-son-modele.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/demarrage-choisir-son-modele.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Choisir son <em>modèle</em></h1>
+    <p>Faire tourner un modèle chez toi, payer un service à l'usage, ou utiliser
+    un compte que tu as déjà : trois voies, avec des conséquences différentes sur
+    la confidentialité, le coût et la capacité. Cette page t'aide à trancher.</p>
+
+    <h2 id="les-trois-voies">Les trois voies</h2>
+    <p>Premier point, celui qui dédramatise tout le reste : <b>le choix n'est pas
+    définitif</b>. Il se fait conversation par conversation, et se change en
+    cours de route sans perdre l'historique.</p>
+    <p><b>Modèle local via Ollama</b> — installé sur ton disque, exécuté sur le
+    processeur ou la carte graphique. Rien ne sort de la machine.</p>
+    <p><b>Modèle distant via clé API</b> — tu crées une clé chez le fournisseur,
+    tu la saisis une fois dans Beaver, les requêtes partent vers ses serveurs, et
+    la facturation se fait à l'usage.</p>
+    <p><b>Modèle distant via compte web</b> — pour trois fournisseurs seulement,
+    tu te connectes avec un compte existant au lieu d'une clé. La consommation
+    est imputée à ce compte selon ses propres règles.</p>
+
+    <h2 id="comparatif">Le comparatif</h2>
+    <table>
+      <caption class="crumb">Ce qui change entre les trois voies</caption>
+      <tr><th></th><th>Local (Ollama)</th><th>Clé API</th><th>Compte web</th></tr>
+      <tr><td>Données envoyées à un tiers</td><td>Aucune</td><td>Messages et contenu des fichiers lus</td><td>Identique à la clé API</td></tr>
+      <tr><td>Coût</td><td>Aucun, hors électricité</td><td>Facturé au jeton</td><td>Selon l'abonnement du compte</td></tr>
+      <tr><td>Fonctionne hors ligne</td><td>Oui</td><td>Non</td><td>Non</td></tr>
+      <tr><td>Vitesse</td><td>Dépend du matériel</td><td>Généralement élevée</td><td>Généralement élevée</td></tr>
+      <tr><td>Capacité de raisonnement</td><td>Limitée par la taille du modèle qui tient en mémoire</td><td>Accès aux modèles les plus capables</td><td>Identique à la clé API</td></tr>
+      <tr><td>Mise en place</td><td>Télécharger un modèle</td><td>Créer une clé chez le fournisseur</td><td>Se connecter</td></tr>
+      <tr><td>Limites d'usage</td><td>Aucune</td><td>Selon le crédit</td><td>Selon les quotas du compte</td></tr>
+    </table>
+
+    <h2 id="quand-choisir-le-local">Quand choisir le local</h2>
+    <ul>
+      <li>tes fichiers contiennent des données qui ne doivent être transmises à personne ;</li>
+      <li>tu travailles sans connexion, ou avec une connexion incertaine ;</li>
+      <li>tu refuses une facturation à l'usage ;</li>
+      <li>ta machine dispose d'une mémoire vidéo confortable.</li>
+    </ul>
+    <p><b>La contrainte réelle est le matériel.</b> Un modèle qui ne tient pas en
+    mémoire vidéo bascule sur le processeur, et le temps de réponse s'allonge
+    nettement. Les correspondances entre taille de modèle et machine sont dans
+    <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+
+    <h2 id="quand-choisir-un-modele-distant">Quand choisir un modèle distant</h2>
+    <ul>
+      <li>la tâche demande un raisonnement long ou une grande fenêtre de contexte ;</li>
+      <li>tu veux des réponses rapides sans immobiliser ta machine ;</li>
+      <li>ton matériel ne suffit pas pour un modèle assez capable ;</li>
+      <li>le contenu traité peut passer chez un fournisseur sans que ça pose problème.</li>
+    </ul>
+
+    <h2 id="fournisseurs-disponibles">Les fournisseurs disponibles</h2>
+    <p><b>Onze</b> fournisseurs de modèles sont gérés par clé API, dont
+    <b>trois</b> acceptent aussi une connexion par compte web. S'y ajoutent les
+    services de recherche et de prévision.</p>
+
+    <table>
+      <caption class="crumb">Fournisseurs gérés et mode de connexion</caption>
+      <tr><th>Type</th><th>Fournisseur</th><th>Connexion</th></tr>
+      <tr><td>LLM</td><td>Google Gemini</td><td>Clé API</td></tr>
+      <tr><td>LLM</td><td>Mistral</td><td>Clé API</td></tr>
+      <tr><td>LLM</td><td>Cerebras</td><td>Clé API</td></tr>
+      <tr><td>LLM</td><td>OpenRouter</td><td>Clé API</td></tr>
+      <tr><td>LLM</td><td>OpenAI</td><td>Clé API ou compte web OpenAI/Codex</td></tr>
+      <tr><td>LLM</td><td>DeepSeek</td><td>Clé API</td></tr>
+      <tr><td>LLM</td><td>xAI</td><td>Clé API ou compte web Grok</td></tr>
+      <tr><td>LLM</td><td>Moonshot Kimi</td><td>Clé API ou compte web Kimi (expérimental)</td></tr>
+      <tr><td>LLM</td><td>Z.ai GLM</td><td>Clé API</td></tr>
+      <tr><td>LLM</td><td>Anthropic Claude</td><td>Clé API Console (en-tête <code>x-api-key</code>)</td></tr>
+      <tr><td>LLM</td><td>Qwen</td><td>Clé API (point d'accès résolu via Alibaba Model Studio)</td></tr>
+      <tr><td>Recherche</td><td>Brave Search</td><td>Clé API</td></tr>
+      <tr><td>Recherche</td><td>Exa</td><td>Clé API</td></tr>
+      <tr><td>Recherche et extraction</td><td>Firecrawl</td><td>Clé API</td></tr>
+      <tr><td>Recherche</td><td>SearXNG</td><td>Aucune clé, exécution locale</td></tr>
+      <tr><td>Prévision</td><td>Nixtla TimeGPT</td><td>Clé API</td></tr>
+    </table>
+
+    <p>Deux réserves à garder en tête. Les modèles proposés, les quotas et les
+    tarifs sont décidés par le fournisseur et <b>changent sans préavis</b> :
+    réfère-toi à ses propres pages. Et Beaver affiche les informations de compte
+    <b>que le fournisseur accepte de communiquer</b> — la couverture varie de
+    l'un à l'autre.</p>
+
+    <div class="callout">
+      <span class="t">Expérimental</span>
+      Parmi les trois connexions par compte web, seule celle de Kimi (Moonshot)
+      est marquée expérimentale. Les comptes OpenAI/Codex et xAI ne le sont pas :
+      ne place pas les trois au même niveau de fiabilité.
+    </div>
+
+    <h2 id="combiner-les-deux">Combiner les deux</h2>
+    <p>Une organisation qui fonctionne, plutôt qu'une règle : un modèle local
+    pour les tâches courantes, les fichiers sensibles et le travail hors ligne ;
+    un modèle distant pour les tâches qui demandent du raisonnement, sur du
+    contenu non sensible. Côté recherche web, <b>SearXNG</b> en local quand tu
+    veux éviter d'envoyer les requêtes à un tiers, <b>Brave</b>, <b>Exa</b> ou
+    <b>Firecrawl</b> quand tu veux de meilleurs résultats.
+    → <a href="integrations-recherche-web.html">Recherche web</a></p>
+
+    <h2 id="changer-de-modele">Changer de modèle en cours de conversation</h2>
+    <p>Le sélecteur de modèle se trouve <b>dans la barre de saisie, sous la zone
+    de message</b> — pas en haut de la conversation. Changer de modèle ne perd
+    pas l'historique de la conversation en cours.</p>
+
+    <h2 id="pieges">Trois malentendus fréquents</h2>
+    <p><b>« Local » ne veut pas dire « gratuit et équivalent ».</b> Un modèle
+    local assez petit pour tourner sur une machine ordinaire est nettement moins
+    capable qu'un modèle distant récent.</p>
+    <p><b>Un Ollama déjà installé n'est pas à désinstaller.</b> C'est l'inverse :
+    Beaver détecte le démon existant sur <code>localhost:11434</code>, le
+    réutilise, et les modèles sont partagés.</p>
+    <p><b>Configurer une clé API n'envoie rien.</b> Rien ne part tant qu'une
+    conversation n'utilise pas ce fournisseur.</p>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <p>La procédure de configuration détaillée est dans
+    <a href="modeles-fournisseurs-api.html">Fournisseurs API</a> et
+    <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.
+    L'installation et la gestion du moteur local sont dans
+    <a href="modeles-moteur-local.html">Moteur local</a>. Ce que voit exactement
+    un fournisseur est décrit dans
+    <a href="reference-confidentialite.html">Confidentialité</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

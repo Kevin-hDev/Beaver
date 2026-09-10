@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Le moteur local</title>
+<meta name="description" content="Comment Beaver installe, lance et surveille son moteur Ollama, et ce qu'il fait quand un moteur tourne déjà sur ta machine.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Moteur local</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-moteur-local.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/modeles-moteur-local.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le <em>moteur</em> qui fait tourner tes modèles</h1>
+    <p>Les modèles locaux ont besoin d'un moteur d'exécution : Beaver embarque le sien, et sait reconnaître celui que tu as peut-être déjà. Cette page explique ce qu'il installe, ce qu'il réutilise, ce qu'il règle, et ce qu'il refuse de faire quand quelque chose cloche.</p>
+
+    <h2 id="ce-que-beaver-installe">Ce que Beaver installe</h2>
+    <p>Beaver installe son propre moteur Ollama dans son dossier de données, sous <code>~/.local/share/cl-go-dash/ollama-bundle/</code> — le même chemin sur les trois systèmes. <b>Le téléchargement n'a jamais lieu tout seul</b> : il est proposé au premier lancement, ou déclenché quand tu veux depuis <b>Réglages › Ollama</b>. Tant que tu ne le demandes pas, rien n'est installé et Beaver s'en tient aux modèles distants.</p>
+    <ul>
+      <li><b>Aucune installation système n'est nécessaire.</b> Tu n'as pas à installer Ollama séparément, ni même à connaître son existence.</li>
+      <li><b>Le moteur de Beaver n'écrase pas une installation existante.</b> Le programme du moteur vit dans le dossier de Beaver, avec ses propres réglages. Ses <b>modèles</b>, en revanche, sont bien ceux d'Ollama.</li>
+    </ul>
+    <p>Le téléchargement ne peut venir que <b>d'une seule adresse</b> : les publications officielles d'Ollama sur <code>github.com</code>, en <code>https</code> uniquement. Toute autre origine — autre domaine, autre port, adresse portant des identifiants ou des paramètres — est refusée avant même la connexion. <b>L'archive est ensuite vérifiée par son empreinte SHA-256</b> ; si elle ne correspond pas, elle est rejetée et rien n'est installé.</p>
+
+    <table>
+      <caption class="crumb">L'archive attendue selon la plateforme</caption>
+      <tr><th>Plateforme</th><th>Archive attendue</th></tr>
+      <tr><td>macOS</td><td><code>ollama-darwin.tgz</code></td></tr>
+      <tr><td>Windows</td><td><code>ollama-windows-amd64.zip</code></td></tr>
+      <tr><td>Linux</td><td><code>ollama-linux-amd64.tar.zst</code></td></tr>
+      <tr><td>Linux avec carte AMD détectée</td><td>la même, plus <code>ollama-linux-amd64-rocm.tar.zst</code></td></tr>
+    </table>
+
+    <p>Une fois installé, le moteur laisse un <b>reçu</b> dans son dossier : la version installée et l'empreinte de son exécutable. <b>À chaque démarrage, Beaver recalcule cette empreinte et la compare au reçu.</b> Si les deux ne correspondent pas, il refuse de lancer le moteur et passe en reprise plutôt que d'exécuter un binaire dont il ne sait rien.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Tu n'as jamais à installer Ollama toi-même : Beaver récupère et gère son propre moteur, sans manipulation ni terminal. Mais il ne le fait que si tu le lui demandes — au premier lancement, ou plus tard depuis Réglages › Ollama.
+    </div>
+
+    <h2 id="si-tu-as-deja-ollama">Si tu as déjà Ollama</h2>
+    <p><b>Avant de lancer quoi que ce soit, Beaver regarde si un moteur Ollama répond déjà sur le port habituel — <code>127.0.0.1:11434</code>.</b> Si c'est le cas, il l'adopte et <b>ne lance pas de second moteur</b>.</p>
+    <p>La vérification se fait en deux temps. <b>À la détection</b>, Beaver se contente d'ouvrir une connexion sur ce port, avec un délai de <b>250 millisecondes</b> : ce qui répond est considéré comme un moteur existant. <b>Ensuite, la surveillance vérifie réellement</b> : toutes les <b>2 secondes</b>, Beaver interroge l'adresse de version du moteur. Si elle ne répond pas, le moteur est marqué indisponible et la fonctionnalité disparaît de l'application plutôt que d'échouer plus tard.</p>
+    <p>En pratique :</p>
+    <ul>
+      <li>Les modèles déjà téléchargés par l'application Ollama officielle sont <b>immédiatement disponibles</b> dans Beaver. Rien à retélécharger.</li>
+      <li>Il n'y a <b>jamais deux moteurs en mémoire</b> — donc pas de modèle chargé deux fois, ni de mémoire vidéo occupée en double.</li>
+      <li><b>Les réglages de Beaver ne s'appliquent pas</b> à un moteur qu'il n'a pas lancé : le moteur existant garde sa propre configuration. Si tu règles l'accélération matérielle ou le multi-modèle dans Beaver, tu ne verras aucun effet.</li>
+      <li>Certaines opérations sont <b>réservées au moteur possédé</b> : créer un modèle personnalisé, par exemple, est refusé quand Beaver n'a pas lancé le moteur lui-même.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Si tu as déjà Ollama, Beaver le réutilise. Tes modèles sont immédiatement disponibles et il n'y a jamais deux moteurs en mémoire — mais en contrepartie, les réglages de moteur de Beaver restent sans effet sur cette installation-là.
+    </div>
+
+    <h2 id="le-port">Le port choisi</h2>
+    <p>Beaver ne s'impose jamais sur le port habituel d'Ollama.</p>
+    <ul>
+      <li><b>Le port du moteur lancé par Beaver est attribué par le système d'exploitation.</b> Beaver demande « un port libre, n'importe lequel », retient celui qu'on lui donne, et recommence au plus <b>3 fois</b> si le port obtenu ne convient pas. Il n'y a <b>aucune plage de ports fixée</b>.</li>
+      <li><b>Le port 11434 ne sert qu'à la détection</b> d'un moteur déjà en cours d'exécution. Le moteur lancé par Beaver ne l'utilise pas.</li>
+    </ul>
+    <p>Le moteur n'écoute que sur <code>127.0.0.1</code>. <b>Il n'est joignable depuis aucun autre appareil du réseau.</b></p>
+
+    <h2 id="les-reglages-du-moteur">Les réglages appliqués au moteur</h2>
+    <p>Quand Beaver lance son propre moteur, il lui impose une configuration. <b>Elle tient en cinq valeurs, et rien d'autre.</b></p>
+
+    <table>
+      <caption class="crumb">Les cinq réglages imposés au moteur lancé par Beaver</caption>
+      <tr><th>Réglage</th><th>Valeur</th><th>Pourquoi</th></tr>
+      <tr><td>Adresse d'écoute</td><td><code>127.0.0.1:&lt;port attribué par le système&gt;</code></td><td>Rien n'est exposé au réseau</td></tr>
+      <tr><td>Dossier des modèles</td><td>Le dossier Ollama de la machine, vérifié avant lancement</td><td>Modèles partagés, jamais dupliqués</td></tr>
+      <tr><td>Modèles distants d'Ollama</td><td><b>Désactivés</b></td><td>Le local reste local</td></tr>
+      <tr><td>Modèles chargés en même temps</td><td><b>1</b>, ou libre si le multi-modèle est activé</td><td>Éviter la saturation mémoire</td></tr>
+      <tr><td>Bibliothèque de calcul</td><td><b>Processeur</b> en mode processeur seul, <b>détection automatique</b> sinon</td><td>Machines sans carte graphique utilisable</td></tr>
+    </table>
+
+    <p>Trois de ces lignes méritent une explication. <b>Les modèles distants d'Ollama sont désactivés</b> : Ollama propose d'exécuter certains modèles sur ses propres serveurs, et Beaver coupe cette possibilité — quand une conversation utilise un modèle local, elle est réellement locale. <b>Un seul modèle est chargé en mémoire à la fois</b>, sauf si tu actives le multi-modèle dans les réglages avancés ; sur une machine ordinaire, deux modèles chargés saturent la mémoire vidéo. Et <b>le mode processeur seul se force explicitement</b> : par défaut Beaver laisse le moteur détecter le matériel tout seul.</p>
+
+    <p><b>Combien de temps un modèle reste en mémoire</b> après usage se règle aussi, mais autrement : ce n'est pas une consigne donnée au moteur au lancement, c'est une valeur <b>transmise à chaque requête</b>. Elle vaut <b>5 minutes</b> par défaut. Deux valeurs particulières :</p>
+    <ul>
+      <li><b>Indéfiniment</b> — le modèle ne quitte plus la mémoire. Il répond instantanément à la question suivante, au prix de la mémoire occupée en permanence.</li>
+      <li><b>Aucune persistance</b> — le modèle est déchargé, et Beaver demande en plus explicitement au moteur de libérer la mémoire à la fin du tour de conversation.</li>
+    </ul>
+    <p>Comme cette valeur voyage avec chaque requête et non avec le moteur, <b>c'est le seul réglage de moteur qui fonctionne aussi quand Beaver réutilise un moteur système.</b></p>
+
+    <table>
+      <caption class="crumb">Les deux réglages transmis à chaque requête plutôt qu'au moteur</caption>
+      <tr><th>Réglage</th><th>Où il agit</th><th>Valeur par défaut</th></tr>
+      <tr><td>Persistance d'un modèle en mémoire</td><td>Transmis à chaque requête</td><td><b>5 minutes</b></td></tr>
+      <tr><td>Taille de contexte</td><td>Transmise à chaque requête, déduite de la mémoire</td><td><b>8 192 à 32 768 jetons</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Un modèle local est vraiment local. Beaver désactive les modèles distants proposés par Ollama, et le moteur n'écoute que sur <code>127.0.0.1</code>, sur un port que le système lui attribue. Rien ne quitte ta machine, aucun autre appareil ne peut s'y connecter.
+    </div>
+
+    <h2 id="ou-vivent-les-modeles">Où vivent les modèles</h2>
+    <p>Le dossier des modèles est <b>celui d'Ollama, pas un dossier propre à Beaver</b> :</p>
+    <ul>
+      <li>si la variable d'environnement <code>OLLAMA_MODELS</code> est définie sur ta machine, Beaver la respecte ;</li>
+      <li>sinon, il utilise l'emplacement habituel d'Ollama, <code>~/.ollama/models</code>.</li>
+    </ul>
+    <p>Autrement dit, <b>les modèles sont partagés avec l'application Ollama officielle</b>, que Beaver lance son propre moteur ou réutilise celui du système. Rien n'est dupliqué — et une suppression vaut des deux côtés.</p>
+    <p>Beaver refuse de démarrer si ce dossier chevauche l'un de ses propres dossiers de travail : sans ce garde-fou, une mise à jour du moteur pourrait effacer des modèles.</p>
+
+    <h2 id="contexte-et-materiel">La taille de contexte s'adapte au matériel</h2>
+    <p>Beaver mesure la mémoire disponible et en déduit la taille de contexte des modèles locaux.</p>
+
+    <table>
+      <caption class="crumb">Le contexte accordé aux modèles locaux selon la mémoire détectée</caption>
+      <tr><th>Mémoire détectée</th><th>Contexte accordé</th></tr>
+      <tr><td><b>24 Go ou plus</b></td><td><b>32 768 jetons</b></td></tr>
+      <tr><td><b>12 Go à 24 Go</b></td><td><b>24 576 jetons</b></td></tr>
+      <tr><td>Moins de 12 Go, ou indétectable</td><td><b>8 192 jetons</b></td></tr>
+    </table>
+
+    <p>Quand la mémoire ne peut pas être mesurée, Beaver prend la valeur la plus basse : mieux vaut un contexte modeste qui fonctionne qu'un contexte ambitieux qui fait échouer le chargement.</p>
+    <p>Sur les Mac à puce Apple, la mémoire mesurée est la <b>mémoire unifiée</b> — celle que le processeur et la partie graphique se partagent. Un Mac de 16 Go entre donc dans le palier intermédiaire. <b>Sur un Mac à processeur Intel, la mémoire n'est pas mesurée du tout</b> : le contexte tombe au palier de 8 192 jetons. La mesure est rafraîchie toutes les <b>10 secondes</b> en arrière-plan, ce qui alimente aussi l'indicateur de mémoire de l'application.</p>
+
+    <table>
+      <caption class="crumb">Comment la carte graphique est détectée</caption>
+      <tr><th>Plateforme</th><th>Méthode</th><th>Fabricants reconnus</th></tr>
+      <tr><td>macOS</td><td>Interrogation du processeur</td><td>Apple</td></tr>
+      <tr><td>Linux</td><td>Lecture des identifiants matériels du système</td><td>AMD, NVIDIA, Intel</td></tr>
+      <tr><td>Windows</td><td>Interrogation du gestionnaire de périphériques</td><td>NVIDIA, AMD, Intel</td></tr>
+    </table>
+
+    <table>
+      <caption class="crumb">Comment la mémoire est mesurée</caption>
+      <tr><th>Plateforme</th><th>Source, par ordre de préférence</th></tr>
+      <tr><td>macOS (puce Apple)</td><td>Mémoire unifiée du système</td></tr>
+      <tr><td>macOS (processeur Intel)</td><td><b>Aucune</b> — la mémoire n'est pas mesurée</td></tr>
+      <tr><td>Linux</td><td>Outil NVIDIA, puis informations mémoire du pilote graphique</td></tr>
+      <tr><td>Windows</td><td>Outil NVIDIA, puis registre système, puis compteurs de performance</td></tr>
+    </table>
+
+    <p>Le fabricant détecté sert aussi au téléchargement : une carte AMD sous Linux fait récupérer l'archive ROCm en plus de l'archive standard. Pour choisir une taille de modèle adaptée à ta machine, voir <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+
+    <h2 id="demarrage-et-reprise">Le démarrage et la reprise après panne</h2>
+    <p>L'ordre des opérations explique pourquoi Beaver refuse parfois de démarrer le moteur au lieu de le faire mal :</p>
+    <ul>
+      <li><b>Une passe de reprise d'abord.</b> Si une installation ou une mise à jour du moteur a été interrompue, elle est reprise ou annulée avant toute autre chose. Tant qu'elle ne se termine pas, le moteur reste bloqué et Beaver le dit plutôt que de lancer un moteur à moitié installé.</li>
+      <li><b>Le reçu de processus est relu.</b> Si un moteur lancé par une session précédente tourne encore, il est arrêté et récupéré ; s'il a disparu, le reçu est supprimé.</li>
+      <li><b>La détection d'un moteur existant.</b></li>
+      <li><b>Le lancement</b>, si aucun moteur n'a été trouvé.</li>
+      <li><b>La vérification.</b> Beaver accorde <b>10 secondes</b> au moteur pour se mettre à écouter <b>et</b> répondre la version attendue. Si l'une des deux échoue, le processus est arrêté et le démarrage est déclaré en échec — il n'est jamais publié comme disponible « au cas où ».</li>
+    </ul>
+    <p>Le reçu de processus est le mécanisme qui empêche les moteurs orphelins de s'accumuler. Il est écrit <b>avant que le moteur ne soit autorisé à démarrer réellement</b> : le processus est créé puis retenu, bloqué, tant que Beaver n'a pas enregistré son reçu sur le disque. Il n'existe donc aucun instant où un moteur tourne sans que Beaver sache le reconnaître.</p>
+    <p>Le reçu contient de quoi l'identifier sans ambiguïté : identifiant du processus, instant exact de son démarrage, portée système, et empreinte du moteur installé. <b>Ces quatre éléments doivent tous correspondre pour que Beaver arrête un processus.</b> Un identifiant de processus est réutilisé par le système : sans cette vérification, Beaver risquerait de tuer un programme sans rapport qui aurait hérité du même numéro.</p>
+
+    <table>
+      <caption class="crumb">Les délais du moteur</caption>
+      <tr><th>Étape</th><th>Délai</th></tr>
+      <tr><td>Sonde de détection d'un moteur existant</td><td><b>250 ms</b></td></tr>
+      <tr><td>Attente qu'un moteur lancé soit prêt et réponde la bonne version</td><td><b>10 secondes</b></td></tr>
+      <tr><td>Intervalle de surveillance</td><td><b>2 secondes</b></td></tr>
+      <tr><td>Délai d'une vérification de santé</td><td><b>2 secondes</b></td></tr>
+      <tr><td>Réserve d'arrêt à la fermeture</td><td><b>3 secondes</b></td></tr>
+      <tr><td>Rafraîchissement de la mesure de mémoire</td><td><b>10 secondes</b></td></tr>
+      <tr><td>Tentatives d'obtention d'un port</td><td><b>3</b></td></tr>
+    </table>
+
+    <h2 id="arret-et-traces">L'arrêt, le nettoyage et les traces</h2>
+    <ul>
+      <li>À la fermeture de Beaver, le moteur qu'il a lancé est arrêté <b>avec tout son arbre de processus</b> — groupe de processus sous macOS et Linux, objet de travail système sous Windows.</li>
+      <li>Un moteur <b>réutilisé n'est jamais arrêté</b> : Beaver ne coupe pas un processus qu'il n'a pas démarré.</li>
+      <li>La fermeture réserve <b>3 secondes</b> à cette opération dans son budget global. Un moteur qui ne rend pas la main dans ce délai n'empêche pas l'application de se fermer.</li>
+      <li>Sous Linux, le moteur lancé reçoit en plus une consigne du noyau : <b>si Beaver disparaît brutalement, le système tue le moteur avec lui.</b></li>
+    </ul>
+    <p><b>Le moteur n'écrit aucun fichier de traces.</b> Sa sortie n'est redirigée nulle part. Ce qui reste disponible pour comprendre une panne, ce sont <b>les traces de Beaver lui-même</b> : chaque étape du moteur y est consignée avec un <b>code d'erreur nommé</b> — moteur absent, reprise nécessaire, stockage indisponible, démarrage échoué, arrêt échoué, conflit de dossier de modèles. C'est ce code qu'il faut relever pour un signalement.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Les symptômes les plus courants et leur cause</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Le moteur n'est pas installé »</td><td>Téléchargement interrompu, ou dossier du moteur absent</td><td>Relancer l'installation depuis les réglages</td></tr>
+      <tr><td>Le moteur refuse de démarrer après un plantage</td><td>Une installation ou une mise à jour interrompue doit être reprise avant tout démarrage</td><td>Relancer l'application ; la reprise se fait au démarrage</td></tr>
+      <tr><td>Les réglages de moteur ne changent rien</td><td>Beaver réutilise un moteur système</td><td>Quitter l'application Ollama officielle, puis relancer Beaver</td></tr>
+      <tr><td>Impossible de créer un modèle personnalisé</td><td>L'opération demande un moteur lancé par Beaver</td><td>Quitter l'application Ollama officielle, puis relancer Beaver</td></tr>
+      <tr><td>Le chargement du modèle échoue</td><td>Mémoire insuffisante pour le modèle choisi</td><td>Modèle plus petit, ou version plus compressée</td></tr>
+      <tr><td>Le premier message est très lent</td><td>Chargement du modèle en mémoire</td><td>Normal ; augmenter la persistance en mémoire pour éviter le rechargement</td></tr>
+      <tr><td>La carte graphique n'est pas utilisée</td><td>Fabricant non reconnu, ou pilotes absents</td><td>Forcer le mode processeur si besoin ; il n'y a pas de journal du moteur à consulter</td></tr>
+      <tr><td>Un processus reste en arrière-plan</td><td>Arrêt brutal</td><td>Il est reconnu par son reçu et arrêté au démarrage suivant</td></tr>
+      <tr><td>Deux modèles saturent la mémoire</td><td>Multi-modèle activé</td><td>Le désactiver dans les réglages avancés</td></tr>
+    </table>
+
+    <p>Pour installer et supprimer des modèles, voir <a href="modeles-modeles-locaux.html">Modèles locaux</a> ; pour les régler un par un, <a href="modeles-personnalisation.html">Personnalisation</a>. Le téléchargement initial est décrit dans <a href="demarrage-premier-lancement.html">Premier lancement</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

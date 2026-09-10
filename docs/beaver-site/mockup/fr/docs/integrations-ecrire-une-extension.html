@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Écrire une extension</title>
+<meta name="description" content="De zéro à un outil qui marche : le manifeste, le cycle de chargement, la classe d'effet, l'interface, la distribution par Git et le débogage sans console.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Intégrations / Écrire une extension</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="integrations-ecrire-une-extension.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/integrations-ecrire-une-extension.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Écrire une <em>extension</em></h1>
+    <p>Une extension Beaver est un module JavaScript ou TypeScript que Beaver charge dans un processus Node.js qui lui appartient. Elle peut ajouter des outils à l'agent, réagir à des événements et poser des éléments dans l'interface. Pas de serveur à écrire, pas de port à ouvrir, pas de jeton d'appairage : Beaver lance ton point d'entrée et lui passe directement l'objet <code>beaver</code>.</p>
+
+    <h2 id="avant-decrire-une-ligne">Ce que tu acceptes avant d'écrire une ligne</h2>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Ton extension n'est pas dans un bac à sable. Son code s'exécute avec les droits de ton compte : il peut lire tes fichiers, ouvrir le réseau et lancer des processus. Beaver isole chaque extension dans son propre processus et vide son environnement — cela protège la <b>stabilité</b> de l'application, pas la machine contre du code approuvé. Cela vaut aussi pour tes utilisateurs : ils n'installeront ton extension qu'après l'avoir approuvée explicitement, et ils ont raison de lire ton code avant.
+    </div>
+
+    <p>Trois faits qui changent la façon d'écrire. Chaque extension tierce activée a <b>son propre processus Node.js</b>, avec une identité attribuée par Beaver : une extension qui plante n'arrête pas les autres. L'environnement de ce processus est <b>vidé</b> avant le lancement — seuls <code>PATH</code>, <code>TMPDIR</code>, <code>TMP</code>, <code>TEMP</code> et, sous Windows, <code>SystemRoot</code> subsistent : ni <code>HOME</code>, ni <code>USER</code>, ni tes clés. Et une extension approuvée peut demander les secrets du coffre — clé de fournisseur, jeton OAuth MCP, valeur d'environnement MCP, jeton de canal — sachant que l'approbation porte sur tout son code et toutes ses dépendances, sans permission par clé.</p>
+
+    <p>Le point d'entrée est en <b>JavaScript ou TypeScript</b>, pas en Python, Rust, Go, Java ni C#. Une extension peut en revanche lancer un programme écrit dans un autre langage, puisqu'elle a l'accès complet à Node.js.</p>
+
+    <h2 id="le-projet-minimal">Le projet minimal</h2>
+    <p>Deux formes existent, et le choix a des conséquences. <b>Un fichier isolé</b> — tu ajoutes directement <code>mon-extension.ts</code> — reçoit un manifeste implicite : l'identifiant devient <code>local.&lt;nom-du-fichier&gt;.&lt;8 caractères hexadécimaux&gt;</code>, la version vaut <code>0.0.0</code>, et surtout <code>apiLevel</code> vaut <b><code>advanced</code></b>, pas <code>stable</code>. Un fichier isolé reçoit donc le niveau d'API le plus permissif et une identité qui change à chaque ajout : bon pour un essai, mauvais pour tout le reste. <b>Un dossier avec manifeste</b> est la seule forme recommandée.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ls hello-beaver
+beaver-extension.json   index.ts   package.json   package-lock.json</pre>
+    </div>
+
+    <p>Beaver cherche le manifeste sous <b>trois noms, dans cet ordre</b> : <code>beaver-extension.json</code>, puis <code>beaver.json</code>, puis <code>package.json</code>. Le premier trouvé gagne, les suivants ne sont pas lus. Le point d'entrée doit porter une extension reconnue — <code>js</code>, <code>mjs</code>, <code>cjs</code>, <code>jsx</code>, <code>ts</code>, <code>mts</code>, <code>cts</code>, <code>tsx</code>, <code>mtsx</code>, <code>ctsx</code> — et son chemin est canonicalisé puis vérifié comme restant sous la racine de l'extension : un <code>..</code> ou un lien symbolique qui sort du dossier est refusé.</p>
+
+    <p>Tu poses le dossier où tu veux sur ton disque : Beaver enregistre le chemin canonique et lit la source sur place, sans la copier. Il n'écrit chez lui que son registre, <code>~/.local/share/cl-go-dash/extensions.json</code>, et les copies gérées des installations Git et npm dans <code>extension-installs/</code>. Deux points sur l'outillage : <b>n'embarque jamais <code>@beaver/sdk</code></b> dans le paquet distribué, l'hôte résout cet import vers sa propre copie — garde-le en dépendance de développement, pour l'autocomplétion ; et <b>aucune compilation n'est obligatoire</b>, les fichiers <code>.js</code>, <code>.cjs</code> et <code>.mjs</code> passant par l'import natif de Node, tous les autres par Jiti.</p>
+
+    <h2 id="le-manifeste">Le manifeste, champ par champ</h2>
+
+    <table>
+      <caption class="crumb">Les champs de beaver-extension.json</caption>
+      <tr><th>Champ</th><th>Obligatoire</th><th>Valeurs et contraintes</th></tr>
+      <tr><td><code>id</code></td><td>Oui</td><td>≤ 96 caractères, lettres et chiffres ASCII plus <code>.</code> <code>_</code> <code>-</code>, commence par un alphanumérique. Nom de domaine inversé recommandé : <code>com.example.hello</code></td></tr>
+      <tr><td><code>name</code></td><td>Oui</td><td>≤ 100 caractères</td></tr>
+      <tr><td><code>version</code></td><td>Oui</td><td>≤ 64 caractères</td></tr>
+      <tr><td><code>beaverApi</code></td><td>Oui</td><td>exactement la chaîne <code>"1"</code></td></tr>
+      <tr><td><code>runtime</code></td><td>Oui</td><td><code>node</code> — <code>builtin</code> est réservé aux plugins livrés avec Beaver</td></tr>
+      <tr><td><code>main</code></td><td>Oui</td><td>chemin relatif, sous la racine, extension de source reconnue</td></tr>
+      <tr><td><code>access</code></td><td>Non</td><td><code>full</code> par défaut, et <b>doit</b> valoir <code>full</code> si <code>runtime</code> vaut <code>node</code></td></tr>
+      <tr><td><code>apiLevel</code></td><td>Non</td><td><code>stable</code> (défaut) ou <code>advanced</code></td></tr>
+      <tr><td><code>essential</code></td><td>Non</td><td>booléen, <code>false</code> par défaut</td></tr>
+      <tr><td><code>description</code>, <code>author</code>, <code>homepage</code></td><td>Non</td><td>≤ 2 000 caractères chacun</td></tr>
+      <tr><td><code>ui</code></td><td>Non</td><td>objet strict <code>{ apiVersion, mode, entry? }</code></td></tr>
+    </table>
+
+    <p>Les règles qui bloquent réellement un débutant : <code>beaverApi</code> est comparé strictement, avant toute autre validation, et l'échec produit <code>extensions_api_incompatible</code> ; écrire <code>"access": "core"</code> avec <code>runtime: node</code> refuse le manifeste, avec le message « Une extension Node.js possède un accès complet. » ; et le bloc <code>ui</code> est validé strictement, tout champ en trop refusant le manifeste. Tu peux aussi porter le manifeste dans <code>package.json</code>, sous une clé <code>beaver</code> : Beaver y recopie depuis la racine du package les champs <code>name</code>, <code>version</code>, <code>description</code> et <code>main</code> s'ils manquent dans le bloc. L'<code>id</code>, lui, n'est <b>jamais</b> déduit du nom npm.</p>
+
+    <h2 id="du-chargement-au-premier-outil">Du chargement au premier outil</h2>
+    <p>Beaver charge une extension en trois étapes, que tu retrouveras telles quelles dans les diagnostics. <b><code>import</code></b> : l'hôte importe le module d'entrée. <b><code>activate</code></b> : il cherche la fonction d'activation et l'appelle avec l'objet <code>beaver</code> — deux formes sont acceptées, un module dont l'export par défaut <i>est</i> une fonction, ou un module qui expose une méthode <code>activate</code> ; sinon, erreur <code>activate_missing</code>. <b><code>register</code></b> : il vérifie l'unicité des noms d'outils, encode l'instantané des contributions, contrôle qu'il tient dans le message du protocole, et <b>seulement alors</b> publie les outils. Une extension qui échoue en étape <code>register</code> ne laisse donc aucun outil derrière elle.</p>
+
+    <p>Côté cycle de vie : <code>defineExtension</code> ne fait rien à l'exécution, elle retourne son argument tel quel — son seul rôle est de faire vérifier la forme de ton objet par TypeScript. <code>deactivate()</code> est appelée quand l'hôte est remis à zéro ; une exception levée dedans est avalée et le nettoyage des autres extensions continue. C'est là que tu arrêtes tes minuteries, fermes tes fichiers et retires tes écouteurs. Les fonctions de désabonnement rendues par <code>beaver.on</code> et par les enregistrements d'interface sont idempotentes.</p>
+
+    <p>Un outil s'enregistre avec <code>beaver.registerTool</code>, et cinq champs comptent. <b><code>name</code></b> : Beaver <b>préfixe automatiquement</b> le nom par l'identifiant de l'extension, sauf s'il commence déjà par ce préfixe — un outil déclaré <code>hello</code> dans <code>com.example.hello</code> s'appelle donc <code>com.example.hello.hello</code> pour le modèle. Le nom public complet doit tenir dans <b>96 caractères</b> : compte le préfixe, c'est lui qui te rapproche de la limite. <b><code>description</code></b> : obligatoire, non vide, <b>2 000 scalaires Unicode</b> maximum ; vide, elle fait échouer l'enregistrement, donc toute l'activation. <b><code>parameters</code></b> : un objet JSON, jamais un tableau. <b><code>effect</code></b> : voir la section suivante. <b><code>execute</code></b> : obligatoire, et doit être une fonction.</p>
+
+    <p>Le schéma de paramètres est validé strictement. Sa racine <b>doit</b> porter <code>"type": "object"</code>, sinon « Le schéma d'un outil doit décrire un objet. » Seuls <b>38 mots-clés</b> sont acceptés à tous les niveaux — <code>$ref</code> et <code>$defs</code> n'en font pas partie, donc un schéma qui référence une définition est refusé. La profondeur maximale est de <b>16</b> et le total de <b>256 nœuds</b>.</p>
+
+    <p>Ta fonction <code>execute</code> reçoit les arguments du modèle et, en deuxième position, un contexte <b>gelé qui ne contient qu'un champ</b> : <code>workingDirectory</code>. Il n'y a ni identifiant de session, ni langue, ni modèle — ne les cherche pas. Tu peux retourner une chaîne, ou un objet <code>{ content, isError?, displaySummary?, truncated? }</code>. Un <code>content</code> en chaîne est tronqué à <b>1 048 576</b> unités et <code>displaySummary</code> à <b>1 024</b> caractères ; la troncature est silencieuse, elle lève le drapeau <code>truncated</code> sans échouer. L'appel est rejeté au bout de <b>55 secondes</b> avec <code>tool_timeout</code> — attention, la course rejette la promesse mais <b>n'interrompt pas ton code</b> : ton travail continue en arrière-plan sans que personne n'en lise le résultat.</p>
+
+    <h2 id="la-classe-deffet">La classe d'effet</h2>
+    <p>C'est la déclaration qui a le plus de conséquences, et c'est un simple mot dans un objet. Une valeur absente ou mal orthographiée n'est <b>pas</b> refusée : <code>"readonly"</code> au lieu de <code>"read-only"</code> devient <code>unknown</code>, la classe la plus restrictive — l'outil fonctionne, mais il demande confirmation à chaque appel et devient inutilisable en mode Plan, sans qu'aucun message ne l'explique.</p>
+
+    <table>
+      <caption class="crumb">Ce que chaque classe d'effet déclenche</caption>
+      <tr><th><code>effect</code></th><th>Confirmation en « Demander l'autorisation »</th><th>Appel en parallèle</th><th>Mode Plan</th><th>Accord retenu pour la session</th></tr>
+      <tr><td><code>read-only</code></td><td>Non</td><td>Oui</td><td><b>Autorisé</b></td><td>Non</td></tr>
+      <tr><td><code>external-read</code></td><td>Oui</td><td>Oui</td><td>Refusé</td><td>Oui</td></tr>
+      <tr><td><code>local-write</code></td><td>Oui</td><td>Non</td><td>Refusé</td><td>Oui</td></tr>
+      <tr><td><code>external-write</code></td><td>Oui</td><td>Non</td><td>Refusé</td><td>Oui</td></tr>
+      <tr><td><code>process</code></td><td>Oui</td><td>Non</td><td>Refusé</td><td>Non</td></tr>
+      <tr><td><code>secret</code></td><td>Oui</td><td>Non</td><td>Refusé</td><td>Non</td></tr>
+      <tr><td><code>unknown</code></td><td>Oui</td><td>Non</td><td>Refusé</td><td>Non</td></tr>
+    </table>
+
+    <p>Le mode <b>Accès complet</b> contourne la garde de permission pour toutes les lignes : ta classe d'effet ne protège donc que les utilisateurs des modes plus stricts — raison de plus pour la déclarer juste. Côté sous-agents, un profil « explorateur » ne reçoit que les outils d'extension déclarés <code>read-only</code>, tandis que le profil « codeur » les reçoit tous.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      La classe d'effet est une promesse, et Beaver la croit. Il ne vérifie pas ce que ton outil fait réellement : il applique la politique correspondant à la classe déclarée. Déclarer <code>read-only</code> un outil qui écrit sur le disque supprime la demande d'approbation <b>et autorise l'outil en mode Plan</b>, un mode où l'utilisateur s'attend précisément à ce que rien ne soit modifié.
+    </div>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      <code>secret</code> : ce que tu emportes ne revient pas. Une fois une valeur du coffre remise à ton code JavaScript, <b>Beaver ne peut plus garantir son effacement de la mémoire</b>. Désactiver ou supprimer l'extension ne retire pas une copie déjà obtenue : la seule réponse à une fuite est de révoquer le secret chez son fournisseur. Ne l'écris jamais dans un résultat d'outil, un message d'erreur ou un fichier de diagnostic.
+    </div>
+
+    <h2 id="evenements-et-interface">Événements et interface</h2>
+    <p><b>Un seul événement public existe aujourd'hui</b> : <code>session.turn.started</code>. Sa charge utile contient exactement deux champs, <code>sessionId</code> et <code>mode</code>. <code>beaver.on</code> rend une fonction de désabonnement à appeler dans <code>deactivate()</code>. Les bornes : <b>64 gestionnaires par extension</b>, <b>64 gestionnaires en vol</b> simultanés, et un budget de <b>5 secondes</b> par gestionnaire — à l'expiration, Beaver cesse d'attendre mais <b>n'interrompt pas</b> ton code, qui continue de tourner sans surveillance. Une exception dans un gestionnaire ne bloque pas la livraison aux autres extensions.</p>
+
+    <p>Pour poser une vue, il faut d'abord déclarer un bloc <code>ui</code> dans le manifeste — sans lui, chaque enregistrement d'interface est refusé. En <b>mode standard</b>, tu décris des données et Beaver dessine : quatre types de contribution (<code>tab</code>, <code>settingsTab</code>, <code>action</code>, <code>theme</code>), cinq opérations de placement (<code>before</code>, <code>after</code>, <code>replace</code>, <code>move</code>, <code>remove</code>), onze primitives de vue, vingt icônes nommées, quarante-sept jetons de thème redéfinissables et sept langues plus <code>default</code>. Ni CSS, ni JSX.</p>
+
+    <p>Huit emplacements publics existent : <code>app.navigation.primary</code> pour un onglet d'application ; <code>settings.navigation.preferences</code>, <code>settings.navigation.agent</code>, <code>settings.navigation.models</code>, <code>settings.navigation.integrations</code> et <code>settings.navigation.application</code> pour un onglet de réglages ; <code>app.toolbar.primary</code> pour une action de barre d'outils ; et <code>agent.composer.leading</code> pour une action dans le champ de saisie, le seul limité à la conversation Agent et exclu du chat tiers.</p>
+
+    <p>Deux différences de comportement à ne pas rater. <code>registerTool</code> <b>lève</b> en cas de refus ; les enregistrements d'interface, eux, <b>ne lèvent pas</b> : ils rendent une fonction vide et ajoutent un diagnostic. Ton extension se charge, ses outils marchent, et l'interface est simplement absente — il faut aller lire le diagnostic pour le savoir. Et deux occupants sont <b>protégés</b> contre <code>remove</code> et <code>replace</code> : <code>beaver.settings</code> dans la navigation principale et <code>beaver.extensions</code> dans les réglages Intégrations. C'est ce qui garantit qu'un utilisateur peut toujours revenir désactiver ton extension.</p>
+
+    <h2 id="les-niveaux-dapi">Les niveaux d'API</h2>
+    <p>Attention au vocabulaire : le manifeste porte <b>deux champs différents</b>, avec deux jeux de valeurs. <code>apiLevel</code> accepte <code>stable</code> ou <code>advanced</code> ; <code>ui.mode</code> accepte <code>standard</code> ou <code>advanced</code>. Il n'existe <b>pas</b> de niveau d'API nommé <code>standard</code> — c'est un mode d'interface. En pratique, trois combinaisons : <code>apiLevel: "stable"</code> sans bloc <code>ui</code>, qui donne des outils, des événements, des skills et des ressources, et reste le bon choix par défaut ; <code>apiLevel: "stable"</code> avec <code>ui.mode: "standard"</code>, qui ajoute onglets, réglages, actions et thèmes décrits en données ; et <code>apiLevel: "advanced"</code> avec <code>ui.mode: "advanced"</code>, un module JavaScript chargé dans la même WebView que Beaver.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      L'interface avancée partage la page de Beaver, avec les mêmes droits qu'elle. Il n'y a pas de bac à sable, et une boucle synchrone dans ce module bloque toute l'application : la seule sortie est alors de redémarrer, éventuellement avec <code>--safe-mode</code>. Beaver demande pour cela une confirmation supplémentaire à l'activation. N'y va que si le mode standard ne suffit pas.
+    </div>
+
+    <p>Le niveau avancé s'impose dans deux cas seulement : manipuler le DOM ou monter une interface que les primitives standard ne permettent pas, et <a href="integrations-remplacer-un-outil.html">remplacer un outil natif</a>. Ce qu'il ne donne <b>pas</b> : <code>beaver.unstable.call(...)</code> ne peut appeler que des méthodes déclarées avancées dans le contrat, et le contrat actuel n'en publie aucune — les douze méthodes du pont sont toutes stables. Tout appel échoue donc aujourd'hui avec <code>core_method_unavailable</code>. Ce n'est pas une porte dérobée vers le backend.</p>
+
+    <h2 id="distribuer-depuis-git">Distribuer depuis un dépôt Git</h2>
+    <p>Beaver accepte deux formes d'adresse : une URL de schéma <code>https</code> ou <code>ssh</code> — le préfixe <code>git+</code> est toléré et retiré —, et la forme SCP <code>utilisateur@hôte:chemin</code>. Sont refusés tout autre schéma, donc <code>http://</code> en clair, une URL sans hôte, un mot de passe dans l'URL, une chaîne de requête, un nom d'utilisateur en HTTPS et un chemin vide.</p>
+
+    <p>La révision se met après un <code>#</code> : branche, tag ou commit. Le découpage se fait sur le <b>dernier</b> <code>#</code>, un second <code>#</code> refuse l'adresse, et la référence est bornée à <b>200 caractères</b>. Une forme abrégée de commit demande au moins <b>7</b> caractères hexadécimaux ; une forme complète, <b>40</b> ou <b>64</b>. Ce que Beaver fait de ton dépôt : un clone superficiel — sauf si la référence est un commit complet —, puis la suppression du dossier <code>.git</code> de la copie gérée, la mesure du volume occupé, et l'installation des seules dépendances de production. Le délai global de l'opération est de <b>300 secondes</b>. Conséquence pratique : <b>précompile</b> tout ce qui exige un script d'installation npm, car les scripts de cycle de vie npm sont désactivés.</p>
+
+    <h2 id="deboguer">Déboguer : ce que tu vois quand ça plante</h2>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Tu ne peux rien afficher. Dans le processus hôte, <code>console.log</code> et toutes ses variantes sont remplacées par des fonctions vides, et <code>process.stdout.write</code> est neutralisé — la sortie standard <b>est</b> le canal du protocole entre Beaver et l'hôte. La sortie d'erreur du processus, elle, est jetée à la création. Une extension n'écrit nulle part, aucune trace. C'est le premier réflexe qu'un développeur perd en arrivant sur Beaver.
+    </div>
+
+    <p>Ce que tu obtiens à la place est un diagnostic structuré à quatre champs : <code>stage</code> (<code>import</code>, <code>activate</code> ou <code>register</code>), <code>code</code>, <code>file</code> — le <b>nom seul</b> du fichier d'entrée, 128 caractères maximum, jamais le chemin — et <code>line</code>/<code>column</code> si la pile les porte. <b>Ton message d'erreur n'est jamais transmis</b> : il sert seulement à choisir le code.</p>
+
+    <table>
+      <caption class="crumb">Les sept codes de diagnostic de chargement</caption>
+      <tr><th>Code</th><th>Libellé affiché</th><th>Quand</th></tr>
+      <tr><td><code>module_not_found</code></td><td>Module ou dépendance introuvable</td><td>Codes Node <code>ERR_MODULE_NOT_FOUND</code>, <code>ERR_UNKNOWN_FILE_EXTENSION</code>, <code>MODULE_NOT_FOUND</code></td></tr>
+      <tr><td><code>syntax_error</code></td><td>Erreur de syntaxe</td><td><code>SyntaxError</code>, ou message commençant par <code>ParseError:</code></td></tr>
+      <tr><td><code>activation_failed</code></td><td>L'activation a échoué</td><td>Exception pendant l'étape <code>activate</code></td></tr>
+      <tr><td><code>registration_failed</code></td><td>L'enregistrement des contributions a échoué</td><td>Exception pendant l'étape <code>register</code></td></tr>
+      <tr><td><code>import_failed</code></td><td>L'import du module a échoué</td><td>Tous les autres cas</td></tr>
+      <tr><td><code>resource_unavailable</code></td><td>Ressource de l'extension indisponible</td><td>Lecture d'un skill ou d'une ressource</td></tr>
+      <tr><td><code>result_invalid</code></td><td>Résultat de l'extension invalide</td><td>Résultat d'outil refusé</td></tr>
+    </table>
+
+    <p>Tout cela se lit dans <b>Réglages › Extensions</b>, section <b>Hôte</b> : état, version de Node.js, de Jiti et de l'API Beaver, nombre d'extensions actives, et <b>Dernières erreurs de chargement</b>. Deux boutons y aident : <b>Redémarrer l'hôte</b> et <b>Ouvrir la source</b>, qui montre le code réellement chargé. Puisque l'affichage est impossible, la méthode de mise au point est de faire remonter l'information <b>par le résultat de l'outil</b> — <code>content</code> et <code>displaySummary</code> sont, eux, transmis et affichés dans la conversation. Jamais une clé ni un jeton.</p>
+
+    <h2 id="les-limites">Les limites qui te concernent</h2>
+
+    <table>
+      <caption class="crumb">Les bornes du contrat des extensions</caption>
+      <tr><th>Ressource</th><th>Limite</th></tr>
+      <tr><td>Outils par extension, et dans tout l'hôte</td><td><b>64</b> et <b>256</b></td></tr>
+      <tr><td>Gestionnaires d'événements, par extension et en vol</td><td><b>64</b> et <b>64</b></td></tr>
+      <tr><td>Skills et ressources par extension</td><td><b>32</b> et <b>64</b></td></tr>
+      <tr><td>Identifiant, dont le nom d'outil public ; description d'outil</td><td><b>96</b> et <b>2 000</b> caractères</td></tr>
+      <tr><td>Profondeur et nœuds d'un schéma d'outil ; <code>workingDirectory</code></td><td><b>16</b>, <b>256</b>, <b>1 024 caractères</b></td></tr>
+      <tr><td><code>content</code> en chaîne, <code>displaySummary</code></td><td><b>1 048 576</b> unités et <b>1 024</b> caractères, tronqués</td></tr>
+      <tr><td>Durée d'un appel d'outil, d'un gestionnaire, d'une action d'interface</td><td><b>55 s</b>, <b>5 s</b> (non interruptif), <b>15 s</b></td></tr>
+      <tr><td>Contributions, actions et thèmes d'interface par extension</td><td><b>32</b>, <b>64</b>, <b>8</b></td></tr>
+      <tr><td>Nœuds de vue, profondeur, champs par vue ; JSON d'interface</td><td><b>256</b>, <b>12</b>, <b>32</b>, <b>262 144 octets</b></td></tr>
+      <tr><td>Délai global d'une opération Git</td><td><b>300 s</b></td></tr>
+    </table>
+
+    <h2 id="ce-quune-extension-ne-peut-pas-faire">Ce qu'une extension ne peut pas faire</h2>
+    <ul>
+      <li>Écrire son point d'entrée dans un autre langage que JavaScript ou TypeScript — elle peut lancer un programme tiers, mais elle doit le fournir.</li>
+      <li>Afficher quoi que ce soit, ni lire l'environnement du compte : console et sortie standard neutralisées, environnement vidé.</li>
+      <li>Écouter autre chose que <code>session.turn.started</code>, ou appeler une méthode du cœur hors contrat.</li>
+      <li>Retirer ou remplacer <code>beaver.settings</code> et <code>beaver.extensions</code>, ni toucher aux composants internes de Beaver en mode standard.</li>
+      <li>Fonctionner en mode Chatbot : les outils d'extension ne sont disponibles qu'en mode Agent.</li>
+      <li>Se faire connaître de tous les modèles : les modèles Groq via OpenRouter ne reçoivent pas les outils d'extension, et <code>groq/compound</code> ne reçoit aucun outil.</li>
+    </ul>
+
+    <p>Et une limite qui n'en est pas une, à ne pas laisser croire : <b>rien n'empêche une extension de lire tes fichiers, d'ouvrir le réseau ou de lancer des processus.</b> L'accès complet à Node.js est assumé.</p>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui bloque le plus souvent un premier essai</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Diagnostic <code>activate_missing</code></td><td>Ni fonction par défaut, ni méthode <code>activate</code> sur le module</td><td>Exporter par défaut un objet portant <code>activate(beaver)</code></td></tr>
+      <tr><td>Rien ne se charge, aucun message compréhensible</td><td><code>beaverApi</code> absent ou différent de <code>"1"</code></td><td>Le contrôle a lieu avant tout le reste : écrire <code>"beaverApi": "1"</code></td></tr>
+      <tr><td>Manifeste refusé alors que le bloc <code>ui</code> semble correct</td><td>Un champ en trop : le bloc est validé strictement</td><td>Ne garder que <code>apiVersion</code>, <code>mode</code> et, en mode avancé, <code>entry</code></td></tr>
+      <tr><td>Schéma d'outil refusé, l'extension entière échoue</td><td>Racine sans <code>"type": "object"</code>, ou usage de <code>$ref</code> / <code>$defs</code></td><td>Écrire un schéma plat sans référence</td></tr>
+      <tr><td>Le modèle ne trouve pas l'outil sous le nom écrit dans le code</td><td>Beaver préfixe le nom par l'identifiant de l'extension</td><td>Chercher <code>&lt;id&gt;.&lt;nom&gt;</code></td></tr>
+      <tr><td>Les outils marchent, l'interface n'apparaît pas</td><td>Bloc <code>ui</code> absent, ou contribution refusée sans exception levée</td><td>Lire les diagnostics d'interface dans la fiche</td></tr>
+      <tr><td>Un <code>process.env</code> vaut <code>undefined</code></td><td>L'environnement du processus est vidé au lancement</td><td>Passer la valeur par un fichier de configuration de l'extension</td></tr>
+      <tr><td>Il faut ré-approuver après chaque modification</td><td>L'empreinte couvre les sources, le manifeste et l'artefact d'interface</td><td>Comportement voulu : regrouper les modifications avant de recharger</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="integrations-centre-extensions.html">Centre d'extensions</a> — installer, approuver, recharger, mettre à jour. Installer et faire confiance restent deux décisions séparées, y compris pour ta propre extension.</li>
+      <li><a href="integrations-remplacer-un-outil.html">Remplacer un outil</a> — le niveau avancé appliqué au remplacement d'un outil natif.</li>
+      <li><a href="integrations-prompt-systeme.html">Prompt système et extensions</a> — comment tes outils et tes skills arrivent jusqu'au modèle.</li>
+      <li><a href="agent-permissions.html">Modes de permission</a> — les modes dont dépend le tableau des classes d'effet.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

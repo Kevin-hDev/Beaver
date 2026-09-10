@@ -13,6 +13,17 @@
   var current = article ? article[1] : null;
   var prefix = article ? '' : 'docs/';
 
+  // La racine est en anglais, la copie française vit sous fr/ : la langue
+  // se lit dans le chemin, et chaque entrée du sommaire porte ses deux
+  // libellés (docs-nav-data.js reste l'autorité unique des deux langues).
+  var isFrench = /\/fr\//.test(location.pathname);
+  function labelOf(entry) {
+    return isFrench ? entry.label : (entry.label_en || entry.label);
+  }
+  function groupOf(section) {
+    return isFrench ? section.group : (section.group_en || section.group);
+  }
+
   // Liens vers le reste du site dans l'en-tête : sans eux, une page de doc
   // n'offrait aucun retour visible vers l'accueil (relevé par Kevin le
   // 10 sept. 2026). Injectés ici plutôt que copiés dans chaque page.
@@ -22,10 +33,12 @@
     var root = article ? '../' : '';
     var siteLinks = document.createElement('nav');
     siteLinks.className = 'dt-links';
-    siteLinks.setAttribute('aria-label', 'Navigation du site');
+    siteLinks.setAttribute('aria-label',
+      /\/fr\//.test(location.pathname) ? 'Navigation du site' : 'Site navigation');
+    var french = /\/fr\//.test(location.pathname);
     [
-      ['Le harnais', root + 'index.html#harnais', false],
-      ['Ce qu’il embarque', root + 'barrage.html', false],
+      [french ? 'Le harnais' : 'The harness', root + 'index.html#harnais', false],
+      [french ? 'Ce qu’il embarque' : 'What it ships with', root + 'barrage.html', false],
       ['Docs', root + 'docs.html', true]
     ].forEach(function (item) {
       var link = document.createElement('a');
@@ -113,7 +126,7 @@
     var toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'group-toggle';
-    toggle.textContent = section.group;
+    toggle.textContent = groupOf(section);
     var pagesId = 'nav-' + section.group.toLowerCase()
       .normalize('NFD').replace(/[^a-z0-9]+/g, '-');
     toggle.setAttribute('aria-controls', pagesId);
@@ -126,7 +139,7 @@
     section.pages.forEach(function (page) {
       var link = document.createElement('a');
       link.href = prefix + page.slug + '.html';
-      link.textContent = page.label;
+      link.textContent = labelOf(page);
       if (page.slug === current) link.setAttribute('aria-current', 'page');
       pages.appendChild(link);
     });
@@ -191,7 +204,7 @@
   var headings = document.querySelectorAll('.doc h2[id]');
   if (headings.length) {
     var tocTitle = document.createElement('h2');
-    tocTitle.textContent = 'Sur cette page';
+    tocTitle.textContent = isFrench ? 'Sur cette page' : 'On this page';
     toc.appendChild(tocTitle);
 
     headings.forEach(function (heading) {

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Choisir son modèle</title>
-<meta name="description" content="Modèle local, clé API ou compte web : ce qui change vraiment entre les trois voies, et laquelle choisir selon ta situation.">
+<title>Beaver Docs — Choosing your model</title>
+<meta name="description" content="Local model, API key or web account: what really changes between the three routes, and which one to pick for your situation.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,142 +19,142 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Choisir son modèle</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-choisir-son-modele.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / Choosing your model</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-choisir-son-modele.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-choisir-son-modele.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Choisir son <em>modèle</em></h1>
-    <p>Faire tourner un modèle chez toi, payer un service à l'usage, ou utiliser
-    un compte que tu as déjà : trois voies, avec des conséquences différentes sur
-    la confidentialité, le coût et la capacité. Cette page t'aide à trancher.</p>
+    <h1>Choosing your <em>model</em></h1>
+    <p>Running a model at home, paying a service by usage, or using an account
+    you already have: three routes, with different consequences for privacy,
+    cost and capability. This page helps you decide.</p>
 
-    <h2 id="les-trois-voies">Les trois voies</h2>
-    <p>Premier point, celui qui dédramatise tout le reste : <b>le choix n'est pas
-    définitif</b>. Il se fait conversation par conversation, et se change en
-    cours de route sans perdre l'historique.</p>
-    <p><b>Modèle local via Ollama</b> — installé sur ton disque, exécuté sur le
-    processeur ou la carte graphique. Rien ne sort de la machine.</p>
-    <p><b>Modèle distant via clé API</b> — tu crées une clé chez le fournisseur,
-    tu la saisis une fois dans Beaver, les requêtes partent vers ses serveurs, et
-    la facturation se fait à l'usage.</p>
-    <p><b>Modèle distant via compte web</b> — pour trois fournisseurs seulement,
-    tu te connectes avec un compte existant au lieu d'une clé. La consommation
-    est imputée à ce compte selon ses propres règles.</p>
+    <h2 id="les-trois-voies">The three routes</h2>
+    <p>First point, the one that takes the pressure off everything else: <b>the
+    choice is not permanent</b>. It is made conversation by conversation, and can
+    be changed along the way without losing the history.</p>
+    <p><b>Local model through Ollama</b> — installed on your disk, run on the
+    processor or the graphics card. Nothing leaves the machine.</p>
+    <p><b>Remote model through an API key</b> — you create a key at the
+    provider, you enter it once in Beaver, requests go to its servers, and
+    billing happens by usage.</p>
+    <p><b>Remote model through a web account</b> — for three providers only, you
+    sign in with an existing account instead of a key. Consumption is charged to
+    that account under its own rules.</p>
 
-    <h2 id="comparatif">Le comparatif</h2>
+    <h2 id="comparatif">The comparison</h2>
     <table>
-      <caption class="crumb">Ce qui change entre les trois voies</caption>
-      <tr><th></th><th>Local (Ollama)</th><th>Clé API</th><th>Compte web</th></tr>
-      <tr><td>Données envoyées à un tiers</td><td>Aucune</td><td>Messages et contenu des fichiers lus</td><td>Identique à la clé API</td></tr>
-      <tr><td>Coût</td><td>Aucun, hors électricité</td><td>Facturé au jeton</td><td>Selon l'abonnement du compte</td></tr>
-      <tr><td>Fonctionne hors ligne</td><td>Oui</td><td>Non</td><td>Non</td></tr>
-      <tr><td>Vitesse</td><td>Dépend du matériel</td><td>Généralement élevée</td><td>Généralement élevée</td></tr>
-      <tr><td>Capacité de raisonnement</td><td>Limitée par la taille du modèle qui tient en mémoire</td><td>Accès aux modèles les plus capables</td><td>Identique à la clé API</td></tr>
-      <tr><td>Mise en place</td><td>Télécharger un modèle</td><td>Créer une clé chez le fournisseur</td><td>Se connecter</td></tr>
-      <tr><td>Limites d'usage</td><td>Aucune</td><td>Selon le crédit</td><td>Selon les quotas du compte</td></tr>
+      <caption class="crumb">What changes between the three routes</caption>
+      <tr><th></th><th>Local (Ollama)</th><th>API key</th><th>Web account</th></tr>
+      <tr><td>Data sent to a third party</td><td>None</td><td>Messages and the content of the files read</td><td>Same as the API key</td></tr>
+      <tr><td>Cost</td><td>None, apart from electricity</td><td>Billed per token</td><td>Depends on the account's plan</td></tr>
+      <tr><td>Works offline</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td>Speed</td><td>Depends on the hardware</td><td>Generally high</td><td>Generally high</td></tr>
+      <tr><td>Reasoning capability</td><td>Limited by the size of the model that fits in memory</td><td>Access to the most capable models</td><td>Same as the API key</td></tr>
+      <tr><td>Setup</td><td>Download a model</td><td>Create a key at the provider</td><td>Sign in</td></tr>
+      <tr><td>Usage limits</td><td>None</td><td>Depends on the credit</td><td>Depends on the account's quotas</td></tr>
     </table>
 
-    <h2 id="quand-choisir-le-local">Quand choisir le local</h2>
+    <h2 id="quand-choisir-le-local">When to choose local</h2>
     <ul>
-      <li>tes fichiers contiennent des données qui ne doivent être transmises à personne ;</li>
-      <li>tu travailles sans connexion, ou avec une connexion incertaine ;</li>
-      <li>tu refuses une facturation à l'usage ;</li>
-      <li>ta machine dispose d'une mémoire vidéo confortable.</li>
+      <li>your files contain data that must not be transmitted to anyone;</li>
+      <li>you work without a connection, or with an unreliable one;</li>
+      <li>you refuse usage-based billing;</li>
+      <li>your machine has a comfortable amount of video memory.</li>
     </ul>
-    <p><b>La contrainte réelle est le matériel.</b> Un modèle qui ne tient pas en
-    mémoire vidéo bascule sur le processeur, et le temps de réponse s'allonge
-    nettement. Les correspondances entre taille de modèle et machine sont dans
-    <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+    <p><b>The real constraint is the hardware.</b> A model that does not fit in
+    video memory falls back to the processor, and response time gets noticeably
+    longer. The mapping between model size and machine is in
+    <a href="modeles-materiel.html">Hardware and VRAM</a>.</p>
 
-    <h2 id="quand-choisir-un-modele-distant">Quand choisir un modèle distant</h2>
+    <h2 id="quand-choisir-un-modele-distant">When to choose a remote model</h2>
     <ul>
-      <li>la tâche demande un raisonnement long ou une grande fenêtre de contexte ;</li>
-      <li>tu veux des réponses rapides sans immobiliser ta machine ;</li>
-      <li>ton matériel ne suffit pas pour un modèle assez capable ;</li>
-      <li>le contenu traité peut passer chez un fournisseur sans que ça pose problème.</li>
+      <li>the task requires long reasoning or a large context window;</li>
+      <li>you want fast answers without tying up your machine;</li>
+      <li>your hardware is not enough for a capable enough model;</li>
+      <li>the content being handled can go to a provider without causing a problem.</li>
     </ul>
 
-    <h2 id="fournisseurs-disponibles">Les fournisseurs disponibles</h2>
-    <p><b>Onze</b> fournisseurs de modèles sont gérés par clé API, dont
-    <b>trois</b> acceptent aussi une connexion par compte web. S'y ajoutent les
-    services de recherche et de prévision.</p>
+    <h2 id="fournisseurs-disponibles">The available providers</h2>
+    <p><b>Eleven</b> model providers are supported through an API key, and
+    <b>three</b> of them also accept a web account connection. Search and
+    forecasting services come on top of that.</p>
 
     <table>
-      <caption class="crumb">Fournisseurs gérés et mode de connexion</caption>
-      <tr><th>Type</th><th>Fournisseur</th><th>Connexion</th></tr>
-      <tr><td>LLM</td><td>Google Gemini</td><td>Clé API</td></tr>
-      <tr><td>LLM</td><td>Mistral</td><td>Clé API</td></tr>
-      <tr><td>LLM</td><td>Cerebras</td><td>Clé API</td></tr>
-      <tr><td>LLM</td><td>OpenRouter</td><td>Clé API</td></tr>
-      <tr><td>LLM</td><td>OpenAI</td><td>Clé API ou compte web OpenAI/Codex</td></tr>
-      <tr><td>LLM</td><td>DeepSeek</td><td>Clé API</td></tr>
-      <tr><td>LLM</td><td>xAI</td><td>Clé API ou compte web Grok</td></tr>
-      <tr><td>LLM</td><td>Moonshot Kimi</td><td>Clé API ou compte web Kimi (expérimental)</td></tr>
-      <tr><td>LLM</td><td>Z.ai GLM</td><td>Clé API</td></tr>
-      <tr><td>LLM</td><td>Anthropic Claude</td><td>Clé API Console (en-tête <code>x-api-key</code>)</td></tr>
-      <tr><td>LLM</td><td>Qwen</td><td>Clé API (point d'accès résolu via Alibaba Model Studio)</td></tr>
-      <tr><td>Recherche</td><td>Brave Search</td><td>Clé API</td></tr>
-      <tr><td>Recherche</td><td>Exa</td><td>Clé API</td></tr>
-      <tr><td>Recherche et extraction</td><td>Firecrawl</td><td>Clé API</td></tr>
-      <tr><td>Recherche</td><td>SearXNG</td><td>Aucune clé, exécution locale</td></tr>
-      <tr><td>Prévision</td><td>Nixtla TimeGPT</td><td>Clé API</td></tr>
+      <caption class="crumb">Supported providers and connection mode</caption>
+      <tr><th>Type</th><th>Provider</th><th>Connection</th></tr>
+      <tr><td>LLM</td><td>Google Gemini</td><td>API key</td></tr>
+      <tr><td>LLM</td><td>Mistral</td><td>API key</td></tr>
+      <tr><td>LLM</td><td>Cerebras</td><td>API key</td></tr>
+      <tr><td>LLM</td><td>OpenRouter</td><td>API key</td></tr>
+      <tr><td>LLM</td><td>OpenAI</td><td>API key or OpenAI/Codex web account</td></tr>
+      <tr><td>LLM</td><td>DeepSeek</td><td>API key</td></tr>
+      <tr><td>LLM</td><td>xAI</td><td>API key or Grok web account</td></tr>
+      <tr><td>LLM</td><td>Moonshot Kimi</td><td>API key or Kimi web account (experimental)</td></tr>
+      <tr><td>LLM</td><td>Z.ai GLM</td><td>API key</td></tr>
+      <tr><td>LLM</td><td>Anthropic Claude</td><td>Console API key (<code>x-api-key</code> header)</td></tr>
+      <tr><td>LLM</td><td>Qwen</td><td>API key (endpoint resolved through Alibaba Model Studio)</td></tr>
+      <tr><td>Search</td><td>Brave Search</td><td>API key</td></tr>
+      <tr><td>Search</td><td>Exa</td><td>API key</td></tr>
+      <tr><td>Search and extraction</td><td>Firecrawl</td><td>API key</td></tr>
+      <tr><td>Search</td><td>SearXNG</td><td>No key, runs locally</td></tr>
+      <tr><td>Forecasting</td><td>Nixtla TimeGPT</td><td>API key</td></tr>
     </table>
 
-    <p>Deux réserves à garder en tête. Les modèles proposés, les quotas et les
-    tarifs sont décidés par le fournisseur et <b>changent sans préavis</b> :
-    réfère-toi à ses propres pages. Et Beaver affiche les informations de compte
-    <b>que le fournisseur accepte de communiquer</b> — la couverture varie de
-    l'un à l'autre.</p>
+    <p>Two caveats to keep in mind. The models offered, the quotas and the prices
+    are decided by the provider and <b>change without notice</b>: refer to its
+    own pages. And Beaver shows the account information
+    <b>that the provider agrees to communicate</b> — coverage varies from one to
+    the next.</p>
 
     <div class="callout">
-      <span class="t">Expérimental</span>
-      Parmi les trois connexions par compte web, seule celle de Kimi (Moonshot)
-      est marquée expérimentale. Les comptes OpenAI/Codex et xAI ne le sont pas :
-      ne place pas les trois au même niveau de fiabilité.
+      <span class="t">Experimental</span>
+      Among the three web account connections, only Kimi's (Moonshot) is marked
+      experimental. The OpenAI/Codex and xAI accounts are not: do not put all
+      three at the same level of reliability.
     </div>
 
-    <h2 id="combiner-les-deux">Combiner les deux</h2>
-    <p>Une organisation qui fonctionne, plutôt qu'une règle : un modèle local
-    pour les tâches courantes, les fichiers sensibles et le travail hors ligne ;
-    un modèle distant pour les tâches qui demandent du raisonnement, sur du
-    contenu non sensible. Côté recherche web, <b>SearXNG</b> en local quand tu
-    veux éviter d'envoyer les requêtes à un tiers, <b>Brave</b>, <b>Exa</b> ou
-    <b>Firecrawl</b> quand tu veux de meilleurs résultats.
-    → <a href="integrations-recherche-web.html">Recherche web</a></p>
+    <h2 id="combiner-les-deux">Combining the two</h2>
+    <p>An arrangement that works, rather than a rule: a local model for everyday
+    tasks, sensitive files and offline work; a remote model for tasks that
+    require reasoning, on non-sensitive content. On the web search side,
+    <b>SearXNG</b> locally when you want to avoid sending queries to a third
+    party, <b>Brave</b>, <b>Exa</b> or <b>Firecrawl</b> when you want better
+    results.
+    → <a href="integrations-recherche-web.html">Web search</a></p>
 
-    <h2 id="changer-de-modele">Changer de modèle en cours de conversation</h2>
-    <p>Le sélecteur de modèle se trouve <b>dans la barre de saisie, sous la zone
-    de message</b> — pas en haut de la conversation. Changer de modèle ne perd
-    pas l'historique de la conversation en cours.</p>
+    <h2 id="changer-de-modele">Switching model mid-conversation</h2>
+    <p>The model selector is <b>in the input bar, below the message area</b> —
+    not at the top of the conversation. Switching model does not lose the history
+    of the current conversation.</p>
 
-    <h2 id="pieges">Trois malentendus fréquents</h2>
-    <p><b>« Local » ne veut pas dire « gratuit et équivalent ».</b> Un modèle
-    local assez petit pour tourner sur une machine ordinaire est nettement moins
-    capable qu'un modèle distant récent.</p>
-    <p><b>Un Ollama déjà installé n'est pas à désinstaller.</b> C'est l'inverse :
-    Beaver détecte le démon existant sur <code>localhost:11434</code>, le
-    réutilise, et les modèles sont partagés.</p>
-    <p><b>Configurer une clé API n'envoie rien.</b> Rien ne part tant qu'une
-    conversation n'utilise pas ce fournisseur.</p>
+    <h2 id="pieges">Three common misunderstandings</h2>
+    <p><b>“Local” does not mean “free and equivalent”.</b> A local model small
+    enough to run on an ordinary machine is clearly less capable than a recent
+    remote model.</p>
+    <p><b>An Ollama that is already installed does not need to be
+    uninstalled.</b> Quite the opposite: Beaver detects the existing daemon on
+    <code>localhost:11434</code>, reuses it, and the models are shared.</p>
+    <p><b>Configuring an API key sends nothing.</b> Nothing leaves until a
+    conversation actually uses that provider.</p>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
-    <p>La procédure de configuration détaillée est dans
-    <a href="modeles-fournisseurs-api.html">Fournisseurs API</a> et
-    <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.
-    L'installation et la gestion du moteur local sont dans
-    <a href="modeles-moteur-local.html">Moteur local</a>. Ce que voit exactement
-    un fournisseur est décrit dans
-    <a href="reference-confidentialite.html">Confidentialité</a>.</p>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
+    <p>The detailed configuration procedure is in
+    <a href="modeles-fournisseurs-api.html">API providers</a> and
+    <a href="modeles-connexion-par-compte.html">Account sign-in</a>.
+    Installing and managing the local engine is covered in
+    <a href="modeles-moteur-local.html">Local engine</a>. Exactly what a provider
+    sees is described in
+    <a href="reference-confidentialite.html">Privacy</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

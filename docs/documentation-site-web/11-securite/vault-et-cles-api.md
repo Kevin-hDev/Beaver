@@ -212,7 +212,7 @@ Trois protections cumulées, toutes vérifiées :
 - **Les en-têtes HTTPS qui portent un secret sont marqués sensibles** auprès de la bibliothèque réseau, ce qui les exclut de ses propres traces de débogage (`services/secure_http.rs:144-153`).
 - **`secrets.enc` figure dans la liste des fichiers protégés de l'application** : l'agent qui tente de le lire ou de le manipuler par une commande déclenche une alerte (`services/agent_local/sensitive_data.rs:1-6`, `:27-45`). La même liste couvre `config.json`, `agent-settings.json` et `configured-providers.json`.
 
-Les messages d'erreur destinés à l'utilisateur sont génériques : « Clé API invalide ou non autorisée », « Clé valide mais quota dépassé », « test de la clé refusé » (`api_keys_http.rs:132-143`). Le corps de la réponse du fournisseur est lu puis jeté, sans être affiché ni journalisé.
+Les messages d'erreur destinés à l'utilisateur sont génériques — corrigé le 10 septembre 2026 : les messages précis du backend (« Clé API invalide ou non autorisée », « Clé valide mais quota dépassé », `api_keys_http.rs:132-143`) ne sont **jamais affichés** ; le dialogue de saisie les remplace tous par « L'opération a échoué. Réessaye. » (`api-keys-config-dialog.tsx:92-94`, voir *13-depannage/providers-et-cles.md*, anomalie 1). La page ne doit citer que ce dernier message. Le corps de la réponse du fournisseur est lu puis jeté, sans être affiché ni journalisé.
 
 ### 12. Les limites du coffre
 
@@ -293,10 +293,12 @@ Ces encadrés portent la valeur de la page. Ils vont dans le corps du texte, à 
 | « Je ne retrouve plus ma clé dans Beaver » | Aucune commande ne permet de relire une clé enregistrée | Générer une nouvelle clé chez le fournisseur et la ressaisir |
 | Mes clés ont disparu après une réinstallation du système | La clé maîtresse vivait dans le trousseau, pas dans le fichier de coffre | Ressaisir les clés ; sauvegarder `secrets.enc` seul ne sert à rien |
 | J'ai copié `~/.local/share/cl-go-dash/` sur une autre machine et rien ne marche | Le coffre est là, sa clé maîtresse est restée dans le trousseau de l'ancienne machine | Ressaisir les clés sur la nouvelle machine |
-| « clé API invalide (vide ou trop longue) » | La clé dépasse **256 caractères** ou est vide | Vérifier qu'aucun retour à la ligne ou espace n'a été collé avec |
+| L'enregistrement échoue dès la saisie de la clé | La clé dépasse **256 caractères** ou est vide | Vérifier qu'aucun retour à la ligne ou espace n'a été collé avec |
 | « provider inconnu » | L'identifiant du fournisseur n'est pas dans le catalogue de Beaver | Passer par l'écran des clés API plutôt que par une valeur saisie à la main |
-| « limite du coffre atteinte » | **500 entrées** au total, toutes catégories confondues | Supprimer des connecteurs ou des canaux devenus inutiles |
-| « Clé valide mais quota dépassé » | La clé fonctionne, c'est le fournisseur qui refuse | Vérifier la facturation chez le fournisseur, pas dans Beaver |
+| L'enregistrement échoue alors que la clé semble correcte | **500 entrées** au total, toutes catégories confondues — le coffre est plein | Supprimer des connecteurs ou des canaux devenus inutiles |
+| Le test échoue alors que la clé fonctionne ailleurs | La clé fonctionne, c'est le fournisseur qui refuse (quota dépassé) | Vérifier la facturation chez le fournisseur, pas dans Beaver |
+
+Note du 10 septembre 2026 : les anciens symptômes entre guillemets (« clé API invalide (vide ou trop longue) », « limite du coffre atteinte », « Clé valide mais quota dépassé ») étaient des messages backend jamais affichés — le dialogue montre « L'opération a échoué. Réessaye. » dans les trois cas (*13-depannage/providers-et-cles.md*, anomalie 1). Les pages EN et FR du site ont été reformulées sans guillemets, avec un paragraphe qui cite le vrai message générique une fois.
 | J'ai supprimé ma clé de Beaver, est-elle révoquée ? | Non — elle reste valable chez le fournisseur | La supprimer sur le site du fournisseur |
 
 ---

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Forecast</title>
+<meta name="description" content="Piloter la prévision de séries temporelles en langage naturel depuis une conversation, avec l'audit obligatoire et les garde-fous qui empêchent le modèle d'inventer des statistiques.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Forecast</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-forecast.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/outils-forecast.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Prévoir <em>en conversation.</em></h1>
+    <p>Forecast est d'abord un espace dédié dans l'application, avec ses écrans, ses graphiques et ses exports. Sept outils ouvrent une seconde porte : <b>piloter Forecast en langage naturel depuis une conversation</b>. « Prévois-moi les ventes des trois prochains mois à partir de ce fichier » devient une suite d'appels d'outils, et le résultat est une analyse enregistrée, consultable ensuite dans l'espace Forecast.</p>
+    <p>Ils forment le groupe <b>Forecast</b>, optionnel et <b>éteint par défaut</b>.</p>
+
+    <h2 id="les-sept-outils">Les sept outils</h2>
+    <table>
+      <caption class="crumb">Le groupe Forecast</caption>
+      <tr><th>Outil</th><th>Rôle</th><th>Approbation</th></tr>
+      <tr><td><code>forecast_data_audit</code></td><td>Vérifie les données avant toute prévision</td><td><b>Oui</b></td></tr>
+      <tr><td><code>forecast_models</code></td><td>Consulte les modèles utilisables et la politique de sélection</td><td>Non</td></tr>
+      <tr><td><code>forecast_run</code></td><td>Lance la prévision</td><td><b>Oui</b></td></tr>
+      <tr><td><code>forecast_read</code></td><td>Relit une analyse enregistrée</td><td>Non</td></tr>
+      <tr><td><code>forecast_backtest</code></td><td>Valide un modèle sur l'historique</td><td><b>Oui</b></td></tr>
+      <tr><td><code>forecast_compare_models</code></td><td>Lit le classement des modèles évalués</td><td>Non</td></tr>
+      <tr><td><code>forecast_analyze</code></td><td>Ajoute des notes et des scénarios</td><td>Non</td></tr>
+    </table>
+    <p>Les trois outils approuvés sont les trois qui <b>consomment des ressources réelles</b> : ils font tourner des modèles, parfois pendant plusieurs minutes, parfois dans le nuage donc à un coût.</p>
+
+    <h2 id="lenchainement">L'enchaînement obligatoire</h2>
+    <p><b>L'ordre des appels est imposé.</b> Aucune prévision ne peut être lancée sans un audit préalable. L'audit produit un <b>identifiant de profil de données</b> qui sert ensuite de laissez-passer : c'est cet identifiant qui est transmis à la prévision, <b>pas les données elles-mêmes</b>.</p>
+    <table>
+      <caption class="crumb">L'ordre des appels, du premier au dernier</caption>
+      <tr><th>Étape</th><th>Outil</th><th>Obligatoire</th></tr>
+      <tr><td>1. Vérifier les données</td><td><code>forecast_data_audit</code></td><td><b>Oui</b></td></tr>
+      <tr><td>2. Choisir un modèle</td><td><code>forecast_models</code></td><td><b>Oui</b> en mode automatique</td></tr>
+      <tr><td>3. Prévoir</td><td><code>forecast_run</code></td><td>—</td></tr>
+      <tr><td>4. Lire</td><td><code>forecast_read</code></td><td>—</td></tr>
+      <tr><td>5. Valider</td><td><code>forecast_backtest</code></td><td>Recommandé</td></tr>
+      <tr><td>6. Comparer</td><td><code>forecast_compare_models</code></td><td>Après validation</td></tr>
+      <tr><td>7. Annoter, simuler</td><td><code>forecast_analyze</code></td><td>—</td></tr>
+    </table>
+    <p>Ce mécanisme a trois conséquences pratiques : les données ne transitent qu'une fois, quel que soit le nombre de prévisions ; <b>le niveau de confiance demandé est lié au profil</b> et ne peut plus être modifié en cours de route ; les problèmes de données sont détectés <b>avant</b> qu'un modèle ne tourne, pas après.</p>
+
+    <h2 id="laudit">Ce qui est audité avant toute prévision</h2>
+    <p>L'audit vérifie une douzaine de points, et c'est ce qui distingue Forecast d'un simple appel à un modèle :</p>
+    <ul>
+      <li>validité des dates et <b>ordre chronologique</b> ;</li>
+      <li><b>doublons</b> et <b>périodes manquantes</b> ;</li>
+      <li>cohérence de la <b>fréquence</b> annoncée ;</li>
+      <li><b>longueur de l'historique</b> — assez de données pour prévoir ;</li>
+      <li><b>nombre de séries</b> et présence de <b>lignes futures</b> ;</li>
+      <li>validité des <b>valeurs numériques</b> et <b>valeurs aberrantes</b> ;</li>
+      <li><b>budget de prédiction</b> — le volume demandé reste-t-il tenable.</li>
+    </ul>
+    <p>Un audit qui échoue empêche la prévision. L'agent ne peut pas passer outre.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Aucune prévision sans audit. Dates, doublons, trous, fréquence, longueur d'historique, valeurs aberrantes : les données sont vérifiées avant qu'un modèle ne tourne.
+    </div>
+
+    <h2 id="choix-du-modele">Le choix du modèle</h2>
+    <p>Deux politiques, réglées dans l'espace Forecast, et <b>la définition même des outils change selon la politique active</b> : l'agent ne voit pas les mêmes paramètres dans les deux cas.</p>
+    <p><b>En mode manuel</b> — tu as désigné un modèle. L'agent doit vérifier que ce modèle <b>supporte le niveau de confiance demandé</b>, et s'y tenir. Si aucun modèle n'est désigné, sa consigne est de <b>te demander de choisir</b> avant toute prévision.</p>
+    <p><b>En mode automatique</b> — l'agent consulte la liste des modèles utilisables pour ce profil de données, en choisit <b>un seul</b>, et transmet son choix avec :</p>
+    <ul>
+      <li>un <b>identifiant de sélection</b> à durée de vie courte, délivré au moment de la consultation ;</li>
+      <li>l'origine du choix : décision de l'agent, ou demande explicite de ta part ;</li>
+      <li>des <b>motifs structurés</b>, choisis dans une liste fermée : meilleur résultat en validation, dépasse les références, précision demandée, rapidité demandée, exécution locale requise, nuage autorisé, demandé par l'utilisateur, adapté au matériel.</li>
+    </ul>
+    <p>Ces motifs ne sont pas décoratifs : ils rendent le choix du modèle <b>traçable</b>. Tu peux savoir pourquoi tel modèle a été retenu, sans avoir à croire une justification rédigée librement.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Le niveau de confiance n'est jamais arrondi. Si un modèle ne sait pas produire l'intervalle demandé, il n'est pas candidat — on ne dégrade pas la demande pour l'y faire entrer.
+    </div>
+
+    <h2 id="valider">Valider une prévision</h2>
+    <p>Une prévision seule ne dit pas si elle est bonne. La validation par <b>fenêtres glissantes</b> répond à cette question : on rejoue le modèle sur des périodes passées dont on connaît le résultat.</p>
+    <ul>
+      <li>Le modèle est comparé à <b>quatre méthodes de référence</b> : la valeur précédente, la valeur de la même période de la saison précédente, une tendance simple, et un lissage exponentiel.</li>
+      <li>Jusqu'à <b>5 modèles</b> évalués sur les <b>mêmes fenêtres</b>, <b>3 fenêtres</b> par défaut, <b>5</b> au maximum.</li>
+      <li>Les résultats sont enregistrés sur l'analyse.</li>
+    </ul>
+    <p>Deux consignes strictes encadrent l'agent ici : <b>ne jamais présenter une validation partielle comme complète</b> — il doit inspecter les échecs de modèles — et <b>ne jamais qualifier un modèle de « meilleur » s'il ne bat pas les méthodes de référence</b>. Un modèle sophistiqué qui ne fait pas mieux que « demain sera comme aujourd'hui » n'est pas un bon modèle, quelle que soit sa réputation.</p>
+    <p>La comparaison renvoie les mesures d'exactitude, la <b>couverture réelle des intervalles</b>, la durée et la mémoire observée — sans jamais renvoyer les données brutes.</p>
+
+    <h2 id="enrichir">Enrichir une analyse</h2>
+    <p>Sur une analyse enregistrée, l'agent peut <b>annoter</b> — ajouter une note datée — et <b>créer un scénario</b> de deux formes :</p>
+    <ul>
+      <li>un <b>ajustement en pourcentage</b> — « et si tout augmentait de 15 % ? », qui dérive une courbe sans relancer le modèle ;</li>
+      <li>un <b>ajustement contextuel</b> — modifier une variable explicative connue pour l'avenir et <b>relancer réellement le modèle</b>.</li>
+    </ul>
+    <p>Il peut aussi <b>modifier ou supprimer</b> un scénario, et <b>construire un ensemble</b> à partir de plusieurs modèles validés — de 2 à 4 modèles, pondérés par leur performance. Détail remarquable : un ensemble est <b>explicitement marqué comme non validé indépendamment</b>. Beaver refuse de laisser croire qu'une combinaison de modèles validés est elle-même validée.</p>
+
+    <h2 id="ce-que-lagent-ne-fait-pas">Ce que l'agent n'a pas le droit de faire</h2>
+    <p>Plusieurs analyses avancées — décomposition de la série, anomalies résiduelles, importance des variables, dérive — sont <b>calculées automatiquement</b> par Forecast. La consigne donnée à l'agent est sans ambiguïté : <b>les lire, jamais les fabriquer</b>. De même, quand une analyse est indisponible ou peu fiable, il doit le dire tel quel plutôt que de la remplacer par un calcul approximatif de son cru.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Les statistiques viennent du moteur, jamais du modèle de langage. Forecast est construit pour empêcher le modèle d'inventer des chiffres : une analyse indisponible est annoncée comme indisponible.
+    </div>
+
+    <h2 id="les-limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Les bornes du groupe Forecast</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Lignes de données en entrée</td><td><b>5 000</b></td></tr>
+      <tr><td>Colonnes</td><td><b>256</b></td></tr>
+      <tr><td>Séries simultanées</td><td><b>256</b></td></tr>
+      <tr><td>Variables explicatives</td><td><b>64</b></td></tr>
+      <tr><td>Horizon de prévision</td><td><b>5 000</b> périodes</td></tr>
+      <tr><td>Prédictions au total</td><td><b>100 000</b></td></tr>
+      <tr><td>Données transmises directement</td><td><b>5 Mo</b></td></tr>
+      <tr><td>Fichier tableur en source</td><td><b>50 Mo</b></td></tr>
+      <tr><td>Profils de données conservés</td><td><b>20</b></td></tr>
+      <tr><td>Analyses enregistrées</td><td><b>500</b></td></tr>
+      <tr><td>Prédictions par page de lecture</td><td><b>100</b> par défaut, <b>200</b> au maximum</td></tr>
+      <tr><td>Modèles par validation</td><td><b>5</b></td></tr>
+      <tr><td>Fenêtres de validation</td><td><b>3</b> par défaut, <b>5</b> au maximum</td></tr>
+      <tr><td>Validations simultanées</td><td><b>1</b></td></tr>
+      <tr><td>Modèles dans un ensemble</td><td><b>2 à 4</b></td></tr>
+      <tr><td>Modèles candidats en mode automatique</td><td><b>5</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent ne sait pas faire de prévisions</td><td>Groupe Forecast éteint par défaut</td><td>L'activer dans les réglages</td></tr>
+      <tr><td>L'agent demande de choisir un modèle</td><td>Mode manuel sans modèle désigné</td><td>En choisir un dans l'espace Forecast, ou passer en automatique</td></tr>
+      <tr><td>L'audit refuse tes données</td><td>Dates désordonnées, trous, doublons, historique trop court</td><td>Corriger le fichier — le détail est dans le résultat de l'audit</td></tr>
+      <tr><td>L'agent refuse ton niveau de confiance</td><td>Aucun modèle disponible ne le supporte</td><td>Voulu ; changer de niveau ou de modèle</td></tr>
+      <tr><td>La validation n'a évalué que deux modèles sur cinq</td><td>Échecs signalés dans le résultat</td><td>L'agent doit les mentionner ; ne pas lire le classement comme complet</td></tr>
+      <tr><td>Le résultat n'est pas dans l'espace Forecast</td><td>L'analyse est enregistrée et devrait y apparaître</td><td>Vérifier la liste des analyses</td></tr>
+      <tr><td>La prévision est très lente</td><td>Modèle lourd, ou historique long</td><td>Consulter les besoins matériels des modèles</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — activer le groupe Forecast.</li>
+      <li><a href="modeles-materiel.html">Matériel et VRAM</a> — ce qu'un modèle lourd demande à ta machine.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Comment l'agent travaille</title>
-<meta name="description" content="Le cycle qui distingue un agent d'un chat : ce qui l'arrête, ce qui l'accélère et pourquoi il s'interrompt parfois sans erreur.">
+<title>Beaver Docs — How the agent works</title>
+<meta name="description" content="The loop that separates an agent from a chat: what stops it, what speeds it up, and why it sometimes halts without an error.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,117 +19,117 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Agent / Fonctionnement</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="agent-fonctionnement.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Agent / How it works</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/agent-fonctionnement.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="agent-fonctionnement.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Comment l'agent <em>travaille</em></h1>
-    <p>Quand tu envoies un message, Beaver ne répond pas en un coup : il tourne en boucle jusqu'à ce que le travail soit fait. Cette page décrit ce cycle, les cinq façons dont il se termine, et pourquoi il s'arrête parfois tout seul alors que rien n'a échoué.</p>
+    <h1>How the agent <em>works</em></h1>
+    <p>When you send a message, Beaver does not answer in one shot: it loops until the work is done. This page describes that cycle, the five ways it ends, and why it sometimes stops on its own when nothing has failed.</p>
 
-    <h2 id="la-boucle">La boucle</h2>
-    <p>À chaque tour :</p>
+    <h2 id="la-boucle">The loop</h2>
+    <p>On every turn:</p>
     <ul>
-      <li>Beaver envoie au modèle la conversation, les instructions et la liste des outils disponibles.</li>
-      <li>Le modèle répond : du texte, des appels d'outils, ou les deux.</li>
-      <li>Beaver exécute les outils demandés, en demandant confirmation si nécessaire.</li>
-      <li>Les résultats sont ajoutés à la conversation.</li>
-      <li>On recommence.</li>
+      <li>Beaver sends the model the conversation, the instructions and the list of available tools.</li>
+      <li>The model replies: text, tool calls, or both.</li>
+      <li>Beaver runs the requested tools, asking for confirmation where needed.</li>
+      <li>The results are added to the conversation.</li>
+      <li>It starts over.</li>
     </ul>
-    <p><b>La boucle s'arrête quand le modèle ne demande plus d'outil</b> : il a fini, il répond. C'est ce cycle qui distingue un agent d'un chat — un chat s'arrête à la deuxième étape.</p>
-    <p>La boucle est la même en mode Chatbot. Elle n'est pas ramenée à un seul tour : c'est le catalogue d'outils qui est réduit à la recherche web et à la lecture d'une page. Un tour de Chatbot peut donc enchaîner une recherche, la lecture d'une page, puis la réponse. Voir <a href="agent-permissions.html">Modes de permission</a>.</p>
+    <p><b>The loop stops when the model no longer asks for a tool</b>: it is done, it answers. This cycle is what separates an agent from a chat — a chat stops at the second step.</p>
+    <p>The loop is the same in Chatbot mode. It is not reduced to a single turn: what is reduced is the tool catalog, cut down to web search and reading a page. A Chatbot turn can therefore chain a search, the reading of a page, then the answer. See <a href="agent-permissions.html">Permission modes</a>.</p>
 
-    <h2 id="conditions-arret">Les conditions d'arrêt</h2>
-    <p>Cinq façons pour un tour de conversation de se terminer.</p>
+    <h2 id="conditions-arret">The stopping conditions</h2>
+    <p>Five ways for a conversation turn to end.</p>
     <table>
-      <caption class="crumb">Les cinq fins possibles d'un tour</caption>
-      <tr><th>Cause</th><th>Ce qui se passe</th></tr>
-      <tr><td>Le modèle a fini</td><td>Plus d'appel d'outil : c'est la sortie normale</td></tr>
-      <tr><td>Tu as annulé</td><td>L'annulation est vérifiée à chaque tour et avant chaque outil</td></tr>
-      <tr><td>200 tours atteints</td><td>Limite dure ; l'approche de la fin est signalée au modèle avant le dernier tour</td></tr>
-      <tr><td>Boucle détectée</td><td>Six appels d'outils identiques d'affilée</td></tr>
-      <tr><td>Erreur bloquante</td><td>Contexte saturé, modèle indisponible, échec réseau non récupérable</td></tr>
+      <caption class="crumb">The five possible endings of a turn</caption>
+      <tr><th>Cause</th><th>What happens</th></tr>
+      <tr><td>The model is done</td><td>No more tool calls: this is the normal exit</td></tr>
+      <tr><td>You cancelled</td><td>Cancellation is checked on every turn and before every tool</td></tr>
+      <tr><td>200 turns reached</td><td>Hard limit; the model is told the end is near before the last turn</td></tr>
+      <tr><td>Loop detected</td><td>Six identical tool calls in a row</td></tr>
+      <tr><td>Blocking error</td><td>Context full, model unavailable, unrecoverable network failure</td></tr>
     </table>
-    <p>La limite de <b>200 tours</b> est généreuse : elle sert de filet contre une boucle infinie, pas de plafond de travail. Le modèle est prévenu avant d'y arriver, ce qui lui permet de conclure proprement plutôt que d'être coupé net.</p>
-    <p>Un cas à connaître : si des sous-agents travaillent encore, la boucle peut se poursuivre au-delà du moment où le modèle n'appelle plus d'outil, le temps qu'ils rendent leur résultat. Voir <a href="agent-sous-agents.html">Sous-agents</a>.</p>
+    <p>The <b>200-turn</b> limit is generous: it is a safety net against an infinite loop, not a work ceiling. The model is warned before reaching it, which lets it wrap up cleanly rather than being cut off.</p>
+    <p>One case worth knowing: if subagents are still working, the loop may continue past the point where the model stops calling tools, until they hand back their result. See <a href="agent-sous-agents.html">Subagents</a>.</p>
 
-    <h2 id="garde-fou">Le garde-fou anti-boucle</h2>
-    <p><b>Six appels d'outils identiques consécutifs</b> arrêtent la conversation. Même outil, mêmes arguments, six fois de suite : le modèle tourne en rond et ne progressera pas au septième essai. Beaver préfère te rendre la main plutôt que de consommer des jetons.</p>
+    <h2 id="garde-fou">The anti-loop guard</h2>
+    <p><b>Six consecutive identical tool calls</b> stop the conversation. Same tool, same arguments, six times in a row: the model is going in circles and will not make progress on the seventh attempt. Beaver would rather hand control back to you than burn tokens.</p>
     <div class="callout">
-      <span class="t">Pourquoi ça s'arrête tout seul</span>
-      Si la conversation s'interrompt avec un message alors que rien n'a échoué, c'est probablement ce garde-fou. Reformule ta demande, ou change de modèle.
+      <span class="t">Why it stops on its own</span>
+      If the conversation stops with a message when nothing has failed, this guard is the likely reason. Rephrase your request, or switch models.
     </div>
 
-    <h2 id="outils-paralleles">Les outils en parallèle</h2>
-    <p>Quand le modèle demande plusieurs outils de lecture d'un coup, Beaver les exécute <b>en parallèle</b>, par lots de <b>dix</b>. Sur une exploration qui lit quinze fichiers, ça fait deux vagues au lieu de quinze attentes successives.</p>
-    <p>Les outils qui modifient ne suivent pas ce chemin : ils s'exécutent l'un après l'autre, pour rester prévisibles.</p>
-    <p>Mieux : <b>les outils de lecture démarrent avant que le modèle ait fini d'écrire</b>. Dès qu'un appel d'outil en lecture seule apparaît dans le flux de réponse, Beaver le lance sans attendre la fin du message. Le même plafond de <b>dix</b> appels simultanés s'applique, et un outil qui demande une confirmation n'entre jamais dans ce mécanisme.</p>
+    <h2 id="outils-paralleles">Tools in parallel</h2>
+    <p>When the model requests several read tools at once, Beaver runs them <b>in parallel</b>, in batches of <b>ten</b>. On an exploration that reads fifteen files, that means two waves instead of fifteen successive waits.</p>
+    <p>Tools that modify things do not take this path: they run one after another, to stay predictable.</p>
+    <p>Better still: <b>read tools start before the model has finished writing</b>. As soon as a read-only tool call appears in the response stream, Beaver launches it without waiting for the end of the message. The same ceiling of <b>ten</b> simultaneous calls applies, and a tool that requires confirmation never enters this mechanism.</p>
 
-    <h2 id="raisonnement">Le raisonnement</h2>
-    <p>Certains modèles réfléchissent avant de répondre. Beaver affiche ce raisonnement, séparé de la réponse. Quand un modèle local produit un raisonnement mal formé, un mécanisme de reprise évite que des balises internes viennent polluer l'affichage.</p>
-    <p>Le réglage de l'intensité est décrit dans <a href="modeles-raisonnement.html">Raisonnement</a>.</p>
+    <h2 id="raisonnement">Reasoning</h2>
+    <p>Some models think before answering. Beaver displays that reasoning, separated from the answer. When a local model produces malformed reasoning, a recovery mechanism keeps internal tags from polluting the display.</p>
+    <p>Setting the effort level is described in <a href="modeles-raisonnement.html">Reasoning</a>.</p>
 
-    <h2 id="interrompre">Interrompre, mettre en file d'attente</h2>
-    <p><b>Interrompre</b> est possible à tout moment. L'annulation est vérifiée à chaque tour et avant chaque outil : elle prend effet vite, sans attendre la fin du tour en cours.</p>
+    <h2 id="interrompre">Interrupting, queuing</h2>
+    <p><b>Interrupting</b> is possible at any time. Cancellation is checked on every turn and before every tool: it takes effect quickly, without waiting for the current turn to finish.</p>
     <div class="callout">
       <span class="t">Note</span>
-      Tu n'es pas obligé d'attendre devant l'écran : un message envoyé pendant que l'agent travaille est mis en file d'attente et traité une fois le tour terminé.
+      You do not have to wait in front of the screen: a message sent while the agent is working is queued and handled once the turn ends.
     </div>
 
-    <h2 id="connexion">Quand la connexion lâche</h2>
-    <p>Si le flux de réponse est coupé en cours de route, Beaver <b>conserve ce qui a été reçu</b> et poursuit, plutôt que de perdre le tour. Les échecs de flux sont enregistrés dans la conversation — utile pour repérer un fournisseur instable. Ils ne sont pas repris dans un clone.</p>
+    <h2 id="connexion">When the connection drops</h2>
+    <p>If the response stream is cut off midway, Beaver <b>keeps what was received</b> and carries on rather than losing the turn. Stream failures are recorded in the conversation — useful for spotting an unstable provider. They are not carried over into a clone.</p>
 
-    <h2 id="memoire-video">Le modèle local et la mémoire vidéo</h2>
-    <p>Question fréquente : le modèle local reste-t-il chargé dans la carte graphique entre deux messages ? <b>Oui, pendant un temps réglable</b> — et ce n'est pas lié à la fin de la boucle. Aucun déchargement n'est déclenché quand l'agent termine son travail : Beaver joint à <b>chaque requête</b> une durée de maintien en mémoire, lue dans les réglages avancés.</p>
+    <h2 id="memoire-video">Local models and video memory</h2>
+    <p>A frequent question: does the local model stay loaded in the graphics card between two messages? <b>Yes, for an adjustable amount of time</b> — and it is not tied to the end of the loop. No unload is triggered when the agent finishes its work: Beaver attaches a keep-alive duration to <b>every request</b>, read from the advanced settings.</p>
     <table>
-      <caption class="crumb">Durée de maintien du modèle en mémoire vidéo</caption>
-      <tr><th>Valeur du réglage</th><th>Effet</th></tr>
-      <tr><td>5 minutes (valeur par défaut)</td><td>Le modèle est libéré après cinq minutes sans requête</td></tr>
-      <tr><td>Une autre durée</td><td>Le modèle est libéré après cette durée sans requête</td></tr>
-      <tr><td>Toujours</td><td>Le modèle n'est jamais déchargé</td></tr>
+      <caption class="crumb">How long the model stays in video memory</caption>
+      <tr><th>Setting value</th><th>Effect</th></tr>
+      <tr><td>5 minutes (default value)</td><td>The model is released after five minutes without a request</td></tr>
+      <tr><td>Another duration</td><td>The model is released after that duration without a request</td></tr>
+      <tr><td>Always</td><td>The model is never unloaded</td></tr>
     </table>
-    <p>Le compromis se ressent : un modèle libéré rend sa mémoire vidéo aux autres applications, mais le message suivant paie le temps de rechargement ; un modèle maintenu répond tout de suite et occupe la carte en permanence. Ce réglage ne concerne que les modèles locaux — les modèles cloud ne passent pas par ce mécanisme.</p>
+    <p>The trade-off is noticeable: a released model gives its video memory back to other applications, but the next message pays the reload time; a model kept in memory answers immediately and occupies the card permanently. This setting only concerns local models — cloud models do not go through this mechanism.</p>
 
-    <h2 id="limites">Les limites de la boucle</h2>
+    <h2 id="limites">The limits of the loop</h2>
     <table>
-      <caption class="crumb">Valeurs de référence</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Tours par message</td><td><b>200</b></td></tr>
-      <tr><td>Appels d'outils identiques consécutifs</td><td><b>6</b></td></tr>
-      <tr><td>Outils de lecture en parallèle</td><td><b>10</b> par vague</td></tr>
-      <tr><td>Outils de lecture démarrés pendant le flux de réponse</td><td><b>10</b> au maximum</td></tr>
-      <tr><td>Maintien du modèle local en mémoire vidéo</td><td><b>5 minutes</b> par défaut</td></tr>
-    </table>
-
-    <h2 id="pieges">Ce qui bloque le plus souvent</h2>
-    <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>La conversation s'arrête sans erreur apparente</td><td>Six appels d'outils identiques détectés</td><td>Reformuler, ou changer de modèle</td></tr>
-      <tr><td>L'agent s'arrête après un long travail</td><td>200 tours atteints</td><td>Découper la tâche, ou relancer</td></tr>
-      <tr><td>L'annulation ne semble pas immédiate</td><td>Elle prend effet entre deux étapes</td><td>Elle est vérifiée à chaque tour et avant chaque outil</td></tr>
-      <tr><td>L'agent continue après avoir répondu</td><td>Des sous-agents travaillent encore</td><td>Attendre leur résultat</td></tr>
-      <tr><td>Des balises de raisonnement apparaissent dans la réponse</td><td>Modèle local produisant un format inattendu</td><td>Un mécanisme de reprise existe ; essayer un autre modèle</td></tr>
-      <tr><td>Une réponse s'arrête au milieu</td><td>Flux coupé</td><td>Ce qui a été reçu est conservé ; relancer</td></tr>
-      <tr><td>Le premier message après une pause est lent avec un modèle local</td><td>Le modèle a été libéré de la mémoire vidéo</td><td>Augmenter le délai de maintien, ou le mettre sur « toujours »</td></tr>
-      <tr><td>Un modèle local occupe la carte graphique en permanence</td><td>Délai de maintien réglé sur « toujours »</td><td>Choisir une durée finie</td></tr>
+      <caption class="crumb">Reference values</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Turns per message</td><td><b>200</b></td></tr>
+      <tr><td>Consecutive identical tool calls</td><td><b>6</b></td></tr>
+      <tr><td>Read tools in parallel</td><td><b>10</b> per wave</td></tr>
+      <tr><td>Read tools started during the response stream</td><td><b>10</b> at most</td></tr>
+      <tr><td>Local model kept in video memory</td><td><b>5 minutes</b> by default</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pieges">What blocks people most often</h2>
+    <table>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The conversation stops with no visible error</td><td>Six identical tool calls detected</td><td>Rephrase, or switch models</td></tr>
+      <tr><td>The agent stops after a long stretch of work</td><td>200 turns reached</td><td>Split the task, or start it again</td></tr>
+      <tr><td>Cancellation does not seem immediate</td><td>It takes effect between two steps</td><td>It is checked on every turn and before every tool</td></tr>
+      <tr><td>The agent keeps going after answering</td><td>Subagents are still working</td><td>Wait for their result</td></tr>
+      <tr><td>Reasoning tags appear in the answer</td><td>A local model producing an unexpected format</td><td>A recovery mechanism exists; try another model</td></tr>
+      <tr><td>An answer stops halfway</td><td>Stream cut off</td><td>What was received is kept; try again</td></tr>
+      <tr><td>The first message after a pause is slow with a local model</td><td>The model was released from video memory</td><td>Increase the keep-alive time, or set it to “always”</td></tr>
+      <tr><td>A local model occupies the graphics card permanently</td><td>Keep-alive time set to “always”</td><td>Choose a finite duration</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-permissions.html">Modes de permission</a> — ce qui déclenche une confirmation pendant la boucle.</li>
-      <li><a href="agent-contexte.html">Contexte</a> — la limite qui arrête tout.</li>
-      <li><a href="agent-sous-agents.html">Sous-agents</a> — pourquoi la boucle peut se prolonger.</li>
-      <li><a href="agent-diagnostics.html">Diagnostics et erreurs</a> — lire un échec et savoir si on peut réessayer.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — what triggers a confirmation during the loop.</li>
+      <li><a href="agent-contexte.html">Context</a> — the limit that stops everything.</li>
+      <li><a href="agent-sous-agents.html">Subagents</a> — why the loop can run on.</li>
+      <li><a href="agent-diagnostics.html">Diagnostics and errors</a> — reading a failure and knowing whether you can retry.</li>
     </ul>
   </main>
 

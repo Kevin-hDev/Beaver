@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Forecast, vue d'ensemble</title>
-<meta name="description" content="À quoi sert l'espace Forecast, où il se trouve dans Beaver, et le parcours complet d'une prévision, du fichier importé au résultat enregistré.">
+<title>Beaver Docs — Forecast, overview</title>
+<meta name="description" content="What the Forecast workspace is for, where it lives in Beaver, and the full journey of a forecast, from the imported file to the saved result.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,189 +19,189 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Forecast / Vue d'ensemble</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="forecast-vue-densemble.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Forecast / Overview</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/forecast-vue-densemble.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="forecast-vue-densemble.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Prolonger une série <em>dans le futur</em></h1>
-    <p>Forecast prend une série de valeurs datées et la prolonge sur un nombre de périodes que tu choisis. Cette page est la porte d'entrée de la section : elle dit à quoi sert l'espace, où il se trouve, et raconte le parcours complet d'une prévision. Chaque étape a ensuite sa page.</p>
+    <h1>Extending a series <em>into the future</em></h1>
+    <p>Forecast takes a series of dated values and extends it over a number of periods you choose. This page is the section's front door: it says what the workspace is for, where it lives, and tells the full journey of a forecast. Each step then has its own page.</p>
 
     <div class="callout">
-      <span class="t">Forecast en quatre phrases</span>
-      Forecast prolonge une série de valeurs datées et rend une fourchette, pas une seule courbe. Il vit dans le panneau latéral d'une conversation Agent, à côté de l'aperçu de fichier, et se déplie dans une fenêtre séparée quand il faut de la place. Tes données sont contrôlées avant le calcul : un défaut bloquant arrête la prévision au lieu de produire un résultat trompeur. Le résultat est enregistré avec ses données et sa trace d'origine, et se rouvre, s'annote et s'exporte plus tard.
+      <span class="t">Forecast in four sentences</span>
+      Forecast extends a series of dated values and returns a range, not a single curve. It lives in the side panel of an Agent conversation, next to the file preview, and unfolds into a separate window when it needs room. Your data is checked before the calculation: a blocking flaw stops the forecast instead of producing a misleading result. The result is saved with its data and its provenance record, and can be reopened, annotated and exported later.
     </div>
 
-    <h2 id="a-quoi-sert-forecast">À quoi sert Forecast</h2>
-    <p>Un chiffre d'affaires mois par mois, une consommation heure par heure, un nombre de commandes par jour : tu donnes la série, Forecast donne la suite. Trois choses le distinguent d'un simple prolongement de courbe.</p>
+    <h2 id="a-quoi-sert-forecast">What Forecast is for</h2>
+    <p>Revenue month by month, consumption hour by hour, a number of orders per day: you give the series, Forecast gives what comes next. Three things set it apart from simply extending a curve.</p>
     <ul>
-      <li>Le résultat n'est pas une seule courbe mais une <b>fourchette</b>. Chaque point prévu porte trois valeurs — basse, médiane, haute — dérivées du niveau de confiance demandé. Seuls des modèles capables de produire cette fourchette sont acceptés.</li>
-      <li>Les données sont <b>auditées avant le calcul</b>, et un défaut bloquant arrête la prévision plutôt que de produire un résultat trompeur. Voir <a href="forecast-donnees-et-audit.html">Données et audit</a>.</li>
-      <li>Le résultat est <b>enregistré</b> avec ses données d'entrée, son profil de données et la trace du modèle retenu. Il se rouvre, se compare, s'annote et s'exporte plus tard.</li>
+      <li>The result is not a single curve but a <b>range</b>. Every predicted point carries three values — low, median, high — derived from the requested confidence level. Only models capable of producing that range are accepted.</li>
+      <li>The data is <b>audited before the calculation</b>, and a blocking flaw stops the forecast rather than producing a misleading result. See <a href="forecast-donnees-et-audit.html">Data and audit</a>.</li>
+      <li>The result is <b>saved</b> with its input data, its data profile and the record of the model chosen. It can be reopened, compared, annotated and exported later.</li>
     </ul>
 
-    <h2 id="ou-ca-se-trouve">Où ça se trouve dans Beaver</h2>
-    <p>Forecast n'est <b>pas un onglet séparé</b> de l'application. C'est l'un des modes du panneau latéral partagé d'une conversation Agent. Le bouton qui ouvre le sélecteur porte l'infobulle <b>« Mode du panneau »</b>.</p>
+    <h2 id="ou-ca-se-trouve">Where it lives in Beaver</h2>
+    <p>Forecast is <b>not a separate tab</b> in the application. It is one of the modes of an Agent conversation's shared side panel. The button that opens the selector carries the <b>“Panel mode”</b> tooltip.</p>
 
     <table>
-      <caption class="crumb">Les modes du panneau latéral d'une conversation</caption>
-      <tr><th>Mode</th><th>Toujours proposé</th></tr>
-      <tr><td><b>Aperçu fichier</b></td><td>Oui — c'est le mode par défaut</td></tr>
-      <tr><td><b>Forecast</b></td><td>Oui</td></tr>
-      <tr><td><b>Navigateur</b></td><td>Non — l'entrée disparaît quand le navigateur intégré est indisponible</td></tr>
+      <caption class="crumb">The side-panel modes of a conversation</caption>
+      <tr><th>Mode</th><th>Always offered</th></tr>
+      <tr><td><b>File preview</b></td><td>Yes — it's the default mode</td></tr>
+      <tr><td><b>Forecast</b></td><td>Yes</td></tr>
+      <tr><td><b>Browser</b></td><td>No — the entry disappears when the built-in browser is unavailable</td></tr>
     </table>
 
     <div class="callout">
       <span class="t">Note</span>
-      Le mode du panneau, la section ouverte et l'analyse affichée sont mémorisés <b>par conversation</b>. Tu peux laisser une prévision ouverte dans un fil pendant que tu travailles sur autre chose dans un autre : ouvrir une seconde conversation ne change rien à ce que la première affichait.
+      The panel mode, the open section and the analysis displayed are remembered <b>per conversation</b>. You can leave a forecast open in one thread while you work on something else in another: opening a second conversation changes nothing about what the first one was showing.
     </div>
 
-    <h2 id="avant-de-commencer">Ce qu'il faut avant de commencer</h2>
-    <p><b>Un fichier de données.</b> Le sélecteur accepte six extensions : <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code>. Le détail de ce qu'il doit contenir est dans <a href="forecast-donnees-et-audit.html">Données et audit</a>.</p>
-    <p><b>Un modèle utilisable.</b> Deux voies, il en faut au moins une : un <b>modèle local installé</b>, téléchargé depuis l'écran des modèles Forecast — le calcul refuse de démarrer tant qu'il ne l'est pas, avec « Modèle non installé » ; ou le <b>modèle distant</b> du catalogue, le seul qui demande une clé API — sans clé enregistrée, le calcul s'arrête avec « Clé API Nixtla non configurée ». Tous les autres fournisseurs tournent sur ta machine.</p>
-    <p><b>De la place mémoire pour un modèle local.</b> Avant de lancer, Beaver vérifie que la machine peut porter le modèle et refuse sinon, avec « Ressources insuffisantes pour ce modèle ». Le mécanisme est décrit dans <a href="forecast-selection-du-modele.html">Sélection du modèle</a>.</p>
+    <h2 id="avant-de-commencer">What you need before you start</h2>
+    <p><b>A data file.</b> The selector accepts six extensions: <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code>. The detail of what it must contain is in <a href="forecast-donnees-et-audit.html">Data and audit</a>.</p>
+    <p><b>A usable model.</b> Two routes, at least one is needed: an <b>installed local model</b>, downloaded from the Forecast models screen — the calculation refuses to start until it is, with “Model not installed”; or the <b>remote model</b> from the catalog, the only one that requires an API key — with no key saved, the calculation stops with “Nixtla API key not configured”. Every other provider runs on your machine.</p>
+    <p><b>Memory room for a local model.</b> Before launching, Beaver checks that the machine can carry the model and refuses otherwise, with “Insufficient resources for this model”. The mechanism is described in <a href="forecast-selection-du-modele.html">Model selection</a>.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Sans modèle, pas de prévision. Il faut soit un modèle local installé, soit une clé API pour le modèle distant. Le calcul s'arrête proprement dans les deux cas manquants.
+      <span class="t">Warning</span>
+      No model, no forecast. You need either an installed local model or an API key for the remote model. The calculation stops cleanly in both missing cases.
     </div>
 
-    <h2 id="le-parcours">Le parcours, de bout en bout</h2>
-    <p>Sept étapes. Les cinq premières sont visibles, les deux dernières se font toutes seules.</p>
-    <p><b>1. L'écran d'accueil.</b> Tant qu'aucune analyse n'est ouverte, le panneau affiche « Aucune analyse en cours » et, en sous-titre, « Demander à l'agent ». Trois boutons suivent : <b>Importer un fichier (CSV, Excel)</b>, actif ; <b>Coller des données</b> et <b>Depuis une URL</b>, tous deux inactifs, avec l'infobulle « Bientôt disponible ». Sous ces boutons, la liste <b>Analyses récentes</b> permet de rouvrir une analyse déjà calculée, avec son nom, son modèle, son horizon et son erreur moyenne quand elle existe.</p>
+    <h2 id="le-parcours">The journey, end to end</h2>
+    <p>Seven steps. The first five are visible, the last two happen on their own.</p>
+    <p><b>1. The home screen.</b> As long as no analysis is open, the panel shows “No analysis in progress” and, as a subtitle, “Ask the agent”. Three buttons follow: <b>Import file (CSV, Excel)</b>, active; <b>Paste data</b> and <b>From URL</b>, both inactive, with the “Coming soon” tooltip. Below those buttons, the <b>Recent analyses</b> list lets you reopen an already-computed analysis, with its name, its model, its horizon and its mean error when it exists.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Aujourd'hui, l'import de fichier est la seule entrée de données par l'écran. Les deux autres boutons sont présents et inactifs — si tu les vois grisés, tu n'as rien fait de travers. Passer par l'agent est la seconde voie disponible.
+      Today, importing a file is the only data entry point from the screen. The other two buttons are present and inactive — if you see them greyed out, you haven't done anything wrong. Going through the agent is the second available route.
     </div>
 
-    <p><b>2. La lecture du fichier.</b> Le fichier est converti en tableau de lignes, avec des bornes strictes appliquées avant tout contrôle de contenu. Un dépassement affiche « Import impossible. Vérifie le format du fichier. » Deux gestes utiles sont faits automatiquement à ce moment : une colonne sans en-tête reçoit un nom de repli <code>column_1</code>, <code>column_2</code>… et un nombre écrit avec une virgule décimale est reconnu comme un nombre.</p>
-    <p><b>3. L'écran Configuration.</b> Huit réglages, avec leurs valeurs de départ.</p>
+    <p><b>2. Reading the file.</b> The file is converted into a table of rows, with strict bounds applied before any content check. Exceeding one shows “Import failed. Check the file format.” Two useful gestures are performed automatically at that moment: a column with no header receives a fallback name <code>column_1</code>, <code>column_2</code>… and a number written with a decimal comma is recognised as a number.</p>
+    <p><b>3. The Configuration screen.</b> Eight settings, with their starting values.</p>
 
     <table>
-      <caption class="crumb">Les huit réglages de l'écran Configuration et leur valeur de départ</caption>
-      <tr><th>Réglage</th><th>Ce qu'il désigne</th><th>Valeur de départ</th></tr>
-      <tr><td><b>Cible</b></td><td>La colonne à prévoir</td><td>La 2ᵉ colonne du fichier</td></tr>
-      <tr><td><b>Colonne date</b></td><td>L'horodatage</td><td>La 1ʳᵉ colonne du fichier</td></tr>
-      <tr><td><b>Colonne série</b></td><td>Ce qui sépare plusieurs séries</td><td>Aucune — « Aucune colonne série »</td></tr>
-      <tr><td><b>Covariables</b></td><td>Les colonnes explicatives</td><td>Aucune ; pastilles cliquables</td></tr>
-      <tr><td><b>Horizon</b></td><td>Le nombre de périodes à prévoir</td><td><b>12</b></td></tr>
-      <tr><td><b>Fréquence</b></td><td>Le pas de temps</td><td><b>Mois</b></td></tr>
-      <tr><td><b>Modèle</b></td><td>Le moteur de prévision</td><td>Selon le mode de sélection</td></tr>
-      <tr><td><b>Confiance</b></td><td>La largeur de la fourchette</td><td><b>80 %</b></td></tr>
+      <caption class="crumb">The eight settings of the Configuration screen and their starting value</caption>
+      <tr><th>Setting</th><th>What it designates</th><th>Starting value</th></tr>
+      <tr><td><b>Target</b></td><td>The column to forecast</td><td>The file's 2nd column</td></tr>
+      <tr><td><b>Date column</b></td><td>The timestamp</td><td>The file's 1st column</td></tr>
+      <tr><td><b>Series column</b></td><td>What separates several series</td><td>None — “No series column”</td></tr>
+      <tr><td><b>Covariates</b></td><td>The explanatory columns</td><td>None; clickable chips</td></tr>
+      <tr><td><b>Horizon</b></td><td>The number of periods to forecast</td><td><b>12</b></td></tr>
+      <tr><td><b>Frequency</b></td><td>The time step</td><td><b>Month</b></td></tr>
+      <tr><td><b>Model</b></td><td>The forecasting engine</td><td>Depends on the selection mode</td></tr>
+      <tr><td><b>Confidence</b></td><td>The width of the range</td><td><b>80%</b></td></tr>
     </table>
 
-    <p>Les huit fréquences proposées sont <b>Minute</b>, <b>Heure</b>, <b>Jour</b>, <b>Jour ouvré</b>, <b>Semaine</b>, <b>Mois</b>, <b>Trimestre</b> et <b>Année</b>. Le bouton de lancement porte « Lancer le forecast », puis « Calcul en cours… » pendant le travail. Il reste inactif tant qu'une cible, une colonne de date, un modèle et un horizon supérieur à zéro ne sont pas tous renseignés.</p>
-    <p><b>4. Les vérifications avant calcul.</b> Dans l'ordre : normalisation de la demande, lecture de la politique de sélection, application de cette politique, relecture du fichier si besoin, validation de la demande, <b>audit des données</b>, puis vérification que le modèle demandé est bien acceptable. Un défaut bloquant à n'importe laquelle de ces étapes arrête tout.</p>
-    <p><b>5. Le calcul.</b> Pour un modèle distant, Beaver récupère la clé et interroge le service. Pour un modèle local, il vérifie l'installation et les ressources, démarre le moteur, calcule, puis programme l'arrêt du moteur après inactivité.</p>
-    <p><b>6. L'enregistrement.</b> Le résultat reçoit sa trace d'origine — quel modèle, sur quelles données, pour quelle raison, en combien de temps — puis le profil de données et l'analyse sont écrits sur le disque.</p>
-    <p><b>7. L'affichage.</b> Le panneau bascule sur la vue principale de la nouvelle analyse.</p>
-    <p>En cas d'échec, un seul message générique s'affiche : « Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API. » — sauf pour un cas nommé, le stockage plein, qui affiche « Le stockage Forecast est plein. Supprime d'anciennes analyses puis réessaie. »</p>
+    <p>The eight frequencies offered are <b>Minute</b>, <b>Hour</b>, <b>Day</b>, <b>Business day</b>, <b>Week</b>, <b>Month</b>, <b>Quarter</b> and <b>Year</b>. The launch button reads “Launch forecast”, then “Calculating…” while the work runs. It stays inactive until a target, a date column, a model and a horizon greater than zero are all filled in.</p>
+    <p><b>4. The pre-calculation checks.</b> In order: normalising the request, reading the selection policy, applying that policy, re-reading the file if needed, validating the request, <b>auditing the data</b>, then checking that the requested model is indeed acceptable. A blocking flaw at any of these steps stops everything.</p>
+    <p><b>5. The calculation.</b> For a remote model, Beaver retrieves the key and queries the service. For a local model, it checks the installation and the resources, starts the engine, computes, then schedules the engine to stop after a period of inactivity.</p>
+    <p><b>6. Saving.</b> The result receives its provenance record — which model, on which data, for what reason, in how much time — then the data profile and the analysis are written to disk.</p>
+    <p><b>7. Display.</b> The panel switches to the main view of the new analysis.</p>
+    <p>On failure, a single generic message appears: “The calculation failed. Check the columns, model, and API key.” — except for one named case, full storage, which shows “Forecast storage is full. Delete older analyses, then try again.”</p>
 
-    <h2 id="panneau-et-espace">Le panneau et l'espace de travail</h2>
-    <p>C'est le point de structure le plus important de la page, et il n'est pas évident à l'usage.</p>
-    <p><b>Le panneau latéral</b> est étroit et volontairement resserré. Il ne propose que trois sections : <b>Vue principale</b>, le graphique de la prévision et ses couches ; <b>Comparaisons</b>, la mise en regard de plusieurs analyses ; <b>Historique</b>, la liste des analyses enregistrées.</p>
-    <p><b>La fenêtre « Espace Forecast »</b> est une fenêtre séparée, redimensionnable, qui retrouve sa position d'une fois sur l'autre. Elle propose sept sections, avec la description que l'application en donne.</p>
+    <h2 id="panneau-et-espace">The panel and the workspace</h2>
+    <p>This is the most important structural point on the page, and it isn't obvious in use.</p>
+    <p><b>The side panel</b> is narrow and deliberately tight. It offers only three sections: <b>Main view</b>, the forecast chart and its layers; <b>Comparisons</b>, several analyses set side by side; <b>History</b>, the list of saved analyses.</p>
+    <p><b>The “Forecast workspace” window</b> is a separate, resizable window that finds its position again from one time to the next. It offers seven sections, with the description the application gives them.</p>
 
     <table>
-      <caption class="crumb">Les sept sections de la fenêtre Espace Forecast</caption>
-      <tr><th>Section</th><th>Description affichée</th></tr>
-      <tr><td><b>Données</b></td><td>« Inspecter les données, leur mapping et les contrôles de qualité. »</td></tr>
-      <tr><td><b>Prévision</b></td><td>« Consulter la prévision complète et ses différentes couches. »</td></tr>
-      <tr><td><b>Évaluation</b></td><td>« Mesurer les modèles avec des baselines et des validations temporelles. »</td></tr>
-      <tr><td><b>Comparaison</b></td><td>« Comparer la qualité, la vitesse et les contraintes des modèles. »</td></tr>
-      <tr><td><b>Scénarios</b></td><td>« Créer et modifier des hypothèses sans perdre la prévision de référence. »</td></tr>
-      <tr><td><b>Notes</b></td><td>« Créer, organiser et consulter les notes liées à cette prévision. »</td></tr>
-      <tr><td><b>Rapport</b></td><td>« Rassembler la provenance, les notes et les exports avancés. »</td></tr>
+      <caption class="crumb">The seven sections of the Forecast workspace window</caption>
+      <tr><th>Section</th><th>Description shown</th></tr>
+      <tr><td><b>Data</b></td><td>“Inspect the data, its mapping, and quality checks.”</td></tr>
+      <tr><td><b>Forecast</b></td><td>“Review the complete forecast and its available layers.”</td></tr>
+      <tr><td><b>Evaluation</b></td><td>“Measure models with baselines and temporal validation.”</td></tr>
+      <tr><td><b>Comparison</b></td><td>“Compare model quality, speed, and constraints.”</td></tr>
+      <tr><td><b>Scenarios</b></td><td>“Create and edit assumptions without losing the reference forecast.”</td></tr>
+      <tr><td><b>Notes</b></td><td>“Create, organize, and review notes linked to this forecast.”</td></tr>
+      <tr><td><b>Report</b></td><td>“Collect provenance, notes, and advanced exports.”</td></tr>
     </table>
 
-    <p><b>Une seule fenêtre à la fois</b> : rouvrir l'espace alors qu'il est déjà ouvert le ramène au premier plan au lieu d'en créer un second. L'analyse affichée dans la fenêtre suit celle du panneau.</p>
+    <p><b>Only one window at a time</b>: reopening the workspace while it is already open brings it to the front instead of creating a second one. The analysis shown in the window follows the panel's.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      Le panneau montre, la fenêtre travaille. Le panneau n'a que trois sections ; les données brutes, les contrôles de qualité, l'évaluation, les scénarios et le rapport sont dans « Espace Forecast ».
+      <span class="t">Key point</span>
+      The panel shows, the window works. The panel has only three sections; the raw data, the quality checks, the evaluation, the scenarios and the report are in “Forecast workspace”.
     </div>
 
-    <p>Une <b>documentation technique intégrée</b> existe par ailleurs, dans sa propre fenêtre, sous le titre « Documentation Forecast ». Elle couvre une douzaine de sujets, dont les jeux de données, les modèles, l'évaluation, l'incertitude, les covariables, le multi-séries, les scénarios et les limites.</p>
+    <p>A <b>built-in technical documentation</b> also exists, in its own window, under the title “Forecast documentation”. It covers a dozen topics, including datasets, models, evaluation, uncertainty, covariates, multi-series, scenarios and limits.</p>
 
-    <h2 id="les-limites-dentree">Les limites d'entrée</h2>
-
-    <table>
-      <caption class="crumb">Ce qui est borné à l'entrée d'une prévision</caption>
-      <tr><th>Ce qui est borné</th><th>Valeur</th></tr>
-      <tr><td>Lignes du fichier</td><td><b>5 000</b></td></tr>
-      <tr><td>Colonnes</td><td><b>256</b></td></tr>
-      <tr><td>Caractères par cellule</td><td><b>32 768</b></td></tr>
-      <tr><td>Caractères par nom de colonne</td><td><b>80</b></td></tr>
-      <tr><td>Covariables</td><td><b>64</b></td></tr>
-      <tr><td>Séries distinctes</td><td><b>256</b></td></tr>
-      <tr><td>Horizon</td><td><b>5 000</b> périodes</td></tr>
-      <tr><td>Points prévus au total (séries × horizon)</td><td><b>100 000</b></td></tr>
-      <tr><td>Taille du fichier ouvert</td><td><b>50 Mo</b></td></tr>
-      <tr><td>Données converties, envoyées au calcul</td><td><b>5 Mo</b></td></tr>
-    </table>
-
-    <h2 id="ce-qui-est-garde">Ce que Beaver garde après le calcul</h2>
+    <h2 id="les-limites-dentree">The input limits</h2>
 
     <table>
-      <caption class="crumb">Ce qui est conservé, et jusqu'où</caption>
-      <tr><th>Ce qui est gardé</th><th>Borne</th></tr>
-      <tr><td>Les analyses calculées</td><td><b>500 analyses</b> au total ; au-delà, la plus ancienne du même espace de travail est remplacée</td></tr>
-      <tr><td>L'index des analyses</td><td><b>2 Mo</b></td></tr>
-      <tr><td>Le profil de données</td><td><b>20 profils</b> par espace de travail, les plus anciens supprimés au-delà</td></tr>
-      <tr><td>La politique de sélection du modèle</td><td><b>4 Ko</b></td></tr>
-      <tr><td>Les notes attachées à une analyse</td><td>Voir <a href="forecast-scenarios-notes-rapports.html">Scénarios, notes et rapports</a></td></tr>
+      <caption class="crumb">What is bounded on a forecast's input</caption>
+      <tr><th>What is bounded</th><th>Value</th></tr>
+      <tr><td>Rows in the file</td><td><b>5,000</b></td></tr>
+      <tr><td>Columns</td><td><b>256</b></td></tr>
+      <tr><td>Characters per cell</td><td><b>32,768</b></td></tr>
+      <tr><td>Characters per column name</td><td><b>80</b></td></tr>
+      <tr><td>Covariates</td><td><b>64</b></td></tr>
+      <tr><td>Distinct series</td><td><b>256</b></td></tr>
+      <tr><td>Horizon</td><td><b>5,000</b> periods</td></tr>
+      <tr><td>Predicted points in total (series × horizon)</td><td><b>100,000</b></td></tr>
+      <tr><td>Size of the opened file</td><td><b>50 MB</b></td></tr>
+      <tr><td>Converted data sent to the calculation</td><td><b>5 MB</b></td></tr>
     </table>
 
-    <p>Une analyse enregistrée pèse au plus <b>64 Mo</b>. Les analyses sont rangées <b>par espace de travail</b> — un projet ou une conversation : ce qui a été calculé dans une conversation n'apparaît pas dans la liste d'une autre.</p>
-
-    <h2 id="depuis-la-conversation">Le même travail depuis la conversation</h2>
-    <p>Le sous-titre de l'écran vide, « Demander à l'agent », n'est pas décoratif : l'agent dispose de sept outils Forecast et peut faire tout le parcours à ta place. Ces outils sont <b>éteints par défaut</b> et s'activent dans les réglages de l'agent — voir <a href="outils-forecast.html">Forecast, côté outils</a>.</p>
+    <h2 id="ce-qui-est-garde">What Beaver keeps after the calculation</h2>
 
     <table>
-      <caption class="crumb">Les sept outils Forecast de l'agent</caption>
-      <tr><th>Outil</th><th>Ce qu'il fait</th></tr>
-      <tr><td><code>forecast_data_audit</code></td><td>Contrôle les données et fixe un profil réutilisable</td></tr>
-      <tr><td><code>forecast_models</code></td><td>Inspecte la politique de sélection et propose les modèles utilisables</td></tr>
-      <tr><td><code>forecast_run</code></td><td>Lance la prévision</td></tr>
-      <tr><td><code>forecast_backtest</code></td><td>Mesure les modèles sur des fenêtres passées</td></tr>
-      <tr><td><code>forecast_compare_models</code></td><td>Relit le classement obtenu</td></tr>
-      <tr><td><code>forecast_analyze</code></td><td>Ajoute une annotation, un scénario, un ensemble</td></tr>
-      <tr><td><code>forecast_read</code></td><td>Relit une analyse enregistrée</td></tr>
+      <caption class="crumb">What is kept, and up to what point</caption>
+      <tr><th>What is kept</th><th>Bound</th></tr>
+      <tr><td>The computed analyses</td><td><b>500 analyses</b> in total; beyond that, the oldest of the same workspace is replaced</td></tr>
+      <tr><td>The index of analyses</td><td><b>2 MB</b></td></tr>
+      <tr><td>The data profile</td><td><b>20 profiles</b> per workspace, the oldest deleted beyond that</td></tr>
+      <tr><td>The model selection policy</td><td><b>4 KB</b></td></tr>
+      <tr><td>The notes attached to an analysis</td><td>See <a href="forecast-scenarios-notes-rapports.html">Scenarios, notes and reports</a></td></tr>
     </table>
 
-    <p>Le résultat produit par l'agent est <b>la même analyse</b> que celle produite par l'écran : elle s'ouvre dans le panneau, s'exporte et s'annote de la même façon.</p>
+    <p>A saved analysis weighs at most <b>64 MB</b>. Analyses are filed <b>by workspace</b> — a project or a conversation: what was computed in one conversation doesn't appear in another one's list.</p>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="depuis-la-conversation">The same work from the conversation</h2>
+    <p>The empty screen's subtitle, “Ask the agent”, isn't decorative: the agent has seven Forecast tools and can do the whole journey for you. Those tools are <b>off by default</b> and are turned on in the agent's settings — see <a href="outils-forecast.html">Forecast, on the tools side</a>.</p>
 
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Je ne trouve pas Forecast dans l'application</td><td>Ce n'est pas un onglet : c'est un mode du panneau latéral</td><td>Ouvrir une conversation, ouvrir le panneau, choisir <b>Forecast</b> dans « Mode du panneau »</td></tr>
-      <tr><td>« Import impossible. Vérifie le format du fichier. »</td><td>Extension non reconnue, ou dépassement d'une borne de lecture</td><td>Réduire le fichier ou l'enregistrer dans un des six formats acceptés</td></tr>
-      <tr><td>« Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API. »</td><td>Message unique couvrant toutes les causes de refus</td><td>Ouvrir la section <b>Données</b> de l'Espace Forecast pour lire les alertes de qualité</td></tr>
-      <tr><td>« Le stockage Forecast est plein. »</td><td>500 analyses enregistrées, aucune de cet espace à remplacer</td><td>Supprimer d'anciennes analyses depuis <b>Historique</b></td></tr>
-      <tr><td>Mes analyses ont disparu</td><td>Elles sont rangées par espace de travail</td><td>Rouvrir la conversation ou le projet dans lequel elles ont été calculées</td></tr>
-      <tr><td>Je ne vois que trois sections</td><td>Le panneau en expose trois ; les sept autres sont dans la fenêtre</td><td>Ouvrir <b>Espace Forecast</b></td></tr>
-      <tr><td>Deux fenêtres Espace Forecast attendues</td><td>Une seule est possible</td><td>Le second appel ramène la fenêtre existante au premier plan</td></tr>
+      <caption class="crumb">The agent's seven Forecast tools</caption>
+      <tr><th>Tool</th><th>What it does</th></tr>
+      <tr><td><code>forecast_data_audit</code></td><td>Checks the data and fixes a reusable profile</td></tr>
+      <tr><td><code>forecast_models</code></td><td>Inspects the selection policy and offers the usable models</td></tr>
+      <tr><td><code>forecast_run</code></td><td>Launches the forecast</td></tr>
+      <tr><td><code>forecast_backtest</code></td><td>Measures models over past windows</td></tr>
+      <tr><td><code>forecast_compare_models</code></td><td>Re-reads the ranking obtained</td></tr>
+      <tr><td><code>forecast_analyze</code></td><td>Adds an annotation, a scenario, an ensemble</td></tr>
+      <tr><td><code>forecast_read</code></td><td>Re-reads a saved analysis</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <p>The result the agent produces is <b>the same analysis</b> as the one produced by the screen: it opens in the panel, exports and gets annotated the same way.</p>
+
+    <h2 id="pieges">Common pitfalls</h2>
+
+    <table>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>I can't find Forecast in the application</td><td>It isn't a tab: it's a side-panel mode</td><td>Open a conversation, open the panel, choose <b>Forecast</b> in “Panel mode”</td></tr>
+      <tr><td>“Import failed. Check the file format.”</td><td>Unrecognised extension, or a reading bound exceeded</td><td>Shrink the file or save it in one of the six accepted formats</td></tr>
+      <tr><td>“The calculation failed. Check the columns, model, and API key.”</td><td>A single message covering every reason for refusal</td><td>Open the <b>Data</b> section of the Forecast workspace to read the quality alerts</td></tr>
+      <tr><td>“Forecast storage is full.”</td><td>500 saved analyses, none from this workspace to replace</td><td>Delete older analyses from <b>History</b></td></tr>
+      <tr><td>My analyses have disappeared</td><td>They are filed by workspace</td><td>Reopen the conversation or the project they were computed in</td></tr>
+      <tr><td>I only see three sections</td><td>The panel exposes three; the other seven are in the window</td><td>Open <b>Forecast workspace</b></td></tr>
+      <tr><td>Two Forecast workspace windows expected</td><td>Only one is possible</td><td>The second call brings the existing window to the front</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="forecast-donnees-et-audit.html">Données et audit</a> — ce que doit contenir le fichier et ce que Beaver contrôle.</li>
-      <li><a href="forecast-selection-du-modele.html">Sélection du modèle</a> — Manuel, Auto, et ce que le code regarde vraiment.</li>
-      <li><a href="forecast-exports.html">Exports</a> — les sept formats de sortie.</li>
-      <li><a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a> — mesurer un modèle sur des fenêtres passées.</li>
-      <li><a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a> — le panneau latéral et ses autres modes.</li>
+      <li><a href="forecast-donnees-et-audit.html">Data and audit</a> — what the file must contain and what Beaver checks.</li>
+      <li><a href="forecast-selection-du-modele.html">Model selection</a> — Manual, Auto, and what the code really looks at.</li>
+      <li><a href="forecast-exports.html">Exports</a> — the seven output formats.</li>
+      <li><a href="forecast-evaluation-et-comparaison.html">Evaluation and comparison</a> — measuring a model over past windows.</li>
+      <li><a href="interface-vue-densemble.html">Interface overview</a> — the side panel and its other modes.</li>
     </ul>
   </main>
 

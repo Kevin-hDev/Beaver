@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Terminal intégré</title>
+<meta name="description" content="Un shell interactif complet dans l'application, rattaché au répertoire de travail de la conversation, avec ses onglets et ses limites.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Terminal intégré</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-terminal.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/interface-terminal.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Un vrai <em>shell</em>, dans l'application</h1>
+    <p>Pas une console de sortie : un shell interactif complet, rattaché au répertoire de travail de la conversation. Il t'évite l'aller-retour vers une application externe quand tu veux vérifier toi-même ce que l'agent vient de faire.</p>
+
+    <h2 id="ouvrir-un-terminal">Ouvrir un terminal</h2>
+    <ul>
+      <li>Raccourci <b>⌘J</b> sur macOS, <b>Ctrl+J</b> sur Windows et Linux.</li>
+      <li>Si aucun terminal n'a jamais été ouvert dans cette conversation, le raccourci en crée un dans le répertoire de travail. Sinon, il bascule simplement l'affichage.</li>
+      <li>Le raccourci est <b>sans effet</b> hors d'une conversation, ou quand le curseur est dans un champ de saisie.</li>
+    </ul>
+
+    <h2 id="quel-shell">Quel shell est lancé</h2>
+
+    <table>
+      <caption class="crumb">Le shell lancé selon le système</caption>
+      <tr><th>Système</th><th>Shell</th></tr>
+      <tr><td>macOS et Linux</td><td>Le shell défini par la variable <code>SHELL</code>, ou <code>/bin/bash</code> à défaut</td></tr>
+      <tr><td>Windows</td><td><code>powershell.exe</code></td></tr>
+    </table>
+
+    <p>Sur macOS et Linux, le chemin du shell est validé avant lancement : un chemin invalide est refusé plutôt qu'exécuté. Sur Windows, <b>aucun réglage ne permet de préférer <code>cmd.exe</code> ou PowerShell 7</b> : c'est <code>powershell.exe</code>, résolu par un chemin système validé.</p>
+
+    <h2 id="environnement-du-shell">Ce que Beaver change à l'environnement</h2>
+    <p>Un seul endroit décide de l'environnement du shell, et il fait deux choses.</p>
+    <ul>
+      <li>Il <b>impose</b> <code>TERM=xterm-256color</code> et <code>COLORTERM=truecolor</code>.</li>
+      <li>Il <b>retire</b> six variables posées par le lanceur de l'application : <code>NO_COLOR</code>, <code>NODE_DISABLE_COLORS</code>, <code>FORCE_COLOR</code>, <code>COLOR</code>, <code>CLICOLOR</code>, <code>CLICOLOR_FORCE</code>.</li>
+    </ul>
+    <p>Le motif est concret : sans cela, un lanceur qui désactive la couleur rendait la sortie de <code>vite</code>, <code>cargo</code> et de la ligne de commande Tauri uniformément grise dans le terminal intégré.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> echo $TERM
+xterm-256color</pre>
+    </div>
+
+    <p><code>EDITOR</code>, en revanche, est transmise telle quelle : Beaver n'y touche pas.</p>
+
+    <h2 id="les-onglets">Les onglets</h2>
+    <ul>
+      <li>Le terminal est multi-onglets.</li>
+      <li>Les onglets ouverts sont conservés entre deux lancements, dans <code>terminal-tabs.json</code>.</li>
+    </ul>
+
+    <h2 id="les-limites">Les limites</h2>
+    <p><b>Deux limites différentes portent la valeur 16</b> : ne les confonds pas. L'une compte les processus vivants sur toute l'application, l'autre les onglets enregistrés dans une conversation.</p>
+
+    <table>
+      <caption class="crumb">Les plafonds du terminal, et sur quoi chacun porte</caption>
+      <tr><th>Limite</th><th>Valeur</th><th>Portée</th></tr>
+      <tr><td>Processus de terminal vivants</td><td><b>16</b></td><td><b>Globale</b>, toutes conversations confondues</td></tr>
+      <tr><td>Onglets enregistrés par groupe</td><td><b>16</b></td><td>Par conversation</td></tr>
+      <tr><td>Groupes d'onglets</td><td><b>128</b></td><td>Globale</td></tr>
+      <tr><td>Onglets enregistrés au total</td><td><b>256</b></td><td>Globale</td></tr>
+      <tr><td>Taille d'une écriture</td><td><b>65 536 octets</b></td><td>Par écriture</td></tr>
+    </table>
+
+    <p>Au-delà de seize <b>processus</b>, l'ouverture est refusée avec un message explicite. La limite est volontaire : chaque terminal vivant est un processus système, et une application qui en ouvre sans compter finit par épuiser les ressources de la machine. Un onglet enregistré dont le processus n'est pas lancé ne consomme pas ce quota.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Seize au maximum, toutes conversations confondues. Si l'ouverture est refusée, va fermer des onglets — y compris dans d'autres conversations que celle où tu te trouves.
+    </div>
+
+    <h2 id="ton-terminal-et-celui-de-l-agent">Ton terminal et celui de l'agent</h2>
+    <p>Ce sont deux mécanismes distincts, et c'est une confusion fréquente.</p>
+    <ul>
+      <li><b>Le terminal intégré est le tien.</b> Ce que tu y tapes n'est pas vu par l'agent.</li>
+      <li><b>L'outil <code>bash</code> est celui de l'agent.</b> Ses commandes s'exécutent séparément, sous le contrôle des permissions.</li>
+    </ul>
+    <p>Les deux partagent le répertoire de travail de la conversation, rien de plus. Voir <a href="outils-terminal-et-shell.html">Terminal et shell</a> pour l'outil de l'agent.</p>
+
+    <h2 id="recapitulatif">Récapitulatif</h2>
+
+    <table>
+      <caption class="crumb">Le terminal intégré en un coup d'œil</caption>
+      <tr><th>Élément</th><th>Valeur</th></tr>
+      <tr><td>Raccourci</td><td><b>⌘J</b> / <b>Ctrl+J</b></td></tr>
+      <tr><td>Shell sur macOS et Linux</td><td><code>$SHELL</code>, sinon <code>/bin/bash</code></td></tr>
+      <tr><td>Shell sur Windows</td><td><code>powershell.exe</code></td></tr>
+      <tr><td>Processus de terminal simultanés</td><td><b>16</b>, globalement</td></tr>
+      <tr><td>Onglets par conversation</td><td><b>16</b>, et <b>256</b> au total</td></tr>
+      <tr><td>Écriture maximale</td><td><b>65 536 octets</b></td></tr>
+      <tr><td>Onglets conservés</td><td>Oui, dans <code>terminal-tabs.json</code></td></tr>
+      <tr><td>Répertoire initial</td><td>Répertoire de travail de la conversation</td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td><b>⌘J</b> ne fait rien</td><td>Pas de conversation active, ou curseur dans un champ de saisie</td><td>Cliquer hors du champ, ou ouvrir une conversation</td></tr>
+      <tr><td>« La limite de terminaux actifs est atteinte. Fermez un onglet pour réessayer. »</td><td>Seize processus déjà actifs, toutes conversations confondues</td><td>Fermer des onglets, y compris ailleurs</td></tr>
+      <tr><td>Le terminal démarre dans le mauvais dossier</td><td>Il suit le répertoire de travail de la conversation</td><td>Changer le répertoire de travail de la conversation</td></tr>
+      <tr><td>Le shell n'est pas celui attendu</td><td>La variable <code>SHELL</code> n'est pas celle du terminal habituel</td><td>Vérifier <code>SHELL</code> dans l'environnement d'où l'application est lancée</td></tr>
+      <tr><td>Un collage volumineux est tronqué</td><td>Écriture plafonnée à 65 536 octets</td><td>Passer par un fichier</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="reference-raccourcis-clavier.html">Raccourcis clavier</a></li>
+      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a></li>
+      <li><a href="outils-terminal-et-shell.html">Terminal et shell</a> — l'outil <code>bash</code> de l'agent</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

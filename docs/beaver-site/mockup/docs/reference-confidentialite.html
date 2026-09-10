@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Confidentialité</title>
-<meta name="description" content="Qui voit tes conversations, quelles connexions Beaver ouvre tout seul, et comment effacer complètement tes données.">
+<title>Beaver Docs — Privacy</title>
+<meta name="description" content="Who sees your conversations, which connections Beaver opens on its own, and how to erase your data completely.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,189 +18,189 @@
 <body>
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Référence / Confidentialité</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="reference-confidentialite.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Reference / Privacy</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reference-confidentialite.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reference-confidentialite.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
   <main class="doc">
-    <h1>Où vont tes <em>données</em></h1>
-    <p>Beaver est une application de bureau : pas de serveur Beaver, pas de compte Beaver, pas de synchronisation. L'essentiel de ce qui quitte ta machine, ce sont les données que tu envoies à un service que tu as toi-même configuré — plus une courte liste de connexions que Beaver ouvre seul, détaillée plus bas. Cette page ne dit pas « rien ne sort sans ton action » : ce serait faux, et la nuance mérite d'être lue.</p>
-    <h2 id="qui-voit-mes-conversations">Qui voit mes conversations</h2>
-    <p>La réponse dépend d'une seule chose : <b>le modèle choisi pour la conversation</b>.</p>
+    <h1>Where your <em>data</em> goes</h1>
+    <p>Beaver is a desktop app: no Beaver server, no Beaver account, no synchronization. Most of what leaves your machine is the data you send to a service you configured yourself — plus a short list of connections Beaver opens on its own, detailed below. This page does not say “nothing goes out without your action”: that would be false, and the nuance is worth reading.</p>
+    <h2 id="qui-voit-mes-conversations">Who sees my conversations</h2>
+    <p>The answer depends on one thing only: <b>the model chosen for the conversation</b>.</p>
     <ul>
-      <li>Modèle <b>local</b> (Ollama) → la conversation ne quitte pas la machine.</li>
-      <li>Modèle <b>cloud</b> (clé API ou compte web) → la conversation entière part chez ce fournisseur, à chaque tour.</li>
+      <li><b>Local</b> model (Ollama) → the conversation does not leave the machine.</li>
+      <li><b>Cloud</b> model (API key or web account) → the whole conversation goes to that provider, on every turn.</li>
     </ul>
-    <p>Le choix se fait conversation par conversation et se change en cours de route : voir <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>.</p>
-    <h2 id="avec-un-modele-cloud">Avec un modèle cloud</h2>
-    <p>Une conversation Beaver n'est pas seulement tes messages. C'est une liste qui contient aussi <b>tes pièces jointes</b> — un fichier texte inséré sous forme de texte, une image sous forme d'image encodée —, <b>le résultat de chaque outil que l'agent utilise</b> — contenu d'un fichier lu, sortie d'une commande de terminal, liste d'un dossier, résultat d'une recherche — et <b>le prompt système</b>, réglages de personnalité et liste des skills compris.</p>
-    <p>Cet ensemble est renvoyé au modèle <b>à chaque tour</b>, pas seulement au premier : un fichier lu une fois reste dans le contexte et repart à chaque échange suivant.</p>
+    <p>The choice is made conversation by conversation and can be changed along the way: see <a href="demarrage-choisir-son-modele.html">Choosing your model</a>.</p>
+    <h2 id="avec-un-modele-cloud">With a cloud model</h2>
+    <p>A Beaver conversation is not just your messages. It is a list that also contains <b>your attachments</b> — a text file inserted as text, an image as an encoded image —, <b>the result of every tool the agent uses</b> — the content of a file read, the output of a terminal command, a folder listing, a search result — and <b>the system prompt</b>, personality settings and the list of skills included.</p>
+    <p>That whole set is sent back to the model <b>on every turn</b>, not just the first: a file read once stays in the context and goes out again with each subsequent exchange.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Ce que l'agent lit, le fournisseur le lit aussi.</b> Si tu ouvres à l'agent un dossier qui contient des données confidentielles et que la conversation utilise un modèle cloud, ces données partent chez le fournisseur du modèle. Ce n'est pas un défaut, c'est le fonctionnement d'un agent — mais il faut le savoir avant, pas après. Pour ce genre de travail, utilise un modèle local.
+      <span class="t">Warning</span>
+      <b>What the agent reads, the provider reads too.</b> If you open a folder containing confidential data to the agent and the conversation uses a cloud model, that data goes to the model's provider. This is not a flaw, it is how an agent works — but you need to know it beforehand, not afterwards. For that kind of work, use a local model.
     </div>
-    <p>En dehors des messages, Beaver n'envoie au fournisseur <b>aucun identifiant d'installation, aucun nom de machine, aucune statistique</b>. L'exception unique est traitée plus bas. Ce que le fournisseur fait ensuite de ces données — conservation, entraînement, durée de rétention — ne dépend pas de Beaver : réfère-toi à la politique de confidentialité de chacun, elle seule fait autorité sur ce point.</p>
-    <h2 id="avec-un-modele-local">Avec un modèle local</h2>
-    <p>Quand la conversation utilise un modèle Ollama, la requête part vers une adresse de la machine elle-même. L'adresse du moteur n'est fabriquée que sous la forme <code>http://127.0.0.1:&lt;port&gt;</code>, toute autre adresse est refusée, et les modèles « cloud » d'Ollama sont désactivés explicitement au lancement du moteur. <b>Aucune requête de conversation ne sort donc de la machine.</b></p>
-    <p>Trois nuances, à ne pas escamoter :</p>
+    <p>Apart from the messages, Beaver sends the provider <b>no installation identifier, no machine name, no statistics</b>. The single exception is covered below. What the provider then does with that data — storage, training, retention period — is not up to Beaver: refer to each one's privacy policy, it alone is authoritative on that point.</p>
+    <h2 id="avec-un-modele-local">With a local model</h2>
+    <p>When the conversation uses an Ollama model, the request goes to an address on the machine itself. The engine's address is only ever built in the form <code>http://127.0.0.1:&lt;port&gt;</code>, any other address is refused, and Ollama's “cloud” models are explicitly disabled when the engine starts. <b>No conversation request therefore leaves the machine.</b></p>
+    <p>Three nuances, not to be glossed over:</p>
     <ul>
-      <li><b>le modèle doit d'abord être téléchargé</b>, et ce téléchargement passe par Internet ;</li>
-      <li><b>une vérification de mise à jour des modèles a lieu automatiquement</b> et envoie le nom des familles de modèles installées à <code>ollama.com</code> ;</li>
-      <li><b>les outils de l'agent, eux, peuvent sortir.</b> Un agent local à qui tu demandes une recherche web ouvre une connexion. Le modèle est local ; ses outils ne le sont pas tous.</li>
+      <li><b>the model must first be downloaded</b>, and that download goes through the Internet;</li>
+      <li><b>a model update check happens automatically</b> and sends the names of the installed model families to <code>ollama.com</code>;</li>
+      <li><b>the agent's tools, however, can go out.</b> A local agent you ask for a web search opens a connection. The model is local; not all of its tools are.</li>
     </ul>
-    <h2 id="le-filet-a-secrets">Le filet automatique : les secrets retirés avant l'envoi</h2>
-    <p>Beaver retire les valeurs qui ressemblent à des secrets du résultat des outils <b>avant que ce résultat n'entre dans la conversation</b> — donc avant qu'il ne parte chez un fournisseur cloud. Après chaque appel des outils <code>bash</code>, <code>bash_control</code>, <code>read_file</code>, <code>grep</code>, <code>glob</code> et <code>list_dir</code>, le contenu passe par une fonction de caviardage qui remplace les valeurs reconnues par <code>[REDACTED]</code>.</p>
-    <p>Ce qui est reconnu : les paires du type <code>api_key=…</code>, <code>token: …</code>, <code>password=…</code>, <code>client_secret</code>, <code>access_token</code>, <code>refresh_token</code>, <code>authorization</code> ; les formats de jeton connus — OpenAI, GitHub, GitLab, Slack, AWS, Google, xAI, Hugging Face, jetons de robot Telegram, jetons JWT, URL de webhook Slack ; les en-têtes <code>Bearer …</code> ; les blocs de clé privée et de certificat au format PEM. Le même caviardage s'applique au journal de la conversation enregistré sur le disque et à ce qui s'affiche dans l'interface.</p>
+    <h2 id="le-filet-a-secrets">The automatic net: secrets removed before sending</h2>
+    <p>Beaver removes values that look like secrets from the tools' results <b>before that result enters the conversation</b> — therefore before it goes to a cloud provider. After each call of the <code>bash</code>, <code>bash_control</code>, <code>read_file</code>, <code>grep</code>, <code>glob</code> and <code>list_dir</code> tools, the content goes through a redaction function that replaces the recognized values with <code>[REDACTED]</code>.</p>
+    <p>What is recognized: pairs of the form <code>api_key=…</code>, <code>token: …</code>, <code>password=…</code>, <code>client_secret</code>, <code>access_token</code>, <code>refresh_token</code>, <code>authorization</code>; known token formats — OpenAI, GitHub, GitLab, Slack, AWS, Google, xAI, Hugging Face, Telegram bot tokens, JWT tokens, Slack webhook URLs; <code>Bearer …</code> headers; private key and certificate blocks in PEM format. The same redaction applies to the conversation log saved on disk and to what is shown in the interface.</p>
     <div class="callout">
       <span class="t">Note</span>
-      <b>Le filet attrape des formats, pas des sens.</b> Il reconnaît des <b>formats techniques</b>. Un mot de passe ordinaire dans un fichier texte, un nom, un numéro de dossier ne ressemblent à aucun format connu : ils ne sont pas retirés. Il s'applique aux <b>six outils nommés</b> ci-dessus, pas au résultat d'un connecteur externe ni d'une extension. Ce filet complète ta vigilance, il ne la remplace pas.
+      <b>The net catches formats, not meanings.</b> It recognizes <b>technical formats</b>. An ordinary password in a text file, a name, a case number look like no known format: they are not removed. It applies to the <b>six named tools</b> above, not to the result of an external connector or of an extension. This net complements your vigilance, it does not replace it.
     </div>
-    <h2 id="la-recherche-web">La recherche web : quatre chemins</h2>
-    <p>Quand l'agent utilise l'outil de recherche web, Beaver essaie les fournisseurs configurés dans un ordre fixe — <b>Brave, puis Exa, puis Firecrawl</b> — et se rabat sur <b>SearXNG local</b> si aucun n'est configuré ou si tous échouent.</p>
+    <h2 id="la-recherche-web">Web search: four paths</h2>
+    <p>When the agent uses the web search tool, Beaver tries the configured providers in a fixed order — <b>Brave, then Exa, then Firecrawl</b> — and falls back on <b>local SearXNG</b> if none is configured or if all of them fail.</p>
     <table>
-      <caption class="crumb">Les trois fournisseurs de recherche et l'adresse contactée</caption>
-      <tr><th>Fournisseur</th><th>Adresse contactée</th></tr>
+      <caption class="crumb">The three search providers and the address contacted</caption>
+      <tr><th>Provider</th><th>Address contacted</th></tr>
       <tr><td>Brave</td><td><code>api.search.brave.com</code></td></tr>
       <tr><td>Exa</td><td><code>api.exa.ai</code></td></tr>
       <tr><td>Firecrawl</td><td><code>api.firecrawl.dev</code></td></tr>
     </table>
-    <p>Avec l'un de ces trois, ta requête part chez lui accompagnée de ta clé API — donc rattachée à ton compte. Ce qui part exactement : la requête de recherche, et rien d'autre que les paramètres de format, nombre de résultats et longueur d'extrait.</p>
+    <p>With one of those three, your query goes to them together with your API key — therefore tied to your account. What exactly goes out: the search query, and nothing beyond the format, result count and snippet length parameters.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>« SearXNG est local » demande une précision.</b> Le moteur s'exécute sur ta machine, n'écoute que <code>127.0.0.1</code>, n'utilise aucune clé API et ne garde aucun cache partagé : tes recherches ne sont rattachées à aucun compte. <b>Mais SearXNG est un métamoteur</b> : son rôle est d'interroger des moteurs publics pour toi. La requête sort donc de la machine, depuis ton adresse IP. Ce qu'il t'apporte, c'est l'absence de compte et la dispersion des requêtes — pas leur confinement.
+      <span class="t">Warning</span>
+      <b>“SearXNG is local” needs a clarification.</b> The engine runs on your machine, listens on <code>127.0.0.1</code> only, uses no API key and keeps no shared cache: your searches are tied to no account. <b>But SearXNG is a meta search engine</b>: its role is to query public engines for you. The query therefore leaves the machine, from your IP address. What it gives you is the absence of an account and the spreading of your queries — not their confinement.
     </div>
-    <p>La liste des moteurs qu'il interroge vient des réglages par défaut de SearXNG lui-même, pas d'un choix inscrit dans Beaver : la documentation de SearXNG fait autorité dessus. Le paramétrage des quatre chemins est décrit dans <a href="outils-web.html">Web</a>.</p>
-    <h2 id="connecteurs-et-extensions">Connecteurs externes et extensions</h2>
-    <p><b>Les connecteurs externes (MCP).</b> Un connecteur peut être un programme local ou un service distant. Ceux qui sont distants reçoivent les arguments des outils que l'agent leur passe — c'est-à-dire, potentiellement, du contenu de ton travail. Rien n'est contacté tant que tu n'as pas configuré et activé le connecteur. Voir <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>.</p>
-    <p><b>Les extensions.</b> Une extension approuvée s'exécute avec les droits de ton compte et peut utiliser le réseau librement. Beaver ne surveille pas ce qu'elle envoie : <b>une extension approuvée sort du périmètre décrit ici</b>. Voir <a href="integrations-centre-extensions.html">Centre d'extensions</a>.</p>
-    <h2 id="les-canaux-externes">Telegram, Slack et Discord</h2>
-    <p>Si tu branches un canal externe, tes messages et les réponses de l'agent transitent par les serveurs de la plateforme concernée — <code>api.telegram.org</code>, <code>slack.com</code>, <code>discord.com</code> —, comme n'importe quelle conversation sur ces services.</p>
-    <p><b>Le journal d'audit local, lui, est solide.</b> Beaver tient un journal des actions dans <code>logs/gateway-audit.jsonl</code>. Une ligne contient exactement sept champs : horodatage, canal, identifiant de compte, empreinte de l'identifiant utilisateur, type d'action, code de décision, catégorie d'erreur. Trois conséquences :</p>
+    <p>The list of engines it queries comes from SearXNG's own default settings, not from a choice written into Beaver: SearXNG's documentation is authoritative on that. Setting up the four paths is described in <a href="outils-web.html">Web</a>.</p>
+    <h2 id="connecteurs-et-extensions">External connectors and extensions</h2>
+    <p><b>External connectors (MCP).</b> A connector can be a local program or a remote service. The remote ones receive the arguments of the tools the agent passes them — that is, potentially, content from your work. Nothing is contacted until you have configured and enabled the connector. See <a href="integrations-connecteurs-mcp.html">MCP connectors</a>.</p>
+    <p><b>Extensions.</b> An approved extension runs with the rights of your account and may use the network freely. Beaver does not monitor what it sends: <b>an approved extension falls outside the perimeter described here</b>. See <a href="integrations-centre-extensions.html">Extension center</a>.</p>
+    <h2 id="les-canaux-externes">Telegram, Slack and Discord</h2>
+    <p>If you plug in an external channel, your messages and the agent's answers pass through the servers of the platform concerned — <code>api.telegram.org</code>, <code>slack.com</code>, <code>discord.com</code> —, like any conversation on those services.</p>
+    <p><b>The local audit log, on the other hand, is solid.</b> Beaver keeps a log of actions in <code>logs/gateway-audit.jsonl</code>. A line contains exactly seven fields: timestamp, channel, account identifier, fingerprint of the user identifier, type of action, decision code, error category. Three consequences:</p>
     <ul>
-      <li><b>le texte des messages n'y figure pas</b> — les actions sont des étiquettes : message reçu, message envoyé, bloqué, limité, erreur d'agent, canal démarré, canal arrêté, authentification échouée ;</li>
-      <li><b>l'identifiant de la personne n'y figure pas en clair</b> : c'est un HMAC-SHA256 tronqué à 8 octets, calculé avec une clé aléatoire propre à ton installation et rangée dans le coffre chiffré ;</li>
-      <li><b>les erreurs sont réduites à cinq catégories</b> avant écriture, donc aucun détail interne ne s'y retrouve.</li>
+      <li><b>the text of the messages is not in it</b> — actions are labels: message received, message sent, blocked, rate-limited, agent error, channel started, channel stopped, authentication failed;</li>
+      <li><b>the person's identifier is not in it in the clear</b>: it is an HMAC-SHA256 truncated to 8 bytes, computed with a random key specific to your installation and stored in the encrypted vault;</li>
+      <li><b>errors are reduced to five categories</b> before writing, so no internal detail ends up in it.</li>
     </ul>
-    <p>Le journal est conservé <b>30 jours par défaut</b>, réglable entre <b>1 et 365 jours</b>, et il peut être désactivé. Voir <a href="integrations-canaux-externes.html">Canaux externes</a>.</p>
-    <h2 id="connexions-automatiques">Les connexions que Beaver ouvre tout seul</h2>
-    <p>Six connexions n'attendent aucune action de ta part. Quatre sont des vérifications de mise à jour, la cinquième est un catalogue de modèles, et la sixième — la moins évidente — est l'aperçu des liens.</p>
+    <p>The log is kept for <b>30 days by default</b>, adjustable between <b>1 and 365 days</b>, and it can be turned off. See <a href="integrations-canaux-externes.html">External channels</a>.</p>
+    <h2 id="connexions-automatiques">The connections Beaver opens on its own</h2>
+    <p>Six connections wait for no action from you. Four are update checks, the fifth is a model catalog, and the sixth — the least obvious — is the link preview.</p>
     <table>
-      <caption class="crumb">Les connexions ouvertes sans action de ta part</caption>
-      <tr><th>Ce que Beaver fait</th><th>Destination</th><th>Quand</th><th>Ce qui part</th></tr>
-      <tr><td>Cherche une nouvelle version de Beaver</td><td><code>api.github.com</code>, puis <code>github.com</code> et <code>raw.githubusercontent.com</code> si une version existe</td><td>Au lancement, puis <b>toutes les heures</b></td><td><code>User-Agent: Beaver/&lt;version&gt;</code></td></tr>
-      <tr><td>Cherche une nouvelle version du moteur Ollama</td><td><code>github.com</code></td><td>Au lancement, puis toutes les heures</td><td><code>User-Agent: Beaver/&lt;version&gt;</code></td></tr>
-      <tr><td>Cherche des versions plus récentes de tes modèles</td><td><code>ollama.com</code></td><td>Au lancement, toutes les heures, et à chaque changement de ta liste de modèles</td><td><b>Le nom des familles de modèles installées chez toi</b>, jusqu'à 100</td></tr>
-      <tr><td>Rafraîchit le catalogue public des modèles et des tarifs</td><td><code>raw.githubusercontent.com</code></td><td><b>Une fois</b> au démarrage</td><td>La date du fichier déjà en cache</td></tr>
-      <tr><td><b>Affiche l'aperçu d'un lien</b></td><td><b>N'importe quel site</b>, celui du lien</td><td><b>Dès qu'un lien s'affiche dans une conversation</b>, y compris un lien écrit par le modèle</td><td>Une requête depuis ton adresse IP</td></tr>
-      <tr><td>Lit l'usage et le solde de tes comptes fournisseurs</td><td><code>chatgpt.com</code>, <code>api.deepseek.com</code>, <code>api.moonshot.ai</code>, <code>openrouter.ai</code></td><td><b>À l'ouverture de l'écran des fournisseurs</b>, sans clic supplémentaire</td><td>Ta clé, pour lire ta propre consommation</td></tr>
+      <caption class="crumb">The connections opened without any action from you</caption>
+      <tr><th>What Beaver does</th><th>Destination</th><th>When</th><th>What is sent</th></tr>
+      <tr><td>Looks for a new version of Beaver</td><td><code>api.github.com</code>, then <code>github.com</code> and <code>raw.githubusercontent.com</code> if a version exists</td><td>At launch, then <b>every hour</b></td><td><code>User-Agent: Beaver/&lt;version&gt;</code></td></tr>
+      <tr><td>Looks for a new version of the Ollama engine</td><td><code>github.com</code></td><td>At launch, then every hour</td><td><code>User-Agent: Beaver/&lt;version&gt;</code></td></tr>
+      <tr><td>Looks for newer versions of your models</td><td><code>ollama.com</code></td><td>At launch, every hour, and on every change to your model list</td><td><b>The names of the model families installed on your machine</b>, up to 100</td></tr>
+      <tr><td>Refreshes the public catalog of models and prices</td><td><code>raw.githubusercontent.com</code></td><td><b>Once</b> at startup</td><td>The date of the file already cached</td></tr>
+      <tr><td><b>Shows a link preview</b></td><td><b>Any site</b>, the one the link points to</td><td><b>As soon as a link appears in a conversation</b>, including a link written by the model</td><td>A request from your IP address</td></tr>
+      <tr><td>Reads the usage and balance of your provider accounts</td><td><code>chatgpt.com</code>, <code>api.deepseek.com</code>, <code>api.moonshot.ai</code>, <code>openrouter.ai</code></td><td><b>When the providers screen opens</b>, with no extra click</td><td>Your key, to read your own consumption</td></tr>
     </table>
-    <p>Le moteur de recherche local SearXNG, lui, est démarré au lancement s'il est installé, mais il est lancé et interrogé sur la boucle locale uniquement : ce n'est pas une connexion sortante. Les canaux de messagerie, eux, ne démarrent que si tu as activé la passerelle <b>et</b> demandé son démarrage avec l'application — mais une fois démarrés, c'est du trafic continu : un canal Telegram interroge en boucle, un canal Discord maintient une connexion permanente.</p>
+    <p>The local SearXNG search engine is started at launch if it is installed, but it is launched and queried on the loopback only: it is not an outgoing connection. The messaging channels only start if you have enabled the gateway <b>and</b> asked for it to start with the app — but once started, that is continuous traffic: a Telegram channel polls in a loop, a Discord channel keeps a permanent connection.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Un lien affiché est un lien visité.</b> Dès qu'une adresse web apparaît dans une conversation, Beaver contacte ce site pour en récupérer le titre, la description et l'image d'aperçu — <b>sans que tu cliques</b>. Cela vaut aussi pour les adresses citées par le modèle : le site voit alors ton adresse IP et sait qu'un lien vers lui a été affiché chez toi. C'est <b>activé par défaut</b> et se désactive dans les réglages avancés. Si tu travailles sur des sujets que tu ne veux signaler à personne, coupe l'aperçu des liens.
+      <span class="t">Warning</span>
+      <b>A link displayed is a link visited.</b> As soon as a web address appears in a conversation, Beaver contacts that site to fetch its title, description and preview image — <b>without you clicking</b>. That also holds for addresses quoted by the model: the site then sees your IP address and knows a link to it was displayed on your machine. It is <b>on by default</b> and can be turned off in the advanced settings. If you work on subjects you do not want to signal to anyone, turn link previews off.
     </div>
-    <p>Beaver refuse par ailleurs de contacter une adresse privée ou locale par ce chemin, et les résultats sont mis en cache pour ne pas redemander le même lien.</p>
+    <p>Beaver also refuses to contact a private or local address through that path, and the results are cached so the same link is not requested again.</p>
     <div class="callout">
       <span class="t">Note</span>
-      <b>La seule vérification automatique qui parle de toi.</b> Toutes les heures, Beaver demande à <code>ollama.com</code> s'il existe une version plus récente de tes modèles, et lui envoie pour cela le nom des familles installées chez toi. Aucun compte, aucune clé, aucun identifiant ne l'accompagne — mais <code>ollama.com</code> apprend quels modèles tu utilises. Les autres vérifications automatiques n'envoient que le nom et la version de Beaver.
+      <b>The only automatic check that says something about you.</b> Every hour, Beaver asks <code>ollama.com</code> whether a newer version of your models exists, and sends it the names of the families installed on your machine to do so. No account, no key, no identifier goes with it — but <code>ollama.com</code> learns which models you use. The other automatic checks send only Beaver's name and version.
     </div>
-    <h2 id="connexions-sur-demande">Ce qui ne part jamais sans ton geste</h2>
+    <h2 id="connexions-sur-demande">What never goes out without a move from you</h2>
     <ul>
-      <li><b>Le moteur Ollama n'est pas téléchargé au démarrage</b> : il l'est quand tu cliques sur le bouton de l'écran d'installation.</li>
-      <li><b>Aucun modèle n'est téléchargé tout seul.</b></li>
-      <li><b>Aucune requête n'est envoyée à un fournisseur cloud tant qu'une conversation n'utilise pas ce fournisseur.</b> Configurer une clé API n'envoie rien — sauf si tu cliques sur le bouton de test, qui appelle le fournisseur pour vérifier la clé.</li>
-      <li><b>Les autres connexions à la demande</b> : télécharger un modèle, demander à l'agent d'ouvrir une page web, naviguer dans le navigateur intégré, installer un modèle de prévision depuis <code>huggingface.co</code>, utiliser Nixtla TimeGPT sur <code>api.nixtla.io</code>, installer une extension, activer un connecteur distant, télécharger une mise à jour de Beaver.</li>
+      <li><b>The Ollama engine is not downloaded at startup</b>: it is downloaded when you click the button on the installation screen.</li>
+      <li><b>No model is downloaded on its own.</b></li>
+      <li><b>No request is sent to a cloud provider until a conversation uses that provider.</b> Configuring an API key sends nothing — unless you click the test button, which calls the provider to check the key.</li>
+      <li><b>The other on-demand connections</b>: downloading a model, asking the agent to open a web page, browsing in the built-in browser, installing a forecasting model from <code>huggingface.co</code>, using Nixtla TimeGPT on <code>api.nixtla.io</code>, installing an extension, enabling a remote connector, downloading a Beaver update.</li>
     </ul>
-    <h2 id="les-identifiants-transmis">Les identifiants transmis : la règle et son exception</h2>
-    <p><b>La règle.</b> Beaver ne fabrique aucun identifiant d'installation et n'en envoie à personne. La seule signature qu'il ajoute à ses propres requêtes est l'en-tête <code>User-Agent</code>, qui vaut <code>Beaver/&lt;version&gt;</code> — le nom du produit et son numéro de version, rien d'autre.</p>
+    <h2 id="les-identifiants-transmis">The identifiers passed on: the rule and its exception</h2>
+    <p><b>The rule.</b> Beaver makes no installation identifier and sends none to anyone. The only signature it adds to its own requests is the <code>User-Agent</code> header, which reads <code>Beaver/&lt;version&gt;</code> — the product name and its version number, nothing else.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Le compte web Kimi transmet le nom de ta machine.</b> Le protocole de ce fournisseur exige une identité d'appareil. Beaver lui envoie donc un identifiant tiré au hasard au premier usage et conservé chez toi, le nom de ton ordinateur, la version de ton système et son architecture, plus le nom et la version de Beaver. <b>C'est la seule connexion de Beaver dans ce cas.</b> Si cela te gêne, utilise la clé API Moonshot plutôt que le compte web.
+      <span class="t">Warning</span>
+      <b>The Kimi web account passes on your machine's name.</b> That provider's protocol requires a device identity. Beaver therefore sends it an identifier drawn at random on first use and kept on your machine, the name of your computer, your system's version and its architecture, plus Beaver's name and version. <b>It is Beaver's only connection in that case.</b> If that bothers you, use the Moonshot API key rather than the web account.
     </div>
-    <p>Une seconde exception, plus légère : la connexion par compte web xAI transmet l'identifiant de ton compte xAI et une signature de client — nom et version de Beaver. C'est l'identité de ton compte chez eux, pas celle de ta machine : aucun nom d'ordinateur n'y figure.</p>
-    <h2 id="telemetrie">Télémétrie : une absence, et sa méthode</h2>
-    <p><b>Beaver n'embarque aucun outil de télémétrie, d'analyse d'usage ou de rapport de plantage.</b> Aucune statistique, aucun identifiant d'installation, aucune trace de plantage n'est envoyée à qui que ce soit. Une absence ne se prouve pas comme une ligne de code : voici donc la méthode, pour que tu puisses refaire la vérification.</p>
+    <p>A second, lighter exception: signing in with an xAI web account passes on your xAI account identifier and a client signature — Beaver's name and version. That is the identity of your account with them, not that of your machine: no computer name appears in it.</p>
+    <h2 id="telemetrie">Telemetry: an absence, and its method</h2>
+    <p><b>Beaver embeds no telemetry, usage analytics or crash reporting tool.</b> No statistics, no installation identifier, no crash trace is sent to anyone. An absence cannot be proven the way a line of code can: here, then, is the method, so that you can redo the check.</p>
     <ul>
-      <li><b>Recherche par mot-clé dans tout le code source</b>, insensible à la casse, sur les motifs <code>sentry</code>, <code>telemetry</code>, <code>analytics</code>, <code>posthog</code>, <code>crashlytics</code>, <code>mixpanel</code>, <code>amplitude</code>, <code>datadog</code>, <code>bugsnag</code>, <code>rollbar</code>, <code>opentelemetry</code>, <code>gtag</code>, <code>matomo</code>, <code>plausible</code>, <code>umami</code>, <code>google-analytics</code>, <code>segment.io</code>, <code>tracking</code>, <code>beacon</code>.</li>
-      <li><b>Recherche dans les déclarations de dépendances</b> — <code>Cargo.toml</code> et <code>package.json</code> — sur les mêmes motifs. <b>Zéro résultat.</b> C'est le contrôle décisif : aucun outil de ce genre ne peut fonctionner sans être déclaré comme dépendance.</li>
-      <li><b>Examen un par un de toutes les correspondances textuelles</b>, pour écarter les faux positifs.</li>
+      <li><b>Keyword search across the whole source code</b>, case-insensitive, on the patterns <code>sentry</code>, <code>telemetry</code>, <code>analytics</code>, <code>posthog</code>, <code>crashlytics</code>, <code>mixpanel</code>, <code>amplitude</code>, <code>datadog</code>, <code>bugsnag</code>, <code>rollbar</code>, <code>opentelemetry</code>, <code>gtag</code>, <code>matomo</code>, <code>plausible</code>, <code>umami</code>, <code>google-analytics</code>, <code>segment.io</code>, <code>tracking</code>, <code>beacon</code>.</li>
+      <li><b>Search in the dependency declarations</b> — <code>Cargo.toml</code> and <code>package.json</code> — on the same patterns. <b>Zero results.</b> That is the decisive check: no tool of that kind can work without being declared as a dependency.</li>
+      <li><b>Examination one by one of every textual match</b>, to rule out false positives.</li>
     </ul>
     <table>
-      <caption class="crumb">Les correspondances trouvées et ce qu'elles sont réellement</caption>
-      <tr><th>Motif trouvé</th><th>Ce que c'est en réalité</th></tr>
-      <tr><td><code>sentry</code></td><td>La chaîne <code>PROCESSENTRY32W</code>, une structure de l'API Windows, et le connecteur MCP Sentry proposé au catalogue — que tu configures toi-même s'il te sert</td></tr>
-      <tr><td><code>analytics</code></td><td>Le module de prévision : des calculs statistiques faits <b>localement</b> sur tes propres séries</td></tr>
-      <tr><td><code>datadog</code></td><td><b>Datadog Toto 2.0</b>, un modèle de prévision de séries temporelles du catalogue. Un nom de modèle, pas un service de supervision</td></tr>
-      <tr><td><code>rollbar</code></td><td>La sous-chaîne de <code>scrollbar</code>, dans les feuilles de style</td></tr>
-      <tr><td><code>amplitude</code></td><td>Le mot « amplitude » au sens de l'analyse de signal, dans les textes du module de prévision</td></tr>
-      <tr><td><code>gtag</code></td><td>La sous-chaîne de <code>HeadingTag</code>, un composant d'affichage de titres</td></tr>
-      <tr><td><code>plausible</code></td><td>L'adjectif « plausible » dans des commentaires et des noms de tests</td></tr>
-      <tr><td><code>telemetry</code></td><td><b>Trois occurrences, et elles vont dans le bon sens</b> : Beaver désactive la télémétrie des composants tiers qu'il lance</td></tr>
-      <tr><td>Les neuf autres motifs</td><td><b>Aucune occurrence.</b></td></tr>
+      <caption class="crumb">The matches found and what they really are</caption>
+      <tr><th>Pattern found</th><th>What it really is</th></tr>
+      <tr><td><code>sentry</code></td><td>The string <code>PROCESSENTRY32W</code>, a Windows API structure, and the Sentry MCP connector offered in the catalog — which you configure yourself if it is useful to you</td></tr>
+      <tr><td><code>analytics</code></td><td>The forecasting module: statistical computations done <b>locally</b> on your own series</td></tr>
+      <tr><td><code>datadog</code></td><td><b>Datadog Toto 2.0</b>, a time series forecasting model from the catalog. A model name, not a monitoring service</td></tr>
+      <tr><td><code>rollbar</code></td><td>The substring of <code>scrollbar</code>, in the style sheets</td></tr>
+      <tr><td><code>amplitude</code></td><td>The word “amplitude” in the signal analysis sense, in the forecasting module's texts</td></tr>
+      <tr><td><code>gtag</code></td><td>The substring of <code>HeadingTag</code>, a heading display component</td></tr>
+      <tr><td><code>plausible</code></td><td>The adjective “plausible” in comments and test names</td></tr>
+      <tr><td><code>telemetry</code></td><td><b>Three occurrences, and they go the right way</b>: Beaver disables the telemetry of the third-party components it launches</td></tr>
+      <tr><td>The nine other patterns</td><td><b>No occurrence at all.</b></td></tr>
     </table>
-    <p>La seule chose que Beaver fasse en matière de télémétrie, c'est donc de <b>l'éteindre</b> chez les composants tiers qu'il exécute pour toi. Cette méthode porte sur le code de Beaver : elle ne dit rien de ce que font les services que tu configures, ni du code d'une extension que tu approuves.</p>
-    <h2 id="ou-vivent-tes-donnees">Où vivent tes données sur le disque</h2>
-    <p>Un seul dossier, identique sur les trois systèmes : <code>~/.local/share/cl-go-dash/</code>. Beaver n'utilise pas les emplacements habituels de chaque système, il en impose un unique.</p>
+    <p>The only thing Beaver does about telemetry is therefore to <b>switch it off</b> in the third-party components it runs for you. This method covers Beaver's code: it says nothing about what the services you configure do, nor about the code of an extension you approve.</p>
+    <h2 id="ou-vivent-tes-donnees">Where your data lives on the disk</h2>
+    <p>A single folder, identical on all three systems: <code>~/.local/share/cl-go-dash/</code>. Beaver does not use each system's usual locations, it imposes a single one.</p>
     <table>
-      <caption class="crumb">Ce qui touche à la confidentialité, dans le dossier de données</caption>
-      <tr><th>Contenu</th><th>Emplacement</th></tr>
+      <caption class="crumb">What bears on privacy, inside the data folder</caption>
+      <tr><th>Content</th><th>Location</th></tr>
       <tr><td>Conversations</td><td><code>agent-sessions/</code></td></tr>
-      <tr><td>Clés API, chiffrées</td><td><code>secrets.enc</code></td></tr>
-      <tr><td>Journaux d'application</td><td><code>logs/beaver.log</code> (rotation)</td></tr>
-      <tr><td>Journal d'audit des canaux</td><td><code>logs/gateway-audit.jsonl</code></td></tr>
-      <tr><td>Sorties d'outils trop longues</td><td><code>tool-results/</code></td></tr>
-      <tr><td>Plans du mode Plan</td><td><code>plans/</code></td></tr>
-      <tr><td>Identifiant machine Kimi</td><td><code>oauth-providers/kimi-device-id</code></td></tr>
-      <tr><td>Catalogue de modèles en cache</td><td><code>litellm-models.json</code></td></tr>
-      <tr><td>Moteur Ollama</td><td><code>ollama-bundle/</code></td></tr>
+      <tr><td>API keys, encrypted</td><td><code>secrets.enc</code></td></tr>
+      <tr><td>Application logs</td><td><code>logs/beaver.log</code> (rotating)</td></tr>
+      <tr><td>Channel audit log</td><td><code>logs/gateway-audit.jsonl</code></td></tr>
+      <tr><td>Tool outputs that are too long</td><td><code>tool-results/</code></td></tr>
+      <tr><td>Plan mode plans</td><td><code>plans/</code></td></tr>
+      <tr><td>Kimi machine identifier</td><td><code>oauth-providers/kimi-device-id</code></td></tr>
+      <tr><td>Cached model catalog</td><td><code>litellm-models.json</code></td></tr>
+      <tr><td>Ollama engine</td><td><code>ollama-bundle/</code></td></tr>
     </table>
-    <p>Sur macOS et Linux, les fichiers créés par Beaver le sont en <code>0600</code> et les dossiers en <code>0700</code> ; sur Windows, une liste de contrôle d'accès équivalente est posée. À chaque démarrage, Beaver restaure ces droits. <b>La limite :</b> ils protègent tes données des <b>autres comptes</b> de l'ordinateur, pas d'un programme lancé sous <b>le tien</b> — y compris une extension que tu as approuvée.</p>
-    <p>Le point qui surprend au moment d'effacer : <b>les modèles Ollama téléchargés ne sont pas dans ce dossier.</b> Ils vont dans <code>~/.ollama/models</code>, et pèsent souvent plusieurs dizaines de gigaoctets.</p>
-    <h2 id="les-traces">Ce qui est écrit dans les traces</h2>
-    <p>Beaver écrit un journal technique dans <code>logs/</code>. Il <b>reste sur ta machine</b> : rien n'est envoyé nulle part. Les garde-fous : chaque ligne passe par un caviardage avant écriture ; chaque ligne est bornée à <b>2 048 caractères</b> ; le fichier est borné à <b>2 Mio</b> et <b>4 fichiers</b> sont conservés en rotation ; le corps des réponses des fournisseurs est caviardé et tronqué à <b>200 caractères</b> ; les messages d'erreur des moteurs de recherche sont caviardés et tronqués à <b>240 caractères</b>.</p>
-    <p><b>Tes clés API ne sont jamais écrites dans les traces</b>, et l'interface ne peut de toute façon pas les lire. Le détail est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
-    <h2 id="tout-effacer">Comment tout effacer</h2>
-    <p><b>La procédure est manuelle.</b> Beaver ne propose aucune commande « tout effacer » : les suppressions disponibles sont ciblées — une clé, une conversation, un projet, un modèle, un réveil, un jeton de connecteur, une note ou une analyse de prévision. Aucune ne couvre l'ensemble.</p>
+    <p>On macOS and Linux, the files Beaver creates are created as <code>0600</code> and the folders as <code>0700</code>; on Windows, an equivalent access control list is set. At every startup, Beaver restores those rights. <b>The limit:</b> they protect your data from the computer's <b>other accounts</b>, not from a program launched under <b>yours</b> — including an extension you have approved.</p>
+    <p>The point that surprises people when it is time to erase: <b>the downloaded Ollama models are not in that folder.</b> They go to <code>~/.ollama/models</code>, and often weigh several tens of gigabytes.</p>
+    <h2 id="les-traces">What is written to the traces</h2>
+    <p>Beaver writes a technical log in <code>logs/</code>. It <b>stays on your machine</b>: nothing is sent anywhere. The safeguards: every line goes through redaction before writing; every line is bounded to <b>2,048 characters</b>; the file is bounded to <b>2 MiB</b> and <b>4 files</b> are kept in rotation; the body of the providers' answers is redacted and truncated to <b>200 characters</b>; the search engines' error messages are redacted and truncated to <b>240 characters</b>.</p>
+    <p><b>Your API keys are never written to the traces</b>, and the interface cannot read them anyway. The detail is in <a href="reference-coffre-et-cles.html">The vault and API keys</a>.</p>
+    <h2 id="tout-effacer">How to erase everything</h2>
+    <p><b>The procedure is manual.</b> Beaver offers no “erase everything” command: the deletions available are targeted — a key, a conversation, a project, a model, a wakeup, a connector token, a forecasting note or analysis. None of them covers the whole.</p>
     <table>
-      <caption class="crumb">Les quatre étapes d'un effacement complet</caption>
-      <tr><th>#</th><th>Étape</th><th>Ce qui disparaît</th><th>Ce qui reste si tu l'oublies</th></tr>
-      <tr><td>1</td><td>Désinstaller l'application</td><td>Le programme</td><td>Toutes tes données</td></tr>
-      <tr><td>2</td><td>Supprimer <code>~/.local/share/cl-go-dash/</code></td><td>Conversations, coffre chiffré, journaux, plans, réglages, moteur Ollama, identifiant Kimi</td><td>—</td></tr>
-      <tr><td>3</td><td>Supprimer l'entrée de trousseau <code>cl-go-dash</code> / <code>master-key</code></td><td>La clé de déchiffrement du coffre</td><td>Une clé orpheline dans ton trousseau</td></tr>
-      <tr><td>4</td><td>Supprimer <code>~/.ollama/models</code></td><td>Les modèles téléchargés</td><td>Souvent plusieurs dizaines de gigaoctets</td></tr>
-      <tr><td>—</td><td>Révoquer tes clés chez chaque fournisseur</td><td>L'accès à ton compte depuis Beaver</td><td>Une clé toujours valable, connue de qui a lu ton disque</td></tr>
+      <caption class="crumb">The four steps of a complete erasure</caption>
+      <tr><th>#</th><th>Step</th><th>What disappears</th><th>What remains if you forget it</th></tr>
+      <tr><td>1</td><td>Uninstall the app</td><td>The program</td><td>All your data</td></tr>
+      <tr><td>2</td><td>Delete <code>~/.local/share/cl-go-dash/</code></td><td>Conversations, encrypted vault, logs, plans, settings, Ollama engine, Kimi identifier</td><td>—</td></tr>
+      <tr><td>3</td><td>Delete the keyring entry <code>cl-go-dash</code> / <code>master-key</code></td><td>The vault's decryption key</td><td>An orphan key in your keyring</td></tr>
+      <tr><td>4</td><td>Delete <code>~/.ollama/models</code></td><td>The downloaded models</td><td>Often several tens of gigabytes</td></tr>
+      <tr><td>—</td><td>Revoke your keys at each provider</td><td>Access to your account from Beaver</td><td>A key that is still valid, known to whoever has read your disk</td></tr>
     </table>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Supprimer le dossier ne suffit pas.</b> Trois choses vivent en dehors : la clé qui déchiffre ton coffre, rangée dans le <b>trousseau du système</b> ; les <b>modèles Ollama</b>, dans <code>~/.ollama/models</code> ; et ce que tu as déjà envoyé à des services tiers, qui n'est pas sur ton disque. Les deux premières se suppriment à la main. La troisième se traite en <b>révoquant tes clés</b> chez chaque fournisseur, depuis son propre site.
+      <span class="t">Warning</span>
+      <b>Deleting the folder is not enough.</b> Three things live outside it: the key that decrypts your vault, stored in the <b>system keyring</b>; the <b>Ollama models</b>, in <code>~/.ollama/models</code>; and what you have already sent to third-party services, which is not on your disk. The first two are deleted by hand. The third is handled by <b>revoking your keys</b> at each provider, from its own website.
     </div>
-    <p>Un dernier point si tu utilises Beaver depuis longtemps : les versions plus anciennes rangeaient chaque clé directement dans le trousseau, sous le même service <code>cl-go-dash</code> et sous le nom du fournisseur. Vérifie ces entrées-là aussi.</p>
-    <h2 id="pieges">Ce qu'on croit à tort</h2>
+    <p>One last point if you have been using Beaver for a long time: older versions stored each key directly in the keyring, under the same <code>cl-go-dash</code> service and under the provider's name. Check those entries too.</p>
+    <h2 id="pieges">What people wrongly believe</h2>
     <table>
-      <caption class="crumb">Idées reçues et ce qui est vrai</caption>
-      <tr><th>Ce qu'on croit</th><th>Ce qui est vrai</th></tr>
-      <tr><td>« J'utilise un modèle local, donc rien ne sort jamais »</td><td>La conversation ne sort pas. La vérification horaire envoie le nom de tes familles de modèles à <code>ollama.com</code>, et un outil de recherche web sort par définition</td></tr>
-      <tr><td>« SearXNG est local, donc mes recherches restent chez moi »</td><td>Elles sortent vers les moteurs publics, mais sans compte ni clé</td></tr>
-      <tr><td>« Je n'envoie que mes messages au fournisseur »</td><td>Chaque fichier lu, chaque sortie de commande et chaque pièce jointe partent aussi, et repartent à chaque tour</td></tr>
-      <tr><td>« Configurer une clé API envoie des données tout de suite »</td><td>Non — sauf si tu cliques sur le bouton de test, ou si tu ouvres l'écran des fournisseurs, qui lit ton solde</td></tr>
-      <tr><td>« Beaver ne contacte un site que si je clique sur son lien »</td><td>Un lien <b>affiché</b> est contacté automatiquement pour en faire l'aperçu, y compris un lien produit par le modèle</td></tr>
-      <tr><td>« J'ai désinstallé, donc tout est effacé »</td><td>La désinstallation ne touche ni le dossier de données, ni le trousseau, ni les modèles Ollama</td></tr>
-      <tr><td>« Le journal d'audit contient mes messages »</td><td>Sept champs techniques et une empreinte de l'identifiant utilisateur. Jamais le texte</td></tr>
-      <tr><td>« Beaver caviarde tout ce qui est sensible »</td><td>Il caviarde les formats de secret connus, dans le résultat de six outils nommés</td></tr>
-      <tr><td>« Mes données sont protégées des autres logiciels »</td><td>Les droits <code>0600</code>/<code>0700</code> protègent des autres comptes, pas d'un programme lancé sous le tien</td></tr>
+      <caption class="crumb">Misconceptions and what is true</caption>
+      <tr><th>What people believe</th><th>What is true</th></tr>
+      <tr><td>“I use a local model, so nothing ever goes out”</td><td>The conversation does not go out. The hourly check sends the names of your model families to <code>ollama.com</code>, and a web search tool goes out by definition</td></tr>
+      <tr><td>“SearXNG is local, so my searches stay on my machine”</td><td>They go out to the public engines, but with no account and no key</td></tr>
+      <tr><td>“I only send my messages to the provider”</td><td>Every file read, every command output and every attachment goes too, and goes again on every turn</td></tr>
+      <tr><td>“Configuring an API key sends data straight away”</td><td>No — unless you click the test button, or open the providers screen, which reads your balance</td></tr>
+      <tr><td>“Beaver only contacts a site if I click its link”</td><td>A link that is <b>displayed</b> is contacted automatically to build the preview, including a link produced by the model</td></tr>
+      <tr><td>“I uninstalled, so everything is erased”</td><td>Uninstalling touches neither the data folder, nor the keyring, nor the Ollama models</td></tr>
+      <tr><td>“The audit log contains my messages”</td><td>Seven technical fields and a fingerprint of the user identifier. Never the text</td></tr>
+      <tr><td>“Beaver redacts everything sensitive”</td><td>It redacts known secret formats, in the result of six named tools</td></tr>
+      <tr><td>“My data is protected from other software”</td><td>The <code>0600</code>/<code>0700</code> rights protect from other accounts, not from a program launched under yours</td></tr>
     </table>
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — les couches de protection, les permissions, le bac à sable et sa condition.</li>
-      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — le chiffrement du coffre et la clé maîtresse.</li>
-      <li><a href="demarrage-mise-a-jour.html">Mise à jour</a> — le mécanisme de mise à jour, côté procédure.</li>
+      <li><a href="reference-modele-de-securite.html">Security model</a> — the layers of protection, the permissions, the sandbox and its condition.</li>
+      <li><a href="reference-coffre-et-cles.html">The vault and API keys</a> — the vault's encryption and the master key.</li>
+      <li><a href="demarrage-mise-a-jour.html">Updating</a> — the update mechanism, on the procedural side.</li>
     </ul>
   </main>
   <div class="toc" id="docs-toc"></div>

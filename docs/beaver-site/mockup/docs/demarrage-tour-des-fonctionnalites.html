@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Tour des fonctionnalités</title>
-<meta name="description" content="Le panorama de ce que Beaver sait faire, domaine par domaine, avec le renvoi vers la page qui détaille chacun.">
+<title>Beaver Docs — Feature tour</title>
+<meta name="description" content="An overview of what Beaver can do, area by area, with a pointer to the page that covers each one in detail.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,166 +19,156 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Tour des fonctionnalités</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-tour-des-fonctionnalites.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / Feature tour</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-tour-des-fonctionnalites.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-tour-des-fonctionnalites.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Tour des <em>fonctionnalités</em></h1>
-    <p>Dix-sept domaines, quelques phrases chacun, et le lien vers la page qui
-    en dit plus. C'est une page d'aiguillage : elle sert à voir l'étendue en une
-    lecture, pas à tout apprendre.</p>
+    <h1>Feature <em>tour</em></h1>
+    <p>Seventeen areas, a few sentences each, and a link to the page that says
+    more. This is a signposting page: it exists to show the scope in one read,
+    not to teach everything.</p>
 
-    <h2 id="agent-et-outils">Agent et outils</h2>
-    <p>L'agent travaille avec un modèle local ou distant, et dispose d'un
-    catalogue d'outils : fichiers, commandes shell, recherche par nom ou par
-    contenu, recherche web, Git, documents bureautiques, tableurs, images,
-    prévision, connecteurs externes. Les outils sont rangés par famille ;
-    certains sont toujours disponibles, les autres s'activent, avec
-    <b>32 outils optionnels au maximum</b> actifs en même temps.
+    <h2 id="agent-et-outils">Agent and tools</h2>
+    <p>The agent works with a local or remote model, and has a catalog of
+    tools: files, shell commands, search by name or by content, web search, Git,
+    office documents, spreadsheets, images, forecasting, external connectors.
+    Tools are grouped by family; some are always available, the rest are enabled
+    manually, with <b>32 optional tools at most</b> active at the same time.
     → <a href="agent-fonctionnement.html">Agent</a>,
-    <a href="outils-vue-densemble.html">Outils</a></p>
+    <a href="outils-vue-densemble.html">Tools</a></p>
 
-    <h2 id="planification-et-permissions">Planification et permissions</h2>
-    <p>Le mode Plan fait explorer l'agent en lecture seule, lui fait rédiger un
-    plan Markdown, et attend ton approbation avant toute écriture. Les plans
-    sont conservés sur le disque. Indépendamment, chaque action modifiante peut
-    être soumise à confirmation, en réglage global ou conversation par
-    conversation.
-    → <a href="agent-permissions.html">Modes de permission</a></p>
+    <h2 id="planification-et-permissions">Planning and permissions</h2>
+    <p>Plan mode makes the agent explore in read-only, makes it write a Markdown
+    plan, and waits for your approval before any write. Plans are kept on disk.
+    Separately, every modifying action can be made subject to confirmation, as a
+    global setting or conversation by conversation.
+    → <a href="agent-permissions.html">Permission modes</a></p>
 
-    <h2 id="conversations-et-projets">Conversations et projets</h2>
-    <p>La navigation se fait par la barre latérale. Tu peux joindre des fichiers,
-    mettre des messages en file d'attente pendant que l'agent travaille,
-    archiver une conversation. Une conversation <b>naît dans un projet ou en
-    dehors</b>, et cela ne change plus ensuite. Le
-    <b>clonage</b> permet de repartir d'un message précis, en abandonnant la
-    suite ou en en gardant un résumé des erreurs et des décisions.
+    <h2 id="conversations-et-projets">Conversations and projects</h2>
+    <p>Navigation happens through the sidebar. You can attach files, queue
+    messages while the agent is working, archive a conversation. A conversation
+    <b>is born inside a project or outside one</b>, and that never changes
+    afterwards. <b>Cloning</b> lets you start again from a specific message,
+    either dropping what followed or keeping a summary of the errors and
+    decisions.
     → <a href="interface-conversations.html">Conversations</a>,
-    <a href="agent-cloner-une-conversation.html">Cloner une conversation</a></p>
+    <a href="agent-cloner-une-conversation.html">Cloning a conversation</a></p>
 
-    <h2 id="sous-agents">Sous-agents</h2>
-    <p>L'agent délègue une partie du travail à des sessions isolées, avec leur
-    propre contexte. Tu suis leur état en direct, tu corriges en cours de route,
-    tu inspectes les fichiers modifiés, puis tu appliques ou tu rejettes les
-    changements. Les copies de travail Git sont nettoyées ensuite.
-    → <a href="agent-sous-agents.html">Sous-agents</a></p>
+    <h2 id="sous-agents">Subagents</h2>
+    <p>The agent delegates part of the work to isolated sessions with their own
+    context. You follow their state live, correct them along the way, inspect the
+    modified files, then apply or reject the changes. Git worktrees are cleaned
+    up afterwards.
+    → <a href="agent-sous-agents.html">Subagents</a></p>
 
-    <h2 id="memoire-persistante">Mémoire persistante</h2>
-    <p>Des notes conservées entre conversations, en portée globale ou par projet,
-    en mode manuel ou automatique. Elles sont rangées par sujet, bornées en
-    taille, et consultables depuis les réglages. Les sous-agents y accèdent en
-    lecture seule.
-    → <a href="agent-memoire.html">Mémoire persistante</a></p>
+    <h2 id="memoire-persistante">Persistent memory</h2>
+    <p>Notes kept between conversations, in global or per-project scope, in
+    manual or automatic mode. They are filed by topic, bounded in size, and
+    viewable from the settings. Subagents access them in read-only.
+    → <a href="agent-memoire.html">Persistent memory</a></p>
 
-    <h2 id="navigateur-integre">Navigateur intégré</h2>
-    <p>Jusqu'à <b>dix onglets par conversation</b>, avec les sessions connectées
-    conservées d'une fois sur l'autre et la détection des serveurs de
-    développement locaux. Le navigateur partage le panneau latéral avec les
-    prévisualisations et Forecast.
-    → <a href="interface-navigateur.html">Navigateur intégré</a></p>
+    <h2 id="navigateur-integre">Integrated browser</h2>
+    <p>Up to <b>ten tabs per conversation</b>, with signed-in sessions kept from
+    one time to the next and detection of local development servers. The browser
+    shares the side panel with previews and Forecast.
+    → <a href="interface-navigateur.html">Integrated browser</a></p>
 
     <div class="callout">
-      <span class="t">Disponibilité par plateforme</span>
-      Le navigateur intégré est disponible sur macOS et Windows. Sur Linux, il
-      n'apparaît pas dans l'interface : la fonctionnalité est masquée plutôt
-      qu'affichée en panne. Toutes les autres fonctionnalités sont disponibles
-      sur les trois systèmes.
+      <span class="t">Platform availability</span>
+      The integrated browser is available on macOS and Windows. On Linux it does
+      not appear in the interface: the feature is hidden rather than shown
+      broken. Every other feature is available on all three systems.
     </div>
 
     <h2 id="git">Git</h2>
-    <p>Créer, changer, fusionner et supprimer des branches et des copies de
-    travail. Committer et pousser. Parcourir les modifications non commitées.
-    Inspecter les différences récentes ou anciennes dans l'historique.
-    → <a href="outils-branches-git.html">Branches Git</a></p>
+    <p>Create, switch, merge and delete branches and worktrees. Commit and push.
+    Browse uncommitted changes. Inspect recent or older diffs in the history.
+    → <a href="outils-branches-git.html">Git branches</a></p>
 
     <h2 id="forecast">Forecast</h2>
-    <p>L'espace de prévision de séries temporelles : audit de qualité des
-    données, choix de modèle manuel ou automatique, exécution locale ou cloud,
-    backtests glissants, comparaison, ensembles pondérés, analyse avancée,
-    scénarios, notes, rapport et exports. <b>Dix familles</b> de modèles locaux
-    sont proposées, plus <b>une famille en cloud</b>, soit onze au total.
+    <p>The time-series forecasting workspace: data quality audit, manual or
+    automatic model selection, local or cloud execution, rolling backtests,
+    comparison, weighted ensembles, advanced analysis, scenarios, notes, report
+    and exports. <b>Ten families</b> of local models are offered, plus <b>one
+    cloud family</b>, eleven in total.
     → <a href="outils-forecast.html">Forecast</a></p>
 
-    <h2 id="fournisseurs-et-usage">Fournisseurs et usage</h2>
-    <p><b>Onze</b> fournisseurs de modèles sont gérés par clé API, dont
-    <b>trois</b> acceptent aussi une connexion par compte web. Beaver affiche
-    les limites, les crédits, les jetons consommés, les requêtes et une
-    estimation de coût quand le fournisseur expose ces informations.
-    → <a href="modeles-fournisseurs-api.html">Fournisseurs API</a>,
-    <a href="modeles-usage-et-couts.html">Usage et coûts</a></p>
+    <h2 id="fournisseurs-et-usage">Providers and usage</h2>
+    <p><b>Eleven</b> model providers are supported through an API key, and
+    <b>three</b> of them also accept a web account connection. Beaver shows
+    limits, credits, tokens consumed, requests and a cost estimate whenever the
+    provider exposes that information.
+    → <a href="modeles-fournisseurs-api.html">API providers</a>,
+    <a href="modeles-usage-et-couts.html">Usage and costs</a></p>
 
-    <h2 id="connecteurs-et-canaux">Connecteurs MCP et canaux</h2>
-    <p>Les connecteurs MCP, locaux ou distants, s'activent conversation par
-    conversation et ajoutent leurs outils à l'agent. Une passerelle
-    d'arrière-plan relie Beaver à Telegram, Slack et Discord, avec un journal
-    d'audit.
-    → <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>,
-    <a href="integrations-canaux-externes.html">Canaux externes</a></p>
+    <h2 id="connecteurs-et-canaux">MCP connectors and channels</h2>
+    <p>MCP connectors, local or remote, are enabled conversation by conversation
+    and add their tools to the agent. A background gateway links Beaver to
+    Telegram, Slack and Discord, with an audit log.
+    → <a href="integrations-connecteurs-mcp.html">MCP connectors</a>,
+    <a href="integrations-canaux-externes.html">External channels</a></p>
 
     <h2 id="extensions">Extensions</h2>
-    <p>Les extensions sont des modules installables qui <b>modifient l'interface
-    elle-même</b>, distribués et mis à jour depuis une source Git. Une extension
-    contribue son propre onglet de réglages, des entrées de navigation, un thème
-    et des skills. Trois outils verrouillés du groupe <code>extensions</code> les
-    rendent visibles à l'agent. À ne pas confondre avec un connecteur MCP, qui
-    n'ajoute que des outils.
-    → <a href="integrations-centre-extensions.html">Centre d'extensions</a></p>
+    <p>Extensions are installable modules that <b>modify the interface
+    itself</b>, distributed and updated from a Git source. An extension
+    contributes its own settings tab, navigation entries, a theme and skills.
+    Three locked tools in the <code>extensions</code> group make them visible to
+    the agent. Not to be confused with an MCP connector, which only adds tools.
+    → <a href="integrations-centre-extensions.html">Extension center</a></p>
 
-    <h2 id="reveils">Réveils</h2>
-    <p>Des instructions programmées une fois, chaque jour ou chaque semaine,
-    déclenchées par un ordonnanceur interne à l'application. Chaque exécution
-    atterrit dans une conversation dédiée, et l'historique est conservé.</p>
+    <h2 id="reveils">Wakeups</h2>
+    <p>Instructions scheduled once, every day or every week, triggered by a
+    scheduler internal to the application. Each run lands in a dedicated
+    conversation, and the history is kept.</p>
 
-    <h2 id="runtime-ollama">Moteur local géré</h2>
-    <p>Le parcours d'accueil propose de télécharger Ollama dans le dossier de
-    données ; tu peux passer l'étape et la reprendre plus tard depuis
-    <b>Réglages › Ollama</b>. Un démon déjà présent est réutilisé au lieu d'être
-    téléchargé. Depuis l'application, tu parcours et
-    installes des modèles, tu édites les modelfiles, tu règles les paramètres et
-    les prompts système. Les modèles sont partagés avec une installation Ollama
-    existante.
-    → <a href="modeles-moteur-local.html">Moteur local</a>,
-    <a href="modeles-modeles-locaux.html">Modèles locaux</a></p>
+    <h2 id="runtime-ollama">Managed local engine</h2>
+    <p>The onboarding flow offers to download Ollama into the data folder; you
+    can skip the step and come back to it later from
+    <b>Settings › Ollama</b>. A daemon that is already present is reused instead
+    of downloading one. From the application, you browse and
+    install models, edit modelfiles, adjust the parameters and the system
+    prompts. Models are shared with an existing Ollama installation.
+    → <a href="modeles-moteur-local.html">Local engine</a>,
+    <a href="modeles-modeles-locaux.html">Local models</a></p>
 
-    <h2 id="espace-de-travail">Espace de travail</h2>
-    <p>Un terminal multi-onglets multiplateforme, un arbre de fichiers avec
-    surveillance des modifications, des prévisualisations riches — texte,
-    images, tableurs, documents bureautiques, aperçus de liens —, le détail de
-    l'occupation du contexte, et un castor interactif.
+    <h2 id="espace-de-travail">Workspace</h2>
+    <p>A cross-platform multi-tab terminal, a file tree that watches for changes,
+    rich previews — text, images, spreadsheets, office documents, link previews
+    —, a breakdown of context usage, and an interactive beaver.
     → <a href="interface-vue-densemble.html">Interface</a>,
-    <a href="interface-terminal.html">Terminal intégré</a></p>
+    <a href="interface-terminal.html">Integrated terminal</a></p>
 
-    <h2 id="demarrage-et-migration">Démarrage guidé et migration</h2>
-    <p>Un parcours d'accueil au premier lancement, et un assistant d'import qui
-    reprend les instructions, les skills et les règles depuis <b>neuf</b>
-    applications : Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode,
-    OpenClaw, OpenCode et Kimi Code.
-    → <a href="demarrage-parcours-accueil.html">Parcours d'accueil</a>,
-    <a href="demarrage-importer.html">Importer d'un autre agent</a></p>
+    <h2 id="demarrage-et-migration">Guided start and migration</h2>
+    <p>An onboarding flow on first launch, and an import assistant that brings
+    over instructions, skills and rules from <b>nine</b> applications: Claude
+    Code, Codex, Agents, Hermes, Qwen Code, ZCode, OpenClaw, OpenCode and Kimi
+    Code.
+    → <a href="demarrage-parcours-accueil.html">Onboarding flow</a>,
+    <a href="demarrage-importer.html">Importing from another agent</a></p>
 
-    <h2 id="stockage-securise">Stockage local sécurisé</h2>
-    <p>Les identifiants vivent dans un coffre chiffré <b>XChaCha20-Poly1305</b>,
-    dont la clé maîtresse est rangée dans le trousseau du système. Aucun secret
-    brut ne parvient à l'interface graphique.
-    → <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>,
-    <a href="reference-modele-de-securite.html">Modèle de sécurité</a></p>
+    <h2 id="stockage-securise">Secure local storage</h2>
+    <p>Credentials live in an encrypted <b>XChaCha20-Poly1305</b> vault, whose
+    master key is stored in the system keyring. No raw secret ever reaches the
+    graphical interface.
+    → <a href="reference-coffre-et-cles.html">The vault and API keys</a>,
+    <a href="reference-modele-de-securite.html">Security model</a></p>
 
-    <h2 id="langues-et-apparence">Langues et apparence</h2>
-    <p>L'interface existe en <b>sept langues</b> — français, anglais, espagnol,
-    allemand, italien, chinois, japonais — et propose <b>six thèmes</b> visuels,
-    plus le réglage de la taille de police et du thème de coloration du code.
-    → <a href="reference-themes.html">Thèmes et apparence</a>,
-    <a href="reference-langues.html">Langues</a></p>
+    <h2 id="langues-et-apparence">Languages and appearance</h2>
+    <p>The interface exists in <b>seven languages</b> — French, English,
+    Spanish, German, Italian, Chinese, Japanese — and offers <b>six</b> visual
+    themes, plus settings for font size and code syntax theme.
+    → <a href="reference-themes.html">Themes and appearance</a>,
+    <a href="reference-langues.html">Languages</a></p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

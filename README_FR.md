@@ -10,7 +10,7 @@ Beaver est un agent IA de bureau open source qui arrive complet : modèles cloud
 [![Téléchargements](https://img.shields.io/github/downloads/Kevin-hDev/Beaver/total?label=t%C3%A9l%C3%A9chargements)](https://github.com/Kevin-hDev/Beaver/releases)
 [![Licence : AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-orange)](LICENSE)
 
-**[Installer](#installation)** · **[Tout est déjà là](#tout-est-déjà-là)** · **[Puis les clés](#puis-les-clés)** · **[Sécurité](SECURITY.md)** · **[English](README.md)**
+**[Documentation](https://kevin-hdev.github.io/Beaver/)** · **[Installer](#installation)** · **[Tout est déjà là](#tout-est-déjà-là)** · **[Puis les clés](#puis-les-clés)** · **[Sécurité](SECURITY.md)** · **[English](README.md)**
 
 macOS (Apple Silicon) · Linux · Windows
 

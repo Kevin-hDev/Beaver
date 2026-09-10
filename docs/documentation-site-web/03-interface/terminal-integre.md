@@ -112,7 +112,7 @@ Les deux partagent le répertoire de travail de la conversation, mais ce sont de
 | Symptôme | Cause | Résolution |
 |---|---|---|
 | ⌘J ne fait rien | Pas de conversation active, ou curseur dans un champ de saisie | Cliquer hors du champ, ou ouvrir une conversation |
-| « Trop de terminaux ouverts » | Seize processus de terminal déjà actifs, toutes conversations confondues | Fermer des onglets, y compris dans d'autres conversations |
+| « La limite de terminaux actifs est atteinte. Fermez un onglet pour réessayer. » (`terminal.liveLimitReached`, fr.json:1237 — corrigé le 10 septembre 2026 : l'ancienne paraphrase « Trop de terminaux ouverts » n'existe pas dans l'application) | Seize processus de terminal déjà actifs, toutes conversations confondues | Fermer des onglets, y compris dans d'autres conversations |
 | Le terminal démarre dans le mauvais dossier | Il suit le répertoire de travail de la conversation | Changer le répertoire de travail de la conversation |
 | Le shell n'est pas celui attendu | La variable `SHELL` n'est pas celle du terminal habituel | Vérifier `SHELL` dans l'environnement d'où l'application est lancée |
 | Un collage volumineux est tronqué | Écriture plafonnée à 65 536 octets | Passer par un fichier |

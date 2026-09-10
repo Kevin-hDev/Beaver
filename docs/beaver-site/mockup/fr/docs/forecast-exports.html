@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Exporter une prévision</title>
+<meta name="description" content="Les sept formats de sortie d'une analyse Forecast, où le fichier atterrit, comment il est nommé, et ce que chacun contient exactement.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Forecast / Exports</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="forecast-exports.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/forecast-exports.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Sortir une prévision <em>de Beaver</em></h1>
+    <p>Sept formats, du tableau à plat au rapport imprimable. Cette page dit ce que chacun contient réellement, où le fichier atterrit et comment il est nommé — parce que d'un format à l'autre, ce n'est pas la même chose qui sort.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Les sept sorties existent et fonctionnent : CSV, Excel, PNG, SVG, JSON, PDF et copie dans le presse-papiers. Le fichier part dans ton dossier de téléchargements, nommé d'après l'analyse.
+    </div>
+
+    <h2 id="les-sept-sorties">Les sept sorties, et où les trouver</h2>
+    <p>Le bouton porte le libellé <b>Export</b> et ouvre un menu de sept entrées.</p>
+
+    <table>
+      <caption class="crumb">Les sept entrées du menu Export</caption>
+      <tr><th>Libellé affiché</th><th>Ce que ça produit</th></tr>
+      <tr><td><b>CSV</b></td><td>Un fichier <code>.csv</code></td></tr>
+      <tr><td><b>Excel (.xlsx)</b></td><td>Un classeur <code>.xlsx</code></td></tr>
+      <tr><td><b>PNG</b></td><td>Une image <code>.png</code></td></tr>
+      <tr><td><b>SVG</b></td><td>Une image vectorielle <code>.svg</code></td></tr>
+      <tr><td><b>JSON</b></td><td>Un fichier <code>.json</code></td></tr>
+      <tr><td><b>PDF (rapport)</b></td><td>Un document <code>.pdf</code></td></tr>
+      <tr><td><b>Copier (clipboard)</b></td><td>Rien sur le disque : le texte va dans le presse-papiers</td></tr>
+    </table>
+
+    <p>Le bouton apparaît à <b>deux endroits</b>, et c'est le même : dans le pied du panneau Forecast dès qu'une analyse est ouverte, et dans la barre d'outils de la section <b>Rapport</b> de la fenêtre Espace Forecast.</p>
+    <p>Trois messages possibles après l'action : <b>« Export enregistré »</b>, un fichier a été écrit ; <b>« Export copié »</b>, le texte est dans le presse-papiers ; <b>« Export impossible »</b>, l'export a échoué, sans autre précision.</p>
+
+    <h2 id="ou-va-le-fichier">Où va le fichier, et comment il s'appelle</h2>
+    <p><b>La destination</b> est le dossier de téléchargements du système. Quand celui-ci est introuvable, Beaver retombe sur un dossier d'exports créé au besoin sous son propre dossier de données.</p>
+    <p><b>Le nom du fichier</b> suit toujours la même forme : le nom de l'analyse nettoyé, un tiret, les huit premiers caractères de son identifiant, puis l'extension. Le nettoyage est strict : seuls les <b>lettres et chiffres non accentués</b> sont conservés, en minuscules ; les espaces, tirets et traits soulignés deviennent des tirets ; tout le reste est supprimé, accents compris ; les tirets consécutifs sont réduits à un seul ; le résultat est coupé à <b>64 caractères</b>. S'il ne reste rien, le nom devient <code>forecast</code>.</p>
+    <p>Les huit caractères d'identifiant à la fin évitent que deux analyses portant le même nom s'écrasent l'une l'autre. <b>Une analyse ne peut être exportée que depuis la conversation à laquelle elle appartient</b> : l'autorisation est vérifiée avant toute lecture.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Les accents disparaissent du nom de fichier. « Prévision CA — été 2026 » devient <code>prvision-ca-t-2026</code> : les accents ne sont pas translittérés, ils sont supprimés. Le contenu du fichier, lui, garde les accents.
+    </div>
+
+    <h2 id="dans-tout-export">Ce qu'il y a dans tout export</h2>
+    <p>Quel que soit le format, l'export part du même assemblage : <b>l'analyse complète et ses notes</b>. Les notes ne sont donc jamais laissées de côté, même dans un export de données brutes.</p>
+    <p><b>Les en-têtes de fourchette s'adaptent au niveau de confiance demandé.</b> Ils ne sont pas figés : ils sont calculés à partir du niveau retenu.</p>
+
+    <table>
+      <caption class="crumb">Deux exemples d'en-têtes de fourchette</caption>
+      <tr><th>Confiance demandée</th><th>En-têtes produits</th></tr>
+      <tr><td><b>90 %</b></td><td><code>q05</code>, <code>q50</code>, <code>q95</code></td></tr>
+      <tr><td><b>99 %</b></td><td><code>q0050</code>, <code>q50</code>, <code>q9950</code></td></tr>
+    </table>
+
+    <p>Le nombre de décimales, lui, change d'un format à l'autre — un détail qui compte quand on compare deux exports.</p>
+
+    <table>
+      <caption class="crumb">La précision des valeurs selon le format</caption>
+      <tr><th>Format</th><th>Précision</th></tr>
+      <tr><td>CSV, presse-papiers</td><td><b>6 décimales</b></td></tr>
+      <tr><td>PDF</td><td><b>2 décimales</b></td></tr>
+      <tr><td>Excel, JSON</td><td>La valeur telle quelle, sans arrondi</td></tr>
+    </table>
+
+    <p>Une valeur non finie sort <b>vide</b>, jamais sous forme de texte parasite.</p>
+
+    <h2 id="csv">CSV — le tableau à plat</h2>
+    <p>Un seul tableau, <b>dix colonnes</b>, qui empile tout ce que l'analyse contient : <code>section</code>, <code>name</code>, <code>date</code>, <code>series_id</code>, <code>value</code>, les trois en-têtes de fourchette, puis <code>text</code> et <code>source</code>.</p>
+
+    <table>
+      <caption class="crumb">Ce que dit la colonne <code>section</code></caption>
+      <tr><th>Valeur</th><th>Ce que la ligne porte</th></tr>
+      <tr><td><code>history</code></td><td>Un point de l'historique fourni</td></tr>
+      <tr><td><code>prediction</code></td><td>Un point prévu, avec sa fourchette</td></tr>
+      <tr><td><code>scenario</code></td><td>Un point d'un scénario, dont le nom est dans <code>name</code></td></tr>
+      <tr><td><code>annotation</code></td><td>Une annotation posée sur le graphique</td></tr>
+      <tr><td><code>note</code></td><td>Une note attachée à l'analyse</td></tr>
+      <tr><td><code>residual_anomaly</code></td><td>Un écart notable relevé après le calcul</td></tr>
+      <tr><td><code>variable_importance</code></td><td>Le poids d'une variable explicative</td></tr>
+      <tr><td><code>drift</code></td><td>Un constat de dérive sur une série</td></tr>
+      <tr><td><code>ensemble_member</code></td><td>Un modèle et son poids dans un ensemble</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Tes exports ne peuvent pas exécuter de formule. Une cellule de texte commençant par <code>=</code>, <code>+</code>, <code>-</code> ou <code>@</code> est neutralisée avant écriture, dans le CSV comme dans le classeur Excel : un tableur qui ouvre le fichier affiche le texte au lieu de l'exécuter. C'est pourquoi certaines cellules apparaissent avec une apostrophe en tête.
+    </div>
+
+    <h2 id="excel">Excel — un classeur, huit feuilles</h2>
+
+    <table>
+      <caption class="crumb">Les feuilles du classeur, dans l'ordre de création</caption>
+      <tr><th>Feuille</th><th>Contenu</th><th>Toujours présente</th></tr>
+      <tr><td><code>Metadata</code></td><td>Identifiant, nom, modèle, fournisseur, cible, fréquence, date de création, horizon</td><td>Oui</td></tr>
+      <tr><td><code>Historique</code></td><td>Les points fournis : date, série, valeur</td><td>Oui</td></tr>
+      <tr><td><code>Prévisions</code></td><td>Les points prévus, avec les trois colonnes de fourchette</td><td>Oui</td></tr>
+      <tr><td><code>Scenarios</code></td><td>Les points de chaque scénario, précédés de son nom</td><td>Oui — vide s'il n'y en a pas</td></tr>
+      <tr><td><code>Notes</code></td><td>Les notes : type, date, titre, texte, source</td><td>Oui — vide s'il n'y en a pas</td></tr>
+      <tr><td><code>Advanced</code></td><td>Décomposition, écarts notables, importance des variables, dérive</td><td>Oui — vide si l'analyse avancée est absente</td></tr>
+      <tr><td><code>Ensemble</code></td><td>Les points de la prévision d'ensemble</td><td><b>Seulement</b> si un ensemble a été construit</td></tr>
+      <tr><td><code>Input data</code></td><td><b>Le fichier d'origine, colonne par colonne, ligne par ligne</b></td><td>Oui</td></tr>
+    </table>
+
+    <p>Chaque feuille reçoit une ligne d'en-tête figée, un filtre automatique et un ajustement de largeur des colonnes plafonné à 52 caractères. Le classeur est lui aussi protégé de l'injection de formule : un titre de note écrit comme une formule reste du texte.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Le classeur emporte tes données de départ. Sa dernière feuille, <code>Input data</code>, contient le fichier d'origine ligne par ligne. C'est le seul export qui permet de refaire tout le travail à partir d'un fichier unique.
+    </div>
+
+    <h2 id="json">JSON — tout, sans perte</h2>
+    <p>Le fichier contient trois clés à la racine : <code>analysis</code>, l'analyse entière telle qu'elle est enregistrée ; <code>notes</code>, les notes attachées ; <code>quantile_labels</code>, les trois en-têtes de fourchette correspondant au niveau de confiance.</p>
+    <p>Le fichier est mis en forme lisiblement, pas compacté. <b>C'est le seul format qui ne perd rien</b> : tous les autres sélectionnent, arrondissent ou mettent en page. C'est le format à conseiller pour alimenter un autre programme.</p>
+
+    <h2 id="png-et-svg">PNG et SVG — l'image du graphique</h2>
+    <p>Les deux sortent le même dessin : le SVG est écrit tel quel, le PNG en est le rendu.</p>
+
+    <table>
+      <caption class="crumb">Les caractéristiques de l'image exportée</caption>
+      <tr><th>Caractéristique</th><th>Valeur</th></tr>
+      <tr><td>Dimensions</td><td><b>1 400 × 760 pixels</b></td></tr>
+      <tr><td>Fond</td><td>Sombre, <b>quel que soit ton thème</b></td></tr>
+      <tr><td>Titre</td><td>Le nom de l'analyse</td></tr>
+      <tr><td>Sous-titre</td><td>Modèle, colonne cible, horizon, nombre de points</td></tr>
+      <tr><td>Courbes</td><td>Historique en gris clair, prévision en orange avec un point par échéance, scénarios en bleu pointillé</td></tr>
+      <tr><td>Zone de confiance</td><td>Une bande orange transparente autour de la prévision</td></tr>
+      <tr><td>Repères</td><td>Axe horizontal daté et grille horizontale avec valeurs</td></tr>
+      <tr><td>Légende</td><td>Trois entrées : Historique, Prevision, Confiance</td></tr>
+    </table>
+
+    <p>La légende est écrite en français dans l'image, sans passer par les traductions — et le mot « Prevision » y apparaît sans accent.</p>
+    <p><b>Une particularité à connaître</b> : l'axe des valeurs ajoute un symbole <b>€</b> quand le nom de la colonne cible contient la suite de lettres <code>eur</code>, en majuscules ou en minuscules. C'est une commodité qui vise un nom comme « chiffre_affaires_eur », mais elle se déclenche aussi sur « valeur », « heures » ou « couleur ». Les valeurs au-delà de mille sont abrégées en milliers, avec une décimale.</p>
+    <p>Le rendu du PNG utilise les <b>polices installées sur ta machine</b> ; l'image peut donc différer légèrement d'un ordinateur à l'autre.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      L'image est toujours sur fond sombre. Le graphique exporté ne suit pas le thème de l'application. À savoir avant de le poser sur une page blanche : dans ce cas, prends le SVG et change le fond dans un éditeur.
+    </div>
+
+    <h2 id="pdf">PDF — le rapport texte</h2>
+    <p>Le PDF n'est pas une mise en page graphique : c'est un rapport en texte à espacement fixe, écrit directement par Beaver.</p>
+
+    <table>
+      <caption class="crumb">Les caractéristiques du document</caption>
+      <tr><th>Caractéristique</th><th>Valeur</th></tr>
+      <tr><td>Format de page</td><td><b>A4</b></td></tr>
+      <tr><td>Police</td><td><b>Courier</b>, corps 9</td></tr>
+      <tr><td>Lignes par page</td><td><b>46</b></td></tr>
+      <tr><td>Pagination</td><td>Automatique, autant de pages que nécessaire</td></tr>
+    </table>
+
+    <p>Le contenu, dans l'ordre : <b>l'en-tête</b>, avec le nom de l'analyse, le modèle et son fournisseur, la colonne cible, l'horizon et la fréquence, la période couverte par l'historique et son nombre de points ; <b>les prévisions</b>, un tableau daté avec date, série, valeur et les trois valeurs de fourchette ; <b>l'analyse avancée</b>, avec la décomposition par série, le nombre d'écarts notables puis les dix premiers, l'importance des variables avec sa méthode et sa fiabilité puis les dix premières, et les constats de dérive ; <b>le backtest</b>, avec le classement des modèles évalués et leurs mesures ; <b>l'ensemble</b>, avec les modèles combinés, leur poids et l'état de validation ; <b>les scénarios</b>, nom et nombre de points ; <b>les notes</b>, avec pour chacune sa date, son type, son titre et les quatre premières lignes de son contenu.</p>
+    <p>Les titres de section du document sont écrits sans accent.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Le PDF est un résumé, pas une archive. Il ne garde que les dix premiers écarts notables, les dix premières variables et les quatre premières lignes de chaque note. Pour l'intégralité, prends le JSON ou le classeur Excel.
+    </div>
+
+    <h2 id="copier">Copier — le collage rapide</h2>
+    <p>Cette entrée n'écrit aucun fichier : le moteur produit un texte, l'interface le pose dans le presse-papiers.</p>
+    <p><b>Le texte produit</b> : quatre lignes d'en-tête — nom de l'analyse, modèle, colonne cible, horizon et fréquence —, une ligne vide, puis un tableau séparé par des tabulations avec date, série, valeur et les trois valeurs de fourchette, une ligne par échéance. Les lignes d'analyse avancée, de backtest et d'ensemble suivent, dans la même forme que le PDF.</p>
+    <p><b>Le séparateur par tabulation est ce qui rend ce format utile</b> : un collage direct dans un tableur remplit les colonnes toutes seules. Les cellules de texte y sont protégées de l'injection de formule comme dans le CSV.</p>
+    <p><b>Ce que le presse-papiers ne contient pas</b> : l'historique fourni, les scénarios détaillés, les annotations et les notes. C'est le seul export volontairement partiel.</p>
+
+    <h2 id="ce-que-chaque-format-contient">Ce que chaque format contient</h2>
+
+    <table>
+      <caption class="crumb">Le contenu de chaque format, élément par élément</caption>
+      <tr><th>&nbsp;</th><th>CSV</th><th>Excel</th><th>JSON</th><th>PNG / SVG</th><th>PDF</th><th>Copier</th></tr>
+      <tr><td>Historique fourni</td><td>Oui</td><td>Oui</td><td>Oui</td><td>Dessiné</td><td>Bornes seulement</td><td><b>Non</b></td></tr>
+      <tr><td>Points prévus et fourchette</td><td>Oui</td><td>Oui</td><td>Oui</td><td>Dessinés</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Scénarios</td><td>Oui</td><td>Oui</td><td>Oui</td><td>Dessinés</td><td>Nom et nombre de points</td><td>Non</td></tr>
+      <tr><td>Annotations</td><td>Oui</td><td>Non</td><td>Oui</td><td>Non</td><td>Non</td><td>Non</td></tr>
+      <tr><td>Notes</td><td>Oui</td><td>Oui</td><td>Oui</td><td>Non</td><td>4 lignes chacune</td><td>Non</td></tr>
+      <tr><td>Analyse avancée</td><td>Oui</td><td>Oui</td><td>Oui</td><td>Non</td><td>Tronquée à 10</td><td>Oui</td></tr>
+      <tr><td>Résultats d'évaluation</td><td>Non</td><td>Non</td><td>Oui</td><td>Non</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Ensemble</td><td>Ses membres</td><td>Ses points</td><td>Oui</td><td>Non</td><td>Ses membres</td><td>Oui</td></tr>
+      <tr><td><b>Données d'origine</b></td><td>Non</td><td><b>Oui</b></td><td>Oui</td><td>Non</td><td>Non</td><td>Non</td></tr>
+    </table>
+
+    <h2 id="choisir-le-format">Choisir le bon format</h2>
+
+    <table>
+      <caption class="crumb">Le format à prendre selon ce que tu veux faire</caption>
+      <tr><th>Ce que tu veux faire</th><th>Format</th></tr>
+      <tr><td>Refaire des calculs, croiser avec d'autres données</td><td><b>Excel</b> — il contient aussi tes données d'origine</td></tr>
+      <tr><td>Ouvrir dans n'importe quel tableur, ou traiter par script</td><td><b>CSV</b></td></tr>
+      <tr><td>Alimenter un autre programme sans rien perdre</td><td><b>JSON</b></td></tr>
+      <tr><td>Mettre le graphique dans une présentation</td><td><b>PNG</b></td></tr>
+      <tr><td>Mettre le graphique dans un document imprimé, ou le retoucher</td><td><b>SVG</b></td></tr>
+      <tr><td>Envoyer un compte rendu lisible sans logiciel particulier</td><td><b>PDF (rapport)</b></td></tr>
+      <tr><td>Coller trois chiffres dans un message ou un tableur ouvert</td><td><b>Copier (clipboard)</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Export impossible »</td><td>Message unique : écriture refusée, dossier inaccessible, analyse introuvable</td><td>Vérifier la place disque et les droits sur le dossier de téléchargements</td></tr>
+      <tr><td>Je ne retrouve pas le fichier</td><td>Il est dans le dossier de téléchargements du système, pas dans un dossier Beaver</td><td>Chercher un nom commençant par celui de l'analyse</td></tr>
+      <tr><td>Le nom du fichier est méconnaissable</td><td>Accents et ponctuation supprimés, minuscules imposées, coupé à 64 caractères</td><td>Comportement attendu ; renommer le fichier après coup</td></tr>
+      <tr><td>Des cellules commencent par une apostrophe</td><td>Protection contre l'injection de formule</td><td>Comportement voulu ; retirer l'apostrophe manuellement si nécessaire</td></tr>
+      <tr><td>Le graphique exporté est sur fond sombre alors que mon thème est clair</td><td>Le dessin d'export a ses propres couleurs</td><td>Utiliser le SVG et changer le fond dans un éditeur</td></tr>
+      <tr><td>Un symbole € apparaît sur l'axe sans raison</td><td>Le nom de la colonne cible contient les lettres <code>eur</code> — « valeur », « heures », « couleur »</td><td>Renommer la colonne cible avant le calcul</td></tr>
+      <tr><td>Le PDF est incomplet par rapport à l'écran</td><td>Troncatures volontaires : 10 anomalies, 10 variables, 4 lignes par note</td><td>Prendre le JSON ou le classeur Excel</td></tr>
+      <tr><td>Le collage ne contient pas mes notes</td><td>Le presse-papiers ne porte que la prévision et les analyses</td><td>Utiliser CSV ou Excel</td></tr>
+      <tr><td>Le PNG ne rend pas pareil sur une autre machine</td><td>Le rendu utilise les polices installées localement</td><td>Utiliser le SVG, ou vérifier le rendu sur la machine cible</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="forecast-vue-densemble.html">Vue d'ensemble</a> — où se trouve le bouton d'export dans le panneau et dans la fenêtre.</li>
+      <li><a href="forecast-scenarios-notes-rapports.html">Scénarios, notes et rapports</a> — ce qui alimente tous les exports.</li>
+      <li><a href="forecast-analyse-avancee.html">Analyse avancée</a> — ce que recouvrent décomposition, écarts notables, importance des variables et dérive.</li>
+      <li><a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a> — les résultats d'évaluation, présents dans le JSON, le PDF et le presse-papiers.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

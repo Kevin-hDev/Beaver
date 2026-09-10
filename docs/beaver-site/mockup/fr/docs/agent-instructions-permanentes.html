@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Instructions permanentes</title>
+<meta name="description" content="AGENTS.md et fichiers de personnalité : où placer tes consignes, dans quel ordre elles sont assemblées et où elles ne sont pas transmises.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Instructions permanentes</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-instructions-permanentes.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/agent-instructions-permanentes.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Instructions <em>permanentes</em></h1>
+    <p>Des consignes que l'agent applique à chaque conversation, sans que tu aies à les répéter. Six sources sont assemblées dans un ordre précis, et cet ordre détermine qui gagne en cas de contradiction — c'est l'information à connaître quand une consigne semble ignorée.</p>
+
+    <h2 id="deux-mecanismes">Les deux mécanismes</h2>
+    <table>
+      <caption class="crumb">AGENTS.md et personnalité, deux façons de faire</caption>
+      <tr><th></th><th>AGENTS.md</th><th>Personnalité</th></tr>
+      <tr><td>Contenu</td><td>Conventions, commandes du projet, interdits</td><td>Ton, comportement, façon de travailler</td></tr>
+      <tr><td>Portée</td><td>Global et par projet</td><td>Global</td></tr>
+      <tr><td>Format</td><td>Markdown libre</td><td>Fichiers Markdown activables un par un</td></tr>
+      <tr><td>Emplacement</td><td>Dossier de données et dossier du projet</td><td><code>memory/core/</code> et <code>inbox/</code></td></tr>
+    </table>
+    <p>Les deux se cumulent. Un troisième mécanisme existe pour ce qui doit évoluer tout seul : la <a href="agent-memoire.html">mémoire</a>. La distinction vaut d'être posée — <code>AGENTS.md</code> est ce que <b>tu</b> écris, la mémoire est ce que l'<b>agent</b> retient.</p>
+
+    <h2 id="ordre-assemblage">AGENTS.md — l'ordre d'assemblage</h2>
+    <p>Six sources, assemblées dans cet ordre.</p>
+    <table>
+      <caption class="crumb">L'ordre de lecture des sources</caption>
+      <tr><th>Ordre</th><th>Source</th><th>Emplacement</th></tr>
+      <tr><td>1</td><td>Instructions globales</td><td><code>AGENTS.md</code> du dossier de données</td></tr>
+      <tr><td>2</td><td>Instructions importées activées</td><td>Documents repris d'un autre assistant</td></tr>
+      <tr><td>3</td><td>Règles externes sélectionnées</td><td>Règles importées, triées par source</td></tr>
+      <tr><td>4</td><td>Instructions de projet</td><td><code>AGENTS.md</code> à la racine du projet</td></tr>
+      <tr><td>5</td><td>Instructions de projet</td><td><code>.cl-go/AGENTS.md</code> dans le projet</td></tr>
+      <tr><td>6</td><td>Règles de projet</td><td><code>.cl-go/rules/*.md</code>, triées par nom de fichier</td></tr>
+    </table>
+    <p>L'ensemble est précédé d'un en-tête qui indique au modèle qu'il doit suivre ces instructions à la lettre, et que les instructions de projet, plus spécifiques, viennent après les globales. Chaque section est étiquetée par sa provenance, ce qui permet au modèle de distinguer une consigne globale d'une consigne de projet.</p>
+    <div class="callout">
+      <span class="t">Qui gagne en cas de contradiction</span>
+      Les instructions de projet sont lues après les instructions globales, et le modèle est explicitement informé qu'elles sont plus spécifiques. En cas de contradiction, c'est le projet qui doit l'emporter.
+    </div>
+
+    <h2 id="ou-placer">Où placer tes instructions</h2>
+    <ul>
+      <li><b>Ce qui vaut pour tout ton travail</b> → <code>AGENTS.md</code> du dossier de données, modifiable depuis l'application.</li>
+      <li><b>Ce qui vaut pour un projet</b> → <code>AGENTS.md</code> à la racine du projet. Il se versionne avec le code, donc il suit le dépôt et profite à toute l'équipe.</li>
+      <li><b>Des règles nombreuses sur un projet</b> → des fichiers séparés dans <code>.cl-go/rules/</code>, un par sujet. Ils sont lus par ordre alphabétique : numérote-les pour fixer leur ordre.</li>
+    </ul>
+    <div class="callout">
+      <span class="t">AGENTS.md se versionne</span>
+      Placé à la racine d'un projet, <code>AGENTS.md</code> suit ton dépôt Git. Toute l'équipe travaille alors avec les mêmes consignes.
+    </div>
+
+    <h2 id="personnalite">La personnalité</h2>
+    <p>Des fichiers Markdown <b>activables individuellement</b>. Quatre existent à l'installation, <b>tous désactivés par défaut</b>, et ils ne vivent pas tous au même endroit.</p>
+    <table>
+      <caption class="crumb">Les quatre fichiers de personnalité</caption>
+      <tr><th>Fichier</th><th>Emplacement</th><th>Objet</th></tr>
+      <tr><td><code>identity.md</code></td><td><code>memory/core/</code></td><td>Qui est l'agent</td></tr>
+      <tr><td><code>principles.md</code></td><td><code>memory/core/</code></td><td>Ses principes de travail</td></tr>
+      <tr><td><code>user.md</code></td><td><code>memory/core/</code></td><td>Qui tu es</td></tr>
+      <tr><td><code>idea-discovery.md</code></td><td><code>inbox/</code></td><td>Sa façon d'explorer des idées</td></tr>
+    </table>
+    <p>Seuls les fichiers activés sont injectés ; l'activation de chacun est enregistrée dans <code>personality-injection.json</code>. À ces quatre s'ajoute le fichier <code>AGENTS.md</code> global, présenté dans le même écran : c'est <b>celui-là</b> que l'application modifie quand tu édites <code>AGENTS.md</code> depuis la section Personnalité — jamais celui d'un projet.</p>
+    <p><b>La liste est figée.</b> Les trois emplacements et les noms de fichiers sont fixés par le code : un fichier déposé à la main dans <code>memory/core/</code> n'apparaîtra pas dans l'écran Personnalité et ne sera jamais injecté.</p>
+
+    <h2 id="non-injectees">Où les instructions permanentes ne sont pas injectées</h2>
+    <div class="callout">
+      <span class="t">Attention</span>
+      Dans deux situations, ni <code>AGENTS.md</code> ni les fichiers de personnalité ne sont injectés : <b>en mode Chatbot</b> et <b>dans une session de sous-agent</b>. Une consigne qui semble ignorée dans l'un de ces deux cas l'est réellement — elle n'a pas été transmise.
+    </div>
+    <p>Pour les sous-agents, c'est cohérent avec leur principe : un enfant ne voit rien de la conversation parente. Mais si tu as écrit tes conventions de projet dans <code>AGENTS.md</code>, il faut savoir qu'elles ne les suivent pas, et les reprendre dans l'instruction de délégation.</p>
+
+    <h2 id="limite-taille">La limite de taille</h2>
+    <p><b>200 Ko au total</b>, toutes sources confondues. Quand la limite est atteinte, les instructions restantes sont omises et un avertissement est ajouté.</p>
+    <p>Point important : <b>l'ordre détermine ce qui survit</b>. Les sources lues en premier — les instructions globales — passent ; celles de la fin — les règles de projet — sont les premières sacrifiées. Si tu accumules des règles, allège d'abord le global.</p>
+
+    <h2 id="bien-ecrire">Écrire de bonnes instructions</h2>
+    <ul>
+      <li><b>Être impératif et précis.</b> « Utilise <code>npm test</code> avant de conclure » plutôt que « les tests sont importants ».</li>
+      <li><b>Donner la raison</b> quand elle n'est pas évidente. Une règle sans son pourquoi ne couvre que les cas prévus.</li>
+      <li><b>Ne pas dupliquer</b> entre le global et le projet : deux consignes qui se recouvrent finissent par se contredire sur un cas limite.</li>
+      <li><b>Rester bref.</b> Ces instructions occupent du contexte à chaque conversation, sur les 200 Ko disponibles.</li>
+    </ul>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Une consigne semble ignorée</td><td>Contredite par une source lue plus tard</td><td>Vérifier l'ordre d'assemblage</td></tr>
+      <tr><td>Une règle de projet n'a aucun effet</td><td>Limite de 200 Ko atteinte, les dernières sources sont omises</td><td>Alléger les instructions globales</td></tr>
+      <tr><td>Les fichiers de personnalité n'ont pas d'effet</td><td>Désactivés par défaut</td><td>Les activer dans la section Personnalité</td></tr>
+      <tr><td>Aucune instruction permanente ne semble appliquée</td><td>Conversation en mode Chatbot, ou session de sous-agent</td><td>Changer de mode ; pour un sous-agent, écrire la consigne dans l'instruction de délégation</td></tr>
+      <tr><td>Un fichier ajouté à la main dans <code>memory/core/</code> n'apparaît nulle part</td><td>La liste des fichiers de personnalité est figée</td><td>Employer <code>AGENTS.md</code> pour une consigne supplémentaire</td></tr>
+      <tr><td><code>idea-discovery.md</code> est introuvable dans <code>memory/core/</code></td><td>Il vit dans <code>inbox/</code></td><td>Normal</td></tr>
+      <tr><td>Un fichier de <code>.cl-go/rules/</code> est ignoré</td><td>Seuls les fichiers <code>.md</code> sont lus</td><td>Renommer avec l'extension <code>.md</code></td></tr>
+      <tr><td>L'ordre des règles de projet n'est pas celui voulu</td><td>Tri alphabétique</td><td>Préfixer par un numéro</td></tr>
+      <tr><td>Des instructions importées apparaissent sans avoir été écrites</td><td>Reprises d'un autre assistant lors de l'import</td><td>Les désactiver dans les réglages d'import</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-memoire.html">Mémoire persistante</a> — ce que l'agent retient de lui-même.</li>
+      <li><a href="agent-prompts-systeme.html">Prompts système</a> — les instructions fournies par Beaver, en amont des tiennes.</li>
+      <li><a href="agent-skills.html">Skills</a> — pour une procédure détaillée qui ne doit pas peser en permanence.</li>
+      <li><a href="demarrage-importer.html">Importer d'un autre agent</a> — l'origine des instructions importées.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

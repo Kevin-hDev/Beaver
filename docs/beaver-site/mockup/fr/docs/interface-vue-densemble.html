@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Vue d'ensemble de l'interface</title>
+<meta name="description" content="Le nom de chaque zone de l'écran de Beaver : les quatre sections, la barre d'outils, les réglages et les commandes de fenêtre.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Vue d'ensemble</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-vue-densemble.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/interface-vue-densemble.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Ce que tu <em>regardes</em></h1>
+    <p>Tu viens d'ouvrir Beaver. Cette page nomme chaque zone de l'écran et te renvoie vers sa page détaillée. Elle ne décrit aucune procédure : c'est une carte, pas un mode d'emploi.</p>
+
+    <h2 id="les-quatre-sections">Les quatre sections de l'application</h2>
+    <p>La navigation principale compte <b>quatre destinations</b>, dans cet ordre.</p>
+
+    <table>
+      <caption class="crumb">Les quatre destinations de la navigation principale</caption>
+      <tr><th>Section</th><th>Contenu</th></tr>
+      <tr><td><b>Sessions</b></td><td>Les conversations avec l'agent — le cœur de l'application</td></tr>
+      <tr><td><b>Réveils</b></td><td>Les instructions programmées et leur historique</td></tr>
+      <tr><td><b>Personnalité</b></td><td>Les fichiers qui définissent le comportement de l'agent</td></tr>
+      <tr><td><b>Réglages</b></td><td>La configuration complète</td></tr>
+    </table>
+
+    <h2 id="organisation-de-l-ecran">L'organisation de l'écran</h2>
+    <p>De gauche à droite :</p>
+    <ul>
+      <li><b>La barre latérale</b> — la liste des éléments de la section active : conversations, réveils, fichiers de personnalité. Sa largeur est ajustable, et elle se masque avec <b>⌘B</b>.</li>
+      <li><b>La zone centrale</b> — la conversation, ou le contenu de la section.</li>
+      <li><b>Le panneau latéral</b> — prévisualisation, navigateur ou Forecast, au choix. Voir <a href="interface-panneau-lateral.html">Panneau latéral</a>.</li>
+      <li><b>Le terminal</b> — il s'ouvre en bas avec <b>⌘J</b>. Voir <a href="interface-terminal.html">Terminal intégré</a>.</li>
+    </ul>
+    <p>Quand la fenêtre devient trop étroite, l'application replie d'elle-même la barre latérale et passe la conversation en affichage compact. C'est voulu, et réversible.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Chaque conversation a son environnement : modèle, permissions, répertoire de travail et outils actifs lui sont propres. Changer de conversation change le contexte de travail, pas seulement le fil de discussion.
+    </div>
+
+    <h2 id="barre-d-outils">La barre d'outils</h2>
+    <p>En haut de la fenêtre :</p>
+    <ul>
+      <li>la navigation avant et arrière dans l'historique de consultation ;</li>
+      <li>la recherche (<b>⌘G</b>) ;</li>
+      <li>une nouvelle conversation (<b>⌥⌘N</b>) ;</li>
+      <li>les notifications de mise à jour, avec une barre de progression pendant un téléchargement ;</li>
+      <li>l'indicateur de téléchargement de modèle en cours.</li>
+    </ul>
+
+    <h2 id="les-reglages">Les réglages</h2>
+    <p><b>Cinq sections, dix-sept onglets d'origine</b> — davantage si tu installes des extensions. Le regroupement suit ce qu'on configure, pas l'usage qu'on en fait.</p>
+
+    <table>
+      <caption class="crumb">Les dix-sept onglets de réglages livrés avec l'application</caption>
+      <tr><th>Section</th><th>Onglets</th></tr>
+      <tr><td>Préférences</td><td>Général, Mascotte, Raccourcis</td></tr>
+      <tr><td>Agent</td><td>Mémoire, Prompt système, Outils, Avancé</td></tr>
+      <tr><td>Modèles</td><td>Ollama, Forecast, LLM</td></tr>
+      <tr><td>Intégrations</td><td>Fournisseurs, Connecteurs, Canaux, Extensions</td></tr>
+      <tr><td>Application</td><td>Mises à jour, Conversations archivées, À propos</td></tr>
+    </table>
+
+    <p>Cette liste n'est pas figée : une extension installée peut contribuer son propre onglet de réglages. Les dix-sept onglets ci-dessus sont ceux d'origine, pas un total définitif.</p>
+
+    <p>Deux voisinages méritent une explication. Ollama et Forecast se suivent parce qu'on y installe et paramètre tous deux des modèles locaux, même si l'un produit du texte et l'autre des prévisions. Les fournisseurs, eux, sont rangés dans les intégrations parce qu'on y saisit une clé et une connexion, pas un modèle.</p>
+
+    <h2 id="les-commandes-de-fenetre">Les commandes de fenêtre</h2>
+    <p>L'application dessine ses propres commandes de fenêtre, adaptées au système.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Sur macOS, fermer la fenêtre ne quitte pas l'application : elle reste dans le Dock. Utilise <b>⌘Q</b> pour quitter réellement. Sur Windows et Linux, la croix quitte l'application. Le détail est dans <a href="demarrage-premier-lancement.html">Premier lancement</a>.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui surprend le plus souvent à la découverte</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>La barre latérale disparaît</td><td>Repli automatique sur fenêtre étroite</td><td>Élargir la fenêtre, ou <b>⌘B</b></td></tr>
+      <tr><td>Un réglage attendu est introuvable</td><td>Dix-sept onglets répartis en cinq sections, plus ceux des extensions</td><td>Voir le tableau ci-dessus</td></tr>
+      <tr><td>L'application semble fermée mais tourne (macOS)</td><td>La fermeture masque la fenêtre</td><td><b>⌘Q</b> pour quitter</td></tr>
+    </table>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

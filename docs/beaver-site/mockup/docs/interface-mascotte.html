@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Mascotte</title>
-<meta name="description" content="Un personnage animé qui reflète l'état de l'agent dans sa propre fenêtre — éteint par défaut, à activer dans les réglages.">
+<title>Beaver Docs — Mascot</title>
+<meta name="description" content="An animated character that reflects the agent's state in its own window — off by default, to be enabled in the settings.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,43 +19,43 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Interface / Mascotte</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="interface-mascotte.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Interface / Mascot</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/interface-mascotte.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="interface-mascotte.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Savoir où en est l'agent, <em>sans</em> regarder</h1>
-    <p>La mascotte est un personnage animé qui reflète l'état de l'agent : au repos, au travail, tâche réussie, tâche échouée. Elle vit dans sa propre fenêtre, et elle est éteinte tant que tu ne l'allumes pas.</p>
+    <h1>Knowing where the agent stands, <em>without</em> looking</h1>
+    <p>The mascot is an animated character that reflects the agent's state: idle, working, task succeeded, task failed. It lives in its own window, and it stays off until you turn it on.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Elle est éteinte au départ. La mascotte n'apparaît pas tant que tu ne l'actives pas dans <b>Réglages › Mascotte</b>. C'est un choix, pas une panne.
+      It is off to begin with. The mascot does not appear until you enable it in <b>Settings › Mascot</b>. That is a choice, not a fault.
     </div>
 
-    <h2 id="a-quoi-elle-sert">À quoi elle sert</h2>
-    <p>Ce n'est pas seulement décoratif. Sur une tâche longue, elle t'indique d'un coup d'œil si l'agent travaille encore ou s'il a terminé, sans que tu aies à revenir dans la conversation.</p>
+    <h2 id="a-quoi-elle-sert">What it is for</h2>
+    <p>It is not only decorative. On a long task, it tells you at a glance whether the agent is still working or has finished, without you having to go back into the conversation.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Surveiller sans rester devant : la mascotte a sa propre fenêtre. Laisse-la visible pendant que tu travailles ailleurs, elle t'indique quand l'agent a terminé.
+      Keeping an eye out without sitting in front of it: the mascot has its own window. Leave it visible while you work elsewhere, and it will tell you when the agent is done.
     </div>
 
-    <h2 id="les-huit-personnages">Les huit personnages</h2>
-    <p>Huit personnages sont disponibles. Le castor, <code>cl-go-beaver</code>, est celui par défaut.</p>
+    <h2 id="les-huit-personnages">The eight characters</h2>
+    <p>Eight characters are available. The beaver, <code>cl-go-beaver</code>, is the default one.</p>
 
     <table>
-      <caption class="crumb">Les huit personnages disponibles</caption>
-      <tr><th>Personnage</th></tr>
-      <tr><td><code>cl-go-beaver</code> — le castor, personnage par défaut</td></tr>
+      <caption class="crumb">The eight available characters</caption>
+      <tr><th>Character</th></tr>
+      <tr><td><code>cl-go-beaver</code> — the beaver, default character</td></tr>
       <tr><td><code>circuit</code></td></tr>
       <tr><td><code>kova</code></td></tr>
       <tr><td><code>nival</code></td></tr>
@@ -64,42 +65,42 @@
       <tr><td><code>pico</code></td></tr>
     </table>
 
-    <h2 id="les-etats">Les états</h2>
-    <p>Les états suivent les événements des conversations en cours. <b>Huit animations</b> existent : le repos (<code>Idle</code>), le travail (<code>Thinking</code>, <code>WorkLaptop</code>), ainsi que <code>ExploreBook</code>, <code>Waiting</code>, <code>Success</code>, <code>Failed</code> et <code>Alert</code>.</p>
+    <h2 id="les-etats">The states</h2>
+    <p>The states follow the events of the conversations in progress. <b>Eight animations</b> exist: idle (<code>Idle</code>), working (<code>Thinking</code>, <code>WorkLaptop</code>), plus <code>ExploreBook</code>, <code>Waiting</code>, <code>Success</code>, <code>Failed</code> and <code>Alert</code>.</p>
     <ul>
-      <li><b>Jusqu'à 32 conversations</b> sont suivies simultanément.</li>
-      <li>Un état de <b>réussite</b> s'affiche pendant <b>2,2 secondes</b>.</li>
-      <li>Un état d'<b>échec</b> s'affiche pendant <b>2,6 secondes</b>.</li>
-      <li>Un état d'<b>alerte</b> s'affiche pendant <b>1,8 seconde</b>.</li>
-      <li>L'état tient compte du fait que l'application a le focus ou non.</li>
+      <li><b>Up to 32 conversations</b> are tracked at the same time.</li>
+      <li>A <b>success</b> state is shown for <b>2.2 seconds</b>.</li>
+      <li>A <b>failure</b> state is shown for <b>2.6 seconds</b>.</li>
+      <li>An <b>alert</b> state is shown for <b>1.8 seconds</b>.</li>
+      <li>The state takes into account whether the application has focus or not.</li>
     </ul>
 
-    <h2 id="la-fenetre-dediee">La fenêtre dédiée</h2>
-    <p>La mascotte dispose de sa propre fenêtre, séparée de la fenêtre principale. Elle peut donc rester visible pendant que tu travailles dans une autre application — c'est là tout son intérêt pour surveiller une tâche longue sans garder Beaver au premier plan.</p>
+    <h2 id="la-fenetre-dediee">The dedicated window</h2>
+    <p>The mascot has its own window, separate from the main one. It can therefore stay visible while you work in another application — that is exactly what makes it useful for watching a long task without keeping Beaver in the foreground.</p>
 
-    <h2 id="les-reglages">Les réglages</h2>
-    <p>Un onglet dédié : <b>Réglages › Mascotte</b>. Trois réglages, pas deux.</p>
+    <h2 id="les-reglages">The settings</h2>
+    <p>A dedicated tab: <b>Settings › Mascot</b>. Three settings, not two.</p>
     <ul>
-      <li><b>Activation</b> — <b>éteinte par défaut</b>. Rien ne s'affiche tant que tu ne l'allumes pas.</li>
-      <li><b>Choix du personnage</b>, parmi les huit.</li>
-      <li><b>Taille</b>, en pourcentage, de <b>70 %</b> à <b>140 %</b>, avec aperçu en direct. Le défaut est <b>100 %</b>, et une valeur hors de cet intervalle est ramenée dedans.</li>
+      <li><b>Enabling</b> — <b>off by default</b>. Nothing is shown until you turn it on.</li>
+      <li><b>Choice of character</b>, among the eight.</li>
+      <li><b>Size</b>, as a percentage, from <b>70%</b> to <b>140%</b>, with a live preview. The default is <b>100%</b>, and a value outside that range is brought back inside it.</li>
     </ul>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>La mascotte n'apparaît nulle part</td><td>Elle est éteinte par défaut</td><td>L'activer dans <b>Réglages › Mascotte</b></td></tr>
-      <tr><td>La mascotte ne réagit pas</td><td>Aucune conversation active, ou plus de 32 suivies</td><td>Vérifier qu'une conversation travaille</td></tr>
-      <tr><td>L'état de réussite disparaît trop vite</td><td>Affiché 2,2 secondes</td><td>Comportement voulu</td></tr>
-      <tr><td>La fenêtre est perdue de vue</td><td>Fenêtre séparée</td><td>La retrouver via le gestionnaire de fenêtres du système</td></tr>
+      <caption class="crumb">Common symptoms and what to make of them</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The mascot appears nowhere</td><td>It is off by default</td><td>Enable it in <b>Settings › Mascot</b></td></tr>
+      <tr><td>The mascot does not react</td><td>No active conversation, or more than 32 being tracked</td><td>Check that a conversation is working</td></tr>
+      <tr><td>The success state disappears too fast</td><td>Shown for 2.2 seconds</td><td>Intended behavior</td></tr>
+      <tr><td>The window is lost from sight</td><td>Separate window</td><td>Find it again through the system's window manager</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="reference-themes.html">Thèmes et apparence</a></li>
-      <li><a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a> — où trouver les réglages</li>
+      <li><a href="reference-themes.html">Themes and appearance</a></li>
+      <li><a href="interface-vue-densemble.html">Interface overview</a> — where to find the settings</li>
     </ul>
   </main>
 

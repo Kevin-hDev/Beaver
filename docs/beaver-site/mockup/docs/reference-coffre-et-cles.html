@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Le coffre et les clés API</title>
-<meta name="description" content="Où va ta clé API quand tu la confies à Beaver, comment elle est chiffrée, et pourquoi personne — pas même Beaver — ne peut la relire ensuite.">
+<title>Beaver Docs — The vault and API keys</title>
+<meta name="description" content="Where your API key goes when you hand it to Beaver, how it is encrypted, and why nobody — not even Beaver — can read it back afterwards.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,160 +18,161 @@
 <body>
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Référence / Le coffre et les clés</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="reference-coffre-et-cles.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Reference / The vault and keys</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reference-coffre-et-cles.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reference-coffre-et-cles.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
   <main class="doc">
-    <h1>Où va ta <em>clé</em></h1>
-    <p>Une clé API est un mot de passe : qui la détient peut dépenser sur ton compte chez le fournisseur. Beaucoup d'applications les rangent dans un fichier de configuration en clair, lisible par n'importe quel programme tournant sous ta session. Beaver ne fait pas cela, et cette page explique ce qu'il fait à la place.</p>
+    <h1>Where your <em>key</em> goes</h1>
+    <p>An API key is a password: whoever holds it can spend on your account at the provider. Many apps store them in a configuration file in the clear, readable by any program running under your session. Beaver does not do that, and this page explains what it does instead.</p>
     <div class="callout">
       <span class="t">Note</span>
-      <b>Le résumé en quatre phrases.</b> Tes clés vivent dans un seul fichier chiffré, <code>secrets.enc</code>, lisible par ton seul compte utilisateur. La clé qui l'ouvre n'est pas dedans : elle est confiée au gestionnaire de secrets de ton système — Trousseau sur macOS, Gestionnaire d'identifiants sur Windows, service de secrets du bureau sur Linux. L'interface de Beaver ne dispose d'aucune commande capable de relire une clé, et il n'en existe pas de version cachée. Copier le fichier sur une autre machine ne donne accès à rien.
+      <b>The summary in four sentences.</b> Your keys live in a single encrypted file, <code>secrets.enc</code>, readable by your user account alone. The key that opens it is not inside: it is entrusted to your system's secret manager — Keychain on macOS, Credential Manager on Windows, the desktop secret service on Linux. Beaver's interface has no command able to read a key back, and there is no hidden version of one. Copying the file to another machine gives access to nothing.
     </div>
-    <h2 id="le-coffre">Le coffre, concrètement</h2>
-    <p>Un <b>seul fichier</b>, à un <b>seul endroit</b>, identique sur les trois systèmes.</p>
+    <h2 id="le-coffre">The vault, concretely</h2>
+    <p>A <b>single file</b>, in a <b>single place</b>, identical on all three systems.</p>
     <div class="term">
       <div class="term-bar"><i></i><i></i><i></i></div>
       <pre class="term-body"><span class="prompt">$</span> ~/.local/share/cl-go-dash/secrets.enc</pre>
     </div>
-    <p>Ce fichier contient trois champs : un <b>numéro de format</b> (<b>1</b> aujourd'hui), un <b>nombre tiré au hasard</b> différent à chaque écriture, et <b>tous tes secrets chiffrés en un seul bloc illisible</b>. Rien d'autre — aucun nom de fournisseur, aucun indice sur ce qu'il y a dedans : la liste elle-même est à l'intérieur du bloc chiffré.</p>
-    <p><b>Le fichier est réservé à ton compte utilisateur.</b> Sous macOS et Linux, il est créé en <code>0600</code> — toi seul peux le lire et l'écrire — et les dossiers en <code>0700</code>. Sous Windows, Beaver pose une liste de contrôle d'accès qui ne contient qu'une entrée, la tienne, refuse l'héritage des droits du dossier parent, puis <b>relit ce qu'il a posé pour vérifier</b>. Ces permissions sont revérifiées et réparées à chaque démarrage.</p>
-    <p><b>Le fichier n'est jamais écrit à moitié.</b> Beaver écrit d'abord un fichier temporaire, le force sur le disque, corrige ses permissions, puis le renomme par-dessus l'ancien — un renommage est une opération indivisible pour le système. Une coupure de courant pendant une sauvegarde laisse donc soit l'ancien coffre entier, soit le nouveau, jamais un mélange.</p>
-    <h2 id="le-chiffrement">Le chiffrement, sans jargon</h2>
-    <p>L'algorithme est <b>XChaCha20-Poly1305</b>. Il fait deux choses à la fois, et les deux comptent.</p>
+    <p>That file contains three fields: a <b>format number</b> (<b>1</b> today), a <b>randomly drawn number</b> that differs on each write, and <b>all your secrets encrypted into a single unreadable block</b>. Nothing else — no provider name, no clue about what is inside: the list itself is within the encrypted block.</p>
+    <p><b>The file is reserved for your user account.</b> On macOS and Linux, it is created as <code>0600</code> — you alone can read and write it — and the folders as <code>0700</code>. On Windows, Beaver sets an access control list holding a single entry, yours, refuses to inherit the parent folder's rights, then <b>reads back what it set to check</b>. These permissions are rechecked and repaired at every startup.</p>
+    <p><b>The file is never written halfway.</b> Beaver first writes a temporary file, forces it to disk, fixes its permissions, then renames it over the old one — a rename is an indivisible operation for the system. A power cut during a save therefore leaves either the old vault whole, or the new one, never a mixture.</p>
+    <h2 id="le-chiffrement">The encryption, without jargon</h2>
+    <p>The algorithm is <b>XChaCha20-Poly1305</b>. It does two things at once, and both matter.</p>
     <ul>
-      <li><b>XChaCha20</b> rend le contenu illisible sans la clé — la partie qu'on imagine spontanément en entendant « chiffré ».</li>
-      <li><b>Poly1305</b> ajoute une <b>signature de contrôle</b> : si un seul octet du fichier est modifié, par un autre programme, par un disque défaillant ou par quelqu'un qui essaie de bricoler le fichier, le déchiffrement <b>échoue</b> au lieu de renvoyer des données douteuses.</li>
+      <li><b>XChaCha20</b> makes the content unreadable without the key — the part one spontaneously pictures on hearing “encrypted”.</li>
+      <li><b>Poly1305</b> adds a <b>check signature</b>: if a single byte of the file is modified, by another program, by a failing disk or by someone trying to tamper with the file, decryption <b>fails</b> instead of returning dubious data.</li>
     </ul>
-    <p>Deux propriétés s'y ajoutent. <b>Chaque écriture utilise un nombre à usage unique différent</b>, 24 octets tirés d'un générateur aléatoire de qualité cryptographique : sauvegarder deux fois le même contenu produit deux fichiers différents à l'œil, et personne ne peut en déduire que rien n'a changé. Et <b>un coffre écrit par une version future de Beaver est refusé, pas réécrit</b> : Beaver préfère s'arrêter plutôt que de détruire des données qu'il ne comprend pas.</p>
-    <p>Une phrase suffit pour l'essentiel : <b>copier <code>secrets.enc</code> sur une autre machine ne donne accès à rien.</b> Le fichier ne contient pas de quoi s'ouvrir lui-même.</p>
-    <h2 id="la-cle-maitresse">La clé maîtresse</h2>
-    <p>La clé qui ouvre le coffre n'est pas dans le coffre — ce serait mettre la clé de la maison sous le paillasson. Elle est confiée au gestionnaire de secrets de ton système, celui-là même qui garde les mots de passe de ton navigateur.</p>
+    <p>Two properties come on top. <b>Each write uses a different single-use number</b>, 24 bytes drawn from a cryptographic-quality random generator: saving the same content twice produces two files that look different, and nobody can deduce from them that nothing has changed. And <b>a vault written by a future version of Beaver is refused, not rewritten</b>: Beaver would rather stop than destroy data it does not understand.</p>
+    <p>One sentence covers the essential: <b>copying <code>secrets.enc</code> to another machine gives access to nothing.</b> The file does not contain what it takes to open itself.</p>
+    <h2 id="la-cle-maitresse">The master key</h2>
+    <p>The key that opens the vault is not in the vault — that would be putting the house key under the doormat. It is entrusted to your system's secret manager, the very one that keeps your browser's passwords.</p>
     <table>
-      <caption class="crumb">Où vit la clé maîtresse, système par système</caption>
-      <tr><th>Système</th><th>Gestionnaire de secrets</th></tr>
-      <tr><td>macOS</td><td><b>Trousseau d'accès</b></td></tr>
-      <tr><td>Windows</td><td><b>Gestionnaire d'identifiants</b></td></tr>
-      <tr><td>Linux</td><td><b>Service de secrets du bureau</b> (GNOME Keyring, KWallet)</td></tr>
+      <caption class="crumb">Where the master key lives, system by system</caption>
+      <tr><th>System</th><th>Secret manager</th></tr>
+      <tr><td>macOS</td><td><b>Keychain Access</b></td></tr>
+      <tr><td>Windows</td><td><b>Credential Manager</b></td></tr>
+      <tr><td>Linux</td><td><b>Desktop secret service</b> (GNOME Keyring, KWallet)</td></tr>
     </table>
-    <p>L'entrée porte le nom de service <code>cl-go-dash</code> et l'identifiant <code>master-key</code> : c'est sous ce nom qu'on la retrouve. Au tout premier lancement, Beaver tire <b>32 octets</b> d'un générateur aléatoire de qualité cryptographique et les y dépose. Il ne dérive pas cette clé d'un mot de passe et ne la calcule pas à partir de la machine : elle est purement aléatoire.</p>
-    <p><b>Un seul accès au trousseau, au démarrage.</b> La clé maîtresse est lue une fois, à l'initialisation. Tu n'es pas sollicité à chaque requête.</p>
+    <p>The entry carries the service name <code>cl-go-dash</code> and the identifier <code>master-key</code>: that is the name to look for. On the very first launch, Beaver draws <b>32 bytes</b> from a cryptographic-quality random generator and stores them there. It does not derive that key from a password and does not compute it from the machine: it is purely random.</p>
+    <p><b>A single keyring access, at startup.</b> The master key is read once, at initialization. You are not prompted on every request.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Vider le trousseau de ton système rend tes clés illisibles.</b> Beaver refuse volontairement de fabriquer une nouvelle clé maîtresse quand l'ancienne a disparu mais que le coffre existe encore : cela écraserait silencieusement des données encore valables. Si tu vides le trousseau, ou si tu changes de machine sans lui, il faudra <b>ressaisir toutes tes clés</b>. Aucune sauvegarde de <code>secrets.enc</code> ne t'aidera : il ne contient pas de quoi s'ouvrir.
+      <span class="t">Warning</span>
+      <b>Emptying your system keyring makes your keys unreadable.</b> Beaver deliberately refuses to make a new master key when the old one has disappeared but the vault still exists: that would silently overwrite data that is still valid. If you empty the keyring, or if you change machine without it, you will have to <b>enter all your keys again</b>. No backup of <code>secrets.enc</code> will help you: it does not contain what it takes to open itself.
     </div>
-    <h2 id="cycle-de-vie">Le cycle de vie d'une clé</h2>
-    <p>De la saisie à l'appel, en cinq temps.</p>
+    <h2 id="cycle-de-vie">The life cycle of a key</h2>
+    <p>From entry to call, in five stages.</p>
     <ul>
-      <li><b>La saisie.</b> Tu colles la clé dans le champ de l'écran des clés API. Dès que le travail est fait, la copie transmise par l'interface est <b>écrasée en mémoire</b>.</li>
-      <li><b>La validation, une seule fois, à l'entrée.</b> Beaver vérifie que le fournisseur existe dans son catalogue, que la clé n'est pas vide, qu'elle fait au plus <b>256 caractères</b> et qu'elle ne contient aucun caractère de contrôle. Une clé aberrante est refusée plutôt que rangée.</li>
-      <li><b>L'écriture dans le coffre.</b> Elle est transactionnelle : Beaver fabrique une copie complète du contenu du coffre, y applique la modification, vérifie l'ensemble, écrit le fichier entier, et seulement ensuite remplace ce qu'il a en mémoire. Si l'écriture échoue, l'état précédent reste en place. La copie de travail est effacée de la mémoire quoi qu'il arrive, y compris en cas d'erreur.</li>
-      <li><b>La vie en mémoire.</b> Le coffre est déchiffré une fois au démarrage, et les clés restent en mémoire pour la durée de la session, chacune dans un conteneur qui efface son contenu quand il est libéré au lieu de le laisser traîner.</li>
-      <li><b>L'appel au fournisseur.</b> Beaver demande une copie protégée de la clé, la pose dans l'en-tête HTTPS, et cette copie est effacée à la fin de l'appel. L'en-tête qui porte le secret est en plus marqué comme sensible auprès de la bibliothèque réseau, ce qui l'exclut de ses propres traces.</li>
+      <li><b>Entry.</b> You paste the key into the field on the API keys screen. As soon as the work is done, the copy passed by the interface is <b>overwritten in memory</b>.</li>
+      <li><b>Validation, once only, on the way in.</b> Beaver checks that the provider exists in its catalog, that the key is not empty, that it is at most <b>256 characters</b> long and that it holds no control character. An aberrant key is refused rather than stored.</li>
+      <li><b>Writing to the vault.</b> It is transactional: Beaver makes a complete copy of the vault's content, applies the change to it, checks the whole thing, writes the entire file, and only then replaces what it holds in memory. If the write fails, the previous state stays in place. The working copy is erased from memory whatever happens, including on error.</li>
+      <li><b>Life in memory.</b> The vault is decrypted once at startup, and the keys stay in memory for the duration of the session, each in a container that erases its content when released instead of leaving it lying around.</li>
+      <li><b>The call to the provider.</b> Beaver asks for a protected copy of the key, puts it in the HTTPS header, and that copy is erased at the end of the call. The header carrying the secret is additionally marked as sensitive with the network library, which excludes it from its own traces.</li>
     </ul>
-    <p>Dit franchement : les clés ne sont pas rechargées depuis le disque à chaque requête, elles sont en mémoire pendant que Beaver tourne. Ce qui est garanti, c'est que <b>chaque copie remise à un appel est effacée dès qu'elle a servi</b>, et que rien n'est laissé en clair après la fermeture de l'application.</p>
-    <h2 id="interface-ne-peut-pas-lire">L'interface ne peut pas relire une clé</h2>
-    <p>C'est la garantie centrale, et elle se démontre par une liste exhaustive plutôt que par une affirmation. Beaver a une partie interface, écrite en JavaScript, et un moteur écrit en Rust. Le seul passage entre les deux est une liste de commandes déclarées une par une : ce qui n'y figure pas n'existe pas pour l'interface.</p>
+    <p>Put plainly: the keys are not reloaded from disk on every request, they are in memory while Beaver runs. What is guaranteed is that <b>every copy handed to a call is erased as soon as it has served</b>, and that nothing is left in the clear after the app closes.</p>
+    <h2 id="interface-ne-peut-pas-lire">The interface cannot read a key back</h2>
+    <p>This is the central guarantee, and it is demonstrated by an exhaustive list rather than by an assertion. Beaver has an interface part, written in JavaScript, and an engine written in Rust. The only passage between the two is a list of commands declared one by one: what is not on it does not exist for the interface.</p>
     <table>
-      <caption class="crumb">Les sept commandes liées aux clés API, liste complète</caption>
-      <tr><th>Commande</th><th>Ce qu'elle fait</th><th>Ce qu'elle renvoie</th></tr>
-      <tr><td><code>set_api_key</code></td><td>Enregistre une clé</td><td>Rien — succès ou erreur</td></tr>
-      <tr><td><code>delete_api_key</code></td><td>Supprime une clé</td><td>Rien</td></tr>
-      <tr><td><code>has_api_key</code></td><td>Dit si un fournisseur est configuré</td><td><b>Oui / non</b></td></tr>
-      <tr><td><code>list_configured_providers</code></td><td>Liste les fournisseurs configurés</td><td>Des identifiants, jamais des clés</td></tr>
-      <tr><td><code>get_provider_connection</code></td><td>Rappelle les réglages de connexion Qwen</td><td>Région, mode de point d'accès, identifiant d'espace de travail — <b>aucun secret</b></td></tr>
-      <tr><td><code>test_api_key</code></td><td>Teste la clé déjà enregistrée</td><td>Succès ou message d'erreur</td></tr>
-      <tr><td><code>test_api_key_with_value</code></td><td>Teste une clé saisie, avant de l'enregistrer</td><td>Succès ou message d'erreur</td></tr>
+      <caption class="crumb">The seven commands related to API keys, complete list</caption>
+      <tr><th>Command</th><th>What it does</th><th>What it returns</th></tr>
+      <tr><td><code>set_api_key</code></td><td>Stores a key</td><td>Nothing — success or error</td></tr>
+      <tr><td><code>delete_api_key</code></td><td>Deletes a key</td><td>Nothing</td></tr>
+      <tr><td><code>has_api_key</code></td><td>Says whether a provider is configured</td><td><b>Yes / no</b></td></tr>
+      <tr><td><code>list_configured_providers</code></td><td>Lists the configured providers</td><td>Identifiers, never keys</td></tr>
+      <tr><td><code>get_provider_connection</code></td><td>Recalls the Qwen connection settings</td><td>Region, endpoint mode, workspace identifier — <b>no secret</b></td></tr>
+      <tr><td><code>test_api_key</code></td><td>Tests the key already stored</td><td>Success or an error message</td></tr>
+      <tr><td><code>test_api_key_with_value</code></td><td>Tests a key that has been typed, before storing it</td><td>Success or an error message</td></tr>
     </table>
-    <p><b>Aucune commande de lecture n'existe.</b> La même règle vaut pour les comptes web : la commande d'état du compte OpenAI renvoie un booléen « connecté » et l'adresse e-mail, extraite du jeton côté moteur — le jeton, lui, ne franchit jamais la frontière. La liste des connexions par compte renvoie l'identifiant du fournisseur, son nom affiché, l'état de connexion et le nom du compte, jamais un jeton. Pour les connecteurs, il n'existe qu'un test d'existence et une suppression.</p>
+    <p><b>No read command exists.</b> The same rule applies to web accounts: the OpenAI account status command returns a “connected” boolean and the email address, extracted from the token on the engine side — the token itself never crosses the boundary. The list of account connections returns the provider identifier, its display name, the connection state and the account name, never a token. For connectors, there is only an existence test and a deletion.</p>
     <div class="callout">
       <span class="t">Note</span>
-      <b>Une clé enregistrée ne peut plus être affichée</b> — y compris par Beaver. Ce n'est pas un oubli d'ergonomie : c'est ce qui garantit qu'aucun bout d'interface, aucune extension d'interface, aucun défaut d'affichage ne peut faire apparaître ta clé à l'écran. Note-la ailleurs si tu en as besoin, ou génère-en une nouvelle chez le fournisseur.
+      <b>A stored key can no longer be displayed</b> — including by Beaver. This is not an ergonomics oversight: it is what guarantees that no piece of interface, no interface extension, no display fault can make your key appear on screen. Note it down elsewhere if you need it, or generate a new one at the provider.
     </div>
-    <h2 id="ce-que-le-coffre-contient">Ce que le coffre contient en plus des clés</h2>
-    <p>Le coffre n'est pas réservé aux clés de modèles : <b>tout ce qui est secret dans Beaver y va</b>.</p>
+    <h2 id="ce-que-le-coffre-contient">What the vault contains besides keys</h2>
+    <p>The vault is not reserved for model keys: <b>everything secret in Beaver goes into it</b>.</p>
     <ul>
-      <li>Les <b>clés API</b> des fournisseurs de modèles, de recherche web et de prévision.</li>
-      <li>Le compte <b>OpenAI / Codex</b> : jeton d'accès, jeton de renouvellement, échéance.</li>
-      <li>Les comptes <b>Grok (xAI)</b> et <b>Kimi</b>.</li>
-      <li>Les <b>jetons OAuth des connecteurs MCP</b>, et leurs variables d'environnement secrètes.</li>
-      <li>Les identifiants d'application OAuth Google et GitHub.</li>
-      <li>Les <b>jetons des canaux externes</b> — Slack, Discord, Telegram —, une entrée par canal et par compte.</li>
-      <li>Les réglages de connexion Qwen.</li>
+      <li>The <b>API keys</b> of the model, web search and forecasting providers.</li>
+      <li>The <b>OpenAI / Codex</b> account: access token, refresh token, expiry.</li>
+      <li>The <b>Grok (xAI)</b> and <b>Kimi</b> accounts.</li>
+      <li>The <b>OAuth tokens of the MCP connectors</b>, and their secret environment variables.</li>
+      <li>The Google and GitHub OAuth application identifiers.</li>
+      <li>The <b>external channel tokens</b> — Slack, Discord, Telegram —, one entry per channel and per account.</li>
+      <li>The Qwen connection settings.</li>
     </ul>
-    <p>S'y ajoutent des <b>clés techniques que Beaver fabrique lui-même</b>, chacune de 32 octets tirés au hasard à sa première utilisation : celle qui chiffre les sessions du navigateur intégré, celle qui signe les chemins de pièces jointes autorisés, celle qui calcule l'empreinte de continuité de raisonnement, et celle qui signe le journal d'audit des canaux externes.</p>
-    <p><b>Le navigateur intégré mérite une mention à part</b>, parce que c'est là que vivent les sessions de tes comptes web. Elles sont enregistrées dans <code>browser/sessions/</code>, chiffrées avec la même primitive que le coffre, et la clé qui les ouvre est elle-même dans le coffre.</p>
-    <h2 id="ce-qui-n-y-est-pas">Ce qui n'est pas dans le coffre</h2>
-    <p><code>configured-providers.json</code>, le fichier voisin, <b>ne contient aucun secret</b> : seulement une liste triée d'identifiants de fournisseurs, qui sert à savoir <i>quels</i> fournisseurs sont configurés sans avoir à ouvrir le coffre. Il est malgré tout protégé par les mêmes permissions de fichier.</p>
+    <p>To these are added <b>technical keys that Beaver makes itself</b>, each of 32 randomly drawn bytes on its first use: the one that encrypts the built-in browser's sessions, the one that signs the allowed attachment paths, the one that computes the reasoning continuity fingerprint, and the one that signs the external channels' audit log.</p>
+    <p><b>The built-in browser deserves a separate mention</b>, because that is where the sessions of your web accounts live. They are stored in <code>browser/sessions/</code>, encrypted with the same primitive as the vault, and the key that opens them is itself in the vault.</p>
+    <h2 id="ce-qui-n-y-est-pas">What is not in the vault</h2>
+    <p><code>configured-providers.json</code>, the neighboring file, <b>contains no secret</b>: only a sorted list of provider identifiers, used to know <i>which</i> providers are configured without having to open the vault. It is protected by the same file permissions nonetheless.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Une extension approuvée peut demander tes secrets.</b> Le coffre protège tes clés du reste du système. Il ne les protège pas du code que tu as toi-même approuvé : une extension activée peut demander une clé de fournisseur, un jeton de connecteur ou un jeton de canal, et Beaver la lui remet. C'est pourquoi l'activation d'une extension demande une confirmation explicite — voir <a href="integrations-centre-extensions.html">Centre d'extensions</a>.
+      <span class="t">Warning</span>
+      <b>An approved extension can ask for your secrets.</b> The vault protects your keys from the rest of the system. It does not protect them from code you have approved yourself: an enabled extension can ask for a provider key, a connector token or a channel token, and Beaver hands it over. That is why enabling an extension requires an explicit confirmation — see <a href="integrations-centre-extensions.html">Extension center</a>.
     </div>
-    <h2 id="anciens-jetons-hors-coffre">D'anciennes versions rangeaient certains jetons hors du coffre</h2>
-    <p>Tout ce qui est secret va dans le coffre, mais ça n'a pas toujours été vrai. Des versions plus anciennes de Beaver écrivaient deux fichiers de connexion <b>en clair</b>, à côté du coffre plutôt que dedans : celui du compte <b>Kimi</b>, <code>kimi-code.json</code>, et celui du compte <b>Grok</b>, <code>auth.json</code>. Un programme tournant sous ta session pouvait donc les lire, ce que le coffre est précisément là pour empêcher.</p>
-    <p>C'est corrigé, et la correction ne te demande rien : au premier démarrage d'une version récente, Beaver <b>supprime définitivement</b> ces deux fichiers, ainsi qu'une ancienne copie de coffre devenue illisible. L'opération n'a lieu qu'une fois, puis Beaver retient qu'elle est faite. Sur ta machine, ces fichiers n'existent plus.</p>
+    <h2 id="anciens-jetons-hors-coffre">Older versions stored some tokens outside the vault</h2>
+    <p>Everything secret goes into the vault, but that has not always been true. Older versions of Beaver wrote two connection files <b>in the clear</b>, next to the vault rather than inside it: the one for the <b>Kimi</b> account, <code>kimi-code.json</code>, and the one for the <b>Grok</b> account, <code>auth.json</code>. A program running under your session could therefore read them, which is precisely what the vault is there to prevent.</p>
+    <p>That is fixed, and the fix asks nothing of you: on the first startup of a recent version, Beaver <b>permanently deletes</b> those two files, along with an old vault copy that had become unreadable. The operation takes place only once, then Beaver remembers it is done. On your machine, those files no longer exist.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Une vieille sauvegarde peut encore les contenir.</b> Beaver n'a nettoyé que ta machine : si tu retrouves <code>kimi-code.json</code> ou <code>auth.json</code> dans une sauvegarde ancienne de ton ordinateur, ou sur un disque externe, ils peuvent renfermer des jetons <b>encore valables</b>. Supprimer les fichiers ne suffit pas — comme pour une clé API, seule la révocation compte : va <b>révoquer les accès correspondants chez Kimi et chez Grok</b>, puis reconnecte-toi depuis Beaver.
+      <span class="t">Warning</span>
+      <b>An old backup may still contain them.</b> Beaver only cleaned your machine: if you find <code>kimi-code.json</code> or <code>auth.json</code> in an old backup of your computer, or on an external disk, they may hold tokens that are <b>still valid</b>. Deleting the files is not enough — as with an API key, only revocation counts: go and <b>revoke the corresponding accesses at Kimi and at Grok</b>, then sign in again from Beaver.
     </div>
-    <h2 id="supprimer">Supprimer une clé, se déconnecter d'un compte</h2>
-    <p>Supprimer une clé retire son entrée du coffre, réécrit le fichier entier et met à jour la liste des fournisseurs configurés. Se déconnecter d'un compte web efface l'entrée correspondante ; les autres connexions ne sont pas touchées, chacune ayant son entrée distincte.</p>
-    <p><b>Trois choses que la suppression ne fait pas.</b> Elle <b>ne révoque rien chez le fournisseur</b> : la clé reste valable sur ton compte, elle n'est simplement plus dans Beaver. Elle <b>n'est pas annulable</b> : aucune restauration n'est proposée et, comme aucune commande ne permet de relire une clé, il n'existe aucun moyen de la retrouver. Et elle <b>ne récupère pas ce qui est déjà parti</b> : si une extension approuvée a obtenu la clé pendant qu'elle était enregistrée, la supprimer du coffre n'annule pas cette copie.</p>
+    <h2 id="supprimer">Deleting a key, signing out of an account</h2>
+    <p>Deleting a key removes its entry from the vault, rewrites the whole file and updates the list of configured providers. Signing out of a web account erases the corresponding entry; the other connections are untouched, each having its own separate entry.</p>
+    <p><b>Three things deletion does not do.</b> It <b>revokes nothing at the provider</b>: the key stays valid on your account, it is simply no longer in Beaver. It <b>cannot be undone</b>: no restore is offered and, since no command allows a key to be read back, there is no way to recover it. And it <b>does not take back what has already gone</b>: if an approved extension obtained the key while it was stored, deleting it from the vault does not cancel that copy.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Supprimer dans Beaver ne révoque rien chez le fournisseur.</b> Une clé retirée du coffre reste parfaitement valable sur ton compte OpenAI, Mistral ou Brave. Si tu penses qu'elle a fuité, la seule action efficace est de la <b>supprimer sur le site du fournisseur</b>.
+      <span class="t">Warning</span>
+      <b>Deleting in Beaver revokes nothing at the provider.</b> A key removed from the vault remains perfectly valid on your OpenAI, Mistral or Brave account. If you think it has leaked, the only effective action is to <b>delete it on the provider's website</b>.
     </div>
-    <h2 id="trousseau-indisponible">Quand le trousseau du système est indisponible</h2>
-    <p>Le cas se produit surtout sous <b>Linux</b>, sur une session de bureau minimale ou une connexion en ligne de commande, où aucun service de secrets ne tourne. Ce qui se passe alors : l'accès au trousseau échoue, l'initialisation du coffre échoue, <b>l'application démarre quand même</b> — il n'y a pas d'écran bloquant —, et deux secondes plus tard un bandeau apparaît, qui disparaît quand on clique dessus. Le délai laisse à la fenêtre le temps de s'afficher avant le message.</p>
-    <p>Le texte affiché, mot pour mot : « <b>Impossible d'accéder au trousseau de clés. Installe gnome-keyring ou kwallet pour stocker les clés API.</b> »</p>
+    <h2 id="trousseau-indisponible">When the system keyring is unavailable</h2>
+    <p>This mostly happens on <b>Linux</b>, on a minimal desktop session or a command-line connection, where no secret service is running. What happens then: the keyring access fails, the vault initialization fails, <b>the app starts anyway</b> — there is no blocking screen —, and two seconds later a banner appears, which goes away when you click it. The delay gives the window time to show before the message.</p>
+    <p>The text displayed, word for word: “<b>Cannot access keyring. Install gnome-keyring or kwallet to store API keys.</b>”</p>
     <div class="callout">
       <span class="t">Note</span>
-      <b>Ce qui marche encore.</b> Le coffre reste non initialisé : toute tentative d'enregistrer, de lire ou de supprimer un secret est refusée. Les <b>modèles locaux</b> via Ollama, eux, n'ont besoin d'aucune clé et continuent de fonctionner normalement. Sur Linux, installe et démarre <code>gnome-keyring</code> ou <code>kwallet</code>, puis relance Beaver.
+      <b>What still works.</b> The vault stays uninitialized: any attempt to store, read or delete a secret is refused. <b>Local models</b> through Ollama, however, need no key and keep working normally. On Linux, install and start <code>gnome-keyring</code> or <code>kwallet</code>, then restart Beaver.
     </div>
-    <h2 id="les-traces">Ce qui est écrit dans les traces</h2>
-    <p>Trois protections cumulées. <b>Les réponses des fournisseurs ne sont jamais écrites brutes</b> : elles passent par une fonction unique qui masque les données sensibles, supprime les caractères de contrôle et tronque à <b>200 caractères</b>. <b>Les en-têtes HTTPS qui portent un secret sont marqués sensibles</b> auprès de la bibliothèque réseau, ce qui les exclut de ses traces de débogage. Et <b><code>secrets.enc</code> figure dans la liste des fichiers protégés</b> de l'application : un agent qui tente de le lire ou de le manipuler par une commande déclenche une alerte. La même liste couvre <code>config.json</code>, <code>agent-settings.json</code> et <code>configured-providers.json</code>.</p>
-    <p>Les messages d'erreur qui te sont destinés restent génériques — « clé API invalide ou non autorisée », « clé valide mais quota dépassé » — et le corps de la réponse du fournisseur est lu puis jeté, sans être affiché ni journalisé.</p>
-    <h2 id="les-limites">Les limites du coffre</h2>
+    <h2 id="les-traces">What is written to the traces</h2>
+    <p>Three cumulative protections. <b>The providers' answers are never written raw</b>: they go through a single function that masks sensitive data, strips control characters and truncates to <b>200 characters</b>. <b>The HTTPS headers carrying a secret are marked sensitive</b> with the network library, which excludes them from its debug traces. And <b><code>secrets.enc</code> is on the app's list of protected files</b>: an agent trying to read it or manipulate it through a command triggers an alert. The same list covers <code>config.json</code>, <code>agent-settings.json</code> and <code>configured-providers.json</code>.</p>
+    <p>The error messages meant for you stay generic — the screen shows “Operation failed. Please try again.” whatever the technical detail — and the body of the provider's answer is read then thrown away, without being displayed or logged.</p>
+    <h2 id="les-limites">The vault's limits</h2>
     <table>
-      <caption class="crumb">Les bornes appliquées au contenu du coffre</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Longueur d'une clé API</td><td><b>256 caractères</b></td></tr>
-      <tr><td>Entrées au total dans le coffre</td><td><b>500</b></td></tr>
-      <tr><td>Taille d'un secret rangé</td><td><b>8 192 octets</b></td></tr>
-      <tr><td>Longueur d'un nom d'entrée</td><td><b>160 caractères</b></td></tr>
-      <tr><td>Secrets écrits en une seule opération</td><td><b>8</b></td></tr>
-      <tr><td>Identifiant de connecteur MCP</td><td><b>64 caractères</b> — lettres, chiffres, <code>-</code> et <code>_</code> seulement</td></tr>
-      <tr><td>Jeton de compte Grok ou Kimi</td><td><b>4 096 caractères</b></td></tr>
-      <tr><td>Jeton d'accès OpenAI / Codex</td><td><b>512 Kio</b></td></tr>
-      <tr><td>Session du navigateur intégré</td><td><b>64 Kio</b> en clair, <b>128 Kio</b> chiffré</td></tr>
+      <caption class="crumb">The bounds applied to the vault's content</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Length of an API key</td><td><b>256 characters</b></td></tr>
+      <tr><td>Total entries in the vault</td><td><b>500</b></td></tr>
+      <tr><td>Size of a stored secret</td><td><b>8,192 bytes</b></td></tr>
+      <tr><td>Length of an entry name</td><td><b>160 characters</b></td></tr>
+      <tr><td>Secrets written in a single operation</td><td><b>8</b></td></tr>
+      <tr><td>MCP connector identifier</td><td><b>64 characters</b> — letters, digits, <code>-</code> and <code>_</code> only</td></tr>
+      <tr><td>Grok or Kimi account token</td><td><b>4,096 characters</b></td></tr>
+      <tr><td>OpenAI / Codex access token</td><td><b>512 KiB</b></td></tr>
+      <tr><td>Built-in browser session</td><td><b>64 KiB</b> in the clear, <b>128 KiB</b> encrypted</td></tr>
     </table>
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common traps</h2>
+    <p>Three of these failures show the same on-screen message — “Operation failed. Please try again.” The real cause is told by the situation, not by the message.</p>
     <table>
-      <caption class="crumb">Symptômes courants et ce qu'il faut faire</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Impossible d'accéder au trousseau de clés » au démarrage</td><td>Aucun service de secrets ne tourne — cas courant sur une session Linux minimale</td><td>Installer et démarrer <code>gnome-keyring</code> ou <code>kwallet</code>, puis relancer</td></tr>
-      <tr><td>« Je ne retrouve plus ma clé dans Beaver »</td><td>Aucune commande ne permet de relire une clé enregistrée</td><td>Générer une nouvelle clé chez le fournisseur et la ressaisir</td></tr>
-      <tr><td>Mes clés ont disparu après une réinstallation du système</td><td>La clé maîtresse vivait dans le trousseau, pas dans le fichier de coffre</td><td>Ressaisir les clés ; sauvegarder <code>secrets.enc</code> seul ne sert à rien</td></tr>
-      <tr><td>J'ai copié le dossier de données sur une autre machine et rien ne marche</td><td>La clé maîtresse est restée dans le trousseau de l'ancienne machine</td><td>Ressaisir les clés sur la nouvelle machine</td></tr>
-      <tr><td>« Clé API invalide (vide ou trop longue) »</td><td>La clé dépasse 256 caractères, ou est vide</td><td>Vérifier qu'aucun retour à la ligne ou espace n'a été collé avec</td></tr>
-      <tr><td>« Limite du coffre atteinte »</td><td>500 entrées au total, toutes catégories confondues</td><td>Supprimer des connecteurs ou des canaux devenus inutiles</td></tr>
-      <tr><td>« Clé valide mais quota dépassé »</td><td>La clé fonctionne, c'est le fournisseur qui refuse</td><td>Vérifier la facturation chez le fournisseur, pas dans Beaver</td></tr>
-      <tr><td>« J'ai supprimé ma clé de Beaver, est-elle révoquée ? »</td><td>Non — elle reste valable chez le fournisseur</td><td>La supprimer sur le site du fournisseur</td></tr>
+      <caption class="crumb">Common symptoms and what to do</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“Cannot access keyring” at startup</td><td>No secret service is running — a common case on a minimal Linux session</td><td>Install and start <code>gnome-keyring</code> or <code>kwallet</code>, then restart</td></tr>
+      <tr><td>“I cannot find my key in Beaver any more”</td><td>No command allows a stored key to be read back</td><td>Generate a new key at the provider and enter it again</td></tr>
+      <tr><td>My keys disappeared after reinstalling the system</td><td>The master key lived in the keyring, not in the vault file</td><td>Enter the keys again; backing up <code>secrets.enc</code> alone is useless</td></tr>
+      <tr><td>I copied the data folder to another machine and nothing works</td><td>The master key stayed in the old machine's keyring</td><td>Enter the keys again on the new machine</td></tr>
+      <tr><td>Saving fails as soon as the key is entered</td><td>The key exceeds 256 characters, or is empty</td><td>Check that no line break or space was pasted with it</td></tr>
+      <tr><td>Saving fails even though the key looks correct</td><td>500 entries in total, all categories together — the vault is full</td><td>Delete connectors or channels that have become useless</td></tr>
+      <tr><td>The test fails even though the key works elsewhere</td><td>The key works, it is the provider that refuses (quota exceeded)</td><td>Check the billing at the provider, not in Beaver</td></tr>
+      <tr><td>“I deleted my key from Beaver, is it revoked?”</td><td>No — it stays valid at the provider</td><td>Delete it on the provider's website</td></tr>
     </table>
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="modeles-fournisseurs-api.html">Fournisseurs API</a> — où récupérer une clé et comment la saisir.</li>
-      <li><a href="modeles-connexion-par-compte.html">Connexion par compte</a> — se connecter avec un compte plutôt qu'avec une clé.</li>
-      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — la vue d'ensemble des cinq couches.</li>
-      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — les connecteurs externes et leurs jetons.</li>
+      <li><a href="modeles-fournisseurs-api.html">API providers</a> — where to get a key and how to enter it.</li>
+      <li><a href="modeles-connexion-par-compte.html">Account sign-in</a> — signing in with an account rather than a key.</li>
+      <li><a href="reference-modele-de-securite.html">Security model</a> — the overview of the five layers.</li>
+      <li><a href="integrations-connecteurs-mcp.html">MCP connectors</a> — external connectors and their tokens.</li>
     </ul>
   </main>
   <div class="toc" id="docs-toc"></div>

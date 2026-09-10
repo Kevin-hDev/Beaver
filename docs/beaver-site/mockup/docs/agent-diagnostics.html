@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Diagnostics et erreurs</title>
-<meta name="description" content="Lire un échec d'outil : les dix catégories, l'indicateur qui dit si on peut réessayer, et ce que Beaver masque dans ses relevés.">
+<title>Beaver Docs — Diagnostics and errors</title>
+<meta name="description" content="Reading a tool failure: the ten categories, the flag that says whether you can retry, and what Beaver masks in its records.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,94 +19,94 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Agent / Diagnostics et erreurs</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="agent-diagnostics.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Agent / Diagnostics and errors</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/agent-diagnostics.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="agent-diagnostics.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Diagnostics et <em>erreurs</em></h1>
-    <p>Quelque chose a échoué : cette page explique comment lire l'erreur, comment savoir si réessayer est sûr, et ce que Beaver conserve — ou pas — dans ses relevés.</p>
+    <h1>Diagnostics and <em>errors</em></h1>
+    <p>Something failed: this page explains how to read the error, how to know whether retrying is safe, and what Beaver keeps — or does not — in its records.</p>
 
-    <h2 id="lire-une-erreur">Comment lire une erreur</h2>
-    <p>Chaque échec d'outil porte trois informations : un <b>code</b>, identifiant précis de la cause ; une <b>catégorie</b>, la nature du problème ; et un <b>indicateur de reprise</b>, qui dit si réessayer est sûr.</p>
-    <p>Le troisième est celui qui te sert le plus : il évite de relancer une action qui échouera à l'identique, ou pire, qui aurait déjà partiellement abouti.</p>
+    <h2 id="lire-une-erreur">How to read an error</h2>
+    <p>Every tool failure carries three pieces of information: a <b>code</b>, the precise identifier of the cause; a <b>category</b>, the nature of the problem; and a <b>retry flag</b>, which says whether retrying is safe.</p>
+    <p>The third is the one that helps you most: it saves you from rerunning an action that will fail identically, or worse, one that had already partly succeeded.</p>
 
-    <h2 id="categories">Les dix catégories</h2>
+    <h2 id="categories">The ten categories</h2>
     <table>
-      <caption class="crumb">Chaque catégorie appelle une réaction différente</caption>
-      <tr><th>Catégorie</th><th>Signification</th><th>Que faire</th></tr>
-      <tr><td>Validation</td><td>Les arguments sont invalides</td><td>Reformuler la demande</td></tr>
-      <tr><td>Permission</td><td>L'action a été refusée</td><td>Vérifier le mode de permission et la portée d'accès</td></tr>
-      <tr><td>Introuvable</td><td>Le fichier ou la ressource n'existe pas</td><td>Vérifier le chemin</td></tr>
-      <tr><td>Conflit</td><td>L'état a changé entre-temps</td><td>Inspecter la situation avant de relancer</td></tr>
-      <tr><td>Délai dépassé</td><td>L'opération a été trop longue</td><td>Réessayer, ou réduire la portée</td></tr>
-      <tr><td>Annulé</td><td>Tu as interrompu</td><td>Rien</td></tr>
-      <tr><td>Indisponible</td><td>Le service ou l'outil n'est pas joignable</td><td>Vérifier la configuration</td></tr>
-      <tr><td>Externe</td><td>Un service tiers a échoué</td><td>Vérifier le fournisseur ou le connecteur</td></tr>
-      <tr><td>Exécution</td><td>L'action a échoué à l'exécution</td><td>Lire le message</td></tr>
-      <tr><td>Interne</td><td>Défaut de Beaver</td><td>Signaler le problème</td></tr>
+      <caption class="crumb">Each category calls for a different response</caption>
+      <tr><th>Category</th><th>Meaning</th><th>What to do</th></tr>
+      <tr><td>Validation</td><td>The arguments are invalid</td><td>Rephrase the request</td></tr>
+      <tr><td>Permission</td><td>The action was denied</td><td>Check the permission mode and the access scope</td></tr>
+      <tr><td>Not found</td><td>The file or resource does not exist</td><td>Check the path</td></tr>
+      <tr><td>Conflict</td><td>The state changed in the meantime</td><td>Inspect the situation before rerunning</td></tr>
+      <tr><td>Timeout</td><td>The operation took too long</td><td>Retry, or narrow the scope</td></tr>
+      <tr><td>Cancelled</td><td>You interrupted it</td><td>Nothing</td></tr>
+      <tr><td>Unavailable</td><td>The service or tool is unreachable</td><td>Check the configuration</td></tr>
+      <tr><td>External</td><td>A third-party service failed</td><td>Check the provider or the connector</td></tr>
+      <tr><td>Execution</td><td>The action failed while running</td><td>Read the message</td></tr>
+      <tr><td>Internal</td><td>A defect in Beaver</td><td>Report the problem</td></tr>
     </table>
 
-    <h2 id="reessayer">Peut-on réessayer ?</h2>
-    <p>L'indicateur de reprise est vrai <b>uniquement quand une nouvelle tentative est sûre sans vérifier l'état extérieur</b>. La nuance compte : un délai dépassé sur une écriture n'est pas rejouable à l'aveugle, parce que l'écriture a peut-être abouti ; une lecture qui échoue, elle, se rejoue sans risque.</p>
+    <h2 id="reessayer">Can you retry?</h2>
+    <p>The retry flag is true <b>only when a new attempt is safe without checking external state</b>. The nuance matters: a timeout on a write cannot be replayed blindly, because the write may have gone through; a read that fails, on the other hand, can be replayed at no risk.</p>
     <div class="callout">
-      <span class="t">Toutes les erreurs ne se rejouent pas</span>
-      Une opération d'écriture interrompue par un délai dépassé a peut-être abouti. Beaver indique explicitement quand une nouvelle tentative est sûre.
+      <span class="t">Not every error can be replayed</span>
+      A write operation interrupted by a timeout may have gone through. Beaver states explicitly when a new attempt is safe.
     </div>
 
-    <h2 id="diagnostics">Les diagnostics</h2>
-    <p>Beaver conserve des relevés de diagnostic par conversation : ce qui a été tenté, avec quels arguments résumés, et ce qui a échoué. Ils servent à comprendre après coup une conversation qui a mal tourné, sans relire tout l'historique. Ils ne sont pas repris dans un clone.</p>
+    <h2 id="diagnostics">The diagnostics</h2>
+    <p>Beaver keeps diagnostic records per conversation: what was attempted, with which summarized arguments, and what failed. They serve to understand after the fact a conversation that went wrong, without rereading the whole history. They are not carried over into a clone.</p>
 
-    <h2 id="masquage">Ce qui est masqué dans les diagnostics</h2>
-    <p>Les arguments enregistrés sont résumés et expurgés avant écriture :</p>
+    <h2 id="masquage">What is masked in the diagnostics</h2>
+    <p>The recorded arguments are summarized and redacted before writing:</p>
     <ul>
-      <li>le texte est tronqué à <b>200 caractères</b> ;</li>
-      <li>les structures complètes à <b>1 000 caractères</b> ;</li>
-      <li>les valeurs sensibles sont remplacées par <code>[redacted]</code> ;</li>
-      <li>les chemins sont remplacés par <code>[path]</code>.</li>
+      <li>text is truncated at <b>200 characters</b>;</li>
+      <li>full structures at <b>1,000 characters</b>;</li>
+      <li>sensitive values are replaced by <code>[redacted]</code>;</li>
+      <li>paths are replaced by <code>[path]</code>.</li>
     </ul>
     <div class="callout">
-      <span class="t">Tes données ne sont pas dans les diagnostics</span>
-      Un relevé permet de comprendre ce qui s'est passé sans conserver le contenu de tes fichiers ni tes secrets.
+      <span class="t">Your data is not in the diagnostics</span>
+      A record makes it possible to understand what happened without keeping the content of your files or your secrets.
     </div>
 
-    <h2 id="journaux">Les journaux</h2>
-    <p>Plusieurs journaux vivent dans le dossier de données, sous <code>logs/</code>.</p>
+    <h2 id="journaux">The logs</h2>
+    <p>Several logs live in the data folder, under <code>logs/</code>.</p>
     <table>
-      <caption class="crumb">Journaux et rotation</caption>
-      <tr><th>Journal</th><th>Contenu</th><th>Rotation</th></tr>
-      <tr><td><code>permission-diagnostics.jsonl</code></td><td>Décisions de permission</td><td>À 2 Mo</td></tr>
-      <tr><td><code>wakeups.jsonl</code></td><td>Exécutions des réveils</td><td>500 lignes</td></tr>
-      <tr><td><code>gateway-audit.jsonl</code></td><td>Échanges des canaux externes</td><td>—</td></tr>
+      <caption class="crumb">Logs and rotation</caption>
+      <tr><th>Log</th><th>Content</th><th>Rotation</th></tr>
+      <tr><td><code>permission-diagnostics.jsonl</code></td><td>Permission decisions</td><td>At 2 MB</td></tr>
+      <tr><td><code>wakeups.jsonl</code></td><td>Wake-up runs</td><td>500 lines</td></tr>
+      <tr><td><code>gateway-audit.jsonl</code></td><td>External channel exchanges</td><td>—</td></tr>
     </table>
 
-    <h2 id="pieges">Ce qui bloque le plus souvent</h2>
+    <h2 id="pieges">What blocks people most often</h2>
     <table>
-      <caption class="crumb">Symptôme, cause probable, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause probable</th><th>Résolution</th></tr>
-      <tr><td>Erreur de permission alors que le mode est Accès complet</td><td>Chemin hors de la portée d'accès, ou chemin sensible</td><td>Voir <a href="agent-repertoire-de-travail.html">Répertoire de travail</a> et <a href="agent-permissions.html">Modes de permission</a></td></tr>
-      <tr><td>Erreur « conflit » sur des changements de sous-agent</td><td>Le dossier a changé pendant son travail</td><td>Inspecter avant d'appliquer</td></tr>
-      <tr><td>Erreur « externe » répétée</td><td>Fournisseur ou connecteur en difficulté</td><td>Vérifier la clé, le quota, l'état du service</td></tr>
-      <tr><td>Erreur « indisponible » sur un modèle local</td><td>Moteur local non démarré, ou modèle absent</td><td>Voir <a href="modeles-moteur-local.html">Moteur local</a></td></tr>
-      <tr><td>Erreur « interne »</td><td>Défaut de Beaver</td><td>Signaler avec le code affiché</td></tr>
-      <tr><td>La conversation s'arrête sans message d'erreur</td><td>Garde-fou anti-boucle, ou 200 tours</td><td>Voir <a href="agent-fonctionnement.html">Fonctionnement</a></td></tr>
+      <caption class="crumb">Symptom, likely cause, fix</caption>
+      <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+      <tr><td>Permission error although the mode is Full access</td><td>Path outside the access scope, or a sensitive path</td><td>See <a href="agent-repertoire-de-travail.html">Working folder</a> and <a href="agent-permissions.html">Permission modes</a></td></tr>
+      <tr><td>“Conflict” error on subagent changes</td><td>The folder changed while it was working</td><td>Inspect before applying</td></tr>
+      <tr><td>Repeated “external” error</td><td>Provider or connector in trouble</td><td>Check the key, the quota, the status of the service</td></tr>
+      <tr><td>“Unavailable” error on a local model</td><td>Local engine not started, or model missing</td><td>See <a href="modeles-moteur-local.html">Local engine</a></td></tr>
+      <tr><td>“Internal” error</td><td>A defect in Beaver</td><td>Report it with the code shown</td></tr>
+      <tr><td>The conversation stops with no error message</td><td>Anti-loop guard, or 200 turns</td><td>See <a href="agent-fonctionnement.html">How it works</a></td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-fonctionnement.html">Fonctionnement</a> — les conditions d'arrêt.</li>
-      <li><a href="agent-permissions.html">Modes de permission</a> — les refus et leur journal.</li>
-      <li><a href="agent-sous-agents.html">Sous-agents</a> — les conflits de changements.</li>
-      <li><a href="reference-depannage-installation.html">Dépannage installation</a> — quand le problème est en amont de l'agent.</li>
+      <li><a href="agent-fonctionnement.html">How it works</a> — the stopping conditions.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — denials and their log.</li>
+      <li><a href="agent-sous-agents.html">Subagents</a> — change conflicts.</li>
+      <li><a href="reference-depannage-installation.html">Installation troubleshooting</a> — when the problem is upstream of the agent.</li>
     </ul>
   </main>
 
