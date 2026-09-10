@@ -11,7 +11,7 @@ Les fichiers portent l'extension `.gele` pour qu'aucun outil de génération ne 
 | Chantier | État |
 |---|---|
 | Mode Plan | **Gelé** — décision produit : le mode Plan va être modifié |
-| Compression du contexte | **Gelé** — la compression va être revue |
+| Compression du contexte | **Dégelé le 10 septembre 2026** — refonte terminée, brief écrit dans `04-agent/compression.md` |
 | Extensions (4 briefs) | **Dégelé le 9 septembre 2026, briefs écrits le jour même** — voir `07-integrations/extensions-*.md` |
 
 La fiche Extensions reste dans ce fichier pour garder la trace du gel et de sa levée. Elle n'interdit plus rien.
@@ -63,9 +63,9 @@ La fiche Extensions reste dans ce fichier pour garder la trace du gel et de sa l
 
 ---
 
-## Compression du contexte — brief non écrit
+## Compression du contexte — DÉGELÉ le 10 septembre 2026
 
-**Raison du gel** : la compression va être revue. **Toujours d'actualité au 9 septembre 2026** : le chantier est visiblement actif dans le code — le module de compression existe et des fichiers de test récents y sont attachés.
+**Gel levé** : Kevin a déclaré la refonte terminée le 10 septembre 2026. Le brief `04-agent/compression.md` a été écrit le jour même sur l'état du code post-refonte, et la page du site `agent-compression` est publiée. Cette entrée est conservée pour l'historique.
 
 **Brief prévu** : `04-agent/compression.md` — quand la compression se déclenche, ce qu'elle résume, ce qu'elle conserve, ce que l'utilisateur voit, et ce qu'il peut régler.
 

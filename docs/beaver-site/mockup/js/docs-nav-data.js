@@ -38,6 +38,7 @@ var BEAVER_DOCS_NAV = [
       { slug: 'agent-fonctionnement', label: 'Fonctionnement' },
       { slug: 'agent-permissions', label: 'Modes de permission' },
       { slug: 'agent-contexte', label: 'Contexte' },
+      { slug: 'agent-compression', label: 'Compression du contexte' },
       { slug: 'agent-memoire', label: 'Mémoire persistante' },
       { slug: 'agent-instructions-permanentes', label: 'Instructions permanentes' },
       { slug: 'agent-prompts-systeme', label: 'Prompts système' },
@@ -94,6 +95,14 @@ var BEAVER_DOCS_NAV = [
       { slug: 'integrations-authentification-mcp', label: 'Authentification des connecteurs' },
       { slug: 'integrations-recherche-web', label: 'Recherche web' },
       { slug: 'integrations-canaux-externes', label: 'Canaux externes' },
+    ],
+  },
+  {
+    group: 'Automatisation',
+    pages: [
+      { slug: 'automatisation-reveils', label: 'Réveils programmés' },
+      { slug: 'automatisation-historique-des-reveils', label: 'Historique des réveils' },
+      { slug: 'automatisation-git', label: 'Travail avec Git' },
     ],
   },
   {
