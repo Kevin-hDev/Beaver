@@ -1,11 +1,9 @@
 use super::plan_mode_controller::PlanModeDecision;
-use super::types_ollama::StreamResult;
 use super::types_plan::AgentPlanWorkflowStatus;
 
 pub fn controller_decision(
     workflow: AgentPlanWorkflowStatus,
     repair_count: usize,
-    result: &StreamResult,
     decision: &PlanModeDecision,
 ) {
     let decision_label = match decision {
@@ -14,22 +12,12 @@ pub fn controller_decision(
         PlanModeDecision::Fail(_) => "fail",
     };
     ::log::info!(
-        "[plan-mode] decision workflow={workflow:?} repairs={repair_count} content_chars={} question={} tool_calls={} decision={decision_label}",
-        result.content.chars().count(),
-        has_question(&result.content),
-        result.tool_calls.len(),
+        "[plan-mode] decision workflow={workflow:?} repairs={repair_count} decision={decision_label}",
     );
 }
 
 pub fn workflow_failed(message: &str) {
-    ::log::error!(
-        "[plan-mode] failed reason={}",
-        failure_code(message),
-    );
-}
-
-fn has_question(content: &str) -> bool {
-    content.contains('?') || content.contains('？')
+    ::log::error!("[plan-mode] failed reason={}", failure_code(message),);
 }
 
 fn failure_code(message: &str) -> &'static str {

@@ -22,12 +22,7 @@ pub async fn evaluate(
         return PlanModeDecision::Accept;
     }
     let decision = decide(session.plan_workflow_status, result, repair_count);
-    plan_mode_debug::controller_decision(
-        session.plan_workflow_status,
-        repair_count,
-        result,
-        &decision,
-    );
+    plan_mode_debug::controller_decision(session.plan_workflow_status, repair_count, &decision);
     decision
 }
 
