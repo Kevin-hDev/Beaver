@@ -105,7 +105,7 @@ Mentionner que certains outils sont actifs par défaut et d'autres s'activent da
 - **GNU Affero General Public License v3.0**.
 - Droits : utiliser, étudier, modifier, redistribuer.
 - Obligation : toute version **distribuée ou hébergée en réseau**, modifiée ou non, doit être publiée sous AGPL v3 avec son code source complet.
-- Les versions **jusqu'à la 1.1.2 incluse** avaient été publiées sous **Apache License 2.0** ; elles ne sont plus distribuées (corrigé le 10 sept. 2026 : les anciennes releases n'existent plus sur GitHub — la liste des releases commence à la v1.1.9. Les deux README portent encore la phrase fausse « restent disponibles selon ces termes », à corriger au prochain passage README).
+- Les versions **jusqu'à la 1.1.2 incluse** avaient été publiées sous **Apache License 2.0** ; elles ne sont plus distribuées (corrigé le 10 sept. 2026 : les anciennes releases n'existent plus sur GitHub — la liste des releases commence à la v1.1.9. Les deux README portaient la même phrase fausse, corrigée le 10 sept. 2026).
 - Une **licence commerciale** exemptant des obligations de l'AGPL est disponible sur demande.
 - Les composants tiers gardent leurs licences propres (`THIRD_PARTY_NOTICES.md`).
 - Contribuer suppose de signer le **CLA** (`CLA.md`, `CONTRIBUTING.md`).
