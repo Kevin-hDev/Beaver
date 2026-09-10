@@ -33,6 +33,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "externalBin": ["target/beaver-cli/beaver"],
     "copyright": "Copyright © 2026 Kevin Huynh — GNU AGPL v3.0",
     "icon": [
       "icons/32x32.png",
