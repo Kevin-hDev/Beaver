@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest";
+import apifyIconSvg from "@/assets/Apify-2/Apify-icon.svg?raw";
+import apifyTextSvg from "@/assets/Apify-2/Apify-text.svg?raw";
 import canvaSvg from "@/assets/Canva/canva-icon.svg?raw";
+import canvaTextSvg from "@/assets/Canva/Canva-text.svg?raw";
+import figmaSvg from "@/assets/Figma/Figma.svg?raw";
+import githubIconSvg from "@/assets/github/github.svg?raw";
+import githubTextSvg from "@/assets/github/github-text.svg?raw";
+import huggingfaceSvg from "@/assets/hugging-face/huggingface.svg?raw";
 import imessageSvg from "@/assets/IMessage/IMessage_logo.svg?raw";
+import linearIconSvg from "@/assets/Linear/Linear-icon.svg?raw";
+import linearTextSvg from "@/assets/Linear/Linear-text.svg?raw";
+import notionIconSvg from "@/assets/Notion/Notion-icon.svg?raw";
+import notionTextSvg from "@/assets/Notion/Notion-text.svg?raw";
 import producthuntSvg from "@/assets/Product_Hunt/Product-hunt.svg?raw";
 import redditSvg from "@/assets/Reddit/Reddit-icon.svg?raw";
+import redditTextSvg from "@/assets/Reddit/Reddit-text.svg?raw";
+import sentryIconSvg from "@/assets/Sentry/Sentry-icon.svg?raw";
+import sentryTextSvg from "@/assets/Sentry/Sentry-text.svg?raw";
 import slackSvg from "@/assets/Slack-2/Slack-icon.svg?raw";
+import slackTextSvg from "@/assets/Slack-2/Slack-text.svg?raw";
+import vercelIconSvg from "@/assets/Vercel/Vercel-icon.svg?raw";
+import vercelTextSvg from "@/assets/Vercel/Vercel-text.svg?raw";
 import { prepareMcpSvg } from "./mcp-svg-normalize";
 
 describe("prepareMcpSvg", () => {
@@ -58,14 +75,63 @@ describe("prepareMcpSvg", () => {
   });
 
   it("removes inline styling from brand assets that broke in release", () => {
-    const assets = [canvaSvg, imessageSvg, producthuntSvg, redditSvg, slackSvg];
+    const assets = [
+      apifyIconSvg, apifyTextSvg, canvaSvg, canvaTextSvg, figmaSvg,
+      githubIconSvg, githubTextSvg, huggingfaceSvg, imessageSvg,
+      linearIconSvg, linearTextSvg, notionIconSvg, notionTextSvg,
+      producthuntSvg, redditSvg, redditTextSvg, sentryIconSvg,
+      sentryTextSvg, slackSvg, slackTextSvg, vercelIconSvg, vercelTextSvg,
+    ];
 
     for (const [index, asset] of assets.entries()) {
       const prepared = prepareMcpSvg(asset, `asset-${index}-`);
+      expect(prepared).toContain("<svg");
+      expect(prepared).not.toContain("<svg:");
       expect(prepared).not.toContain("<style");
       expect(prepared).not.toContain("style=");
       expect(missingUrlRefs(prepared)).toEqual([]);
     }
+  });
+
+  it("removes active content and event handlers before rendering", () => {
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">
+        <script>alert(1)</script>
+        <foreignObject><div>unsafe</div></foreignObject>
+        <path id="safe" d="M0 0h10v10z" onclick="alert(1)"/>
+      </svg>
+    `;
+
+    const prepared = prepareMcpSvg(svg, "safe-");
+
+    expect(prepared).not.toContain("<script");
+    expect(prepared).not.toContain("foreignObject");
+    expect(prepared).not.toContain("onload");
+    expect(prepared).not.toContain("onclick");
+    expect(prepared).toContain('id="safe-safe"');
+  });
+
+  it("removes external references while keeping local gradient references", () => {
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg">
+        <linearGradient id="local"/>
+        <use href="https://example.com/image.svg#shape"/>
+        <rect fill="url(https://example.com/image.svg#paint)"/>
+        <rect fill="url(#local)"/>
+      </svg>
+    `;
+
+    const prepared = prepareMcpSvg(svg, "safe-");
+
+    expect(prepared).not.toContain("https://example.com");
+    expect(prepared).toContain('fill="url(#safe-local)"');
+  });
+
+  it("rejects malformed, document-bearing, oversized, or invalidly scoped SVG", () => {
+    expect(prepareMcpSvg("<svg><sty<style>le></svg>", "safe-")).toBe("");
+    expect(prepareMcpSvg('<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"/>', "safe-")).toBe("");
+    expect(prepareMcpSvg(`<svg xmlns="http://www.w3.org/2000/svg">${"x".repeat(256 * 1024)}</svg>`, "safe-")).toBe("");
+    expect(prepareMcpSvg('<svg xmlns="http://www.w3.org/2000/svg"/>', 'bad" scope')).toBe("");
   });
 });
 

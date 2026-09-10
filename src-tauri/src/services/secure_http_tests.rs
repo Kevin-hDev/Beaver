@@ -55,6 +55,25 @@ async fn loopback_client_rejects_non_loopback_plain_http() {
     assert_eq!(result.unwrap_err(), SecureHttpError::InsecureUrl);
 }
 
+#[test]
+fn url_policies_allow_only_https_or_literal_loopback_http() {
+    let strict = AuthenticatedClient::new(Duration::from_secs(2)).unwrap();
+    let loopback = AuthenticatedClient::new_loopback(Duration::from_secs(2)).unwrap();
+
+    for url in ["https://example.com", "https://127.0.0.1"] {
+        assert!(strict.url_is_allowed(&url.parse().unwrap()));
+        assert!(loopback.url_is_allowed(&url.parse().unwrap()));
+    }
+    for url in ["http://example.com", "http://localhost", "ftp://127.0.0.1"] {
+        assert!(!strict.url_is_allowed(&url.parse().unwrap()));
+        assert!(!loopback.url_is_allowed(&url.parse().unwrap()));
+    }
+    for url in ["http://127.0.0.1", "http://127.0.0.2", "http://[::1]"] {
+        assert!(!strict.url_is_allowed(&url.parse().unwrap()));
+        assert!(loopback.url_is_allowed(&url.parse().unwrap()));
+    }
+}
+
 #[tokio::test]
 async fn redirects_never_forward_credentials_or_bodies() {
     for status in [302, 307, 308] {
