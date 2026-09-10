@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Les réglages, écran par écran</title>
+<meta name="description" content="Où se règle telle chose dans Beaver : les cinq sections, les dix-sept onglets livrés, et un index inverse pour trouver un réglage en une ligne.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Réglages / Vue d'ensemble</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reglages-vue-densemble.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Les réglages, écran par <em>écran</em></h1>
+    <p>Cette page répond à une seule question : où se règle telle chose ? Elle donne la carte complète des cinq sections et des dix-sept onglets livrés avec Beaver, puis un index inverse qui part de ce que tu veux faire. Les cinq autres pages de cette section disent ce que chaque réglage fait vraiment.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      C'est un sommaire, pas un manuel. Si tu sais déjà où aller, le tableau « Je cherche à régler… » plus bas te répond en une ligne.
+    </div>
+
+    <h2 id="ouvrir-les-reglages">Ouvrir les réglages</h2>
+    <p>Les réglages sont l'un des <b>quatre onglets principaux</b> de Beaver, aux côtés de l'Agent, du Heartbeat et de la Personnalité. Dans la barre latérale, l'onglet porte le nom <b>Paramètres</b>.</p>
+    <p>Deux chemins pour y arriver :</p>
+    <ul>
+      <li>cliquer sur l'onglet dans la barre latérale ;</li>
+      <li>le raccourci <b><code>Cmd</code> + <code>,</code></b> sur Mac, <b><code>Ctrl</code> + <code>,</code></b> ailleurs.</li>
+    </ul>
+
+    <h2 id="comment-lecran-est-organise">Comment l'écran est organisé</h2>
+    <p>L'écran se lit en deux colonnes : à gauche la liste des onglets, groupés sous cinq en-têtes de section ; à droite le contenu de l'onglet sélectionné.</p>
+    <p>Trois comportements à connaître :</p>
+    <ul>
+      <li><b>Les en-têtes de section ne sont pas cliquables.</b> Ce n'est pas un oubli : ils sont volontairement privés de rôle de bouton et d'ordre de tabulation, pour que la navigation au clavier ne s'arrête pas sur une ligne qui n'ouvre rien.</li>
+      <li><b>La liste se parcourt aux flèches du clavier.</b> Les flèches passent d'un onglet au suivant à travers toutes les sections confondues, dans l'ordre d'affichage.</li>
+      <li><b>L'onglet ouvert est mémorisé</b>, avec le détail de ta position : fournisseur sélectionné, connecteur ouvert, modèle Ollama affiché, vue du catalogue de modèles distants. Revenir dans les réglages te ramène là où tu étais.</li>
+    </ul>
+
+    <h2 id="les-cinq-sections">Les cinq sections, d'un coup d'œil</h2>
+    <p>L'ordre des sections et des onglets n'est pas un accident d'affichage : il est déclaré une seule fois et tout l'écran en découle. Le regroupement suit un principe simple — <b>les réglages sont groupés par objet configuré</b> : les modèles, les connexions, le comportement de l'agent, les préférences, le cycle de vie de l'application.</p>
+
+    <table>
+      <caption class="crumb">Les cinq sections des réglages et ce qu'elles couvrent</caption>
+      <tr><th>Section</th><th>Onglets</th><th>Ce qu'on y règle</th></tr>
+      <tr><td><b>Préférences</b></td><td>3</td><td>Ce que tu vois et la façon dont tu navigues</td></tr>
+      <tr><td><b>Agent</b></td><td>4</td><td>Ce que l'agent sait, dit et a le droit de faire</td></tr>
+      <tr><td><b>Modèles</b></td><td>3</td><td>Les moteurs qui produisent les réponses</td></tr>
+      <tr><td><b>Intégrations</b></td><td>4</td><td>Ce à quoi Beaver se connecte à l'extérieur</td></tr>
+      <tr><td><b>Application</b></td><td>3</td><td>Le logiciel lui-même : version, mises à jour, archives</td></tr>
+    </table>
+
+    <p><b>Dix-sept onglets au total</b>, sur une installation sans extension : une extension peut en ajouter, en retirer ou en déplacer.</p>
+
+    <h2 id="section-preferences">Section Préférences</h2>
+
+    <table>
+      <caption class="crumb">Les trois onglets de la section Préférences</caption>
+      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
+      <tr><td><b>Général</b></td><td>Thème, taille et police de l'interface, thème de code, langue de l'interface, langue de réponse du modèle, aperçu des liens, lancement au démarrage</td></tr>
+      <tr><td><b>Mascotte</b></td><td>Activer la mascotte de bureau, régler sa taille, choisir parmi huit personnages</td></tr>
+      <tr><td><b>Raccourcis clavier</b></td><td>La liste des vingt raccourcis de l'application, en consultation seule</td></tr>
+    </table>
+
+    <p>Le détail est dans <a href="reglages-preferences.html">Préférences</a>.</p>
+
+    <h2 id="section-agent">Section Agent</h2>
+
+    <table>
+      <caption class="crumb">Les quatre onglets de la section Agent</caption>
+      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
+      <tr><td><b>Mémoire</b></td><td>Mode mémoire, budget de contexte, consultation des mémoires enregistrées</td></tr>
+      <tr><td><b>System prompt</b></td><td>Les instructions système globales : celles de Beaver, celles d'Ollama, ou les tiennes</td></tr>
+      <tr><td><b>Outils</b></td><td>Les groupes d'outils : cinq toujours actifs, les autres activables</td></tr>
+      <tr><td><b>Avancé</b></td><td>Import depuis un autre assistant, icône dans la barre système, modèle par défaut, moteur Ollama, <b>accès fichiers</b>, fichiers des sessions</td></tr>
+    </table>
+
+    <p>Le détail est dans <a href="reglages-agent.html">Agent</a>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Deux réglages ne sont pas là où on les cherche. <b>Accès fichiers</b> — les dossiers ouverts à l'agent — est dans <b>Agent › Avancé</b>, pas dans Application. Et tout ce qui concerne le moteur Ollama — libération de la mémoire, processeur ou carte graphique, plusieurs modèles à la fois — est aussi dans <b>Agent › Avancé</b>, pas dans Modèles › Ollama, qui ne gère que les modèles eux-mêmes.
+    </div>
+
+    <h2 id="section-modeles">Section Modèles</h2>
+
+    <table>
+      <caption class="crumb">Les trois onglets de la section Modèles</caption>
+      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
+      <tr><td><b>Ollama</b></td><td>Installer et gérer les modèles locaux, personnaliser leur Modelfile</td></tr>
+      <tr><td><b>Forecast</b></td><td>Les modèles de prévision installés et leur configuration</td></tr>
+      <tr><td><b>LLM</b></td><td>Le catalogue consultable des modèles distants : capacités, tailles de contexte, coûts</td></tr>
+    </table>
+
+    <p>Le détail est dans <a href="reglages-modeles.html">Modèles</a>.</p>
+
+    <h2 id="section-integrations">Section Intégrations</h2>
+
+    <table>
+      <caption class="crumb">Les quatre onglets de la section Intégrations</caption>
+      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
+      <tr><td><b>Providers</b></td><td>Tes connexions aux fournisseurs de modèles : clés API d'un côté, comptes web de l'autre</td></tr>
+      <tr><td><b>Connecteurs</b></td><td>Les connecteurs MCP, leur configuration et leur autorisation</td></tr>
+      <tr><td><b>Canaux</b></td><td>Les canaux externes qui peuvent parler à Beaver</td></tr>
+      <tr><td><b>Extensions</b></td><td>Les extensions installées, leurs droits, et l'état de leur hôte</td></tr>
+    </table>
+
+    <p>Le détail est dans <a href="reglages-integrations.html">Intégrations</a>.</p>
+
+    <h2 id="section-application">Section Application</h2>
+
+    <table>
+      <caption class="crumb">Les trois onglets de la section Application</caption>
+      <tr><th>Onglet</th><th>Ce qu'il contient</th></tr>
+      <tr><td><b>Mises à jour</b></td><td>Les versions installées de Beaver et d'Ollama, et l'installation des nouvelles</td></tr>
+      <tr><td><b>Chats archivés</b></td><td>Retrouver, désarchiver ou supprimer définitivement une conversation archivée</td></tr>
+      <tr><td><b>À propos</b></td><td>Version de Beaver, version de Tauri, système, lien vers le dépôt</td></tr>
+    </table>
+
+    <p>Le détail est dans <a href="reglages-application.html">Application</a>.</p>
+
+    <h2 id="sous-onglets">Les onglets qui ont eux-mêmes des sous-onglets</h2>
+    <p>Quatre onglets se subdivisent. Leurs sous-onglets s'affichent en haut du panneau de droite.</p>
+
+    <table>
+      <caption class="crumb">Les onglets divisés en sous-onglets</caption>
+      <tr><th>Onglet</th><th>Sous-onglets affichés</th></tr>
+      <tr><td><b>Ollama</b></td><td>Modelfile · Modèles</td></tr>
+      <tr><td><b>Forecast</b></td><td>Config · Models</td></tr>
+      <tr><td><b>Providers</b></td><td>Clés API · OAuth</td></tr>
+      <tr><td><b>Extensions</b></td><td>Plugins · Extensions · Hôte</td></tr>
+    </table>
+
+    <h2 id="ce-quune-extension-peut-changer">Ce qu'une extension peut changer dans cet écran</h2>
+    <p>La liste des onglets n'est pas figée : une extension installée peut <b>ajouter son propre onglet de réglages</b> dans n'importe laquelle des cinq sections, et il apparaît dans la liste de gauche comme les autres. Elle peut aussi <b>retirer, remplacer ou déplacer</b> un onglet existant — avec deux exceptions verrouillées par le contrat des extensions lui-même.</p>
+
+    <table>
+      <caption class="crumb">Les deux éléments qu'aucune extension ne peut retirer</caption>
+      <tr><th>Élément protégé</th><th>Opérations interdites</th></tr>
+      <tr><td>L'onglet principal <b>Paramètres</b></td><td>Retrait, remplacement</td></tr>
+      <tr><td>L'onglet de réglages <b>Extensions</b></td><td>Retrait, remplacement</td></tr>
+    </table>
+
+    <p>Le raisonnement tient en une phrase : <b>on ne peut pas installer une extension qui t'enlèverait le moyen de la désinstaller.</b> Une tentative de modification sur ces deux éléments est rejetée. Une limite chiffrée existe par ailleurs : <b>128 occupants par emplacement</b> au maximum.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Un onglet supplémentaire peut apparaître dans n'importe laquelle des cinq sections. Il vient de l'extension, pas de Beaver, et disparaît avec elle. Ce qu'une extension a le droit de faire est détaillé dans <a href="integrations-centre-extensions.html">Centre d'extensions</a>.
+    </div>
+
+    <h2 id="je-cherche-a-regler">« Je cherche à régler… »</h2>
+    <p>L'index inverse : tu pars de ce que tu veux faire, il te donne l'onglet.</p>
+
+    <table>
+      <caption class="crumb">Où se règle chaque chose, par intention</caption>
+      <tr><th>Je veux…</th><th>Section › Onglet</th></tr>
+      <tr><td>Changer le thème sombre ou clair</td><td>Préférences › <b>Général</b></td></tr>
+      <tr><td>Changer la langue de l'application</td><td>Préférences › <b>Général</b></td></tr>
+      <tr><td>Faire répondre le modèle dans une autre langue</td><td>Préférences › <b>Général</b></td></tr>
+      <tr><td>Lancer Beaver au démarrage de la machine</td><td>Préférences › <b>Général</b></td></tr>
+      <tr><td>Agrandir le texte de l'interface</td><td>Préférences › <b>Général</b></td></tr>
+      <tr><td>Faire disparaître la mascotte</td><td>Préférences › <b>Mascotte</b></td></tr>
+      <tr><td>Retrouver un raccourci clavier</td><td>Préférences › <b>Raccourcis clavier</b></td></tr>
+      <tr><td>Empêcher l'agent de retenir des choses</td><td>Agent › <b>Mémoire</b></td></tr>
+      <tr><td>Remplacer les instructions système</td><td>Agent › <b>System prompt</b></td></tr>
+      <tr><td>Interdire un outil à l'agent</td><td>Agent › <b>Outils</b></td></tr>
+      <tr><td>Restreindre les dossiers accessibles à l'agent</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Choisir le modèle par défaut des nouvelles conversations</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Enlever l'icône de la barre système</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Choisir où sont écrits les livrables des sessions</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Ouvrir le dossier de données de Beaver</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Décider quand un modèle local libère la mémoire</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Forcer le processeur au lieu de la carte graphique</td><td>Agent › <b>Avancé</b></td></tr>
+      <tr><td>Installer ou supprimer un modèle local</td><td>Modèles › <b>Ollama</b></td></tr>
+      <tr><td>Comparer les capacités de deux modèles distants</td><td>Modèles › <b>LLM</b></td></tr>
+      <tr><td>Saisir une clé API</td><td>Intégrations › <b>Providers</b> › Clés API</td></tr>
+      <tr><td>Me connecter avec un compte web</td><td>Intégrations › <b>Providers</b> › OAuth</td></tr>
+      <tr><td>Ajouter un connecteur MCP</td><td>Intégrations › <b>Connecteurs</b></td></tr>
+      <tr><td>Installer une extension</td><td>Intégrations › <b>Extensions</b></td></tr>
+      <tr><td>Mettre Beaver à jour</td><td>Application › <b>Mises à jour</b></td></tr>
+      <tr><td>Retrouver une conversation archivée</td><td>Application › <b>Chats archivés</b></td></tr>
+      <tr><td>Connaître ma version de Beaver</td><td>Application › <b>À propos</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui surprend le plus souvent dans l'écran des réglages</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Je ne trouve pas où limiter les dossiers de l'agent »</td><td>Le réglage est dans <b>Agent › Avancé</b>, pas dans Application</td><td>Voir <a href="reglages-agent.html">Agent</a></td></tr>
+      <tr><td>« L'onglet Ollama ne propose aucun réglage du moteur »</td><td>Cet onglet gère les modèles ; le moteur se règle dans <b>Agent › Avancé</b></td><td>Voir <a href="reglages-agent.html">Agent</a></td></tr>
+      <tr><td>« Un onglet a disparu de mes réglages »</td><td>Une extension installée peut retirer un onglet, sauf Paramètres et Extensions</td><td>Désactiver l'extension depuis Intégrations › Extensions</td></tr>
+      <tr><td>« Un onglet que je ne connais pas est apparu »</td><td>Il vient d'une extension installée</td><td>Même écran</td></tr>
+      <tr><td>« Le clic sur un titre de section ne fait rien »</td><td>Les en-têtes ne sont pas des destinations, volontairement</td><td>Comportement attendu</td></tr>
+      <tr><td>« Je cherche un onglet Clés API dans la liste »</td><td>Ce n'est pas un onglet de premier niveau : c'est un sous-onglet de <b>Providers</b></td><td>Ouvrir Providers, puis Clés API</td></tr>
+    </table>
+
+    <p>Pour la disposition générale de l'application, voir <a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a>. Les vingt raccourcis sont détaillés dans <a href="reference-raccourcis-clavier.html">Raccourcis clavier</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

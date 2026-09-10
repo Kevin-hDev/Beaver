@@ -64,6 +64,11 @@ aside nav {
   display: block;
   top: 88px;
   font-size: var(--t-small);
+  /* Le sommaire dépasse l'écran (85 entrées) : sans défilement interne,
+     tout ce qui déborde devient inatteignable une fois le bloc épinglé. */
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding-right: 8px;
 }
 @supports (position: sticky) { aside nav { position: sticky; } }
 

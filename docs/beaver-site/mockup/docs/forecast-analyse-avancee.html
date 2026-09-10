@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Analyse avancée</title>
+<meta name="description" content="Décomposition, anomalies résiduelles, dérive et importance des variables : d'où sortent ces chiffres, sur quoi ils portent, et jusqu'où s'y fier.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Forecast / Analyse avancée</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="forecast-analyse-avancee.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Quatre calculs sur <em>tes données</em></h1>
+    <p>À la fin de chaque prévision, Beaver produit une décomposition, une détection d'anomalies, une mesure de dérive et une importance des variables. Cette page dit d'où viennent ces chiffres, ce qu'ils décrivent exactement, et ce qu'ils ne disent pas.</p>
+
+    <h2 id="ce-que-cest">Ce que c'est, et quand ça se calcule</h2>
+    <p><b>Elle n'a pas de bouton.</b> L'analyse avancée est produite automatiquement à la fin de chaque prévision. Tu n'as rien à lancer, et tu ne peux pas l'éviter. Elle est enregistrée dans le fichier d'analyse, donc conservée avec la prévision et disponible dans les exports.</p>
+    <p><b>Elle ne coûte aucun appel au modèle.</b> Les quatre calculs sont faits sur ta machine, à partir des données déjà présentes en mémoire. Une prévision distante n'en renvoie rien : le calcul est fait ensuite, localement.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Aucun bouton : l'analyse est faite à chaque prévision, calculée en local même quand la prévision vient d'un modèle distant, et enregistrée avec l'analyse.
+    </div>
+
+    <h2 id="ca-parle-du-passe">Ça parle de ton historique, pas de ta prévision</h2>
+    <p>C'est le point le plus important de la page, et il est contre-intuitif. La décomposition et la dérive sont calculées sur <b>les données que tu as fournies</b>, pas sur les valeurs prédites. Les anomalies en découlent, puisqu'elles portent sur les résidus de la décomposition. L'importance des variables est calculée sur les lignes du fichier source.</p>
+    <p>Autrement dit : <b>ces quatre blocs décrivent le passé</b>. Une anomalie signalée est un point bizarre dans ton historique, pas une prévision surprenante. Une dérive détectée dit que la fin de ton historique ne ressemble plus à son début — c'est un avertissement sur la fiabilité de la prévision, pas une mesure de la prévision elle-même.</p>
+    <p>À l'inverse, les blocs <b>Tendance</b>, <b>Incertitude</b> et <b>Points marquants</b> de la même section sont calculés à partir des valeurs prédites. Deux origines, un seul écran.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Décomposition, anomalies et dérive portent toutes sur l'historique que tu as fourni. Une anomalie signalée est un point bizarre dans le passé, pas une prévision surprenante.
+    </div>
+
+    <h2 id="les-sept-blocs">Les sept blocs de la section Analyse</h2>
+
+    <table>
+      <caption class="crumb">Les sept blocs, leur origine et leur état d'ouverture</caption>
+      <tr><th>Bloc</th><th>Sous-titre affiché</th><th>Origine</th><th>Ouvert au départ</th></tr>
+      <tr><td><b>Tendance</b></td><td>« Lecture générale de la prévision. »</td><td>Les prédictions</td><td><b>Oui</b></td></tr>
+      <tr><td><b>Décomposition</b></td><td>« Tendance, saisonnalité et résidus séparés. »</td><td>L'historique</td><td>Non</td></tr>
+      <tr><td><b>Incertitude</b></td><td>« Amplitude de la plage de confiance. »</td><td>Les bornes prévues</td><td><b>Oui</b></td></tr>
+      <tr><td><b>Points marquants</b></td><td>« Valeurs et mouvements importants. »</td><td>Les prédictions</td><td><b>Oui</b></td></tr>
+      <tr><td><b>Anomalies</b></td><td>« Écarts inhabituels mesurés sur les résidus. »</td><td>L'historique</td><td>Non</td></tr>
+      <tr><td><b>Dérive</b></td><td>« Évolution entre l'historique de référence et la période récente. »</td><td>L'historique</td><td>Non</td></tr>
+      <tr><td><b>Variables</b></td><td>« Impact vérifié par permutation chronologique. »</td><td>Le fichier source</td><td>Non</td></tr>
+    </table>
+
+    <p><b>Les quatre blocs de l'analyse avancée sont donc tous repliés à l'ouverture</b>, et les trois ouverts sont ceux calculés à partir de la prévision. Si un bloc te semble vide, déplie-le.</p>
+    <p>Un sélecteur de série apparaît en haut dès qu'il y a plus d'une série. Décomposition, anomalies et dérive sont calculées <b>série par série</b> ; l'importance des variables, elle, est calculée sur toutes les séries confondues.</p>
+    <p>Pour mémoire, les trois blocs calculés à partir de la prévision : <b>Tendance</b> donne la direction — Hausse, Baisse ou Stable, avec un seuil de ±2 % —, la variation totale en valeur et en pourcentage, la valeur de début et celle de fin. <b>Incertitude</b> donne la plage moyenne, la plage maximale et la période où elle est maximale, avec un avertissement si la plage maximale dépasse 1,5 fois la moyenne. <b>Points marquants</b> donne quatre événements : le point le plus haut, le plus bas, la plus forte hausse et la plus forte baisse.</p>
+
+    <h2 id="la-decomposition">La décomposition</h2>
+    <p>Séparer une série en trois couches : une tendance, un motif qui se répète, et ce qui reste.</p>
+
+    <table>
+      <caption class="crumb">Les deux méthodes de décomposition, choisies automatiquement</caption>
+      <tr><th>Méthode affichée</th><th>Choisie quand</th><th>Ce qu'elle fait</th></tr>
+      <tr><td><b>Additive classique</b></td><td>La fréquence implique une période supérieure à 1 <b>et</b> l'historique couvre au moins deux périodes complètes</td><td>Moyenne mobile sur une période, puis effet saisonnier moyen par phase, recentré</td></tr>
+      <tr><td><b>Moyenne mobile</b></td><td>Tous les autres cas</td><td>Moyenne mobile sur 5 points, aucune saisonnalité extraite</td></tr>
+    </table>
+
+    <p>La période est déduite de la fréquence, exactement comme pour les références du backtest : jour 7, heure 24, mois 12, trimestre 4, semaine 52, seconde et minute 60, jour ouvré 5, année 1. Aucun réglage manuel. <b>En dessous de 5 points</b>, la décomposition n'est pas faite du tout et le bloc affiche « Historique insuffisant pour la décomposition. »</p>
+    <p>Trois valeurs sont affichées : la <b>méthode</b>, la <b>période saisonnière</b> — ou « Non détectée » quand elle vaut 1 — et la <b>force saisonnière</b> en pourcentage. Cette dernière se lit comme « la part de ce qui n'est pas la tendance qui s'explique par le motif saisonnier ». Elle n'est calculée que par la méthode additive ; avec la moyenne mobile, le bloc affiche « Indisponible ».</p>
+    <p>Les points décomposés eux-mêmes — observé, tendance, saisonnier, résidu, date par date — sont enregistrés dans le fichier d'analyse mais ne sont affichés nulle part : l'écran ne montre que les trois valeurs de synthèse. Ils sortent en revanche dans les exports.</p>
+
+    <h2 id="les-anomalies">Les anomalies résiduelles</h2>
+    <p>Beaver ne cherche pas les valeurs « hautes » ou « basses » : il cherche les points qui <b>s'écartent de ce que la décomposition attendait</b>, c'est-à-dire les gros résidus.</p>
+    <p><b>La méthode est robuste</b>, ce qui a une conséquence pratique : quelques valeurs extrêmes ne faussent pas la détection des autres. Le centre est la médiane des résidus, la dispersion leur écart absolu médian.</p>
+    <p><b>Le calcul se fait par phase saisonnière</b> quand la phase compte au moins 4 points et que ses résidus ne sont pas tous identiques ; sinon il retombe sur l'ensemble de la série. Concrètement, avec une fréquence journalière, les lundis sont comparés aux lundis.</p>
+    <p><b>Le seuil est de 3,5.</b> En dessous, rien n'est signalé. Un point à 3,5 s'écarte de trois fois et demie la dispersion habituelle de sa phase. Deux niveaux de gravité : élevé au-delà de 6, moyen entre 3,5 et 6.</p>
+    <p><b>Cent anomalies au maximum sont conservées</b>, les plus fortes d'abord. L'écran n'en affiche que <b>huit</b> par série, chacune sous la forme « Anomalie résiduelle », la valeur observée, puis la date et le score. Quand il n'y en a aucune : « Aucune anomalie résiduelle détectée. » Les anomalies apparaissent aussi sur le graphe principal, comme une couche activable nommée <b>« Anomalies résiduelles »</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Une anomalie est jugée par rapport à sa saison. Avec une fréquence journalière, un lundi est comparé aux autres lundis, pas à l'ensemble des jours — quand l'historique en contient assez.
+    </div>
+
+    <h2 id="la-derive">La dérive</h2>
+    <p>La dérive répond à une question : <b>la fin de ton historique ressemble-t-elle encore à son début ?</b> Si non, un modèle entraîné sur l'ensemble part d'un passé qui n'est plus d'actualité.</p>
+    <p><b>Il faut au moins 24 points</b>, sinon le bloc affiche « Historique insuffisant pour mesurer la dérive. » Deux fenêtres de même taille sont comparées : les premiers points contre les derniers. Leur taille est le tiers de l'historique, ramenée entre 8 et 256 points.</p>
+
+    <table>
+      <caption class="crumb">Les quatre écarts mesurés entre le début et la fin de l'historique</caption>
+      <tr><th>Écart</th><th>Ce qu'il compare</th></tr>
+      <tr><td><b>Décalage de moyenne</b></td><td>La différence des moyennes, rapportée à la dispersion commune</td></tr>
+      <tr><td><b>Changement de dispersion</b></td><td>Le rapport des variances, en valeur absolue</td></tr>
+      <tr><td><b>Changement de pente</b></td><td>La différence des pentes, ramenée à l'échelle de la fenêtre</td></tr>
+      <tr><td><b>Écart de distribution</b></td><td>La distance entre les deux échantillons, de 0 à 1</td></tr>
+    </table>
+
+    <p><b>Le score de dérive est le plus grand des quatre</b>, l'écart de distribution comptant double. Il n'y a donc pas de moyenne : un seul indicateur au rouge suffit à déclencher l'alerte. Deux seuils : dérive <b>détectée</b> à partir de 1,0, gravité élevée à partir de 2,0.</p>
+    <p>Trois valeurs sont affichées : l'<b>État</b> — « Dérive détectée » en avertissement, ou « Stable » —, le <b>Score de dérive</b> à deux décimales, et l'<b>Écart de distribution</b> en pourcentage. Les trois autres écarts sont calculés et enregistrés, mais pas affichés : le score visible ne dit donc pas lequel des quatre phénomènes l'a produit.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Une dérive détectée ne rend pas la prévision fausse. Elle dit que la fin de ton historique ne ressemble plus à son début. C'est une raison de regarder le backtest de plus près, pas un verdict.
+    </div>
+
+    <h2 id="importance-des-variables">L'importance des variables</h2>
+    <p>Ce bloc n'a de contenu que si ta prévision utilise des <b>variables de contexte</b>. Sans elles, l'écran affiche « Importance indisponible ou données insuffisantes. »</p>
+    <p><b>Ce que Beaver mesure exactement.</b> Pour chaque variable, il construit des paires : d'un côté la variation de la cible d'un pas au suivant, de l'autre la valeur de la variable à ce pas. Il ajuste une droite entre les deux sur les <b>70 premiers pour cent</b> des paires, chronologiquement, et garde les 30 % restants pour vérifier.</p>
+    <p><b>L'importance est ensuite mesurée par permutation.</b> Beaver compare l'erreur de cette droite sur la partie de vérification à l'erreur obtenue quand les valeurs de la variable sont décalées circulairement — trois décalages différents, dont on prend la moyenne. Si mélanger la variable dégrade nettement la prédiction, c'est qu'elle portait de l'information ; si ça ne change rien, le score est nul. Le décalage circulaire, plutôt qu'un mélange aléatoire, préserve l'ordre du temps.</p>
+    <p><b>Minimum requis par variable</b> : 12 paires d'entraînement et 6 de vérification. Une variable qui n'y arrive pas est écartée sans être signalée. Si aucune ne passe, le bloc affiche le message d'indisponibilité.</p>
+    <p>Les scores sont normalisés pour que leur somme fasse 100 %, puis triés du plus fort au plus faible. L'écran affiche au plus <b>huit</b> variables, chacune avec son pourcentage et sa direction — positive, négative ou neutre selon le signe de la pente.</p>
+    <p><b>La fiabilité du calcul est établie mais pas affichée.</b> Beaver la range en trois niveaux selon le nombre de points de vérification — élevée à partir de 30, modérée à partir de 12, faible en dessous — et la transmet à l'agent, avec la consigne de toujours la mentionner. L'écran, lui, n'en montre rien : un pourcentage lu à l'écran peut reposer sur six points comme sur trois cents.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      L'importance des variables ne dit pas ce que le modèle a fait. Elle est calculée par un petit modèle linéaire interne à Beaver, indépendamment du modèle de prévision choisi. Elle mesure un lien dans tes données — « cette variable est liée aux variations de la cible » — pas une décision du modèle.
+    </div>
+
+    <h2 id="ce-que-ca-ne-dit-pas">Ce que l'analyse avancée ne dit pas</h2>
+    <ul>
+      <li><b>Elle ne juge pas le modèle.</b> Aucun de ces quatre calculs ne compare la prévision à la réalité : pour ça, il faut un backtest — voir <a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a>.</li>
+      <li><b>Elle ne détecte pas d'anomalie dans le futur.</b> Les anomalies portent sur l'historique fourni.</li>
+      <li><b>Un calcul qui dérape est effacé en silence.</b> Une dernière passe vérifie que toutes les valeurs sont finies ; sinon la décomposition repasse en « données insuffisantes », les anomalies concernées sont retirées et la dérive remise à zéro. Un bloc « insuffisant » peut donc signaler un calcul qui a échoué autant qu'un historique trop court.</li>
+      <li><b>Elle n'est pas rejouée</b> quand tu modifies quelque chose sans relancer de prévision : elle est produite une fois, à la fin du calcul, avec un horodatage.</li>
+    </ul>
+
+    <h2 id="ou-on-la-retrouve">Où on la retrouve ailleurs</h2>
+    <p><b>Dans les exports.</b> Les points de décomposition, les anomalies, la dérive et l'importance des variables sortent dans le classeur et dans le rapport PDF — voir <a href="forecast-exports.html">Exports</a>.</p>
+    <p><b>Dans la section Rapport</b> de l'Espace Forecast, qui affiche la même section Analyse à côté du menu d'export — voir <a href="forecast-scenarios-notes-rapports.html">Scénarios, notes et rapports</a>.</p>
+    <p><b>Auprès de l'agent.</b> Quand l'agent consulte une analyse, il reçoit la décomposition en résumé, les anomalies les plus fortes, l'importance des variables et la dérive, accompagnées d'une phrase qui lui rappelle la nature exacte de chaque chiffre. Le nombre d'anomalies transmises est plafonné, et un indicateur signale la troncature. Ses outils Forecast sont <b>éteints par défaut</b> — voir <a href="outils-forecast.html">Forecast, côté outils</a>.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Historique insuffisant pour la décomposition. »</td><td>Moins de 5 points dans la série</td><td>Allonger l'historique</td></tr>
+      <tr><td>« Historique insuffisant pour mesurer la dérive. »</td><td>Moins de 24 points</td><td>Allonger l'historique</td></tr>
+      <tr><td>Période saisonnière « Non détectée »</td><td>Fréquence non reconnue, ou historique de moins de deux périodes complètes</td><td>Vérifier la fréquence déclarée ; avec une fréquence journalière il faut au moins 14 points</td></tr>
+      <tr><td>Force saisonnière « Indisponible »</td><td>La méthode retenue est la moyenne mobile, qui n'extrait pas de saisonnalité</td><td>Même cause que la ligne précédente</td></tr>
+      <tr><td>« Importance indisponible ou données insuffisantes. »</td><td>Aucune variable de contexte, ou moins de 12 + 6 paires exploitables par variable</td><td>Ajouter des lignes, ou vérifier que la colonne est bien numérique</td></tr>
+      <tr><td>Une variable de contexte n'apparaît pas dans la liste</td><td>Elle n'a pas atteint le minimum de points, et son absence n'est pas signalée</td><td>Vérifier les cases vides et les valeurs non numériques de cette colonne</td></tr>
+      <tr><td>« Aucune anomalie résiduelle détectée. »</td><td>Aucun résidu n'atteint le seuil de 3,5</td><td>C'est un bon résultat, pas une panne</td></tr>
+      <tr><td>Le bloc Anomalies affiche 8 lignes alors qu'il y en a plus</td><td>L'affichage est plafonné à 8 par série</td><td>Les autres — jusqu'à 100 — sont dans les exports</td></tr>
+      <tr><td>Les blocs de l'analyse avancée semblent vides à l'ouverture</td><td>Ils sont repliés par défaut</td><td>Les déplier</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a> — les mesures qui jugent le modèle, et non les données.</li>
+      <li><a href="forecast-donnees-et-audit.html">Données et audit</a> — les contrôles de qualité faits à l'import, distincts des anomalies résiduelles.</li>
+      <li><a href="forecast-exports.html">Exports</a> — les points de décomposition et les 100 anomalies, qui n'existent que là.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

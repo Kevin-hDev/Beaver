@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Réglages de l'application</title>
+<meta name="description" content="Les trois onglets de la section Application : mises à jour de Beaver et d'Ollama, chats archivés et suppression définitive, et l'écran À propos.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Réglages / Application</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reglages-application.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le logiciel et ce qu'il a <em>accumulé</em></h1>
+    <p>Trois onglets qui ne changent pas le comportement de Beaver : ils s'occupent du logiciel lui-même, de ses versions, et des conversations mises de côté. C'est aussi le seul endroit des réglages où l'on peut détruire des données définitivement.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Un réglage souvent cherché ici n'y est pas : l'<b>accès aux fichiers</b> — les dossiers ouverts à l'agent — vit dans <a href="reglages-agent.html">Agent › Avancé</a>, avec les autres réglages du comportement de l'agent.
+    </div>
+
+    <h2 id="ce-que-contient-la-section">Ce que contient la section</h2>
+
+    <table>
+      <caption class="crumb">Les trois onglets de la section Application</caption>
+      <tr><th>Onglet</th><th>Ce qu'on y fait</th></tr>
+      <tr><td><b>Mises à jour</b></td><td>Voir les versions installées, chercher et installer les nouvelles</td></tr>
+      <tr><td><b>Chats archivés</b></td><td>Retrouver, désarchiver ou supprimer définitivement une conversation</td></tr>
+      <tr><td><b>À propos</b></td><td>Lire sa version, celle de Tauri, son système, ouvrir le dépôt</td></tr>
+    </table>
+
+    <h2 id="onglet-mises-a-jour">Onglet Mises à jour</h2>
+    <p>Le panneau porte le titre <b>« Mises à jour »</b> et une phrase de cadrage : « Vérifie et installe les nouvelles versions de Beaver et Ollama. » En haut à droite, un bouton <b>« Rechercher les mises à jour »</b>, qui devient <b>« Recherche… »</b> pendant l'opération et reste inactif tant qu'elle dure.</p>
+    <p>Le corps de l'écran a une section fixe et une section conditionnelle.</p>
+    <p><b>« Installé »</b> — toujours présente. Deux lignes, une par produit, chacune avec son logo, son nom et son numéro de version au format <code>v1.2.2</code> : la version de <b>Beaver</b> lui-même, et celle du moteur <b>Ollama</b> réellement installé. Quand une version n'est pas connue — Ollama pas encore installé, par exemple — la ligne affiche <code>—</code>.</p>
+    <p><b>« Mises à jour disponibles »</b> — n'apparaît <b>que s'il y en a</b>. Chaque ligne porte alors un bouton <b>« Mettre à jour »</b>. Pendant le téléchargement, le bouton laisse place à une barre de progression avec un bouton d'annulation, qui affiche « Annulation… » le temps que l'arrêt se fasse.</p>
+
+    <p>Trois faits sur le rythme de vérification :</p>
+    <ul>
+      <li>une vérification a lieu <b>au lancement de l'application</b> ;</li>
+      <li>puis <b>automatiquement toutes les heures</b> ;</li>
+      <li>le bouton de l'écran déclenche la même vérification <b>à la demande</b>, et c'est le seul cas où un échec produit un message d'erreur visible. Les vérifications automatiques échouent en silence.</li>
+    </ul>
+
+    <p><b>Une seule mise à jour à la fois.</b> Tant qu'un téléchargement est en cours, le bouton de l'autre produit est inactif. Et pendant ce temps, une nouvelle vérification ne remplace pas ce qui est en cours d'installation — sans cela, un téléchargement pourrait viser une version différente de celle annoncée à l'écran.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Beaver cherche ses mises à jour tout seul, mais n'installe jamais tout seul. Une vérification a lieu au lancement puis toutes les heures ; l'installation reste toujours un clic de ta part.
+    </div>
+
+    <h2 id="ce-qui-ny-figure-pas">Mises à jour — ce qui n'y figure pas</h2>
+    <p>Deux absences, parce qu'on les cherche dans cet onglet :</p>
+    <ul>
+      <li><b>Les mises à jour des modèles Ollama</b> ne sont pas listées ici. L'application les détecte, mais cet écran ne montre que l'application et le moteur. Les modèles se mettent à jour depuis <a href="reglages-modeles.html">Modèles › Ollama</a>.</li>
+      <li><b>Il n'y a aucun réglage</b> dans cet onglet : ni case « mettre à jour automatiquement », ni choix de canal de version. La vérification est automatique, l'installation toujours manuelle.</li>
+    </ul>
+    <p>Le mécanisme complet — d'où viennent les versions, comment l'installation se déroule, ce qui se passe si elle échoue — est dans <a href="demarrage-mise-a-jour.html">Mise à jour</a>.</p>
+
+    <h2 id="onglet-chats-archives">Onglet Chats archivés</h2>
+    <p>Le panneau porte le titre <b>« Chats archivés »</b>. En haut, une barre avec deux contrôles : un champ de recherche <b>« Rechercher des discussions archivées »</b>, limité à <b>120 caractères</b>, et un filtre par projet dont la première valeur est <b>« Tous les projets »</b>. En haut à droite, un bouton <b>« Tout supprimer »</b>, inactif quand il n'y a rien à supprimer.</p>
+    <p><b>Les conversations sont groupées par projet</b>, et à l'intérieur de chaque groupe, de la plus récemment active à la plus ancienne. Un groupe vide n'est pas affiché. Les conversations qui n'appartiennent à aucun projet forment un groupe à part, titré <b>« Beaver »</b> ; le filtre propose ce groupe comme une entrée à part entière, entre « Tous les projets » et la liste des projets réels.</p>
+    <p>Chaque conversation propose deux actions : <b>« Désarchiver »</b> et <b>« Supprimer »</b>.</p>
+    <p><b>Une borne d'affichage existe</b> : au plus <b>2 000 conversations archivées</b> sont présentées. Au-delà, les plus anciennes ne s'affichent pas, et la limite n'est pas signalée à l'écran. La recherche reste le moyen de retrouver une conversation précise.</p>
+    <p>L'onglet a ses états écrits : « Chargement des archives… », « Aucun chat archivé », et la liste elle-même. Chaque action produit un message : « Chat désarchivé », « Impossible de désarchiver le chat », « Chat supprimé », « Chats archivés supprimés », « Impossible de supprimer le chat ». Archiver une conversation depuis la liste principale est décrit dans <a href="interface-conversations.html">Conversations</a>.</p>
+
+    <h2 id="supprimer">Supprimer, et ce que ça veut dire</h2>
+    <p>Deux niveaux de gravité, à ne pas confondre :</p>
+    <ul>
+      <li><b>Désarchiver</b> rend la conversation à la liste principale. Rien n'est perdu.</li>
+      <li><b>Supprimer</b> l'efface. Les textes de l'application sont explicites : « Supprimer définitivement ce chat archivé ? » et, pour l'action de masse, « Supprimer définitivement tous les chats archivés ? »</li>
+    </ul>
+    <p><b>Les deux suppressions demandent une confirmation</b> : le bouton se transforme en <b>« Confirmer »</b>, qu'il faut cliquer une seconde fois. <b>Il n'y a pas d'annulation après coup</b> : une conversation supprimée n'est plus récupérable depuis l'application.</p>
+    <p><b>« Tout supprimer » supprime les conversations une par une, en parallèle.</b> Deux conséquences : si l'opération échoue en cours de route, une partie des conversations peut avoir été supprimée ; et le message d'erreur affiché est unique — il ne dit pas combien ont été effacées.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      « Tout supprimer » ignore les filtres. Le bouton porte sur <b>toutes</b> les conversations archivées, y compris celles que la recherche ou le filtre par projet masquent au moment du clic. Filtrer sur un projet puis cliquer « Tout supprimer » efface aussi les archives des autres projets.
+    </div>
+
+    <h2 id="onglet-a-propos">Onglet À propos</h2>
+    <p>Le plus simple des dix-sept onglets : il n'a aucun réglage. En haut, le logo de Beaver, son nom en typographie de marque, et sa description — « Application desktop agentique pour LLM locaux et cloud. »</p>
+    <p>Puis une carte de trois lignes :</p>
+
+    <table>
+      <caption class="crumb">Les trois lignes de l'écran À propos</caption>
+      <tr><th>Ligne</th><th>Contenu</th></tr>
+      <tr><td><b>Version</b></td><td>La version de Beaver installée</td></tr>
+      <tr><td><b>Tauri</b></td><td>La version du cadre applicatif sur lequel Beaver est construit</td></tr>
+      <tr><td><b>Système</b></td><td><b>macOS</b>, <b>Windows</b> ou <b>Linux</b>, selon la machine</td></tr>
+    </table>
+
+    <p>Chacune affiche <code>—</code> tant que la valeur n'est pas connue. Enfin, un bouton <b>« Voir sur GitHub »</b> ouvre le dépôt du projet dans le navigateur du système, hors de Beaver.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      C'est l'écran à ouvrir avant toute demande d'aide. La version de Beaver, celle de Tauri et ton système sont les trois informations à joindre à un signalement pour qu'un problème soit reproductible.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Les surprises les plus courantes de la section Application</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Je cherche où limiter les dossiers accessibles »</td><td>Ce réglage est dans <b>Agent › Avancé</b></td><td>Voir <a href="reglages-agent.html">Agent</a></td></tr>
+      <tr><td>« La version d'Ollama affiche <code>—</code> »</td><td>Le moteur n'est pas installé, ou sa version n'a pas pu être lue</td><td>Voir <a href="modeles-moteur-local.html">Moteur local</a></td></tr>
+      <tr><td>« Le bouton Mettre à jour est grisé »</td><td>Une autre mise à jour est déjà en cours</td><td>Attendre la fin, ou l'annuler</td></tr>
+      <tr><td>« J'ai cliqué Rechercher et rien ne s'est passé »</td><td>Aucune mise à jour n'est disponible : la section correspondante n'apparaît pas</td><td>Comportement attendu</td></tr>
+      <tr><td>« Mon modèle Ollama a une mise à jour qui n'apparaît pas ici »</td><td>Cet onglet ne liste que l'application et le moteur</td><td>Passer par <a href="reglages-modeles.html">Modèles › Ollama</a></td></tr>
+      <tr><td>« J'ai supprimé un chat archivé par erreur »</td><td>La suppression est définitive et sans annulation</td><td>Aucune résolution dans l'application</td></tr>
+      <tr><td>« J'ai filtré sur un projet et tout a été supprimé »</td><td>« Tout supprimer » porte sur toutes les archives, filtres compris</td><td>Supprimer ligne par ligne quand on ne veut qu'une partie</td></tr>
+      <tr><td>« Mes archives les plus anciennes n'apparaissent pas »</td><td>L'écran affiche au plus 2 000 conversations</td><td>Utiliser la recherche pour retrouver une conversation précise</td></tr>
+      <tr><td>« Je ne trouve pas mes conversations sans projet »</td><td>Elles sont groupées sous le titre <b>Beaver</b></td><td>Sélectionner cette entrée dans le filtre</td></tr>
+    </table>
+
+    <p>Pour retrouver un autre réglage, voir <a href="reglages-vue-densemble.html">Vue d'ensemble des réglages</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

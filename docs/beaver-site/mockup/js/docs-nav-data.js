@@ -97,6 +97,31 @@ var BEAVER_DOCS_NAV = [
     ],
   },
   {
+    group: 'Forecast',
+    pages: [
+      { slug: 'forecast-vue-densemble', label: "Vue d'ensemble" },
+      { slug: 'forecast-donnees-et-audit', label: 'Données et audit' },
+      { slug: 'forecast-selection-du-modele', label: 'Sélection du modèle' },
+      { slug: 'forecast-modeles-locaux', label: 'Modèles locaux' },
+      { slug: 'forecast-modele-cloud-timegpt', label: 'TimeGPT (cloud)' },
+      { slug: 'forecast-evaluation-et-comparaison', label: 'Évaluation et comparaison' },
+      { slug: 'forecast-analyse-avancee', label: 'Analyse avancée' },
+      { slug: 'forecast-scenarios-notes-rapports', label: 'Scénarios, notes et rapports' },
+      { slug: 'forecast-exports', label: 'Exports' },
+    ],
+  },
+  {
+    group: 'Réglages',
+    pages: [
+      { slug: 'reglages-vue-densemble', label: "Vue d'ensemble" },
+      { slug: 'reglages-preferences', label: 'Préférences' },
+      { slug: 'reglages-agent', label: 'Agent' },
+      { slug: 'reglages-modeles', label: 'Modèles' },
+      { slug: 'reglages-integrations', label: 'Intégrations' },
+      { slug: 'reglages-application', label: 'Application' },
+    ],
+  },
+  {
     group: 'Référence',
     pages: [
       { slug: 'reference-raccourcis-clavier', label: 'Raccourcis clavier' },

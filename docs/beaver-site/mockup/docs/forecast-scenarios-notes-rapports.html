@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Scénarios, notes et rapports</title>
+<meta name="description" content="Tester une hypothèse sans perdre la prévision de référence, écrire des notes attachées à une analyse, et ce que contient la section Rapport.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Forecast / Scénarios, notes et rapports</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="forecast-scenarios-notes-rapports.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Poser une hypothèse <em>sans rien perdre</em></h1>
+    <p>Un scénario est une variante de la prévision, enregistrée à côté d'elle. Une note est un texte daté, attaché à une analyse et rangé dans un vrai fichier sur ton disque. Cette page décrit les deux, et ce que contient la section Rapport.</p>
+
+    <h2 id="les-trois-sections">Les trois sections, et où elles vivent</h2>
+    <p>Scénarios, Notes et Rapport sont trois des sept sections de la fenêtre <b>Espace Forecast</b> — avec Données, Prévision, Évaluation et Comparaison. Ce n'est pas le menu principal de Forecast, qui n'a que trois entrées : Vue principale, Comparaisons, Historique.</p>
+    <p>Les trois sections sont attachées à <b>une analyse précise</b> : sans analyse sélectionnée, elles affichent « Aucune analyse à évaluer » et « Lancez d'abord une prévision depuis la conversation. »</p>
+
+    <h2 id="les-scenarios">Les scénarios : deux façons de poser une hypothèse</h2>
+    <p>Le sous-titre de la section le dit : « Créer et modifier des hypothèses sans perdre la prévision de référence. » Deux types existent.</p>
+
+    <table>
+      <caption class="crumb">Les deux types de scénario</caption>
+      <tr><th>Type affiché</th><th>Relance le modèle ?</th><th>Conditions</th></tr>
+      <tr><td><b>Ajustement global</b></td><td><b>Non</b></td><td>Aucune</td></tr>
+      <tr><td><b>Contexte</b></td><td><b>Oui</b></td><td>Il faut des variables de contexte dans l'analyse</td></tr>
+    </table>
+
+    <p>Le bouton <b>Contexte</b> est désactivé quand l'analyse n'utilise aucune variable de contexte. L'interface explique les deux sous les boutons : « Crée une courbe dérivée à partir de la prévision actuelle, sans relancer le modèle. » d'un côté, « Relance le modèle avec les nouvelles valeurs futures des variables sélectionnées. » de l'autre.</p>
+    <p><b>Champs communs</b> : un <b>nom</b> obligatoire, au plus 80 caractères, et une <b>description</b> facultative, au plus 500. <b>Cinquante scénarios au maximum</b> par analyse.</p>
+
+    <h2 id="ajustement-global">L'ajustement global</h2>
+    <p>Le plus simple, et le plus rapide : Beaver <b>multiplie</b> la prévision par un facteur, sans rien recalculer. Le pourcentage va de <b>−95 % à +500 %</b>, par pas de 0,1.</p>
+    <p>Ce qui est multiplié : les prédictions <b>et les trois bornes</b> — basse, médiane, haute. La plage de confiance se déplace donc avec la courbe, et sa largeur relative reste identique. Avec plusieurs séries, l'ajustement les déplace toutes.</p>
+    <p><b>Le modèle n'est pas rappelé.</b> Aucun calcul, aucun réseau, aucun démarrage de moteur : c'est une transformation arithmétique de la prévision déjà obtenue. Le bouton porte « Lancer le scénario » à la création et « Mettre à jour » en modification.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Un ajustement global ne prévient pas le modèle. Il multiplie la courbe déjà calculée, plage de confiance comprise. C'est immédiat et sans risque, mais ça ne répond pas à « que se passerait-il si… » : ça répond à « à quoi ressemblerait cette courbe 10 % plus haut ».
+    </div>
+
+    <h2 id="ajustement-de-contexte">L'ajustement de contexte</h2>
+    <p>Celui-ci <b>relance vraiment le modèle</b> avec d'autres valeurs futures pour tes variables explicatives.</p>
+    <p><b>Comment on le règle</b> : on ajoute une ou plusieurs lignes, chacune composée d'une <b>variable</b>, d'un <b>mode</b> — « % » ou « Valeur » — et d'un <b>nombre</b>. Le bouton d'ajout s'appelle « Ajouter une variable », celui de retrait « Retirer la variable ». Une nouvelle ligne démarre à +10 %. <b>Douze ajustements au maximum.</b></p>
+    <p>Le mode « % » ajuste la valeur existante ; le mode « Valeur » la remplace. Attention : <b>la borne de −95 à +500 s'applique aux deux modes</b>. Une variable dont les valeurs normales se comptent en milliers ne peut donc pas être fixée à sa vraie échelle par ce champ.</p>
+    <p><b>Sur quelles lignes ça s'applique</b> : uniquement les lignes <b>futures</b>, c'est-à-dire celles dont la colonne cible est vide. Les données historiques ne sont jamais modifiées. Si aucune ligne future ne correspond, le scénario est refusé avec « Aucune ligne future modifiée ».</p>
+    <p><b>Une série ou toutes.</b> Quand l'analyse contient plusieurs séries, un sélecteur permet de viser une série précise ; sa valeur par défaut est « Toutes les séries ».</p>
+    <p><b>Quatre conditions doivent être réunies</b>, sinon le scénario est refusé : le moteur doit accepter les variables de contexte futures, les données source doivent être disponibles, l'analyse doit utiliser au moins une variable, et chaque variable citée doit faire partie de celles utilisées.</p>
+    <p><b>La relance passe par le même chemin qu'une prévision normale</b> : validation de la requête, contrôle de qualité des données, vérification des capacités du moteur, puis appel local ou distant. Toutes les conditions habituelles s'appliquent donc — modèle installé, ressources suffisantes, clé API pour un modèle distant. Le bouton porte « Relancer le scénario » en modification, puisque le calcul est refait.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Un scénario de contexte ne modifie que les lignes futures — celles dont la colonne cible est vide. Si ton fichier n'en contient pas, le scénario est refusé. Et avec un modèle distant, la relance <b>renvoie tes données au fournisseur</b> : voir <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a>.
+    </div>
+
+    <h2 id="les-notes">Les notes : ce que c'est, où c'est écrit</h2>
+    <p>Une note est un texte daté, attaché à une analyse, rangé dans un vrai fichier Markdown sur ton disque.</p>
+    <p><b>Cinq types</b> : <b>Contexte</b>, <b>Risque</b>, <b>Décision</b>, <b>Anomalie</b>, <b>Hypothèse</b>. Le type par défaut d'une nouvelle note est « Contexte ». <b>Deux sources possibles</b> : une note écrite par toi, ou une note posée par l'agent. L'interface les distingue par la couleur du point sur la frise et affiche « Utilisateur » ou « LLM ».</p>
+    <p><b>Où c'est rangé.</b> Un fichier <code>.md</code> par note, dans un dossier de notes propre à l'analyse, sous le dossier de données de Beaver. L'interface affiche ce chemin sous la frise, et le bouton <b>« Ouvrir la note »</b> ouvre le fichier dans l'éditeur du système.</p>
+    <p><b>Ce que contient le fichier</b> : un en-tête entre deux lignes de tirets — identifiant, identifiant d'analyse, date, type, source, dates de création et de mise à jour —, puis le titre en titre de niveau 1, puis le contenu en Markdown.</p>
+
+    <table>
+      <caption class="crumb">Les limites d'une note</caption>
+      <tr><th>Élément</th><th>Limite</th></tr>
+      <tr><td>Titre</td><td><b>120 caractères</b>, sans guillemet double ni caractère de contrôle</td></tr>
+      <tr><td>Date</td><td><b>80 caractères</b>, mêmes restrictions</td></tr>
+      <tr><td>Contenu</td><td><b>60 ko</b> ; retours à la ligne et tabulations acceptés</td></tr>
+      <tr><td>Fichier entier</td><td><b>64 ko</b></td></tr>
+      <tr><td>Notes par analyse</td><td><b>200</b></td></tr>
+    </table>
+
+    <p><b>L'écriture est sûre.</b> Chaque fichier est écrit en deux temps — fichier temporaire puis renommage — et l'enregistrement de la note et celui de l'analyse forment une transaction : si l'analyse ne peut pas être sauvegardée, la note écrite est annulée. Un verrou empêche deux opérations sur les notes de se croiser, et les chemins sont vérifiés à chaque accès : identifiant filtré, chemin canonicalisé, appartenance au bon dossier contrôlée, liens symboliques refusés.</p>
+    <p><b>Les notes existent en deux endroits à la fois</b> : le fichier Markdown, et une copie dans l'analyse elle-même. Beaver les remet d'accord à chaque ouverture de la liste — les fichiers manquants sont réécrits, et les copies mises à jour depuis les fichiers.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Tes notes sont de vrais fichiers Markdown. Un fichier par note, dans le dossier de données de Beaver, lisible et modifiable dans n'importe quel éditeur — sans Beaver.
+    </div>
+
+    <h2 id="frise-et-liste">La frise et la liste</h2>
+    <p>La section Notes affiche trois zones.</p>
+    <ul>
+      <li><b>Une frise</b> — « Timeline annotée » — où chaque note est un point placé selon sa date, sur un axe qui va du début de l'historique à la fin de la prévision. Sa hauteur se règle en la tirant, et un double-clic la remet à sa taille d'origine. Vide, elle affiche « Aucune note placée sur cette prévision. »</li>
+      <li><b>Une liste</b> des notes, triées par date puis par ordre de création.</li>
+      <li><b>Un panneau de détail</b>, avec l'aperçu Markdown de la note sélectionnée et les actions Modifier, Supprimer et Ouvrir la note. Sans note, il affiche « Sélectionne une note ou crée une nouvelle note. »</li>
+    </ul>
+    <p>Le bouton de création s'appelle <b>« Nouvelle note »</b>. <b>La liste se recharge quand la fenêtre reprend le focus</b> : si tu modifies un fichier de note dans un éditeur externe, revenir sur Beaver suffit à voir le changement.</p>
+
+    <h2 id="la-section-rapport">La section Rapport</h2>
+    <p>Elle contient deux choses : un <b>menu d'export</b> en haut, et en dessous la <b>section Analyse</b> — les sept blocs décrits dans <a href="forecast-analyse-avancee.html">Analyse avancée</a>.</p>
+    <p>Le menu d'export propose sept entrées : CSV, Excel, PNG, SVG, JSON, PDF et copie dans le presse-papiers. Les fichiers atterrissent dans le dossier de téléchargements du système, et à défaut dans un dossier d'exports sous le dossier de données de Beaver. Le nom du fichier est celui de l'analyse, nettoyé, suivi des huit premiers caractères de son identifiant.</p>
+    <p><b>Les notes partent dans l'export</b> : elles sont chargées et jointes à l'analyse avant toute écriture. Le détail de ce que contient chaque format est dans <a href="forecast-exports.html">Exports</a>.</p>
+
+    <h2 id="ce-qui-est-conserve">Ce qui est conservé, et ce qui disparaît</h2>
+    <p><b>Tout est enregistré sur ton disque, tout de suite.</b> Scénarios et annotations vivent dans le fichier de l'analyse, les notes dans leurs fichiers Markdown. Il n'y a pas de bouton « enregistrer l'analyse » : chaque création, modification et suppression déclenche une écriture.</p>
+    <p><b>Cinq cents analyses au maximum.</b> Au-delà, Beaver supprime la plus ancienne du même espace de travail ; s'il n'y en a aucune, il refuse d'enregistrer avec « Le stockage Forecast est plein. Supprime d'anciennes analyses puis réessaie. »</p>
+    <p><b>Supprimer une analyse supprime ses notes</b>, et l'opération est reprenable : le dossier de notes est d'abord mis de côté, puis supprimé une fois l'analyse effacée ; si l'effacement échoue, le dossier est remis en place. Un dossier resté en attente après une coupure est traité au démarrage suivant.</p>
+    <p><b>Les scénarios ne survivent pas à une nouvelle prévision</b> : ils appartiennent à l'analyse. Une nouvelle prévision crée une nouvelle analyse, donc une liste de scénarios vide.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Supprimer une analyse supprime ses notes. L'opération est faite de façon à ne rien laisser à moitié fait, et une coupure au milieu est rattrapée au démarrage suivant — mais la suppression, elle, est définitive.
+    </div>
+
+    <h2 id="depuis-la-conversation">Notes et scénarios depuis la conversation</h2>
+    <p>L'agent peut créer une note, créer un scénario, le modifier ou le supprimer — c'est ce qui explique la source « LLM » sur la frise. Ces outils sont <b>éteints par défaut</b> et doivent d'abord être activés dans les réglages de l'agent : voir <a href="outils-forecast.html">Forecast, côté outils</a>.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Le bouton « Contexte » est grisé</td><td>L'analyse n'utilise aucune variable de contexte</td><td>Relancer une prévision en désignant des colonnes explicatives</td></tr>
+      <tr><td>« Aucune ligne future modifiée »</td><td>Le fichier ne contient pas de lignes futures pour cette série</td><td>Ajouter des lignes avec la date future et la cible vide</td></tr>
+      <tr><td>« Covariable future manquante »</td><td>Une ligne future n'a pas de valeur pour la variable ajustée</td><td>Compléter la colonne sur toute la période à prévoir</td></tr>
+      <tr><td>« Scénario contextuel non supporté par ce moteur »</td><td>Le modèle de l'analyse ne lit pas les variables de contexte futures</td><td>Voir <a href="forecast-modeles-locaux.html">Modèles locaux</a></td></tr>
+      <tr><td>Le scénario de contexte échoue avec un modèle distant</td><td>Clé API absente, ou service indisponible</td><td>Voir <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a></td></tr>
+      <tr><td>« Trop de scénarios »</td><td>50 scénarios déjà enregistrés sur cette analyse</td><td>En supprimer</td></tr>
+      <tr><td>« Limite de notes atteinte »</td><td>200 notes déjà attachées à cette analyse</td><td>En supprimer</td></tr>
+      <tr><td>Le titre de la note est refusé</td><td>Il est vide, dépasse 120 caractères, ou contient un guillemet double</td><td>Le raccourcir, retirer les guillemets</td></tr>
+      <tr><td>« Le stockage Forecast est plein. »</td><td>500 analyses, et aucune à évincer dans cet espace de travail</td><td>Supprimer d'anciennes analyses</td></tr>
+      <tr><td>La note modifiée dans un éditeur externe n'apparaît pas</td><td>La liste se recharge au retour du focus</td><td>Cliquer sur la fenêtre de Beaver</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="forecast-exports.html">Exports</a> — ce que contient chacun des sept formats du menu Rapport.</li>
+      <li><a href="forecast-analyse-avancee.html">Analyse avancée</a> — les sept blocs affichés sous le menu d'export.</li>
+      <li><a href="forecast-modeles-locaux.html">Modèles locaux</a> — quels modèles acceptent les variables de contexte futures.</li>
+      <li><a href="forecast-vue-densemble.html">Vue d'ensemble</a> — l'Espace Forecast et ses sept sections.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>
