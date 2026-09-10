@@ -4,8 +4,12 @@
 #[path = "../../../src/services/windows_fs_retry.rs"]
 mod windows_fs_retry;
 
+#[path = "../../../src/services/secure_random.rs"]
+mod secure_random;
+
 mod services {
     // Mirror the production module path so this isolated crate compiles the real implementation.
+    pub(crate) use crate::secure_random;
     pub(crate) use crate::windows_fs_retry;
 
     pub mod paths {
@@ -28,10 +32,7 @@ mod private_store;
 
 #[test]
 fn private_storage_round_trip_uses_the_windows_acl_implementation() {
-    use rand::RngCore;
-
-    let mut random = [0_u8; 8];
-    rand::rngs::OsRng.fill_bytes(&mut random);
+    let random = secure_random::array::<8>();
     let root = std::env::temp_dir().join(format!(
         "cl-go-private-store-integration-{}",
         hex::encode(random)

@@ -2,9 +2,7 @@ use super::*;
 
 // Clé master 32 octets (XChaCha20-Poly1305) pour les tests.
 fn test_bytes<const N: usize>() -> [u8; N] {
-    let mut bytes = [0_u8; N];
-    crate::services::secure_random::fill(&mut bytes);
-    bytes
+    crate::services::secure_random::array()
 }
 
 fn test_key() -> [u8; 32] {

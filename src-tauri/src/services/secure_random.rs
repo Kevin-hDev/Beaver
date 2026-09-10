@@ -1,5 +1,14 @@
 use rand::TryRng;
 
+#[cfg(test)]
+use rand::{rand_core::UnwrapErr, RngExt};
+
+/// Generate a fixed-size byte array directly from the operating system CSPRNG.
+#[cfg(test)]
+pub(crate) fn array<const N: usize>() -> [u8; N] {
+    UnwrapErr(rand::rngs::SysRng).random()
+}
+
 /// Fill with the operating system CSPRNG. Failure stops generation instead of
 /// returning predictable bytes.
 pub(crate) fn fill(bytes: &mut [u8]) {
@@ -14,11 +23,8 @@ pub(crate) fn try_fill(bytes: &mut [u8]) -> Result<(), ()> {
 mod tests {
     #[test]
     fn fills_distinct_buffers() {
-        let mut first = [0_u8; 32];
-        let mut second = [0_u8; 32];
-
-        super::fill(&mut first);
-        super::fill(&mut second);
+        let first = super::array::<32>();
+        let second = super::array::<32>();
 
         assert_ne!(first, [0_u8; 32]);
         assert_ne!(first, second);
