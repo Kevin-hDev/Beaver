@@ -131,6 +131,18 @@ var BEAVER_DOCS_NAV = [
     ],
   },
   {
+    group: 'Dépannage',
+    pages: [
+      { slug: 'reference-depannage-installation', label: 'Installation' },
+      { slug: 'depannage-ollama', label: 'Moteur Ollama' },
+      { slug: 'depannage-cles-et-fournisseurs', label: 'Clés et fournisseurs' },
+      { slug: 'depannage-agent-et-outils', label: "Agent et outils" },
+      { slug: 'depannage-connecteurs-extensions-canaux', label: 'Connecteurs, extensions, canaux' },
+      { slug: 'depannage-forecast', label: 'Forecast' },
+      { slug: 'depannage-faq', label: 'Questions fréquentes' },
+    ],
+  },
+  {
     group: 'Référence',
     pages: [
       { slug: 'reference-raccourcis-clavier', label: 'Raccourcis clavier' },
@@ -139,7 +151,6 @@ var BEAVER_DOCS_NAV = [
       { slug: 'reference-modele-de-securite', label: 'Modèle de sécurité' },
       { slug: 'reference-coffre-et-cles', label: 'Le coffre et les clés API' },
       { slug: 'reference-confidentialite', label: 'Confidentialité' },
-      { slug: 'reference-depannage-installation', label: 'Dépannage installation' },
     ],
   },
 ];

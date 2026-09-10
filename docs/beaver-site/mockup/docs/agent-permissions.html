@@ -37,7 +37,7 @@
 
     <div class="callout">
       <span class="t">Attention</span>
-      À l'installation, Beaver est en <b>Accès complet</b> : l'agent exécute ses outils sans jamais demander. Passe en <b>Demande d'approbation</b> si tu préfères valider chaque action sensible.
+      À l'installation, Beaver est en <b>Accès complet</b> : l'agent exécute ses outils sans jamais demander. Passe en <b>Demander l'autorisation</b> si tu préfères valider chaque action sensible.
     </div>
 
     <h2 id="trois-modes">Les trois modes</h2>
@@ -45,7 +45,7 @@
       <caption class="crumb">Les modes proposés dans une conversation</caption>
       <tr><th>Mode</th><th>Comportement</th></tr>
       <tr><td>Accès complet</td><td>L'agent exécute ses outils sans jamais demander</td></tr>
-      <tr><td>Demande d'approbation</td><td>Les actions sensibles déclenchent une confirmation</td></tr>
+      <tr><td>Demander l'autorisation</td><td>Les actions sensibles déclenchent une confirmation</td></tr>
       <tr><td>Chatbot</td><td>Deux outils seulement : recherche web et lecture d'une page</td></tr>
     </table>
     <p><b>Accès complet est aussi la valeur de repli.</b> Fichier de réglages absent, illisible ou portant une valeur inconnue : le mode retenu est Accès complet.</p>
@@ -59,7 +59,7 @@
     </div>
 
     <h2 id="ce-qui-declenche">Ce qui déclenche une demande</h2>
-    <p>En mode Demande d'approbation, <b>douze outils</b> déclenchent systématiquement une confirmation : <code>write_file</code>, <code>edit_file</code>, <code>web_fetch</code>, <code>write_spreadsheet</code>, <code>write_document</code>, <code>create_branch</code>, <code>checkout_branch</code>, <code>apply_subagent_changes</code>, <code>manage_automation</code>, <code>forecast_data_audit</code>, <code>forecast_run</code>, <code>forecast_backtest</code>.</p>
+    <p>En mode Demander l'autorisation, <b>douze outils</b> déclenchent systématiquement une confirmation : <code>write_file</code>, <code>edit_file</code>, <code>web_fetch</code>, <code>write_spreadsheet</code>, <code>write_document</code>, <code>create_branch</code>, <code>checkout_branch</code>, <code>apply_subagent_changes</code>, <code>manage_automation</code>, <code>forecast_data_audit</code>, <code>forecast_run</code>, <code>forecast_backtest</code>.</p>
     <p><b>Quatre outils</b> déclenchent une confirmation sous condition.</p>
     <table>
       <caption class="crumb">Les outils conditionnels</caption>
@@ -69,7 +69,7 @@
       <tr><td><code>transform_image</code></td><td>Au moins une opération est demandée</td></tr>
       <tr><td><code>search_mcp_tools</code></td><td>Le mode est l'appel d'un outil — la simple recherche d'outils ne demande rien</td></tr>
     </table>
-    <p><b>Tous les autres outils natifs passent sans confirmation</b>, y compris en mode Demande d'approbation : lire un fichier, lister un dossier, chercher par nom ou par contenu, chercher sur le web. C'est un choix de conception : demander confirmation pour chaque lecture de fichier rendrait le mode inutilisable, et tu finirais par tout approuver sans lire.</p>
+    <p><b>Tous les autres outils natifs passent sans confirmation</b>, y compris en mode Demander l'autorisation : lire un fichier, lister un dossier, chercher par nom ou par contenu, chercher sur le web. C'est un choix de conception : demander confirmation pour chaque lecture de fichier rendrait le mode inutilisable, et tu finirais par tout approuver sans lire.</p>
 
     <h2 id="outils-extension">Les outils fournis par une extension</h2>
     <p>Ils échappent aux deux listes ci-dessus. Leur besoin de confirmation dépend de <b>l'effet déclaré</b> par l'extension pour cet outil.</p>
@@ -100,7 +100,7 @@
     <p>Toute autre commande déclenche une confirmation. Un cas mérite d'être signalé : <b><code>git branch</code> seul est sûr, <code>git branch -d</code> ne l'est pas</b>. C'est le seul motif de la liste qui refuse toute option ; les autres acceptent des arguments après le nom de la commande.</p>
     <div class="callout">
       <span class="t">Note</span>
-      En mode Demande d'approbation, une commande de lecture reconnue comme sûre — <code>ls</code>, <code>cat</code>, <code>git status</code> — s'exécute sans confirmation. Dès qu'une commande contient un enchaînement, une redirection ou un chemin sensible, la confirmation est demandée.
+      En mode Demander l'autorisation, une commande de lecture reconnue comme sûre — <code>ls</code>, <code>cat</code>, <code>git status</code> — s'exécute sans confirmation. Dès qu'une commande contient un enchaînement, une redirection ou un chemin sensible, la confirmation est demandée.
     </div>
 
     <h2 id="donnees-sensibles">Les données sensibles</h2>
@@ -146,7 +146,7 @@
     <h2 id="sous-agents">Les sous-agents ne demandent pas</h2>
     <div class="callout">
       <span class="t">Sécurité</span>
-      Les sessions déléguées à des sous-agents s'exécutent sans confirmation, même si ta conversation est en Demande d'approbation. Le contrôle se fait en amont, au moment de décider quoi déléguer, et en aval, en inspectant leurs changements avant de les appliquer. Voir <a href="agent-sous-agents.html">Sous-agents</a>.
+      Les sessions déléguées à des sous-agents s'exécutent sans confirmation, même si ta conversation est en Demander l'autorisation. Le contrôle se fait en amont, au moment de décider quoi déléguer, et en aval, en inspectant leurs changements avant de les appliquer. Voir <a href="agent-sous-agents.html">Sous-agents</a>.
     </div>
 
     <h2 id="changer-de-mode">Changer de mode</h2>

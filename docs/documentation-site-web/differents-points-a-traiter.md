@@ -178,12 +178,12 @@ On coche au fur et à mesure.
 ## 13 — Dépannage
 
 - [x] `13-depannage/installation.md` — écrit le 9 septembre 2026 : 13 sections symptôme → cause → résolution (Gatekeeper avec signature ad hoc, SmartScreen, Linux .deb/apt uniquement, téléchargement d'Ollama, permissions disque, machine sans réseau, GPU, désinstallation)
-- [ ] `13-depannage/ollama.md` — daemon indisponible, port occupé, téléchargement interrompu, GPU non détecté, modèle trop lourd
-- [ ] `13-depannage/providers-et-cles.md` — clé refusée, quota atteint, expiration OAuth, erreurs réseau
-- [ ] `13-depannage/agent-et-outils.md` — outil bloqué, permission refusée, contexte saturé, boucle interrompue
-- [ ] `13-depannage/mcp-extensions-channels.md` — connecteur qui ne démarre pas, OAuth échoué, extension incompatible, gateway silencieux
-- [ ] `13-depannage/forecast.md` — modèle non installé, données rejetées, mémoire insuffisante
-- [ ] `13-depannage/faq.md` — questions récurrentes qui ne relèvent d'aucune page ci-dessus
+- [x] `13-depannage/ollama.md` — écrit le 10 septembre 2026 : trois états du moteur, port 11434 jamais occupé par Beaver, limites du moteur externe (ni téléchargement ni suppression ni création), annulation qui efface les morceaux, GPU, modèle trop lourd, les 20 messages du moteur cités
+- [x] `13-depannage/providers-et-cles.md` — écrit le 10 septembre 2026 : clé refusée, quota, réseau, expiration/effacement d'une connexion par compte, catalogue vide ; fait central : aucune reprise sur les requêtes cloud (choix assumé, une réponse perdue peut être déjà facturée)
+- [x] `13-depannage/agent-et-outils.md` — écrit le 10 septembre 2026 : trois endroits où lire un échec, fenêtre d'autorisation, 15 motifs shell bloqués d'office, fichier hors zone, contexte saturé, 200 tours, coupe-circuit à 6 appels identiques, sous-agents, diagnostics
+- [x] `13-depannage/mcp-extensions-channels.md` — écrit le 10 septembre 2026 : connecteur qui ne démarre pas, 8 codes d'échec d'outil MCP, OAuth (7 causes), hôte d'extensions (3 redémarrages/300 s, mode sûr), canaux (4 refus muets, limites 12/120/300 par minute), journal d'audit
+- [x] `13-depannage/forecast.md` — écrit le 10 septembre 2026 : les 30 causes derrière « Le calcul a échoué », installation (Python 3.12 exact, pas de reprise), mémoire, données refusées, TimeGPT, délais réels ; le seul chemin qui montre la vraie cause est le résultat d'outil via l'agent
+- [x] `13-depannage/faq.md` — écrit le 10 septembre 2026 : 10 questions vérifiées (données, sauvegarde, trousseau, hors-ligne, fermeture selon l'OS, AGPL v3, désinstallation) + tableau de renvois
 
 ## 14 — Projet
 
@@ -239,10 +239,12 @@ estimations et non une facture.
 | Code | Libellé affiché |
 |---|---|
 | `auto` | Accès complet |
-| `manual` | Demande d'approbation |
+| `manual` | Demander l'autorisation |
 | `chat` | Chatbot |
 
 `subagent` est interne, jamais proposé à l'utilisateur.
+
+Corrigé le 10 septembre 2026 : l'ancien libellé « Demande d'approbation » de ce tableau ne correspondait pas à l'application, qui affiche « Demander l'autorisation » (`fr.json:550`, vérifié). Décision de Kevin : le site suit l'application — 29 occurrences corrigées sur 15 pages.
 
 ### Écarts relevés entre le mockup et le code
 
@@ -546,7 +548,7 @@ Le détail complet et les sources fichier:ligne sont dans la section « Anomalie
 - **Les motifs d'erreur précis du moteur sont remplacés à l'écran par un message unique** (« l'opération a échoué ») — et ces motifs sont en dur, en français, dans le code Rust, hors i18n.
 - **Le drapeau « issu d'un réveil » traverse la frontière et n'est jamais lu** : une conversation de réveil ne se distingue que par son préfixe `Heartbeat •`.
 - **Le panneau latéral n'affiche que les réveils actifs** : un ponctuel exécuté disparaît au moment où on le cherche.
-- **Deux vocabulaires pour la même chose** : onglet « Heartbeat » (jamais traduit), écran « Réveils », préfixe `Heartbeat •`.
+- **Deux vocabulaires pour la même chose** : onglet « Heartbeat » (jamais traduit), écran « Réveils », préfixe `Heartbeat •`. **Tranché le 10 septembre 2026 : « Heartbeat » reste en anglais dans toutes les langues — c'est le terme universel des planificateurs, une traduction ne signifierait plus la même chose. Ce n'est plus une anomalie.**
 - Tutoiement et vouvoiement mêlés dans le même écran ; « master switch » en anglais et ne désigne rien de nommé ainsi.
 - **La liste identifie un réveil par son modèle, pas par son nom** : deux réveils sur le même modèle sans description sont indistinguables.
 - Repli du sélecteur de fournisseur sur une option `Ollama` en dur.
@@ -566,6 +568,22 @@ Le détail complet et les sources fichier:ligne sont dans la section « Anomalie
 - **Échec du listage des worktrees masqué en liste vide**, côté moteur et côté interface.
 - Deux dialogues hors du portail flottant commun (suppression, conflit d'extraction) — configuration propice à un menu coupé en deux ; deux composants court-circuitent les hooks Git.
 - Vocabulaire franco-anglais (« fichier(s) à Commit », « Merge dans… ») : défendable mais écrit nulle part ; tutoiement dominant ; date de commit sans heure (deux commits du même jour indistinguables).
+
+### Relevé en écrivant les briefs Dépannage (10 septembre 2026, trois agents, chaque point sourcé dans le brief correspondant)
+
+Le détail complet et les sources fichier:ligne sont dans la section « Anomalies relevées » de chacun des six briefs de `13-depannage/`.
+
+**Ollama** — un redémarrage sans effet annoncé en notification de succès (« Ollama externe réutilisé ») ; « Restart Ollama » non traduit en français seul des sept langues ; rien ne vérifie que ce qui répond sur 11434 est bien Ollama ; le moteur local disparaît de la liste des modèles sans message là où un fournisseur distant en échec y reste avec sa raison ; « Le dossier des modèles chevauche… » décrit une cause indevinable, sans procédure de résolution.
+
+**Clés et fournisseurs** — le dialogue de saisie jette les sept messages précis et affiche toujours « L'opération a échoué. Réessaye. » ; messages du test de clé et des comptes web en français en dur dans le Rust, hors i18n ; une connexion effacée par Beaver après refus de renouvellement ne prévient personne (cause du symptôme « mon fournisseur a disparu ») ; `app-error.ts` ne couvre que Git, la vraie correspondance est `agent-error-codes.ts` ; « Test non implémenté pour <nom> » inatteignable, en dur, avec identifiant technique.
+
+**Agent et outils** — la fenêtre d'autorisation nomme l'outil par son identifiant technique non traduit ; les échecs de flux arrivent en français brut là où l'interface attend un code, et retombent sur le générique ; le journal de diagnostics de permissions ne se lit qu'en ouvrant le fichier à la main ; « Écriture bloquée : fichier non lu » en dur en français dans le Rust ; le mode Chatbot n'annonce nulle part qu'il n'a que deux outils.
+
+**MCP, extensions, canaux** — l'échec d'un connecteur accuse le jeton dans tous les cas alors que le moteur distingue six causes ; le motif d'un échec OAuth traverse la frontière et l'interface l'ignore ; `auditUnavailable` sans traduction (une panne de disque s'affiche en générique) ; dix-huit diagnostics d'interface d'extension traduits en sept langues et jamais affichés ; « Validation du connecteur en cours… » déclaré, affiché, jamais atteint ; la page de retour OAuth du navigateur en français en dur, hors thème et hors langue ; le motif d'un refus écrasé en `"blocked"` dans l'audit — impossible d'y distinguer un utilisateur non autorisé d'un compte mal configuré.
+
+**Forecast** — le panneau n'a que trois messages pour une trentaine de pannes : tout est écrasé par « Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API. », seule la voie agent montre la vraie cause ; l'agent contrôle `is_installed` là où le panneau contrôle `is_ready` ; un seul code pour quinze causes d'installation ; anomalies de données affichées sans leur nom ; aucun contrôle d'espace disque avant plusieurs gigaoctets ; ressources vérifiées au calcul mais pas à l'installation ; TimeGPT indistinct entre clé, quota et panne ; messages du moteur en dur en français ; « stockage plein » conseille une action inapplicable là où il s'affiche ; « sidecar » exposé à l'utilisateur.
+
+**FAQ / transverse** — six messages demandent de restaurer « depuis une sauvegarde » que l'application n'aide jamais à faire ; « La recherche des mises à jour a échoué » ne se déclenche que sur l'échec de la vérification Ollama, pas celle de Beaver ; **l'application n'affiche nulle part sa licence** (À propos : version, cadre, système — aucune mention AGPL v3 ni droit d'auteur, alors que la licence impose de transmettre ces informations) — le plus sérieux du lot ; langue et thème stockés dans le stockage local du composant d'affichage, hors du dossier de données : perdus à tout déplacement de machine, invisibles pour une sauvegarde ; langue par défaut anglaise sans tenir compte du système là où le thème, lui, suit le système.
 
 ### Constat de conception à mettre en avant sur le site
 

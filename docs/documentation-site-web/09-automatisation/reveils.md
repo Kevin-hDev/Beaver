@@ -291,7 +291,7 @@ Constatées dans le code, non corrigées.
 
 0. **L'accès complet des conversations de réveil — tranché.** Décision du 10 septembre 2026 : l'accès complet des conversations de réveil est un choix assumé, documenté clairement sur la page.
 
-1. **Le vocabulaire « Heartbeat » / « Réveils ».** Le site doit-il employer un seul mot, et lequel ? Si c'est « Réveils », le nom de l'onglet et le préfixe des conversations restent en désaccord avec la documentation. Décision produit, à prendre avec l'équipe.
+1. **Le vocabulaire « Heartbeat » / « Réveils ».** Le site doit-il employer un seul mot, et lequel ? Si c'est « Réveils », le nom de l'onglet et le préfixe des conversations restent en désaccord avec la documentation. Décision produit, à prendre avec l'équipe. **Tranché le 10 septembre 2026 (Kevin) : « Heartbeat » reste en anglais dans toutes les langues — terme universel des planificateurs, dont la traduction ne porterait plus le même sens. L'interface est donc correcte telle quelle ; la page du site continue de citer les deux libellés tels que l'application les affiche.**
 
 2. **Faut-il documenter que les conversations de réveil s'appellent `Heartbeat • …` ?** C'est aujourd'hui le seul moyen de les repérer dans la liste des conversations (anomalie 3). Tant que le drapeau n'est pas exploité à l'écran, la documentation devrait probablement le dire.
 

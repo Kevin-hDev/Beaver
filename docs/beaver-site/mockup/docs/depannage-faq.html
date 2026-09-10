@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Questions fréquentes</title>
+<meta name="description" content="Les questions courtes qui n'ont pas de page à elles : où sont les données, comment sauvegarder, ce qui marche hors ligne, la licence, la désinstallation.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Dépannage / Questions fréquentes</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="depannage-faq.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Questions <em>fréquentes</em></h1>
+    <p>Les questions courtes qui n'ont pas de page à elles : où sont tes fichiers, comment sauvegarder, ce qui marche sans Internet, ce que l'application envoie toute seule, sous quelle licence elle est publiée, comment la désinstaller. Les questions qui ont leur propre page sont renvoyées en fin de page, en une ligne chacune.</p>
+
+    <h2 id="ou-sont-mes-donnees">Où sont mes données ?</h2>
+    <p><b>Dans un seul dossier</b>, identique sur macOS, Windows et Linux.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ~/.local/share/cl-go-dash/</pre>
+    </div>
+
+    <p>Sous Windows, cela correspond à <code>C:\Users\&lt;ton compte&gt;\.local\share\cl-go-dash\</code> : un emplacement inhabituel pour ce système, hérité du choix d'un chemin unique sur les trois.</p>
+    <p><b>Le raccourci depuis l'application</b> : Réglages › Avancé › <b>Données Beaver</b> › bouton <b>Ouvrir le dossier</b>, décrit comme « Ouvrir le dossier qui contient les sessions, la mémoire et les réglages locaux ».</p>
+    <p><b>Ce dossier ne se déplace pas.</b> Aucun réglage, aucune variable d'environnement ne permet de le changer.</p>
+    <p>Deux choses vivent <b>en dehors</b> de ce dossier, et c'est ce qui rend la question suivante importante : <b>la clé qui ouvre tes clés API</b>, confiée au gestionnaire de secrets de ton système, et <b>la langue et le thème de l'interface</b>, rangés dans le stockage local du composant d'affichage. Les modèles locaux d'Ollama, eux, sont ailleurs encore — voir <a href="modeles-modeles-locaux.html">Modèles locaux</a>.</p>
+
+    <h2 id="sauvegarde">Comment je sauvegarde tout — et qu'est-ce qui ne se restaure pas ?</h2>
+    <p><b>Il n'existe aucune fonction de sauvegarde ni de restauration dans l'application.</b> Rien dans les réglages, rien ailleurs : la seule action prévue est le bouton qui ouvre le dossier.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Sauvegarder, c'est copier un dossier.</b> Ferme Beaver, copie <code>~/.local/share/cl-go-dash/</code>, et sache que tes clés API ne s'y restaureront pas : elles sont chiffrées par une clé restée dans le trousseau de la machine d'origine.
+    </div>
+
+    <p><b>Ce que la copie restaure</b>, sur la même machine ou sur une autre : les conversations, les projets, la mémoire, les réglages, les analyses de prévision, les notes, les connecteurs configurés.</p>
+
+    <table>
+      <caption class="crumb">Ce que la copie ne restaure pas, et pourquoi</caption>
+      <tr><th>Élément</th><th>Pourquoi</th></tr>
+      <tr><td><b>Tes clés API</b></td><td>Le fichier <code>secrets.enc</code> est chiffré par une clé restée dans le trousseau de l'ancienne machine. Beaver refuse volontairement d'en fabriquer une nouvelle : les clés sont à ressaisir</td></tr>
+      <tr><td><b>La langue de l'interface</b></td><td>Elle est dans le stockage local du composant d'affichage, pas dans le dossier de données : l'application redémarre en anglais</td></tr>
+      <tr><td><b>Le thème</b></td><td>Même raison : il repart sur « système »</td></tr>
+      <tr><td><b>Les modèles locaux</b></td><td>Ils vivent hors de ce dossier et pèsent plusieurs gigaoctets</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Vider le trousseau de ton système rend tes clés illisibles.</b> Beaver refuse volontairement de fabriquer une nouvelle clé maîtresse quand l'ancienne a disparu : cela écraserait un coffre encore valable. Il faut alors ressaisir toutes tes clés.
+    </div>
+
+    <p>Une raison de plus de faire cette copie : <b>plusieurs messages d'erreur de l'application te demandent de restaurer un fichier « depuis une sauvegarde »</b> — par exemple « Le fichier de personnalisation Ollama est illisible. Restaure « ollama-custom-models.json » depuis une sauvegarde dans Réglages &gt; Avancé &gt; Données Beaver. » L'application suppose donc une sauvegarde qu'elle n'a jamais proposé de faire. À défaut de copie, le second recours proposé par ces messages est le seul disponible : supprimer le fichier nommé et relancer, pour repartir des valeurs par défaut.</p>
+
+    <h2 id="trousseau">Pourquoi Beaver demande-t-il mon trousseau au démarrage ?</h2>
+    <p>Parce que tes clés API sont chiffrées, et que la clé qui les déchiffre est confiée au gestionnaire de secrets de ton système — Trousseau d'accès sur macOS, Gestionnaire d'identifiants sur Windows, service de secrets du bureau sur Linux.</p>
+    <p><b>Cela n'arrive qu'une fois par lancement.</b> La lecture de cette clé a lieu dans la routine d'initialisation, au démarrage, et nulle part ailleurs : tu n'es pas sollicité à chaque requête.</p>
+    <p><b>Au tout premier lancement</b>, il n'y a rien à lire : Beaver tire <b>32 octets</b> au hasard et les dépose dans le trousseau. C'est à ce moment que le système peut demander une autorisation.</p>
+    <p><b>Si tu refuses, ou si aucun service de secrets ne tourne</b> — cas courant sur une session Linux minimale — l'application démarre quand même, affiche un bandeau, et refuse toute opération sur les clés API. Les modèles locaux, qui n'ont besoin d'aucune clé, continuent de fonctionner. Le détail est sur <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+
+    <h2 id="hors-ligne">Est-ce que Beaver fonctionne sans Internet ?</h2>
+    <p><b>Oui, pour l'essentiel — à condition d'avoir déjà installé ce dont tu te sers.</b></p>
+    <p><b>Ce qui fonctionne hors ligne :</b></p>
+    <ul>
+      <li>les <b>modèles locaux</b>, une fois téléchargés ;</li>
+      <li>les <b>modèles de prévision locaux</b>, une fois installés : leur moteur est démarré en mode hors ligne forcé à chaque lancement, et un test verrouille ce comportement ;</li>
+      <li>tout ce qui touche à tes fichiers, au terminal, à Git, et aux conversations déjà enregistrées.</li>
+    </ul>
+    <p><b>Ce qui ne fonctionne pas :</b></p>
+    <ul>
+      <li>les modèles distants, quels qu'ils soient ;</li>
+      <li>la recherche web, les connecteurs externes, les canaux de messagerie ;</li>
+      <li><b>l'installation</b> de quoi que ce soit : un modèle local se télécharge, et un modèle de prévision télécharge aussi des bibliothèques.</li>
+    </ul>
+    <p><b>Le cas particulier du tout premier lancement</b> : Beaver a besoin d'Internet une fois, pour récupérer le moteur Ollama. Voir <a href="reference-depannage-installation.html">Dépannage · Installation</a>.</p>
+
+    <h2 id="internet">Est-ce que Beaver contacte Internet tout seul ?</h2>
+    <p><b>Oui, pour une seule chose : chercher les mises à jour.</b></p>
+    <p>La vérification part <b>au lancement de l'application, puis toutes les heures</b>. Elle porte sur trois choses à la fois : la version de Beaver, la version du moteur Ollama, et les mises à jour de tes modèles Ollama installés.</p>
+    <p>Pour l'application, l'adresse interrogée est <code>https://api.github.com/repos/Kevin-hDev/Beaver/releases/latest</code>. Aucune donnée personnelle n'y est envoyée : c'est une lecture publique de la dernière version publiée.</p>
+    <p><b>En cas d'échec, rien ne s'affiche.</b> Le message « La recherche des mises à jour a échoué. Réessaie dans un instant. » n'apparaît que si tu as lancé la vérification toi-même. Un Beaver qui n'annonce jamais de mise à jour n'est donc pas forcément à jour : déclenche la vérification à la main depuis l'indicateur de mises à jour.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Une seule connexion automatique.</b> Au lancement puis toutes les heures, Beaver demande à GitHub s'il existe une version plus récente, et à Ollama si tes modèles ont bougé.
+    </div>
+
+    <p><b>Sur la télémétrie</b>, ce qui est établi : Beaver <b>désactive</b> celle des composants qu'il lance — les processus de prévision partent avec la télémétrie coupée. Le détail de ce qui sort de la machine et de ce qui n'en sort pas est traité sur <a href="reference-confidentialite.html">Confidentialité</a>, qui fait autorité sur ce point.</p>
+
+    <h2 id="fermer-la-fenetre">Fermer la fenêtre, est-ce que ça quitte l'application ?</h2>
+    <p><b>Ça dépend du système, et la différence est voulue.</b></p>
+
+    <table>
+      <caption class="crumb">Ce que fait la croix de fermeture, système par système</caption>
+      <tr><th>Système</th><th>Ce que fait la croix de fermeture</th></tr>
+      <tr><td><b>macOS</b></td><td><b>La fenêtre est masquée, l'application continue de tourner.</b> Elle se rouvre en cliquant sur l'icône du Dock</td></tr>
+      <tr><td><b>Windows et Linux</b></td><td><b>L'application se ferme</b></td></tr>
+    </table>
+
+    <p>Sur les trois systèmes, une icône dans la barre système est affichée par défaut, et le réglage se trouve dans Réglages › Avancé. Sur Mac, pour quitter réellement, passe par le menu de l'application ou par l'icône de la barre système.</p>
+
+    <h2 id="demarrage-machine">Est-ce que Beaver démarre avec ma machine ?</h2>
+    <p><b>Non, pas par défaut.</b> Le réglage <b>Lancer au démarrage</b> existe mais est désactivé à l'installation, tout comme <b>Démarrage masqué</b>, qui lance l'application en arrière-plan sans ouvrir la fenêtre. Les deux se trouvent dans Réglages › Avancé, décrits sur <a href="reglages-agent.html#avance-comportement-general">Réglages · Agent</a>.</p>
+
+    <h2 id="licence">L'application est-elle gratuite ? libre ? puis-je m'en servir au travail ?</h2>
+    <p><b>Beaver est publié sous la licence GNU Affero General Public License version 3</b>, et le droit d'auteur appartient à Kevin Huynh.</p>
+    <ul>
+      <li><b>Tu peux l'utiliser, l'étudier, le modifier et le redistribuer</b>, y compris en entreprise, sans rien payer.</li>
+      <li><b>En contrepartie</b>, toute version que tu distribues ou que tu mets à disposition sur un réseau — modifiée ou non — doit être publiée sous la même licence, avec son code source complet.</li>
+      <li><b>Une licence commerciale existe</b> pour qui veut être dispensé de cette obligation ; elle s'obtient auprès de l'auteur.</li>
+      <li><b>Contribuer au projet demande de signer un accord de contribution</b>, publié dans le dépôt.</li>
+      <li><b>Les versions jusqu'à la 1.1.2 incluse</b> avaient été publiées sous licence Apache 2.0 ; elles ne sont plus distribuées.</li>
+    </ul>
+    <p>Les composants tiers gardent leurs propres licences, listées dans le dépôt. L'écran <b>À propos</b> de l'application, lui, n'affiche pas la licence : elle se lit ici ou dans le dépôt.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Libre, et gratuit.</b> La contrepartie de l'AGPL v3 ne concerne que ceux qui distribuent une version de Beaver : ils doivent publier leur code source. L'utiliser, même au travail, n'impose rien.
+    </div>
+
+    <h2 id="version">Où est le numéro de version ?</h2>
+    <p><b>Réglages › À propos.</b> L'écran affiche la version de Beaver, celle de son cadre applicatif, et le système d'exploitation détecté, plus un bouton <b>Voir sur GitHub</b> qui ouvre <code>https://github.com/Kevin-hDev/Beaver</code>. C'est le numéro à donner quand tu signales un problème.</p>
+
+    <h2 id="desinstaller">Comment désinstaller proprement ?</h2>
+    <p>Retirer l'application ne suffit pas : trois choses restent.</p>
+    <ul>
+      <li><b>Le dossier de données</b> <code>~/.local/share/cl-go-dash/</code> — conversations, réglages, modèles de prévision, coffre chiffré.</li>
+      <li><b>L'entrée du gestionnaire de secrets</b> de ton système, au nom de service <code>cl-go-dash</code>, identifiant <code>master-key</code>. Tant qu'elle est là, elle ne sert plus à rien ; supprimée, le coffre devient définitivement illisible.</li>
+      <li><b>Les modèles Ollama</b>, qui vivent dans un dossier partagé avec toute autre installation d'Ollama sur la machine — à ne pas supprimer sans vérifier.</li>
+    </ul>
+    <p>La procédure système par système est sur <a href="reference-depannage-installation.html">Dépannage · Installation</a>, qui fait autorité. Cette page ne la duplique pas : elle rappelle seulement les trois restes.</p>
+
+    <h2 id="renvois">Les questions qui ont leur propre page</h2>
+
+    <table>
+      <caption class="crumb">La question, et la page qui y répond</caption>
+      <tr><th>Question</th><th>Où est la réponse</th></tr>
+      <tr><td>Comment je change la langue de l'interface ?</td><td><a href="reference-langues.html">Langues</a></td></tr>
+      <tr><td>Comment je change le thème, la police, la taille du texte ?</td><td><a href="reference-themes.html">Thèmes et apparence</a></td></tr>
+      <tr><td>Où je mets ma clé API, et qui peut la relire ?</td><td><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a></td></tr>
+      <tr><td>Est-ce que mes conversations partent quelque part ?</td><td><a href="reference-confidentialite.html">Confidentialité</a></td></tr>
+      <tr><td>Quel modèle ma machine peut-elle faire tourner ?</td><td><a href="modeles-materiel.html">Matériel et VRAM</a></td></tr>
+      <tr><td>Local ou distant : lequel choisir ?</td><td><a href="demarrage-choisir-son-modele.html">Choisir son modèle</a></td></tr>
+      <tr><td>Comment je mets Beaver à jour ?</td><td><a href="demarrage-mise-a-jour.html">Mise à jour</a></td></tr>
+      <tr><td>L'installation a échoué, l'application ne démarre pas</td><td><a href="reference-depannage-installation.html">Dépannage · Installation</a></td></tr>
+      <tr><td>Mon modèle de prévision refuse de s'installer ou de calculer</td><td><a href="depannage-forecast.html">Dépannage · Forecast</a></td></tr>
+      <tr><td>Quels fichiers l'agent peut-il lire ou modifier ?</td><td><a href="agent-permissions.html">Modes de permission</a></td></tr>
+      <tr><td>L'agent s'est arrêté tout seul, ou un outil a échoué</td><td><a href="depannage-agent-et-outils.html">Agent et outils</a></td></tr>
+      <tr><td>Mon connecteur, mon extension ou mon bot ne répond plus</td><td><a href="depannage-connecteurs-extensions-canaux.html">Connecteurs, extensions, canaux</a></td></tr>
+      <tr><td>Le moteur local ne démarre pas</td><td><a href="depannage-ollama.html">Moteur Ollama</a></td></tr>
+      <tr><td>Ma clé API est refusée par le fournisseur</td><td><a href="depannage-cles-et-fournisseurs.html">Clés et fournisseurs</a></td></tr>
+    </table>
+
+    <h2 id="pieges">Symptômes fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>J'ai copié mon dossier de données sur un autre ordinateur, et aucune clé API ne marche</td><td>La clé maîtresse est restée dans le trousseau de l'ancienne machine</td><td>Ressaisir les clés ; copier <code>secrets.enc</code> seul ne sert à rien</td></tr>
+      <tr><td>Après restauration, l'application est en anglais</td><td>La langue est dans le stockage local, pas dans le dossier de données</td><td>La rechoisir dans les réglages</td></tr>
+      <tr><td>Je ne trouve pas mon dossier de données sous Windows</td><td>Le chemin est unifié sur les trois systèmes</td><td>Chercher <code>C:\Users\&lt;compte&gt;\.local\share\cl-go-dash\</code></td></tr>
+      <tr><td>Je ferme la fenêtre sur Mac et Beaver tourne toujours</td><td>Comportement voulu sur macOS</td><td>Quitter par le menu de l'application</td></tr>
+      <tr><td>Beaver n'annonce jamais de mise à jour</td><td>La vérification échoue en silence quand le réseau manque</td><td>La déclencher à la main depuis l'indicateur de mises à jour</td></tr>
+      <tr><td>Un message me dit de restaurer un fichier « depuis une sauvegarde » que je n'ai jamais faite</td><td>L'application n'a pas de fonction de sauvegarde</td><td>Supprimer le fichier nommé et relancer pour repartir des valeurs par défaut, comme le message le propose en second recours</td></tr>
+      <tr><td>J'ai désinstallé Beaver et il reste des fichiers</td><td>Le dossier de données, l'entrée du trousseau et les modèles ne sont pas supprimés</td><td>Voir <a href="reference-depannage-installation.html">Dépannage · Installation</a></td></tr>
+    </table>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>
