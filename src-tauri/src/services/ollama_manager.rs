@@ -7,6 +7,7 @@ mod cancel_cleanup;
 mod canonical_executable;
 mod cleanup;
 mod cleanup_inspection;
+pub(crate) mod cli_access;
 mod compute_mode;
 mod constants;
 mod download;

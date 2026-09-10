@@ -16,6 +16,10 @@ use support::{
     wait_nonblocking, StableExecutableLink,
 };
 
+pub(super) fn is_process_name(name: &str) -> bool {
+    support::gated_link_owner(std::ffi::OsStr::new(name)).is_some()
+}
+
 pub(crate) struct NativeGatedProcess {
     pid: libc::pid_t,
     gate: Option<File>,

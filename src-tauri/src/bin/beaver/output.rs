@@ -69,7 +69,6 @@ impl Out {
     }
 }
 
-#[allow(dead_code)] // Utilisé dès Task 3 par status.
 pub fn format_size(bytes: u64) -> String {
     format_size_with(bytes, lang())
 }
@@ -112,7 +111,7 @@ pub fn print_help(out: &Out) {
     for (command, fr, en, ready) in [
         ("--version", "version installée", "installed version", true),
         ("paths", "chemins des données", "data paths", true),
-        ("status", "état local", "local status", false),
+        ("status", "état local", "local status", true),
         ("doctor", "diagnostic local", "local diagnostics", false),
         ("logs", "lecture des journaux", "read logs", false),
         ("update", "mise à jour", "update", false),

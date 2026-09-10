@@ -13,6 +13,13 @@ const GATE_LINK_PREFIX: &str = ".beaver-gated-";
 #[path = "spawn_gate_unix_support/cleanup.rs"]
 mod cleanup;
 
+pub(super) fn gated_link_owner(name: &std::ffi::OsStr) -> Option<u32> {
+    let value = name.to_str()?.strip_prefix(GATE_LINK_PREFIX)?;
+    let (owner, suffix) = value.split_once('-')?;
+    (!suffix.is_empty()).then_some(())?;
+    owner.parse().ok()
+}
+
 pub(super) struct StableExecutableLink {
     path: PathBuf,
 }
