@@ -87,16 +87,7 @@ fausse. À repasser en revue quand l'app change :
 4. **Les workers du dépôt** : des branches/worktrees d'agents externes peuvent
    exister — vérifier qu'on est sur `main` avant de committer.
 
-## Ce qui reste à faire (état au 11 septembre 2026)
+## Ce qui reste à faire
 
-- **Passe visuelle finale** sur les deux langues avant de faire circuler
-  l'adresse (plan validé de longue date).
-- **Image de partage social** : à créer, puis à déclarer — aucune balise
-  `og:image` / `twitter:card` n'existe encore dans les `<head>` des pages.
-  Sans ces balises, l'image ne servira à rien.
-- **Pilule d'en-tête de `barrage.html`** : les liens GitHub/Télécharger ont été
-  ajoutés seulement sur `index.html` — alignement à trancher.
-- **Sections de confort** non écrites côté briefs (12-reference, 14-projet,
-  11-securite approfondie) ; pages Mode Plan et Compression gelées.
-- Débrief des anomalies relevées pendant la rédaction : registre
-  `docs/documentation-site-web/differents-points-a-traiter.md`.
+Une seule autorité : **`A-FAIRE.md`**, dans ce dossier. Ce fichier-ci explique
+comment le site fonctionne ; l'autre liste le travail restant, daté et coché.

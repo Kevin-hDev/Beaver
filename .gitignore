@@ -28,8 +28,9 @@ src-tauri/resources/extension-host/ui-build.mjs
 !/docs/beaver-site/
 /docs/beaver-site/*
 !/docs/beaver-site/direction-artistique.md
-# Guide de reprise du site (créé le 11 sept. 2026) : public, comme le reste du site.
+# Guide de reprise du site et liste du travail restant (créés le 11 sept. 2026) : publics, comme le reste du site.
 !/docs/beaver-site/MAINTENANCE.md
+!/docs/beaver-site/A-FAIRE.md
 !/docs/beaver-site/mockup/
 /docs/beaver-site/mockup/*
 !/docs/beaver-site/mockup/*.html
