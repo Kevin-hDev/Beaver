@@ -1,6 +1,4 @@
-use crate::models::{
-    AutomationDefinition, AutomationStatus, AutomationTarget, ScheduledWakeup, WakeupSchedule,
-};
+use crate::models::{AutomationDefinition, AutomationStatus, AutomationTarget};
 use crate::services::agent_local::session_store;
 use crate::services::automations::{OccurrenceResult, OccurrenceResultStatus};
 use chrono::Utc;
@@ -49,23 +47,32 @@ pub async fn fire_automation(
             }
         };
     let generation = stream.generation;
-    if super::runtime::mark_running(occurrence_id, Utc::now())
-        .await
-        .is_err()
-    {
-        let _ = crate::commands::agent_chat_streams::finish_active_stream(
-            &app.state::<crate::ActiveStreams>(),
-            &session.id,
-            generation,
-        )
-        .await;
-        if session.created {
-            delete_empty_session(&session.id).await;
-        }
-        return;
-    }
-    let wakeup = legacy_adapter(&definition);
-    let result = super::agentic::run(&app, &wakeup, &session.id, stream, cancel.clone()).await;
+    let actor_guard =
+        match super::fire_actor::register(&session.id, &stream.request_id, automation_id).await {
+            Ok(guard) => guard,
+            Err(_) => {
+                let _ = crate::commands::agent_chat_streams::finish_active_stream(
+                    &app.state::<crate::ActiveStreams>(),
+                    &session.id,
+                    generation,
+                )
+                .await;
+                if session.created {
+                    delete_empty_session(&session.id).await;
+                }
+                return;
+            }
+        };
+    let result = super::agentic::run(
+        &app,
+        &definition,
+        occurrence_id,
+        &session.id,
+        stream,
+        cancel.clone(),
+    )
+    .await;
+    drop(actor_guard);
     if cancel.is_cancelled() {
         return;
     }
@@ -91,6 +98,11 @@ pub async fn fire_automation(
             );
         }
         Ok(_) => finish_error(occurrence_id, "assistant_missing", Some(session.id)).await,
+        Err(error) if error == super::agentic::RUNTIME_ADMISSION_FAILED => {
+            if session.created {
+                delete_empty_session(&session.id).await;
+            }
+        }
         Err(error) => {
             if session.created {
                 delete_empty_session(&session.id).await;
@@ -179,33 +191,12 @@ async fn create_session(
     .map(|session| session.id)
 }
 
-async fn delete_empty_session(session_id: &str) {
+pub(super) async fn delete_empty_session(session_id: &str) {
     let Ok(session) = session_store::get(session_id).await else {
         return;
     };
     if session.messages.is_empty() && session_store::delete_one(session_id).await.is_err() {
         ::log::warn!("empty_automation_cleanup_failed");
-    }
-}
-
-fn legacy_adapter(definition: &AutomationDefinition) -> ScheduledWakeup {
-    ScheduledWakeup {
-        id: definition.id.to_string(),
-        name: definition.name.clone(),
-        model: definition.model.clone(),
-        provider: definition.provider.clone(),
-        prompt: definition.prompt.clone(),
-        schedule: WakeupSchedule::Once {
-            datetime: definition.created_at.to_rfc3339(),
-        },
-        description: definition.description.clone().unwrap_or_default(),
-        project_id: match &definition.target {
-            AutomationTarget::NewSession { project_id } => project_id.clone(),
-            AutomationTarget::ResumeSession { .. } => None,
-        },
-        active: true,
-        paused_by_global: false,
-        created_at: definition.created_at.to_rfc3339(),
     }
 }
 

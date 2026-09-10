@@ -11,7 +11,7 @@ pub enum AutomationOrigin {
     UserInterface,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AutomationActor {
     pub origin: AutomationOrigin,
     pub session_or_channel_id: String,

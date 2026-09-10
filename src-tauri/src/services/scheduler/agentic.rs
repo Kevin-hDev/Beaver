@@ -1,12 +1,13 @@
 use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
-use crate::models::ScheduledWakeup;
+use crate::models::AutomationDefinition;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::ChatMessage;
-#[cfg(test)]
-use crate::services::agent_local::{conversation_admission, conversation_input};
 use tauri::{AppHandle, Manager};
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
+
+pub(super) const RUNTIME_ADMISSION_FAILED: &str = "automation_runtime_admission_failed";
 
 pub struct ScheduledAgentResult {
     pub tokens: u32,
@@ -15,7 +16,8 @@ pub struct ScheduledAgentResult {
 
 pub async fn run(
     app: &AppHandle,
-    wakeup: &ScheduledWakeup,
+    automation: &AutomationDefinition,
+    occurrence_id: Uuid,
     session_id: &str,
     stream: crate::commands::agent_chat_admission::AgentChatAdmission,
     cancel: CancellationToken,
@@ -23,8 +25,8 @@ pub async fn run(
     let streams = app.state::<crate::ActiveStreams>();
     let target = match crate::commands::agent_chat_target::resolve(
         session_id,
-        &wakeup.provider,
-        &wakeup.model,
+        &automation.provider,
+        &automation.model,
         None,
         None,
     )
@@ -42,12 +44,12 @@ pub async fn run(
         }
     };
     let turn = crate::commands::agent_chat_turn::prepare(TurnStart::New(NewUserTurnInput {
-        content: wakeup.prompt.clone(),
+        content: automation.prompt.clone(),
         files: Vec::new(),
         skills: Vec::new(),
     }))
     .await?;
-    let admitted = match crate::commands::agent_chat_turn::admit_current(
+    let admitted = match crate::commands::agent_chat_turn::admit_automation_current(
         &streams,
         session_id,
         stream.generation,
@@ -90,6 +92,25 @@ pub async fn run(
                 return Err(error);
             }
         };
+    if super::runtime::mark_running(occurrence_id, chrono::Utc::now())
+        .await
+        .is_err()
+    {
+        let _ = crate::commands::agent_chat_turn::rollback_current(
+            &streams,
+            session_id,
+            stream.generation,
+            &admission_rollback,
+        )
+        .await;
+        crate::commands::agent_chat_streams::finish_active_stream(
+            &streams,
+            session_id,
+            stream.generation,
+        )
+        .await;
+        return Err(RUNTIME_ADMISSION_FAILED.to_string());
+    }
     let emitter =
         AgentEventEmitter::with_generation(app.clone(), session_id.to_string(), stream.generation);
     let _ = emitter.send(admission_rollback.accept_execution_event());
@@ -103,15 +124,19 @@ pub async fn run(
         on_event: emitter.clone(),
         session_id: session_id.to_string(),
         request_id: stream.request_id.clone(),
-        model: wakeup.model.clone(),
+        model: automation.model.clone(),
         conversation: Some(
-            crate::commands::agent_chat_task::StreamConversation::canonical(admitted.turn),
+            crate::commands::agent_chat_task::StreamConversation::canonical_for_automation(
+                admitted.turn,
+                automation.id,
+                &automation.target,
+            ),
         ),
         continuation_target: Some(target.continuation),
         reasoning_profile: Some(target.reasoning.clone()),
         tools: Vec::new(),
         think: target.reasoning.active,
-        provider: wakeup.provider.clone(),
+        provider: automation.provider.clone(),
         working_dir: resolved_dir.path,
         outputs_dir: resolved_dir.outputs_dir,
         capability_hints: StreamCapabilityHints::default(),
@@ -155,34 +180,13 @@ pub async fn run(
     {
         return Err(crate::commands::agent_chat_streams::STREAM_REPLACED.to_string());
     }
-    let has_text_result = completed
-        .messages()
-        .iter()
-        .any(|message| message.role == "assistant" && !message.content.trim().is_empty());
+    let has_text_result = has_text_result(completed.messages());
     let tokens = generated_output_tokens(completed.messages());
     completed.emit_done(&emitter);
     Ok(ScheduledAgentResult {
         tokens,
         has_text_result,
     })
-}
-
-#[cfg(test)]
-pub(crate) async fn admit_wakeup_turn(
-    session_id: &str,
-    prompt: &str,
-    target: crate::services::reasoning_continuity::contract::ContinuationTarget,
-) -> Result<conversation_admission::AdmittedTurn, String> {
-    let input = conversation_input::resolve(NewUserTurnInput {
-        content: prompt.to_string(),
-        files: Vec::new(),
-        skills: Vec::new(),
-    })
-    .await
-    .map_err(|_| "conversation_admission_failed".to_string())?;
-    conversation_admission::new_turn_for_continuation(session_id, input, target)
-        .await
-        .map_err(|_| "conversation_admission_failed".to_string())
 }
 
 fn generated_output_tokens(messages: &[ChatMessage]) -> u32 {
@@ -197,32 +201,12 @@ fn generated_output_tokens(messages: &[ChatMessage]) -> u32 {
         .min(u32::MAX as usize) as u32
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
-
-    #[test]
-    fn token_estimate_includes_intermediate_answers_and_tool_calls() {
-        let messages = vec![
-            ChatMessage::assistant(
-                "a".repeat(400),
-                None,
-                None,
-                None,
-                Some(vec![ToolCallOllama {
-                    id: Some("call-1".into()),
-                    extra_content: None,
-                    function: ToolCallFunction {
-                        name: "list_dir".into(),
-                        arguments: serde_json::json!({"path": "."}),
-                    },
-                }]),
-            ),
-            ChatMessage::tool("README.md".into(), None, Some("list_dir".into())),
-            ChatMessage::assistant("Terminé.".into(), None, None, None, None),
-        ];
-
-        assert!(generated_output_tokens(&messages) >= 100);
-    }
+pub(super) fn has_text_result(messages: &[ChatMessage]) -> bool {
+    messages
+        .iter()
+        .any(|message| message.role == "assistant" && !message.content.trim().is_empty())
 }
+
+#[cfg(test)]
+#[path = "agentic_tests.rs"]
+mod tests;

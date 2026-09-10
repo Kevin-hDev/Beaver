@@ -13,6 +13,14 @@ fn chat_ignores_explicit_agentic_tools() {
 }
 
 #[test]
+fn empty_agent_tool_request_uses_the_current_catalog() {
+    let definitions = definitions_for_mode(false, &[]);
+    let names = tool_catalog::tool_names(&definitions);
+
+    assert!(names.iter().any(|name| name == "manage_automation"));
+}
+
+#[test]
 fn ollama_thinking_uses_only_rust_metadata() {
     let capabilities = ["completion".into(), "thinking".into()];
     let canonical = canonical_ollama_think("qwen3.5:4b", Some("auto"), true, Some(&capabilities));

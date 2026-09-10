@@ -15,7 +15,14 @@ pub(super) use super::conversation_admission_ids::unique_uuid;
 use super::conversation_history::{ConversationHistory, ProviderRole};
 use super::conversation_input::ResolvedTurnInput;
 use super::types_message::AgentMessage;
+use super::types_message::AgentMessageKind;
 use super::types_session::AgentSession;
+
+#[path = "conversation_admission_reasoning.rs"]
+mod reasoning;
+pub(crate) use reasoning::{
+    new_automation_turn_with_lease_and_reasoning, new_turn_with_lease_and_reasoning,
+};
 
 pub const PUBLIC_ERROR_CODE: &str = super::conversation_history::PUBLIC_ERROR_CODE;
 #[cfg(test)]
@@ -82,25 +89,7 @@ pub(crate) async fn new_turn_with_lease(
         input,
         target,
         None,
-        super::conversation_history_resolve::AttachmentKeySource::Vault,
-        || async {},
-        |session| async move { super::session_store::save(&session).await },
-        || async {},
-    )
-    .await
-}
-
-pub(crate) async fn new_turn_with_lease_and_reasoning(
-    lease: &super::session_locks::AdmissionLease,
-    input: ResolvedTurnInput,
-    target: ContinuationTarget,
-    reasoning: &super::conversation_reasoning_state::SessionReasoningUpdate,
-) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    new_turn_inner(
-        lease.session_id(),
-        input,
-        target,
-        Some(reasoning),
+        None,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -113,11 +102,12 @@ pub(crate) async fn new_turn_with_lease_and_reasoning(
     clippy::too_many_arguments,
     reason = "test seams keep the durable admission order explicit"
 )]
-async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
+pub(super) async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
     session_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
     reasoning: Option<&super::conversation_reasoning_state::SessionReasoningUpdate>,
+    message_kind: Option<AgentMessageKind>,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
     after_load: A,
     writer: W,
@@ -174,7 +164,7 @@ where
         turn_id: turn_id.clone(),
         role: "user".into(),
         content: input.user_content.clone(),
-        message_kind: None,
+        message_kind,
         thinking: None,
         tool_calls: None,
         tool_name: None,

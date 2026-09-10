@@ -20,8 +20,8 @@ pub(crate) enum BackgroundAdmissionError {
     Unavailable,
 }
 
-pub(crate) async fn admit_background_if_idle(
-    app: &tauri::AppHandle,
+pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
     session_id: &str,
 ) -> Result<AgentChatAdmission, BackgroundAdmissionError> {
     crate::services::agent_local::session_user_write::ensure_allowed(session_id)

@@ -1,5 +1,6 @@
 pub(crate) mod migration;
 // Temporaire : la tâche 7 expose ces décisions via les commandes de migration.
+pub(crate) mod actor_context;
 mod audit_store;
 mod history_cursor;
 mod history_metadata;
@@ -76,6 +77,8 @@ pub(crate) const fn history_max_line_bytes() -> usize {
     history_store::MAX_LINE_BYTES
 }
 
+#[cfg(test)]
+mod actor_context_tests;
 #[cfg(test)]
 mod audit_store_tests;
 #[cfg(test)]
