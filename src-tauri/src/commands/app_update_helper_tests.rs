@@ -1,6 +1,6 @@
 use std::fs;
 
-use super::{copy_helper, copy_helper_while, current_install_directory_for};
+use super::{cli_update_paths_for, copy_helper, copy_helper_while, current_install_directory_for};
 
 #[test]
 fn copies_a_bounded_regular_helper_with_private_permissions() {
@@ -98,4 +98,25 @@ fn cli_beaver_refuse_un_dossier_sans_executable_principal() {
     fs::write(installation.path().join(cli), b"cli").unwrap();
 
     assert!(current_install_directory_for(&installation.path().join(cli)).is_err());
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn cli_beaver_lie_resout_les_dossiers_du_bundle() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir().unwrap();
+    let macos = root.path().join("Beaver.app/Contents/MacOS");
+    let resources = root.path().join("Beaver.app/Contents/Resources");
+    fs::create_dir_all(&macos).unwrap();
+    fs::create_dir_all(&resources).unwrap();
+    fs::write(macos.join("cl-go-dash"), b"app").unwrap();
+    fs::write(macos.join("beaver"), b"cli").unwrap();
+    let link = root.path().join("beaver");
+    symlink(macos.join("beaver"), &link).unwrap();
+
+    let (resource_root, working_directory) = cli_update_paths_for(&link).unwrap();
+
+    assert_eq!(working_directory, macos.canonicalize().unwrap());
+    assert_eq!(resource_root, resources.canonicalize().unwrap());
 }

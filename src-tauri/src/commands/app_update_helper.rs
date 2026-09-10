@@ -102,16 +102,18 @@ fn create_helper_file(temp_root: &Path) -> Result<(TemporaryHelper, File), Strin
 }
 
 pub(crate) fn current_install_directory() -> Result<PathBuf, String> {
-    let executable = std::env::current_exe().map_err(|_| install_error())?;
+    let executable = std::env::current_exe()
+        .and_then(std::fs::canonicalize)
+        .map_err(|_| install_error())?;
     current_install_directory_for(&executable)
 }
 
 pub(crate) fn current_install_directory_for(executable: &Path) -> Result<PathBuf, String> {
-    let metadata = std::fs::symlink_metadata(executable).map_err(|_| install_error())?;
-    if !metadata.is_file() || metadata.file_type().is_symlink() {
+    let executable = std::fs::canonicalize(executable).map_err(|_| install_error())?;
+    let metadata = std::fs::symlink_metadata(&executable).map_err(|_| install_error())?;
+    if !metadata.is_file() {
         return Err(install_error());
     }
-    let executable = std::fs::canonicalize(executable).map_err(|_| install_error())?;
     let name = executable.file_name().and_then(|name| name.to_str());
     if name != Some(main_executable_name()) && name != Some(cli_executable_name()) {
         return Err(install_error());
@@ -129,6 +131,22 @@ pub(crate) fn current_install_directory_for(executable: &Path) -> Result<PathBuf
     Ok(directory)
 }
 
+pub(crate) fn cli_update_paths_for(executable: &Path) -> Result<(PathBuf, PathBuf), String> {
+    let executable = std::fs::canonicalize(executable).map_err(|_| install_error())?;
+    let working_directory = current_install_directory_for(&executable)?;
+    #[cfg(target_os = "macos")]
+    let resource_root = working_directory
+        .parent()
+        .map(|contents| contents.join("Resources"))
+        .ok_or_else(install_error)?
+        .canonicalize()
+        .map_err(|_| install_error())?;
+    #[cfg(not(target_os = "macos"))]
+    let resource_root = cli_resource_directory()?;
+    Ok((resource_root, working_directory))
+}
+
+#[cfg(not(target_os = "macos"))]
 pub(crate) fn cli_resource_directory() -> Result<PathBuf, String> {
     let package = tauri::utils::PackageInfo {
         name: env!("CARGO_PKG_NAME").to_string(),

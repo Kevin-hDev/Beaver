@@ -1,6 +1,6 @@
 use super::app_update_helper::{
-    cli_resource_directory, copy_helper_while, current_install_directory,
-    current_install_directory_for, helper_resource_name, TemporaryHelper,
+    cli_update_paths_for, copy_helper_while, current_install_directory, helper_resource_name,
+    TemporaryHelper,
 };
 use crate::services::process_identity::ProcessIdentity;
 use crate::services::update_handoff::UpdateHandoff;
@@ -93,9 +93,8 @@ fn spawn_update_helper_from_paths(
 pub(crate) async fn launch_update_helper_for_cli(asset: &Path) -> Result<(), String> {
     let asset = asset.to_path_buf();
     run_helper_operation(move || {
-        let resource_root = cli_resource_directory()?;
         let executable = std::env::current_exe().map_err(|_| install_error())?;
-        let working_directory = current_install_directory_for(&executable)?;
+        let (resource_root, working_directory) = cli_update_paths_for(&executable)?;
         let helper =
             spawn_update_helper_from_paths(&asset, &resource_root, &working_directory, None)?;
         helper.detach();
