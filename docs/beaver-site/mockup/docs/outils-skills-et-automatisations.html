@@ -75,7 +75,7 @@
       <li>Il n'existe <b>aucune liste d'outils propre à une automatisation</b>, ni à la création, ni à l'exécution. Rien n'est restreint, rien n'est refusé par nature.</li>
       <li>Une automatisation dispose donc de <code>manage_automation</code> : <b>elle peut en créer, en modifier et en supprimer d'autres.</b> La seule borne est le plafond de 64 réveils.</li>
     </ul>
-    <p>Régler Beaver en <b>Demande d'approbation</b> ne borne pas les automatisations. Le corollaire : <b>ce que tu confies à une automatisation, tu le confies sans filet</b>. Les seuls points de contrôle sont le texte de l'instruction et le choix des outils activés dans les réglages — tous deux décidés à l'avance, une fois pour toutes.</p>
+    <p>Régler Beaver en <b>Demander l'autorisation</b> ne borne pas les automatisations. Le corollaire : <b>ce que tu confies à une automatisation, tu le confies sans filet</b>. Les seuls points de contrôle sont le texte de l'instruction et le choix des outils activés dans les réglages — tous deux décidés à l'avance, une fois pour toutes.</p>
 
     <div class="callout">
       <span class="t">Avertissement</span>
@@ -88,7 +88,7 @@
       <tr><td>Mode de permission</td><td>Celui que tu as choisi</td><td><b>Accès complet, toujours</b></td></tr>
       <tr><td>Outils disponibles</td><td>Les groupes activés dans les réglages</td><td><b>Les mêmes</b>, sans restriction</td></tr>
       <tr><td>Skills disponibles</td><td>Tous</td><td><b>Tous</b></td></tr>
-      <tr><td>Demande d'approbation</td><td>Selon ton mode</td><td><b>Jamais</b></td></tr>
+      <tr><td>Demander l'autorisation</td><td>Selon ton mode</td><td><b>Jamais</b></td></tr>
       <tr><td>Peut créer une autre automatisation</td><td>Oui</td><td><b>Oui</b></td></tr>
       <tr><td>Peut déléguer à un sous-agent</td><td>Oui</td><td><b>Oui</b></td></tr>
     </table>
@@ -156,7 +156,7 @@
       <tr><td>L'agent n'utilise jamais ton skill</td><td>Description trop vague, ou groupe Skills désactivé</td><td>Réécrire la description en disant <b>quand</b> utiliser le skill</td></tr>
       <tr><td>Ton skill n'apparaît pas dans la liste</td><td>Fichier mal nommé, en-tête absent, ou fichier trop gros</td><td>Voir <a href="agent-skills.html">Skills</a></td></tr>
       <tr><td>Une automatisation a modifié des fichiers sans rien demander</td><td>Elle s'exécute en Accès complet, par conception</td><td>Restreindre son instruction, ou couper les groupes d'outils concernés</td></tr>
-      <tr><td>Tu es en Demande d'approbation et pourtant elle n'a rien demandé</td><td>Le mode de tes conversations ne s'applique pas aux automatisations</td><td>Voulu ; le contrôle se fait sur l'instruction et les outils activés</td></tr>
+      <tr><td>Tu es en Demander l'autorisation et pourtant elle n'a rien demandé</td><td>Le mode de tes conversations ne s'applique pas aux automatisations</td><td>Voulu ; le contrôle se fait sur l'instruction et les outils activés</td></tr>
       <tr><td>L'automatisation ne se déclenche pas</td><td>Réveils globalement en pause</td><td>Vérifier la pause globale dans l'écran des réveils</td></tr>
       <tr><td>« Maximum 64 réveils »</td><td>Plafond commun aux automatisations et aux réveils simples</td><td>Supprimer un réveil devenu inutile</td></tr>
       <tr><td>« Provider non supporté »</td><td>Le fournisseur de la conversation n'accepte pas les requêtes d'automatisation</td><td>Créer l'automatisation depuis une conversation utilisant un autre fournisseur</td></tr>

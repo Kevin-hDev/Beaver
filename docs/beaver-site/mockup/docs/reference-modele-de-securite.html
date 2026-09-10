@@ -33,7 +33,7 @@
     <p>Cette page répond à quatre questions : qu'est-ce qui sort de ta machine, qu'est-ce qui n'en sort jamais, qu'est-ce qui te protège, et où sont les limites. Chaque protection y est écrite avec sa condition d'activation — une protection annoncée sans sa condition serait un mensonge par omission.</p>
     <div class="callout">
       <span class="t">Attention</span>
-      <b>Beaver démarre en accès complet.</b> À l'installation, l'agent peut exécuter ses outils sans rien demander, sur l'ensemble de ton disque. C'est le réglage d'origine et il est délibéré : Beaver est conçu pour travailler dans tes projets. Si tu préfères valider chaque action, passe en <b>Demande d'approbation</b> et <b>restreins l'accès disque</b> à tes dossiers de travail. Ce sont les deux réglages les plus importants de l'application.
+      <b>Beaver démarre en accès complet.</b> À l'installation, l'agent peut exécuter ses outils sans rien demander, sur l'ensemble de ton disque. C'est le réglage d'origine et il est délibéré : Beaver est conçu pour travailler dans tes projets. Si tu préfères valider chaque action, passe en <b>Demander l'autorisation</b> et <b>restreins l'accès disque</b> à tes dossiers de travail. Ce sont les deux réglages les plus importants de l'application.
     </div>
     <h2 id="une-application-de-bureau">Une application de bureau, pas un service</h2>
     <p>Beaver s'exécute sur ton ordinateur, avec les droits de ton compte utilisateur. Il n'y a pas de serveur Beaver, pas de compte à créer, pas de synchronisation. Trois conséquences.</p>
@@ -87,7 +87,7 @@
     </table>
     <h2 id="couche-permissions">Couche 1 — Les permissions de l'agent</h2>
     <p><b>Le mode par défaut est Accès complet.</b> À la première installation, Beaver démarre dans ce mode, et il y revient si son fichier de réglages est absent, illisible ou porte une valeur inconnue. En accès complet, l'agent exécute ses outils sans jamais demander : écrire un fichier, lancer une commande, modifier une branche Git.</p>
-    <p><b>La recommandation, sans détour :</b> passe en <b>Demande d'approbation</b> si tu n'as pas une raison précise de rester en accès complet. Le détail des trois modes est dans <a href="agent-permissions.html">Modes de permission</a>.</p>
+    <p><b>La recommandation, sans détour :</b> passe en <b>Demander l'autorisation</b> si tu n'as pas une raison précise de rester en accès complet. Le détail des trois modes est dans <a href="agent-permissions.html">Modes de permission</a>.</p>
     <p><b>Un plafond protège les canaux externes.</b> Quand une conversation arrive de Telegram, Slack ou Discord, le pont demande l'accès complet, mais cette demande est plafonnée par ton réglage : si le mode demandé est plus permissif que le tien, c'est le tien qui est retenu. Un canal externe ne peut jamais obtenir plus de droits que ceux que tu as consentis dans l'application.</p>
     <div class="callout">
       <span class="t">Attention</span>
@@ -95,7 +95,7 @@
     </div>
     <div class="callout">
       <span class="t">Attention</span>
-      <b>Les réveils programmés font exception.</b> Une conversation déclenchée par un réveil s'exécute en <b>Accès complet</b>, même si tes conversations manuelles sont en Demande d'approbation. C'est un choix assumé : un réveil travaille sans personne devant l'écran, et une demande d'approbation sans personne pour y répondre bloquerait l'exécution au lieu de la protéger. Ton consentement, tu le donnes au moment de créer le réveil et d'écrire la tâche qu'il exécutera. N'automatise que ce que tu accepterais de laisser tourner sans surveillance.
+      <b>Les réveils programmés font exception.</b> Une conversation déclenchée par un réveil s'exécute en <b>Accès complet</b>, même si tes conversations manuelles sont en Demander l'autorisation. C'est un choix assumé : un réveil travaille sans personne devant l'écran, et une demande d'approbation sans personne pour y répondre bloquerait l'exécution au lieu de la protéger. Ton consentement, tu le donnes au moment de créer le réveil et d'écrire la tâche qu'il exécutera. N'automatise que ce que tu accepterais de laisser tourner sans surveillance.
     </div>
     <h2 id="couche-bac-a-sable">Couche 2 — Le bac à sable du système, et sa condition</h2>
     <p>Un bac à sable, ici, veut dire que le système d'exploitation enferme la commande dans un espace dont elle ne peut pas sortir. C'est l'argument le plus fort de Beaver, et il est conditionnel : les deux moitiés se lisent ensemble.</p>
@@ -147,7 +147,7 @@
     <p>Ce que Beaver garantit malgré tout : une double décision explicite — installer, puis faire confiance —, une empreinte des fichiers qui révoque l'approbation dès qu'ils changent, une identité attribuée par Beaver et non déclarée par l'extension, et un journal de chaque remise de secret. Le détail est dans <a href="integrations-centre-extensions.html">Centre d'extensions</a>.</p>
     <h2 id="les-limites-assumees">Les limites assumées</h2>
     <ul>
-      <li><b>Le mode par défaut est le plus permissif</b> — accès complet sur tout le disque. Passe en Demande d'approbation et restreins la portée disque.</li>
+      <li><b>Le mode par défaut est le plus permissif</b> — accès complet sur tout le disque. Passe en Demander l'autorisation et restreins la portée disque.</li>
       <li><b>Sans restriction de portée, aucune commande n'est isolée.</b> Déclare tes dossiers de travail : c'est ce qui allume la protection du noyau.</li>
       <li><b>Les réveils programmés s'exécutent en accès complet</b>, quel que soit ton réglage. N'automatise que ce que tu accepterais de laisser tourner seul.</li>
       <li><b>Le code d'une extension approuvée n'est contraint par rien.</b> Lis le code avant d'approuver ; en cas de doute, révoque la clé chez son fournisseur, pas seulement l'extension.</li>
@@ -160,7 +160,7 @@
     <p>Dans l'ordre d'effet décroissant.</p>
     <ul>
       <li><b>Restreindre l'accès disque</b> à tes dossiers de travail — le seul geste qui active une protection du noyau.</li>
-      <li><b>Passer en Demande d'approbation</b> — voir <a href="agent-permissions.html">Modes de permission</a>.</li>
+      <li><b>Passer en Demander l'autorisation</b> — voir <a href="agent-permissions.html">Modes de permission</a>.</li>
       <li><b>Choisir un modèle local</b> pour tout contenu sensible — voir <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>.</li>
       <li><b>N'approuver une extension qu'après avoir lu son code</b> — et révoquer la clé, pas seulement l'extension, en cas de doute.</li>
       <li><b>Restreindre la liste des utilisateurs autorisés</b> sur chaque canal externe — voir <a href="integrations-canaux-externes.html">Canaux externes</a>.</li>

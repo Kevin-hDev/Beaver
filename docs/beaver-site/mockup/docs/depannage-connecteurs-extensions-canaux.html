@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Connecteurs, extensions, canaux</title>
+<meta name="description" content="Un connecteur MCP qui ne démarre pas, une extension refusée, un bot de messagerie silencieux : reconnaître lequel des trois est en cause, et ce que chaque message veut dire.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Dépannage / Connecteurs, extensions, canaux</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="depannage-connecteurs-extensions-canaux.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Quand un service <em>branché</em> ne répond plus</h1>
+    <p>Trois systèmes différents partagent cette page parce qu'ils se ressemblent de l'extérieur. Un <b>connecteur MCP</b> est un service externe qui prête des outils à l'agent. Une <b>extension</b> est du code qui tourne dans un processus séparé de Beaver. Un <b>canal externe</b> est un bot de messagerie qui parle à l'agent depuis Telegram, Slack ou Discord. Ils tombent en panne de façons très différentes, et la première chose à faire est de savoir lequel des trois est en cause.</p>
+    <p>Leur point commun : <b>une panne de l'un n'arrête pas Beaver.</b> L'agent continue de fonctionner sans les outils manquants.</p>
+
+    <h2 id="reconnaitre">Reconnaître lequel des trois est en cause</h2>
+
+    <table>
+      <caption class="crumb">Le symptôme, le système concerné, l'écran où regarder</caption>
+      <tr><th>Ce que tu observes</th><th>Système concerné</th><th>Où regarder</th></tr>
+      <tr><td>Un outil promis par un service externe ne répond pas</td><td><b>Connecteur MCP</b></td><td>Réglages › Connecteurs, statut « Connecté » ou « Déconnecté »</td></tr>
+      <tr><td>Un plugin officiel ou une extension personnalisée est absent, en erreur ou incompatible</td><td><b>Extension</b></td><td>Réglages › Extensions › Hôte, section « Dernières erreurs de chargement »</td></tr>
+      <tr><td>Un bot Telegram, Slack ou Discord ne répond plus</td><td><b>Canal externe</b></td><td>Réglages › Canaux, statut du compte</td></tr>
+    </table>
+
+    <h2 id="connecteur-demarrage">Un connecteur MCP qui ne démarre pas</h2>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Beaver n'accepte pas n'importe quel serveur MCP.</b> La liste est fermée : cinq connecteurs installables localement, treize points d'accès distants approuvés, trois programmes autorisés à démarrer. La commande lancée doit correspondre <b>au caractère près</b> à celle du catalogue. Ce n'est pas une limite provisoire : c'est ce qui empêche un connecteur d'exécuter du code arbitraire sous ton compte.
+    </div>
+
+    <p>Les cinq connecteurs installables localement sont <b>Context7</b>, <b>Hugging Face</b>, <b>Product Hunt</b>, <b>Reddit</b> et <b>iMessage</b> — ce dernier <b>sur macOS uniquement</b>. Chacun est lancé avec une version figée, par l'un des trois seuls programmes autorisés : <code>npx</code>, <code>uvx</code> ou <code>deno</code>.</p>
+    <p>Pour les connecteurs distants, la liste est également fermée : <b>treize points d'accès approuvés</b> — Gmail, Google Drive, Google Agenda, Canva, Figma, Notion, Slack, Linear, Lucid, Sentry, Vercel, Apify, GitHub. L'adresse doit être en <b>HTTPS</b>, sans paramètre de requête, sans port explicite, et le chemin doit correspondre au caractère près.</p>
+
+    <table>
+      <caption class="crumb">Les causes de non-démarrage, dans l'ordre où Beaver les rencontre</caption>
+      <tr><th>Cause</th><th>Ce que le moteur constate</th></tr>
+      <tr><td>Le programme n'est pas installé sur la machine</td><td>Le runtime requis est absent du <code>PATH</code></td></tr>
+      <tr><td>Le connecteur n'est pas au catalogue</td><td>Connecteur non autorisé</td></tr>
+      <tr><td>La commande ne correspond pas au catalogue</td><td>Commande MCP non autorisée</td></tr>
+      <tr><td>Un argument contient un caractère interdit</td><td>Argument invalide</td></tr>
+      <tr><td>Huit processus MCP tournent déjà</td><td>Connecteur MCP indisponible</td></tr>
+      <tr><td>Beaver est en cours de fermeture</td><td>La même chose</td></tr>
+    </table>
+
+    <p><b>Ce que l'interface affiche, quelle que soit la cause ci-dessus</b>, est une phrase unique : <b>« Impossible de valider le connecteur. Vérifiez le token puis réessayez. »</b> Le message accuse le jeton dans tous les cas. <b>Vérifie donc d'abord que <code>npx</code>, <code>uvx</code> ou <code>deno</code> est bien installé et accessible</b> avant de soupçonner ton jeton : c'est la cause la plus fréquente derrière ce message.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b><code>npx</code> et <code>uvx</code> téléchargent le paquet au premier lancement.</b> C'est la cause la plus banale d'un démarrage qui semble bloqué : la machine télécharge. Aucun délai ne borne le démarrage lui-même — seule la première interrogation est bornée, à <b>20 secondes</b>. Attends, puis réessaie.
+    </div>
+
+    <p>Trois bornes valent d'être connues. <b>32 connecteurs</b> configurés au maximum. Un connecteur inactif est <b>arrêté au bout de 10 minutes</b> sans usage : son redémarrage à l'appel suivant est normal, et rend ce premier appel plus lent. Enfin, le catalogue d'outils d'un connecteur est <b>gardé en mémoire 5 minutes</b> — un outil ajouté côté serveur peut donc mettre jusqu'à cinq minutes à apparaître.</p>
+
+    <h2 id="outil-mcp">Un outil MCP qui échoue en pleine conversation</h2>
+    <p>L'agent n'appelle pas un connecteur directement : il passe par un outil unique. En cas d'échec, tu ne lis que <a href="depannage-agent-et-outils.html">la phrase de la catégorie d'erreur</a>, jamais la cause précise.</p>
+
+    <table>
+      <caption class="crumb">Ce qui a échoué, et la phrase que tu lis</caption>
+      <tr><th>Ce qui a échoué</th><th>Phrase affichée</th></tr>
+      <tr><td>Le connecteur n'est plus actif, ou l'outil n'existe plus</td><td>L'outil est temporairement indisponible.</td></tr>
+      <tr><td>Les arguments ne respectent pas le schéma de l'outil</td><td>La demande transmise à l'outil est invalide.</td></tr>
+      <tr><td>L'appel a dépassé <b>60 secondes</b></td><td>L'outil n'a pas répondu à temps.</td></tr>
+      <tr><td>Le service est injoignable</td><td>L'outil est temporairement indisponible.</td></tr>
+      <tr><td>Le serveur a renvoyé une erreur</td><td>Un service externe a empêché l'opération.</td></tr>
+      <tr><td>La réponse du serveur est illisible</td><td>Un service externe a empêché l'opération.</td></tr>
+      <tr><td>Le transport a échoué</td><td>Un service externe a empêché l'opération.</td></tr>
+      <tr><td>L'outil lui-même signale une erreur</td><td>Un service externe a empêché l'opération.</td></tr>
+    </table>
+
+    <p><b>Le conseil qui suit l'erreur est celui qui compte</b>, parce qu'il te dit si relancer est sans risque. Quand le service était injoignable, Beaver écrit <b>« Aucun appel d'outil n'a été envoyé ; une nouvelle tentative est sûre. »</b> Dans tous les autres cas : <b>« Vérifier l'état du service avant de relancer : l'action a pu être exécutée. »</b> — l'appel est parti, et il a pu aboutir malgré l'erreur.</p>
+    <p>Dernier détail utile : la sortie d'un outil MCP est <b>coupée à 4 096 caractères</b> et marquée comme tronquée. Une réponse incomplète n'est pas forcément un échec du service.</p>
+
+    <h2 id="oauth">La connexion OAuth d'un connecteur a échoué</h2>
+    <p>La connexion se déroule ainsi : Beaver interroge le service pour trouver son serveur d'autorisation, vérifie que les adresses obtenues font partie des adresses approuvées, ouvre un port local, ouvre ton navigateur, attend le retour, échange le code contre des jetons, teste le connecteur, puis enregistre.</p>
+    <p><b>Sept causes d'échec distinctes existent</b> — serveur d'autorisation introuvable ou non approuvé, port local impossible à ouvrir, adresse d'enregistrement pas en HTTPS, service sans identifiants utilisables, <b>attente dépassée au bout de 5 minutes</b>, 50 requêtes arrivées sur le port sans retour valide, connecteur qui refuse le jeton au test final.</p>
+    <p><b>Dans les sept cas, tu lis la même phrase : « Échec de la connexion. Réessayez. »</b> Le motif exact n'est pas affiché. En pratique, la cause de loin la plus fréquente est la cinquième : <b>termine la connexion dans ton navigateur en moins de cinq minutes</b>, sans fermer la fenêtre de Beaver.</p>
+    <p>Trois détails à connaître :</p>
+    <ul>
+      <li><b>Cinq connexions OAuth au maximum en parallèle.</b> Au-delà, les suivantes sont refusées.</li>
+      <li><b>Relancer la même connexion pendant qu'elle tourne ne fait rien</b> : la seconde tentative est écartée en silence, sans message. Le bouton <b>« Cela n'a pas fonctionné ? Relancez. »</b> n'a donc d'effet qu'une fois la première tentative terminée ou annulée — ferme la fenêtre, puis recommence.</li>
+      <li>La page affichée dans le navigateur après une connexion réussie dit <b>« Authentification en cours — Vous pouvez fermer cet onglet et retourner dans l'application. »</b>. Elle est <b>en français quelle que soit la langue de l'application</b>, et ne suit pas le thème : c'est normal.</li>
+    </ul>
+    <p>Le parcours complet est décrit sur <a href="integrations-authentification-mcp.html">Authentification des connecteurs</a>.</p>
+
+    <h2 id="jeton-expire">Le jeton d'un connecteur a expiré</h2>
+    <p>Beaver renouvelle le jeton <b>30 secondes avant son échéance</b>, sous un verrou par connecteur : deux appels simultanés ne renouvellent pas deux fois. Le point d'accès du renouvellement est <b>revérifié contre la liste approuvée avant chaque appel</b> — un service qui changerait d'adresse casserait le renouvellement plutôt que d'envoyer ton jeton ailleurs. C'est voulu.</p>
+    <p><b>Deux situations n'ont aucune issue automatique</b>, et ce sont elles qui expliquent qu'un connecteur autrefois fiable cesse de répondre :</p>
+    <ul>
+      <li><b>Le service n'a pas fourni de jeton de renouvellement.</b> Il faut refaire la connexion.</li>
+      <li><b>Le renouvellement échoue</b> — service injoignable, ou jeton révoqué de ton côté. Beaver <b>ne réessaie pas et ne prévient pas</b> : l'échec remonte comme une simple indisponibilité de l'outil.</li>
+    </ul>
+    <p>Dans les deux cas, la manœuvre est la même : se déconnecter du connecteur, puis refaire la connexion. Les jetons vivent dans le coffre chiffré, pas dans un fichier de configuration — voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+
+    <h2 id="hote-extensions">L'hôte d'extensions est indisponible</h2>
+    <p>Les extensions ne tournent pas dans Beaver : elles tournent dans un <b>processus séparé</b>, l'hôte. Son état est visible dans Réglages › Extensions › Hôte : <b>Arrêté</b>, <b>Démarrage</b>, <b>En cours</b>, <b>Erreur</b>. <b>Node.js 20 au minimum</b> est exigé ; une version inférieure fait échouer le démarrage.</p>
+
+    <table>
+      <caption class="crumb">Les messages de l'hôte d'extensions</caption>
+      <tr><th>Message affiché</th><th>Ce qu'il signifie</th></tr>
+      <tr><td>« L'hôte d'extensions est indisponible. »</td><td>Le processus ne tourne pas, ou ne répond plus</td></tr>
+      <tr><td>« L'hôte d'extensions traite trop de demandes. Réessaie dans un instant. »</td><td>Plus de <b>64 demandes</b> en attente</td></tr>
+      <tr><td>« L'hôte d'extensions n'a pas répondu à temps. »</td><td>Un des délais du contrat a été dépassé</td></tr>
+      <tr><td>« L'hôte d'extensions n'a pas confirmé son arrêt. »</td><td>L'arrêt a dépassé 5 secondes. Suivi de « Quittez complètement Beaver, puis relancez-le avant de réactiver cette extension. »</td></tr>
+      <tr><td>« L'hôte d'extensions n'est pas compatible avec cette version de Beaver. »</td><td>Le protocole annoncé ne correspond pas</td></tr>
+    </table>
+
+    <table>
+      <caption class="crumb">Les délais du contrat de l'hôte</caption>
+      <tr><th>Opération</th><th>Délai</th></tr>
+      <tr><td>Appel d'un outil d'extension</td><td><b>55 s</b></td></tr>
+      <tr><td>Requête vers l'hôte</td><td><b>60 s</b></td></tr>
+      <tr><td>Appel d'un outil MCP depuis une extension</td><td><b>25 s</b></td></tr>
+      <tr><td>Requête d'une extension vers Beaver</td><td><b>30 s</b></td></tr>
+      <tr><td>Action d'interface</td><td><b>15 s</b></td></tr>
+      <tr><td>Gestionnaire d'événement</td><td><b>5 s</b></td></tr>
+      <tr><td>Arrêt de l'hôte</td><td><b>5 s</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>L'hôte ne redémarre pas indéfiniment.</b> Beaver s'autorise <b>3 redémarrages automatiques par fenêtre de 300 secondes</b>. Passé ce budget, plus rien ne se relance tout seul jusqu'à une action de ta part : c'est exactement le moment où le bouton <b>« Redémarrer l'hôte »</b> sert à quelque chose. Si l'hôte repart en erreur aussitôt, le dernier recours est <b>« Désactiver les extensions hébergées »</b>, présenté dans l'application sous le titre <b>« Mode de récupération »</b> : « Désactive les plugins Beaver et les extensions locales afin de retrouver un Beaver fonctionnel. »
+    </div>
+
+    <h2 id="extension-refusee">Une extension refusée ou incompatible</h2>
+    <p><b>Une extension est refusée avant d'être chargée</b> quand son manifeste annonce une version d'API différente de celle de Beaver — actuellement <b>1</b>. Le message est <b>« Cette extension n'est pas compatible avec cette version de Beaver. »</b> et l'état affiché dans la liste est <b>« Incompatible »</b>.</p>
+    <p><b>Il n'existe aucun mode de compatibilité</b> : la comparaison est stricte. La seule issue est une mise à jour de l'extension, ou de Beaver.</p>
+    <p>Les autres refus se produisent au moment de l'installation : dépôt Git non téléchargeable, dépôt Git qui n'a pas répondu à temps, adresse ou référence Git invalide, nom ou version npm invalide, paquet qui n'est pas une extension Beaver, manifeste ou point d'entrée invalide, lien symbolique non pris en charge, identifiant déjà installé, nombre maximal atteint, dépendances non installables, environnement d'installation invalide ou trop volumineux.</p>
+    <p>Le message <b>« Le nombre maximal d'extensions est atteint. »</b> correspond à quatre limites : <b>128 extensions personnelles</b>, <b>132 au total</b> plugins officiels compris, <b>64 outils par extension</b>, <b>256 outils en tout</b>.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      <b>Une extension activée reçoit la confiance, pas une permission limitée.</b> La fenêtre d'activation le dit sans détour : « Cette extension aura un accès total aux données, secrets et fonctions de votre compte. Beaver ne l'a pas auditée. », avec le bouton <b>« Faire confiance et activer »</b>. Après une mise à jour, l'extension est <b>désactivée</b> et doit être réapprouvée — « La mise à jour désactivera l'extension. Examinez sa nouvelle version avant de lui refaire confiance. » Et si les fichiers changent hors de Beaver, l'extension est arrêtée avec « Les fichiers de l'extension ont changé et doivent être vérifiés à nouveau. »
+    </div>
+
+    <p><b>Les erreurs de chargement individuelles</b> sont listées sous <b>« Dernières erreurs de chargement »</b>, avec l'identifiant de l'extension, la phrase du diagnostic et, quand elle est connue, la position dans le fichier. Les plus fréquentes : « Module ou dépendance introuvable », « Erreur de syntaxe », « L'activation a échoué », « L'import du module a échoué », « Le point d'entrée de l'extension est indisponible », « L'hôte n'a pas confirmé le chargement de cette extension ».</p>
+    <p>Les refus qui portent sur l'<b>interface</b> d'une extension, eux, sont tous ramenés à une seule phrase : <b>« La contribution d'interface de cette extension a été refusée »</b>. Le détail n'est pas exposé — si tu écris l'extension, la vérification passe par ton propre contrôle du contrat d'interface, décrit sur <a href="integrations-ecrire-une-extension.html">Écrire une extension</a>.</p>
+
+    <h2 id="chargement-interrompu">Un chargement d'extension interrompu</h2>
+    <p>Si Beaver s'est arrêté pendant le chargement d'une extension, il le sait au démarrage suivant et <b>s'arrête avant de la recharger</b>. Une fenêtre s'ouvre : <b>« Chargement d'extension interrompu — Beaver s'est arrêté pendant le chargement d'une extension. Examinez-la avant de choisir la suite. »</b></p>
+    <p>Cinq réponses sont possibles : ouvrir la fiche de l'extension, la <b>garder désactivée</b>, réessayer le chargement, supprimer les informations de reprise, ou <b>restaurer le registre précédent</b>.</p>
+    <p><b>Le cas des interfaces d'extension est traité plus sévèrement</b> : après une interruption pendant le chargement d'une interface, Beaver démarre en mode sûr et n'affiche <b>aucun élément d'interface tiers</b>. Le bandeau dit alors : <b>« Interfaces d'extension désactivées — Ce lancement reste en mode sûr et n'affiche aucune interface tierce. »</b> C'est cohérent avec la règle du projet : une fonctionnalité est disponible et fonctionne, ou elle est invisible — jamais visible et cassée.</p>
+
+    <h2 id="canal-silencieux">Un canal externe silencieux</h2>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Un canal qui affiche « Actif » peut ne répondre à personne.</b> Quatre contrôles refusent les messages <b>en silence</b> : liste des utilisateurs autorisés, limite de débit, compte non configuré, message invalide. Rien n'est répondu à l'expéditeur, rien n'apparaît dans Beaver, le statut reste « Actif ». C'est un choix de sécurité, pas un défaut : un bot qui répondrait « vous n'êtes pas autorisé » confirmerait son existence à n'importe qui.
+    </div>
+
+    <p>Un message venu de l'extérieur traverse cinq contrôles avant d'atteindre l'agent.</p>
+
+    <table>
+      <caption class="crumb">Les cinq contrôles, et ce qui les déclenche</caption>
+      <tr><th>Contrôle</th><th>Ce qui le déclenche</th></tr>
+      <tr><td>Validation du message</td><td>Identifiants malformés, message vide ou trop long</td></tr>
+      <tr><td>Compte non configuré</td><td>Le compte ne correspond à aucune configuration</td></tr>
+      <tr><td><b>Liste des utilisateurs autorisés</b></td><td>L'expéditeur n'y figure pas</td></tr>
+      <tr><td><b>Limite de débit</b></td><td>Trop de messages sur la minute écoulée</td></tr>
+      <tr><td>Fournisseur restreint</td><td>Le modèle choisi n'est pas autorisé hors du chat interactif</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>La liste des utilisateurs autorisés n'est pas facultative.</b> Vide, elle bloque tout le monde : le joker <code>*</code> est refusé à l'enregistrement, et seule une entrée présente ouvre l'accès. C'est le <b>premier réglage à vérifier</b> quand un bot ne répond à personne. Le champ s'appelle <b>« Utilisateurs autorisés »</b> ; la comparaison ignore la casse et les espaces autour, et la liste est bornée à <b>1 000 entrées</b> de <b>128 caractères</b>, la plus ancienne étant évincée au-delà.
+    </div>
+
+    <p><b>Les limites de débit par défaut</b> sont de <b>12 messages par minute et par utilisateur</b>, <b>120 par minute et par canal</b>, <b>300 par minute au total</b>, comptés sur une fenêtre glissante de 60 secondes. Un bot qui répond puis se tait après quelques messages a presque toujours atteint la première.</p>
+    <p><b>Deuxième cause de silence, propre aux groupes</b> : l'option <b>« Mention requise en groupe »</b>. Quand elle est active, un message de groupe qui ne mentionne pas le bot est ignoré avant même d'entrer dans la file. Si le bot répond en privé mais pas en groupe, c'est elle.</p>
+
+    <h2 id="canal-erreur">Un canal externe en erreur</h2>
+    <p>Cinq états sont affichés : <b>« Arrêté »</b>, <b>« Démarrage… »</b>, <b>« Actif »</b>, <b>« Erreur »</b>, <b>« Arrêt… »</b>.</p>
+    <p><b>La reconnexion est automatique et bornée</b> : le délai part de <b>1 seconde</b> et double à chaque échec jusqu'à <b>60 secondes</b>. Il repart à 1 seconde si la connexion précédente a tenu plus de <b>5 minutes</b>. Après <b>10 tentatives</b>, Beaver abandonne et passe le canal en <b>« Erreur »</b>. Une seconde reconnexion, interne à la connexion permanente du canal, va de <b>1 à 30 secondes</b> et se remet à zéro après 60 secondes de connexion stable.</p>
+    <p><b>Une erreur d'authentification arrête tout immédiatement</b>, sans aucune tentative : un jeton révoqué ou invalide met le canal en erreur du premier coup. C'est la bonne réaction — réessayer dix fois avec un mauvais jeton ne mène nulle part, et certains services en tiennent rigueur. <b>Un canal en erreur instantanée, c'est un jeton à vérifier ; un canal en erreur après plusieurs minutes, c'est le réseau ou le service.</b></p>
+
+    <table>
+      <caption class="crumb">Les trois phrases affichées sur un canal</caption>
+      <tr><th>Ce que le moteur signale</th><th>Phrase affichée</th></tr>
+      <tr><td>Configuration invalide</td><td>La configuration du canal est invalide.</td></tr>
+      <tr><td>Canal indisponible</td><td>Le canal est indisponible.</td></tr>
+      <tr><td>Tout autre cas, <b>y compris une panne du journal d'audit</b></td><td>L'opération a échoué. Réessayez.</td></tr>
+    </table>
+
+    <p>Le bouton de test affiche <b>« Connexion réussie »</b> ou <b>« Connexion échouée »</b>. Avant de démarrer un compte, le moteur vérifie les identifiants de canal et de compte, la présence d'un fournisseur et d'un modèle, la validité des identifiants d'utilisateurs autorisés, et <b>la présence de tous les jetons requis</b> pour ce canal. Slack en demande deux : <b>« Token bot Slack »</b> et <b>« Token app Slack »</b> — n'en fournir qu'un empêche le démarrage.</p>
+
+    <h2 id="audit">Le journal d'audit des canaux</h2>
+    <p>C'est le seul endroit où retrouver ce qui est arrivé aux messages refusés en silence. Il n'est pas consultable depuis l'application : il faut ouvrir le fichier.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ~/.local/share/cl-go-dash/logs/gateway-audit.jsonl</pre>
+    </div>
+
+    <p>Une ligne par événement, sept champs : horodatage, canal, compte, <b>empreinte de l'utilisateur</b>, action, décision de sécurité, erreur. Huit actions sont écrites : message reçu, message envoyé, message bloqué, débit dépassé, erreur de l'agent, canal démarré, canal arrêté, échec d'authentification.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      <b>L'identifiant de l'expéditeur n'est jamais écrit en clair.</b> Il est remplacé par une empreinte calculée avec une clé tirée au hasard et rangée dans le coffre. Conséquence pratique : <b>tu ne peux pas lire dans ce journal qui a été refusé</b> — seulement voir que deux lignes concernent la même personne.
+    </div>
+
+    <p>Le journal garde <b>10 000 entrées</b> au maximum, <b>2 048 octets par ligne</b>, avec une purge par ancienneté selon la rétention configurée — <b>30 jours</b> par défaut, ramenée de force entre 1 et 365 jours. Il peut être désactivé dans la configuration : il est alors muet, sans erreur.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Quand le journal ne peut pas être écrit, le message est refusé.</b> L'échec d'audit n'est pas ignoré : il bloque le traitement. Un canal peut donc devenir muet pour une raison qui n'a rien à voir avec le canal — un disque plein, ou des droits manquants sur le dossier des journaux. C'est la première chose à vérifier quand un bot se tait sans qu'aucun réglage n'ait changé.
+    </div>
+
+    <h2 id="pieges">Symptômes fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause vérifiée, ce qu'on peut faire</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Ce qu'on peut faire</th></tr>
+      <tr><td>« Impossible de valider le connecteur. Vérifiez le token puis réessayez. »</td><td>Message unique pour toutes les causes : programme absent, commande refusée, service injoignable, délai dépassé</td><td>Vérifier que <code>npx</code>, <code>uvx</code> ou <code>deno</code> est installé avant de soupçonner le jeton</td></tr>
+      <tr><td>« Je ne peux pas ajouter mon propre serveur MCP »</td><td>Catalogue fermé : cinq connecteurs locaux, treize adresses distantes</td><td>Comportement voulu, aucun contournement</td></tr>
+      <tr><td>Le premier lancement d'un connecteur prend très longtemps</td><td><code>npx</code> ou <code>uvx</code> télécharge le paquet</td><td>Attendre, puis réessayer</td></tr>
+      <tr><td>Un outil du connecteur n'apparaît pas</td><td>Catalogue d'outils gardé 5 minutes en mémoire</td><td>Attendre, ou retirer puis rajouter le connecteur</td></tr>
+      <tr><td>« Échec de la connexion. Réessayez. » après un OAuth</td><td>Sept causes possibles, un seul message</td><td>Refaire la connexion sans quitter la fenêtre, en moins de cinq minutes</td></tr>
+      <tr><td>Le bouton « Relancez » ne fait rien</td><td>Une connexion est déjà en cours pour ce connecteur : la seconde est écartée en silence</td><td>Fermer la fenêtre, puis recommencer</td></tr>
+      <tr><td>Un connecteur autrefois connecté ne répond plus</td><td>Jeton expiré sans jeton de renouvellement, ou renouvellement en échec</td><td>Se déconnecter du connecteur et refaire la connexion</td></tr>
+      <tr><td>« Cette extension n'est pas compatible avec cette version de Beaver. »</td><td>Version d'API du manifeste différente de 1</td><td>Mettre à jour l'extension ou Beaver. Aucun mode de compatibilité</td></tr>
+      <tr><td>L'hôte d'extensions repasse en erreur en boucle, puis s'arrête</td><td>Budget de 3 redémarrages par 300 s épuisé</td><td>« Redémarrer l'hôte » ; si ça recommence, « Désactiver les extensions hébergées »</td></tr>
+      <tr><td>« L'hôte d'extensions n'a pas confirmé son arrêt. »</td><td>L'arrêt a dépassé 5 secondes</td><td>Quitter complètement Beaver puis le relancer, comme le message le dit</td></tr>
+      <tr><td>Aucune interface d'extension ne s'affiche après un arrêt brutal</td><td>Mode sûr après une interruption de chargement</td><td>Réessayer l'interface, ou écarter l'incident depuis la fenêtre de reprise</td></tr>
+      <tr><td>Le bot Telegram ne répond à personne</td><td>Liste des utilisateurs autorisés vide ou mal remplie</td><td>Ajouter l'identifiant. Le canal reste « Actif » malgré tout</td></tr>
+      <tr><td>Le bot répond en privé mais pas en groupe</td><td>« Mention requise en groupe » est active</td><td>Mentionner le bot, ou désactiver l'option</td></tr>
+      <tr><td>Le bot répond puis s'arrête après quelques messages</td><td>12 messages par minute et par utilisateur</td><td>Attendre la minute suivante, ou relever la limite dans la configuration</td></tr>
+      <tr><td>Canal en « Erreur » immédiatement, sans tentative</td><td>Erreur d'authentification : arrêt définitif dès le premier échec</td><td>Vérifier le jeton du bot</td></tr>
+      <tr><td>Canal en « Erreur » après plusieurs minutes</td><td>10 tentatives de reconnexion épuisées</td><td>Vérifier le réseau et le service, puis relancer le canal</td></tr>
+      <tr><td>Un canal devient muet sans erreur affichée</td><td>L'écriture du journal d'audit échoue et bloque chaque message</td><td>Vérifier l'espace disque et les droits sur le dossier des journaux</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — la liste des connecteurs et comment les ajouter.</li>
+      <li><a href="integrations-authentification-mcp.html">Authentification des connecteurs</a> — le parcours OAuth en détail.</li>
+      <li><a href="integrations-centre-extensions.html">Centre d'extensions</a> — installer, approuver et mettre à jour une extension.</li>
+      <li><a href="integrations-ecrire-une-extension.html">Écrire une extension</a> — le manifeste, la version d'API, le contrat d'interface.</li>
+      <li><a href="integrations-canaux-externes.html">Canaux externes</a> — brancher un bot Telegram, Slack ou Discord.</li>
+      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — où vivent les jetons OAuth et les jetons de bots.</li>
+      <li><a href="depannage-agent-et-outils.html">Agent et outils</a> — les catégories d'erreur d'outil, dont celles des appels MCP.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

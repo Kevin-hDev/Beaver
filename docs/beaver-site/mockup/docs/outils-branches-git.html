@@ -42,7 +42,7 @@
       <tr><td><code>create_branch</code></td><td>Crée une branche à partir de l'état courant et bascule dessus</td><td><b>Oui</b></td></tr>
       <tr><td><code>checkout_branch</code></td><td>Bascule sur une branche existante</td><td><b>Oui</b></td></tr>
     </table>
-    <p>Les deux demandent une approbation en mode <b>Demande d'approbation</b>. Ce sont les deux seules opérations Git que l'agent effectue par un outil dédié.</p>
+    <p>Les deux demandent une approbation en mode <b>Demander l'autorisation</b>. Ce sont les deux seules opérations Git que l'agent effectue par un outil dédié.</p>
 
     <h2 id="pourquoi-si-peu">Pourquoi si peu</h2>
     <p>C'est un choix de conception assumé. Les opérations Git complexes — fusion, rebasage, correction de commit, envoi vers un dépôt distant — <b>ne passent pas par des outils dédiés</b>. Elles passent par le terminal, où l'agent tape les commandes comme tu le ferais.</p>
@@ -110,7 +110,7 @@
       <tr><td>« Le dépôt ne contient encore aucun commit »</td><td>Dépôt fraîchement initialisé</td><td>Créer le premier commit</td></tr>
       <tr><td>« Dépôt Git indisponible »</td><td>Le répertoire de travail n'est pas un dépôt Git</td><td>Ouvrir un projet versionné</td></tr>
       <tr><td>« Configuration Git invalide »</td><td>Nom ou adresse absents de la configuration Git</td><td>Les configurer</td></tr>
-      <tr><td>L'agent a créé une branche sans que tu le veuilles</td><td>Mode Accès complet</td><td>Passer en mode Demande d'approbation</td></tr>
+      <tr><td>L'agent a créé une branche sans que tu le veuilles</td><td>Mode Accès complet</td><td>Passer en mode Demander l'autorisation</td></tr>
     </table>
 
     <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>

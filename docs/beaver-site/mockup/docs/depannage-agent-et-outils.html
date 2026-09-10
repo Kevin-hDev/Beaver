@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Agent et outils</title>
+<meta name="description" content="L'agent a refusé une action, s'est arrêté tout seul, ou un outil a échoué : le message exact, sa cause réelle, et ce qu'il y a à faire.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Dépannage / Agent et outils</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="depannage-agent-et-outils.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Quand l'agent <em>s'arrête</em> ou refuse d'agir</h1>
+    <p>Une action refusée, un outil en échec, une réponse qui s'interrompt sans explication : cette page couvre ce qui se passe entre ta demande et l'outil. Chaque symptôme est donné avec le message exact que tu lis à l'écran, sa cause réelle, et ce qu'il y a à faire — y compris quand la réponse est « rien ».</p>
+    <p>Les pannes de clés API et de fournisseurs sont sur <a href="depannage-cles-et-fournisseurs.html">Clés et fournisseurs</a> ; celles du moteur local sur <a href="depannage-ollama.html">Moteur Ollama</a> ; celles des connecteurs, extensions et bots sur <a href="depannage-connecteurs-extensions-canaux.html">Connecteurs, extensions, canaux</a>.</p>
+
+    <h2 id="ou-lire">Les trois endroits où lire un échec</h2>
+    <p>Beaver ne met pas tous les échecs au même endroit, et c'est la première chose à savoir : chercher au mauvais endroit fait conclure qu'il n'y a aucun message.</p>
+
+    <table>
+      <caption class="crumb">Où se lit un échec, et combien de temps il reste</caption>
+      <tr><th>Où</th><th>Ce qu'on y trouve</th><th>Durée de vie</th></tr>
+      <tr><td><b>Sous le bloc d'un outil</b>, dans la conversation</td><td>L'échec d'<b>un outil</b> : une phrase par catégorie d'erreur, plus un conseil quand il y en a un</td><td>Reste dans la conversation</td></tr>
+      <tr><td><b>Sous la réponse</b>, quand la génération s'arrête</td><td>L'échec du <b>flux entier</b> : une phrase, plus un résumé technique court</td><td>Le résumé technique <b>disparaît</b> au rechargement de la conversation</td></tr>
+      <tr><td>Le journal des autorisations, sur le disque</td><td>Chaque demande d'autorisation et chaque réponse</td><td>Fichier tourné à <b>2 Mio</b>, une seule génération conservée</td></tr>
+    </table>
+
+    <p>Beaver garde par ailleurs en mémoire de session les <b>20 derniers échecs de flux</b> et les <b>20 derniers diagnostics d'exécution</b>, enregistrés dans le fichier de la conversation.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Le résumé technique d'une interruption ne survit pas au rechargement.</b> Il s'affiche sous la réponse au moment de l'échec — par exemple « Interruption pendant le tool read_file (stream_error). » — puis disparaît quand tu rouvres la conversation. Copie-le avant de changer d'onglet si tu veux le signaler.
+    </div>
+
+    <h2 id="autorisations">Pourquoi Beaver te demande l'autorisation</h2>
+    <p>Le mode de permission se choisit par conversation et se change au clavier avec <b>Shift+Tab</b>. En <b>Chatbot</b>, l'agent ne dispose que de deux outils, <code>web_search</code> et <code>web_fetch</code>, et n'a aucun accès aux fichiers. En <b>Accès complet</b>, aucune question n'est posée. En <b>Demander l'autorisation</b>, une fenêtre s'ouvre avant chaque action classée sensible. Le détail de chaque mode est sur <a href="agent-permissions.html">Modes de permission</a>.</p>
+    <p>La question qui revient le plus souvent en dépannage n'est pas « pourquoi Beaver demande » mais <b>« pourquoi Beaver demande pour ça »</b>. La réponse tient presque toujours dans une seule règle, celle des commandes shell.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Un tube change tout.</b> <code>grep -r motif .</code> ne demande aucune autorisation ; <code>grep -r motif . | head</code> en demande une. Dès qu'une commande contient <code>|</code>, <code>&amp;&amp;</code>, <code>;</code>, <code>||</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&amp;</code>, un retour à la ligne ou une substitution, elle sort de la liste des commandes reconnues comme sûres et repasse par toi.
+    </div>
+
+    <p>Les commandes reconnues comme sûres, tant qu'elles restent seules, sont au nombre de vingt : <code>ls</code>, <code>cat</code>, <code>head</code>, <code>tail</code>, <code>wc</code>, <code>grep</code>, <code>find</code>, <code>git status|log|diff|show|remote|tag</code>, <code>git branch</code> seul, <code>pwd</code>, <code>echo</code>, <code>which</code>, <code>cargo check|test|clippy|build</code>, <code>npx tsc</code>, <code>npm run|test</code>, <code>tree</code>, <code>file</code>, <code>stat</code>, <code>du</code>, <code>df</code>.</p>
+    <p>Pour les outils apportés par une extension, la demande dépend de l'effet que l'extension déclare.</p>
+
+    <table>
+      <caption class="crumb">Les effets d'extension et ce qu'ils autorisent</caption>
+      <tr><th>Effet déclaré</th><th>Demande une confirmation</th><th>Bouton « Toujours autoriser »</th></tr>
+      <tr><td>Lecture seule</td><td>Non</td><td>—</td></tr>
+      <tr><td>Lecture externe</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Écriture locale</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Écriture externe</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Exécution d'un processus</td><td>Oui</td><td><b>Non</b></td></tr>
+      <tr><td>Données sensibles</td><td>Oui</td><td><b>Non</b></td></tr>
+      <tr><td>Action non classée</td><td>Oui</td><td><b>Non</b></td></tr>
+    </table>
+
+    <p>Les trois derniers effets ne proposent jamais « Toujours autoriser » : chaque appel repose la question.</p>
+
+    <h2 id="fenetre">« Autoriser à … ? » — la fenêtre de demande</h2>
+    <p>Le titre exact est <b>« Autoriser à {{action}} ? »</b>, avec trois boutons : <b>« Refuser »</b> — la touche <b>Échap</b> fait la même chose —, <b>« Autoriser une fois »</b> et <b>« Toujours autoriser »</b>.</p>
+    <p>Quatre outils seulement ont un libellé traduit dans ce titre : « écrire un fichier », « modifier un fichier », « exécuter une commande », « récupérer une URL ». Pour tous les autres, le titre affiche le <b>nom technique de l'outil</b> : tu peux donc lire « Autoriser à forecast_backtest ? » ou « Autoriser à apply_subagent_changes ? ». C'est le nom réel de l'outil, pas un défaut d'affichage.</p>
+    <p><b>Deux cas où aucune fenêtre n'apparaît alors que tu l'attends :</b></p>
+    <ul>
+      <li><b>Plus de 64 demandes sont en attente</b> — la 65ᵉ est refusée sans qu'aucune fenêtre s'ouvre. Arrête la réponse et relance.</li>
+      <li><b>La réponse est annulée pendant l'attente</b> — la demande est retirée, et ce retrait vaut refus.</li>
+    </ul>
+
+    <h2 id="refus">Une action refusée : ce que voit l'agent, ce que tu vois</h2>
+    <p>Quand tu refuses, l'agent reçoit un résultat d'erreur portant le message <b>« L'utilisateur a refusé cette action. »</b>. Toi, tu lis la phrase de la catégorie : <b>« Cette opération n'est pas autorisée. »</b> — la même que pour une garde d'écriture ou un outil interdit. <b>Le détail exact n'est pas affiché</b> : il faut relire le contexte de l'outil pour savoir lequel des trois cas s'applique.</p>
+    <p>Il existe dix catégories d'erreur d'outil, et chacune a une phrase et une seule. Reconnaître la phrase, c'est reconnaître la catégorie.</p>
+
+    <table>
+      <caption class="crumb">Les dix catégories d'erreur d'outil et leur phrase</caption>
+      <tr><th>Catégorie</th><th>Phrase affichée</th></tr>
+      <tr><td>Demande invalide</td><td>La demande transmise à l'outil est invalide.</td></tr>
+      <tr><td>Permission</td><td>Cette opération n'est pas autorisée.</td></tr>
+      <tr><td>Ressource absente</td><td>La ressource demandée est introuvable.</td></tr>
+      <tr><td>Conflit d'état</td><td>L'état actuel empêche cette opération.</td></tr>
+      <tr><td>Délai dépassé</td><td>L'outil n'a pas répondu à temps.</td></tr>
+      <tr><td>Annulation</td><td>L'opération a été annulée.</td></tr>
+      <tr><td>Indisponibilité</td><td>L'outil est temporairement indisponible.</td></tr>
+      <tr><td>Service externe</td><td>Un service externe a empêché l'opération.</td></tr>
+      <tr><td>Exécution</td><td>L'outil n'a pas pu terminer l'opération.</td></tr>
+      <tr><td>Erreur interne</td><td>Une erreur interne a empêché l'opération.</td></tr>
+    </table>
+
+    <p><b>Le conseil sous l'erreur.</b> Certains échecs ajoutent une phrase d'orientation. La plus fréquente est <b>« Vérifiez l'état obtenu avant de relancer : l'action a peut-être déjà été exécutée. »</b>, et elle veut dire exactement ce qu'elle dit : l'échec porte sur la réponse, pas forcément sur l'action. Trois cas de commande shell la portent explicitement — délai dépassé, sortie indisponible, échec non classé.</p>
+    <p><b>Un résultat d'outil manquant.</b> Si le flux se termine alors qu'un outil n'a pas rendu son résultat, Beaver écrit <b>« Le résultat de l'outil manque après la fin du flux. »</b>. Ce n'est pas une panne de l'outil : c'est le flux qui s'est arrêté avant lui, et l'action a pu avoir lieu.</p>
+
+    <h2 id="commandes-bloquees">Une commande bloquée d'office</h2>
+    <p>Certaines commandes ne te sont <b>pas soumises : elles sont refusées</b>. Le refus vaut dans tous les modes, <b>y compris Accès complet</b>. Ce n'est pas un réglage, et aucun réglage ne le débloque.</p>
+    <p>Les quinze motifs interdits, mot pour mot : <code>sudo rm</code>, <code>chmod 777</code>, <code>dd if=</code>, <code>mkfs.</code>, <code>&gt; /dev/sd</code>, <code>fdisk</code>, <code>shutdown</code>, <code>reboot</code>, <code>init 0</code>, <code>init 6</code>, <code>:(){:|:&amp;};:</code>, <code>del /f /s /q</code>, <code>rd /s /q</code>, <code>format c:</code>, <code>format d:</code>.</p>
+    <p>Quatre formes supplémentaires sont détectées par motif : un <code>eval</code> sur une variable, un <code>find</code> avec <code>-delete</code>, un <code>rsync</code> avec <code>--delete</code>, un <code>dd</code> visant <code>of=/dev/</code>, et <code>mkfs</code> isolé.</p>
+    <p>Les messages exacts sont <b>« Commande bloquée : pattern dangereux « … » »</b> ou <b>« Commande bloquée : pattern dangereux détecté »</b>. Ils sont adressés à l'agent, en français, et ne suivent pas la langue de l'application. La seule issue est de reformuler la commande.</p>
+
+    <h2 id="ecriture-bloquee">« Écriture bloquée : fichier non lu avant modification »</h2>
+    <p>Le message exact est <b>« Écriture bloquée : fichier non lu avant modification. Utilise read_file sur ce chemin d'abord. »</b>. C'est une protection contre l'écrasement à l'aveugle : Beaver n'autorise la modification d'un fichier <b>existant</b> que si l'agent l'a lu pendant la conversation. Un fichier qui n'existe pas encore n'est pas concerné.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Ce n'est pas une erreur, et tu n'as rien à faire.</b> L'agent relit le fichier et repart tout seul. La seule situation à signaler est la répétition en boucle, traitée plus bas.
+    </div>
+
+    <p>La mémoire des fichiers lus est bornée à <b>1 000 chemins</b>, et l'ajout du 1 001ᵉ efface les <b>100 plus anciens</b>. Sur une très longue conversation touchant beaucoup de fichiers, un fichier lu au début peut donc redemander une lecture. C'est le comportement attendu.</p>
+
+    <h2 id="zones-autorisees">Un fichier hors des zones autorisées</h2>
+    <p>Deux messages, selon le sens de l'opération : <b>« Lecture interdite hors des zones autorisées »</b> et <b>« Écriture interdite hors des zones autorisées »</b>.</p>
+    <p>Les zones autorisées sont les dossiers configurés dans les réglages, le dossier de sortie de session s'il est configuré, le dossier temporaire du système, le dossier de travail de la conversation, et les ressources propres à l'agent — mémoire, skills et fichiers d'instructions.</p>
+    <p>Côté interface, le refus d'un dossier de session porte un autre libellé : <b>« Dossier non autorisé »</b>, suivi de « Les sessions sont limitées aux dossiers suivants : » et de <b>« Pour utiliser un autre dossier, modifiez Réglages &gt; Avancé &gt; Accès fichiers. »</b> C'est là que se règle la liste, décrite sur <a href="reglages-agent.html#avance-acces-fichiers">Réglages · Agent</a>.</p>
+    <p>Deux bornes encadrent cette liste : <b>70 chemins autorisés</b> au maximum, <b>4 096 caractères</b> par chemin. Au-delà, le réglage est refusé avec « Accès au dossier refusé par les réglages. » Enfin, <b>un lien symbolique n'est jamais suivi</b> pour les ressources de l'agent : un dossier de mémoire qui pointe ailleurs est simplement ignoré.</p>
+
+    <h2 id="capacite-contexte">Le contexte obligatoire dépasse la capacité du modèle</h2>
+    <p>C'est le seul message d'erreur de Beaver qui <b>donne ses chiffres</b>. Dans sa forme complète :</p>
+
+    <div class="callout">
+      <span class="t">Message</span>
+      « Le contexte obligatoire dépasse la capacité du modèle : prompt système {{systemTokens}} tokens + rapports obligatoires {{reportTokens}} tokens + outils actifs {{toolTokens}} tokens = {{requiredTokens}} tokens, pour une limite d'entrée de {{maxInputTokens}} tokens sur une fenêtre de {{contextWindow}} tokens. »
+    </div>
+
+    <p>Quand la fenêtre réelle du modèle n'a pas pu être déterminée, la phrase se termine par « La fenêtre réelle du modèle n'a pas pu être déterminée. » et parle d'une <b>cible de réduction</b> plutôt que d'une capacité.</p>
+    <p><b>Ce qui dépasse n'est pas ta conversation.</b> C'est ce que Beaver doit envoyer <b>avant même le premier message</b> : les instructions système, les rapports de sous-agents à remettre, et la description de tous les outils actifs. La conversation n'entre pas dans la somme — la vider ne change rien.</p>
+    <p><b>Les trois termes sont les trois leviers</b>, et c'est tout ce que le calcul permet d'affirmer : moins d'outils actifs — les connecteurs MCP et les extensions en portent l'essentiel —, pas de rapport de sous-agent en attente, ou un modèle à plus grande fenêtre. <b>L'application ne propose aucune action dans ce message</b> : elle affiche les chiffres et s'arrête.</p>
+    <p>Les chiffres affichés sont vérifiés des deux côtés avant d'apparaître : la somme doit être exacte, chaque valeur inférieure à <b>16 777 216</b>, et la limite d'entrée inférieure ou égale à la fenêtre. Si un compteur est incohérent, Beaver n'affiche <b>aucun chiffre</b> plutôt qu'un chiffre faux.</p>
+    <p>Le fonctionnement du contexte lui-même est décrit sur <a href="agent-contexte.html">Contexte</a>.</p>
+
+    <h2 id="limite-de-tours">L'agent a atteint sa limite de tours</h2>
+    <p>Un tour, c'est un aller-retour modèle puis outils. La limite est de <b>200 tours par réponse</b> : l'arrêt est décidé au tour 199, et Beaver en profite pour décharger le modèle de la mémoire graphique avant de rendre la main.</p>
+    <p><b>Ce que tu lis au moment de l'arrêt est générique</b> — « Le flux s'est interrompu. » —, sans mention des 200 tours. La phrase précise, <b>« L'agent a atteint sa limite de tours. Continue dans un nouveau message. »</b>, apparaît quand tu <b>rouvres la conversation</b>. Le même incident produit donc deux messages différents selon le moment où tu regardes : c'est le second qui nomme la vraie cause.</p>
+    <p>La même limite sert dans un second cas, sans rapport avec les 200 tours : quand un sous-agent est encore actif, qu'un rapport n'a pas été remis, ou qu'une correction reste en file. Le tour est alors refusé pour laisser l'enfant finir.</p>
+    <p>Dans les deux cas, la conduite à tenir est la même : <b>relancer dans un nouveau message</b>.</p>
+
+    <h2 id="boucle">L'agent tournait en rond</h2>
+    <p>Beaver compte les appels d'outils <b>strictement identiques</b> qui se suivent — même nom d'outil, mêmes arguments. Au <b>sixième d'affilée</b>, il arrête la réponse. Le message affiché est <b>« Le flux de réponse a été interrompu. Réessaye. »</b></p>
+    <p>Quand tu as vu l'agent répéter six fois la même action avant l'arrêt, c'est ce coupe-circuit. <b>Relancer à l'identique ne sert à rien</b> : la répétition signale que l'agent n'a pas d'information nouvelle. Reformule la demande, ou donne-lui l'élément qui lui manque.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Un seul argument qui change remet le compteur à zéro.</b> Une boucle où l'agent relit le même fichier avec un décalage différent à chaque fois ne sera donc pas coupée par ce mécanisme : c'est la limite des 200 tours qui finit par s'en charger, plusieurs minutes plus tard. Si tu vois ça, arrête la réponse à la main.
+    </div>
+
+    <h2 id="sous-agents">Un sous-agent en échec</h2>
+    <p>Quatre états sont affichés sous la bulle des sous-agents : <b>« terminé »</b>, <b>« échoué »</b>, <b>« annulé »</b>, <b>« interrompu »</b>. Trois pannes distinctes se cachent derrière « échoué ».</p>
+
+    <table>
+      <caption class="crumb">Ce que recouvre un sous-agent « échoué »</caption>
+      <tr><th>Situation</th><th>Message interne</th></tr>
+      <tr><td>Le sous-agent s'est effondré en cours de route</td><td>« Le sous-agent n'a pas pu terminer correctement. »</td></tr>
+      <tr><td>Sa préparation a échoué avant même de démarrer</td><td>La même phrase</td></tr>
+      <tr><td>Il a travaillé mais n'a pas pu remettre son rapport</td><td>« Le sous-agent n'a pas pu finaliser son rapport. »</td></tr>
+      <tr><td>Un outil lui est interdit</td><td>« Outil indisponible pour ce sous-agent. »</td></tr>
+    </table>
+
+    <p><b>Un effondrement est rattrapé, pas propagé</b> : la panne est capturée dans la tâche qui possède le sous-agent, et une routine de reprise marque l'état terminal. Pour un sous-agent chargé d'écrire du code, Beaver tente d'abord de récupérer les modifications déjà faites dans son espace de travail avant de conclure.</p>
+    <p>Deux limites à connaître. <b>Tu ne peux pas écrire dans la conversation d'un sous-agent</b> : toute tentative renvoie « Cette session de sous-agent est en lecture seule. » Écris dans la conversation parente. Et relis le résumé du sous-agent <b>avant</b> de rouvrir la conversation, puisque le résumé technique ne survit pas au rechargement.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Un sous-agent ne te demande rien.</b> Les sessions enfants tournent dans un mode interne qui contourne la garde de permission. En <b>Demander l'autorisation</b>, les actions du parent te sont soumises ; celles de ses sous-agents, non. C'est un choix, pas un défaut — voir <a href="agent-sous-agents.html">Sous-agents</a>.
+    </div>
+
+    <h2 id="diagnostics">Où sont écrits les diagnostics</h2>
+    <p>Chaque demande d'autorisation et chaque réponse sont écrites dans un journal, une ligne par événement, avec quatre champs : horodatage, événement, outil, détail.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ~/.local/share/cl-go-dash/logs/permission-diagnostics.jsonl</pre>
+    </div>
+
+    <p>Le fichier est renommé avec le suffixe <code>.1</code> au-delà de <b>2 Mio</b>, et <b>une seule génération est conservée</b> : au-delà, l'historique le plus ancien est perdu.</p>
+
+    <table>
+      <caption class="crumb">Les événements écrits dans le journal des autorisations</caption>
+      <tr><th>Événement</th><th>Ce qu'il signifie</th></tr>
+      <tr><td>Demande envoyée</td><td>Une fenêtre a été envoyée à l'interface</td></tr>
+      <tr><td>Réponse reçue — autoriser, autoriser pour la session, refuser</td><td>Ta réponse a été enregistrée</td></tr>
+      <tr><td>Réponse orpheline</td><td>Une réponse est arrivée pour une demande qui n'existait plus</td></tr>
+      <tr><td>Contournement automatique</td><td>Le mode en cours ne demande pas d'autorisation</td></tr>
+      <tr><td>Écriture en mémoire autorisée</td><td>Une écriture couverte par la politique dédiée à la mémoire</td></tr>
+    </table>
+
+    <p><b>Le moteur Ollama, lui, n'écrit aucun journal</b> — voir <a href="depannage-ollama.html">Moteur Ollama</a>. Et les autres traces visibles de l'agent sont décrites sur <a href="agent-diagnostics.html">Diagnostics et erreurs</a>.</p>
+
+    <h2 id="pieges">Symptômes fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause vérifiée, ce qu'on peut faire</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Ce qu'on peut faire</th></tr>
+      <tr><td>« Beaver me demande l'autorisation pour un simple <code>ls</code> »</td><td>La commande contient un opérateur de shell</td><td>Comportement attendu, rien à corriger</td></tr>
+      <tr><td>« Rien ne se passe, aucune fenêtre n'apparaît »</td><td>Plus de 64 demandes en attente : les suivantes sont refusées sans fenêtre</td><td>Arrêter la réponse, puis relancer</td></tr>
+      <tr><td>« La fenêtre affiche un nom bizarre : <code>forecast_run</code> »</td><td>Quatre outils seulement ont un libellé traduit</td><td>C'est le nom réel de l'outil</td></tr>
+      <tr><td>« Cette opération n'est pas autorisée. »</td><td>Ton refus, une garde d'écriture, ou un outil interdit dans ce mode</td><td>Le détail n'est pas affiché : relire le contexte de l'outil</td></tr>
+      <tr><td>« Commande bloquée : pattern dangereux »</td><td>Un des quinze motifs interdits</td><td>Reformuler la commande. Aucun réglage ne le débloque</td></tr>
+      <tr><td>« Lecture / Écriture interdite hors des zones autorisées »</td><td>Chemin hors des dossiers configurés</td><td>Réglages &gt; Avancé &gt; Accès fichiers</td></tr>
+      <tr><td>« Dossier non autorisé » à l'ouverture d'une conversation</td><td>Le dossier de travail n'est pas dans la liste</td><td>Ajouter le dossier dans les réglages</td></tr>
+      <tr><td>« Le contexte obligatoire dépasse la capacité du modèle »</td><td>Instructions, rapports et outils actifs dépassent la limite d'entrée avant tout message</td><td>Désactiver des connecteurs ou des extensions, ou changer de modèle. <b>L'application ne le suggère pas</b></td></tr>
+      <tr><td>« La réponse s'arrête sans explication après un long travail »</td><td>200 tours atteints — le message immédiat est générique</td><td>Relancer dans un nouveau message ; rouvrir la conversation nomme la cause</td></tr>
+      <tr><td>« L'agent a répété six fois la même chose puis s'est arrêté »</td><td>Coupe-circuit à six appels identiques</td><td>Reformuler la demande, ou lui fournir l'information qui manque</td></tr>
+      <tr><td>« L'agent répète la même action sans jamais s'arrêter »</td><td>Un argument change à chaque fois : le coupe-circuit ne se déclenche pas</td><td>Arrêter la réponse à la main</td></tr>
+      <tr><td>« Le résultat de l'outil manque après la fin du flux. »</td><td>Le flux s'est terminé avant que l'outil rende son résultat</td><td>Vérifier l'état obtenu avant de relancer : l'action a peut-être eu lieu</td></tr>
+      <tr><td>Sous-agent « échoué » sans détail</td><td>Effondrement, préparation ratée ou rapport non remis</td><td>Relire son résumé avant de rouvrir la conversation</td></tr>
+      <tr><td>« Je ne peux pas écrire dans la conversation d'un sous-agent »</td><td>Session en lecture seule</td><td>Écrire dans la conversation parente</td></tr>
+      <tr><td>« Écriture bloquée : fichier non lu avant modification »</td><td>Protection contre l'écrasement à l'aveugle</td><td>Rien : l'agent relit le fichier et repart</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-permissions.html">Modes de permission</a> — les trois modes en détail, et ce que chacun autorise.</li>
+      <li><a href="agent-sous-agents.html">Sous-agents</a> — comment ils sont créés, supervisés, et pourquoi ils ne demandent rien.</li>
+      <li><a href="outils-vue-densemble.html">Outils · Vue d'ensemble</a> — la liste des outils et ce que chacun fait.</li>
+      <li><a href="agent-contexte.html">Contexte</a> — ce qui remplit la fenêtre du modèle avant ton premier message.</li>
+      <li><a href="reglages-agent.html#avance-acces-fichiers">Réglages · Agent</a> — le réglage « Accès fichiers » et la liste des dossiers autorisés.</li>
+      <li><a href="depannage-connecteurs-extensions-canaux.html">Connecteurs, extensions, canaux</a> — quand l'outil qui échoue vient d'ailleurs.</li>
+      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — pourquoi certaines commandes touchant des fichiers sensibles déclenchent une demande.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>
