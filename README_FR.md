@@ -421,5 +421,5 @@ contactez huynh.kevin7@outlook.fr.
 Les composants tiers conservent leur propre licence — voir
 **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**.
 
-> Les versions publiées jusqu'à la v1.1.2 incluse l'ont été sous Apache
-> License 2.0 et restent disponibles selon ces termes.
+> Les versions jusqu'à la v1.1.2 incluse avaient été publiées sous Apache
+> License 2.0 ; elles ne sont plus distribuées.

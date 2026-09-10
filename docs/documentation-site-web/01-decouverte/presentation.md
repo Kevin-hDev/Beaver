@@ -27,7 +27,7 @@
 
 - Application **de bureau** — pas un site, pas un outil en ligne de commande.
 - Elle héberge un **agent autonome** : il reçoit un objectif, décide des étapes, exécute des outils, constate les résultats, recommence.
-- Il travaille avec des modèles **locaux** (via Ollama) ou **distants** (clé API ou compte web).
+- Il travaille avec des modèles **cloud** (clé API ou compte web) ou **locaux** (via Ollama). Le cloud se cite en premier (corrigé le 10 sept. 2026 avec Kevin) : la page donnait l'impression d'un produit dédié à l'IA locale, ce que Beaver n'est pas — le README fait foi (« The Agent workspace supports both, rather than being dedicated to local AI »).
 - Plateformes : **macOS, Windows, Linux**.
 - Version courante au moment de la rédaction : **1.2.2**, valeur identique dans les trois fichiers qui font autorité (`package.json:3`, `src-tauri/Cargo.toml:4`, `src-tauri/tauri.conf.json:4`).
 
@@ -49,15 +49,19 @@ Précision à ne pas omettre dans la troisième ligne : **ce qui sort de la mach
 
 Formuler par situations, pas par métiers — un profil (« développeurs ») exclut à tort, une situation inclut.
 
-Les trois situations à décrire :
+Les quatre situations à décrire (la première ajoutée le 10 sept. 2026, même correction d'équilibre cloud/local que la section 1) :
 
+- **Utiliser les modèles auxquels on a déjà accès** — un compte web connecté ou une clé API suffit ; l'agent travaille avec le fournisseur choisi, sans changer d'espace de travail.
 - **Travailler sur des fichiers locaux** — l'agent ouvre, modifie, lance les commandes, vérifie, propose ses changements.
 - **Garder les données sur la machine** — avec un modèle local, aucune conversation ne quitte l'ordinateur ; ni clé API ni compte nécessaires.
 - **Automatiser du récurrent** — les réveils programmés lancent une conversation à heure fixe, le résultat attend dans l'application.
 
 ### 4. Ce qui le distingue
 
-Quatre arguments, dans cet ordre d'importance :
+Cinq arguments, dans cet ordre d'importance (réordonné le 10 sept. 2026 : le multi-fournisseurs passe devant le runtime local, même raison que la correction de la section 1) :
+
+**Cloud et local dans le même espace de travail.**
+- Beaver n'est pas dédié à l'IA locale : comptes web connectés, clés API et modèles Ollama se choisissent dans la même interface, conversation par conversation.
 
 **Le runtime local est fourni.**
 - Ollama est téléchargé et géré par l'application au premier lancement.
@@ -101,7 +105,7 @@ Mentionner que certains outils sont actifs par défaut et d'autres s'activent da
 - **GNU Affero General Public License v3.0**.
 - Droits : utiliser, étudier, modifier, redistribuer.
 - Obligation : toute version **distribuée ou hébergée en réseau**, modifiée ou non, doit être publiée sous AGPL v3 avec son code source complet.
-- Les versions **jusqu'à la 1.1.2 incluse** ont été publiées sous **Apache License 2.0** et restent disponibles selon ces termes.
+- Les versions **jusqu'à la 1.1.2 incluse** avaient été publiées sous **Apache License 2.0** ; elles ne sont plus distribuées (corrigé le 10 sept. 2026 : les anciennes releases n'existent plus sur GitHub — la liste des releases commence à la v1.1.9. Les deux README portaient la même phrase fausse, corrigée le 10 sept. 2026).
 - Une **licence commerciale** exemptant des obligations de l'AGPL est disponible sur demande.
 - Les composants tiers gardent leurs licences propres (`THIRD_PARTY_NOTICES.md`).
 - Contribuer suppose de signer le **CLA** (`CLA.md`, `CONTRIBUTING.md`).

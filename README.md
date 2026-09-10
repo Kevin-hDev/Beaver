@@ -421,4 +421,4 @@ Third-party components keep their own licenses — see
 **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**.
 
 > Releases up to and including v1.1.2 were published under the Apache License
-> 2.0 and remain available under those terms.
+> 2.0; they are no longer distributed.

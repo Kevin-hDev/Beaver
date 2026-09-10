@@ -132,15 +132,15 @@ On coche au fur et à mesure.
 
 ## 8 — Forecast
 
-- [ ] `08-forecast/vue-densemble.md` — à quoi sert l'espace Forecast, parcours type de bout en bout
-- [ ] `08-forecast/donnees-et-audit.md` — import, profil de données, qualité, fréquence, valeurs manquantes, anomalies
-- [ ] `08-forecast/modeles-locaux.md` — Chronos, TimesFM, Toto 2.0, MOIRAI 2.0, FlowState, TabPFN-TS, TiRex, Kairos, Sundial : capacités, installation, matériel requis
-- [ ] `08-forecast/modele-cloud-timegpt.md` — Nixtla TimeGPT-2 / 2.1, clé API, limites
-- [ ] `08-forecast/selection-du-modele.md` — sélection manuelle vs automatique, critères utilisés
-- [ ] `08-forecast/evaluation-et-comparaison.md` — backtests glissants, MASE, sMAPE, MAE, couverture, baselines, ensembles pondérés
-- [ ] `08-forecast/analyse-avancee.md` — décomposition, dérive, importance des variables, anomalies
-- [ ] `08-forecast/scenarios-notes-rapports.md` — scénarios, notes, vue Rapport
-- [ ] `08-forecast/exports.md` — CSV, Excel, JSON, PNG, SVG, PDF, presse-papier
+- [x] `08-forecast/vue-densemble.md` — à quoi sert l'espace Forecast, parcours type de bout en bout
+- [x] `08-forecast/donnees-et-audit.md` — import, profil de données, qualité, fréquence, valeurs manquantes, anomalies
+- [x] `08-forecast/modeles-locaux.md` — Chronos, TimesFM, Toto 2.0, MOIRAI 2.0, FlowState, TabPFN-TS, TiRex, Kairos, Sundial : capacités, installation, matériel requis
+- [x] `08-forecast/modele-cloud-timegpt.md` — Nixtla TimeGPT-2 / 2.1, clé API, limites
+- [x] `08-forecast/selection-du-modele.md` — sélection manuelle vs automatique, critères utilisés
+- [x] `08-forecast/evaluation-et-comparaison.md` — backtests glissants, MASE, sMAPE, MAE, couverture, baselines, ensembles pondérés
+- [x] `08-forecast/analyse-avancee.md` — décomposition, dérive, importance des variables, anomalies
+- [x] `08-forecast/scenarios-notes-rapports.md` — scénarios, notes, vue Rapport
+- [x] `08-forecast/exports.md` — CSV, Excel, JSON, PNG, SVG, PDF, presse-papier
 
 ## 9 — Automatisation
 
@@ -150,12 +150,12 @@ On coche au fur et à mesure.
 
 ## 10 — Réglages (référence)
 
-- [ ] `10-reglages/reference-complete.md` — plan des 5 sections et 16 onglets, ce que chacun contient
-- [ ] `10-reglages/general-et-preferences.md` — langue, démarrage, mascotte, raccourcis, apparence
-- [ ] `10-reglages/agent.md` — mémoire, prompt système, outils, avancé
-- [ ] `10-reglages/modeles.md` — Ollama, Forecast, LLM
-- [ ] `10-reglages/integrations.md` — providers, connecteurs, channels, extensions
-- [ ] `10-reglages/application.md` — conversations archivées, accès fichiers, à propos
+- [x] `10-reglages/reference-complete.md` — plan des 5 sections et 16 onglets, ce que chacun contient
+- [x] `10-reglages/general-et-preferences.md` — langue, démarrage, mascotte, raccourcis, apparence
+- [x] `10-reglages/agent.md` — mémoire, prompt système, outils, avancé
+- [x] `10-reglages/modeles.md` — Ollama, Forecast, LLM
+- [x] `10-reglages/integrations.md` — providers, connecteurs, channels, extensions
+- [x] `10-reglages/application.md` — conversations archivées, accès fichiers, à propos
 
 ## 11 — Sécurité et confidentialité
 
@@ -486,6 +486,46 @@ sourcé est dans les « Points à confirmer » des quatre briefs concernés.
   sourcé dans `04-agent/fonctionnement.md`. La page du site décrit le
   comportement sans citer le message, donc publiable ; le défaut produit reste
   à corriger ou à assumer.
+
+Relevé en écrivant les briefs Forecast et Réglages (10 septembre 2026, trois agents, chaque point sourcé) :
+
+**Espace Forecast — parcours et exports**
+
+- **Textes des exports non traduits ou fautifs** : légende du graphique avec « Prevision » sans accent (`export/chart.rs:87-91`), noms de feuilles du classeur mi-français mi-anglais, titres du PDF désaccentués (`export/pdf.rs:33-47`).
+- **Faux repère monétaire** : le symbole € s'ajoute dès que le nom de la colonne cible contient `eur` — donc aussi « valeur », « heures », « couleur » (`export/chart.rs:167-178`).
+- **Alertes de qualité affichées sans leur nature** : « Erreur bloquante · 3 » sans dire de quoi il s'agit ; les 22 codes internes n'ont aucune traduction (`workbench/forecast-workbench-data.tsx:85-95`).
+- **Messages génériques qui masquent des causes connues** : « Le calcul a échoué » couvre une douzaine de refus nommés, « Données Forecast invalides » quatre, « Export impossible » cinq.
+- **Deux mots pour la même chose** : « Covariables » à la configuration, « Variables externes » dans la section Données (`fr.json`).
+- **Deux clés de navigation mortes** : `forecast.nav.scenarios` et `forecast.nav.notes`, traduites en sept langues, jamais affichées (`forecast-nav.tsx:9-13`).
+- **Rendu des accents dans le PDF incertain** : police Courier sans encodage déclaré, échappement limité à trois caractères (`export/pdf.rs:14`, `:144-149`) — à contrôler en produisant un vrai PDF.
+
+**Espace Forecast — modèles et analyses**
+
+- **Erreur distante unique pour quatre causes** : clé refusée, quota, panne, réponse illisible (`client_nixtla.rs:31`, `client_nixtla_retry.rs:26-32`).
+- **Multivarié TimeGPT-2.1 désactivé en silence** quand les séries ne sont pas alignées (`nixtla_multiseries.rs:65-67`).
+- **Le bouton d'ensemble pondéré ne peut jamais s'afficher** : il exige deux modèles évalués, l'interface n'en évalue qu'un (`forecast-evaluation-view.tsx:61` vs `use-forecast-evaluation.ts:63`).
+- **Fiabilité de l'importance des variables calculée, jamais affichée** (`variables.rs:53-61` vs `forecast-advanced-analysis-utils.ts:35-49`).
+- **Échec d'analyse avancée présenté comme un manque de données** (`sanitize.rs:12-17`, `:64-73`).
+- **Anomalies du graphe étiquetées `llm`** alors qu'elles sont calculées en Rust (`forecast-view-data.ts:104`).
+- **Borne −95/+500 appliquée au mode « Valeur »** d'un scénario de contexte, où elle n'a pas de sens (`scenario_context.rs:99-103`).
+- **Étiquette de machine déduite de la taille disque, pas de la mémoire** : TabPFN-TS-3 « Machine moyenne » pour 8 192 Mo requis (`forecast-model-meta.ts:161-164`).
+- **Commentaire faux sur le stockage des fenêtres de backtest** (`forecast-reliability-data.ts:11-15` vs `types.rs:106-112`).
+- **La section Rapport annonce provenance et notes, absentes du composant** (`forecast-workbench-report.tsx:12-21`).
+- **L'état `invalid` d'un modèle n'a aucun libellé utilisateur** (`model_manager/mod.rs:19-92` vs `fr.json`).
+- **Identifiant TimeGPT-2 Standard incertain depuis le 30 juillet 2026**, de l'aveu d'un commentaire du code, faute de clé pour vérifier (`client_nixtla.rs:88-97`) — le site ne doit pas promettre les quatre variantes tant que ce n'est pas tranché.
+- **Deux boutons inactifs à l'écran d'import** : « Coller des données » et « Depuis une URL » — à câbler ou à retirer (règle : visible et fonctionnel, ou invisible).
+
+**Réglages**
+
+- **« Réinitialiser » de l'accès fichiers fait l'inverse de son libellé** : il rétablit l'accès au disque entier (`path-list-editor.tsx:34-36`, défaut `models/config.rs:116-119`). La plus coûteuse du lot.
+- **« Tout supprimer » des chats archivés ignore la recherche et le filtre actifs** (`archived-chats-settings.tsx:52-60`).
+- **Borne de 2 000 conversations archivées appliquée en silence** (`archived-chats-settings.tsx:17`, `:27`).
+- **Libellés non traduits** : `forecast.models.sidebarTitle` = « Models », `settings.tabs.providers` = « Providers » (`fr.json`).
+- **Deux noms pour le même onglet** : « System prompt » dans la liste, « Instructions système » en titre (`system-prompt-settings.tsx:10`).
+- **Clé orpheline `settings.tabs.apiKeys`** depuis que les clés sont un sous-onglet de Providers.
+- **Forecast seul onglet à tirer son libellé hors de `settings.tabs.*`** (`core-occupants.tsx:46-47`).
+- **Bornes divergentes du budget mémoire** : moteur ≥ 256 tokens, interface ≥ 512 (`memory_types.rs:47` vs `memory-settings.tsx:16`).
+- **Mises à jour de modèles Ollama détectées mais jamais affichées** (`use-update-checker.ts:78` vs `updates-settings.tsx`).
 
 ### Constat de conception à mettre en avant sur le site
 

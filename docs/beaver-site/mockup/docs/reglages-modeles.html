@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Réglages des modèles</title>
+<meta name="description" content="Les trois onglets de la section Modèles : installer des modèles locaux, configurer les modèles de prévision, et consulter le catalogue des modèles distants.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Réglages / Modèles</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reglages-modeles.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Installer, configurer, <em>consulter</em></h1>
+    <p>Trois onglets, trois natures différentes : l'un installe ce qui tourne chez toi, l'autre installe et règle ce qui prévoit, le troisième ne fait que documenter ce qui tourne ailleurs. Cette page décrit leur structure et ce qu'on peut y faire.</p>
+
+    <h2 id="ce-que-contient-la-section">Ce que contient la section — et ce qu'elle ne contient pas</h2>
+
+    <table>
+      <caption class="crumb">Les trois onglets de la section Modèles</caption>
+      <tr><th>Onglet</th><th>Nature</th><th>Ce qu'on y fait</th></tr>
+      <tr><td><b>Ollama</b></td><td>Gestion</td><td>Installer, mettre à jour, supprimer et personnaliser les modèles locaux</td></tr>
+      <tr><td><b>Forecast</b></td><td>Gestion et configuration</td><td>Installer les modèles de prévision et régler leurs paramètres</td></tr>
+      <tr><td><b>LLM</b></td><td><b>Consultation seule</b></td><td>Consulter le catalogue des modèles distants : contexte, coûts, capacités</td></tr>
+    </table>
+
+    <p>Deux choses qu'on cherche souvent ici et qui n'y sont pas :</p>
+    <ul>
+      <li><b>Les réglages du moteur Ollama</b> — libération de la mémoire, processeur ou carte graphique, plusieurs modèles à la fois — sont dans <b>Agent › Avancé</b>. L'onglet Ollama gère les modèles, pas le moteur qui les exécute.</li>
+      <li><b>Les clés API et les comptes</b> des fournisseurs de modèles distants sont dans <b>Intégrations › Providers</b>. L'onglet LLM montre ce qui existe ; il ne connecte rien.</li>
+    </ul>
+
+    <h2 id="onglet-ollama">Onglet Ollama</h2>
+    <p>L'onglet se divise en deux sous-onglets.</p>
+
+    <table>
+      <caption class="crumb">Les deux sous-onglets de l'onglet Ollama</caption>
+      <tr><th>Sous-onglet</th><th>Contenu</th></tr>
+      <tr><td><b>Modèles</b></td><td>Parcourir le catalogue Ollama par famille, choisir une variante, l'installer</td></tr>
+      <tr><td><b>Modelfile</b></td><td>Personnaliser un modèle déjà installé</td></tr>
+    </table>
+
+    <p>Le sous-onglet <b>Modèles</b> propose une recherche et une navigation à deux niveaux : d'abord une famille de modèles, puis une variante précise à l'intérieur de cette famille. L'écran de détail d'une variante affiche ses caractéristiques réelles avant installation — <a href="modeles-materiel.html">Matériel et VRAM</a> explique comment les lire, et <a href="modeles-modeles-locaux.html">Modèles locaux</a> décrit l'installation.</p>
+    <p>Le sous-onglet <b>Modelfile</b> liste les modèles déjà installés et permet d'en modifier la définition. Quand aucun modèle n'est installé, l'écran affiche <b>« Aucun modèle installé »</b>. C'est là que se règlent aussi les <b>instructions système propres à un modèle Ollama</b>, distinctes des instructions globales de <b>Agent › System prompt</b> — le détail est dans <a href="modeles-personnalisation.html">Personnalisation</a>.</p>
+
+    <h2 id="ollama-moteur-pas-pret">Onglet Ollama — quand le moteur n'est pas prêt</h2>
+    <p>Cet onglet est le seul des réglages dont le contenu dépend entièrement de l'état d'un service extérieur. L'écran change du tout au tout selon la situation.</p>
+
+    <table>
+      <caption class="crumb">Ce que montre l'onglet selon l'état du moteur local</caption>
+      <tr><th>État du moteur</th><th>Ce que montre l'onglet</th></tr>
+      <tr><td>En cours de lecture</td><td>Un message d'attente</td></tr>
+      <tr><td>État illisible</td><td>Un message d'erreur avec un bouton pour réessayer</td></tr>
+      <tr><td>Ollama absent</td><td><b>L'écran d'installation d'Ollama</b>, pas la liste des modèles</td></tr>
+      <tr><td>Installation en cours</td><td>Un message de progression</td></tr>
+      <tr><td>Réparation nécessaire</td><td>Un message d'erreur avec un bouton pour réessayer</td></tr>
+      <tr><td>Prêt</td><td>Les deux sous-onglets décrits plus haut</td></tr>
+    </table>
+
+    <p>Un bandeau d'information sur l'état du service s'affiche au-dessus des sous-onglets dans tous les cas où le moteur est prêt. Les états qu'il distingue relèvent de <a href="modeles-moteur-local.html">Moteur local</a>, qui traite le cycle de vie du moteur.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Sur une installation neuve, cet onglet propose d'installer Ollama. Tant que le moteur n'est pas là, il montre l'écran d'installation à la place de la liste des modèles. Ce n'est pas une panne : c'est l'un des chemins prévus pour installer le moteur après avoir passé l'étape à l'accueil.
+    </div>
+
+    <h2 id="onglet-forecast">Onglet Forecast</h2>
+    <p>L'onglet se divise en deux sous-onglets.</p>
+
+    <table>
+      <caption class="crumb">Les deux sous-onglets de l'onglet Forecast</caption>
+      <tr><th>Libellé affiché</th><th>Contenu</th></tr>
+      <tr><td><b>Config</b></td><td>Les paramètres du modèle de prévision sélectionné</td></tr>
+      <tr><td><b>Models</b></td><td>Les modèles de prévision disponibles, à installer ou désinstaller</td></tr>
+    </table>
+
+    <p>Le sous-onglet <b>Models</b> est organisé comme celui d'Ollama : familles, puis modèle. Chaque modèle affiche son état — <b>Installé</b>, <b>Non installé</b>, <b>Préparation requise</b>, <b>Mise à jour requise</b>, ou pour un modèle distant <b>Cloud (clé requise)</b>, voire <b>Clé API non configurée</b> quand la clé manque. Les actions sont <b>Installer</b>, <b>Préparer</b> et <b>Désinstaller</b>, cette dernière demandant une confirmation.</p>
+    <p>La fiche d'un modèle donne, selon le cas : <b>Taille disque</b>, <b>RAM</b>, <b>CPU</b> et <b>GPU</b> (supporté ou non), <b>Licence</b>, <b>Bibliothèque</b>, <b>Pipeline</b>, <b>Horizon max</b>, <b>Fréquences</b> et ses <b>Capacités du modèle</b>.</p>
+    <p>Le sous-onglet <b>Config</b> ne concerne que les modèles configurables : il présente les paramètres du modèle choisi, avec un bouton <b>Éditer</b>, puis <b>Sauvegarder</b> ou <b>Annuler</b>. Chaque paramètre a sa description dans l'application — horizon maximum, contexte historique, quantiles, précision, type numérique. Quand aucun modèle configurable n'est installé, l'écran affiche <b>« Aucun modèle Forecast disponible. »</b></p>
+    <p>L'effet de ces paramètres sur une prévision est traité dans <a href="forecast-modeles-locaux.html">Modèles locaux de Forecast</a> et <a href="forecast-selection-du-modele.html">Sélection du modèle</a>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Installer un modèle Forecast ne suffit pas à ce que l'agent l'utilise. Le groupe d'outils <b>Forecast</b> est éteint à l'installation ; il s'active dans <a href="reglages-agent.html">Agent › Outils</a>.
+    </div>
+
+    <h2 id="onglet-llm">Onglet LLM</h2>
+    <p>C'est le seul onglet de la section qui <b>ne règle rien</b>. C'est un catalogue de référence : on y cherche un modèle distant pour savoir ce qu'il sait faire, combien il coûte et quelle taille de contexte il accepte.</p>
+    <p>L'écran présente une barre de recherche — <b>« Rechercher un modèle… »</b> — et un bouton <b>« Familles »</b> qui déplie une grille de familles de modèles. Une recherche ou une famille ouvre une liste ; un modèle de cette liste ouvre sa fiche, avec un lien <b>« Retour »</b>. La fiche donne en haut la clé du modèle, puis son fournisseur et son mode, et ensuite deux cartes.</p>
+
+    <p><b>Les mesures</b> — seules celles renseignées apparaissent :</p>
+
+    <table>
+      <caption class="crumb">Les mesures affichées sur la fiche d'un modèle distant</caption>
+      <tr><th>Ligne</th><th>Ce qu'elle donne</th><th>Format</th></tr>
+      <tr><td><b>Contexte (entrée)</b></td><td>La taille de la fenêtre d'entrée</td><td>En milliers de jetons, par exemple <code>128K</code></td></tr>
+      <tr><td><b>Sortie max</b></td><td>La longueur maximale d'une réponse</td><td>Identique</td></tr>
+      <tr><td><b>Coût entrée</b></td><td>Le prix du million de jetons envoyés</td><td>En dollars, <code>$0.50/M</code></td></tr>
+      <tr><td><b>Coût sortie</b></td><td>Le prix du million de jetons produits</td><td>Identique</td></tr>
+    </table>
+
+    <p><b>Les capacités</b> — cinq lignes, toujours présentes, chacune valant <b>Oui</b> ou <b>Non</b> :</p>
+
+    <table>
+      <caption class="crumb">Les cinq capacités listées pour chaque modèle distant</caption>
+      <tr><th>Ligne</th><th>Ce qu'elle dit</th></tr>
+      <tr><td><b>Vision</b></td><td>Le modèle accepte-t-il des images</td></tr>
+      <tr><td><b>Tools</b></td><td>Peut-il utiliser des outils — donc travailler en agent</td></tr>
+      <tr><td><b>Raisonnement</b></td><td>Produit-il une phase de réflexion</td></tr>
+      <tr><td><b>Prompt caching</b></td><td>Sait-il réutiliser un contexte déjà envoyé, ce qui réduit le coût</td></tr>
+      <tr><td><b>Recherche web</b></td><td>Dispose-t-il d'une recherche web côté fournisseur</td></tr>
+    </table>
+
+    <p>Deux précisions. <b>Les coûts sont ceux du catalogue embarqué dans Beaver</b>, pas un relevé en direct chez le fournisseur : ils vieillissent entre deux versions de l'application — voir <a href="modeles-usage-et-couts.html">Usage et coûts</a>. Et <b>la capacité « Tools » est la plus déterminante</b> : un modèle qui ne sait pas appeler d'outils ne peut pas travailler en agent, quelles que soient ses autres qualités.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      L'onglet LLM ne connecte rien. Il ne dit pas si tu as une clé pour un modèle ni s'il est utilisable chez toi : c'est <a href="reglages-integrations.html">Intégrations › Providers</a> qui répond à cette question. Pour choisir un modèle au quotidien, voir <a href="modeles-catalogue-et-favoris.html">Catalogue et favoris</a>.
+    </div>
+
+    <h2 id="trois-natures">Trois onglets, trois natures</h2>
+    <ul>
+      <li><b>Ollama</b> installe ce qui tourne <b>chez toi</b> ;</li>
+      <li><b>Forecast</b> installe et règle ce qui <b>prévoit</b> — le module lui-même est décrit dans <a href="forecast-vue-densemble.html">Forecast</a> ;</li>
+      <li><b>LLM</b> ne fait que <b>documenter</b> ce qui tourne <b>ailleurs</b>.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Le moteur Ollama ne se règle pas dans l'onglet Ollama. Cet onglet installe et personnalise les modèles ; la libération de la mémoire, le choix processeur ou carte graphique et le chargement simultané de plusieurs modèles sont dans <a href="reglages-agent.html">Agent › Avancé</a>.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Les surprises les plus courantes de la section Modèles</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« L'onglet Ollama ne montre aucun modèle, juste un écran d'installation »</td><td>Le moteur n'est pas installé</td><td>Suivre l'installation proposée ; voir <a href="modeles-moteur-local.html">Moteur local</a></td></tr>
+      <tr><td>« Aucun modèle installé » dans Modelfile</td><td>Aucun modèle local n'est présent</td><td>Passer au sous-onglet <b>Modèles</b> et en installer un</td></tr>
+      <tr><td>« Je ne trouve pas le réglage CPU / GPU dans l'onglet Ollama »</td><td>Il est dans <b>Agent › Avancé</b>, et masqué sur Mac</td><td>Voir <a href="reglages-agent.html">Agent</a></td></tr>
+      <tr><td>« J'ai trouvé mon modèle dans l'onglet LLM mais je ne peux pas l'utiliser »</td><td>Cet onglet est un catalogue, pas une connexion</td><td>Saisir une clé dans <a href="reglages-integrations.html">Intégrations › Providers</a></td></tr>
+      <tr><td>« Clé API non configurée » sur un modèle Forecast</td><td>Le modèle est distant et aucune clé du fournisseur n'est enregistrée</td><td>Même écran</td></tr>
+      <tr><td>« Aucun modèle disponible pour ce lancement. »</td><td>Aucun modèle Forecast compatible n'est installé</td><td>Installer un modèle dans le sous-onglet <b>Models</b></td></tr>
+      <tr><td>« Aucun modèle Forecast disponible. » dans Config</td><td>Aucun modèle <b>configurable</b> n'est installé</td><td>Identique</td></tr>
+      <tr><td>« L'agent refuse de lancer une prévision »</td><td>Le groupe d'outils <b>Forecast</b> est éteint</td><td>L'activer dans Agent › Outils</td></tr>
+      <tr><td>« Les coûts affichés ne correspondent pas à ma facture »</td><td>Ce sont ceux du catalogue embarqué dans la version installée</td><td>Vérifier chez le fournisseur ; voir <a href="modeles-usage-et-couts.html">Usage et coûts</a></td></tr>
+    </table>
+
+    <p>Pour retrouver un autre réglage, voir <a href="reglages-vue-densemble.html">Vue d'ensemble des réglages</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

@@ -155,7 +155,7 @@ Par ordre de préférence :
 
 ## Points à confirmer
 
-- Les **recommandations par configuration** (8 Go, 16 Go, 24 Go…) sont ma déduction à partir de la table, pas une donnée du produit. À faire valider avant publication — c'est le tableau que les lecteurs utiliseront le plus.
+- Les **recommandations par configuration** (8 Go, 16 Go, 24 Go…) sont ma déduction à partir de la table, pas une donnée du produit. **Tranché le 10 septembre 2026 : validées par Kevin et publiées telles quelles sur la page du site**, sans modification de valeur — c'est le tableau que les lecteurs utiliseront le plus.
 - Le **conseil « grand modèle compressé plutôt que petit modèle peu compressé »** est un consensus du domaine, pas une affirmation vérifiée dans le code de Beaver. À conserver, mais sans le présenter comme une mesure faite par l'équipe.
 - Affichage à vérifier lors de la passe d'interface : emplacement exact de la table dans les réglages, et présence d'un avertissement quand le modèle sélectionné dépasse la mémoire détectée.
 

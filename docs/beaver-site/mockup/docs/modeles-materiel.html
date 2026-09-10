@@ -70,6 +70,18 @@
       <pre class="term-body"><span class="prompt">$</span> VRAM ≈ taille modèle + (contexte/1000 × 0.5 GB) + 0.5 GB</pre>
     </div>
 
+    <p>Si tu connais déjà la mémoire de ta machine, voici la lecture rapide — pense à garder la marge d'un à deux gigaoctets au-delà de ces valeurs.</p>
+
+    <table>
+      <caption class="crumb">Ce qui passe confortablement selon la mémoire de la machine</caption>
+      <tr><th>Machine</th><th>Ce qui passe confortablement</th></tr>
+      <tr><td>8 Go</td><td>Modèles de 3 à 7 milliards, compressés en Q4</td></tr>
+      <tr><td>16 Go</td><td>Jusqu'à 13 milliards en Q4, ou 7 milliards en Q8</td></tr>
+      <tr><td>24 Go</td><td>Jusqu'à 30 milliards en Q4</td></tr>
+      <tr><td>32 Go</td><td>30 milliards en Q5, confortablement</td></tr>
+      <tr><td>48 Go et plus</td><td>70 milliards en Q4</td></tr>
+    </table>
+
     <h2 id="lire-la-compression">Comment lire la compression</h2>
 
     <table>
