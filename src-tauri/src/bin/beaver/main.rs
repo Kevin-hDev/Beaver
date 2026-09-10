@@ -1,4 +1,5 @@
 mod app_detect;
+mod doctor;
 mod output;
 mod paths_cmd;
 mod status;
@@ -26,6 +27,7 @@ fn dispatch(out: &output::Out, args: &[String]) -> i32 {
         Some("--version") | Some("-V") => version::run(out),
         Some("paths") => paths_cmd::run(out),
         Some("status") => status::run(out),
+        Some("doctor") => doctor::run(out),
         Some("--help") | Some("-h") | None => {
             output::print_help(out);
             0

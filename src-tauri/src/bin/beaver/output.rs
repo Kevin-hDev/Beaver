@@ -38,7 +38,7 @@ impl Out {
         }
     }
 
-    pub fn t(&self, fr: &'static str, en: &'static str) -> &'static str {
+    pub fn t<'a>(&self, fr: &'a str, en: &'a str) -> &'a str {
         match self.lang {
             Lang::Fr => fr,
             Lang::En => en,
@@ -112,7 +112,7 @@ pub fn print_help(out: &Out) {
         ("--version", "version installée", "installed version", true),
         ("paths", "chemins des données", "data paths", true),
         ("status", "état local", "local status", true),
-        ("doctor", "diagnostic local", "local diagnostics", false),
+        ("doctor", "diagnostic local", "local diagnostics", true),
         ("logs", "lecture des journaux", "read logs", false),
         ("update", "mise à jour", "update", false),
         ("cleanup", "nettoyage sûr", "safe cleanup", false),
