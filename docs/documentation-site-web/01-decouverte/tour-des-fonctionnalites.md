@@ -50,7 +50,7 @@ Mode Plan : exploration en lecture seule, plan Markdown, approbation avant toute
 → *Agent › Permissions*, *Agent › Mode Plan*
 
 ### 3. Conversations et projets
-Navigation par la barre latérale. Pièces jointes. Mise en file d'attente de messages pendant que l'agent travaille. Archivage. Rattachement à un projet enregistré. **Clonage** : repartir d'un message précis, en abandonnant la suite ou en en gardant un résumé des erreurs et des décisions.
+Navigation par la barre latérale. Pièces jointes. Mise en file d'attente de messages pendant que l'agent travaille. Archivage. Une conversation **naît dans un projet ou en dehors**, et cela ne change plus ensuite : il n'existe aucun moyen de rattacher après coup une conversation existante à un projet — ne jamais l'écrire. **Clonage** : repartir d'un message précis, en abandonnant la suite ou en en gardant un résumé des erreurs et des décisions.
 → *Interface › Conversations*, *Interface › Cloner une conversation*
 
 ### 4. Sous-agents
@@ -91,7 +91,7 @@ Instructions programmées une fois, chaque jour ou chaque semaine. Ordonnanceur 
 → *Automatisation › Réveils*
 
 ### 13. Runtime Ollama géré
-Téléchargé au premier lancement dans le dossier de données. Réutilisation d'un démon déjà présent. Parcours et installation de modèles depuis l'application, édition des modelfiles, réglage des paramètres et des prompts système. Modèles partagés avec une installation Ollama existante.
+Téléchargement **proposé** au premier lancement dans le dossier de données — étape passable, rattrapable depuis **Réglages › Ollama**, jamais automatique. Réutilisation d'un démon déjà présent. Parcours et installation de modèles depuis l'application, édition des modelfiles, réglage des paramètres et des prompts système. Modèles partagés avec une installation Ollama existante.
 → *Modèles › Ollama*
 
 ### 14. Espace de travail

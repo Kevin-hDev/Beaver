@@ -89,7 +89,7 @@ Une page de définitions courtes, groupées par thème, chaque terme en `<dt>`/`
 
 **Compte web** — alternative à la clé API pour **trois** fournisseurs : OpenAI/Codex, Grok (xAI), Kimi (Moonshot, expérimental).
 
-**Ollama** — le logiciel qui exécute les modèles locaux. Téléchargé et piloté par Beaver. ✓
+**Ollama** — le logiciel qui exécute les modèles locaux. Téléchargé **à la demande** puis piloté par Beaver ; facultatif, sans lui seuls les modèles distants sont disponibles. ✓
 
 **Raisonnement (thinking)** — la phase où certains modèles réfléchissent avant de répondre. Affiché par Beaver, avec réglage d'intensité quand le modèle le supporte. ✓
 

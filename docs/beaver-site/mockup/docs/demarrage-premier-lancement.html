@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Premier lancement</title>
-<meta name="description" content="Ce qui se passe au premier démarrage de Beaver : le dossier de données créé, la migration automatique, le téléchargement d'Ollama et le mode de permission initial.">
+<meta name="description" content="Ce qui se passe au premier démarrage de Beaver : le dossier de données créé, la migration automatique, le téléchargement d'Ollama proposé — et passable — et le mode de permission initial.">
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,8 +35,9 @@
     <h1>Le premier <em>lancement</em></h1>
     <p>Au premier démarrage, Beaver crée son dossier de données, reprend
     éventuellement celles d'une installation antérieure, te fait traverser un
-    parcours d'accueil et télécharge Ollama. Voici ce qui arrive sur ton disque,
-    et dans quel état tu démarres.</p>
+    parcours d'accueil et te propose d'installer Ollama — une proposition que tu
+    peux refuser. Voici ce qui arrive sur ton disque, et dans quel état tu
+    démarres.</p>
 
     <h2 id="sequence">La séquence de démarrage</h2>
     <ul>
@@ -133,13 +134,19 @@
     </div>
 
     <h2 id="telechargement-ollama">Le téléchargement d'Ollama</h2>
-    <p>Ollama n'est pas inclus dans l'application : il est téléchargé au premier
-    lancement. Beaver le considère comme disponible si le port <b>11434</b> est
+    <p>Ollama n'est pas inclus dans l'application, et il n'est jamais téléchargé
+    dans ton dos : le parcours d'accueil t'affiche un bouton, et rien ne part
+    tant que tu ne l'as pas cliqué. <b>Tu peux passer l'étape</b> — Beaver
+    fonctionne alors avec les modèles distants, par clé API ou par compte web
+    connecté. Si tu changes d'avis plus tard, l'installation se lance depuis
+    <b>Réglages › Ollama</b>.</p>
+    <p>Beaver considère le moteur comme disponible si le port <b>11434</b> est
     ouvert, ou si le binaire existe déjà dans
-    <code>~/.local/share/cl-go-dash/ollama-bundle/</code>.</p>
-    <p>Si un démon Ollama tourne déjà — parce qu'Ollama est installé séparément —
-    Beaver l'utilise tel quel et ne télécharge rien. Sinon, l'écran de
-    configuration propose le téléchargement.</p>
+    <code>~/.local/share/cl-go-dash/ollama-bundle/</code>. Si un démon Ollama
+    tourne déjà — parce qu'Ollama est installé séparément — Beaver l'utilise tel
+    quel et ne propose aucun téléchargement.</p>
+    <p>Ce qui suit décrit ce qui se passe <b>si</b> tu acceptes le
+    téléchargement.</p>
 
     <table>
       <caption class="crumb">Archive téléchargée selon le système</caption>
@@ -156,8 +163,9 @@
     celle publiée par le projet Ollama ; la présence du binaire est vérifiée
     après extraction ; l'archive temporaire et le dossier de destination sont
     nettoyés en cas d'échec.</p>
-    <p><b>L'étape peut être passée.</b> L'application reste utilisable avec des
-    modèles distants uniquement.</p>
+    <p><b>Refuser n'a aucune conséquence durable.</b> L'application reste
+    pleinement utilisable avec des modèles distants, et le bouton d'installation
+    t'attend dans <b>Réglages › Ollama</b> le jour où tu en veux un local.</p>
 
     <h2 id="instance-unique">Une seule instance à la fois</h2>
     <p>Lancer Beaver une seconde fois ne crée pas de deuxième fenêtre : le focus

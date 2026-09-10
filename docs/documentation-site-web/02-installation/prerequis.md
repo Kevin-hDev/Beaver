@@ -77,7 +77,7 @@ Renvoyer vers *Matériel et VRAM* pour les correspondances taille de modèle / m
 
 ### 6. Réseau
 
-- **Connexion requise au premier lancement** pour télécharger Ollama (plusieurs centaines de Mo).
+- **Connexion nécessaire si l'utilisateur choisit d'installer Ollama** au premier lancement (plusieurs centaines de Mo). Le téléchargement est proposé, pas imposé : l'étape se passe et se rattrape depuis **Réglages › Ollama**.
 - Le dépôt GitHub doit être joignable : la recherche de mises à jour et le téléchargement d'Ollama passent par l'API GitHub Releases.
 - **Après installation, l'application fonctionne hors ligne** avec un modèle local déjà téléchargé.
 - Les modèles distants et la recherche web exigent évidemment une connexion.
@@ -115,7 +115,7 @@ Renvoyer vers *Matériel et VRAM* pour les correspondances taille de modèle / m
 > Le navigateur intégré n'est pas disponible sur Linux. Toutes les autres fonctionnalités le sont.
 
 **Encadré « Premier lancement et connexion »**
-> Le premier lancement télécharge Ollama depuis GitHub. Prévoyez une connexion et quelques centaines de mégaoctets. Ensuite, l'application fonctionne hors ligne avec un modèle local.
+> Si vous choisissez d'installer Ollama, le téléchargement vient de GitHub : prévoyez une connexion et quelques centaines de mégaoctets. Ensuite, l'application fonctionne hors ligne avec un modèle local. Si vous passez l'étape, Beaver démarre sans rien télécharger.
 
 ---
 

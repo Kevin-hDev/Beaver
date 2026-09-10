@@ -134,7 +134,7 @@ Les descriptions ci-dessous sont **abrégées** ; le texte affiché commence tou
 | **Document / Word** | Non | Extraire le texte de documents ou créer des fichiers Word |
 | **Images** | Non | Inspecter, redimensionner, recadrer ou convertir des images |
 
-**Le fait le plus utile de cette page**, à mettre en évidence : **six groupes sur onze sont éteints à l'installation.** Un utilisateur qui demande à l'agent de lire un fichier Excel, de créer une branche Git ou de retoucher une image obtiendra un refus tant qu'il n'a pas activé le groupe correspondant ici.
+**Le fait le plus utile de cette page**, à mettre en évidence : **six groupes sur onze sont éteints à l'installation.** Un utilisateur qui demande à l'agent de lire un fichier Excel, de créer une branche Git ou de redimensionner une image obtiendra un refus tant qu'il n'a pas activé le groupe correspondant ici.
 
 **Un groupe est considéré comme activé seulement si tous ses outils le sont** (`tools-settings.tsx:48-50`). Le cas d'un groupe à moitié activé ne se produit pas par l'interface ; il pourrait apparaître avec un fichier de réglages édité à la main, et l'interrupteur se présenterait alors éteint.
 

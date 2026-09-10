@@ -46,7 +46,7 @@ Ouvrir la page par ce tri, avant toute liste de symptômes. Il évite la lecture
 
 - **Beaver n'est signé par aucun certificat de signature de code.** Le fichier de configuration de l'empaquetage déclare une signature ad hoc, `"signingIdentity": "-"` (`src-tauri/tauri.conf.json:70`), et la chaîne d'intégration continue ne comporte **aucune étape de signature ni de notarisation** (`.github/workflows/release.yml:135-161`). C'est la cause de tout ce que macOS et Windows affichent comme mise en garde.
 - **Une seule architecture est distribuée par système.** Trois cibles seulement sont construites : `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `x86_64-pc-windows-msvc` (`.github/workflows/release.yml:139-158`). Un Mac Intel, un PC ARM, un Linux ARM ou un Linux hors famille Debian n'ont pas de fichier à installer.
-- **Le premier lancement a besoin d'Internet**, et uniquement pour télécharger le moteur Ollama depuis les releases GitHub du projet Ollama (`src-tauri/src/services/ollama_manager/release_fetch.rs:10` et `:104-108`). Tout le reste de l'installation est local.
+- **Le premier lancement n'a besoin d'Internet que si l'utilisateur accepte d'installer le moteur Ollama** — le téléchargement est proposé par un bouton de l'écran d'installation, jamais déclenché tout seul, et se rattrape depuis **Réglages › Ollama**. Il vient des releases GitHub du projet Ollama (`src-tauri/src/services/ollama_manager/release_fetch.rs:10` et `:104-108`). Tout le reste de l'installation est local.
 
 ### 2. macOS — « Beaver ne peut pas être ouvert » ou « développeur non identifié »
 

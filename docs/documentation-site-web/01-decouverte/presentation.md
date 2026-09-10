@@ -63,9 +63,9 @@ Cinq arguments, dans cet ordre d'importance (réordonné le 10 sept. 2026 : le m
 **Cloud et local dans le même espace de travail.**
 - Beaver n'est pas dédié à l'IA locale : comptes web connectés, clés API et modèles Ollama se choisissent dans la même interface, conversation par conversation.
 
-**Le runtime local est fourni.**
-- Ollama est téléchargé et géré par l'application au premier lancement.
-- Rien à installer à part Beaver.
+**Le runtime local est fourni, jamais imposé.**
+- Le parcours d'accueil **propose** de télécharger Ollama ; l'étape peut être passée, et rattrapée plus tard depuis **Réglages › Ollama**. Beaver fonctionne parfaitement sans Ollama, avec les fournisseurs distants (clé API ou compte web connecté). Ne jamais présenter ce téléchargement comme automatique ou obligatoire : c'est un bouton, pas un comportement de démarrage.
+- Une fois accepté, le moteur est géré par l'application. Rien à installer à part Beaver.
 - Si un démon Ollama tourne déjà sur `localhost:11434`, Beaver le réutilise au lieu d'en lancer un second.
 - Les modèles sont partagés avec une installation Ollama existante (`~/.ollama/models/`).
 
@@ -94,7 +94,7 @@ Liste à donner telle quelle, sans détailler — le détail est dans la section
 - déléguer une partie du travail à des sous-agents isolés
 - tenir une liste de tâches et rédiger un plan
 - lire et écrire des tableurs et des documents bureautiques
-- transformer des images
+- redimensionner, recadrer ou convertir des images (l'outil ne sait faire que ces trois choses — pas de retouche, pas d'édition)
 - lancer des prévisions de séries temporelles
 - appeler les outils de connecteurs externes
 

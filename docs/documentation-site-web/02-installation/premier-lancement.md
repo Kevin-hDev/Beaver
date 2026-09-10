@@ -87,7 +87,9 @@ Trois migrations automatiques existent, chacune marquée par un fichier témoin 
 
 ### 5. Le téléchargement d'Ollama
 
-Ollama n'est pas inclus dans l'application. Il est téléchargé au premier lancement.
+Ollama n'est pas inclus dans l'application, et il n'est **jamais téléchargé automatiquement**. Le parcours d'accueil affiche un bouton ; rien ne part tant qu'il n'est pas cliqué. **L'étape peut être passée** — Beaver fonctionne alors avec les seuls modèles distants (clé API ou compte web connecté) — et l'installation se relance plus tard depuis **Réglages › Ollama**.
+
+> Ne jamais rédiger cette section comme si le téléchargement était automatique ou obligatoire : c'est la première chose que voit un utilisateur qui n'est pas venu pour Ollama, et le présenter comme imposé le fait fuir.
 
 **Détection** : Beaver considère Ollama comme disponible si le port **11434** est ouvert, ou si le binaire existe déjà dans `~/.local/share/cl-go-dash/ollama-bundle/`.
 

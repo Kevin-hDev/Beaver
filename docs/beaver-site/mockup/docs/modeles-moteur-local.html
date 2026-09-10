@@ -36,7 +36,7 @@
     <p>Les modèles locaux ont besoin d'un moteur d'exécution : Beaver embarque le sien, et sait reconnaître celui que tu as peut-être déjà. Cette page explique ce qu'il installe, ce qu'il réutilise, ce qu'il règle, et ce qu'il refuse de faire quand quelque chose cloche.</p>
 
     <h2 id="ce-que-beaver-installe">Ce que Beaver installe</h2>
-    <p>Beaver télécharge son propre moteur Ollama dans son dossier de données, sous <code>~/.local/share/cl-go-dash/ollama-bundle/</code> — le même chemin sur les trois systèmes.</p>
+    <p>Beaver installe son propre moteur Ollama dans son dossier de données, sous <code>~/.local/share/cl-go-dash/ollama-bundle/</code> — le même chemin sur les trois systèmes. <b>Le téléchargement n'a jamais lieu tout seul</b> : il est proposé au premier lancement, ou déclenché quand tu veux depuis <b>Réglages › Ollama</b>. Tant que tu ne le demandes pas, rien n'est installé et Beaver s'en tient aux modèles distants.</p>
     <ul>
       <li><b>Aucune installation système n'est nécessaire.</b> Tu n'as pas à installer Ollama séparément, ni même à connaître son existence.</li>
       <li><b>Le moteur de Beaver n'écrase pas une installation existante.</b> Le programme du moteur vit dans le dossier de Beaver, avec ses propres réglages. Ses <b>modèles</b>, en revanche, sont bien ceux d'Ollama.</li>
@@ -56,7 +56,7 @@
 
     <div class="callout">
       <span class="t">Note</span>
-      Tu n'as pas à installer Ollama. Beaver télécharge son propre moteur : aucune manipulation, aucun terminal.
+      Tu n'as jamais à installer Ollama toi-même : Beaver récupère et gère son propre moteur, sans manipulation ni terminal. Mais il ne le fait que si tu le lui demandes — au premier lancement, ou plus tard depuis Réglages › Ollama.
     </div>
 
     <h2 id="si-tu-as-deja-ollama">Si tu as déjà Ollama</h2>
