@@ -1,0 +1,1 @@
+Review M5: macOS CLI link installation now replaces only absent destinations or existing symlinks; a regular file/directory named beaver is preserved and reported. Red-green proof: the installer test first failed with 'existing third-party CLI was replaced', then passed. bash -n, installer tests, and diff checks passed.
