@@ -10,6 +10,7 @@ function session(): AgentSession {
     is_heartbeat: false, is_gateway: false, working_dir: "", working_dir_managed: false,
     automatic_compression_suspended: false,
     accumulated_tokens: 0,
+    context_usage: { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null },
     messages: [{
       id: "user-1", role: "user", content: "Bonjour", files: [],
       timestamp: "2026-08-22T12:50:32Z",

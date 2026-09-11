@@ -1,6 +1,6 @@
 use super::types_ollama::ChatMessage;
 use crate::services::token_counting;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const MESSAGES: usize = 0;
 const SYSTEM_TOOLS: usize = 1;
@@ -14,8 +14,10 @@ pub struct ContextUsageSeed {
     pub memory_context_tokens: usize,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, ts(rename_all = "camelCase"))]
 pub struct RequestContextUsage {
     pub messages: u32,
     pub system_tools: u32,

@@ -3,6 +3,9 @@ mod context_budget_history;
 mod context_budget_prune;
 pub mod context_capacity_error;
 pub mod context_usage_buckets;
+pub mod context_usage_record;
+#[cfg(test)]
+mod context_usage_record_tests;
 pub mod context_usage_runtime;
 pub mod conversation_admission;
 mod conversation_admission_ids;
@@ -63,6 +66,7 @@ mod session_migration_legacy_history;
 #[cfg(test)]
 mod session_migration_tests;
 mod session_migration_v5;
+mod session_migration_v6;
 mod session_migration_version;
 mod session_migration_wire;
 mod session_mutations;
@@ -120,3 +124,4 @@ mod types_diagnostics_contract_tests;
 mod types_message_continuation;
 mod types_message_ids;
 mod types_message_source;
+mod types_session_meta;

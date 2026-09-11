@@ -44,10 +44,9 @@ pub(super) fn parse_v2(bytes: &[u8]) -> Result<AgentSession, String> {
     let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     super::session_migration_compression::migrate_v2_markers(&mut value)?;
-    let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
-    degrade_unreplayable(&mut session);
-    validate_current_readable(&session)?;
-    Ok(session)
+    super::session_migration_v5::migrate(&mut value)?;
+    super::session_migration_v6::migrate(&mut value)?;
+    parse_current_value(value)
 }
 
 pub(super) fn parse_v3(bytes: &[u8]) -> Result<AgentSession, String> {
@@ -55,23 +54,32 @@ pub(super) fn parse_v3(bytes: &[u8]) -> Result<AgentSession, String> {
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     super::session_migration_compression_guard::migrate_v3(&mut value)?;
     super::session_migration_v5::migrate(&mut value)?;
-    parse_v5_value(value)
+    super::session_migration_v6::migrate(&mut value)?;
+    parse_current_value(value)
 }
 
 pub(super) fn parse_v4(bytes: &[u8]) -> Result<AgentSession, String> {
     let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     super::session_migration_v5::migrate(&mut value)?;
-    parse_v5_value(value)
+    super::session_migration_v6::migrate(&mut value)?;
+    parse_current_value(value)
 }
 
 pub(super) fn parse_v5(bytes: &[u8]) -> Result<AgentSession, String> {
-    let value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
+    let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
-    parse_v5_value(value)
+    super::session_migration_v6::migrate(&mut value)?;
+    parse_current_value(value)
 }
 
-fn parse_v5_value(value: Value) -> Result<AgentSession, String> {
+pub(super) fn parse_v6(bytes: &[u8]) -> Result<AgentSession, String> {
+    let value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
+    super::session_migration_ids::validate_required_v2_fields(&value)?;
+    parse_current_value(value)
+}
+
+fn parse_current_value(value: Value) -> Result<AgentSession, String> {
     let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
     degrade_unreplayable(&mut session);
     super::session_migration_compression_guard::normalize_for_read(&mut session);
@@ -103,6 +111,7 @@ fn validate_current_readable(session: &AgentSession) -> Result<(), String> {
         return Err(invalid());
     }
     super::session_migration_compression_guard::validate(&session.automatic_compression_guard)?;
+    session.context_usage.validate().map_err(|_| invalid())?;
     for message in &session.messages {
         message.validate_stream_metadata().map_err(|_| invalid())?;
         super::session_migration_ids::validate_id(&message.turn_id)?;
@@ -201,6 +210,7 @@ fn validate_v1_shape(wire: &V1SessionWire) -> Result<(), String> {
 fn parse_v2_value(value: Value) -> Result<AgentSession, String> {
     let mut value = value;
     super::session_migration_v5::migrate(&mut value)?;
+    super::session_migration_v6::migrate(&mut value)?;
     let session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
     validate_current_writable(&session)?;
     Ok(session)

@@ -25,6 +25,118 @@ const V4_TOOL_ACTIVITY_FIXTURE: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v4-with-tool-activity.json");
 
 #[tokio::test]
+async fn v5_context_fixture_migrates_to_v6_with_an_exact_backup() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000060.json");
+    let mut source = base_session();
+    source.messages[1].continuation = Some(responses_envelope(vec![json!({"opaque": 1})]));
+    let transcript = serde_json::to_value(&source.messages).unwrap();
+    let mut value = serde_json::to_value(&source).unwrap();
+    value["schema_version"] = json!(5);
+    value["accumulated_tokens"] = json!(45_123);
+    value["context_tokens"] = json!(62_900);
+    value["compression_count"] = json!(2);
+    value.as_object_mut().unwrap().remove("context_usage");
+    let bytes = serde_json::to_vec_pretty(&value).unwrap();
+    crate::services::private_store::atomic_write(&path, &bytes).unwrap();
+
+    let migrated = super::session_migration::read(&bytes, path.clone()).expect("migrate v5");
+
+    assert_eq!(
+        migrated.version(),
+        super::session_migration::LoadedVersion::V5
+    );
+    assert_eq!(migrated.session().schema_version, 6);
+    assert_eq!(migrated.session().accumulated_tokens, 45_123);
+    assert_eq!(migrated.session().compression_count, 2);
+    assert_eq!(migrated.session().context_tokens, None);
+    assert_eq!(
+        migrated.session().context_usage,
+        super::context_usage_record::ContextUsageRecord::default()
+    );
+    assert_eq!(
+        serde_json::to_value(&migrated.session().messages).unwrap(),
+        transcript
+    );
+
+    super::session_migration::commit_current(&migrated)
+        .await
+        .expect("publish v6");
+    assert_eq!(
+        std::fs::read(super::session_migration::v5_backup_path(&path).unwrap()).unwrap(),
+        bytes
+    );
+    let current = std::fs::read(&path).unwrap();
+    let current_value: serde_json::Value = serde_json::from_slice(&current).unwrap();
+    assert!(current_value.get("context_tokens").is_none());
+    assert_eq!(current_value["context_usage"], json!({
+        "activeRequestId": null,
+        "currentPreparation": null,
+        "lastMeasurement": null,
+        "lastOutput": null
+    }));
+    let reloaded = super::session_migration::read(&current, path).expect("reload v6");
+    assert_eq!(
+        reloaded.version(),
+        super::session_migration::LoadedVersion::V6
+    );
+}
+
+#[test]
+fn current_v6_context_record_is_not_remigrated() {
+    use super::context_usage_record::{
+        ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot,
+        ContextRequestIdentity, ContextTokenCount, ContextUsageRecord,
+    };
+
+    let mut session = base_session();
+    session.context_usage = ContextUsageRecord {
+        last_measurement: Some(ContextMeasurementSnapshot {
+            identity: ContextRequestIdentity {
+                request_id: "00000000-0000-4000-8000-000000000061".into(),
+                turn_id: "00000000-0000-4000-8000-000000000062".into(),
+                turn: 3,
+                attempt: 1,
+                provider_id: "openai".into(),
+                model: "gpt-5".into(),
+            },
+            context_limit: Some(200_000),
+            input: ContextTokenCount {
+                tokens: Some(45_000),
+                capacity_tokens: Some(45_000),
+                source: Some(ContextCountSource::Provider),
+                coverage: ContextCountCoverage::Complete,
+            },
+            updated_at: chrono::Utc::now(),
+        }),
+        ..ContextUsageRecord::default()
+    };
+    let bytes = super::session_migration::serialize_current(&session).unwrap();
+
+    let loaded = super::session_migration::read(&bytes, PathBuf::from("current-v6.json")).unwrap();
+
+    assert_eq!(loaded.version(), super::session_migration::LoadedVersion::V6);
+    assert_eq!(loaded.session().context_usage, session.context_usage);
+}
+
+#[tokio::test]
+async fn future_session_is_rejected_by_the_current_writer() {
+    let root = tempfile::tempdir().unwrap();
+    let mut session = base_session();
+    session.schema_version = 99;
+
+    assert!(super::session_store_document::write_to_path(
+        root.path().join("future.json"),
+        &session,
+    )
+    .await
+    .is_err());
+    assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+}
+
+#[tokio::test]
 async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
@@ -46,7 +158,7 @@ async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup
         .is_empty());
     super::session_migration::commit_current(&migrated)
         .await
-        .expect("publish v5");
+        .expect("publish v6");
     assert_eq!(
         std::fs::read(path.with_extension("json.v4.bak")).unwrap(),
         V4_TOOL_ACTIVITY_FIXTURE
@@ -54,7 +166,7 @@ async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup
 }
 
 #[tokio::test]
-async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
+async fn v4_migrates_to_v6_with_empty_artifacts_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
         .path()
@@ -72,7 +184,7 @@ async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
         migrated.version(),
         super::session_migration::LoadedVersion::V4
     );
-    assert_eq!(migrated.session().schema_version, 5);
+    assert_eq!(migrated.session().schema_version, 6);
     assert!(migrated.session().messages.iter().all(|message| {
         message
             .tool_activities
@@ -82,7 +194,7 @@ async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
     }));
     super::session_migration::commit_current(&migrated)
         .await
-        .expect("publish v5");
+        .expect("publish v6");
     let backup = root
         .path()
         .join("00000000-0000-4000-8000-000000000051.json.v4.bak");
@@ -90,13 +202,13 @@ async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
 }
 
 #[test]
-fn v5_read_rejects_artifact_metadata_that_exceeds_the_shared_limit() {
+fn v6_read_rejects_artifact_metadata_that_exceeds_the_shared_limit() {
     let migrated = super::session_migration::read(
         V4_TOOL_ACTIVITY_FIXTURE,
         PathBuf::from("bounded-artifacts.json"),
     )
     .expect("migrate fixture");
-    let mut value = serde_json::to_value(migrated.session()).expect("serialize v5");
+    let mut value = serde_json::to_value(migrated.session()).expect("serialize v6");
     let artifact = json!({
         "name": "preview.png", "mime_type": "image/png", "bytes": 8,
         "sha256": "a".repeat(64), "purpose": "preview",
@@ -116,7 +228,7 @@ fn v5_read_rejects_artifact_metadata_that_exceeds_the_shared_limit() {
 }
 
 #[tokio::test]
-async fn v3_migrates_to_v5_with_an_empty_guard_and_exact_backup() {
+async fn v3_migrates_to_v6_with_an_empty_guard_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
         .path()
@@ -131,21 +243,21 @@ async fn v3_migrates_to_v5_with_an_empty_guard_and_exact_backup() {
         loaded.version(),
         super::session_migration::LoadedVersion::V3
     );
-    assert_eq!(loaded.session().schema_version, 5);
+    assert_eq!(loaded.session().schema_version, 6);
     assert!(loaded.session().automatic_compression_guard.is_empty());
     assert_eq!(loaded.session().compression_count, 2);
     assert_eq!(loaded.session().messages.len(), 3);
     super::session_migration::commit_current(&loaded)
         .await
-        .expect("publish v5");
+        .expect("publish v6");
     let backup = super::session_migration::v3_backup_path(&path).expect("v3 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V3_COMPRESSION_FIXTURE);
 
     let current = std::fs::read(&path).unwrap();
-    let reloaded = super::session_migration::read(&current, path).expect("reload v5");
+    let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V5
+        super::session_migration::LoadedVersion::V6
     );
     assert!(reloaded.session().automatic_compression_guard.is_empty());
 }
@@ -176,7 +288,7 @@ fn invalid_automatic_compression_guard_does_not_make_the_session_unreadable() {
 }
 
 #[tokio::test]
-async fn v2_compression_markers_migrate_to_v5_with_an_exact_backup() {
+async fn v2_compression_markers_migrate_to_v6_with_an_exact_backup() {
     use super::types_message::AgentMessageKind;
 
     let root = tempfile::tempdir().expect("tempdir");
@@ -192,7 +304,7 @@ async fn v2_compression_markers_migrate_to_v5_with_an_exact_backup() {
         loaded.version(),
         super::session_migration::LoadedVersion::V2
     );
-    assert_eq!(loaded.session().schema_version, 5);
+    assert_eq!(loaded.session().schema_version, 6);
     assert_eq!(
         loaded.session().messages[0].message_kind,
         Some(AgentMessageKind::CompressionCheckpoint)
@@ -207,16 +319,16 @@ async fn v2_compression_markers_migrate_to_v5_with_an_exact_backup() {
 
     super::session_migration::commit_current(&loaded)
         .await
-        .expect("publish v5");
+        .expect("publish v6");
     let backup = super::session_migration::v2_backup_path(&path).expect("v2 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V2_COMPRESSION_FIXTURE);
     let current = std::fs::read(&path).unwrap();
-    let reloaded = super::session_migration::read(&current, path).expect("reload v5");
+    let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V5
+        super::session_migration::LoadedVersion::V6
     );
-    assert_eq!(reloaded.session().schema_version, 5);
+    assert_eq!(reloaded.session().schema_version, 6);
 }
 
 #[test]

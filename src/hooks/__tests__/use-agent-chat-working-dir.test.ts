@@ -54,6 +54,7 @@ const session: AgentSession = {
   ],
   created_at: "2026-06-24T10:00:00Z",
   accumulated_tokens: 12,
+  context_usage: { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null },
 };
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

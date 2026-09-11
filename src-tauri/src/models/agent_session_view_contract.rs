@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use super::AgentMessageView;
+use crate::services::agent_local::context_usage_record::ContextUsageRecord;
 use crate::services::agent_local::types_session::PreserveReasoningSetting;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,6 +89,7 @@ pub struct AgentSessionView {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(test, ts(optional))]
     pub context_tokens: Option<u32>,
+    pub context_usage: ContextUsageRecord,
     pub automatic_compression_suspended: bool,
     pub messages: Vec<AgentMessageView>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

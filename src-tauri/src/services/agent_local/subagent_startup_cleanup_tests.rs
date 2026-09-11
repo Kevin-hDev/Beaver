@@ -25,6 +25,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        context_usage: Default::default(),
         compression_profile_selection: None,
         compression_count: 0,
         automatic_compression_guard: Default::default(),

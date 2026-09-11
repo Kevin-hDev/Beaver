@@ -182,6 +182,7 @@ function session(messages: AgentMessage[], id = "s1"): AgentSession {
     working_dir: "",
     working_dir_managed: false,
     accumulated_tokens: 0,
+    context_usage: { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null },
     messages,
   };
 }

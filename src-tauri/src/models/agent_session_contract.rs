@@ -59,6 +59,20 @@ pub(crate) fn typescript_bindings() -> String {
     let declarations = [
         crate::services::agent_local::types_session::PreserveReasoningSetting::decl(&config),
         crate::services::agent_local::types_message::AgentMessageKind::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextCountSource::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextCountCoverage::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextPreparationState::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextRequestIdentity::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextTokenCount::decl(&config),
+        crate::services::agent_local::context_usage_buckets::RequestContextUsage::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextPreparationSnapshot::decl(
+            &config,
+        ),
+        crate::services::agent_local::context_usage_record::ContextMeasurementSnapshot::decl(
+            &config,
+        ),
+        crate::services::agent_local::context_usage_record::ContextOutputSnapshot::decl(&config),
+        crate::services::agent_local::context_usage_record::ContextUsageRecord::decl(&config),
         ReasoningReplayStatus::decl(&config),
         message::FileAttachmentView::decl(&config),
         message::ToolCallFunctionView::decl(&config),
