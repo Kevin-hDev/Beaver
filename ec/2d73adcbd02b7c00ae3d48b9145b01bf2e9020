@@ -1,0 +1,7 @@
+Tâche 5 validée.
+
+Implémentation : les réveils peuvent créer une session indépendante ou reprendre une session existante sans remplacer un travail manuel actif. Le tour utilisateur porte message_kind=automation. Le contexte d'acteur est lié au request_id par un registre borné à 64 et nettoyé par guard ; l'identité gateway est hachée et aucune clé brute n'est auditée. Les requêtes de reprise sont classées RequestPurpose::Automation. Les outils sont résolus depuis le catalogue courant au moment de l'exécution. Le message est persisté avant la transition durable vers running ; un échec de cette transition restaure la session et laisse l'occurrence pending.
+
+Décision : ActiveStreams reste l'autorité unique d'admission et actor_context l'autorité unique de provenance d'une automatisation ; aucun identifiant sensible n'entre dans les arguments LLM.
+
+Validation observée : cargo test services::scheduler --no-fail-fast = 31 réussis, 0 échec ; cargo test automations::actor_context_tests --no-fail-fast = 3 réussis ; cargo test agent_chat_stream_replacement_tests --no-fail-fast = 8 réussis ; cargo test conversation_adoption_tests --no-fail-fast = 3 réussis ; test du catalogue courant = 1 réussi ; cargo check réussi ; cargo clippy --all-targets -- -D warnings réussi ; cargo fmt --all -- --check réussi ; git diff --cached --check réussi ; graphify update . réussi. Le test des traces d'outils couvre new_session et resume_session avant assistant_missing.
