@@ -1,0 +1,3 @@
+Decision: eager tool work is guarded at the point where the Tokio task is spawned, so every later request error aborts it before returning to the outer loop. Historical max_turns compatibility lives only in session normalization, safe summaries, and frontend display; current failure classification must not manufacture that retired code.
+
+Local validation only: cargo check; cargo clippy --all-targets -- -D warnings; cargo test (5,463 passed, 21 ignored); targeted eager guard, historical normalization, circuit-breaker compatibility, and 201-turn Ollama tests. Remote CI intentionally not started pending review approval.
