@@ -1,0 +1,1 @@
+CI correction: the repository's included-source rustfmt check found five Rust files that cargo fmt does not traverse. Reformatted only, with no logic change. Validation: exact RUSTFMT_BASE_SHA check passed; cargo fmt --all -- --check passed; tool_automation_tests 7/7 passed; conversation_adoption_tests 3/3 passed; git diff --check passed; graphify update . passed.
