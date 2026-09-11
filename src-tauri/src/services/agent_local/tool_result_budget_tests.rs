@@ -152,13 +152,15 @@ mod tests {
         let result = root.path().join("tool-results/session");
         std::fs::create_dir_all(&result).expect("result directory");
         std::fs::write(result.join("full.txt"), b"result").expect("result");
-        let future = std::time::SystemTime::now()
-            + std::time::Duration::from_secs(2 * 86_400);
+        let future = std::time::SystemTime::now() + std::time::Duration::from_secs(2 * 86_400);
         let selected = old_results_in(root.path(), future).expect("selection");
         assert_eq!(selected, vec![(result.clone(), 6)]);
         let outcome = remove_results(
             root.path(),
-            &selected.iter().map(|item| item.0.clone()).collect::<Vec<_>>(),
+            &selected
+                .iter()
+                .map(|item| item.0.clone())
+                .collect::<Vec<_>>(),
         );
         assert_eq!(outcome.removed, 1);
         assert!(outcome.failed.is_empty());
@@ -213,8 +215,7 @@ mod tests {
         let results = root.path().join("tool-results");
         std::fs::create_dir_all(results.join("a")).expect("first result");
         std::fs::create_dir_all(results.join("b")).expect("second result");
-        let future = std::time::SystemTime::now()
-            + std::time::Duration::from_secs(2 * 86_400);
+        let future = std::time::SystemTime::now() + std::time::Duration::from_secs(2 * 86_400);
 
         let selected = old_results_in_bounded(root.path(), future, 1).expect("selection");
 
@@ -234,8 +235,7 @@ mod tests {
         let unsafe_result = results.join("unsafe");
         std::fs::create_dir(&unsafe_result).expect("unsafe result");
         symlink(root.path(), unsafe_result.join("nested-link")).expect("nested symlink");
-        let future = std::time::SystemTime::now()
-            + std::time::Duration::from_secs(2 * 86_400);
+        let future = std::time::SystemTime::now() + std::time::Duration::from_secs(2 * 86_400);
 
         let selected = old_results_in(root.path(), future).expect("selection");
 

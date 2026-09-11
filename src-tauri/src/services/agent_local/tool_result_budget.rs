@@ -90,10 +90,7 @@ fn result_tree_size(
     Ok(bytes)
 }
 
-pub fn remove_results(
-    root: &std::path::Path,
-    paths: &[std::path::PathBuf],
-) -> RemovalOutcome {
+pub fn remove_results(root: &std::path::Path, paths: &[std::path::PathBuf]) -> RemovalOutcome {
     let mut outcome = RemovalOutcome {
         removed: 0,
         failed: Vec::with_capacity(paths.len()),
@@ -203,9 +200,9 @@ pub fn apply_budget(messages: &mut [ChatMessage]) {
 
 fn compacted_output(content: &str) -> String {
     match extract_persist_path(content) {
-        Some(path) => format!(
-            "{CLEARED_PLACEHOLDER} Résultat complet lisible avec read_file : {path}"
-        ),
+        Some(path) => {
+            format!("{CLEARED_PLACEHOLDER} Résultat complet lisible avec read_file : {path}")
+        }
         None => CLEARED_PLACEHOLDER.to_string(),
     }
 }
