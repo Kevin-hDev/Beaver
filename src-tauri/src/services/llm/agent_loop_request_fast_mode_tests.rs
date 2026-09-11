@@ -69,6 +69,16 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
     ];
     let mut subagents = ParentSubagentOrchestrator::new(&session.id).await;
     let previews = preview_batch();
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let journal = crate::services::agent_local::conversation_journal::ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        request_id.clone(),
+    )
+    .unwrap();
+    journal.activate_context_request().await.unwrap();
 
     let request = run(ApiRequestParams {
         on_event: &emitter,
@@ -80,7 +90,7 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
         think: false,
         reasoning_mode: None,
         session_id: &session.id,
-        request_id: "request-payload-reduction",
+        request_id: &request_id,
         cancel: CancellationToken::new(),
         configured_context: 100_000,
         plan_mode_active: false,
@@ -89,6 +99,7 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
         context_usage_seed: ContextUsageSeed::default(),
         tool_result_previews: &previews,
         continuation_target: None,
+        journal: Some(&journal),
     });
     let change_preference = async {
         scenario.wait_for_payloads(1).await;
@@ -100,6 +111,9 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
     let (result, ()) = tokio::join!(request, change_preference);
     result.expect("reduced retry succeeds");
     let payloads = scenario.payloads();
+    let saved = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
     crate::services::agent_local::session_store::delete_one(&session.id)
         .await
         .expect("delete session");
@@ -113,4 +127,13 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
     assert!(payloads[0].to_string().contains(image));
     assert!(payloads[1].to_string().contains(image));
     assert_eq!(previews.previews().len(), 1);
+    assert_eq!(
+        saved
+            .context_usage
+            .current_preparation
+            .unwrap()
+            .identity
+            .attempt,
+        2
+    );
 }

@@ -74,6 +74,7 @@ pub async fn add_messages_with_context(
     session.updated_at = Some(chrono::Utc::now());
     recompute_accumulated_tokens(&mut session);
     session.context_tokens = validated_context_tokens(context_tokens, context_limit);
+    session.context_usage.invalidate_preparation();
     let result = super::session_store::save(&session).await;
     if result.is_ok() && todo_housekeeping.should_emit_empty_update {
         super::tool_todo::emit_update(id, Vec::new());

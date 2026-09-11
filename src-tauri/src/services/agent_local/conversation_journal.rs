@@ -2,6 +2,8 @@
 mod record;
 #[path = "conversation_journal_store.rs"]
 mod store;
+#[path = "conversation_journal_context.rs"]
+mod context;
 #[path = "conversation_journal_validation.rs"]
 mod validation;
 

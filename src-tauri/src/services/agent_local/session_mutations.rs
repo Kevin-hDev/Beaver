@@ -15,6 +15,7 @@ pub async fn apply_metadata_patch(id: &str, patch: SessionMetadataPatch) -> Resu
             }
             session.model = model;
             session.context_tokens = None;
+            session.context_usage.invalidate_preparation();
         }
         if let Some(provider) = patch.provider {
             if session.provider != provider {
@@ -22,11 +23,13 @@ pub async fn apply_metadata_patch(id: &str, patch: SessionMetadataPatch) -> Resu
             }
             session.provider = provider;
             session.context_tokens = None;
+            session.context_usage.invalidate_preparation();
         }
         if let Some(mode) = patch.reasoning_mode {
             session.thinking_enabled = mode != "off";
             session.reasoning_mode = Some(mode);
             session.context_tokens = None;
+            session.context_usage.invalidate_preparation();
         }
         if let Some(enabled) = patch.fast_mode_enabled {
             session.fast_mode_enabled = enabled;

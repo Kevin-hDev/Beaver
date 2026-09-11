@@ -50,6 +50,7 @@ pub async fn update_model(
             session.preserve_reasoning = Default::default();
         }
         session.context_tokens = None;
+        session.context_usage.invalidate_preparation();
     })
     .await
 }
@@ -80,6 +81,7 @@ pub async fn update_reasoning(
         session.thinking_enabled = !matches!(mode.as_deref(), None | Some("off"));
         session.reasoning_mode = mode;
         session.context_tokens = None;
+        session.context_usage.invalidate_preparation();
     })
     .await
 }
@@ -172,6 +174,7 @@ where
     }
     session.working_dir = canonical.to_string_lossy().to_string();
     session.context_tokens = None;
+    session.context_usage.invalidate_preparation();
     if let ManagedAssignment::Set(value) = managed {
         session.working_dir_managed = value;
     }

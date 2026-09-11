@@ -32,6 +32,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub fixture_candidate:
         Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
     pub enable_eager_tools: bool,
+    pub journal: Option<&'a super::conversation_journal::ConversationJournal>,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -77,12 +78,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.context_usage_seed,
     );
     let textual_input_tokens = breakdown.total_tokens();
-    let input_tokens = super::context_usage_runtime::emit_input(
-        params.on_event,
-        textual_input_tokens,
-        params.configured_context,
-        breakdown,
-    );
     let realtime_budget = RealtimeBudget::for_session(
         params.session_id,
         params.configured_context,
@@ -115,6 +110,13 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     {
         request.fixture_candidate = params.fixture_candidate.cloned();
     }
+    let input_tokens = super::agent_loop_ollama_context::persist_preparation(
+        &params,
+        1,
+        textual_input_tokens,
+        breakdown,
+    )
+    .await?;
     if !request.capture_reasoning {
         crate::services::reasoning_continuity::diagnostics::record_blocked(
             params.session_id,
@@ -192,14 +194,20 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             chat_mode: params.chat_mode,
             realtime_budget,
             enable_eager_tools: params.enable_eager_tools,
+            journal: params.journal,
+            input_tokens,
+            context_limit: params.configured_context,
+            breakdown,
         })
         .await?;
         result = retry.result;
         eager_handle = EagerHandleGuard::new(retry.eager_handle);
         interrupted = retry.interrupted;
         generation = retry.generation;
+        super::agent_loop_ollama_context::persist_result(&params, retry.attempt, &result).await?;
     } else {
         generation.add_result(&result);
+        super::agent_loop_ollama_context::persist_result(&params, 1, &result).await?;
     }
     params
         .subagents

@@ -57,6 +57,7 @@ async fn api_empty_answer_keeps_reports_until_a_real_success_without_retry() {
             context_usage_seed: ContextUsageSeed::default(),
             tool_result_previews: &ToolResultPreviewBatch::default(),
             continuation_target: None,
+            journal: None,
         })
         .await
         .unwrap();

@@ -394,6 +394,29 @@ fn anthropic_messages_reads_the_native_cache_hit_counter() {
 }
 
 #[test]
+fn context_input_tokens_follows_each_api_cache_contract() {
+    let usage = RequestUsage {
+        input_tokens: Some(120),
+        cached_input_tokens: Some(80),
+        cache_write_input_tokens: Some(20),
+        ..Default::default()
+    };
+
+    assert_eq!(
+        usage.context_input_tokens(UsageApiFormat::AnthropicMessages),
+        Some(220)
+    );
+    assert_eq!(
+        usage.context_input_tokens(UsageApiFormat::ChatCompletions),
+        Some(120)
+    );
+    assert_eq!(
+        usage.context_input_tokens(UsageApiFormat::Responses),
+        Some(120)
+    );
+}
+
+#[test]
 fn anthropic_messages_reads_both_cache_creation_windows_without_double_counting() {
     let usage = RequestUsage::from_json_with_context(
         &json!({

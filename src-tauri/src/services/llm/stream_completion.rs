@@ -1,6 +1,6 @@
 use crate::services::agent_local::{
-    context_usage_runtime, conversation_journal::ConversationJournal, stream_buffer,
-    stream_events::AgentEventEmitter, types_ollama::StreamResult,
+    conversation_journal::ConversationJournal, stream_buffer, stream_events::AgentEventEmitter,
+    types_ollama::StreamResult,
 };
 
 pub(super) fn terminal_error(result: &StreamResult) -> Option<&'static str> {
@@ -25,8 +25,6 @@ pub(super) async fn reject_if_failed(
     result: &StreamResult,
     plan_active: bool,
     journal: Option<&mut ConversationJournal>,
-    input_tokens: u32,
-    configured_context: u64,
 ) -> Result<(), String> {
     let Some(error) = result.completion_error else {
         return Ok(());
@@ -43,7 +41,6 @@ pub(super) async fn reject_if_failed(
         }
     }
     stream_buffer::finalize_interrupted_content(on_event, result, plan_active);
-    context_usage_runtime::emit_result(on_event, input_tokens, result, configured_context);
     Err(error.to_string())
 }
 

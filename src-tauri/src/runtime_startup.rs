@@ -25,7 +25,10 @@ pub fn start_recovery(
         .spawn_task(move |cancel| async move {
             tokio::select! {
                 _ = cancel.cancelled() => {}
-                _ = crate::services::agent_local::subagent_startup_cleanup::cleanup_orphans(startup_cutoff) => {}
+                _ = async {
+                    crate::services::agent_local::subagent_startup_cleanup::cleanup_orphans(startup_cutoff).await;
+                    crate::services::agent_local::context_usage_startup::cleanup_interrupted_requests(startup_cutoff).await;
+                } => {}
             }
         })
         .is_err()

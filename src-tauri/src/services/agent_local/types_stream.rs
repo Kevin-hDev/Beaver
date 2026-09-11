@@ -26,14 +26,8 @@ pub enum StreamEvent {
         content: String,
         token_count: u32,
     },
-    #[serde(rename_all = "camelCase")]
     ContextUsage {
-        input_tokens: u32,
-        output_tokens: u32,
-        context_limit: u32,
-        estimated: bool,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        breakdown: Option<super::context_usage_buckets::RequestContextUsage>,
+        record: super::context_usage_record::ContextUsageRecord,
     },
     GenerationStarted {},
     #[serde(rename_all = "camelCase")]

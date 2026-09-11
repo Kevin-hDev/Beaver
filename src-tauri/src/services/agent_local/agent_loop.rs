@@ -7,7 +7,6 @@ use super::{
     agent_loop_ollama_request::OllamaRequestParams,
     agent_loop_plan, agent_loop_support, circuit_breaker,
     context_usage_buckets::ContextUsageSeed,
-    context_usage_runtime,
     stream_events::AgentEventEmitter,
     types_ollama::{ChatMessage, OllamaThink},
     write_guard_registry,
@@ -99,6 +98,7 @@ pub async fn run_agent_loop(
                         true
                     }
                 },
+                journal: journal.as_deref(),
             })
             .await?;
             // The request consumed this ephemeral projection; persisted tool text
@@ -110,7 +110,7 @@ pub async fn run_agent_loop(
             );
             let interrupted = request_output.interrupted;
             let plan_active = request_output.plan_active;
-            let input_tokens = request_output.input_tokens;
+            let _input_tokens = request_output.input_tokens;
             let result = request_output.result;
             if interrupted {
                 eager_handle.abort();
@@ -119,8 +119,6 @@ pub async fn run_agent_loop(
                     messages,
                     &result,
                     plan_active,
-                    input_tokens,
-                    configured_context,
                     &compression,
                     &mut last_prompt,
                     &mut last_eval,
@@ -158,7 +156,6 @@ pub async fn run_agent_loop(
             subagents
                 .finalize_content_phase(on_event, &result, plan_active)
                 .await;
-            context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
             let assistant = agent_loop_support::build_for_plan(&result, plan_active);
             if let Some(journal) = journal.as_deref_mut() {
                 journal.persist_assistant_step(&assistant).await?;

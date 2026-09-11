@@ -11,6 +11,11 @@ use crate::services::reasoning_continuity::contract::{
 use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
 };
+use super::context_usage_record::{
+    ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot,
+    ContextOutputSnapshot, ContextPreparationSnapshot, ContextPreparationState,
+    ContextRequestIdentity, ContextTokenCount,
+};
 
 #[test]
 fn journal_rejects_missing_duplicate_and_reordered_tool_results() {
@@ -182,6 +187,150 @@ async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable(
 
 fn tool(id: &str) -> ChatMessage {
     ChatMessage::tool("result".into(), Some(id.into()), Some("bash".into()))
+}
+
+fn context_identity(journal: &ConversationJournal, turn: u32, attempt: u32) -> ContextRequestIdentity {
+    journal.context_identity(turn, attempt, "openai", "gpt-5")
+}
+
+fn context_count(tokens: u32, source: ContextCountSource) -> ContextTokenCount {
+    ContextTokenCount {
+        tokens: Some(tokens),
+        capacity_tokens: Some(tokens),
+        source: Some(source),
+        coverage: ContextCountCoverage::Complete,
+    }
+}
+
+fn preparation(
+    journal: &ConversationJournal,
+    turn: u32,
+    attempt: u32,
+    tokens: u32,
+) -> ContextPreparationSnapshot {
+    ContextPreparationSnapshot {
+        identity: context_identity(journal, turn, attempt),
+        context_limit: Some(200_000),
+        input: context_count(tokens, ContextCountSource::Heuristic),
+        state: ContextPreparationState::InFlight,
+        breakdown: None,
+        updated_at: chrono::Utc::now(),
+    }
+}
+
+#[tokio::test]
+async fn newer_request_rejects_every_late_context_update() {
+    let session = session_store::create_full("Context order", "gpt-5", "openai", false, None)
+        .await
+        .expect("create session");
+    let turn_id = uuid::Uuid::new_v4().to_string();
+    let journal = |request_id| {
+        ConversationJournal::new(
+            session.id.clone(),
+            turn_id.clone(),
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+            request_id,
+        )
+        .expect("create journal")
+    };
+    let first = journal(uuid::Uuid::new_v4().to_string());
+    first.activate_context_request().await.unwrap();
+    assert!(first
+        .persist_context_preparation(preparation(&first, 8, 1, 120))
+        .await
+        .unwrap());
+
+    let second = journal(uuid::Uuid::new_v4().to_string());
+    second.activate_context_request().await.unwrap();
+    assert!(second
+        .persist_context_preparation(preparation(&second, 0, 1, 80))
+        .await
+        .unwrap());
+    assert!(!first
+        .persist_context_preparation(preparation(&first, 9, 1, 999))
+        .await
+        .unwrap());
+    assert!(!first
+        .persist_context_measurement(ContextMeasurementSnapshot {
+            identity: context_identity(&first, 9, 1),
+            context_limit: Some(200_000),
+            input: context_count(999, ContextCountSource::Provider),
+            updated_at: chrono::Utc::now(),
+        })
+        .await
+        .unwrap());
+    first
+        .finish_context_request(ContextPreparationState::Interrupted)
+        .await
+        .unwrap();
+
+    let saved = session_store::get(&session.id).await.unwrap();
+    assert_eq!(
+        saved.context_usage.active_request_id.as_deref(),
+        Some(context_identity(&second, 0, 1).request_id.as_str())
+    );
+    assert_eq!(
+        saved.context_usage.current_preparation.unwrap().input.tokens,
+        Some(80)
+    );
+    assert!(saved.context_usage.last_measurement.is_none());
+    session_store::delete_one(&session.id).await.unwrap();
+}
+
+#[tokio::test]
+async fn context_attempts_measurements_and_output_keep_distinct_lifetimes() {
+    let session = session_store::create_full("Context lifetime", "gpt-5", "openai", false, None)
+        .await
+        .expect("create session");
+    let journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .unwrap();
+    journal.activate_context_request().await.unwrap();
+    assert!(journal
+        .persist_context_preparation(preparation(&journal, 0, 2, 120))
+        .await
+        .unwrap());
+    assert!(!journal
+        .persist_context_preparation(preparation(&journal, 0, 1, 999))
+        .await
+        .unwrap());
+    assert!(journal
+        .persist_context_measurement(ContextMeasurementSnapshot {
+            identity: context_identity(&journal, 0, 2),
+            context_limit: Some(200_000),
+            input: context_count(100, ContextCountSource::Provider),
+            updated_at: chrono::Utc::now(),
+        })
+        .await
+        .unwrap());
+    assert!(journal
+        .persist_context_output(ContextOutputSnapshot {
+            identity: context_identity(&journal, 0, 2),
+            output: context_count(50, ContextCountSource::Provider),
+            updated_at: chrono::Utc::now(),
+        })
+        .await
+        .unwrap());
+    journal
+        .finish_context_request(ContextPreparationState::Completed)
+        .await
+        .unwrap();
+
+    let saved = session_store::get(&session.id).await.unwrap();
+    assert_eq!(saved.context_usage.active_request_id, None);
+    assert_eq!(
+        saved.context_usage.current_preparation.unwrap().state,
+        ContextPreparationState::Completed
+    );
+    assert_eq!(saved.context_usage.last_measurement.unwrap().input.tokens, Some(100));
+    assert_eq!(saved.context_usage.last_output.unwrap().output.tokens, Some(50));
+    session_store::delete_one(&session.id).await.unwrap();
 }
 
 #[tokio::test]

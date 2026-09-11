@@ -172,7 +172,7 @@ impl<'a> StreamAccumulator<'a> {
                 );
             if let Some(usage) = &self.result.usage {
                 self.result.prompt_tokens =
-                    usage.input_tokens.and_then(|value| value.try_into().ok());
+                    usage.context_input_tokens(self.usage_context.api_format);
                 self.result.eval_count =
                     usage.output_tokens.and_then(|value| value.try_into().ok());
             }

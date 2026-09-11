@@ -1,11 +1,40 @@
 import { describe, it, expect, vi } from "vitest";
 import { applyStreamEvent, createManagedStreamState } from "@/hooks/agent-chat-stream-callbacks";
 import type { ManagedStreamState } from "@/hooks/agent-chat-stream-callbacks";
+import type { RequestContextUsage } from "@/types/agent-session.generated";
 
 vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
 
 function makeState(overrides: Partial<ManagedStreamState> = {}): ManagedStreamState {
   return { ...createManagedStreamState([], 0), streamStartedAt: null, segmentStartedAt: null, ...overrides };
+}
+
+function contextUsageData(inputTokens: number, outputTokens = 0, breakdown: RequestContextUsage | null = null) {
+  const identity = {
+    requestId: "request-1", turnId: "turn-1", turn: 0, attempt: 1,
+    providerId: "openai", model: "gpt-5",
+  };
+  return {
+    record: {
+      activeRequestId: outputTokens === 0 ? identity.requestId : null,
+      currentPreparation: {
+        identity, contextLimit: 372_000,
+        input: { tokens: inputTokens, capacityTokens: inputTokens, source: "heuristic" as const, coverage: "complete" as const },
+        state: outputTokens === 0 ? "in_flight" as const : "completed" as const,
+        breakdown, updatedAt: "2026-09-11T00:00:00Z",
+      },
+      lastMeasurement: outputTokens > 0 ? {
+        identity, contextLimit: 372_000,
+        input: { tokens: inputTokens, capacityTokens: inputTokens, source: "provider" as const, coverage: "complete" as const },
+        updatedAt: "2026-09-11T00:00:01Z",
+      } : null,
+      lastOutput: outputTokens > 0 ? {
+        identity,
+        output: { tokens: outputTokens, capacityTokens: outputTokens, source: "provider" as const, coverage: "complete" as const },
+        updatedAt: "2026-09-11T00:00:01Z",
+      } : null,
+    },
+  };
 }
 
 describe("visibilité du contexte", () => {
@@ -112,12 +141,7 @@ describe("contextUsage", () => {
   it("met à jour le contexte en direct puis le recale sur le provider", () => {
     let state = applyStreamEvent(makeState(), {
       event: "contextUsage",
-      data: {
-        inputTokens: 100,
-        outputTokens: 0,
-        contextLimit: 372_000,
-        estimated: true,
-        breakdown: {
+      data: contextUsageData(100, 0, {
           messages: 60,
           systemTools: 10,
           mcpConnectors: 5,
@@ -126,8 +150,7 @@ describe("contextUsage", () => {
           metaContext: 5,
           systemPrompt: 10,
           reasoningIncluded: false,
-        },
-      },
+        }),
     }).state;
     expect(state.contextUsageVisible).toBe(false);
     expect(state.contextUsageBuckets?.messages).toBe(60);
@@ -142,12 +165,7 @@ describe("contextUsage", () => {
 
     state = applyStreamEvent(state, {
       event: "contextUsage",
-      data: {
-        inputTokens: 102,
-        outputTokens: 20,
-        contextLimit: 372_000,
-        estimated: false,
-      },
+      data: contextUsageData(102, 20),
     }).state;
 
     expect(state.sessionTokenCount).toBe(122);
@@ -160,12 +178,7 @@ describe("contextUsage", () => {
     const state = makeState({ contextOutputTokens: 20, liveTokenCount: 20 });
     const { state: next } = applyStreamEvent(state, {
       event: "contextUsage",
-      data: {
-        inputTokens: 240,
-        outputTokens: 0,
-        contextLimit: 372_000,
-        estimated: true,
-      },
+      data: contextUsageData(240),
     });
 
     expect(next.contextOutputTokens).toBe(0);
@@ -301,12 +314,7 @@ describe("accumulation tokens", () => {
     s = applyStreamEvent(s, { event: "token", data: { content: "a", tps: 5, tokenCount: 3 } }).state;
     s = applyStreamEvent(s, {
       event: "contextUsage",
-      data: {
-        inputTokens: 100,
-        outputTokens: 0,
-        contextLimit: 372_000,
-        estimated: true,
-      },
+      data: contextUsageData(100),
     }).state;
     s = applyStreamEvent(s, { event: "token", data: { content: "b", tps: 5, tokenCount: 2 } }).state;
 

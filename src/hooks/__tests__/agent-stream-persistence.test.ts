@@ -54,10 +54,12 @@ describe("autorité de persistance Rust", () => {
     emit("gateway", {
       event: "contextUsage",
       data: {
-        inputTokens: 1,
-        outputTokens: 0,
-        contextLimit: 372_000,
-        estimated: true,
+        record: {
+          activeRequestId: null,
+          currentPreparation: null,
+          lastMeasurement: null,
+          lastOutput: null,
+        },
       },
     });
     emit("gateway", tokenEvent("frontend"));

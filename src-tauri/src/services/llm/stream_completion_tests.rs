@@ -53,8 +53,6 @@ async fn failed_answer_guard_returns_the_actionable_error() {
         &result,
         false,
         None,
-        739,
-        8192,
     )
     .await
     .unwrap_err();
@@ -87,8 +85,6 @@ async fn partial_answer_survives_reload_without_committing_a_successful_turn() {
         &result,
         false,
         Some(&mut journal),
-        739,
-        8192,
     )
     .await
     .unwrap_err();

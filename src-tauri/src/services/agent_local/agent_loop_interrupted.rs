@@ -14,8 +14,6 @@ pub(super) async fn handle(
     messages: &mut Vec<ChatMessage>,
     result: &StreamResult,
     plan_active: bool,
-    input_tokens: u32,
-    configured_context: u64,
     compression: &LoopCompression<'_>,
     last_prompt: &mut Option<u32>,
     last_eval: &mut Option<u32>,
@@ -28,7 +26,6 @@ pub(super) async fn handle(
             .await?;
     }
     super::stream_buffer::finalize_interrupted_content(on_event, result, plan_active);
-    super::context_usage_runtime::emit_result(on_event, input_tokens, result, configured_context);
     compression
         .handle_interrupted(
             messages,

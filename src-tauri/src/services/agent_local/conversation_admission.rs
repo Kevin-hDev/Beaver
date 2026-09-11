@@ -193,6 +193,7 @@ where
     session.messages.push(message);
     session.updated_at = Some(Utc::now());
     super::session_store_messages::recompute_accumulated_tokens(&mut session);
+    session.context_usage.invalidate_preparation();
     writer(session).await.map_err(|_| error())?;
 
     let history = super::conversation_history::load_for_admission_continuation(

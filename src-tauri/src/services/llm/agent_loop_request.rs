@@ -42,12 +42,13 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.context_usage_seed,
     );
     let mut textual_input_tokens = breakdown.total_tokens();
-    let mut input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
-        params.on_event,
+    let mut input_tokens = super::agent_loop_request_context::persist_preparation(
+        &params,
+        1,
         textual_input_tokens,
-        params.configured_context,
         breakdown,
-    );
+    )
+    .await?;
     let realtime_budget = RealtimeBudget::for_session(
         params.session_id,
         params.configured_context,
@@ -110,8 +111,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.continuation_target.as_ref(),
     )
     .await;
-    let outcome = match first_attempt {
-        Ok(outcome) => outcome,
+    let (outcome, completed_attempt) = match first_attempt {
+        Ok(outcome) => (outcome, 1),
         Err(error) if error == "provider_payload_too_large" => {
             let changed =
                 crate::services::agent_local::context_budget::reduce_after_payload_too_large(
@@ -137,12 +138,13 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.context_usage_seed,
             );
             textual_input_tokens = breakdown.total_tokens();
-            input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
-                params.on_event,
+            input_tokens = super::agent_loop_request_context::persist_preparation(
+                &params,
+                2,
                 textual_input_tokens,
-                params.configured_context,
                 breakdown,
-            );
+            )
+            .await?;
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,
                 params.request_id,
@@ -155,7 +157,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 textual_input_tokens,
             )
             .await;
-            super::retry::retry_stream(
+            let outcome = super::retry::retry_stream(
                 params.on_event,
                 params.session_id,
                 params.request_id,
@@ -175,12 +177,14 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 reduced_budget,
                 params.continuation_target.as_ref(),
             )
-            .await?
+            .await?;
+            (outcome, 2)
         }
         Err(error) => return Err(error),
     };
     let interrupted = outcome.is_interrupted();
     let result = outcome.into_result();
+    super::agent_loop_request_context::persist_result(&params, completed_attempt, &result).await?;
     let mut generation = GenerationAggregate::default();
     generation.add_result(&result);
     crate::services::provider_usage::record_for_session(

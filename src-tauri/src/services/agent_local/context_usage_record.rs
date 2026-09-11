@@ -111,6 +111,13 @@ pub struct ContextUsageRecord {
 }
 
 impl ContextUsageRecord {
+    pub fn invalidate_preparation(&mut self) {
+        if let Some(preparation) = &mut self.current_preparation {
+            preparation.state = ContextPreparationState::Stale;
+            preparation.updated_at = Utc::now();
+        }
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self
             .active_request_id

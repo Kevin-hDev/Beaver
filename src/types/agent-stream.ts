@@ -1,6 +1,6 @@
 import type { AgentInteractiveChoiceRequest } from "./agent-interactive";
 import type { ToolFileChangeRecord } from "./agent-message";
-import type { AgentMessageView, ToolArtifactRecordView } from "./agent-session.generated";
+import type { AgentMessageView, ContextUsageRecord, ToolArtifactRecordView } from "./agent-session.generated";
 import type { AgentPlanPreview } from "./agent-plan";
 import type { SubagentStatus } from "./agent-session";
 import type { AgentTodoItem } from "./agent-todo";
@@ -43,22 +43,11 @@ export interface RetryIndicatorState {
   maxAttempts: number;
 }
 
-export interface StreamContextUsageBreakdown {
-  messages: number;
-  systemTools: number;
-  mcpConnectors: number;
-  skills: number;
-  memory: number;
-  metaContext: number;
-  systemPrompt: number;
-  reasoningIncluded: boolean;
-}
-
 export type StreamEvent =
   | { event: "token"; data: { content: string; tokenCount: number; tps: number; phase?: TokenPhase } }
   | { event: "contentPhase"; data: { phase: TokenPhase } }
   | { event: "thinking"; data: { content: string; tokenCount?: number } }
-  | { event: "contextUsage"; data: { inputTokens: number; outputTokens: number; contextLimit: number; estimated: boolean; breakdown?: StreamContextUsageBreakdown } }
+  | { event: "contextUsage"; data: { record: ContextUsageRecord } }
   | { event: "generationStarted"; data: Record<string, never> }
   | { event: "turnAdmitted"; data: { turnId: string; userMessageId: string; assistantMessageId: string } }
   | { event: "turnCommitted"; data: { turnId: string; userMessageId: string; assistantMessageId: string } }

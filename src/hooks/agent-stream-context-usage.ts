@@ -1,6 +1,7 @@
 import type { ManagedStreamState } from "./agent-chat-stream-types";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 import type { StreamEvent } from "@/types/agent";
+import type { RequestContextUsage } from "@/types/agent-session.generated";
 
 type ContextUsageData = Extract<
   StreamEvent,
@@ -13,9 +14,16 @@ export function applyContextUsage(
   state: ManagedStreamState,
   usage: ContextUsageData,
 ) {
-  const inputTokens = boundedTokens(usage.inputTokens);
-  const outputTokens = boundedTokens(usage.outputTokens);
-  const startsRequest = usage.estimated && outputTokens === 0;
+  const preparation = usage.record.currentPreparation;
+  const activePreparation = preparation && (
+    preparation.state === "ready" || preparation.state === "in_flight"
+  ) ? preparation : null;
+  const selectedInput = activePreparation
+    ?? usage.record.lastMeasurement
+    ?? preparation;
+  const inputTokens = boundedTokens(selectedInput?.input.tokens ?? 0);
+  const outputTokens = boundedTokens(usage.record.lastOutput?.output.tokens ?? 0);
+  const startsRequest = activePreparation !== null;
   if (!startsRequest) {
     state.liveTokenCount = adjustedTokens(
       state.liveTokenCount,
@@ -24,13 +32,13 @@ export function applyContextUsage(
   }
   state.contextInputTokens = inputTokens;
   state.contextOutputTokens = outputTokens;
-  state.contextLimitTokens = boundedTokens(usage.contextLimit);
-  state.hasContextUsageSnapshot = true;
+  state.contextLimitTokens = boundedTokens(selectedInput?.contextLimit ?? 0);
+  state.hasContextUsageSnapshot = selectedInput !== null;
   state.sessionTokenCount = boundedSum(inputTokens, outputTokens);
-  if (usage.breakdown) {
-    state.contextUsageBuckets = boundedBuckets(usage.breakdown);
+  if (preparation?.breakdown) {
+    state.contextUsageBuckets = boundedBuckets(preparation.breakdown);
     state.contextUsageBaseSegments = state.completedSegments.length;
-    state.contextUsageIncludesReasoning = usage.breakdown.reasoningIncluded === true;
+    state.contextUsageIncludesReasoning = preparation.breakdown.reasoningIncluded === true;
   }
 }
 
@@ -68,7 +76,7 @@ function adjustedTokens(value: number, delta: number): number {
 }
 
 function boundedBuckets(
-  source: NonNullable<ContextUsageData["breakdown"]>,
+  source: RequestContextUsage,
 ): ContextTokenBuckets {
   return {
     messages: boundedTokens(source.messages),

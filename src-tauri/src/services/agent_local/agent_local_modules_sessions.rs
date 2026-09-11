@@ -1,3 +1,4 @@
+mod agent_loop_ollama_context;
 pub mod context_budget;
 mod context_budget_history;
 mod context_budget_prune;
@@ -7,6 +8,7 @@ pub mod context_usage_record;
 #[cfg(test)]
 mod context_usage_record_tests;
 pub mod context_usage_runtime;
+pub mod context_usage_startup;
 pub mod conversation_admission;
 mod conversation_admission_ids;
 mod conversation_admission_replay;

@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg(test)]
 use super::usage_context::UsageApiFormat;
 use super::usage_context::UsageContext;
 
@@ -41,6 +40,18 @@ pub struct RequestUsage {
 }
 
 impl RequestUsage {
+    pub fn context_input_tokens(&self, api_format: UsageApiFormat) -> Option<u32> {
+        let input = self.input_tokens?;
+        let total = if api_format == UsageApiFormat::AnthropicMessages {
+            input
+                .checked_add(self.cached_input_tokens.unwrap_or(0))?
+                .checked_add(self.cache_write_input_tokens.unwrap_or(0))?
+        } else {
+            input
+        };
+        total.try_into().ok()
+    }
+
     pub fn cache_status_label(&self) -> &'static str {
         match self.cache_status {
             CacheUsageStatus::Unknown => "unknown",

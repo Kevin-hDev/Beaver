@@ -129,3 +129,28 @@ fn measurements_require_a_complete_input_and_outputs_require_a_value() {
     .validate()
     .is_err());
 }
+
+#[test]
+fn invalidation_marks_only_the_preparation_stale() {
+    let measurement = measurement();
+    let mut record = ContextUsageRecord {
+        current_preparation: Some(ContextPreparationSnapshot {
+            identity: identity(),
+            context_limit: Some(100_000),
+            input: count(80, Some(80)),
+            state: ContextPreparationState::InFlight,
+            breakdown: None,
+            updated_at: Utc::now(),
+        }),
+        last_measurement: Some(measurement.clone()),
+        ..Default::default()
+    };
+
+    record.invalidate_preparation();
+
+    assert_eq!(
+        record.current_preparation.unwrap().state,
+        ContextPreparationState::Stale
+    );
+    assert_eq!(record.last_measurement, Some(measurement));
+}
