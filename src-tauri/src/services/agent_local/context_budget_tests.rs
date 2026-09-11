@@ -39,10 +39,7 @@ fn oversized_subagent_report_fails_closed_instead_of_truncating() {
         super::super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX,
         "r".repeat(12_000)
     );
-    let mut messages = vec![
-        msg("system", "rules"),
-        msg("user", report_content.as_str()),
-    ];
+    let mut messages = vec![msg("system", "rules"), msg("user", report_content.as_str())];
 
     assert!(prepare_for_request(&mut messages, 4_000, &[], "ollama").is_err());
     assert_eq!(messages[1].content, report_content);

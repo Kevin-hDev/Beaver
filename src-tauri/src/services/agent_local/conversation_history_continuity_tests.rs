@@ -35,16 +35,15 @@ async fn delivered_subagent_report_reloads_as_user_context() {
         .expect("reload delivered report");
     let target = ContinuationTarget::Replay(target("model-a"));
 
-    let history =
-        super::super::conversation_history_build::from_continuation(&reloaded, &target)
-            .expect("delivered report history");
+    let history = super::super::conversation_history_build::from_continuation(&reloaded, &target)
+        .expect("delivered report history");
     let context = history
         .messages
         .iter()
         .find(|message| {
-            message.content.starts_with(
-                super::super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX,
-            )
+            message
+                .content
+                .starts_with(super::super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX)
         })
         .expect("durable subagent report context");
 
