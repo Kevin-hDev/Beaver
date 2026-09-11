@@ -1,0 +1,1 @@
+Cause: circuit-breaker producers stored a localized sentence and legacy unknown diagnostics were never normalized on session read. Validation: Rust filters circuit_breaker (6 tests), stream_diagnostics_failure (9 tests), and historical_circuit_breaker_diagnostic_survives_reload (1 test).
