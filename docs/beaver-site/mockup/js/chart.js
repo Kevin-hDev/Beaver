@@ -10,9 +10,20 @@
   var HIST = 40;
   var PRED = 12;
   var W = 1000;
+  var VB_H = 380;
   var TOP = 18;
   var BOT = 352;
   var RANGE = BOT - TOP;
+
+  // Graduations : les valeurs de l'axe vertical sont celles que `ys` place
+  // réellement, l'axe horizontal compte les pas à partir du dernier point
+  // observé (0 = la ligne de séparation).
+  var Y_TICKS = [100, 80, 60, 40, 20];
+  var X_TICKS = [-30, -20, -10, 0, 6, 12];
+  // Sous 900px, « maintenant » touche le pas +6 : les graduations hors de ce
+  // socle sont masquées par forecast.css plutôt que tassées.
+  var X_CORE = [-30, -20, -10, 0, 12];
+  var NOW_LABEL = document.documentElement.lang === 'en' ? 'now' : 'maintenant';
 
   // Série déterministe : le graphe est identique à chaque chargement, donc
   // comparable d'une capture à l'autre.
@@ -47,10 +58,31 @@
   }
 
   var grid = document.getElementById('grid');
-  for (var g = 0; g <= 4; g++) {
-    var y = TOP + (RANGE / 4) * g;
-    grid.innerHTML += '<line x1="0" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke-width="1"/>';
-  }
+  var yAxis = document.getElementById('fc-yaxis');
+  var gridMarkup = '';
+  var yMarkup = '';
+  Y_TICKS.forEach(function (v) {
+    var y = ys(v);
+    gridMarkup += '<line x1="0" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke-width="1"/>';
+    yMarkup += '<span style="top:' + (y / VB_H * 100).toFixed(3) + '%">' + v + '</span>';
+  });
+  grid.innerHTML = gridMarkup;
+  if (yAxis) yAxis.innerHTML = yMarkup;
+
+  var xAxis = document.getElementById('fc-xaxis');
+  var ticksEl = document.getElementById('fc-ticks');
+  var xMarkup = '';
+  var tickMarkup = '';
+  X_TICKS.forEach(function (k) {
+    var x = xs(HIST - 1 + k);
+    var label = k === 0 ? NOW_LABEL : (k > 0 ? '+' + k : '−' + (-k));
+    var cls = (k === 0 ? 'fc-now ' : '') + (X_CORE.indexOf(k) === -1 ? 'fc-opt' : '');
+    xMarkup += '<span class="' + cls.trim() + '" style="left:' + (x / W * 100).toFixed(3) + '%">' + label + '</span>';
+    tickMarkup += '<line class="' + (X_CORE.indexOf(k) === -1 ? 'fc-opt' : '') + '" x1="' + x.toFixed(1) +
+      '" y1="' + BOT + '" x2="' + x.toFixed(1) + '" y2="' + (BOT + 7) + '" stroke-width="1"/>';
+  });
+  if (xAxis) xAxis.innerHTML = xMarkup;
+  if (ticksEl) ticksEl.innerHTML = tickMarkup;
 
   var histEl = document.getElementById('hist');
   var predEl = document.getElementById('pred');

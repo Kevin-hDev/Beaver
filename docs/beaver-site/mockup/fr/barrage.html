@@ -28,6 +28,8 @@
     <a href="index.html">← Le harnais</a>
     <a href="#forecast">Forecast</a>
     <a href="docs.html">Docs</a>
+    <a href="https://github.com/Kevin-hDev/Beaver">GitHub</a>
+    <a href="#install">Télécharger</a>
     <span class="lang" role="group" aria-label="Langue">
       <a class="lang-opt" href="barrage.html" hreflang="fr" aria-current="true">FR</a>
       <a class="lang-opt" href="../barrage.html" hreflang="en">EN</a>
@@ -124,27 +126,34 @@
   <div class="chart-card">
     <div class="chart-meta">
       <span>chronos-bolt · horizon 12 · confiance 90%</span>
+      <span class="fc-demo">série de démonstration</span>
       <span class="live">● run #047</span>
     </div>
-    <svg class="chart" id="chart" viewBox="0 0 1000 380" preserveAspectRatio="none" role="img" aria-label="Courbe historique prolongée par une prévision et son intervalle de confiance">
-      <defs>
-        <linearGradient id="hgrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" class="gs-from"></stop>
-          <stop offset="1" class="gs-to"></stop>
-        </linearGradient>
-      </defs>
-      <g id="grid"></g>
-      <rect id="fzone" y="18" height="334" opacity="0"></rect>
-      <path id="harea" fill="url(#hgrad)" opacity="0" stroke="none"></path>
-      <polygon id="band" opacity="0"></polygon>
-      <path id="hist" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
-      <path id="pred" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
-      <line id="split" x1="0" y1="18" x2="0" y2="352" stroke-dasharray="3 6" opacity="0"></line>
-    </svg>
+    <div class="fc-plot">
+      <div class="fc-yaxis" id="fc-yaxis" aria-hidden="true"></div>
+      <svg class="chart" id="chart" viewBox="0 0 1000 380" preserveAspectRatio="none" role="img" aria-label="Série de démonstration, sans unité : quarante pas observés prolongés par une prévision sur douze pas et son intervalle 90%. Axe vertical gradué de 20 à 100.">
+        <defs>
+          <linearGradient id="hgrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="gs-from"></stop>
+            <stop offset="1" class="gs-to"></stop>
+          </linearGradient>
+        </defs>
+        <g id="grid"></g>
+        <rect id="fzone" y="18" height="334" opacity="0"></rect>
+        <path id="harea" fill="url(#hgrad)" opacity="0" stroke="none"></path>
+        <polygon id="band" opacity="0"></polygon>
+        <path id="hist" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+        <path id="pred" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+        <line id="split" x1="0" y1="18" x2="0" y2="352" stroke-dasharray="3 6" opacity="0"></line>
+        <g id="fc-ticks"></g>
+      </svg>
+    </div>
+    <div class="fc-xaxis" id="fc-xaxis" aria-hidden="true"></div>
     <div class="legend">
       <span class="l-hist"><i></i>Historique</span>
       <span class="l-pred"><i></i>Prédiction</span>
       <span class="l-band"><i></i>Intervalle 90%</span>
+      <span class="fc-note">valeur sans unité · pas relatifs à maintenant</span>
     </div>
   </div>
 

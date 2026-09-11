@@ -21,6 +21,45 @@
   margin-bottom: 16px;
 }
 .chart-meta .live { color: var(--accent); }
+.chart-meta .fc-demo {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 11px;
+  margin: -3px 0;
+}
+
+/* Axes : les libellés restent en HTML pour garder une taille lisible quelle
+   que soit la largeur à laquelle le SVG est mis à l'échelle. */
+.fc-plot { position: relative; padding-left: 40px; }
+
+.fc-yaxis, .fc-xaxis {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--ink-dim);
+}
+
+.fc-yaxis { position: absolute; left: 0; top: 0; width: 32px; height: 100%; }
+.fc-yaxis span { position: absolute; right: 0; transform: translateY(-50%); }
+
+.fc-xaxis { position: relative; height: 14px; margin: 7px 0 0 40px; }
+.fc-xaxis span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.fc-xaxis .fc-now { color: var(--ink); }
+
+#fc-ticks line { stroke: var(--ink-dim); }
+
+.fc-note { margin-left: auto; }
+
+@media (max-width: 900px) {
+  .fc-xaxis .fc-opt, #fc-ticks .fc-opt { display: none; }
+}
+
+@media (max-width: 620px) {
+  .fc-plot { padding-left: 30px; }
+  .fc-yaxis { width: 24px; }
+  .fc-xaxis { margin-left: 30px; }
+  .fc-yaxis, .fc-xaxis { font-size: 8.5px; letter-spacing: 0; }
+}
 
 /* Le SVG est piloté par les tokens de thème : une seule couche de variables. */
 #grid line { stroke: var(--line); }
