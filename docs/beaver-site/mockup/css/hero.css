@@ -1,12 +1,17 @@
 /* Beaver — hero et démonstration « l'app se remodule »
    La thèse du site est montrée ici avant d'être écrite ailleurs. */
 
+/* `start` et non `center` : la colonne de gauche est ~280px plus haute que la
+   maquette, et centrer répartissait la moitié de cet écart en vide au-dessus
+   d'elle. Alignées en haut, les deux colonnes partent du même trait, et le
+   barrage se forme dans le vide laissé sous la maquette au lieu d'être masqué
+   par elle au début du défilement. */
 .hero {
   min-height: 100svh;
   display: grid;
   grid-template-columns: 1.05fr 1fr;
   gap: 5vw;
-  align-items: center;
+  align-items: start;
   padding: 132px var(--pad-x) 64px;
 }
 
