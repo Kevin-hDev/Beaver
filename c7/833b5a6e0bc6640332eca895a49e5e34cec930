@@ -1,0 +1,3 @@
+Review corrections A-m1..A-m4 — bounded results and interrupted turns
+
+Decision: a reread of Beaver's retained tool output reuses its verified source file instead of writing another full copy. Empty terminal repair markers remain durable protocol records but are not rendered. Capacity is checked before repair so a full session always reports session_capacity_reached. UTF-8 regressions now assert the exact preview and retained content.
