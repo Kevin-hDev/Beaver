@@ -36,14 +36,16 @@ async fn large_errors_are_bounded_and_the_full_result_is_retained() {
 async fn truncation_is_utf8_safe() {
     let session_id = uuid::Uuid::new_v4().to_string();
     let result = truncate_result(
-        ToolResult::ok("🎉".repeat(MAX_CHARS_GLOB + 1)),
+        ToolResult::ok(format!("{}🎉{}", "a".repeat(PREVIEW_SIZE - 1), "b".repeat(MAX_CHARS_GLOB))),
         "glob",
         &session_id,
     )
     .await;
 
     assert!(result.truncated);
-    assert!(result.content.is_char_boundary(result.content.len()));
+    assert!(result
+        .content
+        .contains(&format!("{}🎉\n", "a".repeat(PREVIEW_SIZE - 1))));
     let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
 }
 
@@ -88,16 +90,24 @@ async fn oversized_log_read_is_bounded_and_retained_outside_the_context() {
 #[tokio::test]
 async fn read_file_over_the_limit_is_truncated_without_splitting_utf8() {
     let session_id = uuid::Uuid::new_v4().to_string();
+    let full = format!("{}🎉", "r".repeat(200_000));
     let result = truncate_result(
-        ToolResult::ok(format!("{}🎉", "r".repeat(200_000))),
+        ToolResult::ok(full.clone()),
         "read_file",
         &session_id,
     )
     .await;
 
     assert!(result.truncated);
-    assert!(result.content.is_char_boundary(result.content.len()));
-    let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
+    let directory = data_dir().join("tool-results").join(&session_id);
+    let stored = std::fs::read_dir(&directory)
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    assert_eq!(std::fs::read_to_string(stored).unwrap(), full);
+    let _ = std::fs::remove_dir_all(directory);
 }
 
 #[test]
@@ -139,6 +149,12 @@ async fn persisted_result_path_is_directly_readable_by_the_file_tool() {
     let bounded = truncate_result(read_result, "read_file", &session_id).await;
     assert!(bounded.truncated);
     assert!(bounded.content.chars().count() < 3_000);
+    assert_eq!(
+        std::fs::read_dir(data_dir().join("tool-results").join(&session_id))
+            .unwrap()
+            .count(),
+        1
+    );
 
     let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
 }

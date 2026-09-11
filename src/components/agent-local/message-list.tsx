@@ -105,6 +105,9 @@ export function MessageList({
           );
         }
         if (msg.role === "assistant") {
+          if (!msg.content && !msg.thinking && !msg.tool_activities?.length && !msg.segments?.length) {
+            return null;
+          }
           const isLast = idx === lastAssistantIdx && !isStreaming;
           return (
             <div

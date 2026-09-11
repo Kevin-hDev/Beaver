@@ -11,6 +11,7 @@ pub(super) struct ToolResultArtifacts {
     pub(super) ephemeral: Vec<super::tool_artifact::EphemeralArtifact>,
     pub(super) pending: Vec<super::tool_artifact::PendingArtifact>,
     pub(super) pending_resource: Option<super::tool_artifact::PendingExtensionResource>,
+    pub(super) source_path: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

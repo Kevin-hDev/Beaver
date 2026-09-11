@@ -42,6 +42,7 @@ vi.mock("../subagent-bubble", () => ({ SubagentBubble: () => null }));
 vi.mock("../plan-preview-bubble", () => ({ PlanPreviewBubble: () => null }));
 vi.mock("../file-change-bubble", () => ({ FileChangeBubble: () => null }));
 vi.mock("@/lib/file-preview-utils", () => ({
+  collectFileOperations: () => [],
   collectMessageFileOperations: () => [],
 }));
 vi.mock("../chat.css", () => ({}));
@@ -78,6 +79,31 @@ function renderStreaming(overrides: {
 }
 
 describe("MessageList loading indicator", () => {
+  it("ne rend pas le marqueur assistant vide d'un tour interrompu", () => {
+    const view = renderStreaming();
+    view.rerender(
+      <MessageList
+        messages={[{
+          id: "interrupted-marker", role: "assistant", content: "", files: [],
+          timestamp: "2026-09-12T10:00:00Z",
+        }]}
+        completedSegments={[]}
+        currentContent=""
+        currentThinking=""
+        currentTools={[]}
+        isStreaming={false}
+        isWorking={false}
+        isCompressing={false}
+        tps={0}
+        totalElapsedMs={0}
+        segmentStartedAt={null}
+        liveTokenCount={0}
+      />,
+    );
+
+    expect(view.container.querySelector('[data-message-id="interrupted-marker"]')).toBeNull();
+  });
+
   it("reste visible pendant le texte live", () => {
     const view = renderStreaming({ currentContent: "texte live" });
 

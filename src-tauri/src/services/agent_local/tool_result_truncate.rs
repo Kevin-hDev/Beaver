@@ -52,9 +52,22 @@ pub(crate) async fn truncate_result(
     }
 
     let preview = result.content.chars().take(PREVIEW_SIZE).collect();
+    let existing_path = retained_source_path(&result, tool_name, session_id);
     let full_content = std::mem::take(&mut result.content);
-    let persist_path = persist_result(full_content, session_id).await;
+    let persist_path = match existing_path {
+        Some(path) => Some(path),
+        None => persist_result(full_content, session_id).await,
+    };
     apply_truncation(result, preview, persist_path, total)
+}
+
+fn retained_source_path(result: &ToolResult, tool_name: &str, session_id: &str) -> Option<String> {
+    if tool_name != "read_file" || super::session_store::validate_session_id(session_id).is_err() {
+        return None;
+    }
+    let path = result.artifacts.source_path.as_ref()?;
+    let directory = data_dir().join("tool-results").join(session_id);
+    (path.parent() == Some(directory.as_path())).then(|| path.to_string_lossy().into_owned())
 }
 
 fn apply_truncation(

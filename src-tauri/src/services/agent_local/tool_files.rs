@@ -78,6 +78,7 @@ pub async fn read_file(path: &str, working_dir: &Path, offset: usize, limit: usi
         ));
     }
     let mut result = ToolResult::ok(output);
+    result.artifacts.source_path = Some(resolved);
     result.mark_truncated(remaining > 0);
     result
 }

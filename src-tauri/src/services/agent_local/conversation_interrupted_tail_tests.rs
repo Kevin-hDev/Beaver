@@ -135,6 +135,35 @@ async fn conversation_admission_closes_the_real_interrupted_shape_atomically() {
 }
 
 #[tokio::test]
+async fn full_recoverable_session_reports_capacity() {
+    let mut session = recoverable_tail().await;
+    let tail = std::mem::take(&mut session.messages);
+    session.messages = (0..998)
+        .flat_map(|index| complete_turn(&format!("full-{index}"), "answer", None))
+        .collect();
+    session
+        .messages
+        .push(message("full-user", "full-user-turn", "user", "done"));
+    session.messages.extend(tail);
+    assert_eq!(
+        session.messages.len(),
+        super::session_limits::MAX_MESSAGES_PER_SESSION
+    );
+    super::session_store::save(&session).await.unwrap();
+
+    let error = super::conversation_admission::new_turn_for_continuation(
+        &session.id,
+        resolved("overflow"),
+        forbidden(RouteId::Ollama),
+    )
+    .await
+    .expect_err("full session must be rejected as capacity");
+
+    assert_eq!(error.to_string(), "session_capacity_reached");
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn conversation_admission_failure_does_not_persist_the_repair() {
     let session = recoverable_tail().await;
     super::session_store::save(&session).await.unwrap();
