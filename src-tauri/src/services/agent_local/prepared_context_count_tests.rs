@@ -83,8 +83,9 @@ fn bounded_media_has_capacity_but_remote_and_opaque_blocks_do_not() {
     assert_eq!(anthropic(&anthropic_image).coverage, ContextCountCoverage::Partial);
 
     for count in [chat_completions(&remote), responses(&opaque)] {
-        assert_eq!(count.coverage, ContextCountCoverage::Partial);
-        assert!(count.tokens.is_some());
+        assert_eq!(count.coverage, ContextCountCoverage::Unknown);
+        assert_eq!(count.tokens, None);
         assert_eq!(count.capacity_tokens, None);
+        assert_eq!(count.source, None);
     }
 }

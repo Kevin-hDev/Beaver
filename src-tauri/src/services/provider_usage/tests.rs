@@ -87,15 +87,25 @@ fn gemini_explicit_cache_can_write_and_read_the_same_prefix() {
 fn openai_reasoning_is_not_added_twice() {
     let usage = RequestUsage::from_json(&json!({
         "prompt_tokens": 20,
-        "completion_tokens": 12,
-        "completion_tokens_details": { "reasoning_tokens": 8 },
-        "total_tokens": 32
+        "completion_tokens": 50,
+        "completion_tokens_details": { "reasoning_tokens": 30 },
+        "total_tokens": 70
     }))
     .unwrap();
 
-    assert_eq!(usage.output_tokens, Some(12));
-    assert_eq!(usage.reasoning_output_tokens, Some(8));
-    assert_eq!(usage.total_tokens, Some(32));
+    assert_eq!(usage.output_tokens, Some(50));
+    assert_eq!(usage.reasoning_output_tokens, Some(30));
+    assert_eq!(usage.total_tokens, Some(70));
+}
+
+#[test]
+fn total_only_usage_stays_diagnostic_without_inventing_input_or_output() {
+    let usage = RequestUsage::from_json(&json!({ "total_tokens": 70 })).unwrap();
+
+    assert_eq!(usage.total_tokens, Some(70));
+    assert_eq!(usage.input_tokens, None);
+    assert_eq!(usage.output_tokens, None);
+    assert_eq!(usage.reasoning_output_tokens, None);
 }
 
 #[test]

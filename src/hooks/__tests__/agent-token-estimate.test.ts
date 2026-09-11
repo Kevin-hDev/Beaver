@@ -114,6 +114,27 @@ describe("agent-token-estimate", () => {
     });
   });
 
+  it("ignore un ancien historique de 900K quand la dernière requête mesurée vaut 31K", () => {
+    const identity = {
+      requestId: "A", turnId: "turn-A", turn: 0, attempt: 1,
+      providerId: "codex-oauth", model: "gpt-5",
+    };
+    const resolved = resolveContextUsage({
+      activeRequestId: null,
+      currentPreparation: null,
+      lastMeasurement: {
+        identity, contextLimit: 258_400,
+        input: { tokens: 31_000, capacityTokens: 31_000, source: "provider", coverage: "complete" },
+        updatedAt: "2026-09-11T00:00:00Z",
+      },
+      lastOutput: null,
+    }, 900_000, 258_400);
+
+    expect(resolved).toMatchObject({
+      used: 31_000, max: 258_400, status: "measured", source: "provider",
+    });
+  });
+
   it("reconstruit seulement un record vide et ne fabrique aucune limite historique", () => {
     const empty = { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null };
     expect(resolveContextUsage(empty, 45_000, 200_000)).toMatchObject({

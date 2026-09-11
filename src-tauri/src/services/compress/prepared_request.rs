@@ -8,6 +8,9 @@ pub(crate) fn count(
     messages: &[ChatMessage],
     tools: &[Value],
 ) -> ContextTokenCount {
+    if crate::services::llm::route_profile::is_local(provider_id) {
+        return ollama(model, messages, tools);
+    }
     match crate::services::llm::route_profile::diagnostic_payload_kind(provider_id) {
         Some("responses") => responses(provider_id, model, messages, tools),
         Some("anthropic_messages") => {
@@ -15,6 +18,20 @@ pub(crate) fn count(
         }
         _ => chat(provider_id, model, messages, tools),
     }
+}
+
+fn ollama(model: &str, messages: &[ChatMessage], tools: &[Value]) -> ContextTokenCount {
+    let Some(policy) = crate::services::llm::route_profile::payload_policy("ollama", model) else {
+        return unknown();
+    };
+    let messages = crate::services::agent_local::ollama_tool_role::wrap_tool_results(
+        messages,
+        policy.message.tool_results,
+    );
+    crate::services::agent_local::prepared_context_count::ollama(&json!({
+        "messages": crate::services::agent_local::ollama_wire::messages_value(&messages),
+        "tools": tools,
+    }))
 }
 
 pub(crate) fn system_head(
@@ -115,5 +132,18 @@ mod tests {
             .unwrap();
 
         assert!(after > before);
+    }
+
+    #[test]
+    fn ollama_tool_results_use_the_native_wire_shape() {
+        let messages = [ChatMessage::tool(
+            "result".into(),
+            Some("call-1".into()),
+            Some("read_file".into()),
+        )];
+
+        let count = count("ollama", "fixture", &messages, &[]);
+
+        assert!(count.capacity_tokens.is_some());
     }
 }

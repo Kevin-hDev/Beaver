@@ -122,12 +122,20 @@ impl SemanticCount {
     }
 
     fn finish(self) -> ContextTokenCount {
+        if self.unbounded {
+            return ContextTokenCount {
+                tokens: None,
+                capacity_tokens: None,
+                source: None,
+                coverage: ContextCountCoverage::Unknown,
+            };
+        }
         let tokens = bounded(token_counting::token_count_from_units(self.units));
         ContextTokenCount {
             tokens: Some(tokens),
-            capacity_tokens: (!self.unbounded).then(|| {
-                bounded(token_counting::token_count_from_units(self.capacity_units).max(tokens as usize))
-            }),
+            capacity_tokens: Some(bounded(
+                token_counting::token_count_from_units(self.capacity_units).max(tokens as usize),
+            )),
             source: Some(ContextCountSource::Heuristic),
             coverage: if self.partial {
                 ContextCountCoverage::Partial
