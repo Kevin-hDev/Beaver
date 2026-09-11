@@ -1,3 +1,5 @@
 Decision: Agent work has no global limit by turns, elapsed time, provider tokens, cost, or heartbeat status. Heartbeats follow the same runtime policy as interactive sessions because useful autonomous work may legitimately run for hours. Safety relies on explicit cancellation, natural model completion, bounded resources, and targeted failure detection. The 2,000-message storage boundary remains a data-integrity limit: Beaver now reports it explicitly instead of presenting a generic failure. Every Ollama loop error aborts eager tool work and requests GPU unload. Historical max_turns diagnostics remain read-only compatibility for persisted sessions.
 
 Validation: cargo check; cargo clippy --all-targets -- -D warnings; cargo test (5,463 passed, 21 ignored); npx tsc --noEmit; npm run lint; npm test (607 Vitest files, 3,336 tests, plus build, CI, filesystem, CEF, E2E runner, extension host, reasoning fixture, and contract suites); targeted cloud and Ollama loops both crossed 200 turns.
+
+Remote CI: run 34603652820 completed successfully. All required jobs passed; the Windows diagnostic-only job was skipped by the target=all workflow contract.
