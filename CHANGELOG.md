@@ -14,6 +14,10 @@
 
 - **Terminal commands** — the new `beaver` command provides `--version`, `paths`, `status`, `doctor`, `logs`, `cleanup`, and `update` for inspecting and maintaining Beaver from a terminal.
 
+### Automation
+
+- **Agent-managed wakeups** — the Agent can now create, inspect, update, enable, disable, and delete scheduled wakeups, review their execution history and errors, and schedule work either in the current conversation or in a separate session.
+
 ### Documentation
 
 - **Official documentation site** — the full Beaver documentation is now online at [kevin-hdev.github.io/Beaver](https://kevin-hdev.github.io/Beaver/): 95 pages covering getting started, the interface, the agent and its tools, models, integrations, automation, Forecast, settings, troubleshooting, and reference — in English and French, with automatic language detection.
