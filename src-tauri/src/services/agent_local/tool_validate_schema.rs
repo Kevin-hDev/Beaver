@@ -57,15 +57,17 @@ static LOAD_SKILL: Schema = &[("skill_id", Ty::Str, true)];
 static LOAD_EXTENSION_RESOURCE: Schema = &[("resource_id", Ty::Str, true)];
 static MANAGE_AUTOMATION: Schema = &[
     ("action", Ty::Str, true),
-    ("id", Ty::Str, false),
+    ("automation_id", Ty::Str, false),
     ("name", Ty::Str, false),
     ("description", Ty::Str, false),
     ("prompt", Ty::Str, false),
+    ("target_mode", Ty::Str, false),
+    ("model", Ty::Str, false),
     ("schedule", Ty::Obj, false),
-    ("skill_ids", Ty::Arr, false),
-    ("tool_names", Ty::Arr, false),
-    ("active", Ty::Bool, false),
-    ("confirm", Ty::Bool, false),
+    ("status", Ty::Str, false),
+    ("patch", Ty::Obj, false),
+    ("limit", Ty::Int, false),
+    ("cursor", Ty::Str, false),
 ];
 static CREATE_BRANCH: Schema = &[("branch_name", Ty::Str, true)];
 static CHECKOUT_BRANCH: Schema = &[("branch_name", Ty::Str, true)];

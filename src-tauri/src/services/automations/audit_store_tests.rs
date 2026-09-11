@@ -42,7 +42,7 @@ async fn management_actions_are_audited_without_prompts_or_results() {
         &actor(),
         id,
         UpdateAutomation {
-            name: Some("CI bis".into()),
+            prompt: Some("UPDATED_PROMPT_SECRET".into()),
             ..Default::default()
         },
         now,
@@ -100,7 +100,8 @@ async fn management_actions_are_audited_without_prompts_or_results() {
         .iter()
         .find(|entry| entry["action"] == "update" && entry["result"] == "intent")
         .unwrap();
-    assert_eq!(update["fields"], serde_json::json!(["name"]));
+    assert_eq!(update["fields"], serde_json::json!(["prompt"]));
+    assert!(!raw.contains("UPDATED_PROMPT_SECRET"));
     assert!(entries
         .iter()
         .any(|entry| entry["action"] == "get" && entry["result"] == "not_found"));

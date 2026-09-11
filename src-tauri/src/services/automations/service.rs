@@ -99,6 +99,11 @@ async fn list_with_pause_at(
         let runs = super::history_store::all_at(&root.join("logs/wakeups.jsonl"), None)
             .await
             .map_err(|_| AutomationError::StoreUnavailable)?;
+        let runtime = match super::runtime_lifecycle::runtime_at(root).await {
+            Ok(runtime) => Some(runtime),
+            Err(AutomationError::NotFound) => None,
+            Err(_) => return Err(AutomationError::StoreUnavailable),
+        };
         Ok(definitions
             .into_iter()
             .map(|definition| {
@@ -111,7 +116,15 @@ async fn list_with_pause_at(
                     });
                 let paused =
                     globally_paused && definition.status == crate::models::AutomationStatus::Active;
-                super::service_helpers::summary_with_state(definition, now, paused, last_run)
+                let running = runtime.as_ref().is_some_and(|runtime| {
+                    runtime.occurrences.iter().any(|occurrence| {
+                        occurrence.automation_id == definition.id
+                            && occurrence.state == super::OccurrenceState::Running
+                    })
+                });
+                super::service_helpers::summary_with_state(
+                    definition, now, paused, running, last_run,
+                )
             })
             .collect::<Vec<_>>())
     }

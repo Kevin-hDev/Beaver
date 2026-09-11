@@ -42,6 +42,16 @@ pub async fn mark_allowed(session_id: &str, tool_name: &str) {
     }
 }
 
+pub fn automation_permission_key(tool_name: &str, args: &Value) -> Option<&'static str> {
+    if tool_name != "manage_automation" {
+        return None;
+    }
+    match args["action"].as_str() {
+        Some("list" | "get" | "history") => Some("manage_automation:read"),
+        _ => Some("manage_automation:mutate"),
+    }
+}
+
 pub(crate) async fn clear_extension(extension_id: &str) {
     super::permission_allow_cache::clear_extension(extension_id).await;
 }

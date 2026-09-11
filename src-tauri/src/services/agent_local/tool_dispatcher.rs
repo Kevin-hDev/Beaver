@@ -144,7 +144,9 @@ pub(super) async fn dispatch_inner(
         name if name == super::tool_extension_resource::NAME => {
             super::tool_extension_resource::execute(args, session_id).await
         }
-        "manage_automation" => super::tool_automation::execute(args, working_dir, session_id).await,
+        "manage_automation" => {
+            super::tool_automation::execute(args, working_dir, session_id, trace.request_id).await
+        }
         "create_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {

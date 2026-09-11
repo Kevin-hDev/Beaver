@@ -106,13 +106,14 @@ pub(super) async fn check_allowed(
     if !permission_gate::requires_permission(name, args) {
         return true;
     }
-    if permission_gate::is_allowed(session_id, name).await {
+    let permission_key = permission_gate::automation_permission_key(name, args).unwrap_or(name);
+    if permission_gate::is_allowed(session_id, permission_key).await {
         return true;
     }
     match permission_gate::request(on_event, name, args, cancel).await {
         PermissionDecision::Allow => true,
         PermissionDecision::AllowSession => {
-            permission_gate::mark_allowed(session_id, name).await;
+            permission_gate::mark_allowed(session_id, permission_key).await;
             true
         }
         PermissionDecision::Deny => false,

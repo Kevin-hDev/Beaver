@@ -53,6 +53,7 @@ pub struct AutomationSummary {
     pub target: AutomationTarget,
     pub schedule: AutomationSchedule,
     pub status: AutomationStatus,
+    pub running: bool,
     pub paused_by_global: bool,
     pub next_fire_at: Option<DateTime<Utc>>,
     pub last_run: Option<AutomationLastRun>,

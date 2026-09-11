@@ -5,6 +5,26 @@ use super::{
 use std::collections::HashMap;
 use std::time::Instant;
 
+#[test]
+fn automation_reads_and_mutations_use_distinct_permission_keys() {
+    use crate::services::agent_local::permission_gate::automation_permission_key;
+    use serde_json::json;
+
+    for action in ["list", "get", "history"] {
+        assert_eq!(
+            automation_permission_key("manage_automation", &json!({"action": action})),
+            Some("manage_automation:read")
+        );
+    }
+    for action in ["create", "update", "delete"] {
+        assert_eq!(
+            automation_permission_key("manage_automation", &json!({"action": action})),
+            Some("manage_automation:mutate")
+        );
+    }
+    assert_eq!(automation_permission_key("read_file", &json!({})), None);
+}
+
 #[tokio::test]
 async fn bounds_tools_remembered_for_one_session() {
     let session_id = uuid::Uuid::new_v4().to_string();

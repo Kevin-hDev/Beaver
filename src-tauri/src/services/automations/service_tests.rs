@@ -92,6 +92,32 @@ async fn create_list_get_update_delete_advances_revisions() {
 }
 
 #[tokio::test]
+async fn list_reports_a_persisted_running_occurrence() {
+    let root = tempfile::tempdir().unwrap();
+    let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
+    let created = create_at(
+        root.path(),
+        &actor(),
+        input(AutomationSchedule::AfterCompletion { delay_minutes: 10 }),
+        now,
+    )
+    .await
+    .unwrap();
+    let admission = super::runtime_lifecycle::admit_at(root.path(), &created.definition, now, now)
+        .await
+        .unwrap();
+    let super::runtime_lifecycle::RuntimeAdmission::Ready { occurrence_id } = admission else {
+        panic!("occurrence should be ready");
+    };
+    super::runtime_lifecycle::mark_running_at(root.path(), occurrence_id, now)
+        .await
+        .unwrap();
+
+    let items = list_at(root.path(), &actor(), now).await.unwrap();
+    assert!(items[0].running);
+}
+
+#[tokio::test]
 async fn immutable_fields_and_cross_provider_models_are_rejected() {
     let root = tempfile::tempdir().unwrap();
     let now = Utc::now();

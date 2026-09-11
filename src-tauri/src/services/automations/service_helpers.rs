@@ -27,13 +27,14 @@ pub(super) fn detail(
 }
 
 pub(super) fn summary(definition: AutomationDefinition, now: DateTime<Utc>) -> AutomationSummary {
-    summary_with_state(definition, now, false, None)
+    summary_with_state(definition, now, false, false, None)
 }
 
 pub(super) fn summary_with_state(
     definition: AutomationDefinition,
     now: DateTime<Utc>,
     paused_by_global: bool,
+    running: bool,
     last_run: Option<AutomationLastRun>,
 ) -> AutomationSummary {
     let next_fire_at = crate::services::scheduler::next_fire::next_fire_at(&definition, now)
@@ -49,6 +50,7 @@ pub(super) fn summary_with_state(
         target: definition.target,
         schedule: definition.schedule,
         status: definition.status,
+        running,
         paused_by_global,
         next_fire_at,
         last_run,

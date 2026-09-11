@@ -1,167 +1,141 @@
-use super::tool_automation_validation as validation;
-use crate::models::{ScheduledWakeup, WakeupSchedule};
+#[path = "tool_automation_view.rs"]
+mod view;
+
+use super::tool_automation_validation::{self as validation, Action, TargetMode};
+use crate::models::AutomationTarget;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
+use crate::services::automations::{AutomationActor, AutomationError, CreateAutomation};
 use serde_json::{json, Value};
 use std::path::Path;
-use uuid::Uuid;
 
-pub async fn execute(args: &Value, _working_dir: &Path, session_id: &str) -> ToolResult {
-    match args["action"].as_str() {
-        Some("list") => list(),
-        Some("create") => create(args, session_id).await,
-        Some("update") => update(args).await,
-        Some("delete") => delete(args),
-        _ => ToolResult::validation("automation_action_invalid", "Action d'automatisation invalide."),
-    }
-}
-
-fn list() -> ToolResult {
-    match crate::services::config::read_config() {
-        Ok(config) => {
-            let entries = config
-                .scheduled_wakeups
-                .into_iter()
-                .map(|wakeup| public_value(&wakeup))
-                .collect::<Vec<_>>();
-            ToolResult::ok(serde_json::to_string_pretty(&entries).unwrap_or_else(|_| "[]".into()))
-        }
-        Err(_) => validation::internal_error(),
-    }
-}
-
-async fn create(args: &Value, session_id: &str) -> ToolResult {
+pub async fn execute(
+    args: &Value,
+    _working_dir: &Path,
+    session_id: &str,
+    request_id: Option<&str>,
+) -> ToolResult {
+    let action_name = action_name(args);
+    let request = match validation::parse(args) {
+        Ok(request) => request,
+        Err(code) => return failure(action_name, code, ToolErrorCategory::Validation),
+    };
     let session = match super::session_store::get(session_id).await {
         Ok(session) => session,
-        Err(_) => return validation::internal_error(),
+        Err(_) => return failure(action_name, "store_unavailable", ToolErrorCategory::Unavailable),
     };
-    let schedule = match validation::parse_schedule(args.get("schedule")) {
-        Ok(value) => value, Err(result) => return result,
+    let actor = match crate::services::automations::actor_context::actor_for(
+        &session.id,
+        session.is_gateway,
+        session.gateway_channel_key.as_deref(),
+        request_id,
+    ) {
+        Ok(actor) => actor,
+        Err(error) => return automation_failure(action_name, error),
     };
-    let wakeup = ScheduledWakeup {
-        id: Uuid::new_v4().to_string(),
-        name: validation::text(args, "name"),
-        model: session.model,
-        provider: session.provider,
-        prompt: validation::text(args, "prompt"),
-        schedule,
-        description: validation::text(args, "description"),
-        project_id: session.project_id,
-        active: args["active"].as_bool().unwrap_or(true),
-        paused_by_global: false,
-        created_at: chrono::Utc::now().to_rfc3339(),
-    };
-    if let Err(error) = crate::commands::heartbeat_validation::validate_wakeup(&wakeup) {
-        return ToolResult::validation("automation_invalid", error);
-    }
-    save_new(wakeup)
+    dispatch(request, session, actor).await
 }
 
-fn save_new(wakeup: ScheduledWakeup) -> ToolResult {
-    let saved = crate::services::config::update_config(|config| {
-        crate::commands::heartbeat_validation::validate_capacity(config.scheduled_wakeups.len())?;
-        let mut wakeup = wakeup;
-        if config.heartbeat.global_paused && wakeup.active {
-            wakeup.active = false;
-            wakeup.paused_by_global = true;
-        }
-        config.scheduled_wakeups.push(wakeup.clone());
-        Ok(wakeup)
-    });
-    match saved {
-        Ok(wakeup) => {
-            crate::services::scheduler::notify_config_changed();
-            ToolResult::ok(
-                json!({"status":"created", "automation": public_value(&wakeup)}).to_string(),
-            )
-        }
-        Err(error) => ToolResult::validation("automation_create_failed", error),
+fn action_name(args: &Value) -> &'static str {
+    match args["action"].as_str() {
+        Some("list") => "list",
+        Some("get") => "get",
+        Some("create") => "create",
+        Some("update") => "update",
+        Some("history") => "history",
+        Some("delete") => "delete",
+        _ => "unknown",
     }
 }
 
-async fn update(args: &Value) -> ToolResult {
-    let id = validation::text(args, "id");
-    let schedule = match optional_schedule(args) { Ok(value) => value, Err(result) => return result };
-    update_saved(args, &id, schedule)
-}
-
-fn optional_schedule(args: &Value) -> Result<Option<WakeupSchedule>, ToolResult> {
-    match args.get("schedule") {
-        Some(value) if !value.is_null() => validation::parse_schedule(Some(value)).map(Some),
-        _ => Ok(None),
-    }
-}
-
-fn update_saved(
-    args: &Value,
-    id: &str,
-    schedule: Option<WakeupSchedule>,
+async fn dispatch(
+    request: Action,
+    session: super::types_session::AgentSession,
+    actor: AutomationActor,
 ) -> ToolResult {
-    let result = crate::services::config::update_config(|config| {
-        let globally_paused = config.heartbeat.global_paused;
-        let wakeup = config.scheduled_wakeups.iter_mut()
-            .find(|wakeup| wakeup.id == id)
-            .ok_or_else(|| "Automatisation introuvable".to_string())?;
-        apply_optional(args, wakeup, schedule);
-        if globally_paused && wakeup.active {
-            wakeup.active = false;
-            wakeup.paused_by_global = true;
-        } else if !wakeup.active {
-            wakeup.paused_by_global = false;
+    match request {
+        Action::List => match crate::services::automations::list(&actor).await {
+            Ok(items) => success("list", view::summaries(items)),
+            Err(error) => automation_failure("list", error),
+        },
+        Action::Get(id) => match crate::services::automations::get(&actor, id).await {
+            Ok(item) => success("get", view::detail(item)),
+            Err(error) => automation_failure("get", error),
+        },
+        Action::Create(request) => {
+            let target = match request.target_mode {
+                TargetMode::NewSession => AutomationTarget::NewSession {
+                    project_id: session.project_id.clone(),
+                },
+                TargetMode::ResumeSession => AutomationTarget::ResumeSession {
+                    session_id: session.id.clone(),
+                },
+            };
+            let input = CreateAutomation {
+                name: request.name,
+                description: request.description,
+                prompt: request.prompt,
+                target,
+                provider: session.provider,
+                model: request.model.unwrap_or(session.model),
+                schedule: request.schedule,
+                status: request.status,
+            };
+            match crate::services::automations::create(&actor, input).await {
+                Ok(item) => {
+                    crate::services::scheduler::notify_config_changed();
+                    success("create", view::detail(item))
+                }
+                Err(error) => automation_failure("create", error),
+            }
         }
-        crate::commands::heartbeat_validation::validate_wakeup(wakeup)?;
-        Ok(wakeup.clone())
-    });
-    match result {
-        Ok(wakeup) => {
-            crate::services::scheduler::notify_config_changed();
-            ToolResult::ok(
-                json!({"status":"updated", "automation": public_value(&wakeup)}).to_string(),
-            )
+        Action::Update(id, patch) => {
+            match crate::services::automations::update(&actor, id, patch).await {
+                Ok(item) => {
+                    crate::services::scheduler::notify_config_changed();
+                    success("update", view::detail(item))
+                }
+                Err(error) => automation_failure("update", error),
+            }
         }
-        Err(error) => ToolResult::validation("automation_update_failed", error),
+        Action::History(query) => match crate::services::automations::history(&actor, query).await {
+            Ok(page) => success("history", view::history(page)),
+            Err(error) => automation_failure("history", error),
+        },
+        Action::Delete(id) => match crate::services::automations::delete(&actor, id).await {
+            Ok(()) => {
+                crate::services::scheduler::notify_config_changed();
+                success("delete", json!({"automation_id": id}))
+            }
+            Err(error) => automation_failure("delete", error),
+        },
     }
 }
 
-fn delete(args: &Value) -> ToolResult {
-    if args["confirm"].as_bool() != Some(true) {
-        return ToolResult::validation("automation_confirmation_required", "Confirmation requise.");
-    }
-    let id = validation::text(args, "id");
-    let result = crate::services::config::update_config(|config| {
-        let before = config.scheduled_wakeups.len();
-        config.scheduled_wakeups.retain(|wakeup| wakeup.id != id);
-        if config.scheduled_wakeups.len() == before { return Err("Automatisation introuvable".into()); }
-        Ok(())
-    });
-    match result {
-        Ok(()) => {
-            crate::services::scheduler::notify_config_changed();
-            ToolResult::ok(json!({"status":"deleted", "id": id}).to_string())
-        }
-        Err(error) => ToolResult::validation("automation_delete_failed", error),
-    }
+fn success(action: &str, data: Value) -> ToolResult {
+    ToolResult::ok(json!({"ok":true, "action":action, "data":data}).to_string())
 }
 
-fn apply_optional(
-    args: &Value,
-    wakeup: &mut ScheduledWakeup,
-    schedule: Option<WakeupSchedule>,
-) {
-    if let Some(value) = args["name"].as_str() { wakeup.name = value.to_string(); }
-    if let Some(value) = args["description"].as_str() { wakeup.description = value.to_string(); }
-    if let Some(value) = args["prompt"].as_str() { wakeup.prompt = value.to_string(); }
-    if let Some(value) = args["active"].as_bool() { wakeup.active = value; }
-    if let Some(value) = schedule { wakeup.schedule = value; }
+fn automation_failure(action: &str, error: AutomationError) -> ToolResult {
+    failure(action, error.code(), error_category(error))
 }
 
-pub(super) fn public_value(wakeup: &ScheduledWakeup) -> Value {
-    json!({
-        "id": wakeup.id,
-        "name": wakeup.name,
-        "description": wakeup.description,
-        "prompt": wakeup.prompt,
-        "schedule": wakeup.schedule,
-        "active": wakeup.active,
-        "project_id": wakeup.project_id,
-    })
+fn failure(action: &str, code: &'static str, category: ToolErrorCategory) -> ToolResult {
+    ToolResult::error(
+        json!({"ok":false, "action":action, "error_code":code}).to_string(),
+        code,
+        category,
+        false,
+    )
+}
+
+fn error_category(error: AutomationError) -> ToolErrorCategory {
+    match error {
+        AutomationError::NotFound => ToolErrorCategory::NotFound,
+        AutomationError::InvalidInput
+        | AutomationError::ImmutableField
+        | AutomationError::InvalidSchedule => ToolErrorCategory::Validation,
+        AutomationError::CapacityReached => ToolErrorCategory::Conflict,
+        _ => ToolErrorCategory::Unavailable,
+    }
 }
