@@ -52,6 +52,7 @@ pub(super) async fn run(mut context: ToolTurnContext<'_>) -> Result<ToolTurnOutp
         &context.result.tool_calls,
         context.turn,
         context.model,
+        context.session_id,
         context.breaker,
     )
     .await?;

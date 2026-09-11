@@ -13,8 +13,20 @@ impl CircuitBreaker {
         }
     }
 
-    pub fn check(&mut self, tool_calls: &[(String, serde_json::Value)]) -> Result<(), String> {
-        let sig = compute_signature(tool_calls);
+    pub fn check(
+        &mut self,
+        tool_calls: &[(String, serde_json::Value)],
+        owner_session_id: &str,
+    ) -> Result<(), String> {
+        let active_calls = tool_calls
+            .iter()
+            .filter(|(name, args)| !is_passive_bash_control(name, args, owner_session_id))
+            .cloned()
+            .collect::<Vec<_>>();
+        if active_calls.is_empty() {
+            return Ok(());
+        }
+        let sig = compute_signature(&active_calls);
         let is_repeat = self.last_signature.as_ref() == Some(&sig);
         if is_repeat {
             self.consecutive_count += 1;
@@ -27,6 +39,47 @@ impl CircuitBreaker {
         }
         Ok(())
     }
+}
+
+fn is_passive_bash_control(
+    name: &str,
+    args: &serde_json::Value,
+    owner_session_id: &str,
+) -> bool {
+    const ALLOWED_FIELDS: [&str; 6] = [
+        "session_id",
+        "chars",
+        "eof",
+        "stop",
+        "yield_time_ms",
+        "yield-time-ms",
+    ];
+
+    if name != "bash_control" {
+        return false;
+    }
+    let Some(args) = args.as_object() else {
+        return false;
+    };
+    if args.keys().any(|key| !ALLOWED_FIELDS.contains(&key.as_str())) {
+        return false;
+    }
+    let Some(process_id) = args.get("session_id").and_then(serde_json::Value::as_str) else {
+        return false;
+    };
+    if args.get("chars").is_some_and(|value| value.as_str() != Some(""))
+        || args.get("eof").is_some_and(|value| value.as_bool() != Some(false))
+        || args.get("stop").is_some_and(|value| value.as_bool() != Some(false))
+        || args
+            .get("yield_time_ms")
+            .is_some_and(|value| value.as_u64().is_none())
+        || args
+            .get("yield-time-ms")
+            .is_some_and(|value| value.as_u64().is_none())
+    {
+        return false;
+    }
+    super::tool_bash_registry::contains_owned(process_id, owner_session_id)
 }
 
 fn normalize_json(value: &serde_json::Value) -> String {

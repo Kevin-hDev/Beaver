@@ -57,6 +57,15 @@ pub fn get(
     Ok((session, command))
 }
 
+pub fn contains_owned(process_id: &str, owner_session_id: &str) -> bool {
+    let Ok(process_id) = uuid::Uuid::parse_str(process_id).map(|id| id.to_string()) else {
+        return false;
+    };
+    lock_sessions().iter().any(|entry| {
+        entry.session.id() == process_id && entry.session.owner_session_id() == owner_session_id
+    })
+}
+
 pub fn remove(process_id: &str) {
     let mut sessions = lock_sessions();
     sessions.retain(|entry| entry.session.id() != process_id);

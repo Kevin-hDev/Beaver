@@ -19,10 +19,11 @@ pub(super) async fn prepare(
     tool_calls: &[(String, serde_json::Value)],
     turn: usize,
     model: &str,
+    session_id: &str,
     breaker: &mut CircuitBreaker,
 ) -> Result<PreparedToolBatch, String> {
     super::agent_loop_support::ensure_more_turns(turn, model).await?;
-    if let Err(message) = breaker.check(tool_calls) {
+    if let Err(message) = breaker.check(tool_calls, session_id) {
         eager_handle.abort();
         super::agent_loop_support::decharge_gpu(model).await;
         return Err(message);
