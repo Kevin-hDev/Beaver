@@ -41,11 +41,12 @@ fn oversized_subagent_report_fails_closed_instead_of_truncating() {
     );
     let mut messages = vec![
         msg("system", "rules"),
-        msg("assistant", report_content.as_str()),
+        msg("user", report_content.as_str()),
     ];
 
     assert!(prepare_for_request(&mut messages, 4_000, &[], "ollama").is_err());
     assert_eq!(messages[1].content, report_content);
+    assert_eq!(messages[1].role, "user");
 }
 
 #[test]
@@ -112,13 +113,15 @@ fn fitting_subagent_report_survives_saturated_context_intact() {
     let mut messages = vec![
         msg("system", "rules"),
         msg("user", &"old".repeat(30_000)),
-        msg("assistant", report_content.as_str()),
+        msg("user", report_content.as_str()),
     ];
 
     prepare_for_request(&mut messages, 12_000, &[], "ollama").expect("complete report fits");
-    assert!(messages
+    let report = messages
         .iter()
-        .any(|message| message.content == report_content));
+        .find(|message| message.content == report_content)
+        .expect("complete report retained");
+    assert_eq!(report.role, "user");
 }
 
 #[test]

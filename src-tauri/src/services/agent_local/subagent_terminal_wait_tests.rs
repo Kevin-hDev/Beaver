@@ -138,6 +138,16 @@ async fn first_report_resumes_once_then_waits_for_the_second_child() {
             .expect("join first waiter");
     tokio::time::pause();
     assert_eq!(first_outcome, Ok(true));
+    let first_batch = messages
+        .iter()
+        .find(|message| {
+            message
+                .content
+                .starts_with(super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX)
+                && message.content.contains(&first_child)
+        })
+        .expect("first report batch");
+    assert_eq!(first_batch.role, "user");
     orchestrator
         .complete_model_request(true, &CancellationToken::new(), &messages)
         .await
@@ -167,10 +177,21 @@ async fn first_report_resumes_once_then_waits_for_the_second_child() {
     .await
     .expect("complete second child");
     tokio::time::resume();
-    let (second_outcome, _) = tokio::time::timeout(TERMINAL_WAKE_TEST_TIMEOUT, second_waiter)
-        .await
-        .expect("second report must wake immediately")
-        .expect("join second waiter");
+    let (second_outcome, second_messages) =
+        tokio::time::timeout(TERMINAL_WAKE_TEST_TIMEOUT, second_waiter)
+            .await
+            .expect("second report must wake immediately")
+            .expect("join second waiter");
     assert_eq!(second_outcome, Ok(true));
+    let second_batch = second_messages
+        .iter()
+        .find(|message| {
+            message
+                .content
+                .starts_with(super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX)
+                && message.content.contains(&second_child)
+        })
+        .expect("second report batch");
+    assert_eq!(second_batch.role, "user");
     cleanup_parent(&parent.id).await;
 }

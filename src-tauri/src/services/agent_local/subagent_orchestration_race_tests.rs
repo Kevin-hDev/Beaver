@@ -178,21 +178,27 @@ async fn report_policy_and_body_match_api_and_ollama_payloads() {
     assert_eq!(api[0]["role"], "system");
     assert!(api[0]["content"].as_str().is_some_and(|content| content
         .starts_with(super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX)));
-    let expected = messages
+    let report_message = messages
         .iter()
         .find(|message| {
             message
                 .content
                 .starts_with(super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX)
         })
-        .expect("report payload")
-        .content
-        .as_str();
-    assert!(ollama
+        .expect("report payload");
+    assert_eq!(report_message.role, "user");
+    let expected = report_message.content.as_str();
+    let ollama_report = ollama
         .messages
         .iter()
-        .any(|message| message.content == expected));
-    assert!(api.iter().any(|message| message["content"] == expected));
+        .find(|message| message.content == expected)
+        .expect("Ollama report payload");
+    assert_eq!(ollama_report.role, "user");
+    let api_report = api
+        .iter()
+        .find(|message| message["content"] == expected)
+        .expect("OpenAI-compatible report payload");
+    assert_eq!(api_report["role"], "user");
     session_store::delete_one(&parent.id)
         .await
         .expect("delete parent");
