@@ -1,14 +1,13 @@
-/* Beaver — poussière de bois v2.1 : la rivière apporte les branches,
-   le barrage les attrape.
+/* Beaver — poussière de bois v3 : la rivière apporte la matière,
+   le dessin du barrage l'attrape.
 
-   - une rivière en bas de l'écran (ondulations + branches au fil du courant)
-   - les particules du barrage VIENNENT de la rivière, puis sont capturées
-   - couche croisée de branches diagonales, dessinée SOUS et SUR les bûches
-     pour un vrai effet entrelacé
-   - tons de bois variés (déclinaisons ombrées de l'accent)
-   - silhouette irrégulière : rangs bombés, brindilles qui dépassent
-   - assemblage chorégraphié : rangs du bas d'abord, approche en spirale
-   - poussière ambiante permanente (le hero ne reste jamais vide)
+   Les particules venues de la rivière convergent vers des points tirés dans
+   les zones encrées du dessin (dam-ink.js), les rangs du bas d'abord ; au-delà
+   de ~85 % de convergence le dessin teinté monte en fondu pendant qu'elles
+   s'effacent, et l'inverse à la dispersion.
+
+   data-mode="drift" sur le canevas : pas de barrage, juste la dérive — le
+   dessin n'est alors même pas téléchargé. Même repli si le SVG manque.
 
    Debug : ?phase=<0..2> force la phase (0 dispersé, 1 barrage, 2 dispersé). */
 
@@ -16,87 +15,63 @@
   'use strict';
 
   var canvas = document.getElementById('dust');
-  if (!canvas || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!canvas) return;
 
   var ctx = canvas.getContext('2d');
   var W = 0, H = 0, T = 0;
 
   var query = new URLSearchParams(location.search);
   var forced = query.has('phase') ? parseFloat(query.get('phase')) : null;
+  var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var driftOnly = canvas.dataset.mode === 'drift';
 
-  var ROWS = 9, SEG = 16, GAP = 13, THICK = 8;
-  var CROSS = 36, TWIGS = 14, RIVER = 42, DUST = 36;
+  var RIVER = 42, DUST = 36, DRIFT_PARTS = 150;
+  var hasInk = false;
+  var parts = [], river = [], dust = [];
 
-  var rows = [], parts = [], cross = [], twigs = [], river = [], dust = [];
-
-  function box() { return { w: Math.min(400, W * 0.27), cx: W * 0.72, baseY: H * 0.73 }; }
+  function box() {
+    var w = Math.min(430, W * 0.30);
+    var ratio = (window.DamInk && window.DamInk.ratio) || 3;
+    return { w: w, h: w / ratio, cx: W * 0.72, baseY: H * 0.73 };
+  }
   function band() { return { top: 0.77, bot: 0.99 }; }
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
-  function scatter() { return { x: Math.random(), y: Math.random() }; }
-  function inRiver() { var b = band(); return { x: Math.random(), y: rnd(b.top, b.bot) }; }
-
-  function buildRows() {
-    rows = [];
-    for (var r = 0; r < ROWS; r++) {
-      var t = r / (ROWS - 1);
-      rows.push({
-        span: 0.66 + (1 - t) * 0.36 + Math.random() * 0.07,
-        drift: (Math.random() - 0.5) * 0.10,
-        angle: (Math.random() - 0.5) * 0.16,
-        lift: (Math.random() - 0.5) * 3,
-        tone: rnd(0.72, 1.0) // chaque rang a son bois
-      });
-    }
-  }
+  function smooth(t) { return t * t * (3 - 2 * t); }
+  function clamp01(t) { return Math.max(0, Math.min(1, t)); }
 
   function build() {
-    buildRows();
-    parts = []; cross = []; twigs = []; river = []; dust = [];
-    var r, i, a, b;
-    for (r = 0; r < ROWS; r++) for (i = 0; i < SEG; i++) {
-      a = inRiver(); b = scatter();
+    // Sans dessin, des cibles factices : elles ne servent jamais puisque la
+    // convergence reste à zéro, mais la rivière garde ses particules.
+    var pts = hasInk ? window.DamInk.points : [], i;
+    if (!hasInk) {
+      for (i = 0; i < DRIFT_PARTS; i++) pts.push({ u: Math.random(), v: Math.random() });
+    }
+    var b = band();
+    parts = [];
+    for (i = 0; i < pts.length; i++) {
       parts.push({
-        row: r, slot: i,
-        ax: a.x, ay: a.y, bx: b.x, by: b.y,
-        r: rnd(0.6, 1.9),
+        u: pts[i].u, v: pts[i].v,
+        ax: Math.random(), ay: rnd(b.top, b.bot),   // départ rivière
+        bx: Math.random(), by: Math.random(),       // position dispersée
+        r: rnd(0.55, 1.5),
         cur: rnd(0.00035, 0.0009),
         vx: rnd(-0.00015, 0.00015), vy: rnd(0.00005, 0.00025),
         o: rnd(0.10, 0.34),
-        spin: rnd(0.35, 0.85) * (Math.random() < 0.5 ? -1 : 1)
+        spin: rnd(0.35, 0.85) * (Math.random() < 0.5 ? -1 : 1),
+        // les points du bas se posent d'abord
+        delay: (1 - pts[i].v) * 0.30 + Math.random() * 0.05
       });
     }
-    for (i = 0; i < CROSS; i++) {
-      cross.push({
-        u: Math.random(), v: Math.random(),
-        ang: (Math.random() < 0.5 ? -1 : 1) * rnd(0.45, 1.0),
-        len: rnd(0.10, 0.26),
-        a: inRiver(), b: scatter(),
-        o: rnd(0.10, 0.28),
-        under: i % 5 < 2 // 40% passent sous les bûches, 60% dessus
-      });
-    }
-    for (i = 0; i < TWIGS; i++) {
-      twigs.push({
-        row: Math.floor(Math.random() * ROWS),
-        end: Math.random() < 0.5 ? -1 : 1,
-        ang: rnd(0.5, 1.5), len: rnd(10, 26),
-        o: rnd(0.2, 0.5)
-      });
-    }
+    river = []; dust = [];
     for (i = 0; i < RIVER; i++) {
-      river.push({
-        x: Math.random(), y: Math.random(),
-        sp: rnd(0.0005, 0.0016), len: rnd(14, 44),
-        o: rnd(0.14, 0.42)
-      });
+      river.push({ x: Math.random(), y: Math.random(), sp: rnd(0.0005, 0.0016),
+                   len: rnd(14, 44), o: rnd(0.14, 0.42) });
     }
     for (i = 0; i < DUST; i++) {
-      dust.push({
-        x: Math.random(), y: Math.random(),
-        vx: rnd(-0.00012, 0.00012), vy: rnd(0.00004, 0.00018),
-        r: rnd(0.6, 1.6), o: rnd(0.09, 0.24)
-      });
+      dust.push({ x: Math.random(), y: Math.random(),
+                  vx: rnd(-0.00012, 0.00012), vy: rnd(0.00004, 0.00018),
+                  r: rnd(0.6, 1.6), o: rnd(0.09, 0.24) });
     }
   }
 
@@ -106,26 +81,18 @@
     canvas.width = W * ratio; canvas.height = H * ratio;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    retint();
   }
-
-  function heroHeight() {
-    var hero = document.querySelector('.hero');
-    return (hero && hero.offsetHeight) || innerHeight;
-  }
-
-  var driftOnly = canvas.dataset.mode === 'drift';
 
   function phase() {
     if (forced !== null && !isNaN(forced)) return forced;
-    if (driftOnly) return 0;
-    var h = heroHeight();
+    if (!hasInk) return 0;
+    var hero = document.querySelector('.hero');
+    var h = (hero && hero.offsetHeight) || innerHeight;
     if (scrollY < h * 0.55) return scrollY / (h * 0.55);
     if (scrollY < h * 1.05) return 1;
     return 1 + Math.min(1, (scrollY - h * 1.05) / (h * 0.75));
   }
-
-  function smooth(t) { return t * t * (3 - 2 * t); }
-  function clamp01(t) { return Math.max(0, Math.min(1, t)); }
 
   // Tons de bois : l'accent décliné en ombres. Cache parsé, rafraîchi
   // avec le thème.
@@ -136,32 +103,34 @@
   var accent = accentHex();
   setInterval(function () {
     var next = accentHex();
-    if (next !== accent) { accent = next; toneCache = {}; }
+    if (next !== accent) { accent = next; toneCache = {}; retint(); repaintCalm(); }
   }, 1200);
 
   function shade(f) {
-    var key = accent + f;
-    if (toneCache[key]) return toneCache[key];
+    var cle = accent + f;
+    if (toneCache[cle]) return toneCache[cle];
     var m = /^#?([0-9a-f]{6})$/i.exec(accent);
     if (!m) return accent;
     var n = parseInt(m[1], 16);
-    var r = Math.min(255, Math.round(((n >> 16) & 255) * f));
-    var g = Math.min(255, Math.round(((n >> 8) & 255) * f));
-    var b = Math.min(255, Math.round((n & 255) * f));
-    var out = 'rgb(' + r + ',' + g + ',' + b + ')';
-    toneCache[key] = out;
+    var out = 'rgb(' + Math.round(((n >> 16) & 255) * f) + ',' +
+              Math.round(((n >> 8) & 255) * f) + ',' + Math.round((n & 255) * f) + ')';
+    toneCache[cle] = out;
     return out;
   }
 
-  function bar(x, y, w, h, angle) {
-    ctx.save();
-    ctx.translate(x, y);
-    if (angle) ctx.rotate(angle);
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, Math.min(h / 2, w / 2));
-    else ctx.rect(-w / 2, -h / 2, w, h);
-    ctx.fill();
-    ctx.restore();
+  // Le dessin teinté n'est régénéré qu'au redimensionnement et au changement
+  // de thème — jamais dans la boucle d'animation.
+  function retint() {
+    if (!hasInk || !W) return;
+    var b = box(), s = Math.min(devicePixelRatio || 1, 2) * 1.5;
+    window.DamInk.tint(b.w * s, b.h * s, accent);
+  }
+
+  function drawInk(alpha) {
+    var b = box();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(window.DamInk.canvas, b.cx - b.w / 2, b.baseY - b.h, b.w, b.h);
+    ctx.globalAlpha = 1;
   }
 
   function frame() {
@@ -169,15 +138,14 @@
     T += 16;
 
     var ph = phase();
-    var gathered = smooth(1 - Math.abs(ph - 1));
+    var gathered = hasInk ? smooth(1 - Math.abs(ph - 1)) : 0;
     var B = box(), RB = band();
+    var i, x, k;
 
-    canvas.style.opacity = 0.36 + gathered * 0.28;
+    canvas.style.opacity = 0.36 + gathered * 0.64;
     ctx.clearRect(0, 0, W, H);
 
-    var i, r, p, k, x, y;
-
-    // ---- poussière ambiante : toujours là, partout -----------------------
+    // ---- poussière ambiante ---------------------------------------------
     ctx.fillStyle = shade(1);
     for (i = 0; i < dust.length; i++) {
       var d = dust[i];
@@ -185,12 +153,11 @@
       if (d.y > 1.02) { d.y = -0.02; d.x = Math.random(); }
       if (d.x > 1.02) d.x = -0.02; else if (d.x < -0.02) d.x = 1.02;
       ctx.globalAlpha = d.o;
-      bar(d.x * W, d.y * H, d.r * 2, d.r * 2, 0);
+      ctx.fillRect(d.x * W - d.r, d.y * H - d.r, d.r * 2, d.r * 2);
     }
 
-    // ---- la rivière : ondulations + branches au courant ------------------
+    // ---- la rivière ------------------------------------------------------
     var waterK = 1 - gathered * 0.8;
-
     ctx.strokeStyle = shade(0.85);
     ctx.lineWidth = 1.4;
     for (i = 0; i < 4; i++) {
@@ -210,103 +177,63 @@
       f.x += f.sp * (0.6 + f.y * 0.8);
       if (f.x > 1.06) { f.x = -0.06; f.y = Math.random(); }
       ctx.globalAlpha = f.o * waterK;
-      bar(f.x * W, H * (RB.top + f.y * (RB.bot - RB.top)),
-          f.len, 2.2, Math.sin(T * 0.001 + i) * 0.05);
+      ctx.fillRect(f.x * W - f.len / 2, H * (RB.top + f.y * (RB.bot - RB.top)) - 1.1, f.len, 2.2);
     }
 
-    // ---- lit « boue » derrière les bûches --------------------------------
-    if (gathered > 0.5) {
-      ctx.globalAlpha = (gathered - 0.5) * 0.16;
-      ctx.fillStyle = shade(0.55);
-      var wBase = B.w * rows[0].span * 0.52, wTop = B.w * rows[ROWS - 1].span * 0.52;
-      var yTop = B.baseY - (ROWS - 1) * GAP;
-      ctx.beginPath();
-      ctx.moveTo(B.cx - wBase, B.baseY + 6);
-      ctx.lineTo(B.cx + wBase, B.baseY + 6);
-      ctx.lineTo(B.cx + wTop, yTop - 6);
-      ctx.lineTo(B.cx - wTop, yTop - 6);
-      ctx.closePath();
-      ctx.fill();
-    }
+    // ---- fondu croisé : le dessin prend le relais en fin de convergence ---
+    var inkK = smooth(clamp01((gathered - 0.85) / 0.15));
 
-    // ---- croisé SOUS les bûches ------------------------------------------
-    var kc = smooth(clamp01(gathered * 1.2 - 0.15));
-    ctx.fillStyle = shade(0.55);
-    for (i = 0; i < cross.length; i++) {
-      var c = cross[i];
-      if (!c.under) continue;
-      var from = ph <= 1 ? c.a : c.b;
-      x = from.x * W + (B.cx + (c.u - 0.5) * B.w * 0.92 - from.x * W) * kc;
-      y = from.y * H + (B.baseY - c.v * (ROWS - 1) * GAP * 0.94 - from.y * H) * kc;
-      ctx.globalAlpha = c.o * (0.25 + 0.75 * kc);
-      bar(x, y, c.len * B.w * (0.3 + 0.7 * kc), 4, c.ang * (0.35 + 0.65 * kc));
-    }
-
-    // ---- bûches principales : capturées depuis la rivière ----------------
+    // ---- particules capturées par le dessin ------------------------------
+    ctx.fillStyle = shade(0.95);
     for (i = 0; i < parts.length; i++) {
-      p = parts[i]; r = rows[p.row];
+      var p = parts[i];
 
       p.ax += p.cur; if (p.ax > 1.04) { p.ax = -0.04; p.ay = rnd(RB.top, RB.bot); }
       p.bx += p.vx; p.by += p.vy;
       if (p.by > 1.02) { p.by = -0.02; p.bx = Math.random(); }
 
-      k = smooth(clamp01(gathered * 1.3 - p.row * 0.045));
+      // 2.4 : à mi-parcours la silhouette doit déjà se lire. Plus bas, la
+      // moitié du trajet ne donne qu'un nuage.
+      k = smooth(clamp01(gathered * 2.4 - p.delay));
+      var lx = (ph <= 1 ? p.ax : p.bx) * W;
+      var ly = (ph <= 1 ? p.ay : p.by) * H;
 
-      var loose = ph <= 1 ? { x: p.ax, y: p.ay } : { x: p.bx, y: p.by };
-
-      var span = B.w * r.span;
-      var step = span / (SEG - 1);
-      var offset = (p.slot - (SEG - 1) / 2) * step;
-      var tx = B.cx + r.drift * B.w + offset * Math.cos(r.angle);
-      var ty = B.baseY - p.row * GAP + r.lift + offset * Math.sin(r.angle)
-             + Math.pow(offset / (B.w * 0.5), 2) * 7;
+      var tx = B.cx - B.w / 2 + p.u * B.w;
+      var ty = B.baseY - B.h + p.v * B.h;
 
       var s = 1 - k;
-      var sw = Math.sin(T * 0.002 + p.slot * 1.3 + p.row) * s * 16 * p.spin;
+      x = lx + (tx - lx) * k;
+      var y = ly + (ty - ly) * k + Math.sin(T * 0.002 + i * 0.7) * s * 14 * p.spin;
 
-      x = loose.x * W + (tx - loose.x * W) * k;
-      y = loose.y * H + (ty - loose.y * H) * k + sw;
-
-      var w = p.r * 2 + k * (step * 1.9 - p.r * 2);
-      var h = p.r * 2 + k * (THICK - p.r * 2);
-
-      ctx.globalAlpha = p.o + Math.pow(k, 2.2) * (1 - p.o);
-      ctx.fillStyle = shade(r.tone);
-      bar(x, y, w, h, r.angle * k + s * p.spin * 2.2);
+      var r = p.r * (0.8 + k * 0.3);
+      ctx.globalAlpha = (p.o + Math.pow(k, 2.2) * (1 - p.o)) * (1 - inkK);
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
 
-    // ---- croisé SUR les bûches -------------------------------------------
-    ctx.fillStyle = shade(0.8);
-    for (i = 0; i < cross.length; i++) {
-      var c2 = cross[i];
-      if (c2.under) continue;
-      var from2 = ph <= 1 ? c2.a : c2.b;
-      x = from2.x * W + (B.cx + (c2.u - 0.5) * B.w * 0.92 - from2.x * W) * kc;
-      y = from2.y * H + (B.baseY - c2.v * (ROWS - 1) * GAP * 0.94 - from2.y * H) * kc;
-      ctx.globalAlpha = c2.o * (0.25 + 0.75 * kc);
-      bar(x, y, c2.len * B.w * (0.3 + 0.7 * kc), 4, c2.ang * (0.35 + 0.65 * kc));
-    }
-
-    // ---- brindilles qui dépassent -----------------------------------------
-    ctx.fillStyle = shade(0.95);
-    for (i = 0; i < twigs.length; i++) {
-      var tw = twigs[i]; r = rows[tw.row];
-      var kt = clamp01((smooth(clamp01(gathered * 1.3 - tw.row * 0.045)) - 0.82) / 0.18);
-      if (kt <= 0) continue;
-      var half = B.w * r.span / 2;
-      var ex = B.cx + r.drift * B.w + tw.end * half * Math.cos(r.angle);
-      var ey = B.baseY - tw.row * GAP + r.lift + tw.end * half * Math.sin(r.angle)
-             + Math.pow(half / (B.w * 0.5), 2) * 7;
-      ctx.globalAlpha = tw.o * kt;
-      bar(ex + tw.end * tw.len * 0.4 * kt, ey - tw.len * 0.3 * kt,
-          tw.len * kt, 2.4, r.angle + tw.end * tw.ang);
-    }
-
+    if (inkK > 0) drawInk(inkK);
     ctx.globalAlpha = 1;
   }
 
-  build();
-  resize();
-  addEventListener('resize', function () { resize(); });
-  requestAnimationFrame(frame);
+  // Mouvement réduit : le dessin, net et immobile, sans particules.
+  // À noter : css/motion.css masque #dust dans ce mode, donc rien n'est visible
+  // aujourd'hui — ce dessin réapparaît le jour où cette règle CSS tombe.
+  function repaintCalm() {
+    if (!calm || !hasInk) return;
+    ctx.clearRect(0, 0, W, H);
+    canvas.style.opacity = 1;
+    drawInk(1);
+  }
+
+  function start(ok) {
+    hasInk = ok;
+    resize();
+    addEventListener('resize', function () { resize(); repaintCalm(); });
+    if (calm) { repaintCalm(); return; }
+    build();
+    requestAnimationFrame(frame);
+  }
+
+  // Le dessin n'est téléchargé que là où le barrage peut se former.
+  if (driftOnly || !window.DamInk) start(false);
+  else window.DamInk.load(start);
 })();
