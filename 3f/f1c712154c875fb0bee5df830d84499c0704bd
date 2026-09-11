@@ -1,0 +1,3 @@
+Task 6 decision: the prepared provider payload is the single authority for request context usage. Each active Chat Completions, Responses, Codex, Anthropic, xAI OAuth, and Ollama transport builds once, counts semantic context fields, persists the InFlight preparation, then sends that same payload.
+
+Opaque or remote media remains Partial and removes capacity_tokens when it cannot be conservatively bounded; HTTP-only metadata does not affect the count. Validation: 290 focused Rust tests across 9 non-empty filters, cargo fmt --check, cargo clippy --all-targets -- -D warnings, git diff --check, source size policy, and graphify update . all passed.
