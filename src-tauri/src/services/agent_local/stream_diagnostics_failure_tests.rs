@@ -136,6 +136,28 @@ fn session_capacity_code_is_preserved() {
 }
 
 #[test]
+fn reasoning_continuity_failure_keeps_its_specific_code_and_phase() {
+    let diagnostic = run("model_request", "completed");
+    assert_eq!(
+        classify_error("reasoning_continuity_invalid", false),
+        "reasoning_continuity_invalid"
+    );
+    assert_eq!(
+        safe_code("reasoning_continuity_invalid"),
+        "reasoning_continuity_invalid"
+    );
+    let summary = safe_summary(
+        &diagnostic,
+        "reasoning_continuity_invalid",
+        "reasoning_continuity_invalid",
+    );
+    assert_eq!(
+        summary,
+        "Interruption avant l'appel du modèle (reasoning_continuity_invalid)."
+    );
+}
+
+#[test]
 fn extension_failures_keep_stable_codes_in_persisted_diagnostics() {
     use crate::services::extensions::error_codes;
     for code in [
