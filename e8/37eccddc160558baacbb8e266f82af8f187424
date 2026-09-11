@@ -1,0 +1,11 @@
+CI correction: the Ollama manager contract rejected a hard-coded transactional path in paths_cmd.rs:88.
+
+Root cause: the embedded beaver paths test repeated the private ollama-bundle name outside the Ollama path authority.
+Fix: assert against cli_support::ollama_bundle_dir(), the same public authority used by the command.
+
+Validated:
+- npm run test:ollama-manager-contracts: 6/6 and 3348 source files verified
+- cargo test --bin beaver paths_cmd::tests: 3/3
+- cargo fmt --check
+- cargo clippy --bin beaver -- -D warnings
+- graphify update .: no topology changes
