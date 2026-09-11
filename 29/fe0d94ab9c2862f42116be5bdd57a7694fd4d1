@@ -1,0 +1,1 @@
+CI Clippy Linux — Supprime l'import global de cli_update_paths_for, inutilisé lorsque le test macOS est exclu, et qualifie directement l'unique appel dans ce test. Diagnostic CI : unused import avec -D warnings. Validation locale : cargo fmt --check ; cargo clippy --all-targets -- -D warnings ; 6/6 tests app_update_helper. Graphify mis à jour.
