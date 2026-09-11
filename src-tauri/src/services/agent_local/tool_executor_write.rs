@@ -97,12 +97,20 @@ pub(super) async fn execute_write(
             return super::tool_executor_errors::denied_or_cancelled(&cancel);
         }
     } else if permission_gate::requires_permission(name, args)
-        && !permission_gate::is_allowed(session_id, name).await
+        && !permission_gate::is_allowed(
+            session_id,
+            permission_gate::automation_permission_key(name, args).unwrap_or(name),
+        )
+        .await
     {
         match permission_gate::request(on_event, name, args, cancel.clone()).await {
             permission_gate::PermissionDecision::Allow => {}
             permission_gate::PermissionDecision::AllowSession => {
-                permission_gate::mark_allowed(session_id, name).await;
+                permission_gate::mark_allowed(
+                    session_id,
+                    permission_gate::automation_permission_key(name, args).unwrap_or(name),
+                )
+                .await;
             }
             permission_gate::PermissionDecision::Deny => {
                 return super::tool_executor_errors::denied_or_cancelled(&cancel);

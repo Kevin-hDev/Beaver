@@ -68,6 +68,9 @@ uuid = { version = "1", features = ["v4", "serde"] }
 dirs = "6"
 dunce = "1"
 chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = { version = "0.10", features = ["serde"] }
+croner = "4.0.0"
+iana-time-zone = "0.1"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.13", features = ["json", "stream", "rustls", "query", "form"] }
 netstat2 = "=0.11.2"

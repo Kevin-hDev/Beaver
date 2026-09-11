@@ -9,6 +9,7 @@ pub(crate) mod attachment_access_identity;
 mod attachment_access_read;
 #[cfg(test)]
 mod attachment_access_tests;
+pub mod automations;
 pub mod autostart_migration;
 pub mod background_command;
 pub mod brand;

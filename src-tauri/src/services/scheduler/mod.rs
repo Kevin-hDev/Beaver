@@ -1,19 +1,14 @@
 mod agentic;
 #[cfg(test)]
-pub(crate) use agentic::admit_wakeup_turn;
-pub mod due;
+mod agentic_modes_tests;
 pub mod fire;
-mod fire_once;
-mod in_flight;
-pub mod log;
-pub mod next_fire;
-#[cfg(test)]
-mod next_fire_tests;
+mod fire_actor;
 mod runtime;
-mod runtime_decisions;
+mod runtime_publish;
+#[cfg(test)]
+mod runtime_test_support;
 #[cfg(test)]
 mod runtime_tests;
-pub mod state;
 #[cfg(test)]
 #[path = "task_tests.rs"]
 mod task_tests;
@@ -28,6 +23,12 @@ use tauri::AppHandle;
 use tokio::sync::watch;
 pub use work_supervision::SchedulerDiagnostics;
 use work_supervision::SchedulerWorkServices;
+
+#[cfg(test)]
+pub(crate) use runtime_test_support::{
+    mark_running_at as mark_running_for_test, mark_terminal_at as mark_terminal_for_test,
+    publish_terminal_at as publish_terminal_for_test, runtime_at as runtime_for_test,
+};
 
 static RELOAD_SENDER: OnceLock<Mutex<Option<watch::Sender<u64>>>> = OnceLock::new();
 

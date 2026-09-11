@@ -19,6 +19,24 @@ impl StreamConversation {
         }
     }
 
+    pub(crate) fn canonical_for_automation(
+        admitted: AdmittedTurn,
+        automation_id: uuid::Uuid,
+        target: &crate::models::AutomationTarget,
+    ) -> Self {
+        let target_mode = match target {
+            crate::models::AutomationTarget::NewSession { .. } => "new_session",
+            crate::models::AutomationTarget::ResumeSession { .. } => "resume_session",
+        };
+        Self::Canonical {
+            admitted,
+            system_prompt: Some(format!(
+                "Automatisation active : id={automation_id}, mode={target_mode}. L'outil manage_automation permet de la consulter, la modifier ou la supprimer."
+            )),
+            subagent_owner: None,
+        }
+    }
+
     pub(crate) fn canonical_for_subagent(
         admitted: AdmittedTurn,
         system_prompt: String,

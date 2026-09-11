@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { CustomSelect } from "@/components/ui/custom-select";
 import type { WakeupSchedule } from "@/types/wakeup";
 
 interface SchedulePickerProps {
@@ -7,25 +6,32 @@ interface SchedulePickerProps {
   onChange: (schedule: WakeupSchedule) => void;
 }
 
-const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
+const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function localMinute(offsetMs: number): string {
+  const date = new Date(Date.now() + offsetMs);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function defaultOnceSchedule(): WakeupSchedule {
+  return { kind: "once", local_datetime: localMinute(86_400_000), timezone };
+}
 
 export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
   const { t } = useTranslation();
 
   const setKind = (kind: WakeupSchedule["kind"]) => {
     if (kind === value.kind) return;
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
     switch (kind) {
       case "once":
-        onChange({ kind: "once", datetime });
+        onChange({ kind: "once", local_datetime: localMinute(60_000), timezone });
         break;
-      case "daily":
-        onChange({ kind: "daily", time: "08:00" });
+      case "cron":
+        onChange({ kind: "cron", expression: "0 8 * * *", timezone });
         break;
-      case "weekly":
-        onChange({ kind: "weekly", weekday: 0, time: "08:00" });
+      case "after_completion":
+        onChange({ kind: "after_completion", delay_minutes: 10 });
         break;
     }
   };
@@ -35,7 +41,7 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
       <span className="nwd-label">{t("heartbeat.form.schedule")}</span>
 
       <div className="nwd-tabs" role="group">
-        {(["once", "daily", "weekly"] as const).map((k) => (
+        {(["once", "cron", "after_completion"] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -48,42 +54,39 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
         ))}
       </div>
 
-      {/* Le moment se lit comme une phrase : « À 08:00 », « Lundi à 08:00 ».
-          Ces champs occupent leur largeur utile, pas toute la ligne. */}
       <div className="nwd-when">
-        {value.kind === "weekly" && (
-          <div className="nwd-weekday">
-            <CustomSelect
-              value={String(value.weekday)}
-              onChange={(day) => onChange({ kind: "weekly", weekday: Number(day), time: value.time })}
-              options={WEEKDAYS.map((d) => ({ value: String(d), label: t(`heartbeat.form.weekdays.${d}`) }))}
-            />
-          </div>
-        )}
-
-        <span className="nwd-when-label">{t("heartbeat.form.at")}</span>
-
         {value.kind === "once" ? (
           <input
             type="datetime-local"
             className="field nwd-when-input"
-            value={value.datetime}
-            onChange={(e) => onChange({ kind: "once", datetime: e.target.value })}
+            value={value.local_datetime}
+            onChange={(e) => onChange({ ...value, local_datetime: e.target.value })}
+            required
+          />
+        ) : value.kind === "cron" ? (
+          <input
+            type="text"
+            className="field nwd-when-input"
+            value={value.expression}
+            onChange={(e) => onChange({ ...value, expression: e.target.value })}
+            pattern="\S+\s+\S+\s+\S+\s+\S+\s+\S+"
+            aria-label={t("heartbeat.form.cronExpression")}
+            placeholder={t("heartbeat.form.cronPlaceholder")}
             required
           />
         ) : (
           <input
-            type="time"
+            type="number"
             className="field nwd-when-input"
-            value={value.time}
-            onChange={(e) => onChange(
-              value.kind === "weekly"
-                ? { kind: "weekly", weekday: value.weekday, time: e.target.value }
-                : { kind: "daily", time: e.target.value },
-            )}
+            value={value.delay_minutes}
+            min={1}
+            max={525600}
+            onChange={(e) => onChange({ kind: "after_completion", delay_minutes: Number(e.target.value) })}
+            aria-label={t("heartbeat.form.delayMinutes")}
             required
           />
         )}
+        {value.kind !== "after_completion" && <span className="nwd-when-label">{value.timezone}</span>}
       </div>
     </div>
   );

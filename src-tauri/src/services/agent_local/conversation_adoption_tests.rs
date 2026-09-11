@@ -1,5 +1,6 @@
 use super::conversation_history::ProviderRole;
-use super::session_store;
+use super::{conversation_admission, conversation_input, session_store};
+use crate::models::agent_turn_contract::NewUserTurnInput;
 use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, NonReplayTarget, ReasoningModeId, RouteId,
 };
@@ -15,10 +16,16 @@ async fn scheduler_conversation_adoption_persists_the_canonical_turn_once() {
         reasoning_mode: ReasoningModeId::Off,
     });
 
-    let admitted =
-        crate::services::scheduler::admit_wakeup_turn(&session.id, "Inspecte le projet", target)
-            .await
-            .expect("admit wakeup");
+    let input = conversation_input::resolve(NewUserTurnInput {
+        content: "Inspecte le projet".into(),
+        files: Vec::new(),
+        skills: Vec::new(),
+    })
+    .await
+    .expect("resolve wakeup input");
+    let admitted = conversation_admission::new_turn_for_continuation(&session.id, input, target)
+        .await
+        .expect("admit wakeup");
     let saved = session_store::get(&session.id)
         .await
         .expect("reload session");

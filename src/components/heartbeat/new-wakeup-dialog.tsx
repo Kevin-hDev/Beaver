@@ -2,22 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Info, X } from "@/components/ui/icons";
 import { CustomSelect } from "@/components/ui/custom-select";
-import type { CreateWakeupInput, ScheduledWakeup, WakeupSchedule } from "@/types/wakeup";
+import type { CreateWakeupInput, UpdateWakeupInput, WakeupDefinition, WakeupSchedule } from "@/types/wakeup";
 import { useAvailableModels, withoutInteractiveOnlyModels } from "@/hooks/use-available-models";
 import { useProjects } from "@/hooks/use-projects";
-import { SchedulePicker } from "./schedule-picker";
+import { defaultOnceSchedule, SchedulePicker } from "./schedule-picker";
 import { WakeupField, WakeupModelFields } from "./wakeup-form-fields";
 import "./new-wakeup-dialog.css";
 
 interface NewWakeupDialogProps {
-  initial: ScheduledWakeup | null;
+  initial: WakeupDefinition | null;
   onClose: () => void;
-  onCreate: (input: CreateWakeupInput) => Promise<void>;
-  onUpdate: (wakeup: ScheduledWakeup) => Promise<void>;
+  onCreate: (input: CreateWakeupInput) => Promise<unknown>;
+  onUpdate: (input: UpdateWakeupInput) => Promise<unknown>;
 }
 
 function defaultSchedule(): WakeupSchedule {
-  return { kind: "daily", time: "08:00" };
+  return defaultOnceSchedule();
 }
 
 export function NewWakeupDialog({
@@ -35,7 +35,9 @@ export function NewWakeupDialog({
   const [model, setModel] = useState(initial?.model ?? "");
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [projectId, setProjectId] = useState(initial?.project_id ?? "");
+  const [projectId, setProjectId] = useState(
+    initial?.target.mode === "new_session" ? initial.target.project_id ?? "" : "",
+  );
   const [schedule, setSchedule] = useState<WakeupSchedule>(
     initial?.schedule ?? defaultSchedule(),
   );
@@ -54,11 +56,18 @@ export function NewWakeupDialog({
   }, [heartbeatGroups, provider]);
 
   useEffect(() => {
-    if (!toolCapableModels.find((m) => m.id === model)) {
+    if (!initial && availableProviders.length > 0 && !heartbeatGroups.has(provider)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- initialise le premier fournisseur disponible après le chargement du catalogue
+      setProvider(availableProviders[0].id);
+    }
+  }, [availableProviders, heartbeatGroups, initial, provider]);
+
+  useEffect(() => {
+    if (!initial && !toolCapableModels.find((m) => m.id === model)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- derived state reset when provider changes is intentional
       setModel(toolCapableModels[0]?.id ?? "");
     }
-  }, [provider, toolCapableModels, model]);
+  }, [initial, provider, toolCapableModels, model]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -77,16 +86,7 @@ export function NewWakeupDialog({
     setError(null);
     try {
       if (initial) {
-        await onUpdate({
-          ...initial,
-          name,
-          provider,
-          model,
-          prompt,
-          description,
-          schedule,
-          project_id: projectId || undefined,
-        });
+        await onUpdate({ automation_id: initial.id, name, model, prompt, description, schedule });
       } else {
         await onCreate({
           name,
@@ -99,8 +99,7 @@ export function NewWakeupDialog({
         });
       }
       onClose();
-    } catch (err) {
-      console.warn("[wakeup create]", err);
+    } catch {
       setError(t("errors.operationFailed"));
     } finally {
       setSubmitting(false);
@@ -164,9 +163,10 @@ export function NewWakeupDialog({
             models={toolCapableModels}
             onProviderChange={setProvider}
             onModelChange={setModel}
+            providerEditable={!initial}
           />
 
-          <WakeupField label={t("heartbeat.form.project")}>
+          {!initial && <WakeupField label={t("heartbeat.form.project")}>
             <CustomSelect
               value={projectId}
               onChange={setProjectId}
@@ -176,7 +176,7 @@ export function NewWakeupDialog({
                 ...projects.map((project) => ({ value: project.id, label: project.name })),
               ]}
             />
-          </WakeupField>
+          </WakeupField>}
 
           <WakeupField label={t("heartbeat.form.prompt")} required>
             <textarea

@@ -9,7 +9,7 @@ import type { GitDiffPreview } from "./file-preview";
 
 export type PreserveReasoningSetting = "off" | "local" | "remote";
 
-export type AgentMessageKind = "compression_checkpoint" | "compression_boundary";
+export type AgentMessageKind = "compression_checkpoint" | "compression_boundary" | "automation";
 
 export type ReasoningReplayStatus = "unavailable" | "partial" | "preserved" | "compacted";
 

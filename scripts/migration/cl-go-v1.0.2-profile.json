@@ -624,7 +624,7 @@
           "snippets": [".join(\"wakeups.jsonl\")"]
         }
       ],
-      "evidence": ["src-tauri/src/services/scheduler/next_fire_tests.rs"],
+      "evidence": ["src-tauri/src/services/automations/next_fire_tests.rs"],
       "manualGates": ["Laisse un réveil de test se déclencher après le redémarrage."]
     },
     {

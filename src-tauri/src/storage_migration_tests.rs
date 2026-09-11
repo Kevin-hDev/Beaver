@@ -1,4 +1,4 @@
-use super::{init_base_structure, write_migration_file};
+use super::{init_base_structure, initialize_automations_at, write_migration_file};
 
 const LEGACY_MEMORY_PATHS: &[&str] = &[
     "memory/archive",
@@ -49,4 +49,15 @@ fn private_store_failures_preserve_the_migration_error_contract() {
         write_migration_file(&occupied_target, b"ok"),
         Err("Erreur d'initialisation des données".to_string())
     );
+}
+
+#[test]
+fn corrupt_config_does_not_block_startup_or_get_rewritten() {
+    let root = tempfile::tempdir().unwrap();
+    let config = root.path().join("config.json");
+    std::fs::write(&config, b"{not-json").unwrap();
+
+    initialize_automations_at(root.path());
+
+    assert_eq!(std::fs::read(config).unwrap(), b"{not-json");
 }

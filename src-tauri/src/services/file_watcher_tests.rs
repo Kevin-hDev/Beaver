@@ -28,6 +28,8 @@ fn classify_memory_paths() {
 fn classify_config_files() {
     for path in [
         "/Users/kevin/.local/share/cl-go-dash/config.json",
+        "/Users/kevin/.local/share/cl-go-dash/automations.json",
+        "/Users/kevin/.local/share/cl-go-dash/automation-runtime.json",
         "/Users/kevin/.local/share/cl-go-dash/favorite-models.json",
         "/Users/kevin/.local/share/cl-go-dash/agent-settings.json",
     ] {
@@ -37,10 +39,12 @@ fn classify_config_files() {
 
 #[test]
 fn classify_domain_files() {
-    assert_eq!(
-        classify_path("/Users/kevin/.local/share/cl-go-dash/logs/wakeups.jsonl"),
-        Some(EVENT_LOGS)
-    );
+    for path in [
+        "/Users/kevin/.local/share/cl-go-dash/logs/wakeups.jsonl",
+        "/Users/kevin/.local/share/cl-go-dash/logs/automation-audit.jsonl",
+    ] {
+        assert_eq!(classify_path(path), Some(EVENT_LOGS));
+    }
     assert_eq!(
         classify_path("/Users/kevin/.local/share/cl-go-dash/inbox/idea-discovery.md"),
         Some(EVENT_PERSONALITY)

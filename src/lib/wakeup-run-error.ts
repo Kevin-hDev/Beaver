@@ -9,6 +9,10 @@ export const WAKEUP_RUN_ERROR_CODES = [
   "missed_unavailable",
   "scheduler_stopping",
   "capacity_reached",
+  "app_stopped",
+  "target_session_missing",
+  "provider_unavailable",
+  "model_unavailable",
 ] as const satisfies readonly WakeupRunErrorCode[];
 
 const ERROR_KEYS: Record<WakeupRunErrorCode, string> = {
@@ -19,6 +23,10 @@ const ERROR_KEYS: Record<WakeupRunErrorCode, string> = {
   missed_unavailable: "missedUnavailable",
   scheduler_stopping: "schedulerStopping",
   capacity_reached: "capacityReached",
+  app_stopped: "appStopped",
+  target_session_missing: "targetSessionMissing",
+  provider_unavailable: "providerUnavailable",
+  model_unavailable: "modelUnavailable",
 };
 
 const KNOWN_CODES = new Set<string>(WAKEUP_RUN_ERROR_CODES);

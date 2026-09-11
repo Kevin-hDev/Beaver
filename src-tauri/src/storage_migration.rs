@@ -1,8 +1,40 @@
+use crate::services::automations::migration::AutomationMigrationStatus;
 use crate::services::paths::data_dir;
 
 pub fn initialize(app_handle: &tauri::AppHandle) -> Result<(), String> {
     run(app_handle)?;
-    crate::services::private_store::repair_app_storage().map_err(|_| migration_error())
+    crate::services::private_store::repair_app_storage().map_err(|_| migration_error())?;
+    initialize_automations_at(&data_dir());
+    Ok(())
+}
+
+fn initialize_automations_at(root: &std::path::Path) {
+    let status = tauri::async_runtime::block_on(migrate_automations_at(root));
+    match status {
+        AutomationMigrationStatus::Ready => {}
+        AutomationMigrationStatus::NeedsTimezone => {
+            ::log::warn!("[automations] timezone selection required");
+        }
+        AutomationMigrationStatus::Conflicts(items) => {
+            ::log::warn!("[automations] {} migration conflict(s)", items.len());
+        }
+        AutomationMigrationStatus::Unavailable => {
+            ::log::warn!("[automations] migration unavailable; legacy config preserved");
+        }
+    }
+}
+
+async fn migrate_automations_at(root: &std::path::Path) -> AutomationMigrationStatus {
+    let timezone = iana_time_zone::get_timezone()
+        .ok()
+        .and_then(|value| value.parse::<chrono_tz::Tz>().ok());
+    crate::services::automations::migration::migrate_legacy(root, timezone)
+        .await
+        .unwrap_or(AutomationMigrationStatus::Unavailable)
+}
+
+pub fn acknowledge_automation_migration() -> Result<(), String> {
+    crate::services::automations::migration::acknowledge_successful_startup(&data_dir())
 }
 
 pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {

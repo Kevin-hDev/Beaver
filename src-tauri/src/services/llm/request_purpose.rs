@@ -10,6 +10,14 @@ pub enum RequestPurpose {
 }
 
 impl RequestPurpose {
+    pub async fn for_request(session_id: &str, request_id: &str) -> Self {
+        if crate::services::automations::actor_context::is_automation_request(request_id) {
+            Self::Automation
+        } else {
+            Self::for_session(session_id).await
+        }
+    }
+
     pub async fn for_session(session_id: &str) -> Self {
         match crate::services::provider_usage::origin_for_session(session_id).await {
             Some(UsageOrigin::ManualChat) => Self::ManualChat,

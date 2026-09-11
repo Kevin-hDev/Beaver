@@ -5,6 +5,10 @@ use crate::services::agent_local::conversation_admission::{
 use crate::services::agent_local::conversation_input::{ConversationInputError, ResolvedTurnInput};
 use crate::services::reasoning_continuity::contract::ContinuationTarget;
 
+#[path = "agent_chat_turn_automation.rs"]
+mod automation;
+pub(crate) use automation::admit_automation_current;
+
 pub(crate) struct AdmittedCurrentTurn {
     pub(crate) turn: AdmittedTurn,
     before: crate::services::agent_local::types_session::AgentSession,
@@ -78,6 +82,21 @@ pub(crate) async fn admit_current(
     target: ContinuationTarget,
     reasoning: crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate,
 ) -> Result<AdmittedCurrentTurn, String> {
+    admit_current_with_kind(
+        streams, session_id, generation, turn, target, reasoning, false,
+    )
+    .await
+}
+
+pub(super) async fn admit_current_with_kind(
+    streams: &crate::ActiveStreams,
+    session_id: &str,
+    generation: u64,
+    turn: PreparedTurn,
+    target: ContinuationTarget,
+    reasoning: crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate,
+    automation: bool,
+) -> Result<AdmittedCurrentTurn, String> {
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     let current = matches!(
@@ -92,10 +111,17 @@ pub(crate) async fn admit_current(
         .map_err(|_| "conversation_admission_failed".to_string())?;
     let (turn, kind) = match turn {
         PreparedTurn::New(input) => {
-            crate::services::agent_local::conversation_admission::new_turn_with_lease_and_reasoning(
-                &lease, input, target, &reasoning,
-            )
-            .await
+            if automation {
+                crate::services::agent_local::conversation_admission::new_automation_turn_with_lease_and_reasoning(
+                    &lease, input, target, &reasoning,
+                )
+                .await
+            } else {
+                crate::services::agent_local::conversation_admission::new_turn_with_lease_and_reasoning(
+                    &lease, input, target, &reasoning,
+                )
+                .await
+            }
             .map(|turn| (turn, AdmittedTurnKind::New))
         }
         PreparedTurn::Resume(input) => {

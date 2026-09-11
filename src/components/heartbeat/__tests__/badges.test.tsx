@@ -1,68 +1,42 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ActiveBadge, ScheduleBadge } from "../badges";
-import type { WakeupSchedule } from "@/types/wakeup";
+import { RunErrorBadge, ScheduleBadge, StatusBadge } from "../badges";
+import type { WakeupDisplayStatus } from "@/types/wakeup";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/i18n", () => ({
-  default: { t: (key: string) => key, language: "fr" },
-}));
-
-// Mock l'icône Clock (vient de @phosphor-icons/react) pour éviter le rendu SVG.
-vi.mock("@/components/ui/icons", () => ({
-  Clock: () => null,
-}));
+vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock("@/i18n", () => ({ default: { t: (key: string) => key, language: "fr" } }));
+vi.mock("@/components/ui/icons", () => ({ Clock: () => null }));
 
 afterEach(cleanup);
 
-describe("ActiveBadge", () => {
-  it("affiche le label actif avec la classe active", () => {
-    const { getByText } = render(<ActiveBadge active={true} />);
-    const badge = getByText("heartbeat.badges.active");
-    expect(badge.className).toContain("wk-badge-active");
-  });
+describe("StatusBadge", () => {
+  it.each(["active", "disabled", "completed", "running", "paused_by_global"] as WakeupDisplayStatus[])(
+    "affiche l'état %s fourni par le backend",
+    (status) => {
+      const { getByText } = render(<StatusBadge status={status} />);
+      expect(getByText(`heartbeat.badges.${status}`).className).toContain(`wk-badge-${status}`);
+    },
+  );
+});
 
-  it("affiche le label inactif avec la classe inactive", () => {
-    const { getByText } = render(<ActiveBadge active={false} />);
-    const badge = getByText("heartbeat.badges.inactive");
-    expect(badge.className).toContain("wk-badge-inactive");
-  });
-
-  it("utilise les clés i18n pour les labels", () => {
-    const { getByText } = render(<ActiveBadge active={true} />);
-    // Le mock t retourne la clé → on vérifie la clé exacte.
-    expect(getByText("heartbeat.badges.active")).toBeTruthy();
+describe("RunErrorBadge", () => {
+  it("rend visible une session cible disparue", () => {
+    const { getByText } = render(<RunErrorBadge run={{
+      status: "error", finished_at: "2026-09-11T00:00:00Z", error_code: "target_session_missing",
+    }} />);
+    expect(getByText("heartbeat.history.errors.targetSessionMissing")).toBeInTheDocument();
   });
 });
 
 describe("ScheduleBadge", () => {
-  it("affiche le schedule formaté pour un wakeup daily", () => {
-    const schedule: WakeupSchedule = { kind: "daily", time: "08:00" };
-    const { container } = render(<ScheduleBadge schedule={schedule} />);
-    const badge = container.querySelector(".wk-badge-schedule");
-    expect(badge).toBeTruthy();
-    // formatSchedule produit un texte — on vérifie juste qu'il y a du contenu.
-    expect(badge?.textContent).toBeTruthy();
-  });
-
-  it("affiche le schedule formaté pour un wakeup weekly", () => {
-    const schedule: WakeupSchedule = {
-      kind: "weekly",
-      weekday: 1,
-      time: "09:30",
-    };
-    const { container } = render(<ScheduleBadge schedule={schedule} />);
-    const badge = container.querySelector(".wk-badge-schedule");
-    // formatSchedule produit "mar. 09h30" (formatage français).
-    expect(badge?.textContent).toContain("09h30");
-  });
-
-  it("applique la classe wk-badge-schedule", () => {
-    const schedule = { kind: "once", datetime: "2026-01-01T10:00" } as WakeupSchedule;
-    const { container } = render(<ScheduleBadge schedule={schedule} />);
-    expect(container.querySelector(".wk-badge-schedule")).toBeTruthy();
+  it("affiche les trois formes de planification", () => {
+    const { rerender, container } = render(
+      <ScheduleBadge schedule={{ kind: "cron", expression: "*/10 * * * *", timezone: "Europe/Paris" }} />,
+    );
+    expect(container.textContent).toContain("*/10 * * * *");
+    rerender(<ScheduleBadge schedule={{ kind: "after_completion", delay_minutes: 20 }} />);
+    expect(container.textContent).toContain("wakeupFormat.afterCompletion");
+    rerender(<ScheduleBadge schedule={{ kind: "once", local_datetime: "2026-09-12T10:00", timezone: "Europe/Paris" }} />);
+    expect(container.textContent).toContain("2026-09-12 10:00");
   });
 });

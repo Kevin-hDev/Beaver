@@ -14,6 +14,7 @@ use super::{
 pub enum AgentMessageKind {
     CompressionCheckpoint,
     CompressionBoundary,
+    Automation,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

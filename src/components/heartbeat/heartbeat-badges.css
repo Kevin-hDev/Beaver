@@ -11,16 +11,30 @@
   flex-shrink: 0;
 }
 
-.wk-badge-active {
+.wk-badge-active,
+.wk-badge-completed {
   background: var(--signal-ok-bg);
   color: var(--signal-ok);
   border: 1px solid var(--signal-ok-border);
 }
 
-.wk-badge-inactive {
+.wk-badge-disabled,
+.wk-badge-paused_by_global {
   background: var(--surface-hover);
   color: var(--ink-faint);
   border: 1px solid var(--edge);
+}
+
+.wk-badge-running {
+  background: var(--signal-info-bg);
+  color: var(--signal-info);
+  border: 1px solid var(--signal-info);
+}
+
+.wk-badge-error {
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+  border: 1px solid var(--signal-error-border);
 }
 
 .wk-badge-schedule {
