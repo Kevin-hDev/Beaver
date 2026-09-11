@@ -93,9 +93,24 @@ fn unavailable(out: &Out, detail: &str) -> i32 {
 }
 
 fn failure(out: &Out, detail: &str, fr: &str, en: &str) -> i32 {
-    eprintln!("[beaver update] {detail}");
+    eprintln!("[beaver update] {}", safe_detail(detail));
     out.line(out.t(fr, en));
     1
+}
+
+fn safe_detail(detail: &str) -> String {
+    // stderr est une frontière terminal : elle reste bornée et sans caractères de contrôle.
+    detail
+        .chars()
+        .take(512)
+        .map(|character| {
+            if character.is_control() {
+                '?'
+            } else {
+                character
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
