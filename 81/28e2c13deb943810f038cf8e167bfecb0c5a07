@@ -1,0 +1,3 @@
+Review corrections B-m1..B-m4 — context record authority
+
+Decision: stale preparations are terminal and cannot be promoted again. The bounded session index carries only the active-request presence needed by startup cleanup. The legacy view field and the unused zero-default input counter were deleted so ContextUsageRecord is the only context authority. B-m5 stays unchanged: the existing backup is acknowledged only after a later successful v6 read, which is the migration plan's tested safety boundary and not a regression.
