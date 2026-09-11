@@ -9,8 +9,8 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   CLGO: 32,
   // Les parcours E2E et la CLI nomment explicitement le binaire historique sur chaque OS.
   // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
-  // Les guides Forecast, Réglages, Compression, Automatisation et Dépannage citent les noms persistés.
-  "cl-go-dash": 484,
+  // Les guides et les tests de fichiers surveillés citent les noms persistés.
+  "cl-go-dash": 487,
   // Les thèmes d'extension, leurs parcours et les guides Réglages et Dépannage rejouent ces clés.
   clgo: 147,
   // Les guides et leurs pages générées citent le nom exact de l'ancien paquet Linux.
