@@ -119,6 +119,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "provider_configuration_invalid"
             | "model_catalog_unavailable"
             | "session_inconsistent"
+            | "session_capacity_reached"
             | "reasoning_configuration_invalid"
             | "model_invalid"
             | "service_tier_unavailable"

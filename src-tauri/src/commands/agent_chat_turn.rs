@@ -220,6 +220,6 @@ fn public_input_error(_: ConversationInputError) -> String {
     "conversation_admission_failed".to_string()
 }
 
-fn public_admission_error(_: ConversationAdmissionError) -> String {
-    "conversation_admission_failed".to_string()
+fn public_admission_error(error: ConversationAdmissionError) -> String {
+    error.to_string()
 }

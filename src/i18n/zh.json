@@ -1322,6 +1322,7 @@
     "authFailed": "认证失败，请检查 API 密钥",
     "modelCatalogUnavailable": "模型目录暂时不可用。请稍后重试。",
     "sessionInconsistent": "此对话处于不一致状态。请打开新对话以继续。",
+    "sessionCapacityReached": "此对话已达到存储容量上限。请打开新对话以继续。",
     "modelInvalid": "此模型已不可用。请选择其他模型后重试。",
     "reasoningConfigurationInvalid": "此推理设置与该模型不兼容。请选择其他设置后重试。",
     "moonshotMembershipUnverified": "Moonshot 无法确认有效的 Kimi Code 订阅。",

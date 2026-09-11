@@ -1379,6 +1379,7 @@
     "authFailed": "Authentication failed, check your API key",
     "modelCatalogUnavailable": "The model catalog is temporarily unavailable. Try again later.",
     "sessionInconsistent": "This conversation is in an inconsistent state. Open a new conversation to continue.",
+    "sessionCapacityReached": "This conversation has reached its storage capacity. Open a new conversation to continue.",
     "modelInvalid": "This model is no longer available. Choose another model and try again.",
     "reasoningConfigurationInvalid": "The reasoning setting is not compatible with this model. Choose another setting and try again.",
     "moonshotMembershipUnverified": "Moonshot cannot confirm an active Kimi Code membership.",

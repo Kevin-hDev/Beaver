@@ -9,7 +9,7 @@ use chrono::Utc;
 
 use super::types_ollama::ChatMessage;
 pub(crate) use validation::validate_tool_results;
-use validation::{assistant_tool_ids, error};
+use validation::{assistant_tool_ids, capacity_error, error};
 
 /// Unique owner of durable provider checkpoints for one admitted turn.
 pub(crate) struct ConversationJournal {
@@ -201,7 +201,7 @@ impl ConversationJournal {
             if session.messages.len().saturating_add(records.len())
                 > super::session_limits::MAX_MESSAGES_PER_SESSION
             {
-                return Err(error());
+                return Err(capacity_error());
             }
             session.messages.extend(records);
             session.updated_at = Some(Utc::now());

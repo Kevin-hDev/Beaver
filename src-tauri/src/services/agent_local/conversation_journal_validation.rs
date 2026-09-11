@@ -34,3 +34,7 @@ pub(super) fn assistant_tool_ids(message: &ChatMessage) -> Result<Vec<String>, S
 pub(super) fn error() -> String {
     "conversation_journal_failed".to_string()
 }
+
+pub(super) fn capacity_error() -> String {
+    super::super::session_limits::SESSION_CAPACITY_REACHED.to_string()
+}

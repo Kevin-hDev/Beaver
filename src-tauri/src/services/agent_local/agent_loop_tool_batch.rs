@@ -17,13 +17,11 @@ pub(super) async fn prepare(
     eager_handle: EagerHandle,
     fixture_mode: bool,
     tool_calls: &[(String, serde_json::Value)],
-    model: &str,
     session_id: &str,
     breaker: &mut CircuitBreaker,
 ) -> Result<PreparedToolBatch, String> {
     if let Err(message) = breaker.check(tool_calls, session_id) {
         eager_handle.abort();
-        super::agent_loop_support::decharge_gpu(model).await;
         return Err(message);
     }
     let control_only = super::subagent_tool_control::is_control_only(tool_calls);

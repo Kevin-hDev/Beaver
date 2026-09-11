@@ -185,6 +185,63 @@ fn tool(id: &str) -> ChatMessage {
 }
 
 #[tokio::test]
+async fn full_session_reports_its_capacity_instead_of_a_generic_journal_failure() {
+    let mut session = session_store::create_full("Full journal", "model", "ollama", false, None)
+        .await
+        .expect("create session");
+    session.messages = (0..super::session_limits::MAX_MESSAGES_PER_SESSION)
+        .map(|index| super::types_message::AgentMessage {
+            id: uuid::Uuid::new_v4().to_string(),
+            turn_id: uuid::Uuid::new_v4().to_string(),
+            role: "user".into(),
+            content: format!("message-{index}"),
+            message_kind: None,
+            thinking: None,
+            tool_calls: None,
+            tool_name: None,
+            tool_call_id: None,
+            continuation: None,
+            replay_source: None,
+            tool_activities: None,
+            segments: None,
+            files: Vec::new(),
+            timestamp: chrono::Utc::now(),
+            tokens: 0,
+            work_duration_ms: None,
+            skill_names: None,
+            skill_ids: None,
+            stream_run_id: None,
+            stream_part: None,
+        })
+        .collect();
+    session_store::save(&session).await.expect("fill session");
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .expect("create journal");
+
+    let error = journal
+        .persist_assistant_step(&ChatMessage::assistant(
+            "overflow".into(),
+            None,
+            None,
+            None,
+            None,
+        ))
+        .await
+        .expect_err("full session must reject the checkpoint");
+
+    assert_eq!(error, "session_capacity_reached");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+}
+
+#[tokio::test]
 async fn tool_artifacts_are_persisted_with_the_matching_result() {
     let session = session_store::create_full("Artifact journal", "model", "openai", false, None)
         .await

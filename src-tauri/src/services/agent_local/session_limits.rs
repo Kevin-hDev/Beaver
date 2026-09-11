@@ -8,6 +8,7 @@ pub const CURRENT_SESSION_SCHEMA_VERSION: u16 = super::session_migration_v5::SCH
 pub const MAX_SESSION_FILE_BYTES: u64 = 32 * 1024 * 1024;
 pub const MAX_SESSION_FILES: usize = 4_096;
 pub const MAX_MESSAGES_PER_SESSION: usize = 2_000;
+pub const SESSION_CAPACITY_REACHED: &str = "session_capacity_reached";
 
 pub fn validate_continuity(session: &AgentSession) -> Result<(), String> {
     let maximum = crate::services::reasoning_continuity::limits::MAX_SESSION_CONTINUITY_BYTES;

@@ -34,11 +34,11 @@ pub(crate) use super::conversation_edit::{
 pub(crate) use super::conversation_resume::resume_with_key;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ConversationAdmissionError;
+pub struct ConversationAdmissionError(&'static str);
 
 impl fmt::Display for ConversationAdmissionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(PUBLIC_ERROR_CODE)
+        formatter.write_str(self.0)
     }
 }
 
@@ -138,9 +138,11 @@ where
         .messages
         .last()
         .is_some_and(|message| message.role == ProviderRole::User)
-        || session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION
     {
         return Err(error());
+    }
+    if session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION {
+        return Err(capacity_error());
     }
 
     let mut used = session
@@ -213,7 +215,11 @@ where
 }
 
 pub(super) const fn error() -> ConversationAdmissionError {
-    ConversationAdmissionError
+    ConversationAdmissionError(PUBLIC_ERROR_CODE)
+}
+
+const fn capacity_error() -> ConversationAdmissionError {
+    ConversationAdmissionError(super::session_limits::SESSION_CAPACITY_REACHED)
 }
 
 #[cfg(test)]

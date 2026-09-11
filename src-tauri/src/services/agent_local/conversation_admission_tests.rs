@@ -151,7 +151,7 @@ async fn limit_refuses_admission_without_draining_a_turn_fragment() {
         conversation_admission::new_turn(&session.id, resolved("overflow"), target("model-a"))
             .await
             .expect_err("must not drain");
-    assert_eq!(error.to_string(), ERROR);
+    assert_eq!(error.to_string(), "session_capacity_reached");
     assert_eq!(std::fs::read(session_path(&session.id)).unwrap(), before);
     cleanup(&session.id).await;
 }

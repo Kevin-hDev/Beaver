@@ -23,6 +23,7 @@ const expected = [
   ["active-stream-limit-reached", "errors.admission.activeStreamCapacity"],
   ["stream-replaced", "errors.admission.streamReplaced"],
   ["subagent-read-only", "errors.admission.subagentReadOnly"],
+  ["session_capacity_reached", "errors.sessionCapacityReached"],
 ] as const;
 const expectedTranslationKeys = [
   "activeStreamCapacity",
@@ -56,7 +57,7 @@ describe("admission-error", () => {
     expect(admissionErrorMessage("session-unavailable", t)).toBe("errors.operationFailed");
   });
 
-  it("expose exactement les neuf codes publics", () => {
+  it("expose exactement les codes publics", () => {
     expect(ADMISSION_ERROR_CODES).toEqual(expected.map(([code]) => code));
   });
 

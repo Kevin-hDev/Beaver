@@ -124,6 +124,14 @@ fn historical_circuit_breaker_sentence_is_classified() {
 }
 
 #[test]
+fn session_capacity_code_is_preserved() {
+    assert_eq!(
+        classify_error("session_capacity_reached", false),
+        "session_capacity_reached"
+    );
+}
+
+#[test]
 fn extension_failures_keep_stable_codes_in_persisted_diagnostics() {
     use crate::services::extensions::error_codes;
     for code in [

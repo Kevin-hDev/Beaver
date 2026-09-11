@@ -1323,6 +1323,7 @@
     "authFailed": "Authentifizierung fehlgeschlagen, überprüfe deinen API-Schlüssel",
     "modelCatalogUnavailable": "Der Modellkatalog ist vorübergehend nicht verfügbar. Versuche es später erneut.",
     "sessionInconsistent": "Diese Unterhaltung befindet sich in einem inkonsistenten Zustand. Öffne eine neue Unterhaltung, um fortzufahren.",
+    "sessionCapacityReached": "Diese Unterhaltung hat ihre Speicherkapazität erreicht. Öffne eine neue Unterhaltung, um fortzufahren.",
     "modelInvalid": "Dieses Modell ist nicht mehr verfügbar. Wähle ein anderes Modell und versuche es erneut.",
     "reasoningConfigurationInvalid": "Die Einstellung für das Schlussfolgern ist mit diesem Modell nicht kompatibel. Wähle eine andere Einstellung und versuche es erneut.",
     "moonshotMembershipUnverified": "Moonshot kann kein aktives Kimi-Code-Abonnement bestätigen.",
