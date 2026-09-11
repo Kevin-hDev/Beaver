@@ -1,0 +1,1 @@
+CI frontend — Synchronise l'autorité des compteurs de marque avec les références techniques ajoutées par la CLI : +11 cl-go-dash nets et +30 cl_go_dash. Le contrat échouait à 14/15 avant correction (attendus 424/48, observés 435/78), puis passe à 15/15. Toutes les occurrences restent classées internes autorisées ; aucun nom public ou inconnu ajouté. Graphify mis à jour.
