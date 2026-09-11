@@ -121,6 +121,51 @@ fn current_v6_context_record_is_not_remigrated() {
     assert_eq!(loaded.session().context_usage, session.context_usage);
 }
 
+#[test]
+fn invalid_v6_context_usage_is_reset_without_losing_the_conversation() {
+    let session = base_session();
+    let expected_messages = serde_json::to_value(&session.messages).unwrap();
+    let mut value = serde_json::to_value(session).unwrap();
+    value["context_usage"] = json!({
+        "activeRequestId": "not-a-uuid",
+        "currentPreparation": null,
+        "lastMeasurement": null,
+        "lastOutput": null
+    });
+
+    let loaded = super::session_migration::read(
+        &serde_json::to_vec(&value).unwrap(),
+        PathBuf::from("invalid-context-usage-v6.json"),
+    )
+    .unwrap();
+
+    assert_eq!(
+        serde_json::to_value(&loaded.session().messages).unwrap(),
+        expected_messages
+    );
+    assert_eq!(
+        loaded.session().context_usage,
+        super::context_usage_record::ContextUsageRecord::default()
+    );
+}
+
+#[test]
+fn malformed_v6_context_usage_shape_is_reset() {
+    let mut value = serde_json::to_value(base_session()).unwrap();
+    value["context_usage"] = json!("corrupt");
+
+    let loaded = super::session_migration::read(
+        &serde_json::to_vec(&value).unwrap(),
+        PathBuf::from("malformed-context-usage-v6.json"),
+    )
+    .unwrap();
+
+    assert_eq!(
+        loaded.session().context_usage,
+        super::context_usage_record::ContextUsageRecord::default()
+    );
+}
+
 #[tokio::test]
 async fn future_session_is_rejected_by_the_current_writer() {
     let root = tempfile::tempdir().unwrap();
