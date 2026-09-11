@@ -1,0 +1,14 @@
+Task 4 — scheduler durable et reprenable
+
+Implémentation : runtime JSON fait foi pour pending/running/terminal, fusion bornée des échéances, reprise pending→missed et running→interrupted, publication ordonnée et idempotente par run_id, ancrage after_completion, boucle canonique, admission de session sans remplacement, diagnostic DST sûr, watcher des quatre fichiers, suppression de l’ancien registre mémoire.
+
+Validation exécutée :
+- cargo test scheduler::runtime_tests --no-fail-fast : 8 réussis
+- cargo test services::scheduler --no-fail-fast : 26 réussis
+- cargo test file_watcher::tests --no-fail-fast : 9 réussis
+- cargo check : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- git diff --check : réussi
+- graphify update . : réussi
+
+Note : l’admission atomique sans remplacement, prévue dans la tâche 5, a été posée ici car elle est nécessaire pour prouver l’absence de chevauchement du scheduler.
