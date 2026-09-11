@@ -33,6 +33,8 @@
 
 ### Quality and correctness
 
+- **Uninterrupted long-running Agent work** — cloud, Ollama, subagent, and heartbeat sessions are no longer stopped solely for crossing an arbitrary 200-turn ceiling. Natural completion, cancellation, provider failures, the repetitive-action circuit breaker, and the bounded 2,000-message conversation capacity remain enforced.
+- **Safer Agent failure handling** — legitimate passive terminal polling no longer trips the repetitive-action circuit breaker, historical stop diagnostics are restored accurately, full conversations return a clear translated error, and speculative read-only tool work is cancelled when an Ollama request fails.
 - **Reliable subagent handoffs** — returned subagent reports are now classified as new user context, preserving provider reasoning continuity across Codex, OpenAI-compatible, Anthropic, and Ollama routes without weakening native response validation or context compression; continuity failures also retain their precise diagnostic instead of blaming the last successful tool.
 - **CodeQL cleanup** — redundant assignments, fragile parsing, ambiguous promise identity checks, and analyzer-only test patterns were replaced with direct, typed behavior without changing user-facing flows.
 - **Verified static-analysis results** — genuine findings were corrected, while reported cleartext-logging cases that only modified bounded in-memory buffers were individually reviewed and documented as false positives.
