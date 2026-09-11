@@ -12,15 +12,10 @@ async fn ollama_loop_continues_past_200_turns() {
     let mut fixture = FixtureRunContext::start().await.expect("fixture");
     let working_dir = fixture.root_for_test();
     let tools = ExtensionToolSet::passthrough(fixture.definitions().into());
-    let session = super::session_store::create_full(
-        "Ollama unbounded",
-        "fixture",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("session");
+    let session =
+        super::session_store::create_full("Ollama unbounded", "fixture", "ollama", false, None)
+            .await
+            .expect("session");
     let session_id = session.id.clone();
     let request_id = uuid::Uuid::new_v4().to_string();
     let script = agent_loop_test_provider::install(&request_id, tool_turns(201));
@@ -62,7 +57,10 @@ async fn ollama_loop_continues_past_200_turns() {
     assert!(cancel.is_cancelled());
     assert_eq!(script.calls(), 201);
     assert_eq!(
-        fixture.dispatch("fixture.read_note", &json!({})).await.unwrap(),
+        fixture
+            .dispatch("fixture.read_note", &json!({}))
+            .await
+            .unwrap(),
         json!({ "value": "200" })
     );
 }

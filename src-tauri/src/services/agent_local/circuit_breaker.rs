@@ -41,11 +41,7 @@ impl CircuitBreaker {
     }
 }
 
-fn is_passive_bash_control(
-    name: &str,
-    args: &serde_json::Value,
-    owner_session_id: &str,
-) -> bool {
+fn is_passive_bash_control(name: &str, args: &serde_json::Value, owner_session_id: &str) -> bool {
     const ALLOWED_FIELDS: [&str; 6] = [
         "session_id",
         "chars",
@@ -61,15 +57,24 @@ fn is_passive_bash_control(
     let Some(args) = args.as_object() else {
         return false;
     };
-    if args.keys().any(|key| !ALLOWED_FIELDS.contains(&key.as_str())) {
+    if args
+        .keys()
+        .any(|key| !ALLOWED_FIELDS.contains(&key.as_str()))
+    {
         return false;
     }
     let Some(process_id) = args.get("session_id").and_then(serde_json::Value::as_str) else {
         return false;
     };
-    if args.get("chars").is_some_and(|value| value.as_str() != Some(""))
-        || args.get("eof").is_some_and(|value| value.as_bool() != Some(false))
-        || args.get("stop").is_some_and(|value| value.as_bool() != Some(false))
+    if args
+        .get("chars")
+        .is_some_and(|value| value.as_str() != Some(""))
+        || args
+            .get("eof")
+            .is_some_and(|value| value.as_bool() != Some(false))
+        || args
+            .get("stop")
+            .is_some_and(|value| value.as_bool() != Some(false))
         || args
             .get("yield_time_ms")
             .is_some_and(|value| value.as_u64().is_none())

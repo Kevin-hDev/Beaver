@@ -131,7 +131,15 @@ async fn caller_cancellation_stops_the_running_command() {
     let command_cancel = cancel.clone();
     let path = dir.path().to_path_buf();
     let task = tokio::spawn(async move {
-        managed("sleep 30", &path, &owner, None, Some(30_000), command_cancel).await
+        managed(
+            "sleep 30",
+            &path,
+            &owner,
+            None,
+            Some(30_000),
+            command_cancel,
+        )
+        .await
     });
 
     tokio::time::sleep(Duration::from_millis(100)).await;

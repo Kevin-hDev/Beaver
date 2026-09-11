@@ -56,11 +56,7 @@ pub(crate) fn summary_from_run(run: &AgentDiagnosticRun) -> AgentErrorDiagnostic
     }
 }
 
-pub(crate) fn safe_summary(
-    run: &AgentDiagnosticRun,
-    error_type: &str,
-    message: &str,
-) -> String {
+pub(crate) fn safe_summary(run: &AgentDiagnosticRun, error_type: &str, message: &str) -> String {
     if message
         .to_ascii_lowercase()
         .contains("plan mode workflow could not be enforced")

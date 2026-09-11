@@ -13,8 +13,7 @@ struct Script {
     calls: Arc<AtomicUsize>,
 }
 
-static SCRIPTS: LazyLock<Mutex<VecDeque<Script>>> =
-    LazyLock::new(|| Mutex::new(VecDeque::new()));
+static SCRIPTS: LazyLock<Mutex<VecDeque<Script>>> = LazyLock::new(|| Mutex::new(VecDeque::new()));
 
 pub struct ScriptHandle {
     request_id: String,
@@ -50,10 +49,7 @@ pub fn install(request_id: &str, responses: Vec<StreamResult>) -> ScriptHandle {
     }
 }
 
-pub fn next(
-    request_id: &str,
-    cancel: &CancellationToken,
-) -> Option<Result<StreamResult, String>> {
+pub fn next(request_id: &str, cancel: &CancellationToken) -> Option<Result<StreamResult, String>> {
     let mut scripts = lock_scripts();
     let position = scripts
         .iter()

@@ -1,8 +1,7 @@
 use serde_json::Value;
 
-const HISTORICAL_DIAGNOSTIC: &[u8] = include_bytes!(
-    "../../../test-fixtures/agent-session-v5-circuit-breaker-unknown.json"
-);
+const HISTORICAL_DIAGNOSTIC: &[u8] =
+    include_bytes!("../../../test-fixtures/agent-session-v5-circuit-breaker-unknown.json");
 
 #[tokio::test]
 async fn historical_circuit_breaker_diagnostic_survives_reload() {
@@ -22,9 +21,7 @@ async fn historical_circuit_breaker_diagnostic_survives_reload() {
     assert_eq!(run["error_type"], Value::String("circuit_breaker".into()));
     assert_eq!(
         run["safe_summary"],
-        Value::String(
-            "Interruption après le dernier tool bash_control (circuit_breaker).".into()
-        )
+        Value::String("Interruption après le dernier tool bash_control (circuit_breaker).".into())
     );
     assert_eq!(
         run["events"][0]["error_type"],
