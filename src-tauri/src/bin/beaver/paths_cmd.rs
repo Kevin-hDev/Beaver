@@ -1,4 +1,5 @@
 use crate::output::Out;
+use cl_go_dash_lib::cli_support;
 use std::path::{Path, PathBuf};
 
 type KnownEntry = (&'static str, &'static str, PathBuf);
@@ -29,7 +30,7 @@ pub fn known_entries(root: &Path) -> Vec<KnownEntry> {
         (
             "Moteur Ollama",
             "Ollama engine",
-            cl_go_dash_lib::cli_support::ollama_bundle_dir(root),
+            cli_support::ollama_bundle_dir(root),
         ),
     ]
 }
@@ -85,9 +86,6 @@ mod tests {
             .into_iter()
             .find(|(_, en, _)| *en == "Ollama engine")
             .expect("Ollama entry");
-        assert_eq!(
-            entry.2,
-            cl_go_dash_lib::cli_support::ollama_bundle_dir(directory.path())
-        );
+        assert_eq!(entry.2, cli_support::ollama_bundle_dir(directory.path()));
     }
 }
