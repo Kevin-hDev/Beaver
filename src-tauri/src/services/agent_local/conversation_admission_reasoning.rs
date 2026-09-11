@@ -43,9 +43,7 @@ async fn admitted(
         kind,
         crate::services::agent_local::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
-        |session| async move {
-            crate::services::agent_local::session_store::save(&session).await
-        },
+        |session| async move { crate::services::agent_local::session_store::save(&session).await },
         || async {},
     )
     .await

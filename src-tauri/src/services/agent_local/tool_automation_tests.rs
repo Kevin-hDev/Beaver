@@ -84,7 +84,9 @@ fn schema_is_strict_and_does_not_advertise_legacy_fields() {
 
 #[tokio::test]
 async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
-    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK
+        .lock()
+        .await;
     crate::services::automations::mutate(|items| {
         items.clear();
         Ok(())
@@ -121,13 +123,7 @@ async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
     assert_eq!(created["data"]["model"], "gpt-5.6-luna");
     assert_eq!(created["data"]["target_session_id"], session.id);
 
-    let listed = dispatch(
-        &session.id,
-        cwd,
-        cancel.clone(),
-        json!({"action":"list"}),
-    )
-    .await;
+    let listed = dispatch(&session.id, cwd, cancel.clone(), json!({"action":"list"})).await;
     assert_eq!(listed["data"].as_array().unwrap().len(), 1);
     assert!(listed.to_string().find("Vérifie la CI").is_none());
     assert!(!listed.to_string().contains("working_dir"));
@@ -185,7 +181,10 @@ async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
     .await;
     let deleted: Value = serde_json::from_str(&deleted.content).unwrap();
     assert_eq!(deleted["ok"], true);
-    assert!(crate::services::automations::read_all().await.unwrap().is_empty());
+    assert!(crate::services::automations::read_all()
+        .await
+        .unwrap()
+        .is_empty());
 
     super::session_store::delete_one(&session.id).await.unwrap();
     super::session_store::remove_session_lock(&session.id).await;
@@ -193,7 +192,9 @@ async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
 
 #[tokio::test]
 async fn dispatcher_accepts_multiline_prompts_on_create_and_update() {
-    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK
+        .lock()
+        .await;
     crate::services::automations::mutate(|items| {
         items.clear();
         Ok(())
@@ -225,7 +226,10 @@ async fn dispatcher_accepts_multiline_prompts_on_create_and_update() {
     )
     .await;
     let id = created["data"]["id"].as_str().unwrap();
-    assert_eq!(created["data"]["prompt"], "Vérifie la CI\nPuis résume les erreurs");
+    assert_eq!(
+        created["data"]["prompt"],
+        "Vérifie la CI\nPuis résume les erreurs"
+    );
     assert_eq!(created["data"]["description"], "Étape 1\nÉtape 2");
 
     let updated = dispatch(
@@ -239,7 +243,10 @@ async fn dispatcher_accepts_multiline_prompts_on_create_and_update() {
         }),
     )
     .await;
-    assert_eq!(updated["data"]["prompt"], "Relis les tests\nPuis publie le résultat");
+    assert_eq!(
+        updated["data"]["prompt"],
+        "Relis les tests\nPuis publie le résultat"
+    );
 
     crate::services::automations::mutate(|items| {
         items.clear();
@@ -253,31 +260,23 @@ async fn dispatcher_accepts_multiline_prompts_on_create_and_update() {
 
 #[tokio::test]
 async fn external_instruction_cannot_mutate_another_sessions_automation_without_manual_approval() {
-    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK
+        .lock()
+        .await;
     crate::services::automations::mutate(|items| {
         items.clear();
         Ok(())
     })
     .await
     .unwrap();
-    let owner = super::session_store::create_full(
-        "Owner",
-        "gpt-5.6-luna",
-        "codex-oauth",
-        false,
-        None,
-    )
-    .await
-    .unwrap();
-    let caller = super::session_store::create_full(
-        "Caller",
-        "gpt-5.6-luna",
-        "codex-oauth",
-        false,
-        None,
-    )
-    .await
-    .unwrap();
+    let owner =
+        super::session_store::create_full("Owner", "gpt-5.6-luna", "codex-oauth", false, None)
+            .await
+            .unwrap();
+    let caller =
+        super::session_store::create_full("Caller", "gpt-5.6-luna", "codex-oauth", false, None)
+            .await
+            .unwrap();
     let created = dispatch(
         &owner.id,
         std::path::Path::new("."),
@@ -342,14 +341,8 @@ async fn dispatch(
     cancel: tokio_util::sync::CancellationToken,
     args: Value,
 ) -> Value {
-    let result = super::tool_dispatcher::dispatch(
-        "manage_automation",
-        &args,
-        cwd,
-        session_id,
-        cancel,
-    )
-    .await;
+    let result =
+        super::tool_dispatcher::dispatch("manage_automation", &args, cwd, session_id, cancel).await;
     assert!(!result.is_error, "{}", result.content);
     serde_json::from_str(&result.content).unwrap()
 }

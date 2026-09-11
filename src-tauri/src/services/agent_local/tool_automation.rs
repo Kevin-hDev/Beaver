@@ -26,7 +26,13 @@ pub async fn execute(
     };
     let session = match super::session_store::get(session_id).await {
         Ok(session) => session,
-        Err(_) => return failure(action_name, "store_unavailable", ToolErrorCategory::Unavailable),
+        Err(_) => {
+            return failure(
+                action_name,
+                "store_unavailable",
+                ToolErrorCategory::Unavailable,
+            )
+        }
     };
     let actor = match crate::services::automations::actor_context::actor_for(
         &session.id,
@@ -102,10 +108,12 @@ async fn dispatch(
                 Err(error) => automation_failure("update", error),
             }
         }
-        Action::History(query) => match crate::services::automations::history(&actor, query).await {
-            Ok(page) => success("history", view::history(page)),
-            Err(error) => automation_failure("history", error),
-        },
+        Action::History(query) => {
+            match crate::services::automations::history(&actor, query).await {
+                Ok(page) => success("history", view::history(page)),
+                Err(error) => automation_failure("history", error),
+            }
+        }
         Action::Delete(id) => match crate::services::automations::delete(&actor, id).await {
             Ok(()) => {
                 crate::services::scheduler::notify_config_changed();

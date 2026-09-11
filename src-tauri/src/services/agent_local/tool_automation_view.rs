@@ -9,15 +9,23 @@ pub(super) fn summaries(items: Vec<AutomationSummary>) -> Value {
 pub(super) fn detail(value: AutomationDetail) -> Value {
     let definition = value.definition;
     let mut data = common(&definition);
-    let object = data.as_object_mut().expect("automation detail is an object");
+    let object = data
+        .as_object_mut()
+        .expect("automation detail is an object");
     object.insert("description".into(), json!(definition.description));
     object.insert("prompt".into(), json!(definition.prompt));
     object.insert(
         "creator_session_id".into(),
         json!(definition.creator_session_id),
     );
-    object.insert("created_at".into(), json!(definition.created_at.to_rfc3339()));
-    object.insert("anchor_at".into(), json!(definition.anchor_at.map(|at| at.to_rfc3339())));
+    object.insert(
+        "created_at".into(),
+        json!(definition.created_at.to_rfc3339()),
+    );
+    object.insert(
+        "anchor_at".into(),
+        json!(definition.anchor_at.map(|at| at.to_rfc3339())),
+    );
     object.insert(
         "next_fire_at".into(),
         json!(value.next_fire_at.map(|at| at.to_rfc3339())),
@@ -75,9 +83,7 @@ fn common(value: &AutomationDefinition) -> Value {
 
 fn target(value: &AutomationTarget) -> (&'static str, Option<&str>, Option<&str>) {
     match value {
-        AutomationTarget::NewSession { project_id } => {
-            ("new_session", None, project_id.as_deref())
-        }
+        AutomationTarget::NewSession { project_id } => ("new_session", None, project_id.as_deref()),
         AutomationTarget::ResumeSession { session_id } => {
             ("resume_session", Some(session_id), None)
         }

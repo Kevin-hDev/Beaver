@@ -39,8 +39,8 @@ pub(super) enum TargetMode {
 }
 
 pub(super) fn parse(args: &serde_json::Value) -> Result<Action, &'static str> {
-    let request = serde_json::from_value::<wire::Request>(args.clone())
-        .map_err(|_| "invalid_input")?;
+    let request =
+        serde_json::from_value::<wire::Request>(args.clone()).map_err(|_| "invalid_input")?;
     match request {
         wire::Request::List {} => Ok(Action::List),
         wire::Request::Get { automation_id } => Ok(Action::Get(automation_id)),
@@ -166,9 +166,7 @@ fn parse_local_datetime(value: &str) -> Result<NaiveDateTime, &'static str> {
 fn validate_history(limit: Option<usize>, cursor: Option<&str>) -> Result<(), &'static str> {
     if limit.is_some_and(|limit| !(1..=100).contains(&limit))
         || cursor.is_some_and(|value| {
-            value.is_empty()
-                || value.chars().count() > 2_048
-                || value.chars().any(char::is_control)
+            value.is_empty() || value.chars().count() > 2_048 || value.chars().any(char::is_control)
         })
     {
         return Err("invalid_input");
