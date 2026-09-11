@@ -704,3 +704,29 @@ fn fixture_candidate_bypasses_only_activation_and_never_the_provenance_contract(
     assert!(payload("cerebras", "zai-glm-4.7", &messages, &production, "auto").is_err());
     assert!(payload("cerebras", "zai-glm-4.7", &messages, &fixture, "auto").is_ok());
 }
+
+#[test]
+fn chat_native_assistant_then_subagent_report_is_valid() {
+    let target = ContinuationTarget::Replay(replay_target(
+        RouteId::Moonshot,
+        "kimi-k2.7-code",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+    ));
+    let report = crate::services::agent_local::subagent_hidden_reports::report_to_message(
+        crate::services::agent_local::subagent_hidden_reports::build_report(
+            "child".into(),
+            "Geminitor".into(),
+            "explorer".into(),
+            "completed".into(),
+            "Rapport Kimi".into(),
+        ),
+    );
+    let messages = [assistant(), report];
+
+    let body = payload("moonshot", "kimi-k2.7-code", &messages, &target, "auto")
+        .expect("native Kimi assistant followed by a Beaver report");
+
+    assert_eq!(body["messages"][0]["reasoning_content"], "opaque-kimi");
+    assert_eq!(body["messages"][1]["role"], "user");
+}

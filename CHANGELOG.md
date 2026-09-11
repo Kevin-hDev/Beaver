@@ -33,6 +33,7 @@
 
 ### Quality and correctness
 
+- **Reliable subagent handoffs** — returned subagent reports are now classified as new user context, preserving provider reasoning continuity across Codex, OpenAI-compatible, Anthropic, and Ollama routes without weakening native response validation or context compression; continuity failures also retain their precise diagnostic instead of blaming the last successful tool.
 - **CodeQL cleanup** — redundant assignments, fragile parsing, ambiguous promise identity checks, and analyzer-only test patterns were replaced with direct, typed behavior without changing user-facing flows.
 - **Verified static-analysis results** — genuine findings were corrected, while reported cleartext-logging cases that only modified bounded in-memory buffers were individually reviewed and documented as false positives.
 - **Reliable Windows error classification** — native file errors preserve the correct not-found, already-exists, sharing, permission, and invalid-input categories across the Ollama lifecycle.

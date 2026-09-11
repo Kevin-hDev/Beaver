@@ -63,6 +63,11 @@ pub(crate) fn safe_summary(run: &AgentDiagnosticRun, error_type: &str, message: 
     {
         return "Workflow Plan Mode non respecté par le modèle.".to_string();
     }
+    if error_type == "reasoning_continuity_invalid" {
+        return support::clip(
+            "Interruption avant l'appel du modèle (reasoning_continuity_invalid).",
+        );
+    }
     if let Some(tool) = &run.last_tool {
         if error_type == "max_turns" {
             return support::clip(&format!(
@@ -117,6 +122,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "session_inconsistent"
             | "session_capacity_reached"
             | "reasoning_configuration_invalid"
+            | "reasoning_continuity_invalid"
             | "model_invalid"
             | "service_tier_unavailable"
             | "compression_unavailable"

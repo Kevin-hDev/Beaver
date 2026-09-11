@@ -16,6 +16,44 @@ use crate::services::reasoning_continuity::envelope::{
 use crate::services::reasoning_continuity::tool_links::ToolLink;
 
 #[tokio::test]
+async fn delivered_subagent_report_reloads_as_user_context() {
+    let mut session = create_session().await;
+    let mut report = super::super::subagent_hidden_reports::build_report(
+        "child".into(),
+        "Geminitor".into(),
+        "explorer".into(),
+        "completed".into(),
+        "Rapport durable".into(),
+    );
+    report.delivered = true;
+    session.subagent_hidden_reports.push(report);
+    super::super::session_store::save(&session)
+        .await
+        .expect("persist delivered report");
+    let reloaded = super::super::session_store::get(&session.id)
+        .await
+        .expect("reload delivered report");
+    let target = ContinuationTarget::Replay(target("model-a"));
+
+    let history = super::super::conversation_history_build::from_continuation(&reloaded, &target)
+        .expect("delivered report history");
+    let context = history
+        .messages
+        .iter()
+        .find(|message| {
+            message
+                .content
+                .starts_with(super::super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX)
+        })
+        .expect("durable subagent report context");
+
+    assert_eq!(context.role, conversation_history::ProviderRole::User);
+    assert!(context.continuation.is_none());
+    assert!(context.content.contains("Rapport durable"));
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn display_thinking_never_becomes_continuation_and_opaque_is_exact() {
     let opaque = envelope(RouteId::Ollama, "model-a", "opaque exact");
     let expected = serde_json::to_vec(&opaque).unwrap();

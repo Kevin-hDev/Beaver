@@ -20,6 +20,16 @@ fn target() -> ContinuationTarget {
     })
 }
 
+fn user_target() -> ContinuationTarget {
+    ContinuationTarget::Replay(ReplayTarget {
+        route_id: RouteId::Anthropic,
+        model_id: "claude-haiku-4-5-20251001".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Low,
+        continuation_use: ContinuationUse::UserContinuation,
+    })
+}
+
 fn blocks() -> Vec<Value> {
     vec![
         json!({"type":"thinking","thinking":"opaque","signature":"AAE+/=="}),
@@ -158,4 +168,62 @@ fn anthropic_native_limits_reject_depth_items_and_bytes_without_truncation() {
     assert!(envelope(vec![json!({"type":"text","text":oversized})])
         .validate()
         .is_err());
+}
+
+#[test]
+fn anthropic_native_assistant_then_subagent_report_is_valid() {
+    let target = user_target();
+    let native_blocks = blocks();
+    let replay = target.replay().unwrap();
+    let envelope = ReasoningEnvelope::new(
+        ContractId::AnthropicMessagesV1,
+        ReasoningSource::from_target(replay),
+        CompletionState::Complete,
+        ContinuationState::AnthropicBlocks {
+            blocks: native_blocks.clone(),
+        },
+        vec![ToolLink {
+            provider_call_id: "toolu_1".into(),
+            tool_name: "read_file".into(),
+        }],
+    );
+    let report = crate::services::agent_local::subagent_hidden_reports::report_to_message(
+        crate::services::agent_local::subagent_hidden_reports::build_report(
+            "child".into(),
+            "Geminitor".into(),
+            "explorer".into(),
+            "completed".into(),
+            "Rapport Anthropic".into(),
+        ),
+    );
+    let messages = [assistant(envelope), report];
+    let mut payload = [
+        json!({"role":"assistant","content":[{"type":"text","text":"reconstructed"}]}),
+        json!({"role":"user","content":[{"type":"text","text":"Rapport Anthropic"}]}),
+    ];
+
+    let replayed = super::replay::apply_anthropic_messages(&messages, Some(&target), &mut payload)
+        .expect("native Anthropic assistant followed by a Beaver report");
+
+    assert_eq!(replayed.len(), 1);
+    assert_eq!(payload[0]["content"], Value::Array(native_blocks));
+    assert_eq!(payload[1]["role"], "user");
+}
+
+#[test]
+fn required_anthropic_replay_rejects_an_assistant_without_an_envelope() {
+    let target = user_target();
+    let messages = [
+        ChatMessage::assistant("lost state".into(), None, None, None, None),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut payload = [
+        json!({"role":"assistant","content":[{"type":"text","text":"lost state"}]}),
+        json!({"role":"user","content":[{"type":"text","text":"continue"}]}),
+    ];
+
+    assert!(matches!(
+        super::replay::apply_anthropic_messages(&messages, Some(&target), &mut payload),
+        Err(super::replay::ReplayApplyError::Blocked)
+    ));
 }

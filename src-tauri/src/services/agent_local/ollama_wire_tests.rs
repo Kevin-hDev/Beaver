@@ -205,3 +205,26 @@ fn cloud_glm_fixture_candidate_replays_persisted_native_thinking() {
     assert_eq!(prepared.payload["messages"][2]["content"], "continue");
     assert_eq!(prepared.replayed.len(), 2);
 }
+
+#[test]
+fn ollama_native_assistant_then_subagent_report_is_valid() {
+    let target = target("qwen3.5:4b");
+    let report = crate::services::agent_local::subagent_hidden_reports::report_to_message(
+        crate::services::agent_local::subagent_hidden_reports::build_report(
+            "child".into(),
+            "Geminitor".into(),
+            "explorer".into(),
+            "completed".into(),
+            "Rapport Ollama".into(),
+        ),
+    );
+    let messages = [message(&target, "opaque historic"), report];
+    let mut request = request();
+    request.live_replay_target = Some(target);
+
+    let body = chat_request(&request, &messages)
+        .expect("native Ollama assistant followed by a Beaver report");
+
+    assert_eq!(body["messages"][0]["thinking"], "opaque historic");
+    assert_eq!(body["messages"][1]["role"], "user");
+}

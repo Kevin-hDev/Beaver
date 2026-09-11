@@ -73,3 +73,31 @@ fn codex_payload_rejects_scope_mismatch_without_falling_back_to_visible_text() {
 
     assert!(matches!(request, Err(error) if error == "reasoning_continuity_invalid"));
 }
+
+#[test]
+fn codex_parent_payload_accepts_a_subagent_report_after_native_reasoning() {
+    let target = ContinuationTarget::Replay(target("codex-scope").replay().unwrap().clone());
+    let report = crate::services::agent_local::subagent_hidden_reports::report_to_message(
+        crate::services::agent_local::subagent_hidden_reports::build_report(
+            "child".into(),
+            "Geminitor".into(),
+            "explorer".into(),
+            "completed".into(),
+            "Rapport Codex".into(),
+        ),
+    );
+    let request = build_codex_request_with_continuity(
+        "gpt-5.6-luna",
+        &[assistant(&target), report],
+        &[],
+        Some("medium"),
+        Some("session"),
+        FastModeRequest::Standard,
+        Some(&target),
+    )
+    .expect("native Codex assistant followed by a Beaver report");
+
+    assert_eq!(request.input[0]["type"], "reasoning");
+    assert_eq!(request.input[1]["type"], "message");
+    assert_eq!(request.input.last().unwrap()["role"], "user");
+}

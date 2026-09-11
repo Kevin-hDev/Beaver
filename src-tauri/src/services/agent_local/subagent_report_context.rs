@@ -41,7 +41,7 @@ pub fn report_to_message(report: SubagentHiddenReport) -> ChatMessage {
 }
 
 fn report_batch_to_message(reports: &[SubagentHiddenReport]) -> ChatMessage {
-    ChatMessage::assistant(report_batch_content(reports), None, None, None, None)
+    ChatMessage::user(report_batch_content(reports))
 }
 
 pub(super) fn durable_context(reports: &[SubagentHiddenReport]) -> Option<String> {
