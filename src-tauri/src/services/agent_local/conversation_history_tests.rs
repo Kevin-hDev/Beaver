@@ -1,5 +1,5 @@
 #[path = "conversation_history_test_support.rs"]
-mod support;
+pub(super) mod support;
 
 #[path = "conversation_admission_tests.rs"]
 mod admission;

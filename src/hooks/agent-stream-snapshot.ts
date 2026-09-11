@@ -8,10 +8,12 @@ export function applySessionSnapshot(
   tokenCount: number,
 ) {
   const resolvedTokenCount = tokenCount || estimateAgentMessagesTokens(messages);
+  const openStreamRunId = latestOpenStreamRunId(messages);
   record.state = {
     ...record.state,
     messages,
-    streamRunId: latestOpenStreamRunId(messages) ?? record.state.streamRunId,
+    streamRunId: openStreamRunId
+      ?? (messages.some((message) => message.stream_run_id) ? "" : record.state.streamRunId),
     sessionTokenCount: resolvedTokenCount,
     contextInputTokens: resolvedTokenCount,
     contextOutputTokens: 0,

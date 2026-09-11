@@ -7,6 +7,22 @@ use super::types_message::AgentMessage;
 pub(crate) fn validate(
     messages: &[AgentMessage],
 ) -> Result<Vec<Range<usize>>, ConversationHistoryError> {
+    let (turns, tail) = analyze(messages)?;
+    if tail != TailState::Terminal {
+        return Err(ConversationHistoryError);
+    }
+    Ok(turns)
+}
+
+pub(super) fn tail_state(
+    messages: &[AgentMessage],
+) -> Result<TailState, ConversationHistoryError> {
+    analyze(messages).map(|(_, tail)| tail)
+}
+
+fn analyze(
+    messages: &[AgentMessage],
+) -> Result<(Vec<Range<usize>>, TailState), ConversationHistoryError> {
     if messages.len() > super::session_limits::MAX_MESSAGES_PER_SESSION {
         return Err(ConversationHistoryError);
     }
@@ -90,13 +106,19 @@ pub(crate) fn validate(
             _ => return Err(ConversationHistoryError),
         }
     }
-    if let Some(state) = current {
-        if matches!(state.phase, Phase::ToolsPending(_) | Phase::ResultsComplete) {
-            return Err(ConversationHistoryError);
+    let tail = if let Some(state) = current {
+        match state.phase {
+            Phase::ToolsPending(_) => TailState::ToolsPending,
+            Phase::ResultsComplete => TailState::ResultsComplete,
+            Phase::User | Phase::Terminal => {
+                turns.push(state.start..messages.len());
+                TailState::Terminal
+            }
         }
-        turns.push(state.start..messages.len());
-    }
-    Ok(turns)
+    } else {
+        TailState::Terminal
+    };
+    Ok((turns, tail))
 }
 
 fn validate_common(
@@ -173,4 +195,11 @@ enum Phase<'a> {
     ToolsPending(HashMap<&'a str, &'a str>),
     ResultsComplete,
     Terminal,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum TailState {
+    Terminal,
+    ResultsComplete,
+    ToolsPending,
 }

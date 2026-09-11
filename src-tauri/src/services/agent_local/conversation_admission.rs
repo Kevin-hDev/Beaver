@@ -129,6 +129,8 @@ where
         update.apply(&mut session).map_err(|_| error())?;
     }
     after_load().await;
+    super::conversation_interrupted_tail::close_recoverable(&mut session)
+        .map_err(|_| error())?;
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session, &target, key_source, None,
     )
