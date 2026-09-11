@@ -27,7 +27,7 @@ pub(super) async fn run(
     let canonical = request
         .runtime_messages
         .iter()
-        .filter(|message| message.role == "system")
+        .filter(|message| matches!(message.role.as_str(), "system" | "developer"))
         .cloned()
         .collect();
     let snapshot = super::snapshot::CompressionSnapshot::capture(

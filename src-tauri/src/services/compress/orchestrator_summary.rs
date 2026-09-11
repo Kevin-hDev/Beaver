@@ -61,6 +61,7 @@ pub async fn generate(
     snapshot: &super::snapshot::CompressionSnapshot,
     collector: &dyn SummaryCollector,
 ) -> Result<Option<ValidatedSummary>, super::checkpoint_transaction::CompressionError> {
+    super::checkpoint_candidate_validation::validate_snapshot(snapshot)?;
     let band_kind = snapshot
         .profile
         .band(snapshot.context_window)

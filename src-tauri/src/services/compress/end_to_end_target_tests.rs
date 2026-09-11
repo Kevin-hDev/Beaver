@@ -6,6 +6,33 @@ use super::super::profile_types::{CompressionTrigger, CompressionWindowBand};
 use crate::services::agent_local::types_message::AgentMessageKind;
 
 #[tokio::test]
+async fn summary_rejects_unverified_capacity_before_calling_the_provider() {
+    let session = super::target_support::stored_session().await;
+    let document = CompressionProfileDocument::default();
+    let mut captured = super::target_support::snapshot(
+        &session,
+        &document,
+        96_000,
+        96_000,
+        12_000,
+        CompressionTrigger::Explicit,
+    );
+    captured.prepared_count.capacity_tokens = None;
+    let collector = super::target_support::RecordingCollector::new();
+
+    let result = super::super::orchestrator_summary::generate(&captured, &collector).await;
+
+    assert!(matches!(
+        result,
+        Err(super::super::checkpoint_transaction::CompressionError::CapacityUnverified)
+    ));
+    assert_eq!(collector.calls(), 0);
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn real_candidate_obeys_the_96k_and_258k_beaver_targets() {
     let session = super::target_support::stored_session().await;
     let document = CompressionProfileDocument::default();

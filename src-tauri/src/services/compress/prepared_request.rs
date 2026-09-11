@@ -9,7 +9,7 @@ pub(crate) fn count(
     tools: &[Value],
 ) -> ContextTokenCount {
     if crate::services::llm::route_profile::is_local(provider_id) {
-        return ollama(model, messages, tools);
+        return ollama(provider_id, model, messages, tools);
     }
     match crate::services::llm::route_profile::diagnostic_payload_kind(provider_id) {
         Some("responses") => responses(provider_id, model, messages, tools),
@@ -20,8 +20,14 @@ pub(crate) fn count(
     }
 }
 
-fn ollama(model: &str, messages: &[ChatMessage], tools: &[Value]) -> ContextTokenCount {
-    let Some(policy) = crate::services::llm::route_profile::payload_policy("ollama", model) else {
+fn ollama(
+    provider_id: &str,
+    model: &str,
+    messages: &[ChatMessage],
+    tools: &[Value],
+) -> ContextTokenCount {
+    let Some(policy) = crate::services::llm::route_profile::payload_policy(provider_id, model)
+    else {
         return unknown();
     };
     let messages = crate::services::agent_local::ollama_tool_role::wrap_tool_results(
@@ -32,6 +38,14 @@ fn ollama(model: &str, messages: &[ChatMessage], tools: &[Value]) -> ContextToke
         "messages": crate::services::agent_local::ollama_wire::messages_value(&messages),
         "tools": tools,
     }))
+}
+
+pub(super) fn add_overhead(mut count: ContextTokenCount, overhead: u32) -> ContextTokenCount {
+    count.tokens = count.tokens.map(|tokens| tokens.saturating_add(overhead));
+    count.capacity_tokens = count
+        .capacity_tokens
+        .map(|tokens| tokens.saturating_add(overhead));
+    count
 }
 
 pub(crate) fn system_head(
@@ -142,8 +156,17 @@ mod tests {
             Some("read_file".into()),
         )];
 
-        let count = count("ollama", "fixture", &messages, &[]);
+        let policy = crate::services::llm::route_profile::payload_policy("ollama", "fixture")
+            .expect("fixture policy");
+        let wrapped = crate::services::agent_local::ollama_tool_role::wrap_tool_results(
+            &messages,
+            policy.message.tool_results,
+        );
+        let expected = crate::services::agent_local::prepared_context_count::ollama(&json!({
+            "messages": crate::services::agent_local::ollama_wire::messages_value(&wrapped),
+            "tools": [],
+        }));
 
-        assert!(count.capacity_tokens.is_some());
+        assert_eq!(count("ollama", "fixture", &messages, &[]), expected);
     }
 }

@@ -18,6 +18,7 @@ pub struct CompressionSnapshot {
     pub checkpoint_images: Vec<super::checkpoint_attachments::CheckpointImage>,
     pub prepared_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
     pub system_head_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
+    pub transient_overhead_tokens: u32,
     pub provider_id: String,
     pub(crate) source_session: AgentSession,
 }
@@ -50,6 +51,7 @@ impl CompressionSnapshot {
             checkpoint_images: Vec::new(),
             prepared_count: empty_count.clone(),
             system_head_count: empty_count,
+            transient_overhead_tokens: 0,
             provider_id: session.provider.clone(),
             source_session: session.clone(),
         })
@@ -97,6 +99,18 @@ impl CompressionSnapshot {
         }
         self.canonical_messages = canonical_messages;
         self.provider_tools = provider_tools;
+        let baseline = super::prepared_request::count(
+            &self.provider_id,
+            &self.source_session.model,
+            &self.canonical_messages,
+            &self.provider_tools,
+        )
+        .capacity_tokens
+        .ok_or_else(|| "compression_snapshot_invalid".to_string())?;
+        self.transient_overhead_tokens = prepared_count
+            .capacity_tokens
+            .ok_or_else(|| "compression_snapshot_invalid".to_string())?
+            .saturating_sub(baseline);
         self.prepared_count = prepared_count;
         self.system_head_count = super::prepared_request::system_head(
             &self.provider_id,
@@ -119,15 +133,11 @@ impl CompressionSnapshot {
     }
 
     pub fn before_tokens(&self) -> u32 {
-        self.prepared_count
-            .capacity_tokens
-            .expect("compression rejects an unverified prepared capacity before snapshot use")
+        self.prepared_count.capacity_tokens.unwrap_or_default()
     }
 
     pub fn system_head_tokens(&self) -> u32 {
-        self.system_head_count
-            .capacity_tokens
-            .expect("compression rejects an unverified system-head capacity before snapshot use")
+        self.system_head_count.capacity_tokens.unwrap_or_default()
     }
 
     pub fn capacity_verified(&self) -> bool {

@@ -69,15 +69,7 @@ pub async fn open_chat_response(
     .await;
     let context_count = prepared.context_count;
     let wire_request = prepared.payload;
-    if let Some(preparation) = diagnostics.preparation {
-        preparation
-            .persist_payload(context_count.clone())
-            .await?;
-    }
-    if context_count.capacity_tokens.is_none() {
-        return Err(super::context_capacity_error::UNVERIFIED_CODE.to_string());
-    }
-
+    persist_verified_context(&context_count, diagnostics.preparation).await?;
     #[cfg(debug_assertions)]
     crate::services::reasoning_fixture_budget::authorize_payload(&wire_request)?;
 
@@ -106,6 +98,19 @@ pub async fn open_chat_response(
         emit_retry_indicator,
     )
     .await
+}
+
+async fn persist_verified_context(
+    count: &super::context_usage_record::ContextTokenCount,
+    preparation: Option<&super::context_usage_runtime::PreparedContextAttempt<'_>>,
+) -> Result<(), String> {
+    if count.capacity_tokens.is_none() {
+        return Err(super::context_capacity_error::UNVERIFIED_CODE.to_string());
+    }
+    if let Some(preparation) = preparation {
+        preparation.persist_payload(count.clone()).await?;
+    }
+    Ok(())
 }
 
 async fn handle_http_failure(
@@ -208,3 +213,7 @@ fn feature_name(request: &ChatRequest, retry: &ChatRequest) -> &'static str {
         "images"
     }
 }
+
+#[cfg(test)]
+#[path = "ollama_stream_request_tests.rs"]
+mod tests;

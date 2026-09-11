@@ -70,3 +70,18 @@ fn snapshot_rejects_a_mismatched_unbounded_session_id() {
     )
     .is_err());
 }
+
+#[test]
+fn prepared_snapshot_keeps_transient_provider_overhead() {
+    let session = session();
+    let messages =
+        vec![crate::services::agent_local::types_ollama::ChatMessage::user("continue".into())];
+    let base = super::prepared_request::count("ollama", &session.model, &messages, &[]);
+    let prepared = super::prepared_request::add_overhead(base, 37);
+
+    let captured = snapshot(&session)
+        .with_prepared_context(messages, Vec::new(), prepared)
+        .unwrap();
+
+    assert_eq!(captured.transient_overhead_tokens, 37);
+}

@@ -76,11 +76,14 @@ pub async fn build_with_evidence(
     runtime_snapshot.checkpoint_images = retained_images;
     let mut runtime_messages =
         super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
-    let mut after_tokens = super::prepared_request::count(
-        &snapshot.provider_id,
-        &snapshot.source_session.model,
-        &runtime_messages,
-        &snapshot.provider_tools,
+    let mut after_tokens = super::prepared_request::add_overhead(
+        super::prepared_request::count(
+            &snapshot.provider_id,
+            &snapshot.source_session.model,
+            &runtime_messages,
+            &snapshot.provider_tools,
+        ),
+        snapshot.transient_overhead_tokens,
     )
     .capacity_tokens
     .ok_or(super::checkpoint_transaction::CompressionError::CapacityUnverified)?;
@@ -94,11 +97,14 @@ pub async fn build_with_evidence(
     .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
     runtime_messages =
         super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
-    let prepared_count = super::prepared_request::count(
-        &snapshot.provider_id,
-        &snapshot.source_session.model,
-        &runtime_messages,
-        &snapshot.provider_tools,
+    let prepared_count = super::prepared_request::add_overhead(
+        super::prepared_request::count(
+            &snapshot.provider_id,
+            &snapshot.source_session.model,
+            &runtime_messages,
+            &snapshot.provider_tools,
+        ),
+        snapshot.transient_overhead_tokens,
     );
     after_tokens = prepared_count
         .capacity_tokens
