@@ -58,8 +58,6 @@ function renderRow(
         providerName="provider"
         fastModeEnabled={false}
         fastModePending={false}
-        contextUsed={0}
-        contextMax={1}
         permissionMode={permissionMode}
         planModeEnabled={planModeEnabled}
         buttonState="send"

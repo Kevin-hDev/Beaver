@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { ContextProgress } from "../context-progress";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
+import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -50,10 +51,17 @@ const breakdown: ContextUsageBreakdown = {
   ],
 };
 
+function contextSummary(used: number, max: number): ResolvedContextUsage {
+  return {
+    used, max, output: null, status: "reconstructed", secondaryStatus: null,
+    source: "reconstructed", coverage: "complete", breakdown: null,
+  };
+}
+
 describe("ContextProgress", () => {
   it("affiche le panneau détaillé avec les 7 catégories", () => {
     const { getByText, getByLabelText } = render(
-      <ContextProgress used={100} max={1000} breakdown={breakdown} />,
+      <ContextProgress summary={contextSummary(100, 1000)} breakdown={breakdown} />,
     );
 
     expect(getByLabelText("Context window")).toBeTruthy();
@@ -69,7 +77,7 @@ describe("ContextProgress", () => {
 
   it("affiche le total sans inventer de pourcentage si le maximum est inconnu", () => {
     const { getByLabelText, getByText } = render(
-      <ContextProgress used={100} max={0} breakdown={breakdown} summary={{
+      <ContextProgress breakdown={breakdown} summary={{
         used: 100, max: null, output: null, status: "measured",
         secondaryStatus: null, source: "provider", coverage: "complete", breakdown: null,
       }} />,
@@ -77,6 +85,18 @@ describe("ContextProgress", () => {
     fireEvent.mouseEnter(getByLabelText("Context window"));
     expect(getByText("100")).toBeTruthy();
     expect(document.querySelector(".context-ring-bar")).toBeNull();
+  });
+
+  it("identifie la ventilation comme estimée quand le total est indisponible", () => {
+    const { getByLabelText, getByText } = render(
+      <ContextProgress breakdown={breakdown} summary={{
+        used: null, max: null, output: null, status: "unavailable",
+        secondaryStatus: null, source: null, coverage: null, breakdown: null,
+      }} />,
+    );
+
+    fireEvent.mouseEnter(getByLabelText("Context window"));
+    expect(getByText("Estimated breakdown · 100")).toBeTruthy();
   });
 
   it.each([[6_000, 5_000], [62_000, 45_000]])(
@@ -96,8 +116,7 @@ describe("ContextProgress", () => {
         breakdown: null,
       };
       const view = render(
-        <ContextProgress used={measured} max={200_000}
-          breakdown={estimatedBreakdown} summary={summary} />,
+        <ContextProgress breakdown={estimatedBreakdown} summary={summary} />,
       );
       fireEvent.mouseEnter(view.getByLabelText("Context window"));
       expect(view.getByText(
@@ -110,7 +129,7 @@ describe("ContextProgress", () => {
 
   it("actualise aussi le panneau détaillé pendant le stream", () => {
     const { getByText, rerender } = render(
-      <ContextProgress used={100} max={1000} breakdown={breakdown} />,
+      <ContextProgress summary={contextSummary(100, 1000)} breakdown={breakdown} />,
     );
     fireEvent.mouseEnter(document.querySelector(".context-ring") as HTMLElement);
     const liveBreakdown: ContextUsageBreakdown = {
@@ -120,7 +139,7 @@ describe("ContextProgress", () => {
         : { ...item, percentage: (item.tokens / 140) * 100 }),
     };
 
-    rerender(<ContextProgress used={140} max={1000} breakdown={liveBreakdown} />);
+    rerender(<ContextProgress summary={contextSummary(140, 1000)} breakdown={liveBreakdown} />);
 
     expect(getByText("140 / 1K (14.0%)")).toBeTruthy();
     expect(getByText("90")).toBeTruthy();
@@ -128,7 +147,7 @@ describe("ContextProgress", () => {
 
   it("affiche 1M et place le focus dans le panneau activé au clavier", async () => {
     const { getByLabelText, getByRole, getByText } = render(
-      <ContextProgress used={400_000} max={1_000_000} />,
+      <ContextProgress summary={contextSummary(400_000, 1_000_000)} />,
     );
     const trigger = getByLabelText("Context window");
 
@@ -142,7 +161,7 @@ describe("ContextProgress", () => {
     const user = userEvent.setup();
     const { getByLabelText, getByRole } = render(
       <>
-        <ContextProgress used={400} max={1_000} />
+        <ContextProgress summary={contextSummary(400, 1_000)} />
         <button type="button">Après l’anneau</button>
       </>,
     );
@@ -161,7 +180,7 @@ describe("ContextProgress", () => {
     let active = true;
     const view = render(
       <AppSurfaceActivityProvider active={active}>
-        <ContextProgress used={100} max={1000} breakdown={breakdown} />
+        <ContextProgress summary={contextSummary(100, 1000)} breakdown={breakdown} />
       </AppSurfaceActivityProvider>,
     );
     const ring = view.getByLabelText("Context window");
@@ -172,14 +191,14 @@ describe("ContextProgress", () => {
     active = false;
     void act(() => view.rerender(
       <AppSurfaceActivityProvider active={active}>
-        <ContextProgress used={100} max={1000} breakdown={breakdown} />
+        <ContextProgress summary={contextSummary(100, 1000)} breakdown={breakdown} />
       </AppSurfaceActivityProvider>,
     ));
     void act(() => vi.advanceTimersByTime(150));
     active = true;
     void act(() => view.rerender(
       <AppSurfaceActivityProvider active={active}>
-        <ContextProgress used={100} max={1000} breakdown={breakdown} />
+        <ContextProgress summary={contextSummary(100, 1000)} breakdown={breakdown} />
       </AppSurfaceActivityProvider>,
     ));
     expect(view.getByRole("dialog", { name: "Context window" })).toBeInTheDocument();

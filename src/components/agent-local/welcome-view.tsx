@@ -112,8 +112,6 @@ export function WelcomeView({
               fastModeEnabled={fastModeEnabled}
               fastModePending={false}
               files={fileDrop.files}
-              contextUsed={0}
-              contextMax={0}
               permissionMode={permMode.mode}
               onPermissionModeChange={(m) => void permMode.change(m)}
               onSend={handleSend}

@@ -166,6 +166,27 @@ describe("agent-token-estimate", () => {
     expect(resolved).toMatchObject({ used: 62_000, max: null, status: "partial" });
   });
 
+  it("conserve une vraie mesure nulle sans la remplacer par une reconstruction", () => {
+    const identity = { requestId: "A", turnId: "turn-A", turn: 0, attempt: 1, providerId: "openai", model: "gpt-5" };
+    const resolved = resolveContextUsage({
+      activeRequestId: null, currentPreparation: null,
+      lastMeasurement: {
+        identity, contextLimit: 200_000,
+        input: { tokens: 0, capacityTokens: 0, source: "provider", coverage: "complete" },
+        updatedAt: "2026-09-11T00:00:00Z",
+      },
+      lastOutput: {
+        identity,
+        output: { tokens: 0, capacityTokens: 0, source: "provider", coverage: "complete" },
+        updatedAt: "2026-09-11T00:00:00Z",
+      },
+    }, 45_000, 200_000);
+
+    expect(resolved).toMatchObject({
+      used: 0, max: 200_000, output: 0, status: "measured", source: "provider",
+    });
+  });
+
   it("affiche le contexte d'une session seulement après une réponse assistant", () => {
     const session = {
       accumulated_tokens: 100,

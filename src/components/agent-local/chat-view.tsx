@@ -169,8 +169,7 @@ export function ChatView({
                   draftKey={sessionComposerDraftKey(sessionId)}
                   sessionId={sessionId}
                   modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode} fastModeEnabled={fastModeEnabled} fastModePending={fastModePending}
-                  files={fileDrop.files} contextUsed={context.summary.used ?? 0}
-                  contextMax={chat.contextUsageVisible ? context.max : 0} contextBreakdown={context.breakdown}
+                  files={fileDrop.files} contextBreakdown={context.breakdown}
                   contextSummary={chat.contextUsageVisible ? context.summary : undefined}
                   retryIndicator={runtime.retryIndicator}
                   interactiveRequest={chat.interactiveChoice}

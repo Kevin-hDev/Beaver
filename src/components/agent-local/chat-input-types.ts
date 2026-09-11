@@ -17,8 +17,6 @@ export interface ChatInputProps {
   fastModeEnabled: boolean;
   fastModePending: boolean;
   files?: DroppedFile[];
-  contextUsed: number;
-  contextMax: number;
   contextBreakdown?: ContextUsageBreakdown;
   contextSummary?: ResolvedContextUsage;
   retryIndicator?: RetryIndicatorState | null;

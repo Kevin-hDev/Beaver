@@ -166,8 +166,6 @@ function Composer({
       providerName="provider"
       fastModeEnabled={false}
       fastModePending={false}
-      contextUsed={0}
-      contextMax={1}
       permissionMode={permissionMode}
       planModeEnabled={planModeEnabled}
       buttonState="hidden"

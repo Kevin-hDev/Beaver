@@ -60,8 +60,6 @@ const baseProps = {
   isStreaming: false,
   fastModeEnabled: false,
   fastModePending: false,
-  contextUsed: 0,
-  contextMax: 8000,
   permissionMode: "chat" as PermissionMode,
   onPermissionModeChange: vi.fn(),
   onFileImport: vi.fn(),

@@ -31,8 +31,6 @@ interface ChatInputActionsRowProps {
   reasoningMode?: string | null;
   fastModeEnabled: boolean;
   fastModePending: boolean;
-  contextUsed: number;
-  contextMax: number;
   contextBreakdown?: ContextUsageBreakdown;
   contextSummary?: ResolvedContextUsage;
   permissionMode: PermissionMode;
@@ -61,8 +59,6 @@ export function ChatInputActionsRow({
   reasoningMode,
   fastModeEnabled,
   fastModePending,
-  contextUsed,
-  contextMax,
   contextBreakdown,
   contextSummary,
   permissionMode,
@@ -112,8 +108,6 @@ export function ChatInputActionsRow({
         </>
       )}
       <ContextProgress
-        used={contextUsed}
-        max={contextMax}
         breakdown={contextBreakdown}
         compression={compression.effective}
         summary={contextSummary}

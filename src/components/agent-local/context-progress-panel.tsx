@@ -18,7 +18,8 @@ export function ContextProgressPanel({
   summary, breakdown, compression, percentage, onCompressionHelpOpen,
 }: ContextProgressPanelProps) {
   const { t } = useTranslation();
-  const differentBreakdown = breakdown && summary.used !== null && breakdown.used !== summary.used;
+  const differentBreakdown = breakdown
+    && (summary.used === null || breakdown.used !== summary.used);
   return <>
     <div className="context-ring-header">
       <span>{t("agentLocal.contextUsage.title")}</span>

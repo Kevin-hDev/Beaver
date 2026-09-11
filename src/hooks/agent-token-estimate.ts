@@ -63,7 +63,7 @@ export function resolveContextUsage(
     ?? (preparation?.state === "completed" ? preparation : null);
   const input = primary?.input;
   const used = validCount(input?.tokens);
-  const reconstructed = used === null ? validCount(reconstructedTokens) : null;
+  const reconstructed = used === null ? validPositiveCount(reconstructedTokens) : null;
   const secondaryStatus = !active && record.lastMeasurement && preparation
     && (preparation.state !== "completed"
       || !sameIdentity(preparation.identity, record.lastMeasurement.identity))
@@ -72,8 +72,8 @@ export function resolveContextUsage(
   return {
     used: used ?? reconstructed,
     max: primary
-      ? validCount(primary.contextLimit)
-      : reconstructed !== null ? validCount(reconstructedLimit) : null,
+      ? validPositiveCount(primary.contextLimit)
+      : reconstructed !== null ? validPositiveCount(reconstructedLimit) : null,
     output: validCount(record.lastOutput?.output.tokens),
     status: used !== null
       ? input?.coverage === "partial" ? "partial" : primaryStatus(active, record, preparation)
@@ -103,9 +103,14 @@ function stateStatus(state: ContextPreparationState): ContextUsageStatus | null 
 }
 
 function validCount(value: number | null | undefined): number | null {
-  return typeof value === "number" && Number.isFinite(value) && value > 0
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
     ? Math.floor(value)
     : null;
+}
+
+function validPositiveCount(value: number | null | undefined): number | null {
+  const count = validCount(value);
+  return count !== null && count > 0 ? count : null;
 }
 
 function sameIdentity(
