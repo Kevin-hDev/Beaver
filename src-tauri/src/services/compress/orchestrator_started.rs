@@ -24,12 +24,6 @@ pub(super) async fn run(
         request.plan_mode_active,
     )
     .map_err(|_| CompressionError::SnapshotInvalid)?;
-    let canonical = request
-        .runtime_messages
-        .iter()
-        .filter(|message| matches!(message.role.as_str(), "system" | "developer"))
-        .cloned()
-        .collect();
     let snapshot = super::snapshot::CompressionSnapshot::capture(
         &session,
         profile,
@@ -39,7 +33,7 @@ pub(super) async fn run(
     )
     .map_err(|_| CompressionError::SnapshotInvalid)?
     .with_prepared_context(
-        canonical,
+        request.runtime_messages,
         request.provider_tools.to_vec(),
         request.prepared_count.clone(),
     )

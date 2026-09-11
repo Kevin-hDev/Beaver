@@ -90,23 +90,30 @@ impl CompressionSnapshot {
 
     pub fn with_prepared_context(
         mut self,
-        canonical_messages: Vec<ChatMessage>,
+        runtime_messages: &[ChatMessage],
         provider_tools: Vec<serde_json::Value>,
         prepared_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
     ) -> Result<Self, String> {
-        if canonical_messages.len() > 64 || provider_tools.len() > 256 {
+        if provider_tools.len() > 256 {
             return Err("compression_snapshot_invalid".to_string());
         }
-        self.canonical_messages = canonical_messages;
-        self.provider_tools = provider_tools;
         let baseline = super::prepared_request::count(
             &self.provider_id,
             &self.source_session.model,
-            &self.canonical_messages,
-            &self.provider_tools,
+            runtime_messages,
+            &provider_tools,
         )
         .capacity_tokens
         .ok_or_else(|| "compression_snapshot_invalid".to_string())?;
+        self.canonical_messages = runtime_messages
+            .iter()
+            .filter(|message| matches!(message.role.as_str(), "system" | "developer"))
+            .cloned()
+            .collect();
+        if self.canonical_messages.len() > 64 {
+            return Err("compression_snapshot_invalid".to_string());
+        }
+        self.provider_tools = provider_tools;
         self.transient_overhead_tokens = prepared_count
             .capacity_tokens
             .ok_or_else(|| "compression_snapshot_invalid".to_string())?
