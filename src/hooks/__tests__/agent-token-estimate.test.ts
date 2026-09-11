@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { estimateAgentMessagesTokens, resolveSessionContext, textUnits } from "../agent-token-estimate";
+import {
+  estimateAgentMessagesTokens,
+  resolveContextUsage,
+  resolveSessionContext,
+  textUnits,
+} from "../agent-token-estimate";
 import type { AgentMessage, AgentSession } from "@/types/agent";
 
 function msg(content: string): AgentMessage {
@@ -61,16 +66,93 @@ describe("agent-token-estimate", () => {
 
     expect(resolveSessionContext(session)).toEqual({
       sessionTokenCount: 900,
-      hasContextUsageSnapshot: true,
+      contextUsageRecord: {
+        activeRequestId: null, currentPreparation: null,
+        lastMeasurement: null, lastOutput: null,
+      },
       contextUsageVisible: false,
     });
 
     delete session.context_tokens;
     expect(resolveSessionContext(session)).toEqual({
       sessionTokenCount: 100,
-      hasContextUsageSnapshot: false,
+      contextUsageRecord: {
+        activeRequestId: null, currentPreparation: null,
+        lastMeasurement: null, lastOutput: null,
+      },
       contextUsageVisible: false,
     });
+  });
+
+  it("priorise la mesure et sa limite tout en gardant la préparation B secondaire", () => {
+    const identity = (requestId: string) => ({
+      requestId, turnId: `turn-${requestId}`, turn: 0, attempt: 1,
+      providerId: "openai", model: requestId === "A" ? "gpt-a" : "gpt-b",
+    });
+    const resolved = resolveContextUsage({
+      activeRequestId: null,
+      currentPreparation: {
+        identity: identity("B"), contextLimit: 100_000,
+        input: { tokens: 80_000, capacityTokens: 80_000, source: "heuristic", coverage: "complete" },
+        state: "completed", breakdown: null, updatedAt: "2026-09-11T00:00:02Z",
+      },
+      lastMeasurement: {
+        identity: identity("A"), contextLimit: 200_000,
+        input: { tokens: 62_000, capacityTokens: 62_000, source: "provider", coverage: "complete" },
+        updatedAt: "2026-09-11T00:00:01Z",
+      },
+      lastOutput: {
+        identity: identity("B"),
+        output: { tokens: 20, capacityTokens: 20, source: "provider", coverage: "complete" },
+        updatedAt: "2026-09-11T00:00:02Z",
+      },
+    }, 45_000, 100_000);
+
+    expect(resolved).toMatchObject({
+      used: 62_000, max: 200_000, output: 20,
+      status: "measured", secondaryStatus: "completedEstimated", source: "provider",
+    });
+  });
+
+  it("reconstruit seulement un record vide et ne fabrique aucune limite historique", () => {
+    const empty = { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null };
+    expect(resolveContextUsage(empty, 45_000, 200_000)).toMatchObject({
+      used: 45_000, max: 200_000, status: "reconstructed", source: "reconstructed",
+    });
+    expect(resolveContextUsage(empty, 0, 200_000)).toMatchObject({
+      used: null, max: null, status: "unavailable", source: null,
+    });
+  });
+
+  it("conserve le précompte terminé du premier appel après reload", () => {
+    const identity = { requestId: "B", turnId: "turn-B", turn: 0, attempt: 1, providerId: "openai", model: "gpt-5" };
+    const resolved = resolveContextUsage({
+      activeRequestId: null,
+      currentPreparation: {
+        identity, contextLimit: 200_000,
+        input: { tokens: 6_000, capacityTokens: 6_000, source: "heuristic", coverage: "complete" },
+        state: "completed", breakdown: null, updatedAt: "2026-09-11T00:00:00Z",
+      },
+      lastMeasurement: null,
+      lastOutput: null,
+    });
+    expect(resolved).toMatchObject({
+      used: 6_000, max: 200_000, status: "completedEstimated", source: "heuristic",
+    });
+  });
+
+  it("n'invente aucun pourcentage quand la mesure n'a pas de limite", () => {
+    const identity = { requestId: "A", turnId: "turn-A", turn: 0, attempt: 1, providerId: "openai", model: "gpt-5" };
+    const resolved = resolveContextUsage({
+      activeRequestId: null, currentPreparation: null,
+      lastMeasurement: {
+        identity, contextLimit: null,
+        input: { tokens: 62_000, capacityTokens: 64_000, source: "provider", coverage: "partial" },
+        updatedAt: "2026-09-11T00:00:00Z",
+      },
+      lastOutput: null,
+    });
+    expect(resolved).toMatchObject({ used: 62_000, max: null, status: "partial" });
   });
 
   it("affiche le contexte d'une session seulement après une réponse assistant", () => {

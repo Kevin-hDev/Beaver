@@ -8,6 +8,8 @@ import { clearCleanup, enforceSessionLimit, type StreamRecord } from "./agent-st
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { AgentMessage } from "@/types/agent";
 import { assignStreamRun, type StreamRun } from "./agent-stream-run-ownership";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
+import { resolveContextUsage } from "./agent-token-estimate";
 
 export interface StreamSnapshot extends ChatState {
   pendingPermissions: PermissionRequestState[];
@@ -65,17 +67,19 @@ export function startStreamRecord(
   streamKind: StreamKind,
   awaitingAdmission = false,
   run?: StreamRun,
+  contextUsageRecord?: ContextUsageRecord,
 ): StreamRecord {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
   const previous = record.state;
-  const next = createManagedStreamState(messages, sessionTokenCount, streamKind);
-  record.state = streamKind === "compression" && previous.hasContextUsageSnapshot ? {
+  const next = createManagedStreamState(
+    messages, sessionTokenCount, streamKind, contextUsageRecord ?? previous.contextUsageRecord,
+  );
+  record.state = streamKind === "compression"
+    && resolveContextUsage(previous.contextUsageRecord).used !== null ? {
     ...next,
-    contextInputTokens: previous.contextInputTokens,
-    contextOutputTokens: previous.contextOutputTokens,
+    contextUsageRecord: previous.contextUsageRecord,
     contextLimitTokens: previous.contextLimitTokens,
-    hasContextUsageSnapshot: previous.hasContextUsageSnapshot,
     contextUsageBuckets: previous.contextUsageBuckets,
     contextUsageBaseSegments: previous.contextUsageBaseSegments,
     contextUsageIncludesReasoning: previous.contextUsageIncludesReasoning,

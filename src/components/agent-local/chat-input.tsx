@@ -27,7 +27,7 @@ const K_ESC = "Escape";
 export function ChatInput({
   draftKey, sessionId,
   modelName, providerName, isStreaming, reasoningMode, fastModeEnabled, fastModePending, files,
-  contextUsed, contextMax, contextBreakdown, retryIndicator,
+  contextUsed, contextMax, contextBreakdown, contextSummary, retryIndicator,
   interactiveRequest, onInteractiveResolved,
   permissionMode, availablePermissionModes, missingDirectory, missingDirectoryResolving,
   planModeEnabled = false, onPermissionModeChange, onResolveMissingDirectory, onPlanModeChange,
@@ -200,6 +200,7 @@ export function ChatInput({
             contextUsed={contextUsed}
             contextMax={contextMax}
             contextBreakdown={contextBreakdown}
+            contextSummary={contextSummary}
             permissionMode={permissionMode}
             availablePermissionModes={availablePermissionModes}
             missingDirectory={missingDirectory}

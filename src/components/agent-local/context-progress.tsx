@@ -8,17 +8,17 @@ import {
   floatingMenuPortalRoot,
   useFloatingMenuPosition,
 } from "@/hooks/use-floating-menu-position";
-import { ContextCompressionHelpPopover } from "./context-compression-help-popover";
 import { useContextProgressSurfaceEffects } from "./use-context-progress-surface-effects";
-import { formatTokenCount } from "@/lib/token-format";
-import { ContextUsageRow } from "./context-progress-row";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
+import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
+import { ContextProgressPanel } from "./context-progress-panel";
 
 interface ContextProgressProps {
   used: number;
   max: number;
   breakdown?: ContextUsageBreakdown;
   compression?: ResolvedCompressionProfileView | null;
+  summary?: ResolvedContextUsage;
 }
 
 type ColorKey = "neutral" | "yellow" | "orange" | "red";
@@ -42,7 +42,7 @@ const STROKE = 3;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function ContextProgress({ used, max, breakdown, compression }: ContextProgressProps) {
+export function ContextProgress({ used, max, breakdown, compression, summary }: ContextProgressProps) {
   const { t } = useTranslation();
   const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
@@ -95,13 +95,19 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
     if (!surfaceActive) cancelClose();
   }, [surfaceActive]);
 
-  if (!max || max <= 0) return null;
-  const resolvedUsed = breakdown?.used ?? used;
-  const percentage = Math.min((resolvedUsed / max) * 100, 100);
-  const colorKey = colorForPercentage(percentage);
-  const offset = CIRCUMFERENCE - (percentage / 100) * CIRCUMFERENCE;
-  const pctDisplay = percentage < 1 ? "0" : percentage.toFixed(1);
-  const items = breakdown?.items ?? [];
+  if (!summary && max <= 0) return null;
+
+  const resolvedSummary = summary ?? {
+    used, max: max > 0 ? max : null, output: null,
+    status: "reconstructed" as const, secondaryStatus: null,
+    source: "reconstructed" as const, coverage: "complete" as const,
+    breakdown: null,
+  };
+  const percentage = resolvedSummary.used !== null && resolvedSummary.max
+    ? Math.min((resolvedSummary.used / resolvedSummary.max) * 100, 100)
+    : null;
+  const colorKey = colorForPercentage(percentage ?? 0);
+  const offset = CIRCUMFERENCE - ((percentage ?? 0) / 100) * CIRCUMFERENCE;
 
   const setHost = (node: HTMLSpanElement | null) => {
     hostRef.current = node;
@@ -174,41 +180,16 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
         onFocus={openPanel}
         onBlur={scheduleClose}
       >
-        <div className="context-ring-header">
-          <span>{t("agentLocal.contextUsage.title")}</span>
-          <strong>{formatTokenCount(resolvedUsed)} / {formatTokenCount(max)} ({pctDisplay}%)</strong>
-        </div>
-        <div className="context-ring-bar" aria-hidden="true">
-          <div className="context-ring-bar-fill" style={{ width: `${percentage}%` }} />
-        </div>
-        <div className="context-ring-list">
-          {items.map((item) => (
-            <ContextUsageRow key={item.key} item={item} />
-          ))}
-        </div>
-        <div className="context-ring-compression-row">
-          {compression ? (
-            compression.available ? (
-              <>
-                <span>{t("agentLocal.contextUsage.compression")}</span>
-                <strong title={compression.name}>{compression.name}</strong>
-              </>
-            ) : (
-              <>
-                <span>{t("agentLocal.contextUsage.compressionDisabled")}</span>
-                <ContextCompressionHelpPopover onOpenChange={(next) => {
-                  if (next) cancelClose();
-                  setHelpOpen(next);
-                }} />
-              </>
-            )
-          ) : (
-            <>
-              <span>{t("agentLocal.contextUsage.compression")}</span>
-              <strong aria-busy="true">—</strong>
-            </>
-          )}
-        </div>
+        <ContextProgressPanel
+          summary={resolvedSummary}
+          breakdown={breakdown}
+          compression={compression}
+          percentage={percentage}
+          onCompressionHelpOpen={(next) => {
+            if (next) cancelClose();
+            setHelpOpen(next);
+          }}
+        />
       </div></AppSurfacePortal>}
     </span>
   );

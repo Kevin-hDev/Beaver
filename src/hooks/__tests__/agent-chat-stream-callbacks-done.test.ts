@@ -63,13 +63,13 @@ describe("done", () => {
     expect(result.state.messages.length).toBeLessThanOrEqual(2000);
   });
 
-  it("utilise contextTokens pour le total contexte session", () => {
+  it("n'utilise plus le contextTokens terminal comme seconde autorité", () => {
     const result = applyStreamEvent(
       makeState({ sessionTokenCount: 100, currentContent: "réponse" }),
       doneEvent({ evalCount: 5, promptTokens: 10, contextTokens: 999 }),
     );
-    expect(result.state.sessionTokenCount).toBe(999);
-    expect(result.state.hasContextUsageSnapshot).toBe(true);
+    expect(result.state.sessionTokenCount).toBe(2);
+    expect(result.state.contextUsageRecord.currentPreparation).toBeNull();
     expect(result.assistantMessage?.tokens).toBe(5);
   });
 
@@ -90,7 +90,7 @@ describe("done", () => {
       doneEvent({ contextTokens: 80 }),
     );
 
-    expect(result.state.sessionTokenCount).toBe(80);
+    expect(result.state.sessionTokenCount).toBe(100);
     expect(result.state.contextUsageBuckets?.messages).toBe(200);
     expect(result.state.contextUsageBuckets?.metaContext).toBe(20);
   });
@@ -101,7 +101,7 @@ describe("done", () => {
       doneEvent({ evalCount: null, promptTokens: null, contextTokens: null }),
     );
     expect(result.state.sessionTokenCount).toBe(1250);
-    expect(result.state.hasContextUsageSnapshot).toBe(false);
+    expect(result.state.contextUsageRecord.currentPreparation).toBeNull();
   });
 });
 

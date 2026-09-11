@@ -27,6 +27,10 @@ describe("useContextUsage", () => {
       contextUsageBaseSegments: 0,
       contextUsageIncludesReasoning: false,
       contextUsageVisible: false,
+      contextUsageRecord: {
+        activeRequestId: null, currentPreparation: null,
+        lastMeasurement: null, lastOutput: null,
+      },
     };
 
     const { result } = renderHook(() => useContextUsage({

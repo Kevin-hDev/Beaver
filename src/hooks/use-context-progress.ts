@@ -2,15 +2,19 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { resolveContextUsage, type ResolvedContextUsage } from "./agent-token-estimate";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
 
 export interface ContextProgressState {
   max: number;
+  summary?: ResolvedContextUsage;
 }
 
 export function useContextProgress(
   model: string,
   usedTokens: number,
   provider: string = "ollama",
+  record?: ContextUsageRecord,
 ): ContextProgressState {
   const [max, setMax] = useState(0);
   const previousUsedTokens = useRef(usedTokens);
@@ -50,5 +54,8 @@ export function useContextProgress(
     }
   }, [provider, refresh, usedTokens]);
 
-  return { max };
+  return {
+    max,
+    summary: record ? resolveContextUsage(record, usedTokens, max) : undefined,
+  };
 }

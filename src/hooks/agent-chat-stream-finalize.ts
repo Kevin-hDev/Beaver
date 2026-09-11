@@ -12,6 +12,7 @@ import type { ToolErrorInfo, ToolResultStatus } from "@/types/agent";
 import i18n from "@/i18n";
 import { visibleAssistant } from "./agent-stream-visible-assistant";
 import type { StreamSegment } from "./agent-chat-utils";
+import { resolveContextUsage } from "./agent-token-estimate";
 
 type PendingToolOutcome = "cancelled" | "interrupted" | "missing";
 
@@ -45,7 +46,7 @@ export function finalizeStream(
   outputTokens: number | null,
   tps: number,
   tpsEstimated: boolean,
-  contextTokens: number | null,
+  _contextTokens: number | null,
   terminalResponse: boolean,
 ): StreamApplyResult {
   const totalMs = state.streamStartedAt ? Date.now() - state.streamStartedAt : 0;
@@ -57,9 +58,10 @@ export function finalizeStream(
     state,
     state.queuedUserMessages,
   );
-  const hasStreamContextTokens = state.hasContextUsageSnapshot;
-  const resolvedContextTokens = contextTokens
-    ?? (hasStreamContextTokens ? state.sessionTokenCount : estimateAgentMessagesTokens(allMessages));
+  const recorded = resolveContextUsage(state.contextUsageRecord);
+  const resolvedContextTokens = recorded.used !== null
+    ? state.sessionTokenCount
+    : estimateAgentMessagesTokens(allMessages);
   const next: ManagedStreamState = {
     ...state,
     messages: allMessages,
@@ -67,12 +69,10 @@ export function finalizeStream(
     currentContentPhase: undefined, currentTools: [], activeStreamItem: null,
     isStreaming: false, isWorking: false, isCompressing: false, tps, tpsEstimated,
     sessionTokenCount: resolvedContextTokens,
-    contextInputTokens: resolvedContextTokens,
-    contextOutputTokens: 0,
-    hasContextUsageSnapshot: contextTokens !== null || hasStreamContextTokens,
     contextUsageBuckets,
     contextUsageBaseSegments: 0,
     liveTokenCount: 0,
+    requestOutputTokens: 0,
     streamStartedAt: null, segmentStartedAt: null, totalElapsedMs: totalMs,
     pendingPermissions: [], interactiveChoice: undefined,
     completed: true, updatedAt: Date.now(),

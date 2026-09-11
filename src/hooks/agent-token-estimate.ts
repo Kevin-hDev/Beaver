@@ -1,8 +1,38 @@
 import type { AgentMessage, AgentSession } from "@/types/agent";
+import type {
+  ContextCountCoverage,
+  ContextCountSource,
+  ContextPreparationState,
+  ContextRequestIdentity,
+  ContextUsageRecord,
+  RequestContextUsage,
+} from "@/types/agent-session.generated";
 import { restoredToolArguments } from "./agent-chat-utils";
 import { toolsFromMessage } from "@/lib/message-tools";
 
 const CHARS_PER_TOKEN = 4;
+
+export const EMPTY_CONTEXT_USAGE_RECORD: ContextUsageRecord = {
+  activeRequestId: null,
+  currentPreparation: null,
+  lastMeasurement: null,
+  lastOutput: null,
+};
+
+export type ContextUsageStatus = "prepared" | "streaming" | "measured"
+  | "completedEstimated" | "stale" | "interrupted" | "failed"
+  | "reconstructed" | "partial" | "unavailable";
+
+export interface ResolvedContextUsage {
+  used: number | null;
+  max: number | null;
+  output: number | null;
+  status: ContextUsageStatus;
+  secondaryStatus: ContextUsageStatus | null;
+  source: ContextCountSource | null;
+  coverage: ContextCountCoverage | null;
+  breakdown: RequestContextUsage | null;
+}
 
 export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
   return messages.reduce((sum, message) => sum + estimateMessage(message), 0);
@@ -10,16 +40,84 @@ export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
 
 export function resolveSessionContext(session: AgentSession): {
   sessionTokenCount: number;
-  hasContextUsageSnapshot: boolean;
+  contextUsageRecord: ContextUsageRecord;
   contextUsageVisible: boolean;
 } {
   const contextTokens = session.context_tokens ?? 0;
   return {
     sessionTokenCount: contextTokens || session.accumulated_tokens
       || estimateAgentMessagesTokens(session.messages),
-    hasContextUsageSnapshot: contextTokens > 0,
+    contextUsageRecord: session.context_usage ?? EMPTY_CONTEXT_USAGE_RECORD,
     contextUsageVisible: session.messages.some((message) => message.role === "assistant"),
   };
+}
+
+export function resolveContextUsage(
+  record: ContextUsageRecord,
+  reconstructedTokens = 0,
+  reconstructedLimit = 0,
+): ResolvedContextUsage {
+  const preparation = record.currentPreparation;
+  const active = preparation?.state === "ready" || preparation?.state === "in_flight"
+    ? preparation
+    : null;
+  const primary = active ?? record.lastMeasurement
+    ?? (preparation?.state === "completed" ? preparation : null);
+  const input = primary?.input;
+  const used = validCount(input?.tokens);
+  const reconstructed = used === null ? validCount(reconstructedTokens) : null;
+  const secondaryStatus = !active && record.lastMeasurement && preparation
+    && (preparation.state !== "completed"
+      || !sameIdentity(preparation.identity, record.lastMeasurement.identity))
+    ? stateStatus(preparation.state)
+    : null;
+  return {
+    used: used ?? reconstructed,
+    max: primary
+      ? validCount(primary.contextLimit)
+      : reconstructed !== null ? validCount(reconstructedLimit) : null,
+    output: validCount(record.lastOutput?.output.tokens),
+    status: used !== null
+      ? input?.coverage === "partial" ? "partial" : primaryStatus(active, record, preparation)
+      : reconstructed !== null ? "reconstructed" : "unavailable",
+    secondaryStatus,
+    source: used !== null ? input?.source ?? null : reconstructed !== null ? "reconstructed" : null,
+    coverage: used !== null ? input?.coverage ?? null : reconstructed !== null ? "complete" : null,
+    breakdown: preparation?.breakdown ?? null,
+  };
+}
+
+function primaryStatus(
+  active: ContextUsageRecord["currentPreparation"],
+  record: ContextUsageRecord,
+  preparation: ContextUsageRecord["currentPreparation"],
+): ContextUsageStatus {
+  if (active?.state === "ready") return "prepared";
+  if (active?.state === "in_flight") return "streaming";
+  if (record.lastMeasurement) return "measured";
+  return preparation?.state === "completed" ? "completedEstimated" : "unavailable";
+}
+
+function stateStatus(state: ContextPreparationState): ContextUsageStatus | null {
+  if (state === "completed") return "completedEstimated";
+  if (state === "stale" || state === "interrupted" || state === "failed") return state;
+  return null;
+}
+
+function validCount(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.floor(value)
+    : null;
+}
+
+function sameIdentity(
+  left: ContextRequestIdentity,
+  right: ContextRequestIdentity,
+): boolean {
+  return left.requestId === right.requestId
+    && left.turnId === right.turnId
+    && left.turn === right.turn
+    && left.attempt === right.attempt;
 }
 
 function estimateMessage(message: AgentMessage): number {

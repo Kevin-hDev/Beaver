@@ -7,6 +7,7 @@ import { PlanModeBadge } from "./plan-mode-badge";
 import { RetryIndicator } from "./retry-indicator";
 import { SendStopButton } from "./send-stop-button";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
+import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { RetryIndicatorState } from "@/types/agent";
@@ -33,6 +34,7 @@ interface ChatInputActionsRowProps {
   contextUsed: number;
   contextMax: number;
   contextBreakdown?: ContextUsageBreakdown;
+  contextSummary?: ResolvedContextUsage;
   permissionMode: PermissionMode;
   availablePermissionModes?: PermissionMode[];
   missingDirectory?: MissingSessionDirectory | null;
@@ -62,6 +64,7 @@ export function ChatInputActionsRow({
   contextUsed,
   contextMax,
   contextBreakdown,
+  contextSummary,
   permissionMode,
   availablePermissionModes,
   missingDirectory,
@@ -113,6 +116,7 @@ export function ChatInputActionsRow({
         max={contextMax}
         breakdown={contextBreakdown}
         compression={compression.effective}
+        summary={contextSummary}
       />
       <div className="mdp-anchor">
         <PermissionModeSelector

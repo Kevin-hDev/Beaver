@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { finalizeContextUsage, type ContextUsageBreakdown } from "./context-usage-breakdown";
 import {
   buildContextTokenBuckets,
+  contextBucketsFromRecord,
   mergeContextTokenBuckets,
   type ContextTokenBuckets,
 } from "./context-usage-buckets";
@@ -9,6 +10,7 @@ import { buildLiveContextMessage, type LiveContextState } from "./context-usage-
 import { resolvePreparedContextBuckets } from "./context-usage-stream";
 import { useContextHiddenUsage } from "./use-context-hidden-usage";
 import type { AgentMessage } from "@/types/agent";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
 
 interface UseContextUsageArgs {
   sessionId: string;
@@ -19,6 +21,7 @@ interface UseContextUsageArgs {
     contextUsageBuckets: ContextTokenBuckets | null;
     contextUsageBaseSegments: number;
     contextUsageIncludesReasoning: boolean;
+    contextUsageRecord: ContextUsageRecord;
   };
   workingDir?: string;
   permissionMode?: string;
@@ -40,7 +43,7 @@ export function useContextUsage({
   contextUsageIncludesReasoning: modelIncludesReasoning,
 }: UseContextUsageArgs): ContextUsageBreakdown {
   const hiddenUsage = useContextHiddenUsage({
-    enabled: !stream.contextUsageBuckets,
+    enabled: !(stream.contextUsageRecord.currentPreparation?.breakdown ?? stream.contextUsageBuckets),
     sessionId,
     model,
     provider,
@@ -60,6 +63,9 @@ export function useContextUsage({
     contextUsageIncludesReasoning,
   } = stream;
   const includeThinking = modelIncludesReasoning ?? contextUsageIncludesReasoning;
+  const recordBuckets = stream.contextUsageRecord.currentPreparation?.breakdown
+    ? contextBucketsFromRecord(stream.contextUsageRecord.currentPreparation.breakdown)
+    : null;
   const preparedBuckets = useMemo(
     () => resolvePreparedContextBuckets({
       completedSegments,
@@ -67,12 +73,13 @@ export function useContextUsage({
       currentContentPhase,
       currentThinking,
       currentTools,
-      contextUsageBuckets,
+      contextUsageBuckets: recordBuckets ?? contextUsageBuckets,
       contextUsageBaseSegments,
       contextUsageIncludesReasoning,
     }),
     [
       contextUsageBuckets,
+      recordBuckets,
       contextUsageBaseSegments,
       contextUsageIncludesReasoning,
       completedSegments,

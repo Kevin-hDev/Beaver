@@ -50,6 +50,31 @@
   white-space: nowrap;
 }
 
+.context-ring-status,
+.context-ring-source,
+.context-ring-output,
+.context-ring-breakdown-label {
+  margin-bottom: var(--space-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.context-ring-status,
+.context-ring-output {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.context-ring-status span:last-child,
+.context-ring-output strong {
+  color: var(--ink);
+}
+
+.context-ring-output strong {
+  font-family: var(--font-mono);
+}
+
 .context-ring-bar {
   width: 100%;
   height: 5px;

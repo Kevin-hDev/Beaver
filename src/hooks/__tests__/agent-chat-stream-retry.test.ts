@@ -50,7 +50,17 @@ describe("retryIndicator", () => {
     ];
     const state = makeState({
       completedSegments,
-      hasContextUsageSnapshot: true,
+      contextUsageRecord: {
+        activeRequestId: "request-1",
+        currentPreparation: {
+          identity: { requestId: "request-1", turnId: "turn-1", turn: 0, attempt: 1, providerId: "openai", model: "gpt-5" },
+          contextLimit: 200_000,
+          input: { tokens: 100, capacityTokens: 100, source: "heuristic", coverage: "complete" },
+          state: "in_flight", breakdown: null, updatedAt: "2026-09-11T00:00:00Z",
+        },
+        lastMeasurement: null,
+        lastOutput: null,
+      },
       contextUsageBaseSegments: 1,
       currentContent: "réponse partielle",
       currentContentPhase: "work",
@@ -59,9 +69,8 @@ describe("retryIndicator", () => {
       activeStreamItem: { kind: "thinking" },
       tps: 12,
       tpsEstimated: true,
-      contextInputTokens: 100,
-      contextOutputTokens: 20,
       liveTokenCount: 35,
+      requestOutputTokens: 20,
       sessionTokenCount: 120,
     });
 
@@ -77,7 +86,6 @@ describe("retryIndicator", () => {
     expect(next.currentTools).toEqual([]);
     expect(next.activeStreamItem).toBeNull();
     expect(next.tps).toBe(0);
-    expect(next.contextOutputTokens).toBe(0);
     expect(next.liveTokenCount).toBe(15);
     expect(next.sessionTokenCount).toBe(100);
   });

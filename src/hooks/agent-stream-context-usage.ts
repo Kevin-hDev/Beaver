@@ -2,6 +2,7 @@ import type { ManagedStreamState } from "./agent-chat-stream-types";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 import type { StreamEvent } from "@/types/agent";
 import type { RequestContextUsage } from "@/types/agent-session.generated";
+import { resolveContextUsage } from "./agent-token-estimate";
 
 type ContextUsageData = Extract<
   StreamEvent,
@@ -15,25 +16,21 @@ export function applyContextUsage(
   usage: ContextUsageData,
 ) {
   const preparation = usage.record.currentPreparation;
-  const activePreparation = preparation && (
-    preparation.state === "ready" || preparation.state === "in_flight"
-  ) ? preparation : null;
-  const selectedInput = activePreparation
-    ?? usage.record.lastMeasurement
-    ?? preparation;
-  const inputTokens = boundedTokens(selectedInput?.input.tokens ?? 0);
-  const outputTokens = boundedTokens(usage.record.lastOutput?.output.tokens ?? 0);
-  const startsRequest = activePreparation !== null;
-  if (!startsRequest) {
+  const resolved = resolveContextUsage(usage.record);
+  const inputTokens = boundedTokens(resolved.used ?? 0);
+  const outputTokens = boundedTokens(resolved.output ?? 0);
+  const startsRequest = preparation?.state === "ready" || preparation?.state === "in_flight";
+  if (startsRequest) {
+    state.requestOutputTokens = 0;
+  } else {
     state.liveTokenCount = adjustedTokens(
       state.liveTokenCount,
-      outputTokens - state.contextOutputTokens,
+      outputTokens - state.requestOutputTokens,
     );
+    state.requestOutputTokens = outputTokens;
   }
-  state.contextInputTokens = inputTokens;
-  state.contextOutputTokens = outputTokens;
-  state.contextLimitTokens = boundedTokens(selectedInput?.contextLimit ?? 0);
-  state.hasContextUsageSnapshot = selectedInput !== null;
+  state.contextUsageRecord = usage.record;
+  state.contextLimitTokens = boundedTokens(resolved.max ?? 0);
   state.sessionTokenCount = boundedSum(inputTokens, outputTokens);
   if (preparation?.breakdown) {
     state.contextUsageBuckets = boundedBuckets(preparation.breakdown);
@@ -46,17 +43,16 @@ export function applyGeneratedTokenCount(
   state: ManagedStreamState,
   reportedTokens: number | undefined,
 ) {
-  const previousTokens = boundedTokens(state.contextOutputTokens);
+  const previousTokens = boundedTokens(state.requestOutputTokens);
   const reported = reportedTokens === undefined ? 0 : boundedTokens(reportedTokens);
   const nextRequestTokens = reported > 0
     ? Math.max(previousTokens, reported)
     : boundedSum(previousTokens, 1);
-  const delta = nextRequestTokens - previousTokens;
-
-  state.contextOutputTokens = nextRequestTokens;
-  state.liveTokenCount = boundedSum(state.liveTokenCount, delta);
+  state.requestOutputTokens = nextRequestTokens;
+  state.liveTokenCount = boundedSum(state.liveTokenCount, nextRequestTokens - previousTokens);
+  const inputTokens = boundedTokens(resolveContextUsage(state.contextUsageRecord).used ?? 0);
   state.sessionTokenCount = boundedSum(
-    state.contextInputTokens,
+    inputTokens,
     nextRequestTokens,
   );
 }
