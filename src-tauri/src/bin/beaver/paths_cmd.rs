@@ -85,6 +85,9 @@ mod tests {
             .into_iter()
             .find(|(_, en, _)| *en == "Ollama engine")
             .expect("Ollama entry");
-        assert_eq!(entry.2, directory.path().join("ollama-bundle"));
+        assert_eq!(
+            entry.2,
+            cl_go_dash_lib::cli_support::ollama_bundle_dir(directory.path())
+        );
     }
 }
