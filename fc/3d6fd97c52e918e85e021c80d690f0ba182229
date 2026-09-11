@@ -7,3 +7,9 @@ Validated:
 - npm run test:brand-boundaries: 15/15, unknown occurrences 0
 - git diff --check
 - graphify update .: no topology changes
+
+Final remote validation for PR #65 at fc3d6fd9:
+- GitHub CI run 34551144929: 10 jobs passed across Linux, macOS, and Windows; dispatch-only diagnostic skipped as designed
+- CodeQL run 34551144894: actions, Rust, and JavaScript/TypeScript analyses passed
+- GitGuardian Security Checks: passed
+- PR state: OPEN, MERGEABLE, mergeStateStatus CLEAN
