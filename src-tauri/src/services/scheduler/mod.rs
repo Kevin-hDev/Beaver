@@ -26,9 +26,8 @@ use work_supervision::SchedulerWorkServices;
 
 #[cfg(test)]
 pub(crate) use runtime_test_support::{
-    admit_due_at as admit_due_for_test, mark_running_at as mark_running_for_test,
-    mark_terminal_at as mark_terminal_for_test, publish_terminal_at as publish_terminal_for_test,
-    runtime_at as runtime_for_test,
+    mark_running_at as mark_running_for_test, mark_terminal_at as mark_terminal_for_test,
+    publish_terminal_at as publish_terminal_for_test, runtime_at as runtime_for_test,
 };
 
 static RELOAD_SENDER: OnceLock<Mutex<Option<watch::Sender<u64>>>> = OnceLock::new();

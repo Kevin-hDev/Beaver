@@ -1,7 +1,6 @@
 use super::runtime::{scan_if_active_at, sleep_until_next, terminal_ids};
 use super::runtime_test_support::{
-    admit_due_at, mark_running_at, mark_terminal_at, publish_terminal_at, runtime_at, Admission,
-    AutomationRunResult,
+    mark_running_at, mark_terminal_at, publish_terminal_at, runtime_at, AutomationRunResult,
 };
 use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus, AutomationTarget};
 use crate::services::automations::{
@@ -39,21 +38,54 @@ fn at(minute: u32) -> chrono::DateTime<Utc> {
     Utc.with_ymd_and_hms(2026, 9, 10, 10, minute, 0).unwrap()
 }
 
+fn once_definition(id: Uuid, scheduled_for: chrono::DateTime<Utc>) -> AutomationDefinition {
+    let mut automation = definition(id);
+    automation.schedule = AutomationSchedule::Once {
+        local_datetime: scheduled_for.naive_utc(),
+        timezone: chrono_tz::UTC,
+    };
+    automation
+}
+
+async fn scan_from(
+    root: &std::path::Path,
+    checkpoint: chrono::DateTime<Utc>,
+    through: chrono::DateTime<Utc>,
+    definitions: &[AutomationDefinition],
+) -> Vec<Uuid> {
+    scan_if_active_at(root, false, checkpoint, &[])
+        .await
+        .unwrap();
+    scan_if_active_at(root, false, through, definitions)
+        .await
+        .unwrap()
+}
+
 #[tokio::test]
 async fn grace_is_ready_but_an_old_unclaimed_occurrence_is_missed() {
-    let root = tempfile::tempdir().unwrap();
-    let ready = admit_due_at(root.path(), &definition(Uuid::new_v4()), at(0), at(3))
-        .await
-        .unwrap();
-    assert!(matches!(ready, Admission::Ready { .. }));
+    let ready_root = tempfile::tempdir().unwrap();
+    let ready = once_definition(Uuid::new_v4(), at(0));
+    scan_from(
+        ready_root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(3),
+        &[ready],
+    )
+    .await;
+    let ready_runtime = runtime_at(ready_root.path()).await.unwrap();
+    assert_eq!(ready_runtime.occurrences[0].state, OccurrenceState::Pending);
 
-    let missed = admit_due_at(root.path(), &definition(Uuid::new_v4()), at(0), at(20))
-        .await
-        .unwrap();
-    assert!(matches!(missed, Admission::Missed { .. }));
-    let runtime = runtime_at(root.path()).await.unwrap();
-    assert_eq!(runtime.occurrences.len(), 2);
-    assert!(runtime.occurrences.iter().any(|item| {
+    let missed_root = tempfile::tempdir().unwrap();
+    let missed = once_definition(Uuid::new_v4(), at(0));
+    scan_from(
+        missed_root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(20),
+        &[missed],
+    )
+    .await;
+    let missed_runtime = runtime_at(missed_root.path()).await.unwrap();
+    assert!(missed_runtime.occurrences.iter().any(|item| {
         item.state == OccurrenceState::Terminal
             && item.result.as_ref().map(|result| &result.status)
                 == Some(&OccurrenceResultStatus::Missed)
@@ -64,27 +96,28 @@ async fn grace_is_ready_but_an_old_unclaimed_occurrence_is_missed() {
 async fn running_has_one_pending_and_later_deadlines_coalesce_into_it() {
     let root = tempfile::tempdir().unwrap();
     let automation = definition(Uuid::new_v4());
-    let first = admit_due_at(root.path(), &automation, at(0), at(1))
-        .await
-        .unwrap();
-    let Admission::Ready { occurrence_id } = first else {
-        panic!("first occurrence must be ready")
-    };
+    let ids = scan_from(
+        root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(1),
+        std::slice::from_ref(&automation),
+    )
+    .await;
+    let occurrence_id = ids[0];
     mark_running_at(root.path(), occurrence_id, at(1))
         .await
         .unwrap();
-    assert!(matches!(
-        admit_due_at(root.path(), &automation, at(5), at(20))
-            .await
-            .unwrap(),
-        Admission::Pending { .. }
-    ));
-    assert!(matches!(
-        admit_due_at(root.path(), &automation, at(10), at(20))
-            .await
-            .unwrap(),
-        Admission::Coalesced { .. }
-    ));
+    scan_if_active_at(root.path(), false, at(6), std::slice::from_ref(&automation))
+        .await
+        .unwrap();
+    scan_if_active_at(
+        root.path(),
+        false,
+        at(11),
+        std::slice::from_ref(&automation),
+    )
+    .await
+    .unwrap();
     let runtime = runtime_at(root.path()).await.unwrap();
     assert_eq!(runtime.occurrences.len(), 2);
     let pending = runtime
@@ -100,12 +133,21 @@ async fn running_has_one_pending_and_later_deadlines_coalesce_into_it() {
 async fn a_busy_session_keeps_pending_without_age_expiration() {
     let root = tempfile::tempdir().unwrap();
     let automation = definition(Uuid::new_v4());
-    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
-        .await
-        .unwrap()
-    else {
-        panic!("occurrence must be ready")
-    };
+    let occurrence_id = scan_from(
+        root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(1),
+        std::slice::from_ref(&automation),
+    )
+    .await[0];
+    scan_if_active_at(
+        root.path(),
+        false,
+        at(30),
+        std::slice::from_ref(&automation),
+    )
+    .await
+    .unwrap();
     let runtime = runtime_at(root.path()).await.unwrap();
     let pending = runtime
         .occurrences
@@ -113,7 +155,8 @@ async fn a_busy_session_keeps_pending_without_age_expiration() {
         .find(|item| item.id == occurrence_id)
         .unwrap();
     assert_eq!(pending.state, OccurrenceState::Pending);
-    assert_eq!(pending.updated_at, at(1));
+    assert_eq!(pending.id, occurrence_id);
+    assert_eq!(pending.coalesced_count, Some(7));
 }
 
 #[tokio::test]
@@ -191,12 +234,13 @@ async fn terminal_publication_is_replayed_once_and_completes_once() {
     })
     .await
     .unwrap();
-    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
-        .await
-        .unwrap()
-    else {
-        panic!("occurrence must be ready")
-    };
+    let occurrence_id = scan_from(
+        root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(1),
+        std::slice::from_ref(&automation),
+    )
+    .await[0];
     mark_running_at(root.path(), occurrence_id, at(1))
         .await
         .unwrap();
@@ -239,12 +283,13 @@ async fn deleted_definition_is_not_resurrected_when_running_finishes() {
     })
     .await
     .unwrap();
-    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
-        .await
-        .unwrap()
-    else {
-        panic!("occurrence must be ready")
-    };
+    let occurrence_id = scan_from(
+        root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(1),
+        std::slice::from_ref(&automation),
+    )
+    .await[0];
     mark_running_at(root.path(), occurrence_id, at(1))
         .await
         .unwrap();
@@ -276,21 +321,18 @@ async fn startup_terminalizes_without_replaying_work() {
     let root = tempfile::tempdir().unwrap();
     let first = definition(Uuid::new_v4());
     let second = definition(Uuid::new_v4());
-    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &first, at(0), at(1))
-        .await
-        .unwrap()
-    else {
-        panic!("occurrence must be ready")
-    };
+    let ids = scan_from(
+        root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(1),
+        &[first, second],
+    )
+    .await;
+    let occurrence_id = ids[0];
     mark_running_at(root.path(), occurrence_id, at(1))
         .await
         .unwrap();
-    assert!(matches!(
-        admit_due_at(root.path(), &second, at(0), at(1))
-            .await
-            .unwrap(),
-        Admission::Ready { .. }
-    ));
+    assert_eq!(ids.len(), 2);
 
     let recovered = recover_startup_at(root.path(), at(20)).await.unwrap();
     assert_eq!(recovered.len(), 2);
@@ -320,12 +362,13 @@ async fn interrupted_after_completion_reanchors_at_startup() {
     })
     .await
     .unwrap();
-    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(10), at(11))
-        .await
-        .unwrap()
-    else {
-        panic!("occurrence must be ready")
-    };
+    let occurrence_id = scan_from(
+        root.path(),
+        at(9),
+        at(11),
+        std::slice::from_ref(&automation),
+    )
+    .await[0];
     mark_running_at(root.path(), occurrence_id, at(11))
         .await
         .unwrap();
@@ -350,12 +393,13 @@ async fn finalization_preserves_changes_made_while_running() {
     })
     .await
     .unwrap();
-    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
-        .await
-        .unwrap()
-    else {
-        panic!("occurrence must be ready")
-    };
+    let occurrence_id = scan_from(
+        root.path(),
+        at(0) - chrono::Duration::minutes(1),
+        at(1),
+        std::slice::from_ref(&automation),
+    )
+    .await[0];
     mark_running_at(root.path(), occurrence_id, at(1))
         .await
         .unwrap();

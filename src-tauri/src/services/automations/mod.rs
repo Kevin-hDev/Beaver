@@ -24,6 +24,7 @@ mod service_helpers;
 mod service_mutations;
 mod store;
 mod store_wire;
+mod text_validation;
 mod types;
 mod validation;
 
@@ -46,8 +47,6 @@ pub(crate) use runtime_scan::scan_definitions_at as scan_and_advance_at;
 #[cfg(test)]
 pub(crate) use history_store::all_at as all_history_at;
 pub(crate) use history_store::append_at as append_history_at;
-#[cfg(test)]
-pub(crate) use runtime_lifecycle::{admit_at as admit_runtime_at, RuntimeAdmission};
 pub(crate) use runtime_lifecycle::{
     mark_running_at as mark_runtime_running_at, mark_terminal_at as mark_runtime_terminal_at,
     remove_terminal_unlocked_at, runtime_at as read_runtime_at, terminal_unlocked_at,
@@ -69,6 +68,9 @@ pub(crate) use service_mutations::record_completion_unlocked_at;
 #[cfg(test)]
 pub(crate) use store::mutate;
 pub use store::read_all;
+pub(crate) use text_validation::{
+    validate_multiline_text, validate_optional_multiline_text, validate_single_line_text,
+};
 pub use types::*;
 pub(crate) use validation::validate_schedule;
 

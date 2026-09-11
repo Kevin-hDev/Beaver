@@ -185,18 +185,15 @@ async fn ready_occurrence(
     definition: &crate::models::AutomationDefinition,
     scheduled_for: DateTime<Utc>,
 ) -> Uuid {
-    match scheduler::admit_due_for_test(
-        &crate::services::paths::data_dir(),
-        definition,
-        scheduled_for,
-        scheduled_for,
-    )
-    .await
-    .unwrap()
-    {
-        super::RuntimeAdmission::Ready { occurrence_id } => occurrence_id,
-        _ => panic!("the occurrence must be ready"),
-    }
+    let root = crate::services::paths::data_dir();
+    super::scan_and_advance_at(&root, scheduled_for - Duration::seconds(1), &[])
+        .await
+        .unwrap();
+    let ids = super::scan_and_advance_at(&root, scheduled_for, std::slice::from_ref(definition))
+        .await
+        .unwrap();
+    assert_eq!(ids.len(), 1);
+    ids[0]
 }
 
 async fn finish(occurrence_id: Uuid, session_id: &str, scheduled_for: DateTime<Utc>) {

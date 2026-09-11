@@ -10,9 +10,9 @@ pub(super) async fn validate_create(
     if input.status == AutomationStatus::Completed {
         return Err(AutomationError::InvalidInput);
     }
-    validate_text(&input.name, 120)?;
-    validate_optional_text(input.description.as_deref(), 300)?;
-    validate_text(&input.prompt, 12_000)?;
+    super::text_validation::validate_single_line_text(&input.name, 120)?;
+    super::text_validation::validate_optional_multiline_text(input.description.as_deref(), 300)?;
+    super::text_validation::validate_multiline_text(&input.prompt, 12_000)?;
     validate_target(&input.target)?;
     validate_model(&input.provider, &input.model).await?;
     validate_schedule_at(&input.schedule, now)
@@ -53,13 +53,13 @@ pub(super) fn validate_update_locked(
         return Err(AutomationError::InvalidSchedule);
     }
     if let Some(name) = &patch.name {
-        validate_text(name, 120)?;
+        super::text_validation::validate_single_line_text(name, 120)?;
     }
     if let Some(description) = &patch.description {
-        validate_optional_text(description.as_deref(), 300)?;
+        super::text_validation::validate_optional_multiline_text(description.as_deref(), 300)?;
     }
     if let Some(prompt) = &patch.prompt {
-        validate_text(prompt, 12_000)?;
+        super::text_validation::validate_multiline_text(prompt, 12_000)?;
     }
     if let Some(schedule) = &patch.schedule {
         validate_schedule(schedule)?;
@@ -70,9 +70,12 @@ pub(super) fn validate_update_locked(
 pub(super) fn validate_definition(
     definition: &AutomationDefinition,
 ) -> Result<(), AutomationError> {
-    validate_text(&definition.name, 120)?;
-    validate_optional_text(definition.description.as_deref(), 300)?;
-    validate_text(&definition.prompt, 12_000)?;
+    super::text_validation::validate_single_line_text(&definition.name, 120)?;
+    super::text_validation::validate_optional_multiline_text(
+        definition.description.as_deref(),
+        300,
+    )?;
+    super::text_validation::validate_multiline_text(&definition.prompt, 12_000)?;
     validate_target(&definition.target)?;
     validate_schedule(&definition.schedule)?;
     match definition.schedule {
@@ -179,32 +182,11 @@ fn schedule_probe(schedule: AutomationSchedule) -> AutomationDefinition {
 
 fn validate_target(target: &AutomationTarget) -> Result<(), AutomationError> {
     match target {
-        AutomationTarget::ResumeSession { session_id } => validate_text(session_id, 128),
+        AutomationTarget::ResumeSession { session_id } => {
+            super::text_validation::validate_single_line_text(session_id, 128)
+        }
         AutomationTarget::NewSession { project_id } => {
-            validate_optional_text(project_id.as_deref(), 128)
+            super::text_validation::validate_optional_single_line_text(project_id.as_deref(), 128)
         }
     }
-}
-
-fn validate_text(value: &str, max: usize) -> Result<(), AutomationError> {
-    if value.trim().is_empty()
-        || value.chars().count() > max
-        || value.chars().any(disallowed_control)
-    {
-        return Err(AutomationError::InvalidInput);
-    }
-    Ok(())
-}
-
-fn validate_optional_text(value: Option<&str>, max: usize) -> Result<(), AutomationError> {
-    if value
-        .is_some_and(|value| value.chars().count() > max || value.chars().any(disallowed_control))
-    {
-        return Err(AutomationError::InvalidInput);
-    }
-    Ok(())
-}
-
-fn disallowed_control(character: char) -> bool {
-    character.is_control() && !matches!(character, '\n' | '\r' | '\t')
 }

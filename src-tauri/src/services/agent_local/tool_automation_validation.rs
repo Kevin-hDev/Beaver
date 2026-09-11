@@ -2,7 +2,10 @@
 mod wire;
 
 use crate::models::{AutomationSchedule, AutomationStatus};
-use crate::services::automations::{HistoryQuery, UpdateAutomation};
+use crate::services::automations::{
+    validate_multiline_text, validate_optional_multiline_text, validate_single_line_text,
+    HistoryQuery, UpdateAutomation,
+};
 use chrono::NaiveDateTime;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -50,11 +53,12 @@ pub(super) fn parse(args: &serde_json::Value) -> Result<Action, &'static str> {
             schedule,
             status,
         } => {
-            valid_text(&name, 120)?;
-            valid_optional_text(description.as_deref(), 300)?;
-            valid_text(&prompt, 12_000)?;
+            validate_single_line_text(&name, 120).map_err(|_| "invalid_input")?;
+            validate_optional_multiline_text(description.as_deref(), 300)
+                .map_err(|_| "invalid_input")?;
+            validate_multiline_text(&prompt, 12_000).map_err(|_| "invalid_input")?;
             if let Some(model) = model.as_deref() {
-                valid_text(model, 256)?;
+                validate_single_line_text(model, 256).map_err(|_| "invalid_input")?;
             }
             Ok(Action::Create(CreateRequest {
                 name: name.trim().to_string(),
@@ -99,17 +103,18 @@ impl TryFrom<wire::Update> for UpdateAutomation {
         if empty {
             return Err("invalid_input");
         }
-        for (text, max) in [
-            (value.name.as_deref(), 120),
-            (value.prompt.as_deref(), 12_000),
-            (value.model.as_deref(), 256),
-        ] {
-            if let Some(text) = text {
-                valid_text(text, max)?;
-            }
+        if let Some(name) = value.name.as_deref() {
+            validate_single_line_text(name, 120).map_err(|_| "invalid_input")?;
+        }
+        if let Some(prompt) = value.prompt.as_deref() {
+            validate_multiline_text(prompt, 12_000).map_err(|_| "invalid_input")?;
+        }
+        if let Some(model) = value.model.as_deref() {
+            validate_single_line_text(model, 256).map_err(|_| "invalid_input")?;
         }
         if let Some(description) = value.description.as_ref() {
-            valid_optional_text(description.as_deref(), 300)?;
+            validate_optional_multiline_text(description.as_deref(), 300)
+                .map_err(|_| "invalid_input")?;
         }
         Ok(UpdateAutomation {
             name: value.name,
@@ -169,21 +174,4 @@ fn validate_history(limit: Option<usize>, cursor: Option<&str>) -> Result<(), &'
         return Err("invalid_input");
     }
     Ok(())
-}
-
-fn valid_text(value: &str, max: usize) -> Result<(), &'static str> {
-    (!value.trim().is_empty()
-        && value.chars().count() <= max
-        && !value.chars().any(char::is_control))
-    .then_some(())
-    .ok_or("invalid_input")
-}
-
-fn valid_optional_text(value: Option<&str>, max: usize) -> Result<(), &'static str> {
-    value
-        .is_none_or(|value| {
-            value.chars().count() <= max && !value.chars().any(char::is_control)
-        })
-        .then_some(())
-        .ok_or("invalid_input")
 }

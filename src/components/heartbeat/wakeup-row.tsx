@@ -1,4 +1,5 @@
 import type { ScheduledWakeup } from "@/types/wakeup";
+import { useTranslation } from "react-i18next";
 import { displayStatus } from "@/types/wakeup";
 import { formatDateTime, formatRunStatus, formatTarget } from "@/lib/wakeup-format";
 import { RunErrorBadge, ScheduleBadge, StatusBadge } from "./badges";
@@ -28,4 +29,3 @@ export function WakeupRow({ wakeup, onClick }: WakeupRowProps) {
     </button>
   );
 }
-import { useTranslation } from "react-i18next";

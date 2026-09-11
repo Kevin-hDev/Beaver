@@ -111,6 +111,31 @@ async fn multiline_prompts_and_descriptions_are_accepted() {
 }
 
 #[tokio::test]
+async fn names_and_resume_session_ids_reject_line_breaks() {
+    let root = tempfile::tempdir().unwrap();
+    let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
+    let mut named = input(AutomationSchedule::AfterCompletion { delay_minutes: 10 });
+    named.name = "CI\nPiratée".into();
+    assert_eq!(
+        create_at(root.path(), &actor(), named, now)
+            .await
+            .unwrap_err(),
+        AutomationError::InvalidInput
+    );
+
+    let mut retargeted = input(AutomationSchedule::AfterCompletion { delay_minutes: 10 });
+    retargeted.target = AutomationTarget::ResumeSession {
+        session_id: "session-a\nother".into(),
+    };
+    assert_eq!(
+        create_at(root.path(), &actor(), retargeted, now)
+            .await
+            .unwrap_err(),
+        AutomationError::InvalidInput
+    );
+}
+
+#[tokio::test]
 async fn list_reports_a_persisted_running_occurrence() {
     let root = tempfile::tempdir().unwrap();
     let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
@@ -122,12 +147,19 @@ async fn list_reports_a_persisted_running_occurrence() {
     )
     .await
     .unwrap();
-    let admission = super::runtime_lifecycle::admit_at(root.path(), &created.definition, now, now)
-        .await
-        .unwrap();
-    let super::runtime_lifecycle::RuntimeAdmission::Ready { occurrence_id } = admission else {
-        panic!("occurrence should be ready");
-    };
+    let occurrence = AutomationOccurrence::pending(created.definition.id, now);
+    let occurrence_id = occurrence.id;
+    super::runtime_store::write_at(
+        root.path(),
+        &AutomationRuntime {
+            schema_version: super::runtime_store::AUTOMATION_RUNTIME_SCHEMA_VERSION,
+            last_checked_at: now,
+            occurrences: vec![occurrence],
+            retired_automation_ids: Vec::new(),
+        },
+    )
+    .await
+    .unwrap();
     super::runtime_lifecycle::mark_running_at(root.path(), occurrence_id, now)
         .await
         .unwrap();

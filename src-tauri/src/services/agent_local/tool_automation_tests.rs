@@ -192,6 +192,66 @@ async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
 }
 
 #[tokio::test]
+async fn dispatcher_accepts_multiline_prompts_on_create_and_update() {
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
+    crate::services::automations::mutate(|items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let session = super::session_store::create_full(
+        "Multiline automation",
+        "gpt-5.6-luna",
+        "codex-oauth",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let created = dispatch(
+        &session.id,
+        std::path::Path::new("."),
+        cancel.clone(),
+        json!({
+            "action":"create",
+            "name":"CI",
+            "description":"Étape 1\nÉtape 2",
+            "prompt":"Vérifie la CI\nPuis résume les erreurs",
+            "target_mode":"resume_session",
+            "schedule":{"kind":"after_completion","delay_minutes":10}
+        }),
+    )
+    .await;
+    let id = created["data"]["id"].as_str().unwrap();
+    assert_eq!(created["data"]["prompt"], "Vérifie la CI\nPuis résume les erreurs");
+    assert_eq!(created["data"]["description"], "Étape 1\nÉtape 2");
+
+    let updated = dispatch(
+        &session.id,
+        std::path::Path::new("."),
+        cancel,
+        json!({
+            "action":"update",
+            "automation_id":id,
+            "patch":{"prompt":"Relis les tests\nPuis publie le résultat"}
+        }),
+    )
+    .await;
+    assert_eq!(updated["data"]["prompt"], "Relis les tests\nPuis publie le résultat");
+
+    crate::services::automations::mutate(|items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+    super::session_store::delete_one(&session.id).await.unwrap();
+    super::session_store::remove_session_lock(&session.id).await;
+}
+
+#[tokio::test]
 async fn external_instruction_cannot_mutate_another_sessions_automation_without_manual_approval() {
     let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
     crate::services::automations::mutate(|items| {
@@ -261,7 +321,9 @@ async fn external_instruction_cannot_mutate_another_sessions_automation_without_
         assert!(result.is_error);
     }
 
-    assert_eq!(crate::services::automations::read_all().await.unwrap().len(), 1);
+    let remaining = crate::services::automations::read_all().await.unwrap();
+    assert_eq!(remaining.len(), 1);
+    assert_eq!(remaining[0].name, "CI");
     for session in [&owner.id, &caller.id] {
         super::session_store::delete_one(session).await.unwrap();
         super::session_store::remove_session_lock(session).await;
