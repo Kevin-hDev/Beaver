@@ -71,10 +71,11 @@ fn failure_keeps_compression_phase_and_classifies_wrapped_ollama_loss() {
 }
 
 #[test]
-fn max_turns_summary_does_not_blame_last_tool() {
+fn historical_max_turns_summary_survives_normalization() {
     let mut session = test_session();
-    session.diagnostic_runs.push(test_run());
-    session.diagnostic_runs[0].last_tool = Some(super::types_diagnostics::AgentDiagnosticTool {
+    let mut run = test_run();
+    run.error_type = Some("unknown".to_string());
+    run.last_tool = Some(super::types_diagnostics::AgentDiagnosticTool {
         name: "list_dir".to_string(),
         status: "detected".to_string(),
         args: None,
@@ -86,13 +87,15 @@ fn max_turns_summary_does_not_blame_last_tool() {
         truncated: false,
         warning_count: 0,
     });
-
-    apply_failure(
-        &mut session,
-        0,
+    run.events = vec![event(
+        "failed",
         "Limite de tours agent atteinte (200).",
-        false,
-    );
+        None,
+        Some("unknown"),
+    )];
+    session.diagnostic_runs.push(run);
+
+    super::stream_diagnostics_history::normalize(&mut session);
 
     let run = &session.diagnostic_runs[0];
     assert_eq!(run.error_type.as_deref(), Some("max_turns"));

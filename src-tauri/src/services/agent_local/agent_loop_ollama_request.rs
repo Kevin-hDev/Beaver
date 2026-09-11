@@ -1,4 +1,4 @@
-use super::agent_loop_thinking_retry::{EagerHandle, ThinkingRetryParams};
+use super::agent_loop_thinking_retry::{EagerHandle, EagerHandleGuard, ThinkingRetryParams};
 use super::context_usage_buckets::{ContextUsageSeed, RequestContextUsage};
 use super::generation_metrics::GenerationAggregate;
 use super::stream_events::AgentEventEmitter;
@@ -137,15 +137,16 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     )
     .await;
     let (tool_tx, tool_rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut eager_handle = super::agent_loop_thinking_retry::spawn_eager_handle(
-        tool_rx,
-        params.working_dir.to_path_buf(),
-        params.session_id.to_string(),
-        params.request_id.to_string(),
-        params.chat_mode,
-        params.cancel.clone(),
-        params.enable_eager_tools,
-    );
+    let mut eager_handle =
+        EagerHandleGuard::new(super::agent_loop_thinking_retry::spawn_eager_handle(
+            tool_rx,
+            params.working_dir.to_path_buf(),
+            params.session_id.to_string(),
+            params.request_id.to_string(),
+            params.chat_mode,
+            params.cancel.clone(),
+            params.enable_eager_tools,
+        ));
     super::stream_diagnostics::mark_phase(
         params.session_id,
         params.request_id,
@@ -181,7 +182,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             on_event: params.on_event,
             request: &request,
             result,
-            eager_handle,
+            eager_handle: eager_handle.take(),
             turn: params.turn,
             working_dir: params.working_dir.to_path_buf(),
             session_id: params.session_id.to_string(),
@@ -194,7 +195,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         })
         .await?;
         result = retry.result;
-        eager_handle = retry.eager_handle;
+        eager_handle = EagerHandleGuard::new(retry.eager_handle);
         interrupted = retry.interrupted;
         generation = retry.generation;
     } else {
@@ -206,7 +207,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         .await?;
     Ok(OllamaRequestOutput {
         result,
-        eager_handle,
+        eager_handle: eager_handle.take(),
         plan_active,
         interrupted,
         input_tokens,

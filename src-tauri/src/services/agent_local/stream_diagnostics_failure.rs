@@ -129,7 +129,6 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "compression_automatic_suspended"
             | "compression_failed"
             | "circuit_breaker"
-            | "max_turns"
     ) {
         return lower;
     }
@@ -150,9 +149,6 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
         "provider_connection_failed" | "provider_request_rejected"
     ) {
         return "provider_error".to_string();
-    }
-    if lower.contains("limite de tours") {
-        return "max_turns".to_string();
     }
     if lower.contains("répété") || lower.contains("circuit") {
         return "circuit_breaker".to_string();
