@@ -68,6 +68,7 @@ pub(crate) use service_mutations::record_completion_at;
 #[allow(unused_imports)]
 pub use store::{mutate, read_all};
 pub use types::*;
+pub(crate) use validation::validate_schedule;
 
 pub(crate) const fn history_max_lines() -> usize {
     history_store::MAX_LINES

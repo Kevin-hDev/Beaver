@@ -1,186 +1,135 @@
-use crate::commands::heartbeat_validation as validation;
-use crate::models::{
-    HeartbeatConfig, ScheduledWakeup, WakeupRun, WakeupSchedule, WakeupStatusSummary,
+#[path = "heartbeat_contract.rs"]
+mod contract;
+#[path = "heartbeat_migration.rs"]
+mod migration;
+#[path = "heartbeat_store.rs"]
+mod store;
+
+use crate::models::HeartbeatConfig;
+use crate::services::automations::{AutomationDetail, AutomationSummary, HistoryPage};
+use crate::services::scheduler::Scheduler;
+pub use contract::{
+    ConflictDecision, CreateWakeupInput, MigrationStatusView, ScheduleInput, UpdateWakeupInput,
 };
-use crate::services::config as cfg;
-use crate::services::scheduler::{log, next_fire::legacy_next_fire_at, Scheduler};
-use chrono::Local;
-use serde::Deserialize;
 use tauri::State;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize)]
-pub struct CreateWakeupInput {
-    pub name: String,
-    pub model: String,
-    pub provider: String,
-    pub prompt: String,
-    pub schedule: WakeupSchedule,
-    #[serde(default)]
-    pub description: String,
-    #[serde(default)]
-    pub project_id: Option<String>,
+#[cfg(test)]
+use crate::commands::heartbeat_validation as validation;
+
+#[cfg(test)]
+#[path = "heartbeat_tests.rs"]
+mod tests;
+
+#[tauri::command]
+pub async fn list_wakeups() -> Result<Vec<AutomationSummary>, String> {
+    store::list().await
 }
 
 #[tauri::command]
-pub fn list_wakeups() -> Result<Vec<ScheduledWakeup>, String> {
-    Ok(cfg::read_config()?.scheduled_wakeups)
+pub async fn get_wakeup(automation_id: Uuid) -> Result<AutomationDetail, String> {
+    store::get(automation_id).await
 }
 
 #[tauri::command]
 pub async fn create_wakeup(
     input: CreateWakeupInput,
     scheduler: State<'_, Scheduler>,
-) -> Result<ScheduledWakeup, String> {
-    validation::validate_input(
-        &input.provider,
-        &input.name,
-        &input.model,
-        &input.prompt,
-        &input.description,
-        &input.schedule,
-        true,
-    )?;
-    validate_project(input.project_id.as_deref()).await?;
-
-    let wakeup = cfg::update_config(move |config| {
-        validation::validate_capacity(config.scheduled_wakeups.len())?;
-        let globally_paused = config.heartbeat.global_paused;
-        let wakeup = ScheduledWakeup {
-            id: Uuid::new_v4().to_string(),
-            name: input.name,
-            model: input.model,
-            provider: input.provider,
-            prompt: input.prompt,
-            schedule: input.schedule,
-            description: input.description,
-            project_id: input.project_id,
-            active: !globally_paused,
-            paused_by_global: globally_paused,
-            created_at: chrono::Utc::now().to_rfc3339(),
-        };
-        config.scheduled_wakeups.push(wakeup.clone());
-        Ok(wakeup)
-    })?;
+) -> Result<AutomationDetail, String> {
+    let result = store::create(input).await?;
     scheduler.notify_config_changed();
-    Ok(wakeup)
+    Ok(result)
 }
 
 #[tauri::command]
 pub async fn update_wakeup(
-    mut wakeup: ScheduledWakeup,
+    input: UpdateWakeupInput,
     scheduler: State<'_, Scheduler>,
-) -> Result<(), String> {
-    validate_project(wakeup.project_id.as_deref()).await?;
-    cfg::update_config(move |config| {
-        if config.heartbeat.global_paused && wakeup.active {
-            wakeup.active = false;
-            wakeup.paused_by_global = true;
-        }
-        validation::validate_wakeup(&wakeup)?;
-        let index = config
-            .scheduled_wakeups
-            .iter()
-            .position(|item| item.id == wakeup.id)
-            .ok_or_else(|| "Réveil introuvable".to_string())?;
-        config.scheduled_wakeups[index] = wakeup;
-        Ok(())
-    })?;
+) -> Result<AutomationDetail, String> {
+    let result = store::update(input).await?;
     scheduler.notify_config_changed();
-    Ok(())
-}
-
-async fn validate_project(project_id: Option<&str>) -> Result<(), String> {
-    if let Some(project_id) = project_id {
-        crate::services::agent_local::directory_access::project_path(project_id).await?;
-    }
-    Ok(())
+    Ok(result)
 }
 
 #[tauri::command]
-pub fn delete_wakeup(id: String, scheduler: State<'_, Scheduler>) -> Result<(), String> {
-    cfg::update_config(move |config| {
-        config.scheduled_wakeups.retain(|wakeup| wakeup.id != id);
-        Ok(())
-    })?;
+pub async fn delete_wakeup(id: Uuid, scheduler: State<'_, Scheduler>) -> Result<(), String> {
+    store::delete(id).await?;
     scheduler.notify_config_changed();
     Ok(())
 }
 
 #[tauri::command]
-pub fn set_wakeup_active(
-    id: String,
+pub async fn set_wakeup_active(
+    id: Uuid,
     active: bool,
     scheduler: State<'_, Scheduler>,
-) -> Result<(), String> {
-    cfg::update_config(move |config| {
-        if config.heartbeat.global_paused {
-            return Err("Réveils en veille".into());
-        }
-        let wakeup = config
-            .scheduled_wakeups
-            .iter_mut()
-            .find(|wakeup| wakeup.id == id)
-            .ok_or_else(|| "Réveil introuvable".to_string())?;
-        wakeup.active = active;
-        wakeup.paused_by_global = false;
-        validation::validate_wakeup(wakeup)
-    })?;
+) -> Result<AutomationDetail, String> {
+    if crate::services::config::read_config()
+        .map_err(|_| "store_unavailable")?
+        .heartbeat
+        .global_paused
+    {
+        return Err("globally_paused".into());
+    }
+    let result = store::set_active(id, active).await?;
     scheduler.notify_config_changed();
-    Ok(())
+    Ok(result)
 }
 
 #[tauri::command]
 pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Result<(), String> {
-    cfg::update_config(move |config| {
-        for wakeup in &mut config.scheduled_wakeups {
-            if paused && wakeup.active {
-                wakeup.paused_by_global = true;
-                wakeup.active = false;
-            } else if !paused && wakeup.paused_by_global {
-                wakeup.active = true;
-                wakeup.paused_by_global = false;
-            }
-        }
-        config.heartbeat.global_paused = paused;
-        Ok(())
-    })?;
+    store::set_global_paused(paused)?;
     scheduler.notify_config_changed();
     Ok(())
 }
 
 #[tauri::command]
 pub fn get_heartbeat_config() -> Result<HeartbeatConfig, String> {
-    Ok(cfg::read_config()?.heartbeat)
+    crate::services::config::read_config()
+        .map(|config| config.heartbeat)
+        .map_err(|_| "store_unavailable".into())
 }
 
 #[tauri::command]
-pub async fn list_wakeup_runs(wakeup_id: Option<String>) -> Result<Vec<WakeupRun>, String> {
-    log::list_runs(wakeup_id.as_deref()).await
+pub async fn list_wakeup_runs(
+    wakeup_id: Uuid,
+    limit: Option<usize>,
+    cursor: Option<String>,
+) -> Result<HistoryPage, String> {
+    store::history(wakeup_id, limit, cursor).await
 }
 
 #[tauri::command]
-pub async fn get_wakeup_status_summaries() -> Result<Vec<WakeupStatusSummary>, String> {
-    let config = cfg::read_config()?;
-    let runs = log::list_runs(None).await?;
-    let now = Local::now();
-    let summaries = config
-        .scheduled_wakeups
-        .iter()
-        .map(|w| {
-            let next_fire_at = if config.heartbeat.global_paused || !w.active || w.paused_by_global
-            {
-                None
-            } else {
-                legacy_next_fire_at(&w.schedule, now).map(|dt| dt.to_rfc3339())
-            };
-            let last_run = runs.iter().find(|r| r.wakeup_id == w.id).cloned();
-            WakeupStatusSummary {
-                wakeup_id: w.id.clone(),
-                next_fire_at,
-                last_run,
-            }
-        })
-        .collect();
-    Ok(summaries)
+pub async fn get_automation_migration_status(
+    timezone: Option<String>,
+) -> Result<MigrationStatusView, String> {
+    let detected = timezone.or_else(|| iana_time_zone::get_timezone().ok());
+    migration::status_at(&crate::services::paths::data_dir(), detected.as_deref()).await
 }
+
+#[tauri::command]
+pub async fn resolve_automation_migration_conflict(
+    legacy_id: String,
+    decision: ConflictDecision,
+    timezone: Option<String>,
+    scheduler: State<'_, Scheduler>,
+) -> Result<Option<Uuid>, String> {
+    let result = migration::resolve_at(
+        &crate::services::paths::data_dir(),
+        legacy_id,
+        decision,
+        timezone,
+    )
+    .await?;
+    scheduler.notify_config_changed();
+    Ok(result)
+}
+
+#[cfg(test)]
+use migration::{resolve_at as resolve_conflict_at, status_at as migration_status_at};
+#[cfg(test)]
+use store::{
+    command_error, create as create_wakeup_inner, delete as delete_wakeup_inner,
+    get as get_wakeup_inner, history as list_wakeup_runs_inner, list as list_wakeups_inner,
+    set_global_paused as set_global_paused_inner, update as update_wakeup_inner,
+};

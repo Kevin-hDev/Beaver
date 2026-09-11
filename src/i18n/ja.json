@@ -715,7 +715,10 @@
     "pausedHint": "ウェイクアップが一時停止中 — マスタースイッチを無効にしてください",
     "badges": {
       "active": "有効",
-      "inactive": "無効"
+      "disabled": "無効",
+      "completed": "完了",
+      "running": "実行中",
+      "paused_by_global": "一時停止"
     },
     "fields": {
       "name": "名前",
@@ -726,19 +729,24 @@
       "lastStatus": "最新ステータス",
       "lastRun": "最新実行",
       "description": "説明",
-      "prompt": "プロンプト"
+      "prompt": "プロンプト",
+      "target": "セッション"
     },
     "status": {
       "ok": "成功",
       "error": "失敗",
       "missed": "実行漏れ",
       "cancelled": "キャンセル済み",
+      "interrupted": "中断",
       "never": "未実行",
       "none": "なし"
     },
     "history": {
       "title": "履歴",
       "empty": "実行履歴なし",
+      "started": "開始",
+      "finished": "終了",
+      "loadMore": "さらに読み込む",
       "errors": {
         "failed": "ウェイクアップに失敗しました。",
         "rateLimited": "プロバイダーのリクエスト上限に達しました。",
@@ -746,7 +754,11 @@
         "ollamaUnavailable": "Ollama を利用できませんでした。",
         "missedUnavailable": "Beaver が利用できない間にウェイクアップを実行できませんでした。",
         "schedulerStopping": "Beaver が終了中のため、ウェイクアップは開始されませんでした。",
-        "capacityReached": "実行中の操作が多すぎるため、ウェイクアップは開始されませんでした。"
+      "capacityReached": "実行中の操作が多すぎるため、ウェイクアップは開始されませんでした。",
+      "appStopped": "実行中に Beaver が停止しました。",
+      "targetSessionMissing": "対象セッションは存在しません。",
+      "providerUnavailable": "プロバイダーを利用できません。",
+      "modelUnavailable": "モデルを利用できません。"
       }
     },
     "sidebar": {
@@ -778,21 +790,18 @@
       "cancel": "キャンセル",
       "create": "作成",
       "save": "保存",
+      "cronExpression": "Cron 式",
+      "cronPlaceholder": "例: 0 8 * * *",
+      "delayMinutes": "遅延（分）",
       "scheduleKind": {
         "once": "一回のみ",
-        "daily": "毎日",
-        "weekly": "毎週"
-      },
-      "weekdays": {
-        "0": "月曜日",
-        "1": "火曜日",
-        "2": "水曜日",
-        "3": "木曜日",
-        "4": "金曜日",
-        "5": "土曜日",
-        "6": "日曜日"
+        "cron": "Cron",
+        "after_completion": "完了後"
       }
-    }
+    },
+    "target": { "new_session": "新しいセッション", "resume_session": "既存のセッション" },
+    "migration": { "title": "ウェイクアップの移行", "timezone": "既存のウェイクアップで使用するタイムゾーンを確認してください。", "conflicts": "一部の古いウェイクアップには判断が必要です。", "remove": "古い項目を削除", "import": "新規として読み込む", "continue": "続行" },
+    "errors": { "audit_unavailable": "監査ログを利用できないため、変更はブロックされました。", "store_unavailable": "ウェイクアップは一時的に利用できません。", "migration_unavailable": "移行を利用できません。", "invalid_timezone": "タイムゾーンが無効です。", "invalid_schedule": "スケジュールが無効です。", "model_unavailable": "モデルを利用できません。", "provider_unavailable": "プロバイダーを利用できません。", "not_found": "ウェイクアップは存在しません。", "globally_paused": "ウェイクアップは一時停止中です。", "invalid_project": "プロジェクトが無効です。", "invalid_input": "入力項目が無効です。", "pauseAll": "すべて一時停止" }
   },
   "personality": {
     "files": "コア",
@@ -1367,8 +1376,7 @@
     "maximize": "最大化"
   },
   "wakeupFormat": {
-    "daily": "毎日",
-    "weekly": "毎週"
+    "afterCompletion": "完了から {{count}} 分後"
   },
   "codex": {
     "title": "GPT via Codex（開発用）",

@@ -722,7 +722,10 @@
     "pausedHint": "Réveils en veille — désactive le master switch",
     "badges": {
       "active": "Actif",
-      "inactive": "Inactif"
+      "disabled": "Désactivé",
+      "completed": "Terminé",
+      "running": "En cours",
+      "paused_by_global": "En pause"
     },
     "fields": {
       "name": "Nom",
@@ -733,19 +736,24 @@
       "lastStatus": "Dernier statut",
       "lastRun": "Dernière exécution",
       "description": "Description",
-      "prompt": "Prompt"
+      "prompt": "Prompt",
+      "target": "Session"
     },
     "status": {
       "ok": "Réussi",
       "error": "Échoué",
       "missed": "Raté",
       "cancelled": "Annulé",
+      "interrupted": "Interrompu",
       "never": "Jamais exécuté",
       "none": "Aucun"
     },
     "history": {
       "title": "Historique",
       "empty": "Aucune exécution",
+      "started": "Début",
+      "finished": "Fin",
+      "loadMore": "Charger plus",
       "errors": {
         "failed": "Le réveil a échoué.",
         "rateLimited": "La limite de requêtes du fournisseur a été atteinte.",
@@ -753,7 +761,11 @@
         "ollamaUnavailable": "Ollama était indisponible.",
         "missedUnavailable": "Le réveil a été manqué pendant l'indisponibilité de Beaver.",
         "schedulerStopping": "Le réveil n'a pas démarré car Beaver était en cours de fermeture.",
-        "capacityReached": "Le réveil n'a pas démarré car trop d'opérations étaient déjà en cours."
+        "capacityReached": "Le réveil n'a pas démarré car trop d'opérations étaient déjà en cours.",
+        "appStopped": "Beaver s'est arrêté pendant l'exécution.",
+        "targetSessionMissing": "La session cible n'existe plus.",
+        "providerUnavailable": "Le fournisseur est indisponible.",
+        "modelUnavailable": "Le modèle est indisponible."
       }
     },
     "sidebar": {
@@ -785,20 +797,40 @@
       "cancel": "Annuler",
       "create": "Créer",
       "save": "Enregistrer",
+      "cronExpression": "Expression cron",
+      "cronPlaceholder": "Exemple : 0 8 * * *",
+      "delayMinutes": "Délai en minutes",
       "scheduleKind": {
         "once": "Ponctuel",
-        "daily": "Journalier",
-        "weekly": "Hebdo"
-      },
-      "weekdays": {
-        "0": "Lundi",
-        "1": "Mardi",
-        "2": "Mercredi",
-        "3": "Jeudi",
-        "4": "Vendredi",
-        "5": "Samedi",
-        "6": "Dimanche"
+        "cron": "Cron",
+        "after_completion": "Après exécution"
       }
+    },
+    "target": {
+      "new_session": "Nouvelle session",
+      "resume_session": "Session existante"
+    },
+    "migration": {
+      "title": "Migration des réveils",
+      "timezone": "Confirme le fuseau utilisé par les réveils existants.",
+      "conflicts": "Certains anciens réveils demandent une décision.",
+      "remove": "Supprimer l'ancien",
+      "import": "Importer comme nouveau",
+      "continue": "Continuer"
+    },
+    "errors": {
+      "audit_unavailable": "Le journal d'audit est indisponible. Les modifications sont bloquées.",
+      "store_unavailable": "Les réveils sont temporairement indisponibles.",
+      "migration_unavailable": "La migration des réveils est indisponible.",
+      "invalid_timezone": "Le fuseau horaire est invalide.",
+      "invalid_schedule": "La planification est invalide.",
+      "model_unavailable": "Le modèle est indisponible.",
+      "provider_unavailable": "Le fournisseur est indisponible.",
+      "not_found": "Ce réveil n'existe plus.",
+      "globally_paused": "Les réveils sont en pause.",
+      "invalid_project": "Le projet est invalide.",
+      "invalid_input": "Un ou plusieurs champs sont invalides.",
+      "pauseAll": "Tout mettre en pause"
     }
   },
   "personality": {
@@ -1458,8 +1490,7 @@
     "maximize": "Agrandir"
   },
   "wakeupFormat": {
-    "daily": "Journalier",
-    "weekly": "Hebdo"
+    "afterCompletion": "{{count}} min après la fin"
   },
   "codex": {
     "title": "GPT via Codex (dev)",

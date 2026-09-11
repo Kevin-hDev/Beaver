@@ -56,6 +56,7 @@ async fn management_actions_are_audited_without_prompts_or_results() {
             automation_id: id.to_string(),
             scheduled_for: now.to_rfc3339(),
             finished_at: now.to_rfc3339(),
+            started_at: None,
             status: WakeupRunStatus::Ok,
             error_code: None,
             session_id: None,

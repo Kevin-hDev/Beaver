@@ -67,3 +67,14 @@
   gap: var(--space-xs);
   flex-shrink: 0;
 }
+
+@media (max-width: 720px) {
+  .wk-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wk-row-badges {
+    flex-wrap: wrap;
+  }
+}

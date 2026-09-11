@@ -57,6 +57,14 @@
   min-height: 7rem;
 }
 
+.nwd-fixed-value {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
 /* Onglets à la largeur de leur libellé, alignés à gauche : étalés sur toute la
    ligne, trois choix se lisent comme trois actions séparées. */
 .nwd-tabs {

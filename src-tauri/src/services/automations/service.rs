@@ -113,6 +113,7 @@ async fn list_with_pause_at(
                     .map(|run| AutomationLastRun {
                         status: run.status.clone(),
                         finished_at: run.finished_at.clone(),
+                        error_code: run.error_code,
                     });
                 let paused =
                     globally_paused && definition.status == crate::models::AutomationStatus::Active;

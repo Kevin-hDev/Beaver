@@ -20,6 +20,10 @@ describe("wakeup-run-error", () => {
     "missedUnavailable",
     "schedulerStopping",
     "capacityReached",
+    "appStopped",
+    "targetSessionMissing",
+    "providerUnavailable",
+    "modelUnavailable",
   ];
 
   it("traduit un code stable et masque un ancien texte", () => {

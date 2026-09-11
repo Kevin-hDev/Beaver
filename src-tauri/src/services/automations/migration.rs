@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
+use serde::Serialize;
 use serde_json::Value;
 use std::path::Path;
 
@@ -7,14 +8,15 @@ use super::migration_files::{cleanup, finish_interrupted_publication, stop, writ
 
 const MAX_CONFIG_BYTES: u64 = 2 * 1024 * 1024;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
+#[serde(tag = "status", content = "conflicts", rename_all = "snake_case")]
 pub enum AutomationMigrationStatus {
     Ready,
     NeedsTimezone,
     Conflicts(Vec<MigrationConflict>),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct MigrationConflict {
     pub legacy_id: String,
 }

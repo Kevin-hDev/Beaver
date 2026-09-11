@@ -715,7 +715,10 @@
     "pausedHint": "Wakeups pausiert — Hauptschalter deaktivieren",
     "badges": {
       "active": "Aktiv",
-      "inactive": "Inaktiv"
+      "disabled": "Deaktiviert",
+      "completed": "Abgeschlossen",
+      "running": "Läuft",
+      "paused_by_global": "Pausiert"
     },
     "fields": {
       "name": "Name",
@@ -726,19 +729,24 @@
       "lastStatus": "Letzter Status",
       "lastRun": "Letzte Ausführung",
       "description": "Beschreibung",
-      "prompt": "Prompt"
+      "prompt": "Prompt",
+      "target": "Sitzung"
     },
     "status": {
       "ok": "Erfolgreich",
       "error": "Fehlgeschlagen",
       "missed": "Verpasst",
       "cancelled": "Abgebrochen",
+      "interrupted": "Unterbrochen",
       "never": "Nie ausgeführt",
       "none": "Keine"
     },
     "history": {
       "title": "Verlauf",
       "empty": "Keine Ausführungen",
+      "started": "Start",
+      "finished": "Ende",
+      "loadMore": "Mehr laden",
       "errors": {
         "failed": "Das Wakeup ist fehlgeschlagen.",
         "rateLimited": "Das Anfragekontingent des Anbieters wurde erreicht.",
@@ -746,7 +754,11 @@
         "ollamaUnavailable": "Ollama war nicht verfügbar.",
         "missedUnavailable": "Das Wakeup wurde verpasst, während Beaver nicht verfügbar war.",
         "schedulerStopping": "Das Wakeup wurde nicht gestartet, weil Beaver beendet wurde.",
-        "capacityReached": "Das Wakeup wurde nicht gestartet, weil bereits zu viele Vorgänge liefen."
+        "capacityReached": "Das Wakeup wurde nicht gestartet, weil bereits zu viele Vorgänge liefen.",
+        "appStopped": "Beaver wurde während der Ausführung beendet.",
+        "targetSessionMissing": "Die Zielsitzung existiert nicht mehr.",
+        "providerUnavailable": "Der Anbieter ist nicht verfügbar.",
+        "modelUnavailable": "Das Modell ist nicht verfügbar."
       }
     },
     "sidebar": {
@@ -778,21 +790,18 @@
       "cancel": "Abbrechen",
       "create": "Erstellen",
       "save": "Speichern",
+      "cronExpression": "Cron-Ausdruck",
+      "cronPlaceholder": "Beispiel: 0 8 * * *",
+      "delayMinutes": "Verzögerung in Minuten",
       "scheduleKind": {
         "once": "Einmalig",
-        "daily": "Täglich",
-        "weekly": "Wöchentlich"
-      },
-      "weekdays": {
-        "0": "Montag",
-        "1": "Dienstag",
-        "2": "Mittwoch",
-        "3": "Donnerstag",
-        "4": "Freitag",
-        "5": "Samstag",
-        "6": "Sonntag"
+        "cron": "Cron",
+        "after_completion": "Nach Abschluss"
       }
-    }
+    },
+    "target": { "new_session": "Neue Sitzung", "resume_session": "Bestehende Sitzung" },
+    "migration": { "title": "Wakeup-Migration", "timezone": "Bestätige die Zeitzone der bestehenden Wakeups.", "conflicts": "Einige alte Wakeups benötigen eine Entscheidung.", "remove": "Altes entfernen", "import": "Als neu importieren", "continue": "Weiter" },
+    "errors": { "audit_unavailable": "Das Auditprotokoll ist nicht verfügbar. Änderungen sind blockiert.", "store_unavailable": "Wakeups sind vorübergehend nicht verfügbar.", "migration_unavailable": "Die Migration ist nicht verfügbar.", "invalid_timezone": "Die Zeitzone ist ungültig.", "invalid_schedule": "Der Zeitplan ist ungültig.", "model_unavailable": "Das Modell ist nicht verfügbar.", "provider_unavailable": "Der Anbieter ist nicht verfügbar.", "not_found": "Das Wakeup existiert nicht mehr.", "globally_paused": "Wakeups sind pausiert.", "invalid_project": "Das Projekt ist ungültig.", "invalid_input": "Ein oder mehrere Felder sind ungültig.", "pauseAll": "Alle pausieren" }
   },
   "personality": {
     "files": "Kern",
@@ -1368,8 +1377,7 @@
     "maximize": "Maximieren"
   },
   "wakeupFormat": {
-    "daily": "Täglich",
-    "weekly": "Wöchentlich"
+    "afterCompletion": "{{count}} Min. nach Abschluss"
   },
   "codex": {
     "title": "GPT via Codex (Dev)",

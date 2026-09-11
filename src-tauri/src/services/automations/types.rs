@@ -43,7 +43,7 @@ pub struct UpdateAutomation {
     pub creator_session_id: Option<Option<String>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AutomationSummary {
     pub id: Uuid,
     pub revision: u64,
@@ -59,13 +59,14 @@ pub struct AutomationSummary {
     pub last_run: Option<AutomationLastRun>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AutomationLastRun {
     pub status: crate::models::WakeupRunStatus,
     pub finished_at: String,
+    pub error_code: Option<crate::models::WakeupRunErrorCode>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AutomationDetail {
     pub definition: AutomationDefinition,
     pub next_fire_at: Option<DateTime<Utc>>,
@@ -87,6 +88,8 @@ pub struct HistoryEntry {
     pub scheduled_for: String,
     #[serde(alias = "fired_at")]
     pub finished_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<String>,
     pub status: crate::models::WakeupRunStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<crate::models::WakeupRunErrorCode>,
@@ -102,7 +105,7 @@ pub struct HistoryEntry {
     pub last_scheduled_for: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct HistoryPage {
     pub entries: Vec<HistoryEntry>,
     pub next_cursor: Option<String>,

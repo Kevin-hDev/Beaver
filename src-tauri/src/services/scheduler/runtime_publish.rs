@@ -34,6 +34,7 @@ fn history_entry(occurrence: &AutomationOccurrence, result: &OccurrenceResult) -
         automation_id: occurrence.automation_id.to_string(),
         scheduled_for: occurrence.scheduled_for.to_rfc3339(),
         finished_at: result.finished_at.to_rfc3339(),
+        started_at: occurrence.started_at.map(|at| at.to_rfc3339()),
         status: status(&result.status),
         error_code: result.error_code.as_deref().map(error_code),
         session_id: result.session_id.clone(),

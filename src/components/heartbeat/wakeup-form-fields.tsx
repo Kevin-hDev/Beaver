@@ -32,6 +32,7 @@ interface ModelFieldsProps {
   models: { id: string }[];
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
+  providerEditable?: boolean;
 }
 
 export function WakeupModelFields({
@@ -41,31 +42,32 @@ export function WakeupModelFields({
   models,
   onProviderChange,
   onModelChange,
+  providerEditable = true,
 }: ModelFieldsProps) {
   const { t } = useTranslation();
   return (
     <div className="nwd-pair">
       <WakeupField label={t("heartbeat.form.provider")}>
-        <CustomSelect
-          value={provider}
-          onChange={onProviderChange}
-          options={
-            providers.length === 0
-              ? [{ value: "ollama", label: "Ollama" }]
-              : providers.map((p) => ({ value: p.id, label: p.display_name }))
-          }
-        />
+        {providerEditable ? (
+          <CustomSelect
+            value={provider}
+            onChange={onProviderChange}
+            ariaLabel={t("heartbeat.form.provider")}
+            options={providers.map((p) => ({ value: p.id, label: p.display_name }))}
+          />
+        ) : <span className="nwd-fixed-value">{provider}</span>}
       </WakeupField>
 
       <WakeupField label={t("heartbeat.form.model")}>
         <CustomSelect
           value={model}
           onChange={onModelChange}
+          ariaLabel={t("heartbeat.form.model")}
           disabled={models.length === 0}
           placeholder={
-            models.length === 0
+            model || (models.length === 0
               ? t("heartbeat.form.noToolCapable")
-              : t("heartbeat.form.pickModel")
+              : t("heartbeat.form.pickModel"))
           }
           options={models.map((m) => ({ value: m.id, label: m.id }))}
         />

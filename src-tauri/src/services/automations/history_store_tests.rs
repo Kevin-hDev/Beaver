@@ -12,6 +12,7 @@ fn entry(id: Uuid, run_id: Option<Uuid>, minute: usize) -> HistoryEntry {
         automation_id: id.to_string(),
         scheduled_for: at.clone(),
         finished_at: at,
+        started_at: None,
         status: WakeupRunStatus::Ok,
         error_code: None,
         session_id: Some("session-safe".into()),

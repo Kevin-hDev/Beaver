@@ -5,7 +5,9 @@ use croner::Cron;
 use std::str::FromStr;
 
 #[path = "next_fire_legacy.rs"]
+#[allow(dead_code)]
 mod legacy;
+#[allow(unused_imports)]
 pub use legacy::legacy_next_fire_at;
 
 const MAX_CRON_EXPRESSION_BYTES: usize = 128;

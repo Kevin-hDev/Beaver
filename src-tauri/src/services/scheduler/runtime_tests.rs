@@ -344,6 +344,7 @@ fn history_entry(run_id: Uuid, automation_id: Uuid, result: &AutomationRunResult
         automation_id: automation_id.to_string(),
         scheduled_for: at(0).to_rfc3339(),
         finished_at: result.finished_at.to_rfc3339(),
+        started_at: None,
         status: crate::models::WakeupRunStatus::Ok,
         error_code: None,
         session_id: result.session_id.clone(),

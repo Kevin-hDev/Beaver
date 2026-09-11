@@ -1,6 +1,9 @@
 use super::*;
-use crate::models::{AutomationSchedule, AutomationStatus, AutomationTarget};
+use crate::models::{
+    AutomationSchedule, AutomationStatus, AutomationTarget, WakeupRunErrorCode, WakeupRunStatus,
+};
 use chrono::{TimeZone, Utc};
+use uuid::Uuid;
 
 fn actor() -> AutomationActor {
     AutomationActor {
@@ -112,9 +115,32 @@ async fn list_reports_a_persisted_running_occurrence() {
     super::runtime_lifecycle::mark_running_at(root.path(), occurrence_id, now)
         .await
         .unwrap();
+    super::history_store::append_at(
+        &root.path().join("logs/wakeups.jsonl"),
+        HistoryEntry {
+            run_id: Some(Uuid::new_v4()),
+            automation_id: created.definition.id.to_string(),
+            scheduled_for: now.to_rfc3339(),
+            started_at: Some(now.to_rfc3339()),
+            finished_at: now.to_rfc3339(),
+            status: WakeupRunStatus::Error,
+            error_code: Some(WakeupRunErrorCode::TargetSessionMissing),
+            session_id: None,
+            tokens: None,
+            missed_count: None,
+            first_scheduled_for: None,
+            last_scheduled_for: None,
+        },
+    )
+    .await
+    .unwrap();
 
     let items = list_at(root.path(), &actor(), now).await.unwrap();
     assert!(items[0].running);
+    assert_eq!(
+        items[0].last_run.as_ref().unwrap().error_code,
+        Some(WakeupRunErrorCode::TargetSessionMissing)
+    );
 }
 
 #[tokio::test]

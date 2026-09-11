@@ -11,6 +11,38 @@ pub enum ConflictResolution {
     ImportAsNew { timezone: Tz },
 }
 
+pub async fn resolve_audited_at(
+    root: &Path,
+    actor: &super::AutomationActor,
+    legacy_id: &str,
+    resolution: ConflictResolution,
+) -> Result<Option<Uuid>, String> {
+    let target_id = Uuid::parse_str(legacy_id).ok();
+    let operation = super::audit_store::begin(
+        root,
+        actor,
+        "resolve_migration_conflict",
+        target_id,
+        vec!["resolution".into()],
+    )
+    .await
+    .map_err(|_| error())?;
+    let result = resolve_at(root, legacy_id, resolution)
+        .await
+        .map_err(|_| super::AutomationError::StoreUnavailable);
+    super::audit_store::complete(
+        root,
+        actor,
+        operation,
+        "resolve_migration_conflict",
+        target_id,
+        result,
+        None,
+    )
+    .await
+    .map_err(|_| error())
+}
+
 #[derive(Serialize, Deserialize)]
 struct ResolutionJournal {
     legacy_id: String,

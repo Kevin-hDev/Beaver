@@ -2,17 +2,16 @@ import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
 import { WakeupClockIcon } from "@/components/ui/wakeup-clock-icon";
 import { SettingsCard } from "@/components/settings/settings-card";
-import type { ScheduledWakeup, WakeupStatusSummary } from "@/types/wakeup";
+import type { ScheduledWakeup } from "@/types/wakeup";
 import { WakeupRow } from "./wakeup-row";
 
 interface WakeupListProps {
   wakeups: ScheduledWakeup[];
-  summaries: Record<string, WakeupStatusSummary>;
   onSelect: (id: string) => void;
   onCreate: () => void;
 }
 
-export function WakeupList({ wakeups, summaries, onSelect, onCreate }: WakeupListProps) {
+export function WakeupList({ wakeups, onSelect, onCreate }: WakeupListProps) {
   const { t } = useTranslation();
 
   return (
@@ -40,7 +39,6 @@ export function WakeupList({ wakeups, summaries, onSelect, onCreate }: WakeupLis
               <WakeupRow
                 key={w.id}
                 wakeup={w}
-                summary={summaries[w.id]}
                 onClick={() => onSelect(w.id)}
               />
             ))}

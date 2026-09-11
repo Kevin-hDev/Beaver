@@ -3,6 +3,10 @@ mod agentic;
 mod agentic_modes_tests;
 pub mod fire;
 mod fire_actor;
+#[allow(
+    dead_code,
+    reason = "compatibilité temporaire, supprimée par la tâche 8"
+)]
 pub mod log;
 pub mod next_fire;
 #[cfg(test)]

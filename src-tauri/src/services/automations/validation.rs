@@ -108,7 +108,7 @@ fn local_model(provider: &str, model: &str) -> Option<llm::types::ModelInfo> {
     None
 }
 
-fn validate_schedule(schedule: &AutomationSchedule) -> Result<(), AutomationError> {
+pub(crate) fn validate_schedule(schedule: &AutomationSchedule) -> Result<(), AutomationError> {
     match schedule {
         AutomationSchedule::Cron {
             expression,
