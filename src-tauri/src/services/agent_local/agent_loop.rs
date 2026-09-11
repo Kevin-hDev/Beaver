@@ -59,7 +59,6 @@ pub async fn run_agent_loop(
         request_id: &request_id,
         native_context,
         configured_context,
-        provider_tools: tools.active().to_vec(),
         chatbot: permission_mode == "chat",
         plan_mode_active,
         working_dir: &working_dir,
@@ -120,6 +119,7 @@ pub async fn run_agent_loop(
                     &result,
                     plan_active,
                     &compression,
+                    tools.active(),
                     &mut last_prompt,
                     &mut last_eval,
                     cancel.clone(),
@@ -162,7 +162,13 @@ pub async fn run_agent_loop(
             }
             messages.push(assistant);
             compression
-                .try_run_and_reset(messages, &mut last_prompt, &mut last_eval, cancel.clone())
+                .try_run_and_reset(
+                    messages,
+                    tools.active(),
+                    &mut last_prompt,
+                    &mut last_eval,
+                    cancel.clone(),
+                )
                 .await;
             if result.tool_calls.is_empty() {
                 eager_handle.abort();

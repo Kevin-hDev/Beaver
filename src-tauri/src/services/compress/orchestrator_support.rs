@@ -26,24 +26,6 @@ pub(super) fn tool_names(tools: &[serde_json::Value]) -> Vec<String> {
         .collect()
 }
 
-pub(super) fn system_head_tokens(
-    provider_id: &str,
-    messages: &[crate::services::agent_local::types_ollama::ChatMessage],
-    tools: &[serde_json::Value],
-) -> u32 {
-    let system_messages = messages
-        .iter()
-        .filter(|message| message.role == "system")
-        .cloned()
-        .collect::<Vec<_>>();
-    super::token_estimate::estimate_textual_request_tokens_for_provider(
-        provider_id,
-        &system_messages,
-        tools,
-    )
-    .min(u32::MAX as usize) as u32
-}
-
 pub(super) fn is_git_repository(working_dir: &Path) -> bool {
     git2::Repository::discover(working_dir).is_ok()
 }

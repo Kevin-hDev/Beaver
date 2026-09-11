@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 pub const CODE: &str = "context_capacity_exceeded";
+pub const UNVERIFIED_CODE: &str = "context_capacity_unverified";
 const SEPARATOR: char = ',';
 const MAX_SAFE_TOKENS: u64 = 16_777_216;
 

@@ -10,6 +10,7 @@ pub fn estimate_chat_tokens(messages: &[ChatMessage]) -> usize {
     messages.iter().map(estimate_chat_message_tokens).sum()
 }
 
+#[cfg(test)]
 pub fn estimate_textual_chat_tokens(messages: &[ChatMessage]) -> usize {
     messages
         .iter()
@@ -28,10 +29,12 @@ pub fn estimate_chat_message_tokens_without_reasoning(message: &ChatMessage) -> 
     estimate_chat_message_tokens_with_reasoning(message, false)
 }
 
+#[cfg(test)]
 pub fn estimate_textual_chat_message_tokens(message: &ChatMessage) -> usize {
     estimate_textual_chat_message_tokens_with_reasoning(message, true)
 }
 
+#[cfg(test)]
 pub fn estimate_textual_chat_message_tokens_without_reasoning(message: &ChatMessage) -> usize {
     estimate_textual_chat_message_tokens_with_reasoning(message, false)
 }

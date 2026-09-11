@@ -45,15 +45,15 @@ pub(super) fn available_after_summary(
     summary_tokens: u32,
 ) -> u32 {
     target_tokens(snapshot, kind)
-        .saturating_sub(snapshot.system_head_tokens)
+        .saturating_sub(snapshot.system_head_tokens())
         .saturating_sub(summary_tokens)
         .saturating_sub(CHECKPOINT_OVERHEAD_TOKENS)
 }
 
 pub(super) fn target_tokens(snapshot: &CompressionSnapshot, kind: CompressionWindowBand) -> u32 {
     super::checkpoint_target::checkpoint_target(
-        snapshot.before_tokens,
-        snapshot.system_head_tokens,
+        snapshot.before_tokens(),
+        snapshot.system_head_tokens(),
         kind,
     )
 }

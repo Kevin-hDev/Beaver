@@ -1,18 +1,15 @@
 const CHECK_INTERVAL_TOKENS: u32 = 32;
+const UNKNOWN_BASE: usize = usize::MAX;
 
 #[derive(Debug, Clone)]
 pub struct RealtimeBudget {
-    base_tokens: usize,
+    base_tokens: std::sync::Arc<std::sync::atomic::AtomicUsize>,
     limit_tokens: usize,
     next_check_at: u32,
 }
 
 impl RealtimeBudget {
-    pub async fn for_session(
-        session_id: &str,
-        configured_context: u64,
-        base_tokens: usize,
-    ) -> Option<Self> {
+    pub async fn pending_for_session(session_id: &str, configured_context: u64) -> Option<Self> {
         let session = crate::services::agent_local::session_store::get(session_id)
             .await
             .ok()?;
@@ -24,7 +21,22 @@ impl RealtimeBudget {
             profile.automatic_enabled && profile.available(configured_context),
             configured_context,
             profile.profile.threshold_percent.min(90),
-            base_tokens,
+            UNKNOWN_BASE,
+        )
+    }
+
+    #[cfg(test)]
+    pub fn new_for_count(
+        enabled: bool,
+        configured_context: u64,
+        threshold_pct: u8,
+        prepared: &crate::services::agent_local::context_usage_record::ContextTokenCount,
+    ) -> Option<Self> {
+        Self::new(
+            enabled,
+            configured_context,
+            threshold_pct,
+            prepared.capacity_tokens? as usize,
         )
     }
 
@@ -39,7 +51,7 @@ impl RealtimeBudget {
         }
         let limit_tokens = (configured_context as f64 * threshold_pct as f64 / 100.0) as usize;
         Some(Self {
-            base_tokens,
+            base_tokens: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(base_tokens)),
             limit_tokens,
             next_check_at: CHECK_INTERVAL_TOKENS,
         })
@@ -50,13 +62,39 @@ impl RealtimeBudget {
             return false;
         }
         self.next_check_at = generated_tokens.saturating_add(CHECK_INTERVAL_TOKENS);
-        self.base_tokens.saturating_add(generated_tokens as usize) >= self.limit_tokens
+        let base_tokens = self.base_tokens.load(std::sync::atomic::Ordering::Relaxed);
+        base_tokens != UNKNOWN_BASE
+            && base_tokens.saturating_add(generated_tokens as usize) >= self.limit_tokens
+    }
+
+    pub fn attach_prepared_count(
+        &self,
+        count: &crate::services::agent_local::context_usage_record::ContextTokenCount,
+    ) {
+        self.base_tokens.store(
+            count
+                .capacity_tokens
+                .map_or(UNKNOWN_BASE, |value| value as usize),
+            std::sync::atomic::Ordering::Relaxed,
+        );
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::agent_local::context_usage_record::{
+        ContextCountCoverage, ContextCountSource, ContextTokenCount,
+    };
+
+    fn prepared(capacity_tokens: Option<u32>) -> ContextTokenCount {
+        ContextTokenCount {
+            tokens: Some(84_000),
+            capacity_tokens,
+            source: Some(ContextCountSource::Heuristic),
+            coverage: ContextCountCoverage::Partial,
+        }
+    }
 
     #[test]
     fn disabled_when_threshold_or_context_is_zero() {
@@ -79,5 +117,17 @@ mod tests {
         assert!(!budget.should_interrupt(32));
         assert!(!budget.should_interrupt(63));
         assert!(!budget.should_interrupt(64));
+    }
+
+    #[test]
+    fn capacity_uses_the_prepared_upper_bound() {
+        let mut budget = RealtimeBudget::new_for_count(true, 100_000, 85, &prepared(Some(84_990)))
+            .expect("known prepared capacity");
+        assert!(budget.should_interrupt(32));
+    }
+
+    #[test]
+    fn unknown_prepared_capacity_never_claims_a_realtime_budget() {
+        assert!(RealtimeBudget::new_for_count(true, 100_000, 85, &prepared(None)).is_none());
     }
 }

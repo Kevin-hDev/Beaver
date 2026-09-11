@@ -1367,6 +1367,7 @@
     "compressionProfilesUnavailable": "現在、圧縮設定を利用できません。",
     "compressionDisabledUnder64": "64K 未満のコンテキスト枠では圧縮が無効です。高度な圧縮プロファイルで許可できます。",
     "compressionFailed": "コンテキストを圧縮できませんでした。会話は変更されていません。",
+    "contextCapacityUnverified": "このコンテキストの容量を確認できません。メディアまたは不透明なブロックを減らして、もう一度お試しください。",
     "compressionAutomaticSuspended": "複数回失敗したため、このセッションの自動圧縮は一時停止されています。/compress で再試行できます。",
     "toolFailed": "ツールが失敗しました",
     "webToolFailed": "Web ツールが失敗しました： {{message}}"

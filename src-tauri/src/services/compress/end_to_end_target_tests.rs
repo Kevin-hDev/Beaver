@@ -22,14 +22,15 @@ async fn real_candidate_obeys_the_96k_and_258k_beaver_targets() {
             12_000,
             CompressionTrigger::Explicit,
         );
-        assert_eq!(captured.system_head_tokens, 12_000);
+        let prepared_head = captured.system_head_tokens();
+        assert_eq!(prepared_head, 12_005);
         let candidate =
             checkpoint_candidate::build(&captured, Some(&super::support::summary()), &[])
                 .await
                 .unwrap();
         assert_eq!(
             candidate.report.target_tokens,
-            Some(checkpoint_target(before, 12_000, band))
+            Some(checkpoint_target(before, prepared_head, band))
         );
         assert!(candidate.after_tokens <= acceptance);
         assert!(candidate
@@ -66,7 +67,7 @@ async fn small_windows_reduce_the_summary_limit_without_changing_the_profile() {
     let original_limit = document.profiles[0].under_64k.summary_max_tokens;
 
     for (window, before, head, expected_limit) in
-        [(16_000, 16_000, 4_000, 2_000), (8_192, 8_192, 3_000, 1_038)]
+        [(16_000, 16_000, 4_000, 2_000), (8_192, 8_192, 3_000, 1_037)]
     {
         let captured = super::target_support::snapshot(
             &session,

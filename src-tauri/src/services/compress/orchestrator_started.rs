@@ -9,7 +9,7 @@ pub(super) async fn run(
     request: super::orchestrator::CompressionRunRequest<'_>,
     session: crate::services::agent_local::types_session::AgentSession,
     profile: super::profile_resolve::ResolvedCompressionProfile,
-    used_tokens: usize,
+    _used_tokens: usize,
     attempt: Option<crate::services::agent_local::types_session::AutomaticCompressionAttempt>,
 ) -> Result<StartedCompression, CompressionError> {
     if request.cancel.is_cancelled() {
@@ -38,10 +38,10 @@ pub(super) async fn run(
         request.trigger,
     )
     .map_err(|_| CompressionError::SnapshotInvalid)?
-    .with_runtime_context(
+    .with_prepared_context(
         canonical,
         request.provider_tools.to_vec(),
-        used_tokens.min(u32::MAX as usize) as u32,
+        request.prepared_count.clone(),
     )
     .map_err(|_| CompressionError::SnapshotInvalid)?;
     let images = collect_images(&snapshot);

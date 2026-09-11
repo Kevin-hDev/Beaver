@@ -1368,6 +1368,7 @@
     "compressionProfilesUnavailable": "Le impostazioni di compressione non sono attualmente disponibili.",
     "compressionDisabledUnder64": "La compressione è disattivata per finestre di contesto inferiori a 64K. Puoi consentirla nel profilo di compressione avanzato.",
     "compressionFailed": "Non è stato possibile comprimere il contesto. La conversazione non è stata modificata.",
+    "contextCapacityUnverified": "Non è possibile verificare la capacità di questo contesto. Riduci i contenuti multimediali o i blocchi opachi e riprova.",
     "compressionAutomaticSuspended": "La compressione automatica è sospesa per questa sessione dopo diversi errori. Puoi riprovare con /compress.",
     "toolFailed": "Strumento fallito",
     "webToolFailed": "Strumento web non riuscito: {{message}}"

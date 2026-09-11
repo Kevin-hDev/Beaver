@@ -10,7 +10,7 @@ use super::conversation_journal::ConversationJournal;
 use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult};
 use crate::services::token_counting;
-use std::sync::atomic::{AtomicU32, Ordering};
+pub use super::context_prepared_attempt::PreparedContextAttempt;
 
 pub struct ContextAttempt<'a> {
     pub on_event: &'a AgentEventEmitter,
@@ -104,35 +104,6 @@ impl ContextAttempt<'_> {
         }
         journal.complete_context_attempt(&identity).await?;
         emit_record(self.on_event, journal).await
-    }
-}
-
-pub struct PreparedContextAttempt<'a> {
-    context: ContextAttempt<'a>,
-    breakdown: RequestContextUsage,
-    input_tokens: AtomicU32,
-}
-
-impl<'a> PreparedContextAttempt<'a> {
-    pub fn new(context: ContextAttempt<'a>, breakdown: RequestContextUsage) -> Self {
-        Self {
-            context,
-            breakdown,
-            input_tokens: AtomicU32::new(0),
-        }
-    }
-
-    pub async fn persist_payload(&self, count: ContextTokenCount) -> Result<(), String> {
-        let tokens = self
-            .context
-            .persist_prepared_count(count, self.breakdown)
-            .await?;
-        self.input_tokens.store(tokens, Ordering::Relaxed);
-        Ok(())
-    }
-
-    pub fn input_tokens(&self) -> u32 {
-        self.input_tokens.load(Ordering::Relaxed)
     }
 }
 

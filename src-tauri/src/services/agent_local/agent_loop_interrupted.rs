@@ -15,6 +15,7 @@ pub(super) async fn handle(
     result: &StreamResult,
     plan_active: bool,
     compression: &LoopCompression<'_>,
+    provider_tools: &[serde_json::Value],
     last_prompt: &mut Option<u32>,
     last_eval: &mut Option<u32>,
     cancel: CancellationToken,
@@ -29,6 +30,7 @@ pub(super) async fn handle(
     compression
         .handle_interrupted(
             messages,
+            provider_tools,
             result,
             LastCounts::new(last_prompt, last_eval),
             cancel,

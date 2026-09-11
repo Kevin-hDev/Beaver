@@ -292,6 +292,11 @@ fn pruning_keeps_a_contiguous_recent_suffix() {
         .all(|message| message.content != "old marker"));
 }
 
+#[test]
+fn two_hundred_thousand_window_applies_one_capped_reserve() {
+    assert_eq!(max_input_tokens(200_000), Some(183_616));
+}
+
 fn assistant_with_calls(ids: &[&str]) -> ChatMessage {
     ChatMessage::assistant(
         String::new(),

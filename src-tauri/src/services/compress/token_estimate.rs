@@ -1,9 +1,10 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_session::AgentMessage;
 
+#[cfg(test)]
+pub use super::token_estimate_request::estimate_textual_request_tokens_for_provider;
 pub use super::token_estimate_request::{
-    estimate_request_tokens, estimate_request_tokens_for_provider,
-    estimate_textual_request_tokens_for_provider, estimate_tool_tokens,
+    estimate_request_tokens, estimate_request_tokens_for_provider, estimate_tool_tokens,
 };
 
 pub fn estimate_tokens(messages: &[ChatMessage]) -> usize {
@@ -21,6 +22,7 @@ pub fn estimate_tokens_for_provider(provider_id: &str, messages: &[ChatMessage])
     )
 }
 
+#[cfg(test)]
 pub fn estimate_textual_tokens_for_provider(provider_id: &str, messages: &[ChatMessage]) -> usize {
     let visible = if counts_visible_reasoning(provider_id) {
         crate::services::token_counting::estimate_textual_chat_tokens(messages)

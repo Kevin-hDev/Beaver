@@ -17,7 +17,7 @@ pub struct CompressionRunRequest<'a> {
     pub provider_id: &'a str,
     pub fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     pub context_window: u64,
-    pub last_context_tokens: Option<u32>,
+    pub prepared_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
     pub provider_tools: &'a [serde_json::Value],
     pub chatbot: bool,
     pub plan_mode_active: bool,
@@ -33,18 +33,24 @@ pub async fn run_compression(
         .map_err(|_| CompressionError::SnapshotInvalid)?;
     let profile = super::profile_resolve::resolve_for_session(&session)
         .map_err(|_| CompressionError::Unavailable)?;
-    let estimated = super::token_estimate::estimate_textual_request_tokens_for_provider(
+    let Some(used) = request
+        .prepared_count
+        .capacity_tokens
+        .map(|value| value as usize)
+    else {
+        return match request.trigger {
+            CompressionTrigger::Automatic => Ok(None),
+            CompressionTrigger::Explicit => Err(CompressionError::CapacityUnverified),
+        };
+    };
+    let system_head_tokens = super::prepared_request::system_head(
         request.provider_id,
+        &session.model,
         request.runtime_messages,
         request.provider_tools,
-    );
-    let _provider_usage = request.last_context_tokens;
-    let used = estimated;
-    let system_head_tokens = super::orchestrator_support::system_head_tokens(
-        request.provider_id,
-        request.runtime_messages,
-        request.provider_tools,
-    );
+    )
+    .capacity_tokens
+    .ok_or(CompressionError::CapacityUnverified)?;
     if !profile.available(request.context_window) {
         return match request.trigger {
             CompressionTrigger::Automatic => Ok(None),

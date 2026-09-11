@@ -103,15 +103,10 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         request.tools.as_deref().unwrap_or_default(),
         params.context_usage_seed,
     );
-    let textual_input_tokens = breakdown.total_tokens();
-    let realtime_budget = RealtimeBudget::for_session(
-        params.session_id,
-        params.configured_context,
-        textual_input_tokens,
-    )
-    .await;
-    let preparation =
-        super::agent_loop_ollama_context::prepared_attempt(&params, 1, breakdown);
+    let realtime_budget =
+        RealtimeBudget::pending_for_session(params.session_id, params.configured_context).await;
+    let preparation = super::agent_loop_ollama_context::prepared_attempt(&params, 1, breakdown)
+        .with_realtime_budget(realtime_budget.clone());
     if !request.capture_reasoning {
         crate::services::reasoning_continuity::diagnostics::record_blocked(
             params.session_id,

@@ -3,6 +3,7 @@ pub mod context_budget;
 mod context_budget_history;
 mod context_budget_prune;
 pub mod context_capacity_error;
+mod context_prepared_attempt;
 pub mod context_usage_buckets;
 pub mod context_usage_record;
 #[cfg(test)]

@@ -43,6 +43,35 @@ pub(super) use payload::{build_payload, BuildError, PreparedPayload};
 pub(super) use stream::consume_stream;
 pub(super) use transport::{collect_silent, stream_chat};
 
+pub(crate) fn prepared_context_count(
+    messages: &[crate::services::agent_local::types_ollama::ChatMessage],
+    provider_tools: &[serde_json::Value],
+) -> crate::services::agent_local::context_usage_record::ContextTokenCount {
+    let Ok(converted) = messages::convert(messages, provider_tools, None) else {
+        return crate::services::agent_local::context_usage_record::ContextTokenCount {
+            tokens: None,
+            capacity_tokens: None,
+            source: None,
+            coverage:
+                crate::services::agent_local::context_usage_record::ContextCountCoverage::Unknown,
+        };
+    };
+    let Ok(tools) = tools::convert(provider_tools) else {
+        return crate::services::agent_local::context_usage_record::ContextTokenCount {
+            tokens: None,
+            capacity_tokens: None,
+            source: None,
+            coverage:
+                crate::services::agent_local::context_usage_record::ContextCountCoverage::Unknown,
+        };
+    };
+    crate::services::agent_local::prepared_context_count::anthropic(&serde_json::json!({
+        "system": converted.system,
+        "messages": converted.messages,
+        "tools": tools,
+    }))
+}
+
 #[cfg(test)]
 mod models_tests;
 #[cfg(test)]

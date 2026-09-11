@@ -40,13 +40,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.tools,
         params.context_usage_seed,
     );
-    let mut textual_input_tokens = breakdown.total_tokens();
-    let realtime_budget = RealtimeBudget::for_session(
-        params.session_id,
-        params.configured_context,
-        textual_input_tokens,
-    )
-    .await;
+    let realtime_budget =
+        RealtimeBudget::pending_for_session(params.session_id, params.configured_context).await;
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
         params.session_id,
         params.plan_mode_active,
@@ -83,7 +78,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     let mut next_attempt = 1_u32;
     let turn = super::agent_loop_turn::metric_turn(params.turn);
     let first_preparation =
-        super::agent_loop_request_context::prepared_attempt(&params, 1, breakdown);
+        super::agent_loop_request_context::prepared_attempt(&params, 1, breakdown)
+            .with_realtime_budget(realtime_budget.clone());
     let first_attempt = super::retry::retry_stream(
         params.on_event,
         params.session_id,
@@ -132,19 +128,16 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.tools,
                 params.context_usage_seed,
             );
-            textual_input_tokens = breakdown.total_tokens();
+            let reduced_budget =
+                RealtimeBudget::pending_for_session(params.session_id, params.configured_context)
+                    .await;
             let reduced_preparation =
-                super::agent_loop_request_context::prepared_attempt(&params, 2, breakdown);
+                super::agent_loop_request_context::prepared_attempt(&params, 2, breakdown)
+                    .with_realtime_budget(reduced_budget.clone());
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,
                 params.request_id,
                 "Requête provider réduite après un rejet de taille.",
-            )
-            .await;
-            let reduced_budget = RealtimeBudget::for_session(
-                params.session_id,
-                params.configured_context,
-                textual_input_tokens,
             )
             .await;
             let outcome = super::retry::retry_stream(

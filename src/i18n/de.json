@@ -1368,6 +1368,7 @@
     "compressionProfilesUnavailable": "Die Komprimierungseinstellungen sind derzeit nicht verfügbar.",
     "compressionDisabledUnder64": "Die Komprimierung ist für Kontextfenster unter 64K deaktiviert. Sie können sie im erweiterten Komprimierungsprofil zulassen.",
     "compressionFailed": "Der Kontext konnte nicht komprimiert werden. Die Unterhaltung wurde nicht geändert.",
+    "contextCapacityUnverified": "Die Kapazität dieses Kontexts kann nicht geprüft werden. Reduziere Medien oder undurchsichtige Blöcke und versuche es erneut.",
     "compressionAutomaticSuspended": "Die automatische Komprimierung ist für diese Sitzung nach mehreren Fehlern pausiert. Sie können es mit /compress erneut versuchen.",
     "toolFailed": "Werkzeug fehlgeschlagen",
     "webToolFailed": "Web-Werkzeug fehlgeschlagen: {{message}}"

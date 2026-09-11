@@ -1,6 +1,6 @@
 use super::ollama_client::OllamaClient;
 use super::ollama_retry_indicator::{
-    max_server_retries, send_retry_indicator, server_retry_delay, should_retry_server_status,
+    max_server_retries, send_retry_indicator, should_retry_server_status,
     REASON_FEATURE_DROPPED, REASON_PARSER_CRASH, REASON_SERVER,
 };
 use super::ollama_stream_retry::build_retry_request;
@@ -13,6 +13,9 @@ use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm::vision;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
+
+#[path = "ollama_stream_request_error.rs"]
+mod request_error;
 
 #[derive(Debug, Clone, Copy)]
 pub struct RetryCounts {
@@ -68,8 +71,11 @@ pub async fn open_chat_response(
     let wire_request = prepared.payload;
     if let Some(preparation) = diagnostics.preparation {
         preparation
-            .persist_payload(context_count)
+            .persist_payload(context_count.clone())
             .await?;
+    }
+    if context_count.capacity_tokens.is_none() {
+        return Err(super::context_capacity_error::UNVERIFIED_CODE.to_string());
     }
 
     #[cfg(debug_assertions)]
@@ -84,7 +90,7 @@ pub async fn open_chat_response(
         .await
     {
         Ok(response) => response,
-        Err(error) => return connection_error(on_event, error),
+        Err(error) => return request_error::connection(on_event, error),
     };
 
     if resp.status().is_success() {
@@ -157,7 +163,7 @@ async fn handle_http_failure(
             attempt,
             max_server_retries(),
         );
-        wait_retry_delay(cancel, attempt).await?;
+        request_error::wait_retry(cancel, attempt).await?;
         return Ok(OpenChatResponse::Retry {
             request: request.clone(),
             counts: RetryCounts {
@@ -190,32 +196,6 @@ fn maybe_send_retry_indicator(
 ) {
     if enabled {
         send_retry_indicator(on_event, reason_key, attempt, max_attempts);
-    }
-}
-
-fn connection_error(
-    on_event: &AgentEventEmitter,
-    error: reqwest::Error,
-) -> Result<OpenChatResponse, String> {
-    let is_connection = error.is_connect() || error.is_timeout();
-    let msg = if is_connection {
-        "ollama_connection_lost".to_string()
-    } else {
-        format!("Ollama: {error}")
-    };
-    let _ = on_event.send(StreamEvent::Error {
-        message: msg.clone(),
-        is_connection,
-        context_capacity: None,
-        diagnostic: None,
-    });
-    Err(msg)
-}
-
-async fn wait_retry_delay(cancel: &CancellationToken, attempt: u32) -> Result<(), String> {
-    tokio::select! {
-        _ = cancel.cancelled() => Err("Annulé".to_string()),
-        _ = tokio::time::sleep(server_retry_delay(attempt)) => Ok(()),
     }
 }
 

@@ -1,6 +1,5 @@
 use super::checkpoint_document::CheckpointSection;
 use super::checkpoint_selection::CheckpointSelection;
-use super::profile_types::{CompressionBandSettings, CompressionWindowBand};
 use super::snapshot::CompressionSnapshot;
 use super::summary_contract::ValidatedSummary;
 use crate::services::agent_local::types_message::AgentMessage;
@@ -22,6 +21,7 @@ pub struct CompressionCandidate {
     pub runtime_messages: Vec<ChatMessage>,
     pub before_tokens: u32,
     pub after_tokens: u32,
+    pub prepared_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
     pub retained_images: usize,
     pub report: CompressionSelectionReport,
     pub automatic_compression_guard:
@@ -43,8 +43,8 @@ pub async fn build_with_evidence(
     sections: &[CheckpointSection],
     evidence_tokens: u32,
 ) -> Result<CompressionCandidate, super::checkpoint_transaction::CompressionError> {
-    validate_snapshot(snapshot)?;
-    let (kind, band) = resolved_band(snapshot)?;
+    super::checkpoint_candidate_validation::validate_snapshot(snapshot)?;
+    let (kind, band) = super::checkpoint_candidate_validation::resolved_band(snapshot)?;
     let summary = summary.ok_or(super::checkpoint_transaction::CompressionError::SummaryInvalid)?;
     let selection = super::checkpoint_selection::select(
         &snapshot.source_messages,
@@ -76,12 +76,14 @@ pub async fn build_with_evidence(
     runtime_snapshot.checkpoint_images = retained_images;
     let mut runtime_messages =
         super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
-    let mut after_tokens = super::token_estimate::estimate_textual_request_tokens_for_provider(
+    let mut after_tokens = super::prepared_request::count(
         &snapshot.provider_id,
+        &snapshot.source_session.model,
         &runtime_messages,
         &snapshot.provider_tools,
     )
-    .min(u32::MAX as usize) as u32;
+    .capacity_tokens
+    .ok_or(super::checkpoint_transaction::CompressionError::CapacityUnverified)?;
     super::checkpoint_metadata::set(
         &mut persisted_messages,
         snapshot,
@@ -92,20 +94,29 @@ pub async fn build_with_evidence(
     .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
     runtime_messages =
         super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
-    after_tokens = super::token_estimate::estimate_textual_request_tokens_for_provider(
+    let prepared_count = super::prepared_request::count(
         &snapshot.provider_id,
+        &snapshot.source_session.model,
         &runtime_messages,
         &snapshot.provider_tools,
-    )
-    .min(u32::MAX as usize) as u32;
-    let report = validate_reduction(snapshot, kind, &selection, after_tokens)?;
+    );
+    after_tokens = prepared_count
+        .capacity_tokens
+        .ok_or(super::checkpoint_transaction::CompressionError::CapacityUnverified)?;
+    let report = super::checkpoint_candidate_validation::validate_reduction(
+        snapshot,
+        kind,
+        &selection,
+        after_tokens,
+    )?;
     prepare_candidate(snapshot, &persisted_messages).await?;
     Ok(CompressionCandidate {
         source_messages: snapshot.source_messages.clone(),
         persisted_messages,
         runtime_messages,
-        before_tokens: snapshot.before_tokens,
+        before_tokens: snapshot.before_tokens(),
         after_tokens,
+        prepared_count,
         retained_images: runtime_snapshot.checkpoint_images.len(),
         report,
         automatic_compression_guard: snapshot.source_session.automatic_compression_guard.clone(),
@@ -138,88 +149,4 @@ async fn prepare_candidate(
         .await
         .map(|_| ())
         .map_err(|_| super::checkpoint_transaction::CompressionError::PrepareFailed)
-}
-
-fn validate_snapshot(
-    snapshot: &CompressionSnapshot,
-) -> Result<(), super::checkpoint_transaction::CompressionError> {
-    if snapshot.source_session.id != snapshot.session_id
-        || !same_messages(&snapshot.source_session.messages, &snapshot.source_messages)
-        || snapshot.source_messages.is_empty()
-    {
-        return Err(super::checkpoint_transaction::CompressionError::SnapshotInvalid);
-    }
-    crate::services::agent_local::conversation_history_validation::validate(
-        &snapshot.source_messages,
-    )
-    .map_err(|_| super::checkpoint_transaction::CompressionError::OpenTurn)?;
-    Ok(())
-}
-
-fn resolved_band(
-    snapshot: &CompressionSnapshot,
-) -> Result<
-    (CompressionWindowBand, &CompressionBandSettings),
-    super::checkpoint_transaction::CompressionError,
-> {
-    match snapshot.profile.band(snapshot.context_window) {
-        Some(CompressionWindowBand::Under64K) if snapshot.profile.profile.allow_under_64k => Ok((
-            CompressionWindowBand::Under64K,
-            &snapshot.profile.profile.under_64k,
-        )),
-        Some(CompressionWindowBand::Under64K) => {
-            Err(super::checkpoint_transaction::CompressionError::Unavailable)
-        }
-        Some(CompressionWindowBand::Compact) => Ok((
-            CompressionWindowBand::Compact,
-            &snapshot.profile.profile.compact,
-        )),
-        Some(CompressionWindowBand::Large) => Ok((
-            CompressionWindowBand::Large,
-            &snapshot.profile.profile.large,
-        )),
-        None if snapshot.trigger == super::profile_types::CompressionTrigger::Explicit => Ok((
-            CompressionWindowBand::Compact,
-            &snapshot.profile.profile.compact,
-        )),
-        None => Err(super::checkpoint_transaction::CompressionError::Unavailable),
-    }
-}
-
-fn validate_reduction(
-    snapshot: &CompressionSnapshot,
-    kind: CompressionWindowBand,
-    selection: &CheckpointSelection,
-    after_tokens: u32,
-) -> Result<CompressionSelectionReport, super::checkpoint_transaction::CompressionError> {
-    let target = super::checkpoint_candidate_budget::target_tokens(snapshot, kind);
-    let checkpoint_tokens = after_tokens.saturating_sub(selection.active_turn_tokens);
-    if checkpoint_tokens > target {
-        return Err(super::checkpoint_transaction::CompressionError::CapacityExceeded);
-    }
-    let compressible_after = checkpoint_tokens.saturating_sub(snapshot.system_head_tokens);
-    if snapshot.trigger == super::profile_types::CompressionTrigger::Automatic
-        && super::token_estimate::should_compress(
-            compressible_after as usize,
-            snapshot.context_window,
-            snapshot.profile.profile.threshold_percent,
-        )
-    {
-        return Err(super::checkpoint_transaction::CompressionError::InsufficientReduction);
-    }
-    Ok(CompressionSelectionReport {
-        selected_messages: selection.messages.len(),
-        before_tokens: snapshot.before_tokens,
-        after_tokens,
-        target_tokens: Some(target),
-        reserve_tokens: None,
-        minimum_reduction_tokens: None,
-    })
-}
-
-pub(crate) fn same_messages(left: &[AgentMessage], right: &[AgentMessage]) -> bool {
-    match (serde_json::to_vec(left), serde_json::to_vec(right)) {
-        (Ok(left), Ok(right)) => left == right,
-        _ => false,
-    }
 }

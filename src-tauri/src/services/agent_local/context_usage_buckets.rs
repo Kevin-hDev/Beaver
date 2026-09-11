@@ -76,15 +76,6 @@ impl RequestContextUsage {
         }
     }
 
-    pub fn total_tokens(self) -> usize {
-        (self.messages as usize)
-            .saturating_add(self.system_tools as usize)
-            .saturating_add(self.mcp_connectors as usize)
-            .saturating_add(self.skills as usize)
-            .saturating_add(self.memory as usize)
-            .saturating_add(self.meta_context as usize)
-            .saturating_add(self.system_prompt as usize)
-    }
 }
 
 fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning: bool) {

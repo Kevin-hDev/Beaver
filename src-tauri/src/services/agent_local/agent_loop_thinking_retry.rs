@@ -113,7 +113,8 @@ pub async fn retry_if_needed(
             super::context_usage_record::ContextCountSource::NativeCounter,
         },
         params.breakdown,
-    );
+    )
+    .with_realtime_budget(params.realtime_budget.clone());
 
     params.eager_handle.abort();
     let (retry_tx, retry_rx) = tokio::sync::mpsc::unbounded_channel();

@@ -112,7 +112,6 @@ async fn loop_compression_reaches_the_payload_with_the_generation_capture() {
         request_id: "request-loop-compression",
         native_context: 100_000,
         configured_context: 100_000,
-        provider_tools: Vec::new(),
         chatbot: false,
         plan_mode_active: false,
         working_dir: working_dir.path(),
@@ -122,6 +121,7 @@ async fn loop_compression_reaches_the_payload_with_the_generation_capture() {
     let result = compression
         .try_run(
             &mut messages,
+            &[],
             Some(90_000),
             Some(0),
             CancellationToken::new(),

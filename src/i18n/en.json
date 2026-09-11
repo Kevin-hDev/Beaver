@@ -1424,6 +1424,7 @@
     "compressionProfilesUnavailable": "Compression settings are currently unavailable.",
     "compressionDisabledUnder64": "Compression is disabled for context windows under 64K. You can allow it in the advanced compression profile.",
     "compressionFailed": "The context could not be compressed. Your conversation was not changed.",
+    "contextCapacityUnverified": "This context capacity cannot be verified. Reduce media or opaque blocks, then try again.",
     "compressionAutomaticSuspended": "Automatic compression is paused for this session after repeated failures. You can retry with /compress.",
     "toolFailed": "Tool failed",
     "webToolFailed": "Web tool failed: {{message}}"
