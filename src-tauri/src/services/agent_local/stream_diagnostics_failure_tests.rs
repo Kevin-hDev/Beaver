@@ -113,6 +113,17 @@ fn compression_failure_keeps_its_stable_code() {
 }
 
 #[test]
+fn historical_circuit_breaker_sentence_is_classified() {
+    assert_eq!(
+        classify_error(
+            "Circuit breaker : 6 appels identiques consécutifs détectés.",
+            false,
+        ),
+        "circuit_breaker"
+    );
+}
+
+#[test]
 fn extension_failures_keep_stable_codes_in_persisted_diagnostics() {
     use crate::services::extensions::error_codes;
     for code in [

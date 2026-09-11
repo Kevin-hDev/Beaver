@@ -100,6 +100,9 @@ pub mod skill_parser;
 pub mod stream_buffer;
 pub mod stream_diagnostics;
 pub mod stream_diagnostics_failure;
+pub(crate) mod stream_diagnostics_history;
+#[cfg(test)]
+mod stream_diagnostics_history_tests;
 pub mod stream_diagnostics_model;
 pub mod stream_diagnostics_payload;
 pub mod stream_diagnostics_support;

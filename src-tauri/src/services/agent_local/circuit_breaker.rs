@@ -19,10 +19,7 @@ impl CircuitBreaker {
         if is_repeat {
             self.consecutive_count += 1;
             if self.consecutive_count >= MAX_CONSECUTIVE_IDENTICAL {
-                return Err(format!(
-                    "Circuit breaker : {} appels identiques consécutifs détectés. Boucle probable, arrêt.",
-                    self.consecutive_count
-                ));
+                return Err("circuit_breaker".to_string());
             }
         } else {
             self.last_signature = Some(sig);

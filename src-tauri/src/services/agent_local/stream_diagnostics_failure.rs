@@ -56,7 +56,11 @@ pub(crate) fn summary_from_run(run: &AgentDiagnosticRun) -> AgentErrorDiagnostic
     }
 }
 
-fn safe_summary(run: &AgentDiagnosticRun, error_type: &str, message: &str) -> String {
+pub(crate) fn safe_summary(
+    run: &AgentDiagnosticRun,
+    error_type: &str,
+    message: &str,
+) -> String {
     if message
         .to_ascii_lowercase()
         .contains("plan mode workflow could not be enforced")
@@ -100,7 +104,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     if let Some(code) = extension_failure_code(message) {
         return code.to_string();
     }
-    let lower = message.to_ascii_lowercase();
+    let lower = message.to_lowercase();
     if matches!(
         lower.as_str(),
         "rate_limit"
@@ -123,6 +127,8 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "compression_disabled_under_64k"
             | "compression_automatic_suspended"
             | "compression_failed"
+            | "circuit_breaker"
+            | "max_turns"
     ) {
         return lower;
     }
@@ -144,10 +150,10 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     ) {
         return "provider_error".to_string();
     }
-    if message.contains("Limite de tours") {
+    if lower.contains("limite de tours") {
         return "max_turns".to_string();
     }
-    if message.contains("répété") || message.contains("circuit") {
+    if lower.contains("répété") || lower.contains("circuit") {
         return "circuit_breaker".to_string();
     }
     if lower.contains("http")

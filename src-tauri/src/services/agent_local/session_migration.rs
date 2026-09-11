@@ -47,7 +47,7 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
     session_limits::validate_serialized_size(bytes.len())
         .map_err(|_| session_limits::invalid_session())?;
     let version = super::session_migration_version::version(bytes)?;
-    let (session, version) = match version {
+    let (mut session, version) = match version {
         WireVersion::V1 => (
             super::session_migration_wire::parse_v1(bytes)?,
             LoadedVersion::V1,
@@ -73,6 +73,7 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
             LoadedVersion::Future(value),
         ),
     };
+    super::stream_diagnostics_history::normalize(&mut session);
     Ok(LoadedSession {
         session,
         path,

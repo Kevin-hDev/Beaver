@@ -33,12 +33,7 @@ mod tests {
         }
         // 6ème appel identique : ERREUR (count atteint MAX_CONSECUTIVE_IDENTICAL)
         let result = breaker.check(&calls);
-        assert!(
-            result.is_err(),
-            "le 6ème appel identique consécutif devrait déclencher le circuit breaker"
-        );
-        let msg = result.unwrap_err();
-        assert!(msg.contains("Circuit breaker"), "message inattendu : {msg}");
+        assert_eq!(result, Err("circuit_breaker".to_string()));
     }
 
     #[test]
