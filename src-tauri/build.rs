@@ -11,10 +11,27 @@ fn main() {
     extension_ui_contract_build::generate();
     prepare_cef_bundle_placeholders();
     prepare_updater_helper_placeholder();
+    prepare_beaver_cli_placeholder();
     tauri_build::build();
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
         println!("cargo:rustc-link-lib=framework=CoreServices");
+    }
+}
+
+fn prepare_beaver_cli_placeholder() {
+    // Cargo checks parse the Tauri bundle config before the release preparer builds the CLI.
+    let target = std::env::var("TARGET").expect("target triple");
+    let suffix = if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        ".exe"
+    } else {
+        ""
+    };
+    let directory = std::path::Path::new("target/beaver-cli");
+    std::fs::create_dir_all(directory).expect("cannot prepare Beaver CLI directory");
+    let path = directory.join(format!("beaver-{target}{suffix}"));
+    if !path.exists() {
+        std::fs::File::create(path).expect("cannot prepare Beaver CLI placeholder");
     }
 }
 

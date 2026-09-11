@@ -73,6 +73,38 @@ if installation_absent "${INSTALL_ROOT}"; then
   printf "FAIL legacy app was not detected\n" >&2
   exit 1
 fi
+
+APP_BUNDLE="${TMP_DIR}/Beaver.app"
+CLI_DIR="${TMP_DIR}/bin"
+/bin/mkdir -p "${APP_BUNDLE}/Contents/MacOS" "${CLI_DIR}"
+/usr/bin/touch "${APP_BUNDLE}/Contents/MacOS/beaver"
+install_cli_link "${APP_BUNDLE}" "${CLI_DIR}"
+assert_eq "${APP_BUNDLE}/Contents/MacOS/beaver" "$(/usr/bin/readlink "${CLI_DIR}/beaver")" "CLI symlink"
+
+NEXT_APP_BUNDLE="${TMP_DIR}/Beaver-next.app"
+/bin/mkdir -p "${NEXT_APP_BUNDLE}/Contents/MacOS"
+/usr/bin/touch "${NEXT_APP_BUNDLE}/Contents/MacOS/beaver"
+install_cli_link "${NEXT_APP_BUNDLE}" "${CLI_DIR}"
+assert_eq \
+  "${NEXT_APP_BUNDLE}/Contents/MacOS/beaver" \
+  "$(/usr/bin/readlink "${CLI_DIR}/beaver")" \
+  "CLI symlink replacement"
+
+THIRD_PARTY_DIR="${TMP_DIR}/third-party-bin"
+/bin/mkdir "${THIRD_PARTY_DIR}"
+printf "third-party\n" > "${THIRD_PARTY_DIR}/beaver"
+install_cli_link "${APP_BUNDLE}" "${THIRD_PARTY_DIR}" >/dev/null
+if [ -L "${THIRD_PARTY_DIR}/beaver" ] ||
+  [ "$(/bin/cat "${THIRD_PARTY_DIR}/beaver")" != "third-party" ]; then
+  printf "FAIL existing third-party CLI was replaced\n" >&2
+  exit 1
+fi
+
+CLI_HINT="$(install_cli_link "${APP_BUNDLE}" "${TMP_DIR}/missing-bin")"
+case "${CLI_HINT}" in
+  *"sudo ln -sfn"*"Contents/MacOS/beaver"*) ;;
+  *) printf "FAIL missing CLI fallback instruction\n" >&2; exit 1 ;;
+esac
 /bin/rm -rf "${INSTALL_ROOT}/CL-GO.app"
 /usr/bin/touch "${INSTALL_ROOT}/Beaver.app"
 if installation_absent "${INSTALL_ROOT}"; then

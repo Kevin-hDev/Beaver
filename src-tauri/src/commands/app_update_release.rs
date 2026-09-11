@@ -6,7 +6,15 @@ use super::app_update_assets::{
 };
 use super::app_update_manifest::MAX_UPDATE_ASSET_BYTES;
 use super::app_update_notes::AppReleaseNotesByLocale;
-use super::app_update_source::{strict_version_gt, MAX_RELEASE_RESPONSE_BYTES, UPDATE_SOURCE};
+use super::app_update_source::{
+    is_safe_version, strict_version_gt, MAX_RELEASE_RESPONSE_BYTES, UPDATE_SOURCE,
+};
+
+pub(crate) enum AppUpdateClassification {
+    NotNewer,
+    Available(AppUpdateInfo),
+    Invalid,
+}
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -35,16 +43,31 @@ struct GithubRelease {
     assets: Vec<ReleaseAsset>,
 }
 
+#[cfg(test)]
 pub(crate) fn app_update_from_json(
     bytes: &[u8],
     current: &str,
     platform: UpdatePlatform,
     architecture: UpdateArchitecture,
 ) -> Option<AppUpdateInfo> {
-    if bytes.len() > MAX_RELEASE_RESPONSE_BYTES {
-        return None;
+    match classify_app_update_json(bytes, current, platform, architecture) {
+        AppUpdateClassification::Available(update) => Some(update),
+        AppUpdateClassification::NotNewer | AppUpdateClassification::Invalid => None,
     }
-    let release: GithubRelease = serde_json::from_slice(bytes).ok()?;
+}
+
+pub(crate) fn classify_app_update_json(
+    bytes: &[u8],
+    current: &str,
+    platform: UpdatePlatform,
+    architecture: UpdateArchitecture,
+) -> AppUpdateClassification {
+    if bytes.len() > MAX_RELEASE_RESPONSE_BYTES {
+        return AppUpdateClassification::Invalid;
+    }
+    let Ok(release) = serde_json::from_slice::<GithubRelease>(bytes) else {
+        return AppUpdateClassification::Invalid;
+    };
     app_update_from_release(&release, current, platform, architecture)
 }
 
@@ -53,34 +76,46 @@ fn app_update_from_release(
     current: &str,
     platform: UpdatePlatform,
     architecture: UpdateArchitecture,
-) -> Option<AppUpdateInfo> {
+) -> AppUpdateClassification {
     if release.draft || release.prerelease {
-        return None;
+        return AppUpdateClassification::Invalid;
     }
-    let version = release.tag_name.strip_prefix('v')?;
+    let Some(version) = release.tag_name.strip_prefix('v') else {
+        return AppUpdateClassification::Invalid;
+    };
+    if !is_safe_version(version) {
+        return AppUpdateClassification::Invalid;
+    }
     if !strict_version_gt(version, current) {
-        return None;
+        return AppUpdateClassification::NotNewer;
     }
     let expected_title = format!("{} v{version}", UPDATE_SOURCE.release_product);
     if release.name != expected_title {
-        return None;
+        return AppUpdateClassification::Invalid;
     }
-    let asset = find_release_asset(
+    let Some(asset) = find_release_asset(
         &release.assets,
         &UPDATE_SOURCE,
         version,
         platform,
         architecture,
-    )?;
+    ) else {
+        return AppUpdateClassification::Invalid;
+    };
     if asset.size == 0 || asset.size > MAX_UPDATE_ASSET_BYTES {
-        return None;
+        return AppUpdateClassification::Invalid;
     }
-    let manifest = find_release_manifest(&release.assets, &UPDATE_SOURCE, version)?;
-    Some(AppUpdateInfo {
+    let Some(manifest) = find_release_manifest(&release.assets, &UPDATE_SOURCE, version) else {
+        return AppUpdateClassification::Invalid;
+    };
+    let Some(published_at) = validated_timestamp(release.published_at.as_deref()) else {
+        return AppUpdateClassification::Invalid;
+    };
+    AppUpdateClassification::Available(AppUpdateInfo {
         version: version.to_string(),
         asset_url: asset.url,
         title: Some(expected_title),
-        published_at: validated_timestamp(release.published_at.as_deref())?,
+        published_at,
         notes_by_locale: None,
         asset_name: asset.name,
         asset_size: asset.size,

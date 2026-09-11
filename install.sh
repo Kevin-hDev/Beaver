@@ -107,13 +107,22 @@ valid_install_dir() {
 installation_absent() { [ ! -e "$1/Beaver.app" ] && [ ! -L "$1/Beaver.app" ] && [ ! -e "$1/CL-GO.app" ] && [ ! -L "$1/CL-GO.app" ]; }
 package_installed() { /usr/bin/dpkg-query -W -f='${db:Status-Abbrev}' "$1" 2>/dev/null | /usr/bin/grep -q '^ii '; }
 verify_bundle() {
-  local bundle="$1" plist="$1/Contents/Info.plist" executable="$1/Contents/MacOS/cl-go-dash"
+  local bundle="$1" plist="$1/Contents/Info.plist" executable="$1/Contents/MacOS/cl-go-dash" cli="$1/Contents/MacOS/beaver"
   [ -d "$bundle" ] && [ ! -L "$bundle" ] && [ -f "$plist" ] && [ ! -L "$plist" ] &&
-    [ -f "$executable" ] && [ ! -L "$executable" ] &&
+    [ -f "$executable" ] && [ ! -L "$executable" ] && [ -f "$cli" ] && [ ! -L "$cli" ] &&
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null)" = "com.clgo.dash" ] &&
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist" 2>/dev/null)" = "cl-go-dash" ]
 }
-
+install_cli_link() {
+  local source="$1/Contents/MacOS/beaver" destination="$2/beaver"
+  # Un fichier ordinaire peut appartenir à un autre outil ; seul notre lien est remplaçable.
+  if [ -e "$destination" ] && [ ! -L "$destination" ]; then
+    info "Commande terminal non installée : $destination existe déjà."
+    return
+  fi
+  [ -d "$2" ] && [ -w "$2" ] && /bin/ln -sfn "$source" "$destination" 2>/dev/null ||
+    info "Pour la commande terminal : sudo ln -sfn \"$source\" \"$destination\""
+}
 install_macos() {
   local asset="$1" install_dir="/Applications" custom="" source="" token="" stage="" target="" stage_inode=""
   printf "\n\033[1;33m📁 Répertoire d'installation : /Applications\033[0m\n"
@@ -137,8 +146,8 @@ install_macos() {
     run_as_root /bin/rm -rf "$stage" "$target/${stage##*/}"; [ "$(/usr/bin/stat -f '%i' "$target" 2>/dev/null)" != "$stage_inode" ] || run_as_root /bin/rm -rf "$target"
     fail "Installation impossible."
   fi
+  install_cli_link "$target" "/usr/local/bin"
 }
-
 install_linux() {
   local asset="$1"
   ! package_installed beaver && ! package_installed cl-go ||

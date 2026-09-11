@@ -1,4 +1,4 @@
 export const EXPECTED_VISIBLE_REFERENCE_CONTRACT = Object.freeze({
-  count: 118,
-  sha256: "3b4609638772e9084916a28ff5d454d62438395a2938d7c1caad2baaf19bc937",
+  count: 122,
+  sha256: "32f7e5493a3cfbd5d61394977c1c3e3e62d0176b2f3be3592f984e3089c18f0a",
 });

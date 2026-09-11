@@ -1,6 +1,6 @@
 use std::fs;
 
-use super::{copy_helper, copy_helper_while};
+use super::{copy_helper, copy_helper_while, current_install_directory_for};
 
 #[test]
 fn copies_a_bounded_regular_helper_with_private_permissions() {
@@ -63,4 +63,61 @@ fn cancellation_during_copy_removes_the_private_helper_copy() {
 
     assert!(matches!(result, Err(error) if error == "update-install-error"));
     assert_eq!(fs::read_dir(destination.path()).unwrap().count(), 0);
+}
+
+#[test]
+fn cli_beaver_resout_le_dossier_de_l_executable_principal() {
+    let installation = tempfile::tempdir().unwrap();
+    let main = if cfg!(windows) {
+        "cl-go-dash.exe"
+    } else {
+        "cl-go-dash"
+    };
+    let cli = if cfg!(windows) {
+        "beaver.exe"
+    } else {
+        "beaver"
+    };
+    fs::write(installation.path().join(main), b"app").unwrap();
+    fs::write(installation.path().join(cli), b"cli").unwrap();
+
+    assert_eq!(
+        current_install_directory_for(&installation.path().join(cli)).unwrap(),
+        installation.path().canonicalize().unwrap()
+    );
+}
+
+#[test]
+fn cli_beaver_refuse_un_dossier_sans_executable_principal() {
+    let installation = tempfile::tempdir().unwrap();
+    let cli = if cfg!(windows) {
+        "beaver.exe"
+    } else {
+        "beaver"
+    };
+    fs::write(installation.path().join(cli), b"cli").unwrap();
+
+    assert!(current_install_directory_for(&installation.path().join(cli)).is_err());
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn cli_beaver_lie_resout_les_dossiers_du_bundle() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir().unwrap();
+    let macos = root.path().join("Beaver.app/Contents/MacOS");
+    let resources = root.path().join("Beaver.app/Contents/Resources");
+    fs::create_dir_all(&macos).unwrap();
+    fs::create_dir_all(&resources).unwrap();
+    fs::write(macos.join("cl-go-dash"), b"app").unwrap();
+    fs::write(macos.join("beaver"), b"cli").unwrap();
+    let link = root.path().join("beaver");
+    symlink(macos.join("beaver"), &link).unwrap();
+
+    let (resource_root, working_directory) =
+        crate::commands::app_update_helper_cli_paths::cli_update_paths_for(&link).unwrap();
+
+    assert_eq!(working_directory, macos.canonicalize().unwrap());
+    assert_eq!(resource_root, resources.canonicalize().unwrap());
 }

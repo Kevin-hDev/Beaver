@@ -23,6 +23,7 @@ async function recordPreparation(platform) {
       prepareCefSource: record("cef-source"),
       buildFrontend: record("frontend"),
       prepareUpdater: record("updater"),
+      prepareCli: record("cli"),
       prepareSearxng: record("searxng"),
       prepareUnixCef: record("unix-cef"),
     });
@@ -39,6 +40,7 @@ test("prépare Windows sans lancer de script Bash", async () => {
     "cef-source",
     "frontend",
     "updater",
+    "cli",
     "searxng",
   ]);
 });
@@ -46,6 +48,7 @@ test("prépare Windows sans lancer de script Bash", async () => {
 test("Tauri utilise uniquement la préparation native centralisée", () => {
   const config = JSON.parse(readFileSync("src-tauri/tauri.conf.json", "utf8"));
   assert.equal(config.build.beforeBuildCommand, "node scripts/build/prepare-release.mjs");
+  assert.deepEqual(config.bundle.externalBin, ["target/beaver-cli/beaver"]);
   assert.equal(existsSync("src-tauri/scripts/prepare-updater-helper.sh"), false);
   assert.equal(existsSync("src-tauri/scripts/prepare-searxng.sh"), false);
 });
@@ -65,6 +68,7 @@ test("conserve la préparation CEF Unix après les étapes communes", async () =
     "cef-source",
     "frontend",
     "updater",
+    "cli",
     "searxng",
     "unix-cef",
   ]);
@@ -87,6 +91,7 @@ test("lance la préparation CEF Unix depuis le dossier Tauri", async () => {
       prepareCefSource: skip,
       buildFrontend: skip,
       prepareUpdater: skip,
+      prepareCli: skip,
       prepareSearxng: skip,
       run: async (command) => commands.push(command),
     });

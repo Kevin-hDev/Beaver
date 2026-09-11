@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { runCommand } from "./command-runner.mjs";
 import { buildFrontend as defaultBuildFrontend } from "./frontend-build.mjs";
 import { prepareSearxng as defaultPrepareSearxng } from "./prepare-searxng.mjs";
+import { prepareBeaverCli as defaultPrepareCli } from "./prepare-beaver-cli.mjs";
 import { prepareUpdaterHelper as defaultPrepareUpdater } from "./prepare-updater-helper.mjs";
 import { canonicalDirectory } from "./updater-helper-copy.mjs";
 
@@ -54,6 +55,15 @@ function defaultPreparations(run) {
         run,
       });
     },
+    async prepareCli({ repoRoot, platform }) {
+      await defaultPrepareCli({
+        platform,
+        target: process.env.CARGO_BUILD_TARGET ?? "",
+        tauriDir: join(repoRoot, "src-tauri"),
+        cargoTargetDir: process.env.CARGO_TARGET_DIR ?? "",
+        run,
+      });
+    },
     async prepareSearxng({ repoRoot }) {
       await defaultPrepareSearxng({ repoRoot, run });
     },
@@ -73,6 +83,7 @@ export async function prepareRelease({
   prepareCefSource,
   buildFrontend,
   prepareUpdater,
+  prepareCli,
   prepareSearxng,
   prepareUnixCef,
   run = runCommand,
@@ -87,6 +98,7 @@ export async function prepareRelease({
       prepareCefSource ?? defaults.prepareCefSource,
       buildFrontend ?? defaults.buildFrontend,
       prepareUpdater ?? defaults.prepareUpdater,
+      prepareCli ?? defaults.prepareCli,
       prepareSearxng ?? defaults.prepareSearxng,
       prepareUnixCef ?? defaults.prepareUnixCef,
     ];
@@ -98,7 +110,8 @@ export async function prepareRelease({
     await selected[3](context);
     await selected[4](context);
     await selected[5](context);
-    if (platform !== "win32") await selected[6](context);
+    await selected[6](context);
+    if (platform !== "win32") await selected[7](context);
   } catch {
     fail();
   }

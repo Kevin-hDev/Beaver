@@ -7,7 +7,7 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
 const MAX_LOG_CHARS: usize = 2_048;
 const MAX_REDACTION_INPUT_CHARS: usize = MAX_LOG_CHARS * 4;
-const MAX_FILE_BYTES: u128 = 2 * 1024 * 1024;
+pub(crate) const MAX_FILE_BYTES: u128 = 2 * 1024 * 1024;
 const RETAINED_FILES: usize = 4;
 const WINDOWS_TLS_VERIFIER_TARGET: &str = "rustls_platform_verifier::verification::windows";
 

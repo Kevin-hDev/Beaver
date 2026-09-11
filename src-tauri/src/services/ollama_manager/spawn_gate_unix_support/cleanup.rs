@@ -6,7 +6,6 @@ use std::os::fd::{AsRawFd, FromRawFd};
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::path::Path;
 
-const GATE_LINK_PREFIX: &str = ".beaver-gated-";
 const OWNER_FILE: &str = ".owner";
 const MAX_STALE_GATE_LINKS: usize = 32;
 
@@ -20,7 +19,7 @@ pub(super) fn stale_gate_links(
         if !entry
             .file_name()
             .to_string_lossy()
-            .starts_with(GATE_LINK_PREFIX)
+            .starts_with(super::GATE_LINK_PREFIX)
         {
             continue;
         }
@@ -30,7 +29,7 @@ pub(super) fn stale_gate_links(
         stale.push(entry.file_name());
     }
     for name in stale {
-        if let Some(owner) = link_owner(&name) {
+        if let Some(owner) = super::gated_link_owner(&name) {
             let Some(link) = open_at_file(parent_file, &name) else {
                 continue;
             };
@@ -64,13 +63,6 @@ pub(super) fn stale_gate_links(
         }
     }
     Ok(())
-}
-
-fn link_owner(name: &std::ffi::OsStr) -> Option<u32> {
-    let value = name.to_str()?.strip_prefix(GATE_LINK_PREFIX)?;
-    let (owner, suffix) = value.split_once('-')?;
-    (!suffix.is_empty()).then_some(())?;
-    owner.parse().ok()
 }
 
 fn open_at_file(parent: &File, name: &std::ffi::OsStr) -> Option<File> {

@@ -6,10 +6,12 @@ use crate::services::work_registry::ServiceWorkAdmissionError;
 use chrono::{DateTime, Local, Utc};
 use std::path::PathBuf;
 use store::{append_at, list_runs_at};
+pub(crate) const MAX_LINES: usize = store::MAX_LINES;
+pub(crate) const MAX_LOG_LINE_BYTES: usize = store::MAX_LOG_LINE_BYTES;
 #[cfg(test)]
 use store::{
     append_at_with_atomic_writer, append_at_with_read_observer, parse_runs, MAX_ID_CHARS,
-    MAX_LINES, MAX_LOG_LINE_BYTES, ROTATED_LINES,
+    ROTATED_LINES,
 };
 
 fn log_path() -> PathBuf {

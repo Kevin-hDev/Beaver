@@ -1,4 +1,10 @@
 export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
+  // Le CLI résout la racine commune en lecture, puis délègue ses chemins à cli_support.
+  ["src-tauri/src/bin/beaver/cleanup.rs", 1],
+  ["src-tauri/src/bin/beaver/doctor.rs", 1],
+  ["src-tauri/src/bin/beaver/logs.rs", 1],
+  ["src-tauri/src/bin/beaver/paths_cmd.rs", 1],
+  ["src-tauri/src/bin/beaver/status.rs", 1],
   ["src-tauri/src/commands/agent_md.rs", 1],
   ["src-tauri/src/commands/ollama_setup.rs", 1],
   ["src-tauri/src/commands/ollama_setup_update.rs", 1],
@@ -97,6 +103,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/mcp_bridge/config.rs", 1],
   ["src-tauri/src/services/mcp_bridge/process_env.rs", 2],
   ["src-tauri/src/services/model_downloads.rs", 1],
+  ["src-tauri/src/services/ollama_manager/cli_access.rs", 1],
   ["src-tauri/src/services/ollama_manager/manager_process.rs", 2],
   ["src-tauri/src/services/ollama_manager/manager_runtime.rs", 1],
   ["src-tauri/src/services/ollama_manager/manager_startup.rs", 1],
