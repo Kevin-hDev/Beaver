@@ -81,6 +81,15 @@ CLI_DIR="${TMP_DIR}/bin"
 install_cli_link "${APP_BUNDLE}" "${CLI_DIR}"
 assert_eq "${APP_BUNDLE}/Contents/MacOS/beaver" "$(/usr/bin/readlink "${CLI_DIR}/beaver")" "CLI symlink"
 
+NEXT_APP_BUNDLE="${TMP_DIR}/Beaver-next.app"
+/bin/mkdir -p "${NEXT_APP_BUNDLE}/Contents/MacOS"
+/usr/bin/touch "${NEXT_APP_BUNDLE}/Contents/MacOS/beaver"
+install_cli_link "${NEXT_APP_BUNDLE}" "${CLI_DIR}"
+assert_eq \
+  "${NEXT_APP_BUNDLE}/Contents/MacOS/beaver" \
+  "$(/usr/bin/readlink "${CLI_DIR}/beaver")" \
+  "CLI symlink replacement"
+
 THIRD_PARTY_DIR="${TMP_DIR}/third-party-bin"
 /bin/mkdir "${THIRD_PARTY_DIR}"
 printf "third-party\n" > "${THIRD_PARTY_DIR}/beaver"
