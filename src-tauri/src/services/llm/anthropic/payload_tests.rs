@@ -127,6 +127,17 @@ fn tool_results_are_grouped_and_errors_are_marked() {
 }
 
 #[test]
+fn interrupted_turn_marker_is_not_sent_to_anthropic() {
+    let messages = vec![message("assistant", ""), message("user", "Continue")];
+
+    let converted = super::messages::convert(&messages, &[], None).unwrap();
+
+    assert_eq!(converted.messages.len(), 1);
+    assert_eq!(converted.messages[0]["role"], "user");
+    assert_eq!(converted.messages[0]["content"][0]["text"], "Continue");
+}
+
+#[test]
 fn payload_projects_verified_preview_in_its_matching_anthropic_tool_result() {
     let mut tool = message("tool", "done");
     tool.tool_call_id = Some("call-preview".into());

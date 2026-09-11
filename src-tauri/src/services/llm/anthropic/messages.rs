@@ -32,6 +32,12 @@ pub(super) fn convert(
                 }
             }
             "user" => messages.push(user_message(message)?),
+            "assistant"
+                if message.content.is_empty()
+                    && message
+                        .tool_calls
+                        .as_ref()
+                        .is_none_or(|calls| calls.is_empty()) => {}
             "assistant" => messages.push(assistant_message(message, &names)?),
             "tool" => pending_results.push(tool_result(
                 message,
