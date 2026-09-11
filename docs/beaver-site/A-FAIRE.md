@@ -18,13 +18,16 @@ rien ne se publie tant que la vitrine n'est pas irréprochable.
   « now »/« maintenant » sur la ligne pointillée, badge « série de
   démonstration » et note « valeur sans unité » (la série est fictive, aucune
   unité inventée — règle « toute représentation porte ses repères »).
-- [ ] **Image de partage social** : Kevin la génère (1200 × 630, castor +
-  wordmark + « Build your dam. », thème sombre — spécification donnée le
-  11 septembre 2026). Puis : la placer dans `mockup/assets/`, et ajouter les
-  balises `og:image` / `og:title` / `og:description` / `twitter:card` dans le
-  `<head>` des pages (aucune n'existe aujourd'hui — sans elles l'image ne sert
-  à rien). Titre et description par page, dans la langue de la page.
-  `og:title`/`og:description` peuvent s'écrire avant l'image.
+- [x] **Image de partage social** — fait le 11 septembre 2026. Kevin a généré
+  le visuel (castor + wordmark + « Build your dam. » + ligne OS, thème
+  sombre) ; recadré en 1200 × 630 (`mockup/assets/social-card.jpg`, 110 Ko),
+  et les 11 balises `og:*`/`twitter:card` ajoutées sur les 196 pages par un
+  agent Opus — titre et description recopiés à l'octet près depuis le
+  `<title>` et la meta description de chaque page, `og:url` absolue par page
+  (forme dossier pour les deux accueils), locale et texte alternatif selon la
+  langue. Reste à tester une fois publié : coller l'adresse dans
+  Discord/Slack/Reddit pour voir la carte réelle (les validateurs lisent
+  l'URL publique).
 - [x] **Pilule d'en-tête de `barrage.html`** — tranché par Kevin le
   11 septembre 2026 : on aligne. GitHub + Download/Télécharger ajoutés
   (même commit 5c8f7aab, vérifié en ligne).
