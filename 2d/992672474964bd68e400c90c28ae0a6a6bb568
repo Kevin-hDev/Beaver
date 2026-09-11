@@ -1,0 +1,10 @@
+CI correction following e837eccd: the centralized assertion added a second textual cl_go_dash_lib occurrence, so the exact brand-boundary count moved from 78 to 79.
+
+Fix: import cli_support once and reuse it in production and test code. This preserves the existing contract count instead of changing a repository-wide threshold for a duplicate spelling.
+
+Validated:
+- npm run test:brand-boundaries: 15/15, unknown occurrences 0
+- npm run test:ollama-manager-contracts: 6/6 and 3348 source files verified
+- cargo test --bin beaver paths_cmd::tests: 3/3
+- cargo fmt --check
+- graphify update . completed
