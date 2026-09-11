@@ -10,7 +10,9 @@
 
 **Spec:** [Investigation de l'interruption au retour d'un sous-agent](../../bug/sous-agent/2026-09-11-interruption-parent-au-retour-sous-agent-continuite-raisonnement.md).
 
-État de référence : **11 septembre 2026, branche `codex/fix-agent-stream-stops` à `e457053f`**. Le document d'investigation est déjà indexé dans Git. Ce plan décrit la correction ; il ne constitue pas une validation du futur code.
+État historique de l'enquête : **11 septembre 2026, branche `codex/fix-agent-stream-stops` à `e457053f`**.
+
+État d'implémentation : **base initiale `d7b27545`, base actuelle après rebase `a5060ddf`, branche `codex/fix-subagent-report-continuity`**. Les tâches 1 à 4 sont appliquées dans `6f928742`, `3913232b`, `96bf7a16` et `f070d49f`. La tâche 5 consigne séparément le contrôle global parallèle resté rouge et la validation complète en série réussie.
 
 ## Global Constraints
 
@@ -59,7 +61,7 @@
 - Consumes: `report_to_message(SubagentHiddenReport) -> ChatMessage`, façade de test existante vers `report_batch_to_message`.
 - Produces: tout rapport injecté par `append_context(&mut Vec<ChatMessage>, &[SubagentHiddenReport])` est un `ChatMessage` de rôle `user`, sans `continuation` ni `tool_calls`.
 
-- [ ] Renommer `report_context_is_assistant_and_xml_escaped` en `report_context_is_user_without_continuation_and_xml_escaped`. Conserver les assertions d'échappement et ajouter :
+- [x] Renommer `report_context_is_assistant_and_xml_escaped` en `report_context_is_user_without_continuation_and_xml_escaped`. Conserver les assertions d'échappement et ajouter :
 
 ```rust
 assert_eq!(message.role, "user");
@@ -67,8 +69,8 @@ assert!(message.continuation.is_none());
 assert!(message.tool_calls.is_none());
 ```
 
-- [ ] Dans `multiple_ready_reports_share_one_batch`, remplacer l'attente `assistant` par `user`. Garder la preuve qu'un seul lot contient les deux identifiants.
-- [ ] Exécuter depuis `src-tauri` avant la correction :
+- [x] Dans `multiple_ready_reports_share_one_batch`, remplacer l'attente `assistant` par `user`. Garder la preuve qu'un seul lot contient les deux identifiants.
+- [x] Exécuter depuis `src-tauri` avant la correction :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter report_context_is_user_without_continuation_and_xml_escaped
@@ -76,20 +78,20 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter report_context_is_user_with
 
 Échec attendu : le constructeur retourne encore `assistant`.
 
-- [ ] Remplacer seulement cette ligne dans `report_batch_to_message` :
+- [x] Remplacer seulement cette ligne dans `report_batch_to_message` :
 
 ```rust
 ChatMessage::user(report_batch_content(reports))
 ```
 
-- [ ] Relancer :
+- [x] Relancer :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter report_context_is_user_without_continuation_and_xml_escaped
 node ../scripts/ci/run-rust-test-filter.mjs --filter multiple_ready_reports_share_one_batch
 ```
 
-- [ ] Vérifier que les deux commandes exécutent un test et se terminent avec le code 0. Relire tous les appelants de `append_context`; le diff de production attendu est une ligne. Commit ciblé :
+- [x] Vérifier que les deux commandes exécutent un test et se terminent avec le code 0. Relire tous les appelants de `append_context`; le diff de production attendu est une ligne. Commit ciblé :
 
 ```bash
 git add src-tauri/src/services/agent_local/subagent_report_context.rs \
@@ -123,8 +125,8 @@ git notes add -m "Cause: Beaver-generated subagent reports were mislabeled as pr
 - Consumes: le `ChatMessage` de rapport `user` produit par la tâche 1 ; `active_routes() -> &'static [RouteContract]` ; `ContinuationTarget::Replay(ReplayTarget)`.
 - Produces: le test `every_live_user_continuation_accepts_the_shared_subagent_report` échoue si une politique active refuse le rapport ou si un adaptateur nouveau n'est pas traité ; les tests par famille prouvent le scénario `[assistant natif valide, rapport]`.
 
-- [ ] Déclarer sous `#[cfg(test)]` le nouveau module `subagent_report_contract_tests` dans `reasoning_wire/mod.rs`.
-- [ ] Ajouter le test de matrice complet ci-dessous. Garder le `match` exhaustif, `ContinuationTarget::Replay` et `Some(&target)` tels quels : ils empêchent un faux vert qui contournerait la validation.
+- [x] Déclarer sous `#[cfg(test)]` le nouveau module `subagent_report_contract_tests` dans `reasoning_wire/mod.rs`.
+- [x] Ajouter le test de matrice complet ci-dessous. Garder le `match` exhaustif, `ContinuationTarget::Replay` et `Some(&target)` tels quels : ils empêchent un faux vert qui contournerait la validation.
 
 ```rust
 use super::{chat_text, replay, responses};
@@ -246,7 +248,7 @@ fn every_live_user_continuation_accepts_the_shared_subagent_report() {
 }
 ```
 
-- [ ] Ajouter dans `chat_contract_tests.rs` le scénario Chat réel suivant, avec les imports `build_report` et `report_to_message` :
+- [x] Ajouter dans `chat_contract_tests.rs` le scénario Chat réel suivant, avec les imports `build_report` et `report_to_message` :
 
 ```rust
 #[test]
@@ -282,7 +284,7 @@ fn chat_native_assistant_then_subagent_report_is_valid() {
 }
 ```
 
-- [ ] Dans `anthropic_contract_tests.rs`, ajouter cette cible de production puis les deux tests :
+- [x] Dans `anthropic_contract_tests.rs`, ajouter cette cible de production puis les deux tests :
 
 ```rust
 fn user_target() -> ContinuationTarget {
@@ -358,7 +360,7 @@ fn required_anthropic_replay_rejects_an_assistant_without_an_envelope() {
 }
 ```
 
-- [ ] Ajouter dans `ollama_wire_tests.rs` le scénario Ollama réel suivant :
+- [x] Ajouter dans `ollama_wire_tests.rs` le scénario Ollama réel suivant :
 
 ```rust
 #[test]
@@ -385,7 +387,7 @@ fn ollama_native_assistant_then_subagent_report_is_valid() {
 }
 ```
 
-- [ ] Ajouter dans `codex_client/reasoning_continuity_tests.rs` ce test qui reproduit la frontière de la session témoin sans réseau :
+- [x] Ajouter dans `codex_client/reasoning_continuity_tests.rs` ce test qui reproduit la frontière de la session témoin sans réseau :
 
 ```rust
 #[test]
@@ -418,8 +420,8 @@ fn codex_parent_payload_accepts_a_subagent_report_after_native_reasoning() {
     assert_eq!(request.input.last().unwrap()["role"], "user");
 }
 ```
-- [ ] Ces tests ajoutent la couverture transversale après le correctif minimal de la tâche 1. Le témoin rouge de la tâche 1 prouve déjà la régression sur `e457053f`; ne créer aucun worktree temporaire uniquement pour refaire cette preuve.
-- [ ] Exécuter depuis `src-tauri` après la correction :
+- [x] Ces tests ajoutent la couverture transversale après le correctif minimal de la tâche 1. Le témoin rouge de la tâche 1 prouve déjà la régression sur `e457053f`; ne créer aucun worktree temporaire uniquement pour refaire cette preuve.
+- [x] Exécuter depuis `src-tauri` après la correction :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter every_live_user_continuation_accepts_the_shared_subagent_report
@@ -433,7 +435,7 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter required_anthropic_replay_r
 node ../scripts/ci/run-rust-test-filter.mjs --filter only_exact_live_fixture_pairs_are_activated
 ```
 
-- [ ] Vérifier que chaque commande annonce au moins un test exécuté et se termine avec le code 0. Commit ciblé :
+- [x] Vérifier que chaque commande annonce au moins un test exécuté et se termine avec le code 0. Commit ciblé :
 
 ```bash
 git add src-tauri/src/services/llm/reasoning_wire/subagent_report_contract_tests.rs \
@@ -472,7 +474,7 @@ git notes add -m "Coverage: active registry matrix plus native assistant and sub
 - Consumes: le rapport `user` produit par la tâche 1 ; `conversation_history_build::from_continuation(&AgentSession, &ContinuationTarget) -> Result<ConversationHistory, ConversationHistoryError>` ; `ParentSubagentOrchestrator::prepare_for_model_request(&mut Vec<ChatMessage>)`.
 - Produces: une preuve de parité direct/disque, une preuve de réveil avec deux enfants et une preuve que `context_budget::prepare_for_request` conserve le rapport entier avec son rôle.
 
-- [ ] Ajouter `delivered_subagent_report_reloads_as_user_context` dans `conversation_history_continuity_tests.rs` :
+- [x] Ajouter `delivered_subagent_report_reloads_as_user_context` dans `conversation_history_continuity_tests.rs` :
 
 ```rust
 #[tokio::test]
@@ -517,11 +519,11 @@ async fn delivered_subagent_report_reloads_as_user_context() {
 }
 ```
 
-- [ ] Renforcer `report_policy_and_body_match_api_and_ollama_payloads` : localiser le rapport injecté, vérifier son rôle `user`, puis vérifier le rôle `user` dans le payload Ollama et dans le payload OpenAI compatible. Garder les assertions sur la politique système et le contenu exact.
-- [ ] Renforcer `first_report_resumes_once_then_waits_for_the_second_child` : après chaque réveil, retrouver le lot correspondant, vérifier son rôle `user`, puis conserver les preuves existantes qu'un rapport ne réveille qu'une fois et que le second enfant reste attendu.
-- [ ] Dans `oversized_subagent_report_fails_closed_instead_of_truncating` et `fitting_subagent_report_survives_saturated_context_intact`, construire le rapport avec `msg("user", ...)`. Après `prepare_for_request`, vérifier à la fois le contenu exact et `role == "user"`.
-- [ ] Ne modifier ni `context_budget_prune::is_required_report` ni le domaine `compress`. Motif : l'autorité de priorité est déjà le préfixe du rapport et le checkpoint collecte les rapports cachés séparément de l'historique de messages.
-- [ ] Exécuter :
+- [x] Renforcer `report_policy_and_body_match_api_and_ollama_payloads` : localiser le rapport injecté, vérifier son rôle `user`, puis vérifier le rôle `user` dans le payload Ollama et dans le payload OpenAI compatible. Garder les assertions sur la politique système et le contenu exact.
+- [x] Renforcer `first_report_resumes_once_then_waits_for_the_second_child` : après chaque réveil, retrouver le lot correspondant, vérifier son rôle `user`, puis conserver les preuves existantes qu'un rapport ne réveille qu'une fois et que le second enfant reste attendu.
+- [x] Dans `oversized_subagent_report_fails_closed_instead_of_truncating` et `fitting_subagent_report_survives_saturated_context_intact`, construire le rapport avec `msg("user", ...)`. Après `prepare_for_request`, vérifier à la fois le contenu exact et `role == "user"`.
+- [x] Ne modifier ni `context_budget_prune::is_required_report` ni le domaine `compress`. Motif : l'autorité de priorité est déjà le préfixe du rapport et le checkpoint collecte les rapports cachés séparément de l'historique de messages.
+- [x] Exécuter :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter report_policy_and_body_match_api_and_ollama_payloads
@@ -534,7 +536,7 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter missing_report_from_real_pa
 node ../scripts/ci/run-rust-test-filter.mjs --filter active_subagents_keep_mission_activity_and_identity
 ```
 
-- [ ] Vérifier dans chaque sortie qu'au moins un test a réellement été exécuté. Commit ciblé :
+- [x] Vérifier dans chaque sortie qu'au moins un test a réellement été exécuté. Commit ciblé :
 
 ```bash
 git add src-tauri/src/services/agent_local/subagent_orchestration_race_tests.rs \
@@ -565,7 +567,7 @@ git notes add -m "Coverage: direct and reloaded report roles, two-child wakeup o
 - Consumes: `classify_error(&str, bool) -> String`, `safe_code(&str) -> String` et `safe_summary(&AgentDiagnosticRun, &str, &str) -> String`.
 - Produces: `reasoning_continuity_invalid` reste identique dans les diagnostics et le résumé exact est `Interruption avant l'appel du modèle (reasoning_continuity_invalid).`.
 
-- [ ] Avant toute modification, exécuter depuis la racine :
+- [x] Avant toute modification, exécuter depuis la racine :
 
 ```bash
 git diff -- src-tauri/src/services/agent_local/stream_diagnostics_failure.rs \
@@ -576,7 +578,7 @@ git diff -- src-tauri/src/services/agent_local/stream_diagnostics_failure.rs \
 
 Résultat requis : aucun hunk non indexé appartenant à `session_capacity_reached` ou à une autre tâche. S'il en reste, ne pas modifier ni indexer ces quatre fichiers avant que leur propriétaire ait isolé son travail.
 
-- [ ] Ajouter le test rouge `reasoning_continuity_failure_keeps_its_specific_code_and_phase` :
+- [x] Ajouter le test rouge `reasoning_continuity_failure_keeps_its_specific_code_and_phase` :
 
 ```rust
 #[test]
@@ -602,7 +604,7 @@ fn reasoning_continuity_failure_keeps_its_specific_code_and_phase() {
 }
 ```
 
-- [ ] Exécuter :
+- [x] Exécuter :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter reasoning_continuity_failure_keeps_its_specific_code_and_phase
@@ -610,10 +612,10 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter reasoning_continuity_failur
 
 Échec attendu : `classify_error` retourne `unknown`, `safe_code` retourne `stream_error` et le résumé désigne encore le dernier outil.
 
-- [ ] Ajouter `reasoning_continuity_invalid` à la liste fermée des codes stables de `classify_error`.
-- [ ] Dans `safe_summary`, traiter ce code avant `last_tool` et retourner exactement `Interruption avant l'appel du modèle (reasoning_continuity_invalid).` via `support::clip`. Motif : `get_subagent` a réussi et ne doit plus apparaître comme la cause de l'interruption.
-- [ ] Ne reformater aucun code voisin. Recompter `stream_diagnostics_failure.rs`, actuellement à 205 lignes dans `e457053f`, et vérifier qu'il reste sous 230 lignes.
-- [ ] L'implémentation de production attendue est limitée à ces deux ajouts :
+- [x] Ajouter `reasoning_continuity_invalid` à la liste fermée des codes stables de `classify_error`.
+- [x] Dans `safe_summary`, traiter ce code avant `last_tool` et retourner exactement `Interruption avant l'appel du modèle (reasoning_continuity_invalid).` via `support::clip`. Motif : `get_subagent` a réussi et ne doit plus apparaître comme la cause de l'interruption.
+- [x] Ne reformater aucun code voisin. Recompter `stream_diagnostics_failure.rs` : 205 lignes dans `e457053f`, 197 à la base `d7b27545` et 203 après le correctif ; il reste sous 230 lignes.
+- [x] L'implémentation de production attendue est limitée à ces deux ajouts :
 
 ```rust
 if error_type == "reasoning_continuity_invalid" {
@@ -629,8 +631,8 @@ et, dans la liste des codes stables :
 | "reasoning_continuity_invalid"
 ```
 
-- [ ] Vérifier sans modification que `KNOWN_ERROR_KEYS.reasoning_continuity_invalid` pointe déjà vers `errors.reasoningContinuityInvalid` et que cette clé existe dans les sept catalogues.
-- [ ] Relancer :
+- [x] Vérifier sans modification que `KNOWN_ERROR_KEYS.reasoning_continuity_invalid` pointe déjà vers `errors.reasoningContinuityInvalid` et que cette clé existe dans les sept catalogues.
+- [x] Relancer :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter reasoning_continuity_failure_keeps_its_specific_code_and_phase
@@ -638,7 +640,7 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter stream_diagnostics_failure
 cd .. && npx vitest run src/lib/agent-error-codes.test.ts
 ```
 
-- [ ] Vérifier que chaque commande exécute au moins un test et se termine avec le code 0. Refaire `git diff --` sur les quatre fichiers de précondition, puis indexer uniquement les deux fichiers Rust si la précondition est toujours satisfaite :
+- [x] Vérifier que chaque commande exécute au moins un test et se termine avec le code 0. Refaire `git diff --` sur les quatre fichiers de précondition, puis indexer uniquement les deux fichiers Rust si la précondition est toujours satisfaite :
 
 ```bash
 git add src-tauri/src/services/agent_local/stream_diagnostics_failure.rs \
@@ -663,8 +665,8 @@ git notes add -m "Cause: reasoning_continuity_invalid fell through to generic di
 - Consumes: les commits indépendants des tâches 1 à 4.
 - Produces: une validation locale complète avec sorties et nombres de tests vérifiés, sans requête provider réelle.
 
-- [ ] Relire le diff complet et confirmer : une seule modification de production pour le rôle, une petite modification du diagnostic, aucune exception fournisseur, aucune modification du domaine `compress`, aucune dépendance nouvelle.
-- [ ] Vérifier les occurrences restantes :
+- [x] Relire le diff complet et confirmer : une seule modification de production pour le rôle, une petite modification du diagnostic, aucune exception fournisseur, aucune modification du domaine `compress`, aucune dépendance nouvelle.
+- [x] Vérifier les occurrences restantes :
 
 ```bash
 rg -n 'report_context_is_assistant|SUBAGENT_REPORT_CONTEXT_PREFIX.*assistant|ChatMessage::assistant\(report_batch_content' src-tauri/src
@@ -673,7 +675,7 @@ rg -n 'reasoning_continuity_invalid' src-tauri/src/services/agent_local/stream_d
 
 Résultat attendu : la première commande ne trouve rien ; la seconde trouve le code dans les deux autorités de diagnostic backend et frontend.
 
-- [ ] Exécuter les suites Rust ciblées :
+- [x] Exécuter les suites Rust ciblées :
 
 ```bash
 node ../scripts/ci/run-rust-test-filter.mjs --filter subagent_hidden_reports
@@ -693,8 +695,10 @@ cargo clippy --all-targets -- -D warnings
 cd .. && npx vitest run src/lib/agent-error-codes.test.ts
 ```
 
-- [ ] Vérifier les codes de sortie et le nombre de tests exécutés. Si une commande est rouge, conserver la sortie et ne pas déclarer le plan validé.
-- [ ] Depuis la racine du dépôt, exécuter :
+Résultat réel : `cargo clippy --all-targets -- -D warnings` et les 11 tests frontend ont réussi. `cargo test --lib` en parallèle a réussi 5470 tests mais a échoué deux fois sur `private_store::tests::app_storage_repairs_the_forecast_notes_directory` avec `Outil de fixture indisponible`; cette case reste donc décochée. Le test isolé a réussi, puis `cargo test --lib -- --test-threads=1` a réussi avec 5471 tests, 0 échec et 21 ignorés.
+
+- [x] Vérifier les codes de sortie et le nombre de tests exécutés. Si une commande est rouge, conserver la sortie et ne pas déclarer le plan validé.
+- [x] Depuis la racine du dépôt, exécuter :
 
 ```bash
 git diff --check
@@ -702,5 +706,5 @@ graphify update .
 git status --short
 ```
 
-- [ ] Vérifier que `graphify-out` n'est pas indexé. Indexer seulement les fichiers du correctif avec des chemins explicites, conserver les documents demandés, puis créer le commit final ou confirmer que les commits ciblés couvrent tout le plan.
-- [ ] Ajouter une git note finale qui explique : rapport Beaver classé comme entrée `user`, validations des vraies sorties modèle conservées, matrice dérivée du registre actif et compression inchangée. Inclure uniquement les commandes réellement exécutées et leurs résultats.
+- [x] Vérifier que `graphify-out` n'est pas indexé. Indexer seulement les fichiers du correctif avec des chemins explicites, conserver les documents demandés, puis créer le commit final ou confirmer que les commits ciblés couvrent tout le plan.
+- [x] Ajouter une git note finale qui explique : rapport Beaver classé comme entrée `user`, validations des vraies sorties modèle conservées, matrice dérivée du registre actif et compression inchangée. Inclure uniquement les commandes réellement exécutées et leurs résultats.

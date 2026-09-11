@@ -1,16 +1,18 @@
 # Interruption du parent au retour d'un sous-agent par continuité de raisonnement
 
 - Date de l'investigation : 11 septembre 2026
-- Statut : cause racine confirmée, correction non appliquée
+- Statut : corrigé sur `codex/fix-subagent-report-continuity`
 - Session témoin : `2b92ba1e-1622-4860-bf06-838fe93b44f3`
+- Base initiale d'implémentation : `d7b27545`; base actuelle après rebase : `a5060ddf`
+- Commits du correctif : `6f928742`, `3913232b`, `96bf7a16`, `f070d49f`
 
 ## Résultat
 
-L'interruption n'est pas propre à Codex. Beaver injecte actuellement le rapport d'un sous-agent comme un message `assistant` sans état natif de continuité. Les fournisseurs stricts interprètent alors ce rapport comme une ancienne réponse du modèle dont le raisonnement aurait été perdu et Beaver bloque la requête avant son envoi.
+L'interruption n'était pas propre à Codex. Au moment de l'enquête, Beaver injectait le rapport d'un sous-agent comme un message `assistant` sans état natif de continuité. Les fournisseurs stricts interprétaient alors ce rapport comme une ancienne réponse du modèle dont le raisonnement aurait été perdu et Beaver bloquait la requête avant son envoi.
 
 Le rapport est une donnée produite par Beaver et destinée au modèle parent. Il doit avoir le rôle `user`. Les véritables réponses produites par le fournisseur restent les seules à avoir le rôle `assistant` ou `model` et à porter leur raisonnement, leurs signatures ou leurs éléments opaques.
 
-Cette correction doit être faite dans le constructeur partagé du rapport. Un traitement particulier pour Codex ou pour chaque fournisseur dupliquerait la même règle et laisserait les autres routes exposées.
+La correction a été faite dans le constructeur partagé du rapport par `6f928742`. Aucun traitement particulier à Codex ou à un fournisseur n'a été ajouté.
 
 ## Symptôme observé
 
@@ -53,11 +55,11 @@ Chronologie utile :
 
 Le payload vide et l'intervalle de 53 millisecondes entre le début du quatrième tour et l'échec montrent que la requête n'a pas atteint Codex. Le blocage vient de la validation locale de Beaver.
 
-Les deux rapports restent `delivered: false`. Tant que leur rôle n'est pas corrigé, une nouvelle tentative peut reproduire le même blocage.
+Dans la session témoin, les deux rapports sont restés `delivered: false`. Avant `6f928742`, une nouvelle tentative pouvait reproduire le même blocage.
 
 ## Cause racine dans Beaver
 
-Tous les retours de sous-agents passent par :
+Avant la correction, tous les retours de sous-agents passaient par :
 
 ```text
 subagent_report_context::append_context
@@ -65,13 +67,13 @@ subagent_report_context::append_context
   -> ChatMessage::assistant(..., continuation=None)
 ```
 
-Le constructeur partagé se trouve dans `src-tauri/src/services/agent_local/subagent_report_context.rs`. La ligne fautive est :
+Le constructeur partagé se trouve dans `src-tauri/src/services/agent_local/subagent_report_context.rs`. À l'état historique `e457053f`, la ligne fautive était :
 
 ```rust
 ChatMessage::assistant(report_batch_content(reports), None, None, None, None)
 ```
 
-Le test `report_context_is_assistant_and_xml_escaped` exige actuellement ce mauvais rôle. Il protège donc le défaut au lieu de le détecter.
+À `e457053f`, le test `report_context_is_assistant_and_xml_escaped` exigeait ce mauvais rôle. `6f928742` l'a remplacé par `report_context_is_user_without_continuation_and_xml_escaped` et verrouille désormais le rôle `user` sans continuité ni appel d'outil.
 
 La contradiction est visible après rechargement : `conversation_history_build::context_message` reconstruit déjà ce contexte durable avec `ProviderRole::User`. Une même conversation n'a donc pas le même sens selon que le rapport est injecté en direct ou relu depuis le disque.
 
@@ -105,9 +107,9 @@ Aucune de ces règles ne justifie de fabriquer une continuité pour un rapport d
 
 ## Impact par fournisseur et modèle actif
 
-La matrice suivante décrit le comportement actuellement enregistré comme `LiveValidated` dans Beaver.
+La matrice suivante décrit les routes enregistrées comme `LiveValidated` au moment de l'enquête et l'impact du défaut avant `6f928742`.
 
-| Route | Modèle et mode | Continuité | Conséquence actuelle du rapport `assistant` |
+| Route | Modèle et mode | Continuité | Conséquence historique du rapport `assistant` |
 | --- | --- | --- | --- |
 | Codex OAuth | `gpt-5.6-luna`, Medium | Obligatoire | Blocage local avant le réseau |
 | OpenAI API | `gpt-5.6-luna`, Medium | Obligatoire | Même blocage |
@@ -161,21 +163,21 @@ La non-régression attendue est : après sélection ou réduction du contexte, l
 
 ## Défaut secondaire de diagnostic
 
-`stream_diagnostics_failure::classify_error` ne reconnaît pas `reasoning_continuity_invalid`. Le code tombe alors sur `stream_error`, tandis que le résumé du run garde `unknown` et mentionne le dernier outil réussi.
+Au moment de l'incident, `stream_diagnostics_failure::classify_error` ne reconnaissait pas `reasoning_continuity_invalid`. Le code tombait alors sur `stream_error`, tandis que le résumé du run gardait `unknown` et mentionnait le dernier outil réussi.
 
 Cela produit le message trompeur `Interruption après le dernier tool get_subagent (unknown)`. `get_subagent` n'a pas échoué : le diagnostic enregistré confirme son succès.
 
-La correction doit ajouter `reasoning_continuity_invalid` aux codes sûrs reconnus afin que l'interface indique la vraie phase et la vraie cause.
+`f070d49f` a ajouté `reasoning_continuity_invalid` aux codes sûrs reconnus. Le résumé indique désormais exactement `Interruption avant l'appel du modèle (reasoning_continuity_invalid).`
 
-## Correction recommandée
+## Correction appliquée
 
-La correction minimale à la cause racine est :
+La correction minimale appliquée par `6f928742` est :
 
 ```rust
 ChatMessage::user(report_batch_content(reports))
 ```
 
-Elle doit remplacer la construction `ChatMessage::assistant(...)` dans `report_batch_to_message`.
+Elle remplace la construction `ChatMessage::assistant(...)` dans `report_batch_to_message`.
 
 Cette modification aligne :
 
@@ -193,7 +195,7 @@ Il ne faut pas :
 
 Ces alternatives masqueraient le mauvais rôle et affaibliraient la protection qui empêche de renvoyer un historique natif incomplet ou falsifié.
 
-## Tests nécessaires avant de déclarer le correctif terminé
+## Tests de non-régression validés
 
 - Le constructeur du rapport produit un message `user`, sans continuité, et conserve l'échappement XML.
 - Un rapport injecté traverse chaque couple `LiveValidated` sans erreur de continuité. Le test doit parcourir le registre plutôt que recopier une liste de fournisseurs.
@@ -204,7 +206,7 @@ Ces alternatives masqueraient le mauvais rôle et affaibliraient la protection q
 - Le rapport survit intact à la réduction du contexte avec le rôle `user`.
 - `reasoning_continuity_invalid` est persisté et affiché comme tel, sans désigner `get_subagent` comme cause.
 
-## Vérifications exécutées pendant l'investigation
+## Vérifications exécutées pendant l'investigation initiale
 
 Les commandes ciblées suivantes ont chacune exécuté un test réel et réussi :
 
@@ -219,9 +221,18 @@ cargo test only_exact_live_fixture_pairs_are_activated --lib -- --nocapture
 cargo test fitting_subagent_report_survives_saturated_context_intact --lib -- --nocapture
 ```
 
-Le test qui attend explicitement le rôle `assistant` est vert parce qu'il encode le comportement fautif. Son succès confirme l'état actuel du code, pas sa justesse.
+Le test qui attendait explicitement le rôle `assistant` était vert parce qu'il encodait le comportement fautif. Son succès confirmait l'état historique `e457053f`, pas sa justesse.
 
 Les premières tentatives utilisant un filtre `--exact` incomplet avaient exécuté zéro test. Elles ne sont pas retenues comme preuve.
+
+## Vérifications exécutées après correction
+
+- Les sept suites Rust ciblées ont réussi : 9 + 17 + 3 + 24 + 37 + 13 + 3 tests.
+- `cargo test --lib` en parallèle a réussi 5470 tests et échoué uniquement sur `private_store::tests::app_storage_repairs_the_forecast_notes_directory` avec `Outil de fixture indisponible`, lors de deux exécutions.
+- Ce test a réussi seul, puis `cargo test --lib -- --test-threads=1` a réussi avec 5471 tests, 0 échec et 21 ignorés.
+- `cargo clippy --all-targets -- -D warnings` a réussi.
+- `npx vitest run src/lib/agent-error-codes.test.ts` a réussi avec 11 tests.
+- Aucun fichier du domaine `compress` ni aucune dépendance n'a été modifié.
 
 ## Autorités utilisées
 
