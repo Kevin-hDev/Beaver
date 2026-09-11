@@ -1,0 +1,1 @@
+CHANGELOG v1.2.3 now records the subagent handoff continuity and diagnostic fix. Validation: npm run test:release-workflow passed 48/48; git diff --check passed. Graphify semantic update was attempted and failed because no supported LLM API key is available.
