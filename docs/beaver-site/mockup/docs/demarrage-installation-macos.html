@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Installation macOS</title>
-<meta name="description" content="Installer Beaver sur un Mac Apple Silicon par le script d'installation ou par le fichier .dmg, et comprendre l'avertissement de Gatekeeper.">
+<title>Beaver Docs — macOS installation</title>
+<meta name="description" content="Install Beaver on an Apple Silicon Mac through the install script or the .dmg file, and understand the Gatekeeper warning.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,33 +19,33 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Installation macOS</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-installation-macos.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / macOS installation</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-installation-macos.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-installation-macos.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Installation sur <em>macOS</em></h1>
-    <p>Deux méthodes : le script d'installation, qui vérifie l'empreinte du
-    fichier et évite l'avertissement de Gatekeeper, ou le <code>.dmg</code>
-    téléchargé à la main. Le script est le chemin recommandé.</p>
+    <h1>Installing on <em>macOS</em></h1>
+    <p>Two methods: the install script, which verifies the file's fingerprint and
+    avoids the Gatekeeper warning, or the <code>.dmg</code> downloaded by hand.
+    The script is the recommended path.</p>
 
     <div class="callout">
-      <span class="t">Apple Silicon uniquement</span>
-      Beaver est distribué pour les Mac à puce Apple Silicon (M1 et suivantes).
-      Sur un Mac Intel, le script s'arrête avec « Système non pris en charge ».
+      <span class="t">Apple Silicon only</span>
+      Beaver is distributed for Apple Silicon Macs (M1 and later). On an Intel
+      Mac, the script stops with “Unsupported system”.
     </div>
 
-    <h2 id="script">La méthode recommandée : le script</h2>
-    <p>À coller dans le Terminal :</p>
+    <h2 id="script">The recommended method: the script</h2>
+    <p>To paste into the Terminal:</p>
 
     <div class="term">
       <div class="term-bar"><i></i><i></i><i></i></div>
@@ -58,114 +59,114 @@
   )</pre>
     </div>
 
-    <p>La commande a l'air compliquée pour deux raisons précises. Elle télécharge
-    le script dans un fichier temporaire au lieu de le passer directement à
-    <code>bash</code>, et ce fichier est supprimé à la sortie quoi qu'il arrive.
-    Et elle impose <b>HTTPS</b> et <b>TLS 1.2</b> au minimum.</p>
-    <p><b>Le script est réservé à une première installation.</b> Il refuse de
-    remplacer une installation existante.</p>
+    <p>The command looks complicated for two precise reasons. It downloads the
+    script into a temporary file instead of piping it straight to
+    <code>bash</code>, and that file is deleted on exit no matter what. And it
+    enforces <b>HTTPS</b> and <b>TLS 1.2</b> as a minimum.</p>
+    <p><b>The script is meant for a first installation only.</b> It refuses to
+    replace an existing installation.</p>
 
-    <h2 id="ce-que-fait-le-script">Ce que fait le script</h2>
-    <p>Il demande le mot de passe administrateur pour écrire dans
-    <code>/Applications</code> : tu as le droit de savoir ce qu'il exécute.</p>
+    <h2 id="ce-que-fait-le-script">What the script does</h2>
+    <p>It asks for the administrator password in order to write to
+    <code>/Applications</code>: you have every right to know what it runs.</p>
     <ul>
-      <li>Il détecte le système et l'architecture, et n'accepte que
-      <code>Darwin:arm64</code> ou <code>Darwin:aarch64</code>. Tout le reste
-      échoue avec « Système non pris en charge ».</li>
-      <li>Il interroge l'API GitHub Releases, avec une réponse plafonnée à
-      <b>512 Kio</b>.</li>
-      <li>Il exige la présence de l'asset Beaver et du fichier
-      <code>update-manifest.json</code>.</li>
-      <li>Il suit <b>trois redirections au maximum</b>, et uniquement vers
+      <li>It detects the system and the architecture, and accepts only
+      <code>Darwin:arm64</code> or <code>Darwin:aarch64</code>. Everything else
+      fails with “Unsupported system”.</li>
+      <li>It queries the GitHub Releases API, with the response capped at
+      <b>512 KiB</b>.</li>
+      <li>It requires the Beaver asset and the
+      <code>update-manifest.json</code> file to be present.</li>
+      <li>It follows <b>three redirects at most</b>, and only towards
       <code>release-assets.githubusercontent.com</code>.</li>
-      <li>Il télécharge le <code>.dmg</code> avec un plafond de <b>2 Gio</b>,
-      puis vérifie sa taille et son <b>SHA-256</b> contre le manifeste.</li>
-      <li>Il demande le dossier d'installation, <code>/Applications</code> par
-      défaut.</li>
-      <li>Il monte le <code>.dmg</code> en lecture seule, sans l'afficher dans le
+      <li>It downloads the <code>.dmg</code> with a <b>2 GiB</b> cap, then checks
+      its size and its <b>SHA-256</b> against the manifest.</li>
+      <li>It asks for the installation folder, <code>/Applications</code> by
+      default.</li>
+      <li>It mounts the <code>.dmg</code> read-only, without showing it in the
       Finder.</li>
-      <li>Il vérifie le contenu du bundle avant de l'installer : présence de
-      <code>Contents/Info.plist</code> et de
-      <code>Contents/MacOS/cl-go-dash</code>, absence de liens symboliques,
-      identifiant <code>com.clgo.dash</code>, exécutable
+      <li>It verifies the contents of the bundle before installing it:
+      <code>Contents/Info.plist</code> and
+      <code>Contents/MacOS/cl-go-dash</code> present, no symbolic links,
+      identifier <code>com.clgo.dash</code>, executable
       <code>cl-go-dash</code>.</li>
-      <li>Il copie vers un dossier temporaire à nom aléatoire, revérifie le
-      bundle copié, puis le déplace en place. En cas d'échec à n'importe quelle
-      étape, tout est nettoyé.</li>
-      <li>Il démonte le <code>.dmg</code> et lance l'application.</li>
+      <li>It copies to a temporary folder with a random name, re-checks the
+      copied bundle, then moves it into place. If any step fails, everything is
+      cleaned up.</li>
+      <li>It unmounts the <code>.dmg</code> and launches the application.</li>
     </ul>
 
-    <h2 id="dmg">La méthode alternative : le fichier .dmg</h2>
-    <p>Le <code>.dmg</code> est attaché à chaque release GitHub, sous le nom
-    <code>Beaver_X.Y.Z_aarch64.dmg</code>. Téléchargement, ouverture,
-    glisser-déposer vers Applications : la manipulation macOS habituelle.</p>
-    <p>Son inconvénient est réel : un fichier téléchargé par un navigateur reçoit
-    l'attribut de quarantaine de macOS, et Gatekeeper le bloque. Le script passe
-    par <code>curl</code>, ce qui évite ce marquage. Cette méthode est un repli,
-    pas le chemin principal.</p>
+    <h2 id="dmg">The alternative method: the .dmg file</h2>
+    <p>The <code>.dmg</code> is attached to every GitHub release, under the name
+    <code>Beaver_X.Y.Z_aarch64.dmg</code>. Download, open, drag and drop into
+    Applications: the usual macOS routine.</p>
+    <p>Its downside is real: a file downloaded through a browser gets the macOS
+    quarantine attribute, and Gatekeeper blocks it. The script goes through
+    <code>curl</code>, which avoids that flag. This method is a fallback, not the
+    main path.</p>
 
     <table>
-      <caption class="crumb">Ce qui distingue les deux méthodes</caption>
-      <tr><th></th><th>Script <code>install.sh</code></th><th>Fichier <code>.dmg</code></th></tr>
-      <tr><td>Vérification SHA-256</td><td>Automatique</td><td>À faire soi-même</td></tr>
-      <tr><td>Avertissement Gatekeeper</td><td>Évité</td><td>À contourner manuellement</td></tr>
-      <tr><td>Choix du dossier</td><td>Proposé</td><td>Libre</td></tr>
-      <tr><td>Remplace une installation existante</td><td>Non, refuse</td><td>Oui</td></tr>
-      <tr><td>Lance l'application à la fin</td><td>Oui</td><td>Non</td></tr>
+      <caption class="crumb">What separates the two methods</caption>
+      <tr><th></th><th><code>install.sh</code> script</th><th><code>.dmg</code> file</th></tr>
+      <tr><td>SHA-256 verification</td><td>Automatic</td><td>Up to you</td></tr>
+      <tr><td>Gatekeeper warning</td><td>Avoided</td><td>To work around manually</td></tr>
+      <tr><td>Choice of folder</td><td>Offered</td><td>Free</td></tr>
+      <tr><td>Replaces an existing installation</td><td>No, refuses</td><td>Yes</td></tr>
+      <tr><td>Launches the application at the end</td><td>Yes</td><td>No</td></tr>
     </table>
 
-    <h2 id="gatekeeper">Gatekeeper et l'absence de signature</h2>
-    <p><b>L'application n'est pas signée par un certificat de développeur
-    Apple.</b> macOS affiche donc un avertissement à l'ouverture d'un
-    <code>.dmg</code> téléchargé par navigateur : application d'un développeur
-    non identifié.</p>
-    <p>Le contournement standard est un clic droit sur l'application puis
-    « Ouvrir », et une confirmation. Sinon, Réglages Système › Confidentialité et
-    sécurité › « Ouvrir quand même ».</p>
+    <h2 id="gatekeeper">Gatekeeper and the missing signature</h2>
+    <p><b>The application is not signed with an Apple developer
+    certificate.</b> macOS therefore shows a warning when opening a
+    <code>.dmg</code> downloaded through a browser: application from an
+    unidentified developer.</p>
+    <p>The standard workaround is a right-click on the application then
+    “Open”, and a confirmation. Otherwise, System Settings › Privacy &amp;
+    Security › “Open Anyway”.</p>
 
     <div class="callout">
-      <span class="t">Application non signée</span>
-      En passant par le script d'installation, tu n'auras pas d'avertissement.
-      En téléchargeant le <code>.dmg</code> depuis un navigateur, macOS en
-      affichera un : fais un clic droit sur l'application, puis « Ouvrir ».
+      <span class="t">Unsigned application</span>
+      Going through the install script, you will get no warning. Downloading the
+      <code>.dmg</code> from a browser, macOS will show one: right-click on the
+      application, then “Open”.
     </div>
 
-    <h2 id="autre-dossier">Choisir un autre dossier d'installation</h2>
-    <p>Le script propose <code>/Applications</code> et attend une confirmation
-    par Entrée. Tu peux saisir un autre chemin absolu ; <code>~</code> et
-    <code>~/…</code> sont acceptés et développés. Le chemin est refusé s'il
-    dépasse 1024 caractères, s'il n'est pas absolu, s'il contient des caractères
-    de contrôle ou un segment <code>..</code>.</p>
+    <h2 id="autre-dossier">Choosing another installation folder</h2>
+    <p>The script offers <code>/Applications</code> and waits for confirmation
+    with Enter. You can enter another absolute path; <code>~</code> and
+    <code>~/…</code> are accepted and expanded. The path is refused if it exceeds
+    1024 characters, if it is not absolute, or if it contains control characters
+    or a <code>..</code> segment.</p>
 
-    <h2 id="mettre-a-jour">Mettre à jour</h2>
-    <p><b>Le script d'installation ne met pas à jour.</b> Il échoue avec « Une
-    application est déjà installée. Utilise sa mise à jour intégrée. » La
-    détection couvre <code>Beaver.app</code> <b>et</b> <code>CL-GO.app</code> —
-    l'ancien nom de l'application — y compris sous forme de lien symbolique.</p>
-    <p>Les mises à jour passent par la fonction intégrée à l'application :
-    <a href="demarrage-mise-a-jour.html">Mise à jour</a>.</p>
+    <h2 id="mettre-a-jour">Updating</h2>
+    <p><b>The install script does not update.</b> It fails with “An application
+    is already installed. Use its built-in update.” Detection covers
+    <code>Beaver.app</code> <b>and</b> <code>CL-GO.app</code> — the application's
+    former name — including as a symbolic link.</p>
+    <p>Updates go through the function built into the application:
+    <a href="demarrage-mise-a-jour.html">Updating</a>.</p>
 
-    <h2 id="desinstaller">Désinstaller</h2>
-    <p>L'application se supprime en jetant <code>Beaver.app</code> du dossier
-    d'installation. Deux choses ne partent pas avec elle : les données, qui
-    restent dans <code>~/.local/share/cl-go-dash/</code>, et la clé maîtresse du
-    coffre, qui reste dans le trousseau macOS.</p>
+    <h2 id="desinstaller">Uninstalling</h2>
+    <p>The application is removed by throwing <code>Beaver.app</code> out of the
+    installation folder. Two things do not go with it: the data, which stays in
+    <code>~/.local/share/cl-go-dash/</code>, and the vault's master key, which
+    stays in the macOS Keychain.</p>
 
-    <h2 id="pieges">Si ça ne marche pas</h2>
+    <h2 id="pieges">If it does not work</h2>
     <table>
-      <caption class="crumb">Messages rencontrés, cause et résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Système non pris en charge »</td><td>Mac Intel, ou architecture non reconnue</td><td>Aucune : il n'existe pas de build Intel</td></tr>
-      <tr><td>« Une application est déjà installée »</td><td><code>Beaver.app</code> ou <code>CL-GO.app</code> présent</td><td>Utiliser la mise à jour intégrée, ou supprimer l'ancienne installation</td></tr>
-      <tr><td>Avertissement de développeur non identifié</td><td><code>.dmg</code> téléchargé par navigateur, attribut de quarantaine</td><td>Clic droit › Ouvrir, ou passer par le script</td></tr>
-      <tr><td>« Installation impossible »</td><td>Échec de vérification du bundle, du montage ou de la copie</td><td>Relancer ; si ça persiste, vérifier l'espace disque et les droits sur le dossier choisi</td></tr>
-      <tr><td>« Impossible de récupérer la version »</td><td>API GitHub injoignable</td><td>Vérifier la connexion et un éventuel proxy</td></tr>
+      <caption class="crumb">Messages you may hit, cause and resolution</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“Unsupported system”</td><td>Intel Mac, or unrecognized architecture</td><td>None: there is no Intel build</td></tr>
+      <tr><td>“An application is already installed”</td><td><code>Beaver.app</code> or <code>CL-GO.app</code> present</td><td>Use the built-in update, or remove the old installation</td></tr>
+      <tr><td>Unidentified developer warning</td><td><code>.dmg</code> downloaded through a browser, quarantine attribute</td><td>Right-click › Open, or go through the script</td></tr>
+      <tr><td>“Installation failed”</td><td>Bundle verification, mounting or copy failed</td><td>Run it again; if it persists, check disk space and permissions on the chosen folder</td></tr>
+      <tr><td>“Could not retrieve the version”</td><td>GitHub API unreachable</td><td>Check the connection and any proxy</td></tr>
     </table>
 
-    <p>Les cas non couverts ici sont traités dans
-    <a href="reference-depannage-installation.html">Dépannage installation</a>.
-    La suite se passe dans
-    <a href="demarrage-premier-lancement.html">Premier lancement</a>.</p>
+    <p>Cases not covered here are handled in
+    <a href="reference-depannage-installation.html">Installation troubleshooting</a>.
+    What comes next is in
+    <a href="demarrage-premier-lancement.html">First launch</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

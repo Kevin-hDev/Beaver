@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Images</title>
-<meta name="description" content="Redimensionner, recadrer et convertir une image depuis une conversation, avec les trois modes de redimensionnement et les limites de l'outil.">
+<meta name="description" content="Resizing, cropping and converting an image from a conversation, with the three resize modes and the tool's limits.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,140 +19,140 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Images</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-images.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / Images</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-images.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-images.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Transformer <em>une image.</em></h1>
-    <p><code>transform_image</code> forme à lui seul le groupe <b>Images</b>, optionnel et <b>éteint par défaut</b>. Il manipule des fichiers image : inspection, redimensionnement, recadrage, conversion. Joindre une image à un message pour en parler est un mécanisme distinct — voir <a href="agent-pieces-jointes.html">Pièces jointes</a>.</p>
+    <h1>Transforming <em>an image.</em></h1>
+    <p><code>transform_image</code> makes up the <b>Images</b> group on its own, optional and <b>off by default</b>. It handles image files: inspecting, resizing, cropping, converting. Attaching an image to a message to talk about it is a separate mechanism — see <a href="agent-pieces-jointes.html">Attachments</a>.</p>
 
-    <h2 id="trois-usages">Un outil, trois usages</h2>
-    <p>Un seul outil couvre trois intentions, distinguées par ce que l'agent fournit.</p>
+    <h2 id="trois-usages">One tool, three uses</h2>
+    <p>A single tool covers three intents, told apart by what the agent supplies.</p>
     <table>
-      <caption class="crumb">Les trois formes d'appel</caption>
-      <tr><th>Intention</th><th>Ce que fournit l'agent</th><th>Écrit un fichier</th></tr>
-      <tr><td><b>Inspecter</b></td><td>Une image, une liste d'opérations vide, <b>pas</b> de destination</td><td>Non</td></tr>
-      <tr><td><b>Convertir</b></td><td>Une image et une destination avec une autre extension, <b>pas</b> d'opérations</td><td>Oui</td></tr>
-      <tr><td><b>Transformer</b></td><td>Une image, une destination, et des opérations</td><td>Oui</td></tr>
+      <caption class="crumb">The three call shapes</caption>
+      <tr><th>Intent</th><th>What the agent supplies</th><th>Writes a file</th></tr>
+      <tr><td><b>Inspect</b></td><td>An image, an empty operation list, <b>no</b> destination</td><td>No</td></tr>
+      <tr><td><b>Convert</b></td><td>An image and a destination with a different extension, <b>no</b> operations</td><td>Yes</td></tr>
+      <tr><td><b>Transform</b></td><td>An image, a destination, and operations</td><td>Yes</td></tr>
     </table>
-    <p>La combinaison « liste d'opérations vide <b>et</b> destination » est <b>refusée</b> comme ambiguë, avec un message qui explique les deux formes correctes. Plutôt que de deviner l'intention, l'outil demande de la clarifier.</p>
-    <p><b>L'approbation dépend de l'intention</b> : inspecter ne demande rien, transformer et convertir déclenchent une demande en mode Demander l'autorisation. C'est cohérent, l'inspection ne touche à rien.</p>
+    <p>The combination "empty operation list <b>and</b> a destination" is <b>refused</b> as ambiguous, with a message explaining the two correct shapes. Rather than guessing the intent, the tool asks for it to be clarified.</p>
+    <p><b>Approval depends on the intent</b>: inspecting requires nothing, transforming and converting trigger a request in Ask permission mode. That is consistent, since inspection touches nothing.</p>
 
-    <h2 id="inspecter">Inspecter une image</h2>
-    <p>Renvoie les <b>dimensions</b>, le <b>format</b> et la <b>taille du fichier</b>, sans rien écrire. C'est l'opération qui répond à « quelle taille fait cette image ? », ou qui prépare un redimensionnement en connaissant les proportions d'origine.</p>
+    <h2 id="inspecter">Inspecting an image</h2>
+    <p>Returns the <b>dimensions</b>, the <b>format</b> and the <b>file size</b>, without writing anything. This is the operation that answers "how big is this image?", or that prepares a resize by knowing the original proportions.</p>
 
-    <h2 id="redimensionner">Redimensionner</h2>
+    <h2 id="redimensionner">Resizing</h2>
     <table>
-      <caption class="crumb">Trois modes, trois résultats différents</caption>
-      <tr><th>Mode</th><th>Comportement</th></tr>
-      <tr><td><b>Ajuster</b> (par défaut)</td><td>L'image tient dans les dimensions demandées <b>en gardant ses proportions</b> — le résultat peut être plus petit que demandé</td></tr>
-      <tr><td><b>Remplir</b></td><td>L'image remplit exactement les dimensions demandées, <b>en rognant</b> ce qui dépasse</td></tr>
-      <tr><td><b>Exact</b></td><td>L'image prend exactement les dimensions demandées, <b>quitte à la déformer</b></td></tr>
+      <caption class="crumb">Three modes, three different results</caption>
+      <tr><th>Mode</th><th>Behaviour</th></tr>
+      <tr><td><b>Fit</b> (default)</td><td>The image fits inside the requested dimensions <b>keeping its proportions</b> — the result may be smaller than requested</td></tr>
+      <tr><td><b>Fill</b></td><td>The image fills the requested dimensions exactly, <b>cropping</b> whatever sticks out</td></tr>
+      <tr><td><b>Exact</b></td><td>The image takes exactly the requested dimensions, <b>even if it distorts it</b></td></tr>
     </table>
-    <p>Le rééchantillonnage utilise un filtre de haute qualité : le résultat d'une réduction est net, pas crénelé.</p>
+    <p>Resampling uses a high-quality filter: the result of a downscale is sharp, not jagged.</p>
 
-    <h2 id="recadrer">Recadrer</h2>
-    <p>L'agent donne un point de départ et une taille. Un recadrage qui sortirait de l'image est <b>refusé</b> avec un message explicite, plutôt que d'être silencieusement ramené aux bords.</p>
+    <h2 id="recadrer">Cropping</h2>
+    <p>The agent gives a starting point and a size. A crop that would fall outside the image is <b>refused</b> with an explicit message, rather than being silently clamped to the edges.</p>
 
-    <h2 id="convertir">Convertir</h2>
-    <p><b>Formats de sortie</b> : JPEG, PNG, WebP, GIF, BMP. Le format est déterminé par <b>l'extension du fichier de destination</b> — il n'y a pas de paramètre de format séparé. Pour une conversion simple, l'agent ne fournit aucune opération : une image d'entrée, une destination avec la bonne extension, et c'est tout.</p>
+    <h2 id="convertir">Converting</h2>
+    <p><b>Output formats</b>: JPEG, PNG, WebP, GIF, BMP. The format is determined by <b>the destination file's extension</b> — there is no separate format parameter. For a simple conversion, the agent supplies no operation at all: an input image, a destination with the right extension, and that is it.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      Le format de sortie vient de l'extension. Écrire vers un fichier en <code>.webp</code> produit du WebP, et il n'y a pas d'autre façon de choisir le format.
+      <span class="t">Key point</span>
+      The output format comes from the extension. Writing to a <code>.webp</code> file produces WebP, and there is no other way to choose the format.
     </div>
 
-    <h2 id="la-qualite">La qualité</h2>
-    <p>Le réglage de qualité va de <b>1 à 100</b> et ne s'applique <b>qu'au JPEG</b>.</p>
+    <h2 id="la-qualite">Quality</h2>
+    <p>The quality setting ranges from <b>1 to 100</b> and applies <b>only to JPEG</b>.</p>
     <ul>
-      <li>sur du <b>JPEG</b>, la qualité est appliquée ;</li>
-      <li>sur du <b>WebP</b>, elle est <b>ignorée</b> — l'encodage est sans perte — et le résultat porte un avertissement qui le dit ;</li>
-      <li>sur <b>tout autre format</b>, elle est ignorée, avec un avertissement également.</li>
+      <li>on <b>JPEG</b>, the quality is applied;</li>
+      <li>on <b>WebP</b>, it is <b>ignored</b> — encoding is lossless — and the result carries a warning saying so;</li>
+      <li>on <b>any other format</b>, it is ignored, with a warning too.</li>
     </ul>
-    <p>L'agent n'apprend donc pas après coup que son réglage n'a servi à rien : il est prévenu dans le résultat même. Dans la même veine, quand Beaver ne parvient pas à relire la taille du fichier produit, il <b>le signale</b> au lieu d'annoncer une taille de zéro.</p>
+    <p>So the agent does not find out after the fact that its setting made no difference: it is warned in the result itself. In the same vein, when Beaver cannot read back the size of the file produced, it <b>says so</b> instead of reporting a size of zero.</p>
 
-    <h2 id="les-operations">Les opérations</h2>
+    <h2 id="les-operations">The operations</h2>
     <table>
-      <caption class="crumb">Ce qu'une opération peut faire</caption>
-      <tr><th>Opération</th><th>Paramètres</th><th>Notes</th></tr>
-      <tr><td>Redimensionner</td><td>Largeur, hauteur, mode</td><td>Mode « ajuster » par défaut</td></tr>
-      <tr><td>Recadrer</td><td>Position de départ, largeur, hauteur</td><td>Refusé si hors limites</td></tr>
-      <tr><td>Qualité</td><td>Valeur de 1 à 100</td><td><b>JPEG uniquement</b></td></tr>
+      <caption class="crumb">What an operation can do</caption>
+      <tr><th>Operation</th><th>Parameters</th><th>Notes</th></tr>
+      <tr><td>Resize</td><td>Width, height, mode</td><td>"Fit" mode by default</td></tr>
+      <tr><td>Crop</td><td>Starting position, width, height</td><td>Refused if out of bounds</td></tr>
+      <tr><td>Quality</td><td>Value from 1 to 100</td><td><b>JPEG only</b></td></tr>
     </table>
-    <p>Les opérations s'appliquent <b>dans l'ordre donné</b> : recadrer puis redimensionner ne donne pas le même résultat que l'inverse.</p>
+    <p>Operations are applied <b>in the order given</b>: cropping then resizing does not give the same result as the other way round.</p>
 
-    <h2 id="les-formats">Les formats</h2>
+    <h2 id="les-formats">The formats</h2>
     <table>
-      <caption class="crumb">Ce qui se lit et ce qui s'écrit</caption>
-      <tr><th>Format</th><th>Entrée</th><th>Sortie</th></tr>
-      <tr><td>PNG</td><td>Oui</td><td><b>Oui</b></td></tr>
-      <tr><td>JPEG</td><td>Oui</td><td><b>Oui</b></td></tr>
-      <tr><td>WebP</td><td>Oui</td><td><b>Oui</b> (sans perte)</td></tr>
-      <tr><td>GIF</td><td>Oui</td><td><b>Oui</b></td></tr>
-      <tr><td>BMP</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <caption class="crumb">What is read and what is written</caption>
+      <tr><th>Format</th><th>Input</th><th>Output</th></tr>
+      <tr><td>PNG</td><td>Yes</td><td><b>Yes</b></td></tr>
+      <tr><td>JPEG</td><td>Yes</td><td><b>Yes</b></td></tr>
+      <tr><td>WebP</td><td>Yes</td><td><b>Yes</b> (lossless)</td></tr>
+      <tr><td>GIF</td><td>Yes</td><td><b>Yes</b></td></tr>
+      <tr><td>BMP</td><td>Yes</td><td><b>Yes</b></td></tr>
     </table>
 
-    <h2 id="les-limites">Les limites</h2>
+    <h2 id="les-limites">The limits</h2>
     <table>
-      <caption class="crumb">Les bornes du groupe Images</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Taille du fichier source</td><td><b>50 Mo</b></td></tr>
-      <tr><td>Dimension maximale, en largeur comme en hauteur</td><td><b>8 000 pixels</b></td></tr>
-      <tr><td>Nombre total de pixels après transformation</td><td><b>50 millions</b></td></tr>
-      <tr><td>Opérations par appel</td><td><b>128</b></td></tr>
-      <tr><td>Qualité</td><td><b>1 à 100</b></td></tr>
+      <caption class="crumb">The bounds of the Images group</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Source file size</td><td><b>50 MB</b></td></tr>
+      <tr><td>Maximum dimension, in width as in height</td><td><b>8,000 pixels</b></td></tr>
+      <tr><td>Total number of pixels after transformation</td><td><b>50 million</b></td></tr>
+      <tr><td>Operations per call</td><td><b>128</b></td></tr>
+      <tr><td>Quality</td><td><b>1 to 100</b></td></tr>
     </table>
-    <p>La limite en nombre de pixels est vérifiée <b>avant</b> la transformation. Sans elle, un redimensionnement demandant 8 000 × 8 000 pixels ferait allouer plusieurs centaines de mégaoctets de mémoire.</p>
+    <p>The pixel-count limit is checked <b>before</b> the transformation. Without it, a resize asking for 8,000 × 8,000 pixels would allocate several hundred megabytes of memory.</p>
 
-    <h2 id="les-erreurs">Les erreurs</h2>
+    <h2 id="les-erreurs">The errors</h2>
     <table>
-      <caption class="crumb">Message et cause</caption>
+      <caption class="crumb">Message and cause</caption>
       <tr><th>Message</th><th>Cause</th></tr>
-      <tr><td>Demande ambiguë</td><td>Liste d'opérations vide <b>avec</b> une destination</td></tr>
-      <tr><td><code>output_path</code> requis</td><td>Transformation demandée sans destination</td></tr>
-      <tr><td>Image trop volumineuse</td><td>Fichier au-delà de 50 Mo</td></tr>
-      <tr><td>Dimensions invalides</td><td>Image dépassant 8 000 pixels de côté</td></tr>
-      <tr><td>Impossible d'ouvrir l'image</td><td>Fichier corrompu ou format non reconnu</td></tr>
-      <tr><td>Recadrage hors limites</td><td>La zone demandée sort de l'image</td></tr>
-      <tr><td>Mode de redimensionnement invalide</td><td>Mode autre que les trois acceptés</td></tr>
-      <tr><td>Qualité hors bornes</td><td>Valeur en dehors de 1 à 100</td></tr>
-      <tr><td>Trop d'opérations</td><td>Plus de 128</td></tr>
-      <tr><td>Opération inconnue</td><td>Type d'opération non reconnu</td></tr>
+      <tr><td>Ambiguous request</td><td>Empty operation list <b>with</b> a destination</td></tr>
+      <tr><td><code>output_path</code> required</td><td>Transformation requested with no destination</td></tr>
+      <tr><td>Image too large</td><td>File over 50 MB</td></tr>
+      <tr><td>Invalid dimensions</td><td>Image exceeding 8,000 pixels on a side</td></tr>
+      <tr><td>Cannot open the image</td><td>Corrupted file or unrecognised format</td></tr>
+      <tr><td>Crop out of bounds</td><td>The requested area falls outside the image</td></tr>
+      <tr><td>Invalid resize mode</td><td>Mode other than the three accepted</td></tr>
+      <tr><td>Quality out of range</td><td>Value outside 1 to 100</td></tr>
+      <tr><td>Too many operations</td><td>More than 128</td></tr>
+      <tr><td>Unknown operation</td><td>Unrecognised operation type</td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Le groupe est éteint par défaut. Sans activation dans <b>Réglages › Agent › Outils</b>, l'agent ne sait pas qu'il peut traiter une image.
+      <span class="t">Careful</span>
+      The group is off by default. Without turning it on in <b>Settings › Agent › Tools</b>, the agent does not know it can process an image.
     </div>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'agent ne traite pas tes images</td><td>Groupe éteint par défaut</td><td>L'activer dans les réglages</td></tr>
-      <tr><td>« Demande ambiguë »</td><td>Opérations vides et destination fournie</td><td>L'agent corrige seul</td></tr>
-      <tr><td>L'image redimensionnée est plus petite que demandé</td><td>Mode « ajuster » : les proportions sont préservées</td><td>Utiliser « remplir » ou « exact »</td></tr>
-      <tr><td>L'image est déformée</td><td>Mode « exact »</td><td>Utiliser « ajuster » ou « remplir »</td></tr>
-      <tr><td>La qualité n'a rien changé</td><td>Format autre que JPEG</td><td>L'avertissement le signale ; convertir en JPEG</td></tr>
-      <tr><td>« Dimensions invalides »</td><td>Image de plus de 8 000 pixels de côté</td><td>La réduire d'abord avec un autre outil</td></tr>
-      <tr><td>« Recadrage hors limites »</td><td>Zone dépassant les bords</td><td>Inspecter l'image d'abord pour connaître ses dimensions</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The agent does not process your images</td><td>Group off by default</td><td>Turn it on in the settings</td></tr>
+      <tr><td>"Ambiguous request"</td><td>Empty operations and a destination supplied</td><td>The agent corrects itself</td></tr>
+      <tr><td>The resized image is smaller than requested</td><td>"Fit" mode: proportions are preserved</td><td>Use "fill" or "exact"</td></tr>
+      <tr><td>The image is distorted</td><td>"Exact" mode</td><td>Use "fit" or "fill"</td></tr>
+      <tr><td>Quality changed nothing</td><td>Format other than JPEG</td><td>The warning says so; convert to JPEG</td></tr>
+      <tr><td>"Invalid dimensions"</td><td>Image over 8,000 pixels on a side</td><td>Shrink it first with another tool</td></tr>
+      <tr><td>"Crop out of bounds"</td><td>Area beyond the edges</td><td>Inspect the image first to learn its dimensions</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — activer un groupe.</li>
-      <li><a href="agent-pieces-jointes.html">Pièces jointes</a> — joindre une image à un message, ce qui est différent.</li>
-      <li><a href="outils-fichiers.html">Fichiers</a> — pourquoi <code>read_file</code> échoue sur une image.</li>
+      <li><a href="outils-vue-densemble.html">Tools overview</a> — turning a group on.</li>
+      <li><a href="agent-pieces-jointes.html">Attachments</a> — attaching an image to a message, which is a different thing.</li>
+      <li><a href="outils-fichiers.html">Files</a> — why <code>read_file</code> fails on an image.</li>
     </ul>
   </main>
 

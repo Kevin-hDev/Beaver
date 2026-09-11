@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Les modèles locaux</title>
+<meta name="description" content="Chercher, installer, mettre à jour et supprimer un modèle qui tourne sur ta machine, et ce que dit sa fiche avant téléchargement.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Modèles locaux</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-modeles-locaux.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/modeles-modeles-locaux.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Installer un modèle sur ta <em>machine</em></h1>
+    <p>Un modèle local ne coûte rien et ne sort jamais de ton ordinateur. Encore faut-il choisir le bon : cette page couvre la recherche, les variantes, ce que dit la fiche d'un modèle avant téléchargement, et ce qui se passe quand tu en supprimes un.</p>
+
+    <h2 id="ou-trouver-des-modeles">Où trouver des modèles</h2>
+    <p>Beaver interroge le catalogue public d'Ollama et te permet d'y chercher un modèle par son nom, depuis l'application — sans passer par un navigateur ni par une ligne de commande. C'est le catalogue d'Ollama : les mêmes modèles, les mêmes noms.</p>
+
+    <h2 id="choisir-une-variante">Choisir une variante</h2>
+    <p>Un modèle n'existe pas en un seul exemplaire. Il se décline en <b>variantes</b>, qui combinent une taille et un niveau de quantification. Chaque variante a son propre poids sur le disque et sa propre demande en mémoire.</p>
+    <p>C'est là que se joue le choix, et la table de correspondance est dans <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Une variante, c'est une taille plus une quantification. Le même modèle existe en plusieurs versions dont la demande en mémoire va du simple au décuple.
+    </div>
+
+    <h2 id="la-fiche-d-un-modele">Ce que dit la fiche d'un modèle</h2>
+    <p>Avant d'installer, Beaver affiche les caractéristiques réelles de la variante.</p>
+
+    <table>
+      <caption class="crumb">Les informations affichées avant installation</caption>
+      <tr><th>Information</th><th>Ce qu'elle apporte</th></tr>
+      <tr><td><b>Capacités</b></td><td>Ce que le modèle sait faire — outils, images, raisonnement</td></tr>
+      <tr><td><b>Taille du fichier</b></td><td>Ce qu'il occupera sur le disque</td></tr>
+      <tr><td><b>Nombre de paramètres</b></td><td>Sa « taille » — 3, 7, 13, 30, 70 milliards</td></tr>
+      <tr><td><b>Longueur de contexte</b></td><td>Combien il peut lire d'un coup</td></tr>
+      <tr><td><b>Niveau de quantification</b></td><td>Le compromis mémoire / qualité</td></tr>
+      <tr><td><b>Architecture</b></td><td>La famille technique</td></tr>
+      <tr><td><b>Experts spécialisés</b></td><td>Si le modèle n'active qu'une partie de lui-même à chaque requête</td></tr>
+      <tr><td><b>Empreinte</b></td><td>L'identifiant exact de la version</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Vérifie la ligne <b>Capacités</b> avant de télécharger plusieurs gigaoctets. Un modèle qui ne sait pas utiliser d'outils tient une conversation, mais ne lira aucun fichier et ne lancera aucune commande dans Beaver.
+    </div>
+
+    <h2 id="installer">Installer</h2>
+    <p>L'installation télécharge la variante choisie. C'est long — plusieurs gigaoctets — et la progression est affichée.</p>
+    <ul>
+      <li><b>Une seule installation à la fois.</b> Un verrou empêche deux téléchargements simultanés, qui se disputeraient la bande passante et le disque.</li>
+      <li><b>L'installation est annulable.</b> L'annulation est propre : si le moteur n'était pas encore installé et que le premier téléchargement est interrompu, le dossier partiel est supprimé plutôt que laissé en place.</li>
+      <li>Le moteur redémarre et attend d'être prêt avant que l'installation soit déclarée réussie.</li>
+    </ul>
+
+    <h2 id="mettre-a-jour">Mettre à jour</h2>
+    <p>Beaver sait détecter les modèles installés dont une version plus récente existe. Il regroupe les modèles installés par famille, interroge le catalogue pour chaque famille, et compare. Jusqu'à <b>100 familles</b> sont examinées.</p>
+    <p>Un modèle mis à jour garde son nom : c'est la version derrière qui change.</p>
+
+    <h2 id="supprimer">Supprimer</h2>
+    <p>Supprimer un modèle libère l'espace disque correspondant. C'est réversible au prix d'un nouveau téléchargement — mais lis d'abord la section suivante, parce que la suppression ne s'arrête pas à Beaver.</p>
+
+    <h2 id="modeles-partages">Les modèles partagés avec Ollama</h2>
+    <p><b>Le stockage des modèles est commun, dans les deux cas de figure.</b></p>
+    <ul>
+      <li>Si l'application Ollama officielle est <b>en cours d'exécution</b>, Beaver réutilise son moteur — donc ses modèles.</li>
+      <li>Si Beaver lance <b>son propre moteur</b>, il le fait pointer vers le dossier de modèles habituel d'Ollama (<code>~/.ollama/models</code>, ou l'emplacement indiqué par la variable d'environnement <code>OLLAMA_MODELS</code> si elle est définie sur ta machine).</li>
+    </ul>
+    <p>Dans les deux cas, tout ce qui a été téléchargé d'un côté est disponible de l'autre, sans copie ni retéléchargement. Le mécanisme complet est décrit dans <a href="modeles-moteur-local.html">Moteur local</a>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Supprimer un modèle depuis Beaver le supprime aussi pour l'application Ollama : c'est le même stockage, pas une copie.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui surprend le plus souvent avec les modèles locaux</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Le modèle est installé mais n'utilise aucun outil</td><td>Modèle sans capacité d'appel d'outils</td><td>Vérifier les capacités avant installation</td></tr>
+      <tr><td>Le téléchargement est très lent</td><td>Plusieurs gigaoctets</td><td>Normal ; il est annulable</td></tr>
+      <tr><td>Impossible de lancer deux installations</td><td>Verrou volontaire</td><td>Attendre la fin de la première</td></tr>
+      <tr><td>Le modèle est installé mais ne se charge pas</td><td>Mémoire insuffisante</td><td>Prendre une variante plus fortement quantifiée</td></tr>
+      <tr><td>Un modèle supprimé a disparu d'Ollama aussi</td><td>Stockage partagé</td><td>Comportement attendu</td></tr>
+      <tr><td>Aucune mise à jour n'est proposée</td><td>Le modèle est à jour, ou sa famille n'a pas été examinée</td><td>Au-delà de 100 familles installées, toutes ne sont pas vérifiées</td></tr>
+    </table>
+
+    <p>Pour régler un modèle installé — paramètres, prompt système, modèle dérivé — voir <a href="modeles-personnalisation.html">Personnalisation</a>. Pour retrouver ensuite tes modèles parmi les autres, <a href="modeles-catalogue-et-favoris.html">Catalogue et favoris</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

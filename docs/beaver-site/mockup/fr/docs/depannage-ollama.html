@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Dépannage du moteur Ollama</title>
+<meta name="description" content="Le moteur local est installé mais quelque chose ne va pas : moteur indisponible, modèle qui refuse de se télécharger, carte graphique ignorée, réglages sans effet. Symptôme par symptôme, avec l'issue réelle.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Dépannage / Moteur Ollama</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="depannage-ollama.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/depannage-ollama.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le moteur Ollama, <em>quand</em> ça coince</h1>
+    <p>Cette page part de ce que tu vois à l'écran et remonte jusqu'à la cause, puis jusqu'au remède — ou jusqu'à l'aveu qu'il n'y en a pas, parce que plusieurs situations décrites ici ne se règlent pas depuis l'application. Elle suppose le moteur <b>déjà installé</b> : la première installation, son téléchargement et sa reprise sont traités dans <a href="reference-depannage-installation.html">Dépannage de l'installation</a>.</p>
+    <p>Un seul réflexe avant tout le reste : ouvrir <b>Réglages › Ollama</b> et lire l'état affiché. Tout ce qui suit en découle.</p>
+
+    <h2 id="etats">Les trois états du moteur, et comment les lire</h2>
+    <p>Le moteur n'a que <b>trois états possibles</b>, et toute la page en découle.</p>
+
+    <table>
+      <caption class="crumb">Les trois états affichés dans Réglages › Ollama</caption>
+      <tr><th>Libellé affiché</th><th>Ce que ça veut dire</th></tr>
+      <tr><td><b>« Ollama géré par Beaver »</b></td><td>Beaver a lancé le moteur lui-même et le contrôle entièrement</td></tr>
+      <tr><td><b>« Ollama externe »</b></td><td>Un moteur tournait déjà sur la machine ; Beaver s'en sert sans le contrôler</td></tr>
+      <tr><td><b>« Ollama indisponible »</b></td><td>Aucun moteur joignable</td></tr>
+    </table>
+
+    <p>Pendant la mesure, l'écran affiche <b>« Chargement de l'état d'Ollama… »</b>, et un bouton <b>« Réessayer »</b> permet de la relancer.</p>
+    <p><b>La distinction entre « géré par Beaver » et « externe » n'est pas cosmétique.</b> Elle décide de ce qui marche et de ce qui ne marche pas : c'est le cœur de cette page, et c'est probablement l'information la plus utile qu'elle contienne.</p>
+    <p><b>Comment Beaver mesure cet état.</b> Une boucle de fond interroge le moteur <b>toutes les 2 secondes</b>, avec un délai de réponse de <b>2 secondes</b>. Si l'appel échoue, l'état bascule immédiatement à « indisponible ». L'interface n'est prévenue <b>que lorsque l'état change</b>, pas à chaque tour de boucle.</p>
+
+    <h2 id="indisponible">« Ollama indisponible » — le moteur ne répond plus</h2>
+    <p><b>Ce que tu vois</b> — Réglages › Ollama affiche <b>« Ollama indisponible »</b>, la liste des modèles locaux se vide, et l'agent refuse toute requête locale.</p>
+    <p><b>Les causes, par ordre de fréquence probable :</b></p>
+    <ul>
+      <li><b>Le processus du moteur s'est arrêté.</b> Quelle qu'en soit la raison — plantage, arrêt par le système, manque de mémoire — la boucle de mesure le constate en moins de deux secondes et bascule l'état.</li>
+      <li><b>Le moteur ne répond pas en moins de 2 secondes.</b> Ce délai est fixe. Une machine très chargée, ou un modèle en train de se charger en mémoire, peut le dépasser : le moteur est alors annoncé indisponible <b>alors qu'il tourne encore</b>. L'état revient tout seul au tour suivant.</li>
+      <li><b>Le moteur n'a jamais démarré.</b> Le lancement a un budget de <b>10 secondes</b>. Au-delà, ou si la version qui répond n'est pas celle installée, Beaver arrête le processus qu'il vient de lancer et affiche <b>« Ollama n'a pas pu démarrer. »</b></li>
+      <li><b>Une réparation est en attente.</b> Si l'installation du moteur est dans un état qui exige une reprise, le démarrage est refusé avant même d'essayer, avec l'un des messages de réparation du tableau qui clôt cette page.</li>
+    </ul>
+
+    <p><b>Que faire, dans cet ordre :</b></p>
+    <ul>
+      <li><b>Attendre dix secondes et regarder de nouveau</b> — la mesure est automatique et se corrige seule dans le deuxième cas.</li>
+      <li><b>Cliquer sur « Réessayer »</b> dans Réglages › Ollama.</li>
+      <li><b>Redémarrer le moteur</b> — voir plus bas.</li>
+      <li><b>Redémarrer Beaver.</b> Une reprise de l'installation s'exécute au démarrage, avant toute tentative de lancement.</li>
+      <li><b>Si le message est l'un des messages de réparation</b>, suivre le tableau : ils n'ont pas tous la même issue.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Il n'y a pas de journal du moteur à consulter.</b> Contrairement à ce que suggèrent d'anciennes documentations, le moteur lancé par Beaver n'écrit aucun fichier de traces : sa sortie est jetée sous macOS et Linux, et n'est pas redirigée sous Windows. Ce fichier n'existe pas — inutile de le chercher. Les seules traces exploitables sont celles de Beaver lui-même, qui portent un code d'erreur, pas un message du moteur.
+    </div>
+
+    <h2 id="port-11434">Le port 11434 et le moteur externe réutilisé</h2>
+    <p>C'est le mécanisme le plus mal compris du produit, et il mérite d'être exposé en entier. <b>À chaque démarrage du moteur, Beaver fait ceci, dans cet ordre :</b></p>
+    <ul>
+      <li>Il tente une connexion sur <b>127.0.0.1:11434</b>, le port habituel d'Ollama, avec un délai de <b>250 millisecondes</b>.</li>
+      <li><b>Si quelque chose répond sur ce port</b>, il le déclare « Ollama externe » et <b>ne lance rien</b>.</li>
+      <li><b>Si la connexion est refusée</b>, il demande au système un <b>port libre au hasard</b> et y lance son propre moteur.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Beaver n'utilise pas le port 11434.</b> C'est le port qu'il <b>regarde</b> pour savoir si un moteur tourne déjà. Le sien démarre sur un port libre tiré au hasard à chaque lancement, et n'écoute que sur ta machine — l'adresse construite est toujours locale, et toute autre forme est refusée : autre machine, identifiant, mot de passe, paramètre d'URL. <b>Un port 11434 occupé ne bloque donc jamais Beaver.</b> C'est l'inverse du réflexe habituel : ce n'est pas un conflit, c'est une détection.
+    </div>
+
+    <p><b>Ce que tu vois</b> — « Réglages affiche <i>Ollama externe</i> alors que je n'ai jamais installé Ollama ». La cause probable : un autre logiciel occupe le port 11434, ou une installation d'Ollama faite avant Beaver tourne encore, par exemple lancée automatiquement à l'ouverture de ta session.</p>
+    <p><b>Que faire</b> — arrêter l'autre moteur, puis redémarrer le moteur depuis Réglages › Ollama. Beaver ne trouvera plus rien sur 11434 et lancera le sien.</p>
+    <p>Et si tu cherches le moteur de Beaver sur 11434, tu ne le trouveras pas : il n'y est jamais.</p>
+
+    <h2 id="moteur-externe">Ce qui ne fonctionne pas avec un moteur externe</h2>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Un moteur externe, ce n'est pas le même produit.</b> Si Réglages › Ollama affiche <b>« Ollama externe »</b>, Beaver se sert d'un moteur qu'il n'a pas lancé. Discuter avec un modèle fonctionne ; <b>télécharger, supprimer ou créer un modèle, non</b>, et les réglages d'accélération n'ont aucun effet. Rien à l'écran ne l'annonce à l'avance.
+    </div>
+
+    <table>
+      <caption class="crumb">Ce que chaque état du moteur permet</caption>
+      <tr><th>Fonction</th><th>Moteur géré par Beaver</th><th>Moteur externe</th></tr>
+      <tr><td>Discuter avec un modèle local</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <tr><td>Lister les modèles installés</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <tr><td>Télécharger un modèle</td><td>Oui</td><td><b>Non</b></td></tr>
+      <tr><td>Supprimer un modèle</td><td>Oui</td><td><b>Non</b></td></tr>
+      <tr><td>Créer un modèle personnalisé</td><td>Oui</td><td><b>Non</b></td></tr>
+      <tr><td>Choisir processeur ou carte graphique</td><td>Oui</td><td><b>Sans effet</b></td></tr>
+      <tr><td>Charger plusieurs modèles à la fois</td><td>Oui</td><td><b>Sans effet</b></td></tr>
+      <tr><td>Durée avant libération de la mémoire</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <tr><td>Arrêter ou redémarrer le moteur</td><td>Oui</td><td><b>Sans effet</b></td></tr>
+    </table>
+
+    <p><b>Pourquoi cette coupure existe.</b> Les réglages d'accélération et de multi-modèle sont transmis au moteur <b>au moment de son lancement</b>, sous forme de variables d'environnement. Un moteur que Beaver n'a pas lancé n'a jamais reçu ces valeurs, et rien ne permet de les lui appliquer après coup. À l'inverse, la durée avant libération de la mémoire voyage dans chaque requête : celle-là s'applique dans les deux cas.</p>
+    <p><b>Que faire</b> — pour retrouver toutes les fonctions, arrêter le moteur externe puis redémarrer celui de Beaver. Il n'y a pas d'autre voie.</p>
+
+    <h2 id="telechargement-echec">Le téléchargement d'un modèle échoue</h2>
+    <p><b>Ce que tu vois</b> — sous le bouton d'installation du modèle, une ligne rouge : <b>« Le téléchargement a échoué »</b>.</p>
+    <p><b>Ce message ne dit jamais laquelle des causes est en jeu.</b> Toutes les défaillances possibles du téléchargement aboutissent au même code unique. Les causes que Beaver distingue en interne, sans jamais les transmettre à l'écran :</p>
+    <ul>
+      <li><b>le moteur n'est pas géré par Beaver</b> — c'est le cas ci-dessus, et probablement la première chose à vérifier ;</li>
+      <li><b>le moteur est injoignable</b> au moment de la demande ;</li>
+      <li><b>le registre de modèles refuse</b> le nom demandé, ou le modèle n'existe pas ;</li>
+      <li><b>le téléchargement dépasse une heure</b> — le délai global est de <b>3 600 secondes</b> ;</li>
+      <li><b>l'espace disque manque</b>, ce qui remonte comme une erreur du moteur ;</li>
+      <li><b>le flux de progression dépasse 500 000 lignes</b>, une borne de sécurité.</li>
+    </ul>
+
+    <p><b>Que faire, dans cet ordre :</b></p>
+    <ul>
+      <li><b>Vérifier l'état du moteur.</b> S'il affiche « Ollama externe », le téléchargement ne peut pas fonctionner.</li>
+      <li><b>Vérifier l'espace disque libre.</b> Les modèles vivent dans <code>~/.ollama/models</code>, <b>en dehors</b> du dossier de données de Beaver, et un modèle courant pèse plusieurs gigaoctets.</li>
+      <li><b>Relancer le téléchargement.</b> Ollama réutilise les morceaux déjà obtenus : un second essai ne repart pas nécessairement de zéro.</li>
+      <li><b>Vérifier le nom du modèle</b> dans le catalogue, en repassant par la recherche plutôt qu'en tapant un nom à la main.</li>
+      <li><b>Sur un réseau d'entreprise</b>, vérifier que <code>ollama.com</code> est joignable : c'est l'adresse du registre de modèles.</li>
+    </ul>
+
+    <p><b>Une seule file, un seul téléchargement à la fois.</b> Beaver n'exécute qu'un téléchargement de modèle en même temps et n'en accepte pas plus de <b>16 en attente</b>. Au-delà, une notification passagère annonce <b>« Impossible d'ajouter ce modèle à la file d'attente. »</b> Les modèles en attente affichent <b>« En attente »</b>, les autres l'étape en cours : <b>« Démarrage »</b>, <b>« Téléchargement »</b>, <b>« Installation »</b>, <b>« Préparation du moteur »</b>, <b>« Terminé »</b>.</p>
+
+    <h2 id="telechargement-interrompu">Le téléchargement d'un modèle a été interrompu</h2>
+    <p><b>Ce que tu vois</b> — tu as cliqué sur <b>« Annuler »</b> (ou appuyé sur Échap, qui fait la même chose), ou bien Beaver a été fermé pendant un téléchargement.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Annuler un téléchargement le supprime.</b> Les morceaux déjà obtenus sont effacés et le modèle est retiré du moteur. Relancer repart du début : ce n'est pas une reprise différée, c'est un nettoyage. La seule exception est la <b>mise à jour</b> d'un modèle déjà installé — annuler y laisse la version précédente intacte, et c'est voulu.
+    </div>
+
+    <p><b>La file d'attente ne survit pas à la fermeture.</b> Elle vit uniquement en mémoire : aucun fichier ne l'enregistre. Après un redémarrage de Beaver, <b>rien ne reprend tout seul</b> et rien ne signale qu'un téléchargement était en cours.</p>
+    <p><b>Que faire</b> — relancer le téléchargement depuis l'écran des modèles. Il n'y a pas d'autre voie, et il n'y a rien à nettoyer toi-même.</p>
+
+    <h2 id="carte-graphique">La carte graphique n'est pas utilisée</h2>
+    <p><b>Ce que tu vois</b> — les modèles locaux répondent très lentement, et l'indicateur de matériel affiche <b>« CPU · RAM »</b> au lieu de « VRAM » ou « RAM ».</p>
+    <p><b>Cet indicateur est fiable, et c'est le bon endroit où regarder.</b> Beaver le calcule à partir de ce que le moteur déclare réellement charger : si aucun modèle chargé n'occupe de mémoire graphique, l'étiquette devient « CPU · RAM ». Il s'affiche si le réglage <b>« Afficher l'état GPU »</b> est activé.</p>
+    <p><b>Trois causes distinctes, à ne pas confondre :</b></p>
+    <ul>
+      <li><b>Le réglage est sur processeur seul.</b> Le mode « processeur » impose au moteur de n'utiliser aucun accélérateur. Le réglage est dans Réglages › Ollama, sous <b>« Moteur d'inférence pour les modèles locaux »</b>. <b>Il n'est pas affiché sur Mac</b> : sur un Mac à puce Apple, le moteur décide seul.</li>
+      <li><b>Le constructeur de la carte n'a pas été reconnu.</b> Sous Linux, Beaver lit les identifiants constructeur des cartes présentes ; sous Windows, il interroge la liste des cartes vidéo du système et reconnaît les noms contenant <code>nvidia</code>, <code>geforce</code>, <code>quadro</code>, <code>amd</code>, <code>radeon</code> ou <code>intel</code> ; sous macOS, il lit la marque du processeur. Un pilote absent, ou une carte dont le nom ne contient aucun de ces mots, donne un constructeur inconnu.</li>
+      <li><b>Le modèle ne tient pas dans la mémoire graphique</b> et le moteur en bascule une partie sur la mémoire ordinaire. C'est la section suivante.</li>
+    </ul>
+
+    <p><b>Que faire :</b></p>
+    <ul>
+      <li><b>Vérifier le réglage</b> dans Réglages › Ollama, hors Mac.</li>
+      <li><b>Sous Linux, avec une carte AMD ou NVIDIA</b> : vérifier que la carte est vue par le système. Si rien n'y correspond, le pilote graphique n'est pas chargé — c'est un problème du système, pas de Beaver.</li>
+      <li><b>Sous Windows</b> : le pilote de la carte doit être installé ; c'est lui qui fournit le nom que Beaver lit.</li>
+      <li><b>Prendre un modèle plus petit ou une quantification plus forte</b> — voir <a href="modeles-materiel.html">Matériel et VRAM</a>.</li>
+    </ul>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ls /sys/class/drm/</pre>
+    </div>
+
+    <p>Une précision qui évite une fausse piste : <b>la détection du constructeur ne sert qu'à choisir l'archive à télécharger sous Linux</b>, à l'installation du moteur. Elle ne commande pas le choix processeur ou carte graphique en fonctionnement : ce choix vient du réglage et de l'autodétection propre au moteur.</p>
+
+    <h2 id="memoire">Le modèle est trop lourd pour la mémoire</h2>
+    <p><b>Ce que tu vois</b> — au lancement d'une installation, une notification passagère : <b>« Ce modèle peut nécessiter plus de mémoire que votre machine n'en possède. Le téléchargement va continuer. »</b>, affichée quatre secondes.</p>
+    <p><b>Ce que fait réellement ce contrôle</b> : il compare la taille annoncée du fichier à la mémoire graphique mesurée, et prévient si elle ne tient pas. <b>Il ne bloque rien</b> — le message le dit lui-même.</p>
+    <p>Trois limites méritent d'être connues :</p>
+    <ul>
+      <li><b>Quand la mémoire n'est pas mesurable, le contrôle répond « ça tient ».</b> Sur une machine où la mesure échoue, l'avertissement ne s'affiche donc <b>jamais</b>, quelle que soit la taille du modèle.</li>
+      <li><b>Il ne compte que le fichier du modèle</b>, pas le contexte de la conversation, qui s'y ajoute et grandit avec elle.</li>
+      <li><b>C'est une notification passagère</b>, pas une confirmation. Quatre secondes d'inattention et elle est passée ; rien ne la rappelle ensuite.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Une mémoire non mesurable a une seconde conséquence, plus discrète.</b> La mesure décide aussi de la taille de contexte accordée aux modèles locaux, en trois paliers : <b>32 768 jetons</b> au-dessus de 24 000 Mo, <b>24 576 jetons</b> au-dessus de 12 000 Mo, <b>8 192 jetons</b> en dessous — et <b>8 192 également quand la mesure échoue</b>. Un contexte bloqué à 8 192 jetons sur une machine bien dotée est donc le symptôme d'une mesure ratée, pas d'un choix. Ce n'est pas réglable depuis l'application.
+    </div>
+
+    <p><b>Que faire</b> — prendre une quantification plus forte du même modèle, ou descendre d'une taille. La table de correspondance complète est dans <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+
+    <h2 id="redemarrer">Redémarrer le moteur</h2>
+    <p><b>Où</b> — Réglages › Ollama. Le bouton apparaît en permanence à côté du réglage d'accélération hors Mac, et une ligne <b>« Redémarrage nécessaire — Les changements seront appliqués après le redémarrage d'Ollama »</b> s'ajoute dès qu'un réglage concerné a été modifié.</p>
+    <p><b>Quels réglages exigent ce redémarrage</b> : la durée avant libération de la mémoire, le choix processeur ou carte graphique, et le chargement de plusieurs modèles à la fois. Le réglage « Afficher l'état GPU » ne le demande pas.</p>
+    <p><b>Ce que le redémarrage fait vraiment</b> : il arrête le moteur avec un budget de <b>10 secondes</b>, puis relance la séquence complète — détection d'un moteur externe sur 11434, puis lancement sur un port libre.</p>
+
+    <table>
+      <caption class="crumb">Les trois issues d'un redémarrage</caption>
+      <tr><th>Ce qui s'est passé</th><th>Message affiché</th></tr>
+      <tr><td>Le moteur de Beaver a redémarré</td><td><b>« Ollama redémarré »</b></td></tr>
+      <tr><td>Un moteur externe a été retrouvé</td><td><b>« Ollama externe réutilisé »</b></td></tr>
+      <tr><td>L'arrêt ou le lancement a échoué</td><td>L'un des messages du tableau ci-dessous</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>« Ollama externe réutilisé » veut dire que rien n'a changé.</b> Sur un moteur externe, l'arrêt ne fait rien du tout et le redémarrage se contente de retrouver le même moteur. Les réglages que tu viens de modifier <b>ne sont pas appliqués</b>, alors que la notification se présente comme un succès. C'est le piège numéro un de cette page.
+    </div>
+
+    <p><b>Si l'arrêt échoue</b>, le message est <b>« Ollama n'a pas pu s'arrêter correctement. »</b>. Il n'y a alors pas d'action possible depuis l'application : ferme Beaver et relance-le.</p>
+
+    <h2 id="connexion-perdue">« Connexion à Ollama perdue » pendant une conversation</h2>
+    <p><b>Ce que tu vois</b> — au milieu d'une réponse, la conversation s'interrompt sur <b>« Connexion à Ollama perdue »</b>.</p>
+    <p><b>La cause</b> — la requête vers le moteur n'a pas abouti, soit parce que la connexion a échoué, soit parce qu'elle a expiré. C'est le symptôme du moteur indisponible, rencontré depuis une conversation plutôt que depuis les réglages.</p>
+    <p><b>À distinguer de « Erreur serveur Ollama »</b> : là, le moteur a répondu, mais par une erreur. Ce message-là n'arrive <b>qu'après épuisement des reprises</b>.</p>
+    <p><b>Les reprises automatiques sont invisibles et généreuses.</b> Sur une erreur temporaire du moteur — codes HTTP 500, 502, 503, 504 — Beaver réessaie <b>jusqu'à dix fois</b>, avec une attente croissante de <b>350 millisecondes multipliées par le numéro d'essai</b>, plafonnée au sixième. Deux autres reprises existent, plus discrètes : le retrait d'une capacité que le modèle ne prend pas en charge, et un petit nombre de reprises après un défaut d'analyse des appels d'outils.</p>
+    <p><b>Cette générosité est propre au moteur local.</b> Les fournisseurs distants n'ont <b>aucune reprise automatique</b> — <a href="depannage-cles-et-fournisseurs.html">Clés et fournisseurs</a> explique pourquoi, et la raison est bonne.</p>
+    <p><b>Que faire</b> — reprendre la conversation après avoir vérifié l'état du moteur. La conversation elle-même est conservée ; seule la réponse en cours est perdue.</p>
+
+    <h2 id="messages">Tous les messages d'erreur du moteur</h2>
+    <p>Vingt messages existent. Ceux qui ne concernent que la première installation renvoient à <a href="reference-depannage-installation.html">Dépannage de l'installation</a>.</p>
+
+    <table>
+      <caption class="crumb">Chaque message, ce qui s'est passé, ce qu'il faut faire</caption>
+      <tr><th>Message affiché</th><th>Ce qui s'est passé</th><th>Ce qu'il faut faire</th></tr>
+      <tr><td>« Ollama est actuellement indisponible. »</td><td>Aucun moteur joignable</td><td>Voir « Ollama indisponible »</td></tr>
+      <tr><td>« Ollama n'a pas pu démarrer. »</td><td>Le lancement a échoué, le moteur n'a pas répondu en 10 s, ou sa version ne correspond pas à celle installée</td><td>Vérifier l'état, puis redémarrer le moteur</td></tr>
+      <tr><td>« Ollama n'a pas pu s'arrêter correctement. »</td><td>L'arrêt a dépassé son budget</td><td>Fermer et relancer Beaver</td></tr>
+      <tr><td>« Ollama n'a pas répondu avant la fin du délai. »</td><td>Le moteur n'a pas répondu dans les <b>45 secondes</b> de l'installation</td><td>Relancer ; fréquent au premier démarrage sur une machine lente</td></tr>
+      <tr><td>« Une autre opération Ollama est déjà en cours. »</td><td>Deux opérations lancées en même temps ; une seule est permise</td><td>Attendre la fin de la première</td></tr>
+      <tr><td>« L'opération Ollama a été annulée. »</td><td>Bouton « Annuler »</td><td>Relancer quand tu veux</td></tr>
+      <tr><td>« Beaver est en cours de fermeture. »</td><td>Opération demandée pendant l'arrêt de l'application</td><td>Relancer Beaver</td></tr>
+      <tr><td>« Le dossier des modèles chevauche les fichiers d'installation d'Ollama. »</td><td>Le dossier des modèles recouvre un dossier de travail du moteur</td><td>Aucune action depuis l'application ; ce cas suppose un emplacement de modèles imposé en dehors de Beaver</td></tr>
+      <tr><td>« Le stockage d'Ollama est inaccessible. Vérifie l'espace libre et les autorisations. »</td><td>Écriture impossible dans le dossier de données</td><td>Voir <a href="reference-depannage-installation.html">Dépannage de l'installation</a></td></tr>
+      <tr><td>« L'installation d'Ollama est endommagée ou incompatible. »</td><td>Le contenu installé n'est pas celui attendu</td><td>Relancer l'installation depuis Réglages › Ollama</td></tr>
+      <tr><td>« Ollama n'est pas installé par Beaver. »</td><td>Aucune installation présente</td><td>Lancer le téléchargement depuis Réglages › Ollama</td></tr>
+      <tr><td>« L'installation d'Ollama doit être réparée avant de continuer. »</td><td>Une installation précédente s'est interrompue</td><td>Bouton « Réessayer »</td></tr>
+      <tr><td>« La réparation d'Ollama est temporairement impossible. Réessaie. »</td><td>Une autre opération occupe le dossier</td><td>Attendre quelques secondes</td></tr>
+      <tr><td>« L'état de mise à jour d'Ollama est illisible et doit être réparé. »</td><td>Le journal d'installation est corrompu</td><td>Bouton « Réessayer »</td></tr>
+      <tr><td>« La mise à jour est installée, mais son nettoyage doit être repris. »</td><td>Nettoyage post-mise à jour inachevé</td><td>Redémarrer Beaver</td></tr>
+      <tr><td>« La validation d'Ollama n'a pas pu se terminer. Réessaie. »</td><td>Contrôle final non abouti, ou aucun port libre obtenu</td><td>Réessayer</td></tr>
+      <tr><td>« Le téléchargement d'Ollama a échoué… », « …vérification d'intégrité », « L'extraction d'Ollama a échoué. »</td><td>Première installation</td><td>Voir <a href="reference-depannage-installation.html">Dépannage de l'installation</a></td></tr>
+      <tr><td>« Beaver a rencontré une erreur interne avec Ollama. »</td><td>Défaut interne</td><td>Redémarrer Beaver ; signaler si ça persiste</td></tr>
+      <tr><td>« Ollama ne peut pas terminer cette opération. Réessaie. »</td><td>Le repli, affiché quand le code reçu n'est reconnu par aucun des cas ci-dessus</td><td>Réessayer, puis redémarrer Beaver</td></tr>
+    </table>
+
+    <h2 id="limites">Les délais et limites du moteur</h2>
+
+    <table>
+      <caption class="crumb">Ce qui est borné, et à quelle valeur</caption>
+      <tr><th>Ce qui est borné</th><th>Valeur</th></tr>
+      <tr><td>Intervalle entre deux mesures d'état</td><td><b>2 secondes</b></td></tr>
+      <tr><td>Délai de la sonde de santé</td><td><b>2 secondes</b></td></tr>
+      <tr><td>Délai de détection d'un moteur externe</td><td><b>250 millisecondes</b></td></tr>
+      <tr><td>Port testé pour un moteur externe</td><td><b>11434</b></td></tr>
+      <tr><td>Budget de lancement du moteur</td><td><b>10 secondes</b></td></tr>
+      <tr><td>Budget d'arrêt lors d'un redémarrage</td><td><b>10 secondes</b></td></tr>
+      <tr><td>Attente du moteur à l'installation</td><td><b>45 secondes</b></td></tr>
+      <tr><td>Téléchargement d'un modèle</td><td><b>3 600 secondes</b></td></tr>
+      <tr><td>Téléchargements de modèles simultanés</td><td><b>1</b></td></tr>
+      <tr><td>Modèles en file d'attente</td><td><b>16</b></td></tr>
+      <tr><td>Opérations simultanées sur le moteur</td><td><b>1</b></td></tr>
+      <tr><td>Reprises sur erreur temporaire du moteur</td><td><b>10</b></td></tr>
+      <tr><td>Attente entre deux reprises</td><td><b>350 ms × numéro d'essai</b>, plafonnée au 6<sup>e</sup></td></tr>
+      <tr><td>Création d'un modèle personnalisé</td><td><b>600 secondes</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Le téléchargement a échoué » sans autre explication</td><td>Un code unique couvre toutes les causes</td><td>Vérifier d'abord l'état du moteur, puis l'espace disque</td></tr>
+      <tr><td>Le bouton d'installation ne fait rien d'utile</td><td>Le moteur est externe : le téléchargement est impossible</td><td>Arrêter le moteur externe, redémarrer celui de Beaver</td></tr>
+      <tr><td>« Ollama externe réutilisé » après avoir changé un réglage</td><td>Le réglage n'a pas été appliqué : Beaver ne contrôle pas ce moteur</td><td>Arrêter le moteur externe</td></tr>
+      <tr><td>Le moteur passe indisponible puis revient tout seul</td><td>La sonde de santé a dépassé 2 secondes sur une machine chargée</td><td>Comportement attendu, rien à faire</td></tr>
+      <tr><td>Je cherche Beaver sur le port 11434 et ne trouve rien</td><td>Son moteur écoute sur un port tiré au hasard</td><td>Comportement attendu</td></tr>
+      <tr><td>Mon téléchargement a disparu après un redémarrage de Beaver</td><td>La file d'attente n'est pas enregistrée sur le disque</td><td>Le relancer à la main</td></tr>
+      <tr><td>Le contexte reste à 8 192 jetons</td><td>La mémoire graphique n'a pas pu être mesurée</td><td>Non réglable depuis l'application</td></tr>
+      <tr><td>Aucun avertissement sur un modèle manifestement trop gros</td><td>Mémoire non mesurée : le contrôle répond « ça tient »</td><td>Se fier à la table de <a href="modeles-materiel.html">Matériel et VRAM</a></td></tr>
+      <tr><td>Le réglage processeur / carte graphique est absent</td><td>Il n'est pas affiché sur Mac</td><td>Comportement voulu</td></tr>
+      <tr><td>Les modèles locaux ont disparu de la liste</td><td>Le moteur est indisponible, ou n'a aucun modèle installé</td><td>Vérifier l'état dans Réglages › Ollama</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="reference-depannage-installation.html">Dépannage de l'installation</a> — la première installation du moteur, sa reprise, et la détection du constructeur de la carte graphique.</li>
+      <li><a href="depannage-cles-et-fournisseurs.html">Clés et fournisseurs</a> — les modèles distants, qui n'ont besoin d'aucun moteur local.</li>
+      <li><a href="modeles-materiel.html">Matériel et VRAM</a> — quelle taille de modèle pour quelle machine.</li>
+      <li><a href="modeles-moteur-local.html">Le moteur local</a> — les réglages en fonctionnement nominal.</li>
+      <li><a href="modeles-modeles-locaux.html">Modèles locaux</a> — le parcours normal de téléchargement.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

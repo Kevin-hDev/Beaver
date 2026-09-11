@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Branches Git</title>
-<meta name="description" content="Les deux outils Git de l'agent, pourquoi il n'y en a que deux, et ce qui se passe pour tout le reste des opérations Git.">
+<title>Beaver Docs — Git branches</title>
+<meta name="description" content="The agent's two Git tools, why there are only two, and what happens for every other Git operation.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,106 +19,106 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Branches Git</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-branches-git.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / Git branches</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-branches-git.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-branches-git.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Les branches <em>Git.</em></h1>
-    <p>L'agent dispose de deux outils Git dédiés, et de deux seulement. Ils forment le groupe <b>Branches Git</b>, optionnel et <b>éteint par défaut</b>. Tout le reste — commits, fusions, envois — passe par des commandes shell que tu vois s'exécuter.</p>
+    <h1>Git <em>branches.</em></h1>
+    <p>The agent has two dedicated Git tools, and only two. They form the <b>Git branches</b> group, optional and <b>off by default</b>. Everything else — commits, merges, pushes — goes through shell commands you watch run.</p>
 
-    <h2 id="deux-outils">Deux outils seulement</h2>
+    <h2 id="deux-outils">Two tools only</h2>
     <table>
-      <caption class="crumb">Le groupe Branches Git</caption>
-      <tr><th>Outil</th><th>Rôle</th><th>Approbation</th></tr>
-      <tr><td><code>create_branch</code></td><td>Crée une branche à partir de l'état courant et bascule dessus</td><td><b>Oui</b></td></tr>
-      <tr><td><code>checkout_branch</code></td><td>Bascule sur une branche existante</td><td><b>Oui</b></td></tr>
+      <caption class="crumb">The Git branches group</caption>
+      <tr><th>Tool</th><th>Role</th><th>Approval</th></tr>
+      <tr><td><code>create_branch</code></td><td>Creates a branch from the current state and switches to it</td><td><b>Yes</b></td></tr>
+      <tr><td><code>checkout_branch</code></td><td>Switches to an existing branch</td><td><b>Yes</b></td></tr>
     </table>
-    <p>Les deux demandent une approbation en mode <b>Demander l'autorisation</b>. Ce sont les deux seules opérations Git que l'agent effectue par un outil dédié.</p>
+    <p>Both ask for approval in <b>Ask permission</b> mode. They are the only two Git operations the agent performs through a dedicated tool.</p>
 
-    <h2 id="pourquoi-si-peu">Pourquoi si peu</h2>
-    <p>C'est un choix de conception assumé. Les opérations Git complexes — fusion, rebasage, correction de commit, envoi vers un dépôt distant — <b>ne passent pas par des outils dédiés</b>. Elles passent par le terminal, où l'agent tape les commandes comme tu le ferais.</p>
-    <p>L'avantage : rien à réimplémenter, rien à maintenir en parallèle de Git, et tu vois <b>exactement</b> la commande exécutée plutôt qu'un outil opaque qui fait « quelque chose » avec ton dépôt.</p>
-    <p>Les deux outils dédiés existent parce que ce sont les deux opérations les plus fréquentes, et parce qu'elles bénéficient d'un traitement d'erreur soigné — notamment le refus de basculer avec des modifications non enregistrées.</p>
+    <h2 id="pourquoi-si-peu">Why so few</h2>
+    <p>This is a deliberate design choice. Complex Git operations — merging, rebasing, amending a commit, pushing to a remote — <b>do not go through dedicated tools</b>. They go through the terminal, where the agent types the commands just as you would.</p>
+    <p>The upside: nothing to reimplement, nothing to maintain alongside Git, and you see <b>exactly</b> which command runs rather than an opaque tool doing "something" to your repository.</p>
+    <p>The two dedicated tools exist because they are the two most frequent operations, and because they benefit from careful error handling — notably the refusal to switch with unsaved changes.</p>
 
-    <h2 id="creer-une-branche">Créer une branche</h2>
+    <h2 id="creer-une-branche">Creating a branch</h2>
     <ul>
-      <li>La branche part de <b>l'état courant</b> du dépôt, et l'agent bascule dessus immédiatement.</li>
-      <li>Le dépôt visé est celui du <b>répertoire de travail</b> de la conversation.</li>
-      <li>La création <b>échoue</b> si une branche du même nom existe déjà. Rien n'est écrasé.</li>
+      <li>The branch starts from the repository's <b>current state</b>, and the agent switches to it immediately.</li>
+      <li>The repository targeted is the one in the conversation's <b>working directory</b>.</li>
+      <li>Creation <b>fails</b> if a branch of the same name already exists. Nothing is overwritten.</li>
     </ul>
 
-    <h2 id="changer-de-branche">Changer de branche</h2>
+    <h2 id="changer-de-branche">Switching branches</h2>
     <ul>
-      <li>Bascule sur une branche <b>existante</b>.</li>
-      <li><b>Échoue s'il reste des modifications non enregistrées.</b> Le message indique <b>combien</b> de fichiers sont concernés, et demande de les examiner et de les préserver avant de continuer.</li>
+      <li>Switches to an <b>existing</b> branch.</li>
+      <li><b>Fails if unsaved changes remain.</b> The message states <b>how many</b> files are affected, and asks that they be reviewed and preserved before carrying on.</li>
     </ul>
-    <p>Ce refus est le comportement le plus utile des deux outils : il empêche qu'un changement de branche décidé par l'agent fasse perdre du travail en cours.</p>
+    <p>This refusal is the most useful behaviour of the two tools: it prevents a branch switch decided by the agent from losing work in progress.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      Changer de branche échoue s'il reste du travail non enregistré, et le message dit combien de fichiers sont concernés.
+      <span class="t">Key point</span>
+      Switching branches fails if unsaved work remains, and the message says how many files are affected.
     </div>
 
-    <h2 id="ce-qui-bloque">Ce qui bloque</h2>
+    <h2 id="ce-qui-bloque">What blocks</h2>
     <table>
-      <caption class="crumb">Situation, message, et quoi faire</caption>
-      <tr><th>Situation</th><th>Message</th><th>Que faire</th></tr>
-      <tr><td>Nom de branche invalide ou trop long</td><td>Nom de branche invalide / trop long</td><td>L'agent reformule</td></tr>
-      <tr><td>Branche déjà existante</td><td>Cette branche existe déjà</td><td>Choisir un autre nom, ou basculer dessus</td></tr>
-      <tr><td>Dépôt sans aucun commit</td><td>Le dépôt ne contient encore aucun commit</td><td>Créer le premier commit d'abord</td></tr>
-      <tr><td>Authentification requise</td><td>Authentification GitHub requise</td><td>Configurer l'accès au dépôt</td></tr>
-      <tr><td>Branche inexistante</td><td>Branche Git introuvable</td><td>Vérifier le nom</td></tr>
-      <tr><td>Modifications non enregistrées</td><td>Le dépôt contient N changement(s) non enregistré(s)</td><td>Les enregistrer ou les mettre de côté</td></tr>
-      <tr><td>Branche protégée, branche déjà active, commits non fusionnés</td><td>L'état du dépôt empêche ce changement de branche</td><td>Examiner l'état du dépôt</td></tr>
-      <tr><td>Identité Git absente ou invalide</td><td>Configuration Git invalide</td><td>Configurer nom et adresse dans Git</td></tr>
-      <tr><td>Pas de dépôt</td><td>Dépôt Git indisponible</td><td>Le répertoire de travail n'est pas un dépôt</td></tr>
+      <caption class="crumb">Situation, message, and what to do</caption>
+      <tr><th>Situation</th><th>Message</th><th>What to do</th></tr>
+      <tr><td>Invalid or overly long branch name</td><td>Invalid / too long branch name</td><td>The agent rephrases</td></tr>
+      <tr><td>Branch already exists</td><td>This branch already exists</td><td>Pick another name, or switch to it</td></tr>
+      <tr><td>Repository with no commit at all</td><td>The repository does not contain any commit yet</td><td>Create the first commit first</td></tr>
+      <tr><td>Authentication required</td><td>GitHub authentication required</td><td>Configure access to the repository</td></tr>
+      <tr><td>Branch does not exist</td><td>Git branch not found</td><td>Check the name</td></tr>
+      <tr><td>Unsaved changes</td><td>The repository contains N unsaved change(s)</td><td>Save them or set them aside</td></tr>
+      <tr><td>Protected branch, branch already active, unmerged commits</td><td>The repository's state prevents this branch switch</td><td>Review the repository's state</td></tr>
+      <tr><td>Git identity missing or invalid</td><td>Invalid Git configuration</td><td>Configure name and address in Git</td></tr>
+      <tr><td>No repository</td><td>Git repository unavailable</td><td>The working directory is not a repository</td></tr>
     </table>
-    <p>Deux cas sont traités à part, et c'est délibéré : quand Beaver <b>ne peut pas confirmer</b> qu'une création ou un changement de branche a abouti, le message ne dit pas « échec » mais <b>« n'a pas pu être confirmé »</b>. La nuance compte, parce que l'opération a peut-être réussi. Ces cas ne sont jamais rejoués automatiquement.</p>
+    <p>Two cases are handled separately, and that is deliberate: when Beaver <b>cannot confirm</b> that a branch creation or switch went through, the message does not say "failed" but <b>"could not be confirmed"</b>. The nuance matters, because the operation may well have succeeded. These cases are never replayed automatically.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      « N'a pas pu être confirmé » n'est pas « a échoué ». Quand Beaver ne peut pas vérifier le résultat d'une opération Git, il le dit ainsi plutôt que d'affirmer un échec, et l'agent vérifie l'état du dépôt avant de recommencer.
+      "Could not be confirmed" is not "failed". When Beaver cannot verify the result of a Git operation, it says so this way rather than asserting a failure, and the agent checks the repository's state before starting over.
     </div>
 
-    <h2 id="le-reste-par-le-terminal">Le reste passe par le terminal</h2>
-    <p>Tout ce qui n'est pas créer ou changer de branche s'écrit en commandes shell :</p>
+    <h2 id="le-reste-par-le-terminal">Everything else goes through the terminal</h2>
+    <p>Anything that is not creating or switching a branch is written as shell commands:</p>
     <ul>
-      <li>lister les branches, consulter l'état, lire un différentiel, consulter l'historique — commandes de lecture, <b>exécutées sans approbation</b> parce qu'elles font partie des commandes reconnues comme sûres ;</li>
-      <li>enregistrer, fusionner, rebaser, envoyer — commandes qui modifient, donc soumises au mode de permission comme n'importe quelle commande.</li>
+      <li>listing branches, checking the status, reading a diff, browsing the history — read commands, <b>run without approval</b> because they are among the commands recognised as safe;</li>
+      <li>committing, merging, rebasing, pushing — commands that modify, and therefore subject to the permission mode like any other command.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Couper le groupe Branches Git n'empêche pas l'agent de toucher à Git : il le fera par le <a href="outils-terminal-et-shell.html">terminal</a>, qui est verrouillé. Ce groupe ne contrôle que deux raccourcis, pas l'accès à Git. Pour limiter réellement ce qu'il fait de ton dépôt, le levier est le <a href="agent-permissions.html">mode de permission</a>.
+      <span class="t">Careful</span>
+      Turning off the Git branches group does not stop the agent touching Git: it will do so through the <a href="outils-terminal-et-shell.html">terminal</a>, which is locked. This group only controls two shortcuts, not access to Git. To genuinely limit what it does to your repository, the lever is the <a href="agent-permissions.html">permission mode</a>.
     </div>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'agent ne crée pas de branche</td><td>Groupe éteint par défaut</td><td>L'activer, ou le laisser passer par le terminal</td></tr>
-      <tr><td>« Le dépôt contient N changements non enregistrés »</td><td>Modifications en cours</td><td>Les enregistrer ou les mettre de côté</td></tr>
-      <tr><td>« Le dépôt ne contient encore aucun commit »</td><td>Dépôt fraîchement initialisé</td><td>Créer le premier commit</td></tr>
-      <tr><td>« Dépôt Git indisponible »</td><td>Le répertoire de travail n'est pas un dépôt Git</td><td>Ouvrir un projet versionné</td></tr>
-      <tr><td>« Configuration Git invalide »</td><td>Nom ou adresse absents de la configuration Git</td><td>Les configurer</td></tr>
-      <tr><td>L'agent a créé une branche sans que tu le veuilles</td><td>Mode Accès complet</td><td>Passer en mode Demander l'autorisation</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The agent does not create a branch</td><td>Group off by default</td><td>Turn it on, or let it go through the terminal</td></tr>
+      <tr><td>"The repository contains N unsaved changes"</td><td>Changes in progress</td><td>Save them or set them aside</td></tr>
+      <tr><td>"The repository does not contain any commit yet"</td><td>Freshly initialised repository</td><td>Create the first commit</td></tr>
+      <tr><td>"Git repository unavailable"</td><td>The working directory is not a Git repository</td><td>Open a version-controlled project</td></tr>
+      <tr><td>"Invalid Git configuration"</td><td>Name or address missing from the Git configuration</td><td>Configure them</td></tr>
+      <tr><td>The agent created a branch you did not want</td><td>Full access mode</td><td>Switch to Ask permission mode</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="outils-terminal-et-shell.html">Terminal et shell</a> — les commandes Git de lecture exécutées sans approbation.</li>
-      <li><a href="outils-sous-agents.html">Sous-agents</a> — les espaces Git isolés dans lesquels travaillent les sous-agents codeurs.</li>
-      <li><a href="agent-permissions.html">Modes de permission</a> — ce qui déclenche une demande d'approbation.</li>
+      <li><a href="outils-terminal-et-shell.html">Terminal and shell</a> — the Git read commands run without approval.</li>
+      <li><a href="outils-sous-agents.html">Subagents</a> — the isolated Git workspaces coding subagents work in.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — what triggers an approval request.</li>
     </ul>
   </main>
 

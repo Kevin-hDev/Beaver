@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Qu'est-ce que Beaver</title>
+<meta name="description" content="Beaver est une application de bureau qui héberge un agent autonome, avec des modèles cloud ou locaux, sur macOS, Windows et Linux.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Démarrage / Présentation</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="demarrage-presentation.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/demarrage-presentation.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Qu'est-ce que <em>Beaver</em></h1>
+    <p>Beaver est une application de bureau qui héberge un agent autonome : tu lui
+    donnes un objectif, il décide des étapes, exécute des outils, constate le
+    résultat et recommence jusqu'à avoir terminé. Cette page dit ce qu'il fait,
+    à qui il s'adresse, et ce qui le distingue.</p>
+
+    <h2 id="definition">En deux phrases</h2>
+    <p>Beaver est une <b>application de bureau</b> — pas un site, pas un outil en
+    ligne de commande. Elle fait tourner un agent qui travaille avec des modèles
+    <b>cloud</b>, atteints par clé API ou par un compte web existant, ou
+    <b>locaux</b>, servis par Ollama sur ta machine. L'application s'exécute sur
+    ton poste ; le modèle, lui, tourne où tu le décides. Elle fonctionne sur
+    <b>macOS</b>, <b>Windows</b> et <b>Linux</b>.</p>
+
+    <h2 id="ce-que-ce-n-est-pas">Ce que Beaver n'est pas</h2>
+    <p>Trois attentes fréquentes, et ce qu'il en est réellement.</p>
+
+    <table>
+      <caption class="crumb">Trois idées reçues et la réalité</caption>
+      <tr><th>Ce qu'on croit</th><th>La réalité</th></tr>
+      <tr><td>« C'est un chat »</td><td>Un chat répond puis attend. Beaver exécute des actions en boucle jusqu'à l'objectif.</td></tr>
+      <tr><td>« C'est un outil en ligne de commande »</td><td>Tout passe par une interface graphique : conversations, approbations, fichiers, graphiques.</td></tr>
+      <tr><td>« C'est un service hébergé »</td><td>L'application s'exécute sur ton poste. Conversations, mémoire, plans et clés restent dans un dossier local.</td></tr>
+    </table>
+
+    <p>Sur ce dernier point, la précision compte : ce qui sort de la machine, ce
+    sont uniquement les requêtes envoyées aux modèles distants et aux services de
+    recherche, quand tu en configures. Avec un modèle local et sans recherche
+    web, rien ne sort.</p>
+
+    <div class="callout">
+      <span class="t">Confidentialité</span>
+      Avec un modèle local et sans recherche web configurée, aucune donnée ne
+      quitte ton ordinateur. Les conversations, la mémoire et les fichiers
+      restent dans un dossier local.
+    </div>
+
+    <h2 id="a-qui">À qui ça s'adresse</h2>
+    <p><b>Utiliser les modèles auxquels tu as déjà accès.</b> Un compte web
+    connecté ou une clé API suffit : l'agent travaille avec le fournisseur que
+    tu choisis, sans changer d'espace de travail.</p>
+    <p><b>Travailler sur des fichiers locaux.</b> L'agent ouvre, modifie, lance
+    les commandes, vérifie, et te propose ses changements.</p>
+    <p><b>Garder les données sur la machine.</b> Avec un modèle local, aucune
+    conversation ne quitte l'ordinateur ; ni clé API ni compte ne sont
+    nécessaires.</p>
+    <p><b>Automatiser du récurrent.</b> Les réveils programmés lancent une
+    conversation à heure fixe, et le résultat t'attend dans l'application.</p>
+
+    <h2 id="ce-qui-le-distingue">Ce qui le distingue</h2>
+    <p><b>Cloud et local dans le même espace de travail.</b> Beaver n'est pas
+    dédié à l'IA locale : comptes web connectés, clés API et modèles Ollama se
+    choisissent dans la même interface, conversation par conversation.</p>
+
+    <p><b>Le moteur local est fourni, jamais imposé.</b> Le parcours d'accueil
+    te propose de télécharger Ollama, et cette étape peut être passée : Beaver
+    fonctionne très bien avec les seuls modèles distants. Si tu changes d'avis,
+    l'installation se lance plus tard depuis <b>Réglages › Ollama</b>. Une fois
+    accepté, le moteur est géré par l'application : il n'y a rien à installer à
+    part Beaver. Si un démon Ollama tourne déjà sur <code>localhost:11434</code>,
+    Beaver le réutilise au lieu d'en lancer un second, et les modèles sont
+    partagés avec l'installation existante
+    (<code>~/.ollama/models/</code>).</p>
+
+    <p><b>Le contrôle des actions te revient.</b> Trois modes de permission
+    existent : <b>Accès complet</b>, <b>Demander l'autorisation</b> et
+    <b>Chatbot</b>. Le mode Plan pousse plus loin — exploration en lecture
+    seule, plan rédigé en Markdown, aucune écriture avant ton approbation. Le
+    détail est dans <a href="agent-permissions.html">Modes de permission</a>.</p>
+
+    <p><b>Les secrets ne transitent pas par l'interface.</b> Les clés vivent dans
+    un coffre chiffré <b>XChaCha20-Poly1305</b>, dont la clé maîtresse est
+    rangée dans le trousseau du système d'exploitation. Aucune commande de
+    l'application ne permet de relire une clé depuis la partie graphique : il
+    n'existe pas de <code>get_api_key</code>. Le cœur Rust charge la clé au
+    moment de l'appel réseau, puis l'efface de la mémoire.</p>
+
+    <p><b>Tout est dans la même fenêtre.</b> Conversations, terminal, arbre de
+    fichiers, prévisualisations, navigateur web, historique Git et espace de
+    prévision.</p>
+
+    <h2 id="ce-que-fait-l-agent">Ce que fait l'agent concrètement</h2>
+    <ul>
+      <li>lire, écrire et modifier des fichiers, lister des dossiers</li>
+      <li>chercher par nom ou par contenu dans une arborescence</li>
+      <li>exécuter des commandes shell, y compris en arrière-plan</li>
+      <li>chercher sur le web et récupérer le contenu d'une page</li>
+      <li>créer des branches Git et changer de branche</li>
+      <li>déléguer une partie du travail à des sous-agents isolés</li>
+      <li>tenir une liste de tâches et rédiger un plan</li>
+      <li>lire et écrire des tableurs et des documents bureautiques</li>
+      <li>redimensionner, recadrer ou convertir des images</li>
+      <li>lancer des prévisions de séries temporelles</li>
+      <li>appeler les outils de connecteurs externes</li>
+    </ul>
+    <p>Certains de ces outils sont actifs par défaut, d'autres s'activent dans les
+    réglages. Le détail est dans
+    <a href="outils-vue-densemble.html">Outils — vue d'ensemble</a>.</p>
+
+    <h2 id="licence">Licence</h2>
+    <p>Beaver est publié sous <b>GNU Affero General Public License v3.0</b>. Tu
+    peux l'utiliser, l'étudier, le modifier et le redistribuer. En contrepartie,
+    toute version <b>distribuée ou hébergée en réseau</b>, modifiée ou non, doit
+    être publiée sous AGPL v3 avec son code source complet.</p>
+    <p>Les versions <b>jusqu'à la 1.1.2 incluse</b> avaient été publiées sous
+    <b>Apache License 2.0</b> ; elles ne sont plus distribuées. Une
+    <b>licence commerciale</b> exemptant des obligations de l'AGPL est
+    disponible sur demande. Les composants tiers gardent leurs licences propres,
+    listées dans <code>THIRD_PARTY_NOTICES.md</code>. Contribuer suppose de
+    signer le <b>CLA</b>.</p>
+
+    <div class="callout">
+      <span class="t">Licence</span>
+      Beaver est sous AGPL v3. Si tu distribues une version modifiée, ou si tu
+      l'héberges comme service accessible par le réseau, tu dois en publier le
+      code source complet sous la même licence.
+    </div>
+
+    <h2 id="ou-aller-ensuite">Où aller ensuite</h2>
+    <p>Trois portes, selon ce que tu cherches :
+    <a href="demarrage-prerequis.html">installer</a>,
+    <a href="demarrage-concepts-cles.html">comprendre le vocabulaire</a>, ou
+    <a href="demarrage-tour-des-fonctionnalites.html">voir l'étendue en une
+    page</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

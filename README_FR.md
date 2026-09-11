@@ -10,7 +10,7 @@ Beaver est un agent IA de bureau open source qui arrive complet : modèles cloud
 [![Téléchargements](https://img.shields.io/github/downloads/Kevin-hDev/Beaver/total?label=t%C3%A9l%C3%A9chargements)](https://github.com/Kevin-hDev/Beaver/releases)
 [![Licence : AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-orange)](LICENSE)
 
-**[Installer](#installation)** · **[Tout est déjà là](#tout-est-déjà-là)** · **[Puis les clés](#puis-les-clés)** · **[Sécurité](SECURITY.md)** · **[English](README.md)**
+**[Documentation](https://kevin-hdev.github.io/Beaver/)** · **[Installer](#installation)** · **[Tout est déjà là](#tout-est-déjà-là)** · **[Puis les clés](#puis-les-clés)** · **[Sécurité](SECURITY.md)** · **[English](README.md)**
 
 macOS (Apple Silicon) · Linux · Windows
 
@@ -80,6 +80,8 @@ Télécharge la dernière release, installe l'app et la lance automatiquement.
 - **Linux** : installe le paquet Debian via `apt-get` (Ubuntu/Debian uniquement)
 
 L'installateur Linux utilise le fichier `.deb` de la release pour rendre l'app visible dans le menu système.
+
+> **Support Linux** : Beaver 1.2.3 est la dernière version qui apporte de nouvelles fonctionnalités à Linux ; ensuite, Linux continue de recevoir uniquement les mises à jour de sécurité, de stabilité et de dépendances. Tout ce qui existe aujourd'hui continue de fonctionner, et les nouvelles fonctionnalités visent macOS et Windows. Le détail complet est dans [CROSS-PLATFORM.md](CROSS-PLATFORM.md).
 
 ### Windows (PowerShell)
 

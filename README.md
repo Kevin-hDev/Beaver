@@ -10,7 +10,7 @@ Beaver is an open-source desktop AI agent that ships complete: cloud models thro
 [![Downloads](https://img.shields.io/github/downloads/Kevin-hDev/Beaver/total?label=downloads)](https://github.com/Kevin-hDev/Beaver/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-orange)](LICENSE)
 
-**[Install](#installation)** · **[Everything's already there](#everythings-already-there)** · **[Then the keys](#then-the-keys)** · **[Security](SECURITY.md)** · **[Français](README_FR.md)**
+**[Documentation](https://kevin-hdev.github.io/Beaver/)** · **[Install](#installation)** · **[Everything's already there](#everythings-already-there)** · **[Then the keys](#then-the-keys)** · **[Security](SECURITY.md)** · **[Français](README_FR.md)**
 
 macOS (Apple Silicon) · Linux · Windows
 
@@ -80,6 +80,8 @@ Downloads the latest release, installs the app, and launches it automatically.
 - **Linux**: installs the Debian package through `apt-get` (Ubuntu/Debian only)
 
 The Linux installer uses the `.deb` release asset so the app is visible in the system application menu.
+
+> **Linux support**: Beaver 1.2.3 is the last release bringing new features to Linux; afterwards Linux keeps receiving security, stability, and dependency updates only. Everything that exists today keeps working, and new features target macOS and Windows. See [CROSS-PLATFORM.md](CROSS-PLATFORM.md) for the full statement.
 
 ### Windows (PowerShell)
 

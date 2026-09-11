@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Importer d'un autre agent</title>
-<meta name="description" content="Reprendre tes instructions, tes règles et tes skills depuis neuf applications d'agent déjà installées, sans rien reconfigurer à la main.">
+<title>Beaver Docs — Importing from another agent</title>
+<meta name="description" content="Bring over your instructions, your rules and your skills from nine agent applications already installed, without reconfiguring anything by hand.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,143 +19,141 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Importer</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-importer.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / Import</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-importer.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-importer.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Importer d'un autre <em>agent</em></h1>
-    <p>Si tu utilises déjà Claude Code, Codex ou un autre agent, tu n'as pas à
-    tout réécrire. Beaver détecte neuf applications installées sur ta machine et
-    reprend leurs instructions, leurs règles et leurs skills.</p>
+    <h1>Importing from another <em>agent</em></h1>
+    <p>If you already use Claude Code, Codex or another agent, you do not have to
+    rewrite everything. Beaver detects nine applications installed on your
+    machine and brings over their instructions, their rules and their skills.</p>
 
-    <h2 id="ce-que-fait-l-import">Ce que fait l'import</h2>
-    <p>L'import reprend <b>trois types de contenu</b> : le <b>document
-    d'instructions</b>, c'est-à-dire le fichier que l'assistant lit à chaque
-    conversation ; les <b>règles</b>, des fichiers d'instructions rangés dans un
-    dossier <code>rules/</code> ; et les <b>skills</b>, des procédures rangées
-    dans un dossier <code>skills/</code>.</p>
+    <h2 id="ce-que-fait-l-import">What the import does</h2>
+    <p>The import brings over <b>three kinds of content</b>: the <b>instruction
+    document</b>, that is, the file the assistant reads at every conversation;
+    the <b>rules</b>, instruction files filed in a <code>rules/</code> folder;
+    and the <b>skills</b>, procedures filed in a <code>skills/</code>
+    folder.</p>
 
     <div class="callout">
-      <span class="t">Ce qui n'est pas importé</span>
-      L'import reprend tes instructions, tes règles et tes skills. Il ne reprend
-      ni tes conversations, ni tes clés API, ni tes connecteurs, ni tes réglages
-      d'interface.
+      <span class="t">What is not imported</span>
+      The import brings over your instructions, your rules and your skills. It
+      does not bring over your conversations, your API keys, your connectors or
+      your interface settings.
     </div>
 
-    <h2 id="assistants-reconnus">Les neuf assistants reconnus</h2>
-    <p>La détection repose sur la présence d'un dossier à un emplacement précis.
-    Ce tableau dit lequel, pour chaque source.</p>
+    <h2 id="assistants-reconnus">The nine recognized assistants</h2>
+    <p>Detection relies on the presence of a folder at a specific location. This
+    table says which one, for each source.</p>
 
     <table>
-      <caption class="crumb">Les sources détectées et ce qui en est repris</caption>
-      <tr><th>Assistant</th><th>Identifiant</th><th>Dossier cherché</th><th>Document repris</th><th>Règles</th><th>Skills</th></tr>
+      <caption class="crumb">The detected sources and what is taken from them</caption>
+      <tr><th>Assistant</th><th>Identifier</th><th>Folder looked for</th><th>Document taken</th><th>Rules</th><th>Skills</th></tr>
       <tr><td>Claude Code</td><td><code>claude</code></td><td><code>~/.claude</code></td><td><code>CLAUDE.md</code></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
       <tr><td>Codex</td><td><code>codex</code></td><td><code>~/.codex</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
       <tr><td>Agents</td><td><code>agents</code></td><td><code>~/.agents</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
-      <tr><td>Hermes Agent</td><td><code>hermes</code></td><td><code>~/.hermes</code></td><td><b>Aucun</b></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
-      <tr><td>Qwen Code</td><td><code>qwen</code></td><td><code>~/.qwen</code></td><td><code>QWEN.md</code></td><td><code>rules/</code> et <code>output-language.md</code></td><td><code>skills/</code></td></tr>
+      <tr><td>Hermes Agent</td><td><code>hermes</code></td><td><code>~/.hermes</code></td><td><b>None</b></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
+      <tr><td>Qwen Code</td><td><code>qwen</code></td><td><code>~/.qwen</code></td><td><code>QWEN.md</code></td><td><code>rules/</code> and <code>output-language.md</code></td><td><code>skills/</code></td></tr>
       <tr><td>ZCode</td><td><code>zcode</code></td><td><code>~/.zcode</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
-      <tr><td>OpenClaw</td><td><code>openclaw</code></td><td><code>~/.openclaw</code> et ses espaces de travail</td><td><code>AGENTS.md</code> du premier espace qui en contient un</td><td><code>rules/</code> de chaque espace</td><td><code>skills/</code> et <code>.agents/skills</code> de chaque espace</td></tr>
-      <tr><td>OpenCode</td><td><code>opencode</code></td><td><code>$XDG_CONFIG_HOME/opencode</code>, sinon <code>~/.config/opencode</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
-      <tr><td>Kimi Code</td><td><code>kimi</code></td><td><code>$KIMI_CODE_HOME</code>, sinon <code>~/.kimi-code</code> ; plus <code>~/.kimi</code>, <code>~/.kimi-webbridge</code>, <code>~/.kimi-work</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code> et <code>~/.kimi/skills</code></td></tr>
+      <tr><td>OpenClaw</td><td><code>openclaw</code></td><td><code>~/.openclaw</code> and its workspaces</td><td><code>AGENTS.md</code> from the first workspace that has one</td><td><code>rules/</code> from every workspace</td><td><code>skills/</code> and <code>.agents/skills</code> from every workspace</td></tr>
+      <tr><td>OpenCode</td><td><code>opencode</code></td><td><code>$XDG_CONFIG_HOME/opencode</code>, otherwise <code>~/.config/opencode</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code></td></tr>
+      <tr><td>Kimi Code</td><td><code>kimi</code></td><td><code>$KIMI_CODE_HOME</code>, otherwise <code>~/.kimi-code</code>; plus <code>~/.kimi</code>, <code>~/.kimi-webbridge</code>, <code>~/.kimi-work</code></td><td><code>AGENTS.md</code></td><td><code>rules/</code></td><td><code>skills/</code> and <code>~/.kimi/skills</code></td></tr>
     </table>
 
-    <p>Deux particularités méritent d'être signalées. <b>Hermes Agent</b> n'a pas
-    de document d'instructions repris — uniquement ses règles et ses skills. Et
-    <b>OpenClaw</b> est le cas le plus complexe : plusieurs espaces de travail
-    sont examinés, et le document retenu est le premier <code>AGENTS.md</code>
-    trouvé.</p>
-    <p>Deux sources dépendent de <b>variables d'environnement</b>, ce qui
-    explique la plupart des non-détections : <b>OpenCode</b> est cherché dans
-    <code>$XDG_CONFIG_HOME/opencode</code>, ou <code>~/.config/opencode</code> si
-    la variable n'est pas définie ; <b>Kimi Code</b> dans
-    <code>$KIMI_CODE_HOME</code>, ou <code>~/.kimi-code</code> par défaut, plus
-    trois emplacements complémentaires.</p>
+    <p>Two particularities are worth pointing out. <b>Hermes Agent</b> has no
+    instruction document taken over — only its rules and its skills. And
+    <b>OpenClaw</b> is the most complex case: several workspaces are examined,
+    and the document kept is the first <code>AGENTS.md</code> found.</p>
+    <p>Two sources depend on <b>environment variables</b>, which explains most
+    non-detections: <b>OpenCode</b> is looked for in
+    <code>$XDG_CONFIG_HOME/opencode</code>, or <code>~/.config/opencode</code> if
+    the variable is not set; <b>Kimi Code</b> in
+    <code>$KIMI_CODE_HOME</code>, or <code>~/.kimi-code</code> by default, plus
+    three additional locations.</p>
 
     <div class="callout">
-      <span class="t">Assistant non détecté</span>
-      La détection repose sur la présence d'un dossier à un emplacement précis.
-      Si ton assistant est installé ailleurs — notamment via une variable
-      d'environnement pour OpenCode et Kimi Code — il ne sera pas trouvé.
+      <span class="t">Assistant not detected</span>
+      Detection relies on the presence of a folder at a specific location. If
+      your assistant is installed elsewhere — in particular through an
+      environment variable for OpenCode and Kimi Code — it will not be found.
     </div>
 
-    <h2 id="ce-qui-est-repris">Ce qui est repris, et où ça atterrit</h2>
-    <p>Le <b>document d'instructions</b> est copié dans le
-    <code>AGENTS.md</code> de Beaver, avec une empreinte de la source pour
-    détecter les modifications ultérieures. Les <b>règles</b> et les
-    <b>skills</b> sont copiés dans les dossiers correspondants du dossier de
-    données. Chaque document importé peut ensuite être <b>activé ou
-    désactivé</b> individuellement, sans être supprimé.</p>
+    <h2 id="ce-qui-est-repris">What is taken, and where it lands</h2>
+    <p>The <b>instruction document</b> is copied into Beaver's
+    <code>AGENTS.md</code>, with a fingerprint of the source to detect later
+    modifications. The <b>rules</b> and the <b>skills</b> are copied into the
+    matching folders in the data folder. Each imported document can then be
+    <b>enabled or disabled</b> individually, without being deleted.</p>
 
-    <h2 id="deroulement">Comment ça se passe</h2>
+    <h2 id="deroulement">How it goes</h2>
     <ul>
-      <li>L'assistant d'import <b>détecte</b> les applications présentes en
-      cherchant leurs dossiers.</li>
-      <li>Tu <b>choisis</b> les sources à reprendre, et ce que tu veux de
-      chacune.</li>
-      <li>Beaver <b>copie</b> le contenu retenu.</li>
-      <li>Une <b>sauvegarde</b> de l'état antérieur est conservée.</li>
+      <li>The import assistant <b>detects</b> the applications present by looking
+      for their folders.</li>
+      <li>You <b>choose</b> the sources to take from, and what you want from each
+      one.</li>
+      <li>Beaver <b>copies</b> the selected content.</li>
+      <li>A <b>backup</b> of the previous state is kept.</li>
     </ul>
-    <p>L'import est proposé pendant le
-    <a href="demarrage-parcours-accueil.html">parcours d'accueil</a>, et reste
-    disponible ensuite.</p>
+    <p>The import is offered during the
+    <a href="demarrage-parcours-accueil.html">onboarding flow</a>, and stays
+    available afterwards.</p>
 
-    <h2 id="sauvegardes">Les sauvegardes</h2>
-    <p><b>Cinq sauvegardes au maximum sont conservées par document.</b> Elles
-    vivent dans <code>agent-import-backups/</code>, dans le dossier de données,
-    et le registre de ce qui a été importé est dans
+    <h2 id="sauvegardes">The backups</h2>
+    <p><b>Five backups at most are kept per document.</b> They live in
+    <code>agent-import-backups/</code>, inside the data folder, and the record of
+    what has been imported is in
     <code>external-agent-sources.json</code>.</p>
 
     <div class="callout">
-      <span class="t">Rien n'est écrasé sans sauvegarde</span>
-      Beaver conserve jusqu'à cinq versions antérieures de chaque document
-      importé. Ton fichier d'instructions précédent n'est pas perdu.
+      <span class="t">Nothing is overwritten without a backup</span>
+      Beaver keeps up to five earlier versions of each imported document. Your
+      previous instruction file is not lost.
     </div>
 
-    <h2 id="limites">Les limites</h2>
-    <p>Elles ne sont pas décoratives : un dossier de skills volumineux sera
-    tronqué, et il vaut mieux savoir pourquoi.</p>
+    <h2 id="limites">The limits</h2>
+    <p>They are not decorative: a large skills folder will be truncated, and it
+    is better to know why.</p>
 
     <table>
-      <caption class="crumb">Les plafonds appliqués à l'import</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
+      <caption class="crumb">The caps applied to the import</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
       <tr><td>Sources</td><td>9</td></tr>
-      <tr><td>Emplacements examinés par source</td><td>8</td></tr>
-      <tr><td>Skills par source</td><td>512</td></tr>
-      <tr><td>Skills au total</td><td>2 048</td></tr>
-      <tr><td>Règles par source</td><td>256</td></tr>
-      <tr><td>Profondeur d'exploration</td><td>12 niveaux</td></tr>
-      <tr><td>Entrées examinées</td><td>10 000</td></tr>
-      <tr><td>Taille d'un document d'instructions</td><td>256 Ko</td></tr>
-      <tr><td>Taille d'un manifeste</td><td>256 Ko</td></tr>
-      <tr><td>Sauvegardes par document</td><td>5</td></tr>
-      <tr><td>Taille du registre</td><td>1 Mo</td></tr>
+      <tr><td>Locations examined per source</td><td>8</td></tr>
+      <tr><td>Skills per source</td><td>512</td></tr>
+      <tr><td>Skills in total</td><td>2,048</td></tr>
+      <tr><td>Rules per source</td><td>256</td></tr>
+      <tr><td>Exploration depth</td><td>12 levels</td></tr>
+      <tr><td>Entries examined</td><td>10,000</td></tr>
+      <tr><td>Size of an instruction document</td><td>256 KB</td></tr>
+      <tr><td>Size of a manifest</td><td>256 KB</td></tr>
+      <tr><td>Backups per document</td><td>5</td></tr>
+      <tr><td>Size of the record file</td><td>1 MB</td></tr>
     </table>
 
-    <h2 id="pieges">Si quelque chose manque</h2>
+    <h2 id="pieges">If something is missing</h2>
     <table>
-      <caption class="crumb">Symptômes fréquents et ce qu'ils signifient</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Un assistant installé n'apparaît pas</td><td>Dossier absent de l'emplacement attendu</td><td>Vérifier le chemin dans le tableau ; pour OpenCode et Kimi Code, vérifier la variable d'environnement</td></tr>
-      <tr><td>Tous les skills n'ont pas été repris</td><td>Plafond de 512 par source ou 2 048 au total</td><td>Copier manuellement ce qui manque dans le dossier <code>skills/</code></td></tr>
-      <tr><td>Une arborescence profonde est ignorée</td><td>Exploration limitée à 12 niveaux et 10 000 entrées</td><td>Aplatir l'arborescence, ou copier manuellement</td></tr>
-      <tr><td>Un document volumineux est refusé</td><td>Plafond de 256 Ko</td><td>Alléger le fichier avant import</td></tr>
-      <tr><td>Hermes ne propose pas de document</td><td>Aucun document n'est défini pour cette source</td><td>Normal : seules ses règles et ses skills sont reprises</td></tr>
+      <caption class="crumb">Common symptoms and what they mean</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>An installed assistant does not appear</td><td>Folder missing from the expected location</td><td>Check the path in the table; for OpenCode and Kimi Code, check the environment variable</td></tr>
+      <tr><td>Not all skills were taken over</td><td>Cap of 512 per source or 2,048 in total</td><td>Manually copy what is missing into the <code>skills/</code> folder</td></tr>
+      <tr><td>A deep directory tree is ignored</td><td>Exploration limited to 12 levels and 10,000 entries</td><td>Flatten the tree, or copy manually</td></tr>
+      <tr><td>A large document is refused</td><td>Cap of 256 KB</td><td>Trim the file before importing</td></tr>
+      <tr><td>Hermes offers no document</td><td>No document is defined for that source</td><td>Normal: only its rules and its skills are taken over</td></tr>
     </table>
 
-    <p>Ce que devient le document importé est expliqué dans
-    <a href="agent-instructions-permanentes.html">Instructions permanentes</a>, et
-    l'usage des skills repris dans <a href="agent-skills.html">Skills</a>.</p>
+    <p>What becomes of the imported document is explained in
+    <a href="agent-instructions-permanentes.html">Permanent instructions</a>, and
+    the use of the imported skills in <a href="agent-skills.html">Skills</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

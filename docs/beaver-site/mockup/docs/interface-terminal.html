@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Terminal intégré</title>
-<meta name="description" content="Un shell interactif complet dans l'application, rattaché au répertoire de travail de la conversation, avec ses onglets et ses limites.">
+<title>Beaver Docs — Integrated terminal</title>
+<meta name="description" content="A full interactive shell inside the application, attached to the conversation's working directory, with its tabs and its limits.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,48 +19,48 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Interface / Terminal intégré</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="interface-terminal.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Interface / Integrated terminal</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/interface-terminal.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="interface-terminal.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Un vrai <em>shell</em>, dans l'application</h1>
-    <p>Pas une console de sortie : un shell interactif complet, rattaché au répertoire de travail de la conversation. Il t'évite l'aller-retour vers une application externe quand tu veux vérifier toi-même ce que l'agent vient de faire.</p>
+    <h1>A real <em>shell</em>, inside the application</h1>
+    <p>Not an output console: a full interactive shell, attached to the conversation's working directory. It saves you the round trip to an external application when you want to check for yourself what the agent has just done.</p>
 
-    <h2 id="ouvrir-un-terminal">Ouvrir un terminal</h2>
+    <h2 id="ouvrir-un-terminal">Opening a terminal</h2>
     <ul>
-      <li>Raccourci <b>⌘J</b> sur macOS, <b>Ctrl+J</b> sur Windows et Linux.</li>
-      <li>Si aucun terminal n'a jamais été ouvert dans cette conversation, le raccourci en crée un dans le répertoire de travail. Sinon, il bascule simplement l'affichage.</li>
-      <li>Le raccourci est <b>sans effet</b> hors d'une conversation, ou quand le curseur est dans un champ de saisie.</li>
+      <li>Shortcut <b>⌘J</b> on macOS, <b>Ctrl+J</b> on Windows and Linux.</li>
+      <li>If no terminal has ever been opened in this conversation, the shortcut creates one in the working directory. Otherwise, it simply toggles the display.</li>
+      <li>The shortcut has <b>no effect</b> outside a conversation, or when the cursor is in an input field.</li>
     </ul>
 
-    <h2 id="quel-shell">Quel shell est lancé</h2>
+    <h2 id="quel-shell">Which shell is launched</h2>
 
     <table>
-      <caption class="crumb">Le shell lancé selon le système</caption>
-      <tr><th>Système</th><th>Shell</th></tr>
-      <tr><td>macOS et Linux</td><td>Le shell défini par la variable <code>SHELL</code>, ou <code>/bin/bash</code> à défaut</td></tr>
+      <caption class="crumb">The shell launched per system</caption>
+      <tr><th>System</th><th>Shell</th></tr>
+      <tr><td>macOS and Linux</td><td>The shell set by the <code>SHELL</code> variable, or <code>/bin/bash</code> as a fallback</td></tr>
       <tr><td>Windows</td><td><code>powershell.exe</code></td></tr>
     </table>
 
-    <p>Sur macOS et Linux, le chemin du shell est validé avant lancement : un chemin invalide est refusé plutôt qu'exécuté. Sur Windows, <b>aucun réglage ne permet de préférer <code>cmd.exe</code> ou PowerShell 7</b> : c'est <code>powershell.exe</code>, résolu par un chemin système validé.</p>
+    <p>On macOS and Linux, the shell's path is validated before launch: an invalid path is refused rather than executed. On Windows, <b>no setting lets you prefer <code>cmd.exe</code> or PowerShell 7</b>: it is <code>powershell.exe</code>, resolved through a validated system path.</p>
 
-    <h2 id="environnement-du-shell">Ce que Beaver change à l'environnement</h2>
-    <p>Un seul endroit décide de l'environnement du shell, et il fait deux choses.</p>
+    <h2 id="environnement-du-shell">What Beaver changes in the environment</h2>
+    <p>A single place decides the shell's environment, and it does two things.</p>
     <ul>
-      <li>Il <b>impose</b> <code>TERM=xterm-256color</code> et <code>COLORTERM=truecolor</code>.</li>
-      <li>Il <b>retire</b> six variables posées par le lanceur de l'application : <code>NO_COLOR</code>, <code>NODE_DISABLE_COLORS</code>, <code>FORCE_COLOR</code>, <code>COLOR</code>, <code>CLICOLOR</code>, <code>CLICOLOR_FORCE</code>.</li>
+      <li>It <b>sets</b> <code>TERM=xterm-256color</code> and <code>COLORTERM=truecolor</code>.</li>
+      <li>It <b>removes</b> six variables set by the application launcher: <code>NO_COLOR</code>, <code>NODE_DISABLE_COLORS</code>, <code>FORCE_COLOR</code>, <code>COLOR</code>, <code>CLICOLOR</code>, <code>CLICOLOR_FORCE</code>.</li>
     </ul>
-    <p>Le motif est concret : sans cela, un lanceur qui désactive la couleur rendait la sortie de <code>vite</code>, <code>cargo</code> et de la ligne de commande Tauri uniformément grise dans le terminal intégré.</p>
+    <p>The reason is concrete: without it, a launcher that disables color made the output of <code>vite</code>, <code>cargo</code> and the Tauri command line uniformly gray in the integrated terminal.</p>
 
     <div class="term">
       <div class="term-bar"><i></i><i></i><i></i></div>
@@ -67,74 +68,74 @@
 xterm-256color</pre>
     </div>
 
-    <p><code>EDITOR</code>, en revanche, est transmise telle quelle : Beaver n'y touche pas.</p>
+    <p><code>EDITOR</code>, on the other hand, is passed through as is: Beaver does not touch it.</p>
 
-    <h2 id="les-onglets">Les onglets</h2>
+    <h2 id="les-onglets">The tabs</h2>
     <ul>
-      <li>Le terminal est multi-onglets.</li>
-      <li>Les onglets ouverts sont conservés entre deux lancements, dans <code>terminal-tabs.json</code>.</li>
+      <li>The terminal has multiple tabs.</li>
+      <li>Open tabs are kept between two launches, in <code>terminal-tabs.json</code>.</li>
     </ul>
 
-    <h2 id="les-limites">Les limites</h2>
-    <p><b>Deux limites différentes portent la valeur 16</b> : ne les confonds pas. L'une compte les processus vivants sur toute l'application, l'autre les onglets enregistrés dans une conversation.</p>
+    <h2 id="les-limites">The limits</h2>
+    <p><b>Two different limits carry the value 16</b>: do not confuse them. One counts the live processes across the whole application, the other the tabs saved in a conversation.</p>
 
     <table>
-      <caption class="crumb">Les plafonds du terminal, et sur quoi chacun porte</caption>
-      <tr><th>Limite</th><th>Valeur</th><th>Portée</th></tr>
-      <tr><td>Processus de terminal vivants</td><td><b>16</b></td><td><b>Globale</b>, toutes conversations confondues</td></tr>
-      <tr><td>Onglets enregistrés par groupe</td><td><b>16</b></td><td>Par conversation</td></tr>
-      <tr><td>Groupes d'onglets</td><td><b>128</b></td><td>Globale</td></tr>
-      <tr><td>Onglets enregistrés au total</td><td><b>256</b></td><td>Globale</td></tr>
-      <tr><td>Taille d'une écriture</td><td><b>65 536 octets</b></td><td>Par écriture</td></tr>
+      <caption class="crumb">The terminal's caps, and what each one covers</caption>
+      <tr><th>Limit</th><th>Value</th><th>Scope</th></tr>
+      <tr><td>Live terminal processes</td><td><b>16</b></td><td><b>Global</b>, across all conversations</td></tr>
+      <tr><td>Saved tabs per group</td><td><b>16</b></td><td>Per conversation</td></tr>
+      <tr><td>Tab groups</td><td><b>128</b></td><td>Global</td></tr>
+      <tr><td>Saved tabs in total</td><td><b>256</b></td><td>Global</td></tr>
+      <tr><td>Size of a write</td><td><b>65,536 bytes</b></td><td>Per write</td></tr>
     </table>
 
-    <p>Au-delà de seize <b>processus</b>, l'ouverture est refusée avec un message explicite. La limite est volontaire : chaque terminal vivant est un processus système, et une application qui en ouvre sans compter finit par épuiser les ressources de la machine. Un onglet enregistré dont le processus n'est pas lancé ne consomme pas ce quota.</p>
+    <p>Beyond sixteen <b>processes</b>, opening is refused with an explicit message. The limit is deliberate: every live terminal is a system process, and an application that opens them without counting eventually exhausts the machine's resources. A saved tab whose process is not running does not use up that quota.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Seize au maximum, toutes conversations confondues. Si l'ouverture est refusée, va fermer des onglets — y compris dans d'autres conversations que celle où tu te trouves.
+      Sixteen at most, across all conversations. If opening is refused, go and close some tabs — including in conversations other than the one you are in.
     </div>
 
-    <h2 id="ton-terminal-et-celui-de-l-agent">Ton terminal et celui de l'agent</h2>
-    <p>Ce sont deux mécanismes distincts, et c'est une confusion fréquente.</p>
+    <h2 id="ton-terminal-et-celui-de-l-agent">Your terminal and the agent's</h2>
+    <p>These are two separate mechanisms, and it is a common confusion.</p>
     <ul>
-      <li><b>Le terminal intégré est le tien.</b> Ce que tu y tapes n'est pas vu par l'agent.</li>
-      <li><b>L'outil <code>bash</code> est celui de l'agent.</b> Ses commandes s'exécutent séparément, sous le contrôle des permissions.</li>
+      <li><b>The integrated terminal is yours.</b> What you type there is not seen by the agent.</li>
+      <li><b>The <code>bash</code> tool is the agent's.</b> Its commands run separately, under the control of the permissions.</li>
     </ul>
-    <p>Les deux partagent le répertoire de travail de la conversation, rien de plus. Voir <a href="outils-terminal-et-shell.html">Terminal et shell</a> pour l'outil de l'agent.</p>
+    <p>The two share the conversation's working directory, nothing more. See <a href="outils-terminal-et-shell.html">Terminal and shell</a> for the agent's tool.</p>
 
-    <h2 id="recapitulatif">Récapitulatif</h2>
-
-    <table>
-      <caption class="crumb">Le terminal intégré en un coup d'œil</caption>
-      <tr><th>Élément</th><th>Valeur</th></tr>
-      <tr><td>Raccourci</td><td><b>⌘J</b> / <b>Ctrl+J</b></td></tr>
-      <tr><td>Shell sur macOS et Linux</td><td><code>$SHELL</code>, sinon <code>/bin/bash</code></td></tr>
-      <tr><td>Shell sur Windows</td><td><code>powershell.exe</code></td></tr>
-      <tr><td>Processus de terminal simultanés</td><td><b>16</b>, globalement</td></tr>
-      <tr><td>Onglets par conversation</td><td><b>16</b>, et <b>256</b> au total</td></tr>
-      <tr><td>Écriture maximale</td><td><b>65 536 octets</b></td></tr>
-      <tr><td>Onglets conservés</td><td>Oui, dans <code>terminal-tabs.json</code></td></tr>
-      <tr><td>Répertoire initial</td><td>Répertoire de travail de la conversation</td></tr>
-    </table>
-
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="recapitulatif">Summary</h2>
 
     <table>
-      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td><b>⌘J</b> ne fait rien</td><td>Pas de conversation active, ou curseur dans un champ de saisie</td><td>Cliquer hors du champ, ou ouvrir une conversation</td></tr>
-      <tr><td>« Trop de terminaux ouverts »</td><td>Seize processus déjà actifs, toutes conversations confondues</td><td>Fermer des onglets, y compris ailleurs</td></tr>
-      <tr><td>Le terminal démarre dans le mauvais dossier</td><td>Il suit le répertoire de travail de la conversation</td><td>Changer le répertoire de travail de la conversation</td></tr>
-      <tr><td>Le shell n'est pas celui attendu</td><td>La variable <code>SHELL</code> n'est pas celle du terminal habituel</td><td>Vérifier <code>SHELL</code> dans l'environnement d'où l'application est lancée</td></tr>
-      <tr><td>Un collage volumineux est tronqué</td><td>Écriture plafonnée à 65 536 octets</td><td>Passer par un fichier</td></tr>
+      <caption class="crumb">The integrated terminal at a glance</caption>
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Shortcut</td><td><b>⌘J</b> / <b>Ctrl+J</b></td></tr>
+      <tr><td>Shell on macOS and Linux</td><td><code>$SHELL</code>, otherwise <code>/bin/bash</code></td></tr>
+      <tr><td>Shell on Windows</td><td><code>powershell.exe</code></td></tr>
+      <tr><td>Simultaneous terminal processes</td><td><b>16</b>, globally</td></tr>
+      <tr><td>Tabs per conversation</td><td><b>16</b>, and <b>256</b> in total</td></tr>
+      <tr><td>Maximum write</td><td><b>65,536 bytes</b></td></tr>
+      <tr><td>Tabs kept</td><td>Yes, in <code>terminal-tabs.json</code></td></tr>
+      <tr><td>Initial directory</td><td>The conversation's working directory</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pieges">Common pitfalls</h2>
+
+    <table>
+      <caption class="crumb">Common symptoms and what to make of them</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td><b>⌘J</b> does nothing</td><td>No active conversation, or the cursor is in an input field</td><td>Click outside the field, or open a conversation</td></tr>
+      <tr><td>“The active terminal limit has been reached”</td><td>Sixteen processes already running, across all conversations</td><td>Close some tabs, including elsewhere</td></tr>
+      <tr><td>The terminal starts in the wrong folder</td><td>It follows the conversation's working directory</td><td>Change the conversation's working directory</td></tr>
+      <tr><td>The shell is not the expected one</td><td>The <code>SHELL</code> variable is not the one from your usual terminal</td><td>Check <code>SHELL</code> in the environment the application is launched from</td></tr>
+      <tr><td>A large paste is truncated</td><td>Write capped at 65,536 bytes</td><td>Go through a file</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="reference-raccourcis-clavier.html">Raccourcis clavier</a></li>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a></li>
-      <li><a href="outils-terminal-et-shell.html">Terminal et shell</a> — l'outil <code>bash</code> de l'agent</li>
+      <li><a href="reference-raccourcis-clavier.html">Keyboard shortcuts</a></li>
+      <li><a href="agent-repertoire-de-travail.html">Working directory</a></li>
+      <li><a href="outils-terminal-et-shell.html">Terminal and shell</a> — the agent's <code>bash</code> tool</li>
     </ul>
   </main>
 

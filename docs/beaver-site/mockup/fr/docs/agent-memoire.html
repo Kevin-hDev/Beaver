@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Mémoire persistante</title>
+<meta name="description" content="Ce que l'agent retient d'une conversation à l'autre : les trois modes, les deux portées, ce que contient une note et comment la corriger.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Mémoire</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-memoire.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/agent-memoire.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Mémoire <em>persistante</em></h1>
+    <p>L'agent peut conserver des notes d'une conversation à l'autre : tes préférences, les conventions d'un projet, des décisions prises, des références utiles. Sans mémoire, chaque conversation repart de zéro et tu répètes les mêmes consignes.</p>
+
+    <div class="callout">
+      <span class="t">Désactivée par défaut</span>
+      La mémoire est inactive à l'installation. Si tu attends que l'agent se souvienne de quelque chose, commence par l'activer dans Réglages › Mémoire, en choisissant le mode Manuelle ou Automatique.
+    </div>
+
+    <h2 id="trois-modes">Les trois modes</h2>
+    <table>
+      <caption class="crumb">Ce que fait l'agent selon le mode</caption>
+      <tr><th>Mode</th><th>Comportement</th></tr>
+      <tr><td>Désactivée</td><td>Aucune mémoire n'est lue ni écrite</td></tr>
+      <tr><td>Manuelle</td><td>L'agent lit la mémoire, mais n'écrit que si tu le demandes</td></tr>
+      <tr><td>Automatique</td><td>L'agent lit et écrit de lui-même ce qu'il juge utile</td></tr>
+    </table>
+    <p>En mode Automatique, l'agent décide seul de ce qui mérite d'être retenu. C'est confortable, mais il retiendra parfois des choses que tu n'aurais pas notées. En mode Manuelle, rien n'est écrit sans ta demande : tu gardes la main sur ce qui s'accumule.</p>
+
+    <h2 id="portees">Les deux portées</h2>
+    <table>
+      <caption class="crumb">Où va une note</caption>
+      <tr><th>Portée</th><th>Ce qu'elle contient</th><th>Emplacement</th></tr>
+      <tr><td>Globale</td><td>Ce qui vaut partout : tes préférences, ta façon de travailler</td><td><code>memory/global/</code></td></tr>
+      <tr><td>Par projet</td><td>Ce qui ne vaut que pour un dossier : conventions, commandes, contraintes</td><td><code>memory/projects/</code></td></tr>
+    </table>
+    <p>L'interface distingue trois vues : la mémoire globale, celle du <b>projet actif</b>, et celle des <b>autres projets</b> — utile pour retrouver ce qui a été noté ailleurs.</p>
+
+    <h2 id="contenu-note">Ce que contient une note</h2>
+    <p>Les notes sont rangées par <b>sujet</b>, en Markdown. Chacune porte des attributs structurés. Le <b>type</b> dit de quoi elle parle.</p>
+    <table>
+      <caption class="crumb">Les quatre types de notes</caption>
+      <tr><th>Type</th><th>Usage</th></tr>
+      <tr><td><code>preference</code></td><td>Une préférence de l'utilisateur</td></tr>
+      <tr><td><code>feedback</code></td><td>Une consigne sur la façon de travailler</td></tr>
+      <tr><td><code>project</code></td><td>Un élément du projet en cours</td></tr>
+      <tr><td><code>reference</code></td><td>Un pointeur vers une ressource externe</td></tr>
+    </table>
+    <p>Le <b>statut</b> prend quatre valeurs : <code>confirmed</code> (confirmé par toi), <code>inferred</code> (déduit par l'agent), <code>stale</code> (probablement périmé) et <code>archived</code>. La <b>source</b> également : <code>user</code>, <code>parent</code>, <code>extractor</code> et <code>subagent-suggestion</code>. Chaque note accepte <b>huit étiquettes</b> au maximum.</p>
+    <div class="callout">
+      <span class="t">Confirmé ou déduit</span>
+      Chaque note indique si elle vient de toi ou si l'agent l'a supposée. C'est la distinction qui compte en pratique : en cas de comportement inattendu, commence par relire les notes déduites.
+    </div>
+
+    <h2 id="injection">Ce qui est injecté dans la conversation</h2>
+    <p>La mémoire ne rentre pas en entier dans le contexte : un budget limite ce qui est injecté.</p>
+    <table>
+      <caption class="crumb">Budget d'injection, réglable dans cet intervalle</caption>
+      <tr><th>Budget</th><th>Valeur</th></tr>
+      <tr><td>Par défaut</td><td><b>3 000 jetons</b></td></tr>
+      <tr><td>Maximum</td><td><b>3 000 jetons</b></td></tr>
+      <tr><td>Minimum</td><td><b>256 jetons</b></td></tr>
+    </table>
+    <p>Au-delà de ce que le budget permet, un résumé prend le relais.</p>
+
+    <h2 id="limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Valeurs de référence</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Sujets par portée</td><td><b>256</b></td></tr>
+      <tr><td>Taille d'un sujet</td><td><b>48 Ko</b></td></tr>
+      <tr><td>Taille d'un résumé de portée</td><td><b>16 Ko</b></td></tr>
+      <tr><td>Étiquettes par note</td><td><b>8</b></td></tr>
+      <tr><td>Jetons injectés</td><td>256 à 3 000</td></tr>
+    </table>
+
+    <h2 id="consulter">Consulter et corriger</h2>
+    <p>Tout est consultable et modifiable depuis <b>Réglages › Mémoire</b> : les notes, leur contenu, leur portée. C'est le point important. Une mémoire qu'on ne peut pas relire est une boîte noire ; une mémoire qu'on relit, c'est un fichier de notes qu'on corrige quand l'agent a mal compris.</p>
+    <div class="callout">
+      <span class="t">Tes notes t'appartiennent</span>
+      La mémoire est stockée en Markdown dans ton dossier de données. Tu peux la relire, la corriger et la supprimer, depuis Beaver ou avec n'importe quel éditeur.
+    </div>
+
+    <h2 id="sous-agents">Les sous-agents et la mémoire</h2>
+    <p>Les sous-agents ont un accès <b>en lecture seule</b> : ils bénéficient de ce qui a été retenu, mais n'écrivent pas dans la mémoire commune. Une des sources de note s'appelle d'ailleurs <code>subagent-suggestion</code> — un sous-agent peut <b>proposer</b> une note, sans l'imposer. Voir <a href="agent-sous-agents.html">Sous-agents</a>.</p>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent ne se souvient de rien</td><td>Mémoire désactivée</td><td>L'activer dans Réglages › Mémoire</td></tr>
+      <tr><td>L'agent retient des choses non souhaitées</td><td>Mode Automatique</td><td>Passer en Manuelle, et supprimer les notes concernées</td></tr>
+      <tr><td>Une note est fausse</td><td>Note déduite plutôt que confirmée</td><td>La corriger ou la supprimer dans les réglages</td></tr>
+      <tr><td>Une note semble ignorée</td><td>Budget d'injection atteint</td><td>Augmenter le budget, ou alléger la mémoire</td></tr>
+      <tr><td>Impossible d'ajouter un sujet</td><td>256 sujets pour cette portée</td><td>Regrouper ou supprimer</td></tr>
+      <tr><td>Un sujet est refusé</td><td>Plus de 48 Ko</td><td>Le scinder</td></tr>
+      <tr><td>La mémoire d'un projet ne suit pas</td><td>Elle est liée au dossier</td><td>Vérifier le répertoire de travail de la conversation</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-contexte.html">Contexte</a> — la différence entre les deux, et le budget d'injection.</li>
+      <li><a href="agent-instructions-permanentes.html">Instructions permanentes</a> — l'autre façon de donner des consignes durables : celles que tu écris toi-même.</li>
+      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — ce qui détermine le projet d'une conversation.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

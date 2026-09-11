@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Les fournisseurs par clé API</title>
-<meta name="description" content="Les onze fournisseurs de modèles qui se connectent avec une clé API, où la créer, et comment Beaver la protège.">
+<title>Beaver Docs — API key providers</title>
+<meta name="description" content="The eleven model providers that connect with an API key, where to create it, and how Beaver protects it.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,37 +19,37 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Modèles / Fournisseurs API</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="modeles-fournisseurs-api.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Models / API providers</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/modeles-fournisseurs-api.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="modeles-fournisseurs-api.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Une <em>clé</em>, un fournisseur</h1>
-    <p>Onze services de modèles se branchent dans Beaver avec une clé API. Cette page dit où créer cette clé, comment l'enregistrer, et surtout où elle va une fois saisie — c'est le point qui distingue Beaver d'une application qui écrirait ta clé dans un fichier de configuration.</p>
+    <h1>One <em>key</em>, one provider</h1>
+    <p>Eleven model services plug into Beaver with an API key. This page says where to create that key, how to save it, and above all where it goes once entered — that is the point which sets Beaver apart from an application that would write your key into a configuration file.</p>
 
-    <h2 id="ce-qu-apporte-une-cle">Ce qu'apporte une clé</h2>
-    <p>Beaver fonctionne sans aucune clé, avec des modèles locaux. Ajouter une clé donne accès aux modèles distants d'un fournisseur : plus puissants, plus rapides, sans consommer les ressources de ta machine — et facturés à l'usage.</p>
-    <p>Le choix entre local et distant est traité dans <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>. Cette page-ci traite de la mise en place.</p>
+    <h2 id="ce-qu-apporte-une-cle">What a key adds</h2>
+    <p>Beaver works without any key at all, with local models. Adding a key gives access to a provider's remote models: more powerful, faster, without consuming your machine's resources — and billed per use.</p>
+    <p>The choice between local and remote is covered in <a href="demarrage-choisir-son-modele.html">Choosing your model</a>. This page is about setting things up.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Beaver fonctionne sans aucune clé. Les modèles locaux ne demandent aucun compte. Une clé ajoute des possibilités, elle n'est jamais un prérequis.
+      Beaver works without any key. Local models require no account. A key adds possibilities, it is never a prerequisite.
     </div>
 
-    <h2 id="les-onze-fournisseurs">Les onze fournisseurs</h2>
+    <h2 id="les-onze-fournisseurs">The eleven providers</h2>
 
     <table>
-      <caption class="crumb">Les fournisseurs configurables par clé API, et où générer la clé</caption>
-      <tr><th>Fournisseur</th><th>Où créer la clé</th></tr>
+      <caption class="crumb">The providers configurable with an API key, and where to generate the key</caption>
+      <tr><th>Provider</th><th>Where to create the key</th></tr>
       <tr><td><b>Google Gemini</b></td><td><code>aistudio.google.com/app/apikey</code></td></tr>
       <tr><td><b>Mistral</b></td><td><code>console.mistral.ai/api-keys</code></td></tr>
       <tr><td><b>Cerebras</b></td><td><code>cloud.cerebras.ai</code></td></tr>
@@ -62,93 +63,93 @@
       <tr><td><b>Qwen</b></td><td><code>modelstudio.console.alibabacloud.com</code></td></tr>
     </table>
 
-    <p>Ces adresses sont celles que Beaver affiche dans son écran de configuration : un bouton y mène directement, tu n'as rien à recopier.</p>
-    <p><b>Trois de ces fournisseurs proposent aussi une connexion par compte</b>, sans clé du tout — voir <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.</p>
-    <p>Deux fournisseurs sortent du cadre commun, sans que ça change quoi que ce soit pour toi. <b>Anthropic Claude</b> n'emploie pas le même mode d'authentification que les autres : sa clé voyage dans un en-tête qui lui est propre. <b>Qwen</b> n'a pas d'adresse de service fixe : le point d'entrée est déterminé au moment de l'appel, à partir de la connexion configurée. Dans les deux cas, la saisie et le test se font comme partout ailleurs.</p>
+    <p>These addresses are the ones Beaver shows on its configuration screen: a button takes you straight there, you have nothing to copy out.</p>
+    <p><b>Three of these providers also offer an account sign-in</b>, with no key at all — see <a href="modeles-connexion-par-compte.html">Account sign-in</a>.</p>
+    <p>Two providers fall outside the common pattern, without changing anything for you. <b>Anthropic Claude</b> does not use the same authentication scheme as the others: its key travels in a header of its own. <b>Qwen</b> has no fixed service address: the endpoint is determined at call time, from the configured connection. In both cases, entering and testing the key works exactly as everywhere else.</p>
 
-    <h2 id="ajouter-une-cle">Ajouter une clé</h2>
+    <h2 id="ajouter-une-cle">Adding a key</h2>
     <ul>
-      <li>Ouvre <b>Réglages › Intégrations › Fournisseurs</b>.</li>
-      <li>Choisis le fournisseur : sa description et son offre d'entrée s'affichent.</li>
-      <li>Suis le lien vers la page du fournisseur, crée un compte, génère une clé.</li>
-      <li>Colle la clé dans Beaver.</li>
-      <li>Teste la connexion.</li>
+      <li>Open <b>Settings › Integrations › Providers</b>.</li>
+      <li>Pick the provider: its description and its entry offer appear.</li>
+      <li>Follow the link to the provider's page, create an account, generate a key.</li>
+      <li>Paste the key into Beaver.</li>
+      <li>Test the connection.</li>
     </ul>
-    <p>La clé est <b>validée à la saisie</b> — format, longueur, caractères. Une clé manifestement erronée est refusée immédiatement, avant tout appel réseau.</p>
-    <p>Une fois enregistrée, le fournisseur apparaît comme configuré et ses modèles rejoignent le sélecteur de la barre de saisie.</p>
+    <p>The key is <b>validated on entry</b> — format, length, characters. An obviously wrong key is refused immediately, before any network call.</p>
+    <p>Once saved, the provider shows as configured and its models join the selector in the input bar.</p>
 
-    <h2 id="ou-va-la-cle">Où va la clé</h2>
-    <p><b>La clé est chiffrée sur le disque.</b> Elle vit dans un coffre chiffré avec un algorithme moderne. La clé qui déverrouille ce coffre — la clé maîtresse — n'est pas dans le coffre : elle est confiée au <b>gestionnaire de mots de passe du système d'exploitation</b> (Trousseau sur macOS, Gestionnaire d'identifiants sur Windows, portefeuille du bureau sur Linux).</p>
-    <p>Conséquence directe : <b>copier le fichier de coffre sur une autre machine ne donne accès à rien.</b> Sans la clé maîtresse du système, il est illisible.</p>
-    <p><b>L'interface de Beaver ne voit jamais une clé.</b> Les commandes disponibles permettent d'enregistrer une clé, de la supprimer, de savoir si elle existe, de lister les fournisseurs configurés et de tester la connexion. <b>Aucune ne permet de la relire.</b></p>
-    <p><b>En mémoire, la clé est protégée et effacée après usage</b> : elle est chargée au moment de l'appel au fournisseur, puis écrasée. Et <b>rien de tout cela n'apparaît dans les traces</b> — les corps de réponse des fournisseurs sont filtrés et tronqués avant écriture.</p>
+    <h2 id="ou-va-la-cle">Where the key goes</h2>
+    <p><b>The key is encrypted on disk.</b> It lives in a vault encrypted with a modern algorithm. The key that unlocks that vault — the master key — is not in the vault: it is entrusted to the <b>operating system's password manager</b> (Keychain on macOS, Credential Manager on Windows, the desktop wallet on Linux).</p>
+    <p>Direct consequence: <b>copying the vault file onto another machine gives access to nothing.</b> Without the system master key, it is unreadable.</p>
+    <p><b>Beaver's interface never sees a key.</b> The available commands make it possible to save a key, delete it, know whether it exists, list the configured providers and test the connection. <b>None of them can read it back.</b></p>
+    <p><b>In memory, the key is protected and erased after use</b>: it is loaded at the moment of the call to the provider, then overwritten. And <b>none of this appears in the logs</b> — provider response bodies are filtered and truncated before being written.</p>
 
     <table>
-      <caption class="crumb">Les protections de la clé, résumées</caption>
-      <tr><th>Question</th><th>Réponse</th></tr>
-      <tr><td>Où est-elle stockée</td><td>Dans un coffre chiffré, dans les données de l'application</td></tr>
-      <tr><td>Qui détient la clé du coffre</td><td>Le gestionnaire de mots de passe du système d'exploitation</td></tr>
-      <tr><td>L'interface peut-elle la lire</td><td><b>Non</b> — aucune commande ne l'expose</td></tr>
-      <tr><td>Peut-on la réafficher après saisie</td><td><b>Non</b></td></tr>
-      <tr><td>Reste-t-elle en mémoire</td><td>Non — chargée à l'appel, effacée après</td></tr>
-      <tr><td>Apparaît-elle dans les traces</td><td>Non — les réponses sont filtrées</td></tr>
-      <tr><td>Copier le fichier suffit-il à la lire</td><td><b>Non</b> — la clé maîtresse reste sur la machine d'origine</td></tr>
+      <caption class="crumb">The key's protections, summarized</caption>
+      <tr><th>Question</th><th>Answer</th></tr>
+      <tr><td>Where is it stored</td><td>In an encrypted vault, inside the application data</td></tr>
+      <tr><td>Who holds the vault key</td><td>The operating system's password manager</td></tr>
+      <tr><td>Can the interface read it</td><td><b>No</b> — no command exposes it</td></tr>
+      <tr><td>Can it be shown again after entry</td><td><b>No</b></td></tr>
+      <tr><td>Does it stay in memory</td><td>No — loaded at call time, erased afterwards</td></tr>
+      <tr><td>Does it appear in the logs</td><td>No — responses are filtered</td></tr>
+      <tr><td>Is copying the file enough to read it</td><td><b>No</b> — the master key stays on the original machine</td></tr>
     </table>
 
     <table>
-      <caption class="crumb">Ce que chaque commande de l'application a le droit de faire</caption>
-      <tr><th>Commande disponible</th><th>Ce qu'elle fait</th></tr>
-      <tr><td>Enregistrer</td><td>Valide et chiffre une clé</td></tr>
-      <tr><td>Supprimer</td><td>La retire du coffre</td></tr>
-      <tr><td>Vérifier la présence</td><td>Répond par oui ou non, sans donner la valeur</td></tr>
-      <tr><td>Lister les fournisseurs configurés</td><td>Donne les identifiants, jamais les clés</td></tr>
-      <tr><td>Tester</td><td>Envoie une requête minimale et rend un verdict</td></tr>
+      <caption class="crumb">What each application command is allowed to do</caption>
+      <tr><th>Available command</th><th>What it does</th></tr>
+      <tr><td>Save</td><td>Validates and encrypts a key</td></tr>
+      <tr><td>Delete</td><td>Removes it from the vault</td></tr>
+      <tr><td>Check presence</td><td>Answers yes or no, without giving the value</td></tr>
+      <tr><td>List configured providers</td><td>Gives the identifiers, never the keys</td></tr>
+      <tr><td>Test</td><td>Sends a minimal request and returns a verdict</td></tr>
     </table>
 
-    <p><b>Il n'existe aucune commande de lecture.</b> C'est volontaire : rien dans l'interface ne peut demander la valeur d'une clé. Le détail du coffre est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+    <p><b>There is no read command.</b> That is deliberate: nothing in the interface can ask for a key's value. The vault is detailed in <a href="reference-coffre-et-cles.html">The vault and API keys</a>.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Une clé saisie ne peut plus être affichée — pas même par Beaver. Si tu la perds, il faut en générer une nouvelle chez le fournisseur. C'est le prix d'une clé que l'application elle-même ne peut pas lire.
+      <span class="t">Warning</span>
+      A key you have entered can never be displayed again — not even by Beaver. If you lose it, you have to generate a new one at the provider. That is the price of a key the application itself cannot read.
     </div>
 
-    <h2 id="tester-et-retirer">Tester la connexion, retirer une clé</h2>
-    <p>Chaque fournisseur dispose d'un test qui envoie une requête minimale et rend un verdict clair. C'est le moyen de distinguer une clé invalide d'un problème de réseau, avant de commencer à travailler.</p>
-    <p>Supprimer une clé la retire du coffre : le fournisseur disparaît de la liste des services configurés et ses modèles quittent le sélecteur. L'écriture dans le coffre est <b>transactionnelle</b> — soit l'opération aboutit entièrement, soit le coffre reste dans son état précédent. Une interruption au mauvais moment ne peut pas le laisser à moitié écrit, donc illisible, donc toutes les clés perdues.</p>
+    <h2 id="tester-et-retirer">Testing the connection, removing a key</h2>
+    <p>Every provider has a test that sends a minimal request and returns a clear verdict. That is how you tell an invalid key from a network problem, before you start working.</p>
+    <p>Deleting a key removes it from the vault: the provider disappears from the list of configured services and its models leave the selector. Writing to the vault is <b>transactional</b> — either the operation completes entirely, or the vault stays in its previous state. An interruption at the wrong moment cannot leave it half written, therefore unreadable, therefore with every key lost.</p>
 
-    <h2 id="groq-retire">Un fournisseur retiré : Groq</h2>
-    <p><b>Groq a été retiré du produit.</b> Il n'apparaît plus dans la liste ci-dessus et ne peut plus être configuré.</p>
-    <p>Si tu l'avais configuré : <b>au premier démarrage d'une version qui ne le propose plus, sa clé est effacée du coffre et du gestionnaire de mots de passe du système.</b> L'effacement suit la même prudence que le reste — une copie du coffre est faite avant l'opération et n'est supprimée qu'au démarrage suivant réussi, et un marqueur empêche que le nettoyage recommence.</p>
-    <p>Le mot « groq » peut encore apparaître comme <b>préfixe de noms de modèles revendus par OpenRouter</b>. Ce n'est pas un fournisseur configurable, c'est une indication d'origine dans un nom de modèle.</p>
+    <h2 id="groq-retire">One provider removed: Groq</h2>
+    <p><b>Groq has been removed from the product.</b> It no longer appears in the list above and can no longer be configured.</p>
+    <p>If you had configured it: <b>on the first start of a version that no longer offers it, its key is erased from the vault and from the system password manager.</b> The erasure follows the same care as the rest — a copy of the vault is made before the operation and is only deleted after the next successful start, and a marker prevents the cleanup from running again.</p>
+    <p>The word "groq" can still appear as a <b>prefix in the names of models resold by OpenRouter</b>. That is not a configurable provider, it is an origin hint inside a model name.</p>
 
-    <h2 id="quand-une-cle-ne-marche-pas">Quand une clé ne marche pas</h2>
+    <h2 id="quand-une-cle-ne-marche-pas">When a key does not work</h2>
 
     <table>
-      <caption class="crumb">Les erreurs de fournisseur et ce qu'elles signifient</caption>
-      <tr><th>Ce qui se passe</th><th>Ce que ça veut dire</th></tr>
-      <tr><td>Authentification refusée</td><td>La clé est invalide, révoquée, ou pas celle de ce service</td></tr>
-      <tr><td>Limite de requêtes atteinte</td><td>Trop de requêtes en peu de temps — attendre</td></tr>
-      <tr><td>Quota épuisé</td><td>Le crédit ou le palier gratuit est consommé</td></tr>
-      <tr><td>Service indisponible</td><td>Panne côté fournisseur — réessayer plus tard</td></tr>
-      <tr><td>Délai dépassé</td><td>Réseau lent, ou fournisseur saturé</td></tr>
+      <caption class="crumb">Provider errors and what they mean</caption>
+      <tr><th>What happens</th><th>What it means</th></tr>
+      <tr><td>Authentication failed</td><td>The key is invalid, revoked, or not the one for this service</td></tr>
+      <tr><td>Request limit reached</td><td>Too many requests in a short time — wait</td></tr>
+      <tr><td>Quota exhausted</td><td>The credit or the free tier is used up</td></tr>
+      <tr><td>Service unavailable</td><td>Outage on the provider's side — try again later</td></tr>
+      <tr><td>Timed out</td><td>Slow network, or saturated provider</td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui bloque le plus souvent au moment de configurer un fournisseur</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>La clé est refusée à la saisie</td><td>Format invalide, espace ou saut de ligne collé avec</td><td>Recopier la clé seule</td></tr>
-      <tr><td>« Authentification refusée » au test</td><td>Clé révoquée, ou clé d'un autre service</td><td>En générer une nouvelle</td></tr>
-      <tr><td>La clé n'est plus visible dans Beaver</td><td>Elle n'est jamais réaffichée, par conception</td><td>En générer une nouvelle chez le fournisseur</td></tr>
-      <tr><td>« Limite de requêtes atteinte »</td><td>Cadence trop élevée pour le palier du compte</td><td>Attendre, ou passer à un palier supérieur</td></tr>
-      <tr><td>Le modèle attendu n'apparaît pas</td><td>Le fournisseur ne le propose pas à ce compte</td><td>Voir <a href="modeles-catalogue-et-favoris.html">Catalogue et favoris</a></td></tr>
-      <tr><td>Les clés ont disparu après un changement de machine</td><td>Le coffre est lié au gestionnaire de mots de passe local</td><td>Ressaisir les clés sur la nouvelle machine</td></tr>
+      <caption class="crumb">What most often blocks when configuring a provider</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The key is refused on entry</td><td>Invalid format, a space or a line break pasted along with it</td><td>Paste the key on its own</td></tr>
+      <tr><td>"Authentication failed" on the test</td><td>Revoked key, or key from another service</td><td>Generate a new one</td></tr>
+      <tr><td>The key is no longer visible in Beaver</td><td>It is never shown again, by design</td><td>Generate a new one at the provider</td></tr>
+      <tr><td>"Request limit reached"</td><td>Rate too high for the account's tier</td><td>Wait, or move to a higher tier</td></tr>
+      <tr><td>The expected model does not appear</td><td>The provider does not offer it to this account</td><td>See <a href="modeles-catalogue-et-favoris.html">Catalog and favorites</a></td></tr>
+      <tr><td>The keys disappeared after switching machines</td><td>The vault is tied to the local password manager</td><td>Enter the keys again on the new machine</td></tr>
     </table>
 
     <div class="callout">
       <span class="t">Note</span>
-      Aucun tarif ne figure sur ce site. Les prix changent régulièrement, et chaque lien ci-dessus mène à la page tarifaire officielle du fournisseur, qui fait autorité. Beaver affiche de son côté une estimation dans son écran d'usage — voir <a href="modeles-usage-et-couts.html">Usage et coûts</a>.
+      No prices appear on this site. They change regularly, and every link above leads to the provider's official pricing page, which is authoritative. Beaver shows an estimate of its own on its usage screen — see <a href="modeles-usage-et-couts.html">Usage and costs</a>.
     </div>
   </main>
 

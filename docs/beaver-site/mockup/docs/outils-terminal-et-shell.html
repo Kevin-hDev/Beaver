@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Terminal et shell</title>
-<meta name="description" content="Comment l'agent lance des commandes sur ta machine, ce qui est bloqué d'office, et le bac à sable du système qui s'active quand tu restreins l'accès disque.">
+<title>Beaver Docs — Terminal and shell</title>
+<meta name="description" content="How the agent runs commands on your machine, what is blocked outright, and the operating-system sandbox that kicks in when you restrict disk access.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,166 +19,166 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Terminal et shell</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-terminal-et-shell.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / Terminal and shell</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-terminal-et-shell.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-terminal-et-shell.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Lancer des <em>commandes.</em></h1>
-    <p><code>bash</code> exécute une commande shell sur ta machine, avec tes droits d'utilisateur : tout ce que tu peux taper dans un terminal, l'agent peut le lancer. C'est l'outil le plus puissant de Beaver, et il appartient au groupe <b>Terminal</b>, verrouillé — il ne peut pas être désactivé.</p>
-    <p>À ne pas confondre avec le <a href="interface-terminal.html">terminal intégré</a> de l'interface, qui est ton terminal à toi. Les deux ne partagent ni les limites, ni les processus.</p>
+    <h1>Running <em>commands.</em></h1>
+    <p><code>bash</code> runs a shell command on your machine, with your user rights: anything you can type in a terminal, the agent can run. It is Beaver's most powerful tool, and it belongs to the <b>Terminal</b> group, locked — it cannot be turned off.</p>
+    <p>Not to be confused with the interface's <a href="interface-terminal.html">built-in terminal</a>, which is your own terminal. The two share neither limits nor processes.</p>
 
-    <h2 id="ce-que-fait-loutil">Ce que fait l'outil</h2>
+    <h2 id="ce-que-fait-loutil">What the tool does</h2>
     <ul>
-      <li>Les commandes démarrent dans le répertoire de travail de la conversation.</li>
-      <li>L'agent peut viser un autre dossier pour un appel précis, à condition de donner un chemin absolu — et <b>ce choix ne persiste pas</b> : l'appel suivant repart du répertoire de travail. De même, un <code>cd</code> à l'intérieur d'une commande ne survit pas à cette commande.</li>
-      <li>Le répertoire visé doit rester dans les dossiers autorisés, sinon la commande est refusée avant d'être lancée.</li>
+      <li>Commands start in the conversation's working directory.</li>
+      <li>The agent can target another folder for a specific call, provided it gives an absolute path — and <b>that choice does not persist</b>: the next call starts from the working directory again. Likewise, a <code>cd</code> inside a command does not survive that command.</li>
+      <li>The targeted directory must stay within the allowed folders, otherwise the command is refused before it is even launched.</li>
     </ul>
 
-    <h2 id="quel-shell">Quel shell est utilisé</h2>
-    <p><b>Sur macOS et Linux</b>, Beaver prend le premier shell disponible dans cet ordre : la variable <code>SHELL</code>, puis <code>/bin/zsh</code> (macOS uniquement), puis <code>/bin/bash</code>, puis <code>/bin/sh</code>. Le candidat doit être un chemin absolu, exister, et faire partie des shells reconnus : <b>zsh, bash, sh, dash, ksh</b>. Un shell exotique est ignoré et Beaver descend au suivant. Si aucun ne convient, l'outil renvoie « Shell utilisateur indisponible ».</p>
-    <p><b>Sur Windows</b>, c'est toujours <b>PowerShell</b>, pris à son emplacement système (<code>System32\WindowsPowerShell\v1.0\powershell.exe</code>), lancé sans bannière, sans profil et en mode non interactif. Le chemin n'est jamais deviné à partir du <code>PATH</code>.</p>
+    <h2 id="quel-shell">Which shell is used</h2>
+    <p><b>On macOS and Linux</b>, Beaver takes the first available shell in this order: the <code>SHELL</code> variable, then <code>/bin/zsh</code> (macOS only), then <code>/bin/bash</code>, then <code>/bin/sh</code>. The candidate must be an absolute path, must exist, and must be one of the recognised shells: <b>zsh, bash, sh, dash, ksh</b>. An exotic shell is ignored and Beaver moves down to the next one. If none fits, the tool returns "User shell unavailable".</p>
+    <p><b>On Windows</b>, it is always <b>PowerShell</b>, taken from its system location (<code>System32\WindowsPowerShell\v1.0\powershell.exe</code>), launched with no banner, no profile and in non-interactive mode. The path is never guessed from the <code>PATH</code>.</p>
 
     <div class="callout">
       <span class="t">Windows</span>
-      Les commandes sont du PowerShell, pas du bash. <code>ls</code>, <code>cat</code> ou <code>grep</code> y ont un autre sens, ou n'existent pas. L'agent le sait ; si tu lis la commande, sache-le aussi.
+      Commands are PowerShell, not bash. <code>ls</code>, <code>cat</code> or <code>grep</code> mean something else there, or do not exist. The agent knows this; if you read the command, know it too.
     </div>
 
-    <h2 id="ton-environnement">Ton environnement est chargé</h2>
-    <p>C'est ce qui distingue Beaver d'un simple <code>sh -c</code>.</p>
+    <h2 id="ton-environnement">Your environment is loaded</h2>
+    <p>This is what sets Beaver apart from a plain <code>sh -c</code>.</p>
     <ul>
-      <li>Au premier appel de commande d'une conversation, Beaver <b>capture une photographie de ton environnement shell</b> : alias, fonctions, variables exportées, options de shell. Elle est prise en lançant le shell en mode connexion et en lisant <code>.zshrc</code> ou <code>.bashrc</code> selon le shell.</li>
-      <li>Elle est ensuite <b>rejouée au début de chaque commande</b> de la conversation. Résultat concret : les gestionnaires de version (nvm, pyenv, rbenv, asdf, mise, volta, bun) et les outils installés dans ton dossier personnel fonctionnent, alors qu'ils seraient introuvables sans elle.</li>
-      <li>La photographie est <b>mise en cache par conversation</b>, jusqu'à <b>64 conversations</b>, et n'est prise qu'une fois.</li>
-      <li>Elle est plafonnée à <b>128 Ko</b> et abandonnée si elle dépasse <b>5 secondes</b>. En cas d'échec, les commandes tournent quand même, mais sans ton environnement personnalisé — c'est la cause la plus fréquente d'un « commande introuvable » alors qu'elle marche dans ton terminal.</li>
-      <li>Le contenu capturé est manipulé en mémoire protégée et effacé après usage : il peut contenir des jetons exportés dans un fichier de configuration.</li>
+      <li>On the first command call of a conversation, Beaver <b>captures a snapshot of your shell environment</b>: aliases, functions, exported variables, shell options. It is taken by launching the shell in login mode and reading <code>.zshrc</code> or <code>.bashrc</code> depending on the shell.</li>
+      <li>It is then <b>replayed at the start of every command</b> in the conversation. Concrete result: version managers (nvm, pyenv, rbenv, asdf, mise, volta, bun) and the tools installed in your home folder work, whereas they would be nowhere to be found without it.</li>
+      <li>The snapshot is <b>cached per conversation</b>, for up to <b>64 conversations</b>, and is taken only once.</li>
+      <li>It is capped at <b>128 KB</b> and abandoned if it takes more than <b>5 seconds</b>. On failure, commands still run, but without your customised environment — this is the most frequent cause of a "command not found" when it works fine in your terminal.</li>
+      <li>The captured content is handled in protected memory and wiped after use: it may contain tokens exported in a configuration file.</li>
     </ul>
 
-    <h2 id="commandes-longues">Les commandes longues</h2>
-    <p>Beaver ne bloque pas sur une commande qui dure.</p>
+    <h2 id="commandes-longues">Long-running commands</h2>
+    <p>Beaver does not block on a command that drags on.</p>
     <ul>
-      <li>Après un délai d'attente — <b>10 secondes par défaut</b>, réglable entre <b>250 ms et 30 secondes</b> — si la commande tourne encore, l'outil rend la main immédiatement avec ce qui a été produit jusque-là et un <b>identifiant de session</b>. L'agent poursuit son raisonnement, puis revient sur la session avec <code>bash_control</code>.</li>
-      <li><b>Il n'y a aucun délai maximal imposé.</b> Une commande peut tourner indéfiniment tant que personne ne l'arrête, sauf si l'agent fixe explicitement un délai pour cet appel.</li>
-      <li>Les processus lancés en tâche de fond avec <code>&amp;</code> restent rattachés à la session tant qu'ils n'ont pas fini.</li>
-      <li><b>64 sessions shell</b> peuvent coexister. Au-delà, Beaver récupère la place des sessions terminées ; si toutes sont actives, la nouvelle commande est refusée avec « Trop de processus shell actifs ».</li>
-      <li>Une session terminée renvoie son code de sortie final puis disparaît du registre.</li>
+      <li>After a waiting delay — <b>10 seconds by default</b>, adjustable between <b>250 ms and 30 seconds</b> — if the command is still running, the tool hands back control immediately with whatever has been produced so far and a <b>session id</b>. The agent carries on reasoning, then comes back to the session with <code>bash_control</code>.</li>
+      <li><b>There is no maximum duration imposed.</b> A command can run indefinitely as long as no one stops it, unless the agent explicitly sets a delay for that call.</li>
+      <li>Processes launched in the background with <code>&amp;</code> stay attached to the session until they finish.</li>
+      <li><b>64 shell sessions</b> can coexist. Beyond that, Beaver reclaims the slots of finished sessions; if all are active, the new command is refused with "Too many active shell processes".</li>
+      <li>A finished session returns its final exit code then disappears from the registry.</li>
     </ul>
-    <p>Pendant qu'une commande tourne, sa sortie <b>s'affiche en direct</b> dans la conversation.</p>
+    <p>While a command is running, its output <b>is shown live</b> in the conversation.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Aucune commande n'a de durée maximale par défaut. C'est voulu — une compilation ou un serveur de développement ne doivent pas être coupés à mi-parcours — mais un processus peut survivre longtemps à la question qui l'a lancé.
+      <span class="t">Careful</span>
+      No command has a maximum duration by default. That is intended — a build or a development server should not be cut off halfway — but a process can outlive the question that started it by a long way.
     </div>
 
-    <h2 id="piloter-une-session">Piloter une session en cours</h2>
+    <h2 id="piloter-une-session">Driving a running session</h2>
     <table>
-      <caption class="crumb">Les quatre actions de <code>bash_control</code></caption>
-      <tr><th>Action</th><th>Ce qui se passe</th></tr>
-      <tr><td>Interroger</td><td>Rend la sortie produite depuis le dernier passage, et dit si le processus tourne toujours</td></tr>
-      <tr><td>Écrire une entrée</td><td>Envoie du texte sur l'entrée du processus — répondre à une invite, saisir un mot de passe, valider un choix</td></tr>
-      <tr><td>Fermer l'entrée</td><td>Signale au processus qu'il n'y aura plus rien à lire</td></tr>
-      <tr><td>Arrêter</td><td>Termine le processus <b>et tous ses enfants</b></td></tr>
+      <caption class="crumb">The four actions of <code>bash_control</code></caption>
+      <tr><th>Action</th><th>What happens</th></tr>
+      <tr><td>Poll</td><td>Returns the output produced since the last visit, and says whether the process is still running</td></tr>
+      <tr><td>Write input</td><td>Sends text to the process's input — answering a prompt, entering a password, confirming a choice</td></tr>
+      <tr><td>Close input</td><td>Tells the process there will be nothing more to read</td></tr>
+      <tr><td>Stop</td><td>Terminates the process <b>and all its children</b></td></tr>
     </table>
     <ul>
-      <li>Arrêter est exclusif : la demande d'arrêt ne peut pas être combinée avec l'envoi d'un texte ou la fermeture de l'entrée, l'appel serait rejeté.</li>
-      <li>Envoyer un caractère d'interruption (l'équivalent de Ctrl-C) dans le texte revient à demander l'arrêt.</li>
-      <li>Une entrée est plafonnée à <b>64 Ko</b> et son écriture abandonne après <b>5 secondes</b> si le processus ne lit rien.</li>
-      <li>Une session n'est accessible qu'à la conversation qui l'a créée. Une autre conversation reçoit « Session shell introuvable », sans autre détail.</li>
+      <li>Stopping is exclusive: the stop request cannot be combined with sending text or closing the input, the call would be rejected.</li>
+      <li>Sending an interrupt character (the equivalent of Ctrl-C) in the text amounts to requesting a stop.</li>
+      <li>An input is capped at <b>64 KB</b> and its write is abandoned after <b>5 seconds</b> if the process reads nothing.</li>
+      <li>A session is only accessible to the conversation that created it. Another conversation gets "Shell session not found", with no further detail.</li>
     </ul>
 
-    <h2 id="bloque-doffice">Ce qui est bloqué d'office</h2>
-    <p>Certaines commandes sont refusées avant tout lancement, quel que soit le mode de permission, y compris en <b>Accès complet</b>. La liste est courte et vise les destructions irréversibles à l'échelle du système, pas la suppression de fichiers ordinaire. Les catégories reconnues :</p>
+    <h2 id="bloque-doffice">What is blocked outright</h2>
+    <p>Some commands are refused before any launch, whatever the permission mode, including in <b>Full access</b>. The list is short and targets irreversible system-wide destruction, not ordinary file deletion. The recognised categories:</p>
     <ul>
-      <li>suppression avec élévation de privilèges, et permissions grandes ouvertes ;</li>
-      <li>écriture directe sur un disque, formatage d'un volume ;</li>
-      <li>extinction et redémarrage de la machine ;</li>
-      <li>bombe de processus, suppression massive déguisée, exécution indirecte de code.</li>
+      <li>deletion with privilege escalation, and wide-open permissions;</li>
+      <li>writing directly to a disk, formatting a volume;</li>
+      <li>shutting down and rebooting the machine;</li>
+      <li>process bomb, disguised mass deletion, indirect code execution.</li>
     </ul>
-    <p>La reconnaissance ignore la casse et les espaces multiples, et s'applique aussi au texte envoyé à une session en cours : on ne contourne pas le filtre en tapant la commande dans un shell déjà ouvert. Quand une commande est bloquée, l'agent reçoit un message qui <b>nomme le motif détecté</b>. Il n'y a pas d'écran de confirmation : c'est un refus, pas une demande d'autorisation.</p>
+    <p>Recognition ignores case and repeated spaces, and also applies to the text sent to a running session: you do not bypass the filter by typing the command in a shell that is already open. When a command is blocked, the agent receives a message that <b>names the detected pattern</b>. There is no confirmation screen: it is a refusal, not a permission request.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Ce filtre est un garde-fou contre l'accident, pas une barrière de sécurité. Il reconnaît des formulations connues ; il ne comprend pas l'intention. La protection réelle vient du mode de permission et de la portée d'accès disque.
+      This filter is a guardrail against accidents, not a security barrier. It recognises known phrasings; it does not understand intent. Real protection comes from the permission mode and the disk access scope.
     </div>
 
-    <h2 id="bac-a-sable">Le bac à sable du shell</h2>
-    <p>Beaver sait exécuter les commandes dans un bac à sable du système d'exploitation, qui limite réellement ce que le processus peut lire et écrire — pas au niveau de Beaver, mais au niveau du noyau.</p>
+    <h2 id="bac-a-sable">The shell sandbox</h2>
+    <p>Beaver can run commands inside an operating-system sandbox, which genuinely limits what the process can read and write — not at Beaver's level, but at the kernel's.</p>
     <table>
-      <caption class="crumb">Le mécanisme natif utilisé par plateforme</caption>
-      <tr><th>Plateforme</th><th>Mécanisme</th></tr>
-      <tr><td>macOS</td><td>Seatbelt (<code>sandbox-exec</code>), avec une politique générée pour chaque commande</td></tr>
-      <tr><td>Linux</td><td>Landlock (ABI v3) et espaces de noms</td></tr>
-      <tr><td>Windows</td><td>Profil dédié et listes de contrôle d'accès</td></tr>
+      <caption class="crumb">The native mechanism used per platform</caption>
+      <tr><th>Platform</th><th>Mechanism</th></tr>
+      <tr><td>macOS</td><td>Seatbelt (<code>sandbox-exec</code>), with a policy generated for each command</td></tr>
+      <tr><td>Linux</td><td>Landlock (ABI v3) and namespaces</td></tr>
+      <tr><td>Windows</td><td>Dedicated profile and access control lists</td></tr>
     </table>
-    <p><b>Ce bac à sable ne s'active que si l'accès disque est restreint.</b> Tant que les dossiers autorisés incluent la racine du disque — <b>ce qui est le réglage par défaut</b> — la commande est lancée directement, sans isolation : il n'y aurait rien à restreindre.</p>
-    <p>Quand le bac à sable est actif, l'écriture est limitée aux dossiers autorisés plus un dossier temporaire propre à la commande, la lecture reste ouverte sur les dossiers systèmes nécessaires à l'exécution des programmes et sur les emplacements des gestionnaires d'outils. Si le mécanisme d'isolation est indisponible sur la machine, <b>la commande échoue</b> avec « Isolation du shell indisponible » — elle ne retombe pas silencieusement en mode non isolé. Un avertissement peut accompagner le résultat quand une limite interne a été atteinte pendant la construction de la politique.</p>
-    <p>Les dossiers temporaires du bac à sable vivent dans les données de l'application et sont nettoyés à la fin de chaque commande, ainsi qu'au démarrage suivant pour ceux qu'une interruption aurait laissés.</p>
-    <p><b>Une commande en cours n'échappe pas à un changement de réglage</b> : si tu restreins l'accès disque pendant qu'une commande tourne, toutes les sessions shell actives sont arrêtées et les requêtes en cours annulées. Élargir l'accès n'arrête rien.</p>
+    <p><b>This sandbox only kicks in if disk access is restricted.</b> As long as the allowed folders include the root of the disk — <b>which is the default setting</b> — the command is launched directly, with no isolation: there would be nothing to restrict.</p>
+    <p>When the sandbox is active, writing is limited to the allowed folders plus a temporary folder specific to the command, while reading stays open on the system folders needed to run programs and on the locations of tool managers. If the isolation mechanism is unavailable on the machine, <b>the command fails</b> with "Shell isolation unavailable" — it does not silently fall back to non-isolated mode. A warning may accompany the result when an internal limit was reached while building the policy.</p>
+    <p>The sandbox's temporary folders live in the application's data and are cleaned up at the end of each command, as well as on the next start-up for any an interruption may have left behind.</p>
+    <p><b>A running command does not escape a settings change</b>: if you restrict disk access while a command is running, all active shell sessions are stopped and the requests in flight cancelled. Widening access stops nothing.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      Restreindre les dossiers autorisés ne fait pas que filtrer les chemins côté Beaver : cela enferme réellement chaque commande shell dans une cage du système d'exploitation. C'est le seul réglage de Beaver dont l'effet est garanti par le noyau et non par le code de l'application.
+      <span class="t">Security</span>
+      Restricting the allowed folders does not merely filter paths on Beaver's side: it genuinely locks every shell command inside an operating-system cage. It is the only setting in Beaver whose effect is guaranteed by the kernel and not by the application's code.
     </div>
 
-    <h2 id="la-sortie">Ce que l'agent voit de la sortie</h2>
-    <p>Trois plafonds se succèdent, du plus proche du processus au plus proche du modèle : <b>1 Mo</b> conservé par session, en gardant le début et la fin et en supprimant le milieu avec une mention du nombre d'octets omis ; environ <b>28 Ko</b> remontés à chaque passage, répartis entre la sortie normale et la sortie d'erreur ; enfin au plus <b>2 000 lignes ou 50 Ko</b> pour une commande, puis le plafond général de <b>30 000 caractères</b> pour les résultats de <code>bash</code>.</p>
-    <p>Quand une sortie est tronquée, le <b>résultat complet est écrit sur le disque</b> et son chemin est donné à l'agent. Autres comportements visibles : une commande qui réussit sans rien afficher renvoie « Commande terminée en N ms (code 0) » plutôt qu'un résultat vide ; une commande encore en cours affiche son identifiant de session, son identifiant de processus et son temps écoulé ; un arrêt, une annulation ou un délai dépassé sont signalés explicitement, avec un code de sortie de <code>-1</code>. Les tampons de sortie sont effacés de la mémoire après usage : une commande peut afficher une clé.</p>
+    <h2 id="la-sortie">What the agent sees of the output</h2>
+    <p>Three ceilings follow one another, from the closest to the process to the closest to the model: <b>1 MB</b> kept per session, keeping the beginning and the end and dropping the middle with a note of the number of omitted bytes; about <b>28 KB</b> returned on each visit, split between standard output and error output; and finally at most <b>2,000 lines or 50 KB</b> for a command, then the general ceiling of <b>30,000 characters</b> for <code>bash</code> results.</p>
+    <p>When an output is truncated, the <b>full result is written to disk</b> and its path is given to the agent. Other visible behaviours: a command that succeeds without displaying anything returns "Command finished in N ms (code 0)" rather than an empty result; a command still running shows its session id, its process id and its elapsed time; a stop, a cancellation or a timeout are reported explicitly, with an exit code of <code>-1</code>. Output buffers are wiped from memory after use: a command may display a key.</p>
 
-    <h2 id="fichiers-suivis">Les fichiers modifiés sont suivis</h2>
-    <p>Pendant qu'une commande tourne, Beaver observe le répertoire de travail et rend la liste des fichiers créés, modifiés ou supprimés. Le point de comparaison est l'état Git du dépôt quand il y en a un, sinon un instantané du dossier. Jusqu'à <b>500 chemins</b> sont suivis ; au-delà, la liste est signalée comme incomplète plutôt que présentée comme exhaustive. Quand le suivi n'a pas pu démarrer ou a manqué des événements, le résultat le dit — il n'affirme jamais « aucun changement » par défaut. Ces changements alimentent l'affichage des différences dans la conversation.</p>
+    <h2 id="fichiers-suivis">Modified files are tracked</h2>
+    <p>While a command is running, Beaver watches the working directory and returns the list of files created, modified or deleted. The point of comparison is the repository's Git state when there is one, otherwise a snapshot of the folder. Up to <b>500 paths</b> are tracked; beyond that, the list is flagged as incomplete rather than presented as exhaustive. When tracking could not start or missed events, the result says so — it never asserts "no changes" by default. These changes feed the diff display in the conversation.</p>
 
-    <h2 id="arreter-une-commande">Arrêter une commande</h2>
+    <h2 id="arreter-une-commande">Stopping a command</h2>
     <ul>
-      <li><b>Depuis l'agent</b> : <code>bash_control</code> avec la demande d'arrêt.</li>
-      <li><b>Depuis l'interface</b> : arrêter la réponse en cours annule les commandes lancées pour cette réponse.</li>
-      <li><b>À la fermeture de Beaver</b> : toutes les sessions shell sont annulées, avec <b>300 ms</b> de grâce, puis terminées de force.</li>
+      <li><b>From the agent</b>: <code>bash_control</code> with the stop request.</li>
+      <li><b>From the interface</b>: stopping the answer in progress cancels the commands launched for that answer.</li>
+      <li><b>When Beaver closes</b>: all shell sessions are cancelled, with <b>300 ms</b> of grace, then forcibly terminated.</li>
     </ul>
-    <p>L'arrêt vise <b>tout l'arbre de processus</b>, pas seulement la commande lancée : un script qui a démarré trois enfants ne laisse pas d'orphelins. Sur macOS et Linux, une demande d'arrêt propre est envoyée au groupe de processus, puis une terminaison forcée <b>50 ms</b> plus tard. Sur Windows, l'arbre est terminé d'un coup.</p>
+    <p>The stop targets <b>the whole process tree</b>, not just the launched command: a script that started three children leaves no orphans. On macOS and Linux, a clean stop request is sent to the process group, then a forced termination <b>50 ms</b> later. On Windows, the tree is terminated in one go.</p>
 
-    <h2 id="les-limites">Les limites chiffrées</h2>
+    <h2 id="les-limites">The limits in figures</h2>
     <table>
-      <caption class="crumb">Les bornes du groupe Terminal</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Sessions shell simultanées</td><td><b>64</b></td></tr>
-      <tr><td>Taille d'une commande</td><td><b>512 Ko</b> Unix, <b>24 Ko</b> Windows</td></tr>
-      <tr><td>Taille d'une entrée envoyée</td><td><b>64 Ko</b></td></tr>
-      <tr><td>Sortie conservée par session</td><td><b>1 Mo</b> (début + fin)</td></tr>
-      <tr><td>Sortie rendue par passage</td><td><b>~28 Ko</b></td></tr>
-      <tr><td>Sortie transmise au modèle</td><td><b>2 000 lignes</b> ou <b>50 Ko</b>, puis <b>30 000 caractères</b></td></tr>
-      <tr><td>Fichiers modifiés suivis</td><td><b>500 chemins</b></td></tr>
-      <tr><td>Profils d'environnement en cache</td><td><b>64</b> conversations</td></tr>
-      <tr><td>Grâce avant terminaison forcée à la fermeture</td><td><b>300 ms</b></td></tr>
+      <caption class="crumb">The bounds of the Terminal group</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Concurrent shell sessions</td><td><b>64</b></td></tr>
+      <tr><td>Size of a command</td><td><b>512 KB</b> Unix, <b>24 KB</b> Windows</td></tr>
+      <tr><td>Size of an input sent</td><td><b>64 KB</b></td></tr>
+      <tr><td>Output kept per session</td><td><b>1 MB</b> (beginning + end)</td></tr>
+      <tr><td>Output returned per visit</td><td><b>~28 KB</b></td></tr>
+      <tr><td>Output passed to the model</td><td><b>2,000 lines</b> or <b>50 KB</b>, then <b>30,000 characters</b></td></tr>
+      <tr><td>Modified files tracked</td><td><b>500 paths</b></td></tr>
+      <tr><td>Environment profiles cached</td><td><b>64</b> conversations</td></tr>
+      <tr><td>Grace before forced termination at shutdown</td><td><b>300 ms</b></td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Commande introuvable » alors qu'elle marche dans ton terminal</td><td>La capture de l'environnement a échoué ou dépassé 5 secondes, souvent à cause d'un fichier de configuration shell lent</td><td>Alléger le fichier de configuration, ou demander à l'agent d'utiliser le chemin complet du programme</td></tr>
-      <tr><td>Ton shell habituel n'est pas utilisé</td><td>Seuls zsh, bash, sh, dash et ksh sont reconnus</td><td>Attendu ; les commandes restent exécutées par un shell compatible</td></tr>
-      <tr><td>« Isolation du shell indisponible »</td><td>Le mécanisme d'isolation du système est absent ou inutilisable</td><td>Vérifier la version du système ; sur Linux, un noyau sans Landlock. Élargir la portée d'accès contourne le problème, au prix de la protection</td></tr>
-      <tr><td>« Trop de processus shell actifs »</td><td>64 sessions ouvertes et aucune terminée</td><td>Demander à l'agent d'arrêter ses commandes en cours</td></tr>
-      <tr><td>« Session shell introuvable »</td><td>La session appartient à une autre conversation, ou elle est déjà terminée</td><td>Comportement attendu</td></tr>
-      <tr><td>Toutes les commandes se sont arrêtées d'un coup</td><td>La portée d'accès disque a été réduite pendant leur exécution</td><td>Attendu et volontaire</td></tr>
-      <tr><td>Une commande a modifié des fichiers hors du dossier de travail</td><td>Le bac à sable n'était pas actif (accès disque complet)</td><td>Restreindre la portée d'accès, ou passer en mode Demander l'autorisation</td></tr>
-      <tr><td>La sortie est coupée en son milieu</td><td>Sortie supérieure à 1 Mo : début et fin conservés</td><td>Attendu ; le fichier complet est sur le disque quand la troncature a lieu au niveau du résultat</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>"Command not found" when it works in your terminal</td><td>The environment capture failed or exceeded 5 seconds, often because of a slow shell configuration file</td><td>Trim the configuration file, or ask the agent to use the program's full path</td></tr>
+      <tr><td>Your usual shell is not used</td><td>Only zsh, bash, sh, dash and ksh are recognised</td><td>Expected; commands are still run by a compatible shell</td></tr>
+      <tr><td>"Shell isolation unavailable"</td><td>The system's isolation mechanism is absent or unusable</td><td>Check the system version; on Linux, a kernel without Landlock. Widening the access scope works around it, at the cost of the protection</td></tr>
+      <tr><td>"Too many active shell processes"</td><td>64 sessions open and none finished</td><td>Ask the agent to stop its running commands</td></tr>
+      <tr><td>"Shell session not found"</td><td>The session belongs to another conversation, or it has already finished</td><td>Expected behaviour</td></tr>
+      <tr><td>All commands stopped at once</td><td>The disk access scope was narrowed while they were running</td><td>Expected and intended</td></tr>
+      <tr><td>A command modified files outside the working folder</td><td>The sandbox was not active (full disk access)</td><td>Restrict the access scope, or switch to Ask permission mode</td></tr>
+      <tr><td>The output is cut in the middle</td><td>Output larger than 1 MB: beginning and end kept</td><td>Expected; the full file is on disk when truncation happens at the result level</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-permissions.html">Modes de permission</a> — les commandes considérées comme sûres et exécutées sans demander.</li>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée d'accès disque et son effet.</li>
-      <li><a href="interface-terminal.html">Terminal intégré</a> — ton terminal à toi, distinct de cet outil.</li>
-      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — le bac à sable dans la vue d'ensemble.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — the commands considered safe and run without asking.</li>
+      <li><a href="agent-repertoire-de-travail.html">Working directory</a> — the disk access scope and its effect.</li>
+      <li><a href="interface-terminal.html">Built-in terminal</a> — your own terminal, separate from this tool.</li>
+      <li><a href="reference-modele-de-securite.html">Security model</a> — the sandbox in the wider picture.</li>
     </ul>
   </main>
 

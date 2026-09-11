@@ -152,7 +152,9 @@ Chaque fiche de modèle porte trois chiffres : la **taille sur le disque**, la *
 | Verdict | Condition | Code interne |
 |---|---|---|
 | **Confortable** | La mémoire disponible vaut au moins **le double** du besoin | `comfortable` |
-| **Juste** | Elle couvre le besoin **plus 20 % de marge**, sans atteindre le double | `constrained` |
+| **Contraint** | Elle couvre le besoin **plus 20 % de marge**, sans atteindre le double | `constrained` |
+
+> Corrigé le 10 septembre 2026 : ce verdict s'appelait « Juste » ici et « Contraint » sur la page Sélection du modèle pour le même `constrained` (`hardware_profile.rs:9-15`, autorité unique). Aligné sur « Contraint » partout (la traduction anglaise dit « Constrained » sur les deux pages).
 | **Insuffisant** | Elle ne couvre pas le besoin plus **20 %** | `insufficient` |
 | **Inconnu** | La mesure a échoué | `unknown` |
 

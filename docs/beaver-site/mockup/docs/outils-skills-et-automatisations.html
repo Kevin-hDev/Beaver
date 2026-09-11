@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Skills et automatisations</title>
-<meta name="description" content="Comment l'agent charge un guide spécialisé, comment il crée une tâche programmée, et pourquoi une automatisation s'exécute sans aucune limite de permission.">
+<title>Beaver Docs — Skills and automations</title>
+<meta name="description" content="How the agent loads a specialised guide, how it creates a scheduled task, and why an automation runs with no permission limit whatsoever.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,157 +19,157 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Skills et automatisations</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-skills-et-automatisations.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / Skills and automations</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-skills-et-automatisations.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-skills-et-automatisations.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Skills et <em>automatisations.</em></h1>
-    <p>Deux outils, deux groupes distincts, tous les deux <b>actifs par défaut</b> et coupables indépendamment dans <b>Réglages › Agent › Outils</b>. Le premier charge un guide écrit d'avance ; le second programme une tâche que l'agent exécutera seul, à l'heure dite.</p>
+    <h1>Skills and <em>automations.</em></h1>
+    <p>Two tools, two separate groups, both <b>on by default</b> and switchable independently in <b>Settings › Agent › Tools</b>. The first loads a guide written in advance; the second schedules a task the agent will carry out on its own, at the appointed time.</p>
 
     <table>
-      <caption class="crumb">Les deux outils et leur groupe</caption>
-      <tr><th>Outil</th><th>Groupe</th><th>Par défaut</th></tr>
-      <tr><td><code>load_skill</code></td><td>Skills</td><td><b>Actif</b></td></tr>
-      <tr><td><code>manage_automation</code></td><td>Automatisations</td><td><b>Actif</b></td></tr>
+      <caption class="crumb">The two tools and their group</caption>
+      <tr><th>Tool</th><th>Group</th><th>Default</th></tr>
+      <tr><td><code>load_skill</code></td><td>Skills</td><td><b>On</b></td></tr>
+      <tr><td><code>manage_automation</code></td><td>Automations</td><td><b>On</b></td></tr>
     </table>
 
-    <h2 id="charger-un-skill">Charger un skill</h2>
-    <p>Un skill est un guide écrit d'avance : une marche à suivre pour une tâche précise — revue de code, audit de sécurité, conception d'interface. Il vit dans un fichier sur ton disque.</p>
-    <p>Le mécanisme est en deux temps, et c'est ce qui le rend économe. <b>La liste des skills disponibles</b> — leur nom et leur description courte, rien de plus — est présente dans la conversation en permanence ; <b>le contenu complet d'un skill n'est chargé que quand l'agent le demande</b>, par cet outil.</p>
+    <h2 id="charger-un-skill">Loading a skill</h2>
+    <p>A skill is a guide written in advance: a procedure for a specific task — code review, security audit, interface design. It lives in a file on your disk.</p>
+    <p>The mechanism has two steps, and that is what makes it frugal. <b>The list of available skills</b> — their name and their short description, nothing more — is present in the conversation at all times; <b>the full content of a skill is only loaded when the agent asks for it</b>, through this tool.</p>
     <ul>
-      <li>Cinquante skills installés coûtent cinquante descriptions courtes, pas cinquante guides complets.</li>
-      <li><b>La description décide de tout.</b> C'est le seul élément sur lequel l'agent se fonde pour décider de charger un skill. Une description vague donne un skill qui ne se déclenche jamais.</li>
-      <li>L'agent ne peut charger qu'un skill <b>présent dans la liste</b> : les identifiants ne s'inventent pas.</li>
-      <li>Un skill déjà chargé dans le tour en cours n'est pas rechargé.</li>
+      <li>Fifty installed skills cost fifty short descriptions, not fifty complete guides.</li>
+      <li><b>The description decides everything.</b> It is the only thing the agent bases its decision to load a skill on. A vague description gives a skill that never triggers.</li>
+      <li>The agent can only load a skill that is <b>present in the list</b>: identifiers cannot be invented.</li>
+      <li>A skill already loaded in the current turn is not loaded again.</li>
     </ul>
-    <p>Une consigne forte accompagne l'outil : quand un skill correspond à la demande, <b>l'agent doit le charger avant de répondre quoi que ce soit</b> sur la tâche. C'est ce qui évite qu'il commence à travailler à sa manière puis découvre le guide à mi-parcours.</p>
+    <p>A strong instruction goes with the tool: when a skill matches the request, <b>the agent must load it before saying anything at all</b> about the task. That is what stops it from starting to work its own way and then discovering the guide halfway through.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      La description d'un skill décide s'il servira un jour. C'est le seul élément que l'agent voit avant de charger le guide : une description qui dit « pour les revues » ne se déclenchera pas, une description qui dit <b>quand</b> l'utiliser, oui.
+      <span class="t">Key point</span>
+      A skill's description decides whether it will ever be used. It is the only thing the agent sees before loading the guide: a description saying "for reviews" will not trigger, a description saying <b>when</b> to use it will.
     </div>
 
-    <h2 id="ce-que-lagent-recoit">Ce que l'agent reçoit d'un skill</h2>
-    <p>Le contenu injecté est précédé de deux informations : <b>d'où vient le skill</b> et <b>dans quel dossier il se trouve</b>. Ce second point compte, parce qu'un skill peut renvoyer à des fichiers voisins — modèles, exemples, scripts — et l'agent a besoin de savoir où les chercher.</p>
-    <p>Contrôles appliqués au chargement : l'identifiant ne peut contenir ni barre oblique, ni <code>..</code>, ni caractère nul ; le fichier doit exister, être un fichier, et peser au plus <b>256 Ko</b> ; l'en-tête de description est retiré, seul le corps du guide est transmis ; le nom affiché est ramené à une seule ligne et plafonné à <b>120 caractères</b>.</p>
+    <h2 id="ce-que-lagent-recoit">What the agent receives from a skill</h2>
+    <p>The injected content is preceded by two pieces of information: <b>where the skill comes from</b> and <b>which folder it sits in</b>. That second point matters, because a skill can refer to neighbouring files — templates, examples, scripts — and the agent needs to know where to look for them.</p>
+    <p>Checks applied at load time: the identifier cannot contain a slash, <code>..</code>, or a null character; the file must exist, must be a file, and must weigh at most <b>256 KB</b>; the description header is stripped, only the body of the guide is passed on; the displayed name is reduced to a single line and capped at <b>120 characters</b>.</p>
 
-    <h2 id="ce-quest-une-automatisation">Ce qu'est une automatisation</h2>
-    <p>Une automatisation est une <b>tâche agentique programmée</b> : à l'heure dite, Beaver ouvre une conversation, y dépose l'instruction enregistrée, et laisse l'agent travailler jusqu'au bout, sans personne devant l'écran.</p>
-    <p>C'est un réveil programmé comme un autre : elle vit dans le même écran que les réveils non agentiques et partage leur plafond commun de <b>64</b>.</p>
+    <h2 id="ce-quest-une-automatisation">What an automation is</h2>
+    <p>An automation is a <b>scheduled agentic task</b>: at the appointed time, Beaver opens a conversation, drops the saved instruction into it, and lets the agent work through to the end, with nobody in front of the screen.</p>
+    <p>It is a scheduled wake-up like any other: it lives on the same screen as non-agentic wake-ups and shares their common ceiling of <b>64</b>.</p>
 
-    <h2 id="acces-complet">Une automatisation s'exécute en Accès complet</h2>
-    <p>C'est l'information la plus importante de cette page, et elle vient avant toute procédure. La conversation programmée est lancée en mode <b>Accès complet</b>, quel que soit le mode choisi pour tes conversations ordinaires.</p>
+    <h2 id="acces-complet">An automation runs in Full access</h2>
+    <p>This is the most important information on this page, and it comes before any procedure. The scheduled conversation is launched in <b>Full access</b> mode, whatever mode you chose for your ordinary conversations.</p>
     <ul>
-      <li><b>Aucune demande d'approbation n'est possible.</b> Personne n'est là pour répondre, et le mode ne le prévoit pas.</li>
-      <li><b>Tous les outils activés dans l'application sont disponibles</b> — exactement la même liste que dans une conversation ordinaire, lue au moment de l'exécution. Y compris ceux qui écrivent des fichiers, lancent des commandes shell et délèguent à des sous-agents.</li>
-      <li><b>Tous les skills installés sont disponibles.</b></li>
-      <li>Il n'existe <b>aucune liste d'outils propre à une automatisation</b>, ni à la création, ni à l'exécution. Rien n'est restreint, rien n'est refusé par nature.</li>
-      <li>Une automatisation dispose donc de <code>manage_automation</code> : <b>elle peut en créer, en modifier et en supprimer d'autres.</b> La seule borne est le plafond de 64 réveils.</li>
+      <li><b>No approval request is possible.</b> Nobody is there to answer, and the mode does not provide for it.</li>
+      <li><b>Every tool enabled in the application is available</b> — exactly the same list as in an ordinary conversation, read at execution time. Including the ones that write files, run shell commands and delegate to subagents.</li>
+      <li><b>Every installed skill is available.</b></li>
+      <li>There is <b>no tool list specific to an automation</b>, neither at creation nor at execution. Nothing is restricted, nothing is refused by nature.</li>
+      <li>An automation therefore has <code>manage_automation</code> at its disposal: <b>it can create, modify and delete others.</b> The only bound is the ceiling of 64 wake-ups.</li>
     </ul>
-    <p>Régler Beaver en <b>Demander l'autorisation</b> ne borne pas les automatisations. Le corollaire : <b>ce que tu confies à une automatisation, tu le confies sans filet</b>. Les seuls points de contrôle sont le texte de l'instruction et le choix des outils activés dans les réglages — tous deux décidés à l'avance, une fois pour toutes.</p>
+    <p>Setting Beaver to <b>Ask permission</b> does not bound automations. The corollary: <b>whatever you entrust to an automation, you entrust without a safety net</b>. The only control points are the text of the instruction and the choice of tools enabled in the settings — both decided in advance, once and for all.</p>
 
     <div class="callout">
-      <span class="t">Avertissement</span>
-      À l'heure dite, Beaver ouvre une conversation en <b>Accès complet</b> et laisse l'agent travailler seul, avec tous les outils et tous les skills activés : écriture de fichiers, commandes shell, délégation à des sous-agents. Avant de programmer une tâche, relis son instruction en te demandant ce qu'elle autorise au pire, et coupe dans <b>Réglages › Agent › Outils</b> les groupes dont elle n'a pas besoin.
+      <span class="t">Warning</span>
+      At the appointed time, Beaver opens a conversation in <b>Full access</b> and lets the agent work alone, with every tool and every skill enabled: writing files, shell commands, delegating to subagents. Before scheduling a task, reread its instruction asking yourself what it allows at worst, and switch off in <b>Settings › Agent › Tools</b> the groups it does not need.
     </div>
 
     <table>
-      <caption class="crumb">Une conversation ordinaire comparée à une automatisation</caption>
-      <tr><th></th><th>Conversation ordinaire</th><th>Automatisation programmée</th></tr>
-      <tr><td>Mode de permission</td><td>Celui que tu as choisi</td><td><b>Accès complet, toujours</b></td></tr>
-      <tr><td>Outils disponibles</td><td>Les groupes activés dans les réglages</td><td><b>Les mêmes</b>, sans restriction</td></tr>
-      <tr><td>Skills disponibles</td><td>Tous</td><td><b>Tous</b></td></tr>
-      <tr><td>Demander l'autorisation</td><td>Selon ton mode</td><td><b>Jamais</b></td></tr>
-      <tr><td>Peut créer une autre automatisation</td><td>Oui</td><td><b>Oui</b></td></tr>
-      <tr><td>Peut déléguer à un sous-agent</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <caption class="crumb">An ordinary conversation compared with an automation</caption>
+      <tr><th></th><th>Ordinary conversation</th><th>Scheduled automation</th></tr>
+      <tr><td>Permission mode</td><td>The one you chose</td><td><b>Full access, always</b></td></tr>
+      <tr><td>Available tools</td><td>The groups enabled in the settings</td><td><b>The same</b>, with no restriction</td></tr>
+      <tr><td>Available skills</td><td>All of them</td><td><b>All of them</b></td></tr>
+      <tr><td>Asks permission</td><td>Depending on your mode</td><td><b>Never</b></td></tr>
+      <tr><td>Can create another automation</td><td>Yes</td><td><b>Yes</b></td></tr>
+      <tr><td>Can delegate to a subagent</td><td>Yes</td><td><b>Yes</b></td></tr>
     </table>
 
-    <h2 id="creer-une-automatisation">Créer une automatisation</h2>
-    <p>L'agent peut créer une automatisation lui-même — « rappelle-moi de vérifier les dépendances tous les lundis ». Sa consigne est de <b>ne créer ou modifier qu'après ta confirmation</b> sur <b>trois points</b> : le déclencheur, l'instruction et l'état actif.</p>
+    <h2 id="creer-une-automatisation">Creating an automation</h2>
+    <p>The agent can create an automation itself — "remind me to check the dependencies every Monday". Its instruction is to <b>create or modify only after your confirmation</b> on <b>three points</b>: the trigger, the instruction and the active state.</p>
     <table>
-      <caption class="crumb">Trois formes de déclencheur, et trois seulement</caption>
-      <tr><th>Forme</th><th>Ce qu'il faut préciser</th></tr>
-      <tr><td>Une fois</td><td>Une date et une heure, au format <code>AAAA-MM-JJTHH:MM</code></td></tr>
-      <tr><td>Chaque jour</td><td>Une heure, au format <code>HH:MM</code></td></tr>
-      <tr><td>Chaque semaine</td><td>Un jour de la semaine (<b>0 à 6</b>) et une heure</td></tr>
+      <caption class="crumb">Three trigger shapes, and only three</caption>
+      <tr><th>Shape</th><th>What has to be specified</th></tr>
+      <tr><td>Once</td><td>A date and a time, in the format <code>YYYY-MM-DDTHH:MM</code></td></tr>
+      <tr><td>Daily</td><td>A time, in the format <code>HH:MM</code></td></tr>
+      <tr><td>Weekly</td><td>A day of the week (<b>0 to 6</b>) and a time</td></tr>
     </table>
-    <p>Il n'y a <b>pas d'expression de planification libre</b> : une syntaxe de type cron est refusée. Une date ponctuelle <b>déjà passée</b> est refusée si l'automatisation est créée active.</p>
+    <p>There is <b>no free-form scheduling expression</b>: a cron-style syntax is refused. A one-off date <b>already in the past</b> is refused if the automation is created active.</p>
 
-    <h2 id="ce-quelle-fige">Ce qu'une automatisation fige</h2>
-    <p>Au moment de sa création, elle reprend de la conversation en cours et fige <b>le modèle</b>, <b>le fournisseur</b> et <b>le projet</b> s'il y en a un. Elle enregistre en plus son nom, sa description, son instruction, son déclencheur, son état actif et sa date de création — et rien d'autre.</p>
-    <p>Le fournisseur est vérifié à la création : un fournisseur qui n'accepte pas les requêtes d'automatisation — certains comptes web connectés, réservés à l'usage interactif — fait échouer la création avec « Provider non supporté ».</p>
+    <h2 id="ce-quelle-fige">What an automation freezes</h2>
+    <p>At creation time, it takes from the current conversation and freezes <b>the model</b>, <b>the provider</b> and <b>the project</b> if there is one. It additionally records its name, its description, its instruction, its trigger, its active state and its creation date — and nothing else.</p>
+    <p>The provider is checked at creation: a provider that does not accept automation requests — some connected web accounts, reserved for interactive use — makes creation fail with "Provider not supported".</p>
 
-    <h2 id="modifier-et-supprimer">Modifier et supprimer</h2>
+    <h2 id="modifier-et-supprimer">Modifying and deleting</h2>
     <ul>
-      <li>Les modifications sont <b>partielles</b> : ce qui n'est pas fourni reste inchangé. Le modèle, le fournisseur et le projet ne se modifient pas par cet outil.</li>
-      <li><b>La suppression exige une confirmation explicite dans l'appel.</b> Sans elle, l'appel est refusé — c'est la seule garde technique du protocole.</li>
-      <li>Seules les automatisations agentiques sont concernées : l'outil ne touche pas aux autres réveils programmés.</li>
-      <li>Toute création, modification ou suppression <b>prévient immédiatement le planificateur</b> — le changement prend effet sans redémarrage.</li>
-      <li>Quand les réveils sont <b>globalement en pause</b>, une automatisation créée ou modifiée active est enregistrée mais mise en pause, et marquée comme telle. Elle repart quand la pause globale est levée.</li>
+      <li>Modifications are <b>partial</b>: whatever is not supplied stays unchanged. The model, the provider and the project cannot be changed through this tool.</li>
+      <li><b>Deletion requires an explicit confirmation in the call.</b> Without it, the call is refused — that is the protocol's only technical guard.</li>
+      <li>Only agentic automations are concerned: the tool does not touch the other scheduled wake-ups.</li>
+      <li>Any creation, modification or deletion <b>notifies the scheduler immediately</b> — the change takes effect without a restart.</li>
+      <li>When wake-ups are <b>globally paused</b>, an automation created or modified as active is saved but paused, and marked as such. It resumes when the global pause is lifted.</li>
     </ul>
 
-    <h2 id="les-bornes">Les bornes qui restent</h2>
+    <h2 id="les-bornes">The bounds that remain</h2>
     <table>
-      <caption class="crumb">Les limites des skills et des automatisations</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Taille d'un fichier de skill</td><td><b>256 Ko</b></td></tr>
-      <tr><td>Longueur d'un identifiant de skill</td><td><b>768 octets</b></td></tr>
-      <tr><td>Nom d'un skill affiché</td><td><b>120 caractères</b></td></tr>
-      <tr><td>Réveils au total, automatisations comprises</td><td><b>64</b></td></tr>
-      <tr><td>Instruction d'une automatisation</td><td><b>12 000 caractères</b></td></tr>
-      <tr><td>Nom d'une automatisation</td><td><b>120 caractères</b></td></tr>
-      <tr><td>Description d'une automatisation</td><td><b>300 caractères</b></td></tr>
+      <caption class="crumb">The limits of skills and automations</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Size of a skill file</td><td><b>256 KB</b></td></tr>
+      <tr><td>Length of a skill identifier</td><td><b>768 bytes</b></td></tr>
+      <tr><td>Displayed name of a skill</td><td><b>120 characters</b></td></tr>
+      <tr><td>Wake-ups in total, automations included</td><td><b>64</b></td></tr>
+      <tr><td>An automation's instruction</td><td><b>12,000 characters</b></td></tr>
+      <tr><td>An automation's name</td><td><b>120 characters</b></td></tr>
+      <tr><td>An automation's description</td><td><b>300 characters</b></td></tr>
     </table>
-    <p>Le nom, le modèle, le fournisseur et l'instruction sont <b>obligatoires et non vides</b>. Une automatisation ne peut pas se donner un modèle ou un fournisseur autres que ceux de la conversation qui l'a créée.</p>
+    <p>The name, the model, the provider and the instruction are <b>required and non-empty</b>. An automation cannot give itself a model or a provider other than those of the conversation that created it.</p>
 
-    <h2 id="les-erreurs">Les erreurs</h2>
+    <h2 id="les-erreurs">The errors</h2>
     <table>
-      <caption class="crumb">Message et cause</caption>
+      <caption class="crumb">Message and cause</caption>
       <tr><th>Message</th><th>Cause</th></tr>
-      <tr><td>Identifiant de skill invalide</td><td>Identifiant contenant un séparateur de chemin ou <code>..</code></td></tr>
-      <tr><td>Skill introuvable</td><td>Identifiant absent du catalogue</td></tr>
-      <tr><td>Skill indisponible</td><td>Fichier illisible ou trop volumineux</td></tr>
-      <tr><td>Action d'automatisation invalide</td><td>Action autre que lister, créer, modifier, supprimer</td></tr>
-      <tr><td>Déclencheur requis</td><td>Aucune planification fournie à la création</td></tr>
-      <tr><td>Déclencheur invalide</td><td>Forme non supportée, par exemple une syntaxe cron</td></tr>
-      <tr><td>Champ requis, champ trop long, heure ou jour invalides, date déjà passée, fournisseur non supporté</td><td>Contrôles de validité à la création</td></tr>
-      <tr><td>Création impossible</td><td>Plafond de 64 réveils atteint, ou écriture refusée</td></tr>
-      <tr><td>Modification impossible</td><td>Identifiant inconnu, ou valeur devenue invalide</td></tr>
-      <tr><td>Confirmation requise</td><td>Suppression sans confirmation explicite</td></tr>
-      <tr><td>Suppression impossible</td><td>Identifiant inconnu</td></tr>
-      <tr><td>Automatisation indisponible</td><td>Configuration ou session illisible</td></tr>
+      <tr><td>Invalid skill identifier</td><td>Identifier containing a path separator or <code>..</code></td></tr>
+      <tr><td>Skill not found</td><td>Identifier absent from the catalogue</td></tr>
+      <tr><td>Skill unavailable</td><td>File unreadable or too large</td></tr>
+      <tr><td>Invalid automation action</td><td>Action other than list, create, modify, delete</td></tr>
+      <tr><td>Trigger required</td><td>No schedule supplied at creation</td></tr>
+      <tr><td>Invalid trigger</td><td>Unsupported shape, a cron syntax for instance</td></tr>
+      <tr><td>Required field, field too long, invalid time or day, date already past, provider not supported</td><td>Validity checks at creation</td></tr>
+      <tr><td>Cannot create</td><td>Ceiling of 64 wake-ups reached, or write refused</td></tr>
+      <tr><td>Cannot modify</td><td>Unknown identifier, or a value that has become invalid</td></tr>
+      <tr><td>Confirmation required</td><td>Deletion without explicit confirmation</td></tr>
+      <tr><td>Cannot delete</td><td>Unknown identifier</td></tr>
+      <tr><td>Automation unavailable</td><td>Configuration or session unreadable</td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'agent n'utilise jamais ton skill</td><td>Description trop vague, ou groupe Skills désactivé</td><td>Réécrire la description en disant <b>quand</b> utiliser le skill</td></tr>
-      <tr><td>Ton skill n'apparaît pas dans la liste</td><td>Fichier mal nommé, en-tête absent, ou fichier trop gros</td><td>Voir <a href="agent-skills.html">Skills</a></td></tr>
-      <tr><td>Une automatisation a modifié des fichiers sans rien demander</td><td>Elle s'exécute en Accès complet, par conception</td><td>Restreindre son instruction, ou couper les groupes d'outils concernés</td></tr>
-      <tr><td>Tu es en Demander l'autorisation et pourtant elle n'a rien demandé</td><td>Le mode de tes conversations ne s'applique pas aux automatisations</td><td>Voulu ; le contrôle se fait sur l'instruction et les outils activés</td></tr>
-      <tr><td>L'automatisation ne se déclenche pas</td><td>Réveils globalement en pause</td><td>Vérifier la pause globale dans l'écran des réveils</td></tr>
-      <tr><td>« Maximum 64 réveils »</td><td>Plafond commun aux automatisations et aux réveils simples</td><td>Supprimer un réveil devenu inutile</td></tr>
-      <tr><td>« Provider non supporté »</td><td>Le fournisseur de la conversation n'accepte pas les requêtes d'automatisation</td><td>Créer l'automatisation depuis une conversation utilisant un autre fournisseur</td></tr>
-      <tr><td>« Date ponctuelle déjà passée »</td><td>Déclencheur unique fixé dans le passé, avec l'état actif</td><td>Choisir une date à venir</td></tr>
-      <tr><td>Tu voulais une planification toutes les deux heures</td><td>Seuls une fois, chaque jour et chaque semaine existent</td><td>Créer plusieurs automatisations quotidiennes</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The agent never uses your skill</td><td>Description too vague, or Skills group disabled</td><td>Rewrite the description saying <b>when</b> to use the skill</td></tr>
+      <tr><td>Your skill does not appear in the list</td><td>Badly named file, missing header, or file too large</td><td>See <a href="agent-skills.html">Skills</a></td></tr>
+      <tr><td>An automation modified files without asking anything</td><td>It runs in Full access, by design</td><td>Narrow its instruction, or switch off the tool groups involved</td></tr>
+      <tr><td>You are in Ask permission and yet it asked nothing</td><td>Your conversations' mode does not apply to automations</td><td>Intended; control happens through the instruction and the enabled tools</td></tr>
+      <tr><td>The automation does not trigger</td><td>Wake-ups globally paused</td><td>Check the global pause on the wake-ups screen</td></tr>
+      <tr><td>"Maximum 64 wake-ups"</td><td>Ceiling shared by automations and plain wake-ups</td><td>Delete a wake-up that has become useless</td></tr>
+      <tr><td>"Provider not supported"</td><td>The conversation's provider does not accept automation requests</td><td>Create the automation from a conversation using another provider</td></tr>
+      <tr><td>"One-off date already past"</td><td>One-off trigger set in the past, with the active state</td><td>Choose a future date</td></tr>
+      <tr><td>You wanted a schedule every two hours</td><td>Only once, daily and weekly exist</td><td>Create several daily automations</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-skills.html">Skills</a> — écrire et installer un skill.</li>
-      <li><a href="agent-permissions.html">Modes de permission</a> — les trois modes, et pourquoi celui-ci ne s'applique pas aux automatisations.</li>
-      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — choisir les groupes actifs, seul vrai levier de restriction d'une automatisation.</li>
+      <li><a href="agent-skills.html">Skills</a> — writing and installing a skill.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — the three modes, and why this one does not apply to automations.</li>
+      <li><a href="outils-vue-densemble.html">Tools overview</a> — choosing the active groups, the only real lever for restricting an automation.</li>
     </ul>
   </main>
 

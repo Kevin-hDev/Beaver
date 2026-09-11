@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Catalogue et favoris</title>
-<meta name="description" content="D'où vient la liste des modèles, ce que Beaver sait de chacun, et comment épingler ceux dont tu te sers.">
+<title>Beaver Docs — Catalog and favorites</title>
+<meta name="description" content="Where the model list comes from, what Beaver knows about each model, and how to pin the ones you actually use.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,86 +19,86 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Modèles / Catalogue et favoris</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="modeles-catalogue-et-favoris.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Models / Catalog and favorites</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/modeles-catalogue-et-favoris.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="modeles-catalogue-et-favoris.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>S'y <em>retrouver</em> parmi les modèles</h1>
-    <p>Deux ou trois fournisseurs configurés, et plusieurs centaines de modèles deviennent accessibles — l'un d'eux est un revendeur qui en propose à lui seul des centaines. Cette page explique d'où vient cette liste, ce que Beaver sait de chaque modèle, et comment garder sous la main ceux dont tu te sers vraiment.</p>
+    <h1>Finding your <em>way</em> among the models</h1>
+    <p>Configure two or three providers and several hundred models become available — one of them is a reseller that offers hundreds on its own. This page explains where that list comes from, what Beaver knows about each model, and how to keep the ones you really use within reach.</p>
 
-    <h2 id="d-ou-vient-la-liste">D'où vient la liste des modèles</h2>
-    <p>Beaver combine trois sources, ce qui explique pourquoi certains modèles sont mieux documentés que d'autres :</p>
+    <h2 id="d-ou-vient-la-liste">Where the model list comes from</h2>
+    <p>Beaver combines three sources, which explains why some models are better documented than others:</p>
     <ul>
-      <li><b>Ce que le fournisseur annonce.</b> Chaque fournisseur expose la liste des modèles accessibles à ton compte. C'est la source de vérité sur la disponibilité.</li>
-      <li><b>Le registre interne de Beaver</b>, qui complète les informations manquantes pour les modèles connus.</li>
-      <li><b>Un catalogue public</b>, téléchargé et tenu à jour, qui fournit les caractéristiques et les tarifs.</li>
+      <li><b>What the provider announces.</b> Every provider exposes the list of models your account can reach. That is the source of truth on availability.</li>
+      <li><b>Beaver's internal registry</b>, which fills in the missing information for known models.</li>
+      <li><b>A public catalog</b>, downloaded and kept up to date, which supplies capabilities and pricing.</li>
     </ul>
-    <p>Conséquence : <b>un modèle très récent peut apparaître avec des informations incomplètes</b>, le temps que les catalogues le référencent. Il reste utilisable.</p>
+    <p>The consequence: <b>a very recent model can show up with incomplete information</b>, until the catalogs list it. It remains usable.</p>
 
-    <h2 id="ce-que-beaver-sait">Ce que Beaver sait d'un modèle</h2>
+    <h2 id="ce-que-beaver-sait">What Beaver knows about a model</h2>
 
     <table>
-      <caption class="crumb">Les informations utiles au moment de choisir</caption>
-      <tr><th>Information</th><th>Pourquoi elle compte</th></tr>
-      <tr><td><b>Sait utiliser des outils</b></td><td><b>Décisif.</b> Sans cette capacité, le modèle ne peut ni lire de fichier ni lancer de commande</td></tr>
-      <tr><td><b>Sait lire des images</b></td><td>Nécessaire pour joindre une capture d'écran</td></tr>
-      <tr><td><b>Sait raisonner</b></td><td>Détermine si le réglage d'effort est disponible</td></tr>
-      <tr><td><b>Longueur de contexte</b></td><td>Combien il peut lire d'un coup</td></tr>
-      <tr><td><b>Limite de sortie</b></td><td>Longueur maximale d'une réponse</td></tr>
-      <tr><td><b>Gratuit</b></td><td>Certains modèles sont proposés sans frais chez certains fournisseurs</td></tr>
+      <caption class="crumb">The information that matters when choosing</caption>
+      <tr><th>Information</th><th>Why it matters</th></tr>
+      <tr><td><b>Can use tools</b></td><td><b>Decisive.</b> Without this capability, the model can neither read a file nor run a command</td></tr>
+      <tr><td><b>Can read images</b></td><td>Required to attach a screenshot</td></tr>
+      <tr><td><b>Can reason</b></td><td>Determines whether the effort setting is available</td></tr>
+      <tr><td><b>Context length</b></td><td>How much it can read at once</td></tr>
+      <tr><td><b>Output limit</b></td><td>Maximum length of a reply</td></tr>
+      <tr><td><b>Free</b></td><td>Some models are offered at no cost by certain providers</td></tr>
     </table>
 
-    <p><b>La capacité à utiliser des outils est le premier critère dans Beaver.</b> Un modèle qui ne l'a pas tient une conversation, mais reste incapable de la moindre action. C'est la principale cause de déception quand on choisit un modèle sur sa réputation.</p>
+    <p><b>The ability to use tools is the first criterion in Beaver.</b> A model without it holds a conversation but remains incapable of the slightest action. That is the main cause of disappointment when a model is chosen on its reputation.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Vérifie d'abord que le modèle sait utiliser des outils. C'est ce qui sépare un assistant capable d'agir d'un modèle qui se contente de répondre. Un excellent modèle sans cette capacité ne te servira presque à rien dans Beaver.
+      <span class="t">Warning</span>
+      Check first that the model can use tools. That is what separates an assistant able to act from a model that merely replies. An excellent model without that capability will be of almost no use to you in Beaver.
     </div>
 
-    <h2 id="les-favoris">Les favoris</h2>
-    <p>Un modèle peut être épinglé. Les favoris sont enregistrés localement, dans un fichier propre, et identifient chaque modèle par son fournisseur <b>et</b> son nom — le même modèle chez deux fournisseurs compte donc pour deux entrées distinctes.</p>
-    <p>L'écriture est <b>atomique</b> : fichier temporaire puis renommage. Une interruption au mauvais moment ne peut pas laisser une liste de favoris corrompue.</p>
-    <p>Ajouter un favori déjà présent, ou en retirer un absent, ne provoque pas d'erreur : l'opération est simplement sans effet, et le fichier n'est même pas réécrit.</p>
+    <h2 id="les-favoris">Favorites</h2>
+    <p>A model can be pinned. Favorites are stored locally, in a file of their own, and identify each model by its provider <b>and</b> its name — so the same model at two providers counts as two separate entries.</p>
+    <p>The write is <b>atomic</b>: temporary file, then rename. An interruption at the wrong moment cannot leave a corrupted list of favorites.</p>
+    <p>Adding a favorite that is already there, or removing one that is not, raises no error: the operation simply has no effect, and the file is not even rewritten.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Les favoris sont locaux. Ils vivent dans un fichier de l'application, pas dans un compte : changer de machine demande de les refaire.
+      Favorites are local. They live in an application file, not in an account: moving to another machine means setting them up again.
     </div>
 
-    <h2 id="choisir-un-modele">Choisir un modèle pour une conversation</h2>
-    <p>Le sélecteur se trouve <b>dans la barre de saisie</b>, sous le champ de message — pas en haut de la conversation. Voir <a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a>.</p>
-    <p>Le choix vaut pour la conversation en cours. Changer de modèle en cours de route est possible : la suite de la conversation utilise le nouveau.</p>
+    <h2 id="choisir-un-modele">Choosing a model for a conversation</h2>
+    <p>The selector sits <b>in the input bar</b>, under the message field — not at the top of the conversation. See <a href="interface-vue-densemble.html">Interface overview</a>.</p>
+    <p>The choice applies to the current conversation. Switching model mid-way is possible: the rest of the conversation uses the new one.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Le même modèle chez deux fournisseurs, ce sont deux entrées. Les prix, les limites et la disponibilité peuvent différer d'un fournisseur à l'autre pour un modèle identique.
+      The same model at two providers is two entries. Prices, limits and availability can differ from one provider to another for an identical model.
     </div>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Ce qui surprend le plus souvent au moment de choisir un modèle</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'agent ne fait rien, il se contente de répondre</td><td>Le modèle ne sait pas utiliser d'outils</td><td>En choisir un qui le sait</td></tr>
-      <tr><td>Impossible de joindre une image</td><td>Le modèle ne lit pas les images</td><td>En choisir un qui le sait — voir <a href="agent-pieces-jointes.html">Pièces jointes</a></td></tr>
-      <tr><td>Le réglage d'effort a disparu</td><td>Le modèle ne raisonne pas</td><td>Comportement attendu — voir <a href="modeles-raisonnement.html">Raisonnement</a></td></tr>
-      <tr><td>Un modèle a disparu de la liste</td><td>Le fournisseur ne le propose plus à ce compte</td><td>Vérifier chez le fournisseur</td></tr>
-      <tr><td>Les favoris ont disparu</td><td>Fichier local, lié à la machine</td><td>Les refaire</td></tr>
-      <tr><td>Deux fois le même modèle dans la liste</td><td>Il est proposé par deux fournisseurs</td><td>Comportement attendu</td></tr>
-      <tr><td>Les caractéristiques d'un modèle sont vides</td><td>Modèle trop récent pour les catalogues</td><td>Il reste utilisable</td></tr>
+      <caption class="crumb">What surprises people most often when choosing a model</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The agent does nothing, it just replies</td><td>The model cannot use tools</td><td>Pick one that can</td></tr>
+      <tr><td>Attaching an image is impossible</td><td>The model does not read images</td><td>Pick one that does — see <a href="agent-pieces-jointes.html">Attachments</a></td></tr>
+      <tr><td>The effort setting has disappeared</td><td>The model does not reason</td><td>Expected behavior — see <a href="modeles-raisonnement.html">Reasoning</a></td></tr>
+      <tr><td>A model has vanished from the list</td><td>The provider no longer offers it to this account</td><td>Check with the provider</td></tr>
+      <tr><td>Favorites have disappeared</td><td>Local file, tied to the machine</td><td>Set them up again</td></tr>
+      <tr><td>The same model appears twice in the list</td><td>It is offered by two providers</td><td>Expected behavior</td></tr>
+      <tr><td>A model's capabilities are empty</td><td>Model too recent for the catalogs</td><td>It remains usable</td></tr>
     </table>
 
-    <p>Pour accéder aux modèles d'un service, il faut d'abord le configurer : <a href="modeles-fournisseurs-api.html">Fournisseurs API</a>. Les modèles qui tournent sur ta machine sont traités dans <a href="modeles-modeles-locaux.html">Modèles locaux</a>, et l'origine des tarifs affichés dans <a href="modeles-usage-et-couts.html">Usage et coûts</a>.</p>
+    <p>To reach a service's models you first have to configure it: <a href="modeles-fournisseurs-api.html">API providers</a>. Models that run on your own machine are covered in <a href="modeles-modeles-locaux.html">Local models</a>, and the origin of the prices shown in <a href="modeles-usage-et-couts.html">Usage and costs</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

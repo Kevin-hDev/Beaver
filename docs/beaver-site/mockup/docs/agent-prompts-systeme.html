@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Prompts système</title>
-<meta name="description" content="Les instructions que Beaver donne au modèle avant ton premier message : deux modes, deux niveaux, deux portées, et comment les remplacer.">
+<title>Beaver Docs — System prompts</title>
+<meta name="description" content="The instructions Beaver gives the model before your first message: two modes, two formats, two scopes, and how to replace them.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,106 +19,106 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Agent / Prompts système</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="agent-prompts-systeme.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Agent / System prompts</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/agent-prompts-systeme.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="agent-prompts-systeme.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Prompts <em>système</em></h1>
-    <p>Les instructions données au modèle <b>avant ton premier message</b> : son rôle, la façon d'employer les outils, le format attendu de ses réponses. Beaver en fournit par défaut, et ils sont consultables, modifiables, remplaçables et désactivables.</p>
-    <p>À ne pas confondre avec tes propres consignes : le prompt système vient de Beaver, <code>AGENTS.md</code> vient de toi. Voir <a href="agent-instructions-permanentes.html">Instructions permanentes</a>.</p>
+    <h1>System <em>prompts</em></h1>
+    <p>The instructions given to the model <b>before your first message</b>: its role, how to use the tools, the format expected of its answers. Beaver provides defaults, and they can be viewed, edited, replaced and disabled.</p>
+    <p>Not to be confused with your own instructions: the system prompt comes from Beaver, <code>AGENTS.md</code> comes from you. See <a href="agent-instructions-permanentes.html">Standing instructions</a>.</p>
 
-    <h2 id="modes-niveaux">Deux modes, deux niveaux</h2>
-    <p>Deux modes, selon la façon de travailler : <b>Chatbot</b> pour une conversation sans outils, <b>Agentique</b> pour le travail avec outils. Et deux niveaux de détail pour chaque mode : <b>Compact</b>, version resserrée, et <b>Détaillé</b>, version complète.</p>
-    <p>Soit <b>quatre prompts</b> par portée, chacun réglable indépendamment.</p>
+    <h2 id="modes-niveaux">Two modes, two formats</h2>
+    <p>Two modes, depending on how you work: <b>Chatbot</b> for a conversation without tools, <b>Agentic</b> for work with tools. And two levels of detail for each mode: <b>Compact</b>, the tightened version, and <b>Detailed</b>, the full version.</p>
+    <p>That is <b>four prompts</b> per scope, each configurable independently.</p>
 
-    <h2 id="niveau-automatique">Le niveau est choisi automatiquement</h2>
-    <p>Point non évident : <b>le niveau dépend du modèle employé</b>, pas d'un réglage manuel. Le choix se fait à partir de la taille du modèle — un petit modèle reçoit la version compacte, un grand la version détaillée.</p>
+    <h2 id="niveau-automatique">The format is chosen automatically</h2>
+    <p>A non-obvious point: <b>the format depends on the model used</b>, not on a manual setting. The choice is made from the size of the model — a small model gets the compact version, a large one the detailed version.</p>
     <div class="callout">
-      <span class="t">Pourquoi</span>
-      Un prompt long occupe une part importante du contexte d'un petit modèle : il le noie plutôt qu'il ne le guide. La version compacte lui laisse de la place pour travailler.
+      <span class="t">Why</span>
+      A long prompt takes up a large share of a small model's context: it drowns it rather than guiding it. The compact version leaves it room to work.
     </div>
 
-    <h2 id="portees">Deux portées : global ou par modèle</h2>
+    <h2 id="portees">Two scopes: global or per model</h2>
     <table>
-      <caption class="crumb">Portée d'un réglage de prompt</caption>
-      <tr><th>Portée</th><th>Effet</th></tr>
-      <tr><td>Globale</td><td>S'applique à tous les modèles</td></tr>
-      <tr><td>Par modèle Ollama</td><td>Ne s'applique qu'à ce modèle</td></tr>
+      <caption class="crumb">Scope of a prompt setting</caption>
+      <tr><th>Scope</th><th>Effect</th></tr>
+      <tr><td>Global</td><td>Applies to every model</td></tr>
+      <tr><td>Per Ollama model</td><td>Applies only to that model</td></tr>
     </table>
-    <p><b>Le réglage par modèle prime sur le réglage global.</b> Cette portée par modèle n'existe que pour les modèles servis par le moteur local : ce sont les seuls dont Beaver gère le cycle de vie complet.</p>
+    <p><b>The per-model setting takes priority over the global setting.</b> This per-model scope only exists for models served by the local engine: they are the only ones whose full lifecycle Beaver manages.</p>
     <table>
-      <caption class="crumb">Récapitulatif des combinaisons</caption>
-      <tr><th>Portée</th><th>Mode</th><th>Niveau</th><th>Réglable</th></tr>
-      <tr><td>Globale</td><td>Chatbot</td><td>Compact</td><td>Oui</td></tr>
-      <tr><td>Globale</td><td>Chatbot</td><td>Détaillé</td><td>Oui</td></tr>
-      <tr><td>Globale</td><td>Agentique</td><td>Compact</td><td>Oui</td></tr>
-      <tr><td>Globale</td><td>Agentique</td><td>Détaillé</td><td>Oui</td></tr>
-      <tr><td>Par modèle Ollama</td><td>Les quatre mêmes combinaisons</td><td></td><td>Oui, et prime sur le global</td></tr>
+      <caption class="crumb">Summary of the combinations</caption>
+      <tr><th>Scope</th><th>Mode</th><th>Format</th><th>Configurable</th></tr>
+      <tr><td>Global</td><td>Chatbot</td><td>Compact</td><td>Yes</td></tr>
+      <tr><td>Global</td><td>Chatbot</td><td>Detailed</td><td>Yes</td></tr>
+      <tr><td>Global</td><td>Agentic</td><td>Compact</td><td>Yes</td></tr>
+      <tr><td>Global</td><td>Agentic</td><td>Detailed</td><td>Yes</td></tr>
+      <tr><td>Per Ollama model</td><td>The same four combinations</td><td></td><td>Yes, and takes priority over global</td></tr>
     </table>
 
-    <h2 id="etats">Les quatre états possibles</h2>
+    <h2 id="etats">The four possible states</h2>
     <table>
-      <caption class="crumb">Ce qu'affiche l'application pour chaque prompt</caption>
-      <tr><th>État</th><th>Signification</th></tr>
-      <tr><td>Par défaut</td><td>Aucun réglage, le prompt fourni est employé</td></tr>
-      <tr><td>Beaver</td><td>Le prompt de Beaver est explicitement retenu</td></tr>
-      <tr><td>Personnalisé</td><td>Tu as écrit le tien</td></tr>
-      <tr><td>Désactivé</td><td>Aucun prompt système n'est envoyé</td></tr>
+      <caption class="crumb">What the application shows for each prompt</caption>
+      <tr><th>State</th><th>Meaning</th></tr>
+      <tr><td>Default</td><td>No setting, the supplied prompt is used</td></tr>
+      <tr><td>Beaver</td><td>Beaver's prompt is explicitly selected</td></tr>
+      <tr><td>Custom</td><td>You wrote your own</td></tr>
+      <tr><td>Disabled</td><td>No system prompt is sent</td></tr>
     </table>
-    <p>Le texte réellement employé peut avoir <b>trois provenances</b> : celui de Beaver, celui du modèle, ou le tien.</p>
+    <p>The text actually used can have <b>three origins</b>: Beaver's, the model's, or yours.</p>
     <div class="callout">
-      <span class="t">Attention</span>
-      Sans prompt système, le modèle ne sait ni comment employer les outils, ni quel format adopter. L'état Désactivé est utilisable pour un usage précis, pas comme réglage courant.
+      <span class="t">Warning</span>
+      Without a system prompt, the model knows neither how to use the tools nor what format to adopt. The Disabled state is usable for a specific purpose, not as an everyday setting.
     </div>
     <div class="callout">
-      <span class="t">Un champ vide désactive</span>
-      Enregistrer un prompt personnalisé vide ne restaure pas le prompt d'origine : ça désactive le prompt système. C'est volontaire — vider le champ est un moyen explicite de le couper. Pour revenir au défaut, utilise « Restaurer ».
+      <span class="t">An empty field disables</span>
+      Saving an empty custom prompt does not restore the original prompt: it disables the system prompt. This is deliberate — emptying the field is an explicit way of switching it off. To go back to the default, use “Restore”.
     </div>
 
-    <h2 id="prompts-natifs">Les prompts natifs des modèles locaux</h2>
-    <p>Un modèle Ollama peut embarquer son propre prompt système, défini par son auteur. Beaver <b>préserve ce prompt natif</b> avant toute personnalisation, dans un stockage dédié, et indique si un prompt natif est disponible pour le modèle en cours.</p>
-    <p>Tu peux donc choisir explicitement entre le comportement voulu par l'auteur du modèle et celui de Beaver : personnaliser un modèle ne détruit pas ce qu'il portait.</p>
+    <h2 id="prompts-natifs">The native prompts of local models</h2>
+    <p>An Ollama model can carry its own system prompt, defined by its author. Beaver <b>preserves that native prompt</b> before any customization, in dedicated storage, and indicates whether a native prompt is available for the current model.</p>
+    <p>You can therefore choose explicitly between the behavior intended by the model's author and Beaver's: customizing a model does not destroy what it carried.</p>
 
-    <h2 id="modifier">Modifier, désactiver, restaurer</h2>
-    <p>Trois opérations, dans <b>Réglages › Prompt système</b> : <b>enregistrer</b> un contenu personnalisé, <b>désactiver</b> le prompt, <b>restaurer</b> le prompt d'origine.</p>
-    <p>Deux garde-fous accompagnent ces opérations : un <b>avertissement avant de remplacer</b> un prompt déjà personnalisé, et une <b>copie dans le presse-papier en un clic</b> avant que le texte soit perdu.</p>
+    <h2 id="modifier">Editing, disabling, restoring</h2>
+    <p>Three operations, in <b>Settings › System prompt</b>: <b>save</b> custom content, <b>disable</b> the prompt, <b>restore</b> the original prompt.</p>
+    <p>Two guards accompany these operations: a <b>warning before replacing</b> an already customized prompt, and a <b>one-click copy to the clipboard</b> before the text is lost.</p>
 
-    <h2 id="comparaison">Prompt système et instructions permanentes</h2>
+    <h2 id="comparaison">System prompt and standing instructions</h2>
     <table>
-      <caption class="crumb">Deux couches d'instructions à ne pas confondre</caption>
-      <tr><th></th><th>Prompt système</th><th>AGENTS.md et personnalité</th></tr>
-      <tr><td>Écrit par</td><td>Beaver, ou toi en remplacement</td><td>Toi</td></tr>
-      <tr><td>Contenu</td><td>Rôle, usage des outils, format</td><td>Conventions, commandes, interdits</td></tr>
-      <tr><td>Désactivable</td><td>Oui</td><td>Il suffit de ne rien écrire</td></tr>
-      <tr><td>Portée par modèle</td><td>Oui, pour les modèles locaux</td><td>Non</td></tr>
+      <caption class="crumb">Two layers of instructions not to be confused</caption>
+      <tr><th></th><th>System prompt</th><th>AGENTS.md and personality</th></tr>
+      <tr><td>Written by</td><td>Beaver, or you as a replacement</td><td>You</td></tr>
+      <tr><td>Content</td><td>Role, tool usage, format</td><td>Conventions, commands, prohibitions</td></tr>
+      <tr><td>Can be disabled</td><td>Yes</td><td>Simply write nothing</td></tr>
+      <tr><td>Per-model scope</td><td>Yes, for local models</td><td>No</td></tr>
     </table>
 
-    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <h2 id="pieges">What surprises people most often</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Un réglage global semble ignoré</td><td>Un réglage par modèle prime</td><td>Vérifier l'onglet du modèle concerné</td></tr>
-      <tr><td>Le prompt affiché n'est pas celui attendu</td><td>Le niveau dépend de la taille du modèle</td><td>Vérifier les deux niveaux</td></tr>
-      <tr><td>Le modèle n'emploie plus ses outils</td><td>Prompt système désactivé</td><td>Restaurer, ou réécrire un prompt qui décrit les outils</td></tr>
-      <tr><td>Un prompt personnalisé a disparu</td><td>Champ vidé, donc désactivé</td><td>Le récupérer depuis le presse-papier si la copie a été faite</td></tr>
-      <tr><td>Le comportement du modèle change après personnalisation</td><td>Passage du prompt natif du modèle à celui de Beaver</td><td>Choisir explicitement la provenance</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>A global setting seems ignored</td><td>A per-model setting takes priority</td><td>Check the tab of the model concerned</td></tr>
+      <tr><td>The prompt shown is not the one expected</td><td>The format depends on the size of the model</td><td>Check both formats</td></tr>
+      <tr><td>The model no longer uses its tools</td><td>System prompt disabled</td><td>Restore it, or rewrite a prompt that describes the tools</td></tr>
+      <tr><td>A custom prompt disappeared</td><td>Field emptied, therefore disabled</td><td>Recover it from the clipboard if the copy was made</td></tr>
+      <tr><td>The model's behavior changes after customization</td><td>Switch from the model's native prompt to Beaver's</td><td>Choose the origin explicitly</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-instructions-permanentes.html">Instructions permanentes</a> — tes propres consignes.</li>
-      <li><a href="modeles-personnalisation.html">Personnalisation des modèles</a> — les paramètres du modèle lui-même.</li>
-      <li><a href="integrations-prompt-systeme.html">Prompt système et extensions</a> — quand une extension entre en jeu.</li>
+      <li><a href="agent-instructions-permanentes.html">Standing instructions</a> — your own instructions.</li>
+      <li><a href="modeles-personnalisation.html">Model customization</a> — the model's own parameters.</li>
+      <li><a href="integrations-prompt-systeme.html">System prompt and extensions</a> — when an extension comes into play.</li>
     </ul>
   </main>
 

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Personnaliser un modèle local</title>
-<meta name="description" content="Les trois niveaux de personnalisation d'un modèle local : les paramètres de génération, le prompt système par modèle, et la création d'un modèle dérivé.">
+<title>Beaver Docs — Customizing a local model</title>
+<meta name="description" content="The three levels of customization for a local model: the generation parameters, the per-model system prompt, and creating a derived model.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,126 +19,126 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Modèles / Personnalisation</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="modeles-personnalisation.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Models / Customization</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/modeles-personnalisation.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="modeles-personnalisation.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Régler un modèle à ta <em>main</em></h1>
-    <p>Un modèle local se règle à trois profondeurs : ses paramètres de génération, ses instructions permanentes, ou une version dérivée qui embarque les deux. Les valeurs par défaut conviennent presque toujours — cette page est là pour les cas où elles ne conviennent pas.</p>
+    <h1>Tuning a model to your <em>liking</em></h1>
+    <p>A local model can be tuned at three depths: its generation parameters, its standing instructions, or a derived version that carries both. The defaults are almost always fine — this page is here for the cases where they are not.</p>
 
-    <h2 id="trois-niveaux">Trois niveaux de personnalisation</h2>
+    <h2 id="trois-niveaux">Three levels of customization</h2>
 
     <table>
-      <caption class="crumb">Du plus simple au plus engageant</caption>
-      <tr><th>Niveau</th><th>Ce que ça change</th><th>Réversible</th></tr>
-      <tr><td><b>Paramètres</b></td><td>Le comportement de génération</td><td>Immédiatement</td></tr>
-      <tr><td><b>Prompt système</b></td><td>Les instructions permanentes du modèle</td><td>Immédiatement</td></tr>
-      <tr><td><b>Modèle personnalisé</b></td><td>Un nouveau modèle dérivé d'un autre</td><td>En le supprimant</td></tr>
+      <caption class="crumb">From the simplest to the most committing</caption>
+      <tr><th>Level</th><th>What it changes</th><th>Reversible</th></tr>
+      <tr><td><b>Parameters</b></td><td>The generation behavior</td><td>Immediately</td></tr>
+      <tr><td><b>System prompt</b></td><td>The model's standing instructions</td><td>Immediately</td></tr>
+      <tr><td><b>Custom model</b></td><td>A new model derived from another</td><td>By deleting it</td></tr>
     </table>
 
-    <h2 id="parametres-de-generation">Les paramètres de génération</h2>
-    <p>Onze paramètres, regroupés par thème. Ce qu'il faut en retenir :</p>
+    <h2 id="parametres-de-generation">The generation parameters</h2>
+    <p>Eleven parameters, grouped by theme. What is worth remembering:</p>
     <ul>
-      <li><b>La longueur de contexte</b> décide de combien le modèle peut lire d'un coup. Par défaut, Beaver la calcule d'après la mémoire de ta machine — c'est le réglage à laisser tel quel dans la quasi-totalité des cas.</li>
-      <li><b>La créativité</b> — le paramètre de température — est le seul que la plupart des gens auront envie de toucher. Bas, le modèle est prévisible et répétitif ; haut, il est inventif et instable. Pour du code, on descend ; pour de la rédaction, on peut monter.</li>
-      <li><b>La graine</b> rend les réponses reproductibles : à graine fixée et question identique, le modèle répond la même chose. Utile pour comparer deux configurations, sans intérêt au quotidien.</li>
-      <li><b>Les pénalités de répétition</b> empêchent le modèle de tourner en boucle sur les mêmes formulations.</li>
-      <li><b>Les paramètres d'échantillonnage</b> affinent la façon dont le modèle choisit chaque mot. Ils sont réservés à qui sait ce qu'il fait.</li>
-      <li><b>Les séquences d'arrêt</b> indiquent au modèle où s'interrompre.</li>
+      <li><b>The context length</b> decides how much the model can read at once. By default, Beaver computes it from your machine's memory — that is the setting to leave alone in almost every case.</li>
+      <li><b>Creativity</b> — the temperature parameter — is the only one most people will want to touch. Low, the model is predictable and repetitive; high, it is inventive and unstable. For code, turn it down; for writing, you can turn it up.</li>
+      <li><b>The seed</b> makes answers reproducible: with a fixed seed and an identical question, the model answers the same thing. Useful for comparing two configurations, of no interest day to day.</li>
+      <li><b>The repetition penalties</b> stop the model from looping on the same phrasings.</li>
+      <li><b>The sampling parameters</b> fine-tune how the model picks each word. They are for people who know what they are doing.</li>
+      <li><b>The stop sequences</b> tell the model where to break off.</li>
     </ul>
 
     <table>
-      <caption class="crumb">Les onze paramètres et leur valeur par défaut</caption>
-      <tr><th>Thème</th><th>Paramètre</th><th>Type</th><th>Défaut</th></tr>
-      <tr><td><b>Contexte</b></td><td>Longueur de contexte</td><td>Entier</td><td><b>Automatique</b></td></tr>
-      <tr><td><b>Longueur</b></td><td>Nombre maximal de jetons produits</td><td>Entier</td><td>Sans limite</td></tr>
-      <tr><td><b>Longueur</b></td><td>Jetons de prédiction anticipée</td><td>Entier</td><td>4</td></tr>
-      <tr><td><b>Créativité</b></td><td>Température</td><td>Décimal</td><td>0,8</td></tr>
-      <tr><td><b>Créativité</b></td><td>Graine aléatoire</td><td>Entier</td><td>0</td></tr>
-      <tr><td><b>Répétition</b></td><td>Fenêtre de répétition</td><td>Entier</td><td>64</td></tr>
-      <tr><td><b>Répétition</b></td><td>Pénalité de répétition</td><td>Décimal</td><td>1,1</td></tr>
-      <tr><td><b>Échantillonnage</b></td><td>Nombre de candidats</td><td>Entier</td><td>40</td></tr>
-      <tr><td><b>Échantillonnage</b></td><td>Masse de probabilité</td><td>Décimal</td><td>0,9</td></tr>
-      <tr><td><b>Échantillonnage</b></td><td>Probabilité minimale</td><td>Décimal</td><td>0,0</td></tr>
-      <tr><td><b>Arrêt</b></td><td>Séquences d'arrêt</td><td>Texte</td><td>Aucune</td></tr>
+      <caption class="crumb">The eleven parameters and their default value</caption>
+      <tr><th>Theme</th><th>Parameter</th><th>Type</th><th>Default</th></tr>
+      <tr><td><b>Context</b></td><td>Context length</td><td>Integer</td><td><b>Automatic</b></td></tr>
+      <tr><td><b>Length</b></td><td>Maximum number of tokens generated</td><td>Integer</td><td>No limit</td></tr>
+      <tr><td><b>Length</b></td><td>Tokens proposed ahead</td><td>Integer</td><td>4</td></tr>
+      <tr><td><b>Creativity</b></td><td>Temperature</td><td>Decimal</td><td>0.8</td></tr>
+      <tr><td><b>Creativity</b></td><td>Random seed</td><td>Integer</td><td>0</td></tr>
+      <tr><td><b>Repetition</b></td><td>Repetition window</td><td>Integer</td><td>64</td></tr>
+      <tr><td><b>Repetition</b></td><td>Repetition penalty</td><td>Decimal</td><td>1.1</td></tr>
+      <tr><td><b>Sampling</b></td><td>Number of candidates</td><td>Integer</td><td>40</td></tr>
+      <tr><td><b>Sampling</b></td><td>Probability mass</td><td>Decimal</td><td>0.9</td></tr>
+      <tr><td><b>Sampling</b></td><td>Minimum probability</td><td>Decimal</td><td>0.0</td></tr>
+      <tr><td><b>Stopping</b></td><td>Stop sequences</td><td>Text</td><td>None</td></tr>
     </table>
 
     <table>
-      <caption class="crumb">Quel paramètre toucher selon ce que tu veux obtenir</caption>
-      <tr><th>Envie</th><th>Réglage</th></tr>
-      <tr><td>Réponses plus prévisibles, moins d'inventions</td><td>Baisser la température</td></tr>
-      <tr><td>Réponses plus variées</td><td>Monter la température</td></tr>
-      <tr><td>Réponses reproductibles à l'identique</td><td>Fixer la graine</td></tr>
-      <tr><td>Le modèle se répète</td><td>Monter la pénalité de répétition</td></tr>
-      <tr><td>Réponses trop longues</td><td>Limiter le nombre de jetons produits</td></tr>
-      <tr><td>Le modèle « oublie » le début de la conversation</td><td>Augmenter la longueur de contexte, si la mémoire le permet</td></tr>
+      <caption class="crumb">Which parameter to touch depending on what you want</caption>
+      <tr><th>Goal</th><th>Setting</th></tr>
+      <tr><td>More predictable answers, fewer inventions</td><td>Lower the temperature</td></tr>
+      <tr><td>More varied answers</td><td>Raise the temperature</td></tr>
+      <tr><td>Answers reproducible exactly</td><td>Fix the seed</td></tr>
+      <tr><td>The model repeats itself</td><td>Raise the repetition penalty</td></tr>
+      <tr><td>Answers that are too long</td><td>Cap the number of tokens generated</td></tr>
+      <tr><td>The model "forgets" the start of the conversation</td><td>Increase the context length, if memory allows</td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Les valeurs par défaut conviennent dans la quasi-totalité des cas. Les paramètres d'échantillonnage en particulier se règlent mal à l'intuition : les modifier sans mesurer dégrade généralement les réponses.
+      <span class="t">Warning</span>
+      The defaults are fine in almost every case. The sampling parameters in particular are hard to set by intuition: changing them without measuring usually degrades the answers.
     </div>
 
     <div class="callout">
       <span class="t">Note</span>
-      Augmenter la longueur de contexte consomme de la mémoire. Un contexte doublé demande davantage de mémoire vidéo ; sur une machine juste, cela peut empêcher le modèle de se charger. Voir <a href="modeles-materiel.html">Matériel et VRAM</a>.
+      Increasing the context length consumes memory. A doubled context asks for more video memory; on a tight machine, it can stop the model from loading. See <a href="modeles-materiel.html">Hardware and VRAM</a>.
     </div>
 
-    <h2 id="prompt-systeme-par-modele">Le prompt système par modèle</h2>
-    <p>Un prompt système est un texte d'instructions que le modèle reçoit avant tout message, à chaque conversation. Beaver permet d'en définir un <b>par modèle</b>.</p>
+    <h2 id="prompt-systeme-par-modele">The per-model system prompt</h2>
+    <p>A system prompt is a block of instructions the model receives before any message, in every conversation. Beaver lets you define one <b>per model</b>.</p>
     <ul>
-      <li><b>Le prompt d'origine du modèle est capturé et conservé</b> avant toute personnalisation. Tu peux donc toujours revenir à l'état initial — la modification n'est jamais destructrice.</li>
-      <li>Quatre états sont possibles : le prompt par défaut du modèle, celui de Beaver, un prompt personnalisé, ou aucun prompt.</li>
+      <li><b>The model's original prompt is captured and kept</b> before any customization. So you can always go back to the initial state — the change is never destructive.</li>
+      <li>Four states are possible: the model's default prompt, Beaver's, a custom prompt, or no prompt at all.</li>
     </ul>
-    <p>Le système complet de prompts — modes Chatbot et Agentique, variantes courte et détaillée — est traité dans <a href="agent-prompts-systeme.html">Prompts système</a>. Cette page ne couvre que la partie propre aux modèles locaux.</p>
+    <p>The full prompt system — Chatbot and Agentic modes, short and detailed variants — is covered in <a href="agent-prompts-systeme.html">System prompts</a>. This page only covers the part specific to local models.</p>
 
-    <h2 id="creer-son-modele">Créer son propre modèle</h2>
-    <p>Le niveau le plus avancé : partir d'un modèle existant et en dériver une version qui embarque ses propres réglages et instructions. Concrètement, tu écris une petite recette qui déclare le modèle de départ, puis ce que tu veux changer. Beaver la transmet au moteur, qui construit le nouveau modèle.</p>
-    <p>Ce que ça apporte : un modèle prêt à l'emploi, avec ses réglages intégrés, sélectionnable comme n'importe quel autre — sans avoir à refaire les réglages à chaque fois.</p>
+    <h2 id="creer-son-modele">Creating your own model</h2>
+    <p>The most advanced level: start from an existing model and derive a version that carries its own settings and instructions. In practice, you write a short recipe declaring the starting model, then what you want to change. Beaver passes it to the engine, which builds the new model.</p>
+    <p>What it gives you: a ready-to-use model, with its settings built in, selectable like any other — without having to redo the settings every time.</p>
     <ul>
-      <li>La recette est limitée à <b>2 Mo</b> — largement suffisant, la plupart tiennent en quelques lignes.</li>
-      <li>La création est abandonnée au bout de <b>10 minutes</b>.</li>
-      <li><b>Mettre à jour le modèle de base ne détruit pas le reste.</b> Beaver ne remplace que la ligne qui désigne le modèle de départ, en conservant toutes les autres instructions.</li>
+      <li>The recipe is capped at <b>2 MB</b> — more than enough, most of them fit in a few lines.</li>
+      <li>Creation is abandoned after <b>10 minutes</b>.</li>
+      <li><b>Updating the base model does not destroy the rest.</b> Beaver only replaces the line that names the starting model, keeping every other instruction.</li>
     </ul>
-    <p>La création demande un moteur lancé par Beaver : elle est refusée quand Beaver réutilise le moteur Ollama du système. Voir <a href="modeles-moteur-local.html">Moteur local</a>.</p>
+    <p>Creation requires an engine started by Beaver: it is refused when Beaver is reusing the system's Ollama engine. See <a href="modeles-moteur-local.html">Local engine</a>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Un modèle personnalisé est un vrai modèle. Il occupe sa place sur le disque, apparaît dans la liste, et se supprime comme les autres.
+      A custom model is a real model. It takes up its own space on disk, appears in the list, and is deleted like the others.
     </div>
 
-    <h2 id="ce-qui-est-verifie">Ce qui est vérifié</h2>
+    <h2 id="ce-qui-est-verifie">What gets checked</h2>
     <ul>
-      <li><b>Le nom du modèle est validé</b> avant toute création.</li>
-      <li><b>La recette est validée</b> : ni vide, ni trop volumineuse, ni contenant de caractères interdits.</li>
-      <li>Le moteur est appelé <b>sans passer par un interpréteur de commandes</b>, et la recette lui est transmise par un fichier temporaire plutôt que sur la ligne de commande. Un nom ou un contenu malveillant ne peut pas s'exécuter comme une commande.</li>
+      <li><b>The model name is validated</b> before any creation.</li>
+      <li><b>The recipe is validated</b>: not empty, not oversized, and free of forbidden characters.</li>
+      <li>The engine is called <b>without going through a command interpreter</b>, and the recipe is handed to it through a temporary file rather than on the command line. A malicious name or content cannot be executed as a command.</li>
     </ul>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Les effets de bord les plus courants d'un réglage</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Le modèle ne se charge plus après un réglage</td><td>Longueur de contexte trop élevée pour la mémoire</td><td>Revenir à Automatique</td></tr>
-      <tr><td>Les réponses sont devenues incohérentes</td><td>Température trop haute, ou échantillonnage modifié</td><td>Revenir aux valeurs par défaut</td></tr>
-      <tr><td>Le modèle répète la même phrase</td><td>Pénalité de répétition trop basse</td><td>La remonter</td></tr>
-      <tr><td>Le modèle s'arrête au milieu d'une phrase</td><td>Nombre de jetons produits trop limité, ou séquence d'arrêt mal choisie</td><td>Vérifier les deux</td></tr>
-      <tr><td>Le prompt personnalisé n'a aucun effet</td><td>Un prompt de niveau supérieur s'applique</td><td>Voir <a href="agent-prompts-systeme.html">Prompts système</a></td></tr>
-      <tr><td>La création du modèle échoue</td><td>Recette invalide, ou modèle de départ absent</td><td>Vérifier que le modèle de base est installé</td></tr>
-      <tr><td>La création dépasse le délai</td><td>Modèle de base volumineux</td><td>Limite à 10 minutes</td></tr>
+      <caption class="crumb">The most common side effects of a setting</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The model no longer loads after a setting change</td><td>Context length too high for the memory</td><td>Go back to Automatic</td></tr>
+      <tr><td>The answers have become incoherent</td><td>Temperature too high, or sampling changed</td><td>Return to the default values</td></tr>
+      <tr><td>The model repeats the same sentence</td><td>Repetition penalty too low</td><td>Raise it</td></tr>
+      <tr><td>The model stops in the middle of a sentence</td><td>Token count capped too low, or a badly chosen stop sequence</td><td>Check both</td></tr>
+      <tr><td>The custom prompt has no effect</td><td>A higher-level prompt applies</td><td>See <a href="agent-prompts-systeme.html">System prompts</a></td></tr>
+      <tr><td>Model creation fails</td><td>Invalid recipe, or the starting model is missing</td><td>Check that the base model is installed</td></tr>
+      <tr><td>Creation exceeds the time limit</td><td>Large base model</td><td>Capped at 10 minutes</td></tr>
     </table>
 
-    <p>Le modèle de base s'installe depuis <a href="modeles-modeles-locaux.html">Modèles locaux</a>.</p>
+    <p>The base model is installed from <a href="modeles-modeles-locaux.html">Local models</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

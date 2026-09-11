@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Skills</title>
+<meta name="description" content="Apprendre une procédure à l'agent sans qu'elle pèse sur toutes tes conversations : format d'un skill, chargement à la demande, limites et conseils d'écriture.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Skills</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-skills.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/agent-skills.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Les <em>skills</em></h1>
+    <p>Un skill est un mode d'emploi rangé dans un dossier, que l'agent <b>charge à la demande</b> quand la tâche y correspond. C'est la façon d'apprendre à l'agent une procédure détaillée sans qu'elle occupe le contexte de toutes tes conversations.</p>
+
+    <h2 id="skill-ou-agents">Skill ou AGENTS.md ?</h2>
+    <table>
+      <caption class="crumb">La différence qui décide où écrire quoi</caption>
+      <tr><th></th><th>AGENTS.md</th><th>Skill</th></tr>
+      <tr><td>Chargement</td><td>À chaque conversation, toujours</td><td>À la demande, quand c'est pertinent</td></tr>
+      <tr><td>Coût en contexte</td><td>Permanent</td><td>Seulement quand il est chargé</td></tr>
+      <tr><td>Contenu</td><td>Conventions courtes, interdits</td><td>Procédures détaillées</td></tr>
+    </table>
+    <p>Ce qui doit toujours être vrai va dans <a href="agent-instructions-permanentes.html"><code>AGENTS.md</code></a> ; ce qui ne sert que parfois va dans un skill. Une procédure de déploiement de trois pages n'a pas à occuper le contexte de toutes tes conversations.</p>
+
+    <h2 id="ou-les-ranger">Où les ranger</h2>
+    <p>Un <b>dossier par skill</b>, dans le dossier <code>skills/</code> du répertoire de données. Le dossier peut contenir d'autres fichiers que le manifeste — scripts, gabarits, références — auxquels le skill renvoie.</p>
+
+    <h2 id="format">Le format d'un skill</h2>
+    <p>Le dossier doit contenir un fichier nommé <code>SKILL.md</code> ou <code>skill.md</code> : les deux graphies sont acceptées. Il commence par un en-tête encadré de <code>---</code> contenant deux champs.</p>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> cat skills/deploiement/SKILL.md
+---
+name: Déploiement
+description: Publier une version en production. À employer avant chaque mise en ligne.
+---
+
+Le contenu du skill, en Markdown libre.</pre>
+    </div>
+    <p><code>name</code> est le nom affiché ; à défaut, le nom du dossier est employé. <code>description</code> fait <b>250 caractères au maximum</b> : c'est ce que l'agent lit pour décider s'il doit charger le skill. Les valeurs entre guillemets simples ou doubles sont acceptées.</p>
+    <p><b>Sans en-tête</b>, le fichier reste utilisable — le nom du dossier sert de nom. Mais l'absence de description prive l'agent de son seul critère de sélection.</p>
+
+    <h2 id="comment-agent-sen-sert">Comment l'agent s'en sert</h2>
+    <p>En deux temps. D'abord <b>le catalogue</b> : l'agent voit en permanence la liste des skills disponibles, avec leur nom et leur description, ce qui coûte peu de contexte. Ensuite <b>le chargement</b> : quand une tâche correspond à une description, l'agent charge le contenu complet avec l'outil <code>load_skill</code>, qui appartient au groupe <b>Skills</b>, actif par défaut.</p>
+    <div class="callout">
+      <span class="t">La description décide de tout</span>
+      L'agent choisit de charger un skill à partir de sa description seule, limitée à 250 caractères. Précise ce que fait le skill <b>et quand l'employer</b> : une description vague donne un skill qui ne se déclenche jamais.
+    </div>
+
+    <h2 id="appeler-soi-meme">Appeler un skill toi-même</h2>
+    <p>Chaque skill reçoit une <b>commande</b> construite depuis sa source et son nom. Dans la zone de saisie, taper <code>/</code> ouvre la liste d'autocomplétion des skills disponibles ; en choisir un insère sa commande dans ton message.</p>
+    <ul>
+      <li>Un skill <b>local</b> s'invoque par <code>/nom-du-skill</code>.</li>
+      <li>Un skill <b>importé</b> s'invoque par <code>/source:nom</code>.</li>
+      <li>Quand deux skills aboutiraient à la même commande, un suffixe tiré de leur identifiant les distingue.</li>
+    </ul>
+
+    <h2 id="skills-importes">Les skills importés, et ceux qu'on ne voit pas</h2>
+    <p>Les skills repris d'un autre assistant apparaissent dans le même catalogue, avec l'indication de leur <b>source d'origine</b>. Le tri se fait par nom, sans distinction de casse.</p>
+    <p>Une troisième source existe, <b>invisible dans le catalogue</b> : les skills fournis par une extension. Leur identifiant est préfixé par <code>extension:</code> et ils sont délibérément retirés du catalogue global — ils ne comptent donc pas dans les 2 048 skills locaux et n'apparaissent pas dans la liste permanente. Autrement dit, le catalogue affiché n'est pas la totalité des skills que l'agent peut charger.</p>
+
+    <h2 id="sous-agents">Les sous-agents n'y ont presque pas accès</h2>
+    <p>Seul un sous-agent de type <b>codeur</b> reçoit <code>load_skill</code>, et seulement si le groupe Skills est activé. Un sous-agent explorateur n'a jamais accès aux skills. Voir <a href="agent-sous-agents.html">Sous-agents</a>.</p>
+
+    <h2 id="limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Valeurs de référence</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Skills locaux</td><td><b>2 048</b></td></tr>
+      <tr><td>Taille d'un fichier de skill</td><td><b>256 Ko</b></td></tr>
+      <tr><td>En-tête lu</td><td><b>32 Ko</b></td></tr>
+      <tr><td>Description</td><td><b>250 caractères</b></td></tr>
+      <tr><td>Nom affiché</td><td><b>120 caractères</b></td></tr>
+      <tr><td>Identifiant de skill</td><td>768 octets</td></tr>
+    </table>
+    <p>Un identifiant ne peut contenir ni <code>..</code>, ni <code>/</code>, ni <code>\</code> : c'est une protection contre la lecture d'un fichier hors du dossier des skills. Trois erreurs sont possibles au chargement : identifiant invalide, skill introuvable, skill indisponible.</p>
+
+    <h2 id="bien-ecrire">Écrire un bon skill</h2>
+    <ul>
+      <li><b>Soigner la description avant le contenu.</b> C'est elle qui déclenche le chargement : écris à quoi sert le skill <b>et quand l'employer</b>, avec les mots que tu emploierais naturellement.</li>
+      <li><b>Écrire à l'impératif.</b> « Tu vérifies X » plutôt que « il faudrait vérifier X » : une consigne à l'infinitif se lit comme une suggestion et se saute.</li>
+      <li><b>Donner la raison d'une règle</b> quand elle n'est pas évidente. Une règle sans son pourquoi ne couvre que les cas prévus.</li>
+      <li><b>Un skill, une procédure.</b> Deux procédures dans un même skill, et l'agent charge les deux pour n'en employer qu'une.</li>
+    </ul>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Un skill n'est jamais chargé</td><td>Description absente ou trop vague</td><td>La réécrire en précisant les cas d'emploi</td></tr>
+      <tr><td>Un skill n'apparaît pas dans le catalogue</td><td>Pas de <code>SKILL.md</code> ni <code>skill.md</code> dans le dossier</td><td>Ajouter le fichier</td></tr>
+      <tr><td>Le nom affiché est celui du dossier</td><td>Champ <code>name</code> absent de l'en-tête</td><td>L'ajouter</td></tr>
+      <tr><td>« Skill introuvable »</td><td>Dossier renommé ou supprimé</td><td>Vérifier le contenu de <code>skills/</code></td></tr>
+      <tr><td>« Identifiant de skill invalide »</td><td>Identifiant contenant <code>..</code>, <code>/</code> ou <code>\</code></td><td>Protection volontaire</td></tr>
+      <tr><td>Une partie du skill semble ignorée</td><td>Fichier au-delà de 256 Ko</td><td>Le scinder en plusieurs skills</td></tr>
+      <tr><td>Des skills inconnus apparaissent</td><td>Repris lors de l'import d'un autre assistant</td><td>Leur source est indiquée dans le catalogue</td></tr>
+      <tr><td>La commande d'un skill porte un suffixe illisible</td><td>Deux skills aboutissaient à la même commande</td><td>Normal ; renommer l'un des deux pour retrouver une commande courte</td></tr>
+      <tr><td>Un sous-agent n'utilise aucun skill</td><td>Seul le codeur y a droit, et seulement si le groupe Skills est activé</td><td>Vérifier le groupe Skills, ou confier la tâche à l'agent principal</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-instructions-permanentes.html">Instructions permanentes</a> — la différence avec <code>AGENTS.md</code>.</li>
+      <li><a href="agent-contexte.html">Contexte</a> — les skills disponibles occupent une catégorie propre.</li>
+      <li><a href="outils-skills-et-automatisations.html">Skills et automatisations</a> — l'outil <code>load_skill</code>.</li>
+      <li><a href="demarrage-importer.html">Importer d'un autre agent</a> — l'origine des skills importés.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

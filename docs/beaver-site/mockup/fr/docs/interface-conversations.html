@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Conversations</title>
+<meta name="description" content="Naviguer entre les conversations, les ordonner, les épingler, les archiver, les rechercher et les exporter en Markdown.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Conversations</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-conversations.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/interface-conversations.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Une conversation, un <em>environnement</em></h1>
+    <p>Chaque conversation porte ses propres réglages : son modèle, ses permissions, son répertoire de travail, ses outils. Passer de l'une à l'autre change ton contexte de travail, pas seulement le fil de discussion. Cette page explique comment tu navigues entre elles et comment tu les organises.</p>
+
+    <h2 id="ce-qui-est-propre-a-chaque-conversation">Ce qui est propre à chaque conversation</h2>
+    <p>Une conversation possède ses propres réglages, et non ceux de l'application :</p>
+    <ul>
+      <li>son modèle et son fournisseur ;</li>
+      <li>son mode de permission ;</li>
+      <li>son <b>mode rapide</b>, commandé depuis la barre de saisie : il demande au fournisseur un traitement prioritaire lorsque celui-ci le propose, et reste sans effet chez les autres ;</li>
+      <li>son répertoire de travail ;</li>
+      <li>ses outils actifs ;</li>
+      <li>ses connecteurs activés ;</li>
+      <li>sa branche Git ;</li>
+      <li>ses onglets de terminal et de navigateur.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Ce qui appartient à la conversation, ce qui appartient à l'application</caption>
+      <tr><th>Élément</th><th>Portée</th></tr>
+      <tr><td>Modèle et fournisseur</td><td>Conversation</td></tr>
+      <tr><td>Mode de permission</td><td>Conversation</td></tr>
+      <tr><td>Mode rapide</td><td>Conversation</td></tr>
+      <tr><td>Répertoire de travail</td><td>Conversation</td></tr>
+      <tr><td>Outils actifs</td><td>Conversation</td></tr>
+      <tr><td>Connecteurs MCP activés</td><td>Conversation</td></tr>
+      <tr><td>Branche Git</td><td>Conversation</td></tr>
+      <tr><td>Onglets de terminal et de navigateur</td><td>Conversation</td></tr>
+      <tr><td>Thème, langue, police</td><td>Application</td></tr>
+      <tr><td>Mémoire globale</td><td>Application</td></tr>
+    </table>
+
+    <h2 id="naviguer">Naviguer entre les conversations</h2>
+    <ul>
+      <li>La <b>barre latérale</b> liste les conversations. C'est le seul moyen de passer de l'une à l'autre : les conversations ne s'ouvrent pas en onglets.</li>
+      <li>Nouvelle conversation : <b>⌥⌘N</b> (Alt+Ctrl+N).</li>
+      <li>La barre latérale se masque avec <b>⌘B</b> (Ctrl+B).</li>
+      <li><b>L'ordre de la liste est le tien</b>, pas un tri par date : tu décides du rang de chaque conversation, et il est conservé d'un lancement à l'autre.</li>
+      <li>Une conversation peut être <b>épinglée</b> pour rester en tête de liste, avec un ordre propre aux conversations épinglées.</li>
+    </ul>
+
+    <h2 id="onglets-de-clones">Les onglets de clones</h2>
+    <p>Les seuls onglets d'une conversation sont ceux créés par le <b>clonage</b>.</p>
+    <ul>
+      <li>Une conversation et ses clones forment un groupe de <b>trois onglets au maximum</b>.</li>
+      <li>Un onglet se renomme et se ferme.</li>
+      <li>Fermer un onglet peut aussi nettoyer la branche Git qui lui était liée.</li>
+    </ul>
+    <p>Le détail est dans <a href="agent-cloner-une-conversation.html">Cloner une conversation</a>.</p>
+
+    <h2 id="archiver-renommer-supprimer">Archiver, désarchiver, renommer, supprimer</h2>
+    <ul>
+      <li>Une conversation terminée s'archive plutôt que de se supprimer : elle quitte la liste principale sans être perdue.</li>
+      <li>Les conversations archivées se consultent dans <b>Réglages › Conversations archivées</b>, et se désarchivent depuis là.</li>
+      <li>La <b>suppression définitive</b> existe aussi : archiver n'est pas la seule sortie.</li>
+      <li>Une conversation se renomme, sauf s'il s'agit d'une session enfant.</li>
+      <li>Les <b>sous-agents</b> suivent un chemin d'archivage distinct, et refusent l'archivage dans certains états.</li>
+      <li>Cloner une conversation archivée produit un clone <b>non archivé</b>.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Archiver plutôt que supprimer : une conversation archivée quitte la liste principale sans être effacée. Tu la retrouves dans <b>Réglages › Conversations archivées</b>.
+    </div>
+
+    <h2 id="la-recherche">La recherche</h2>
+    <p>Le raccourci <b>⌘G</b> (Ctrl+G) ouvre une boîte de recherche qui te permet de retrouver une conversation et de t'y rendre.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      La recherche porte sur le <b>nom de la conversation</b> et le <b>nom du projet</b>, jamais sur le contenu des messages. Une phrase prononcée au milieu d'un échange ne se retrouve pas par ici. Les sous-agents et les clones sont exclus des résultats.
+    </div>
+
+    <h2 id="exporter-en-markdown">Exporter une conversation en Markdown</h2>
+    <p>Une conversation s'exporte en Markdown. C'est la voie pour sortir un échange de l'application : archivage personnel, partage, relecture hors ligne.</p>
+
+    <h2 id="ce-qu-une-conversation-retient">Ce qu'une conversation retient</h2>
+    <ul>
+      <li><b>2 000 messages au maximum</b> par conversation. Au-delà, l'envoi est refusé — rien n'est ni tronqué ni compressé automatiquement.</li>
+      <li>Une conversation par fichier, dans <code>agent-sessions/</code>.</li>
+      <li>Les conversations créées automatiquement par un réveil portent un indicateur qui les distingue.</li>
+      <li>Les gros résultats d'outils sont stockés à part, dans <code>tool-results/</code>, pour ne pas alourdir le fichier de conversation.</li>
+      <li>Chaque conversation garde la trace de ses échecs de flux et de ses diagnostics ; ces historiques ne sont <b>pas</b> repris dans un clone.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Les limites qui s'appliquent aux conversations</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Messages par conversation</td><td><b>2 000</b></td></tr>
+      <tr><td>Fichiers de conversation</td><td><b>4 096</b></td></tr>
+      <tr><td>Taille d'un fichier de conversation</td><td><b>32 Mo</b></td></tr>
+      <tr><td>Onglets par groupe de clones</td><td><b>3</b></td></tr>
+      <tr><td>Onglets de navigateur par conversation</td><td><b>10</b></td></tr>
+      <tr><td>Terminaux simultanés</td><td><b>16</b>, globalement</td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Impossible d'ouvrir deux conversations côte à côte</td><td>Les conversations ne s'ouvrent pas en onglets</td><td>Naviguer par la barre latérale</td></tr>
+      <tr><td>Le modèle change en changeant de conversation</td><td>Le modèle est propre à chaque conversation</td><td>Comportement voulu</td></tr>
+      <tr><td>Une conversation n'accepte plus de messages</td><td>Plafond de 2 000 messages</td><td>Cloner pour repartir d'un point antérieur</td></tr>
+      <tr><td>Un sous-agent refuse d'être archivé</td><td>Chemin d'archivage distinct, refus dans certains états</td><td>Vérifier son état</td></tr>
+      <tr><td>La barre latérale a disparu</td><td>Masquée, ou repliée automatiquement sur fenêtre étroite</td><td><b>⌘B</b>, ou élargir la fenêtre</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-cloner-une-conversation.html">Cloner une conversation</a></li>
+      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a></li>
+      <li><a href="agent-contexte.html">Contexte</a></li>
+      <li><a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a></li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

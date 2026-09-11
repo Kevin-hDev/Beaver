@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Installation Windows</title>
-<meta name="description" content="Installer Beaver sur Windows x64 par le script PowerShell ou par l'installeur, et comprendre les réactions de SmartScreen et de Defender.">
+<title>Beaver Docs — Windows installation</title>
+<meta name="description" content="Install Beaver on Windows x64 through the PowerShell script or the installer, and understand how SmartScreen and Defender react.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,29 +19,29 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Démarrage / Installation Windows</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="demarrage-installation-windows.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Getting started / Windows installation</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/demarrage-installation-windows.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="demarrage-installation-windows.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Installation sur <em>Windows</em></h1>
-    <p>Beaver est distribué en installeur NSIS pour Windows x64. Le script
-    PowerShell vérifie chaque redirection, la taille et l'empreinte du fichier
-    avant de lancer l'installation. Windows va réagir : cette page dit pourquoi
-    et quoi faire.</p>
+    <h1>Installing on <em>Windows</em></h1>
+    <p>Beaver is distributed as an NSIS installer for Windows x64. The PowerShell
+    script checks every redirect, the size and the fingerprint of the file before
+    starting the installation. Windows is going to react: this page says why and
+    what to do.</p>
 
-    <h2 id="script">La méthode recommandée : le script</h2>
-    <p>À coller dans <b>PowerShell</b>, pas dans l'invite de commandes
-    classique :</p>
+    <h2 id="script">The recommended method: the script</h2>
+    <p>To paste into <b>PowerShell</b>, not into the classic command
+    prompt:</p>
 
     <div class="term">
       <div class="term-bar"><i></i><i></i><i></i></div>
@@ -53,128 +54,127 @@
   }</pre>
     </div>
 
-    <h2 id="ce-que-fait-le-script">Ce que fait le script</h2>
+    <h2 id="ce-que-fait-le-script">What the script does</h2>
     <ul>
-      <li>Il vérifie que l'architecture du processeur est <b>AMD64</b>. Toute
-      autre valeur arrête l'installation.</li>
-      <li>Il force <b>TLS 1.2</b> et désactive le suivi automatique des
-      redirections : chaque redirection est examinée avant d'être suivie.</li>
-      <li>Il interroge l'API GitHub Releases, avec une réponse plafonnée à
-      <b>512 Kio</b>.</li>
-      <li>Il exige l'asset nommé exactement
+      <li>It checks that the processor architecture is <b>AMD64</b>. Any other
+      value stops the installation.</li>
+      <li>It forces <b>TLS 1.2</b> and disables automatic redirect following:
+      every redirect is examined before being followed.</li>
+      <li>It queries the GitHub Releases API, with the response capped at
+      <b>512 KiB</b>.</li>
+      <li>It requires the asset named exactly
       <code>Beaver_&lt;version&gt;_x64-setup.exe</code>.</li>
-      <li>Il télécharge <code>update-manifest.json</code>, plafonné à
-      <b>64 Kio</b>, et vérifie que sa taille correspond à celle annoncée.</li>
-      <li>Il vérifie que le manifeste porte bien la version attendue, et que
-      chaque entrée d'asset a un nom conforme, une empreinte <b>SHA-256</b> de
-      64 caractères hexadécimaux et une taille.</li>
-      <li>Il télécharge l'installeur, avec un délai maximum de <b>1800
-      secondes</b>, et vérifie que la taille reçue correspond exactement à celle
-      attendue.</li>
-      <li>Il calcule le <b>SHA-256</b> du fichier et le compare à celui du
-      manifeste. En cas d'écart, l'installation s'arrête.</li>
-      <li>Il propose le dossier d'installation,
-      <code>%LOCALAPPDATA%\Beaver</code> par défaut.</li>
-      <li>Il lance l'installeur NSIS en mode silencieux, fenêtre masquée.</li>
-      <li>Il vérifie que <code>cl-go-dash.exe</code> existe dans le dossier
-      d'installation et qu'il ne s'agit pas d'un point d'analyse — une
-      protection contre la substitution par lien.</li>
+      <li>It downloads <code>update-manifest.json</code>, capped at
+      <b>64 KiB</b>, and checks that its size matches the announced one.</li>
+      <li>It checks that the manifest carries the expected version, and that
+      every asset entry has a conforming name, a <b>SHA-256</b> fingerprint of 64
+      hexadecimal characters and a size.</li>
+      <li>It downloads the installer, with a maximum delay of <b>1800
+      seconds</b>, and checks that the received size matches the expected one
+      exactly.</li>
+      <li>It computes the file's <b>SHA-256</b> and compares it to the one in the
+      manifest. On any mismatch, the installation stops.</li>
+      <li>It offers the installation folder,
+      <code>%LOCALAPPDATA%\Beaver</code> by default.</li>
+      <li>It runs the NSIS installer in silent mode, window hidden.</li>
+      <li>It checks that <code>cl-go-dash.exe</code> exists in the installation
+      folder and that it is not a reparse point — a protection against
+      substitution by link.</li>
     </ul>
 
     <table>
-      <caption class="crumb">Les contrôles effectués par le script</caption>
-      <tr><th>Étape</th><th>Contrôle</th></tr>
-      <tr><td>Architecture</td><td><code>AMD64</code> exigé</td></tr>
-      <tr><td>Transport</td><td>TLS 1.2, redirections non suivies automatiquement</td></tr>
-      <tr><td>Réponse API</td><td>512 Kio maximum</td></tr>
-      <tr><td>Manifeste</td><td>64 Kio maximum, taille et version vérifiées</td></tr>
-      <tr><td>Nom d'asset</td><td><code>Beaver_&lt;version&gt;_x64-setup.exe</code> exactement</td></tr>
-      <tr><td>Empreinte</td><td>SHA-256 sur 64 caractères hexadécimaux, comparée au manifeste</td></tr>
-      <tr><td>Taille de l'asset</td><td>Doit correspondre exactement au manifeste</td></tr>
-      <tr><td>Binaire installé</td><td><code>cl-go-dash.exe</code> présent et non-lien</td></tr>
+      <caption class="crumb">The checks the script performs</caption>
+      <tr><th>Step</th><th>Check</th></tr>
+      <tr><td>Architecture</td><td><code>AMD64</code> required</td></tr>
+      <tr><td>Transport</td><td>TLS 1.2, redirects not followed automatically</td></tr>
+      <tr><td>API response</td><td>512 KiB maximum</td></tr>
+      <tr><td>Manifest</td><td>64 KiB maximum, size and version verified</td></tr>
+      <tr><td>Asset name</td><td><code>Beaver_&lt;version&gt;_x64-setup.exe</code> exactly</td></tr>
+      <tr><td>Fingerprint</td><td>SHA-256 over 64 hexadecimal characters, compared to the manifest</td></tr>
+      <tr><td>Asset size</td><td>Must match the manifest exactly</td></tr>
+      <tr><td>Installed binary</td><td><code>cl-go-dash.exe</code> present and not a link</td></tr>
     </table>
 
-    <h2 id="installeur">La méthode alternative : l'installeur</h2>
-    <p>L'installeur <code>Beaver_X.Y.Z_x64-setup.exe</code> est attaché à chaque
-    release GitHub : double-clic et parcours classique. Son inconvénient :
-    SmartScreen s'interpose sur un exécutable non signé téléchargé par
-    navigateur, et la vérification d'empreinte est à faire soi-même.</p>
+    <h2 id="installeur">The alternative method: the installer</h2>
+    <p>The <code>Beaver_X.Y.Z_x64-setup.exe</code> installer is attached to every
+    GitHub release: double-click and the usual flow. Its downside: SmartScreen
+    steps in on an unsigned executable downloaded through a browser, and the
+    fingerprint check is up to you.</p>
 
-    <h2 id="smartscreen">SmartScreen et l'absence de signature</h2>
-    <p><b>L'application n'est pas signée par un certificat de signature de
-    code.</b> Windows SmartScreen affiche donc un écran bleu « Windows a protégé
-    votre ordinateur » à l'exécution de l'installeur. Le contournement consiste à
-    cliquer sur « Informations complémentaires », puis « Exécuter quand même ».</p>
-    <p>Ce comportement est normal pour un logiciel libre non signé : un
-    certificat de signature de code est payant et nominatif.</p>
+    <h2 id="smartscreen">SmartScreen and the missing signature</h2>
+    <p><b>The application is not signed with a code-signing certificate.</b>
+    Windows SmartScreen therefore shows a blue “Windows protected your PC”
+    screen when the installer runs. The workaround is to click “More info”, then
+    “Run anyway”.</p>
+    <p>This behavior is normal for unsigned free software: a code-signing
+    certificate is paid and issued to a named holder.</p>
 
     <div class="callout">
       <span class="t">SmartScreen</span>
-      Windows affichera « Windows a protégé votre ordinateur ». Clique sur
-      « Informations complémentaires », puis « Exécuter quand même ».
+      Windows will show “Windows protected your PC”. Click “More info”, then
+      “Run anyway”.
     </div>
 
-    <h2 id="defender">Windows Defender et l'accès contrôlé aux dossiers</h2>
-    <p>Si la protection anti-rançongiciel (« Accès contrôlé aux dossiers ») est
-    active, <code>ollama.exe</code> peut être bloqué au premier lancement, quand
-    il tente d'écrire les modèles dans <code>~/.ollama/models/</code>. Une
-    notification Windows apparaît et il faut cliquer <b>« Autoriser »</b>. La
-    demande ne se répète pas ensuite.</p>
-    <p>Sans cette explication, le symptôme observé est « le téléchargement du
-    modèle échoue sans raison ».</p>
+    <h2 id="defender">Windows Defender and controlled folder access</h2>
+    <p>If ransomware protection (“Controlled folder access”) is on,
+    <code>ollama.exe</code> may be blocked on first launch, when it tries to
+    write models to <code>~/.ollama/models/</code>. A Windows notification
+    appears and you need to click <b>“Allow”</b>. The request does not come back
+    afterwards.</p>
+    <p>Without that explanation, the symptom you observe is “the model download
+    fails for no reason”.</p>
 
     <div class="callout">
-      <span class="t">Autorise Ollama</span>
-      Si Windows affiche une notification de blocage au premier téléchargement de
-      modèle, clique sur « Autoriser ». C'est la protection anti-rançongiciel qui
-      empêche Ollama d'écrire les modèles sur le disque. La demande n'apparaît
-      qu'une fois.
+      <span class="t">Allow Ollama</span>
+      If Windows shows a blocking notification on the first model download, click
+      “Allow”. It is ransomware protection preventing Ollama from writing models
+      to the disk. The request appears only once.
     </div>
 
-    <h2 id="autre-dossier">Choisir un autre dossier d'installation</h2>
-    <p>Le défaut est <code>%LOCALAPPDATA%\Beaver</code>. Un autre chemin peut
-    être saisi, avec des contrôles stricts ; un chemin non conforme arrête
-    l'installation.</p>
+    <h2 id="autre-dossier">Choosing another installation folder</h2>
+    <p>The default is <code>%LOCALAPPDATA%\Beaver</code>. Another path can be
+    entered, with strict checks; a non-conforming path stops the
+    installation.</p>
 
     <table>
-      <caption class="crumb">Contraintes sur le dossier d'installation</caption>
-      <tr><th>Règle</th><th>Détail</th></tr>
-      <tr><td>Format</td><td>Commence par une lettre de lecteur suivie de <code>:\</code></td></tr>
-      <tr><td>Longueur</td><td>1024 caractères maximum</td></tr>
-      <tr><td>Caractères interdits</td><td><code>*</code> <code>?</code> <code>&lt;</code> <code>&gt;</code> <code>|</code> <code>"</code> et caractères de contrôle</td></tr>
-      <tr><td>Deux-points</td><td>Interdits au-delà des trois premiers caractères</td></tr>
-      <tr><td>Remontée</td><td>Aucun segment <code>..</code></td></tr>
+      <caption class="crumb">Constraints on the installation folder</caption>
+      <tr><th>Rule</th><th>Detail</th></tr>
+      <tr><td>Format</td><td>Starts with a drive letter followed by <code>:\</code></td></tr>
+      <tr><td>Length</td><td>1024 characters maximum</td></tr>
+      <tr><td>Forbidden characters</td><td><code>*</code> <code>?</code> <code>&lt;</code> <code>&gt;</code> <code>|</code> <code>"</code> and control characters</td></tr>
+      <tr><td>Colons</td><td>Forbidden beyond the first three characters</td></tr>
+      <tr><td>Traversal</td><td>No <code>..</code> segment</td></tr>
     </table>
 
-    <h2 id="mettre-a-jour">Mettre à jour</h2>
-    <p>Contrairement à macOS et Linux, où le script s'arrête si une installation
-    est détectée, le script Windows ne fait pas ce contrôle : l'installeur NSIS
-    gère lui-même le remplacement. La voie normale reste la <b>mise à jour
-    intégrée</b> à l'application :
-    <a href="demarrage-mise-a-jour.html">Mise à jour</a>.</p>
+    <h2 id="mettre-a-jour">Updating</h2>
+    <p>Unlike macOS and Linux, where the script stops if an installation is
+    detected, the Windows script does not perform that check: the NSIS installer
+    handles the replacement itself. The normal route remains the <b>built-in
+    update</b> in the application:
+    <a href="demarrage-mise-a-jour.html">Updating</a>.</p>
 
-    <h2 id="desinstaller">Désinstaller</h2>
-    <p>L'installeur NSIS pose un désinstalleur : la suppression passe par
-    Paramètres › Applications, ou par le désinstalleur du dossier d'installation.
-    Les données restent dans
-    <code>C:\Users\&lt;utilisateur&gt;\.local\share\cl-go-dash\</code>, et la clé
-    maîtresse du coffre reste protégée par DPAPI.</p>
+    <h2 id="desinstaller">Uninstalling</h2>
+    <p>The NSIS installer lays down an uninstaller: removal goes through
+    Settings › Apps, or through the uninstaller in the installation folder. The
+    data stays in
+    <code>C:\Users\&lt;user&gt;\.local\share\cl-go-dash\</code>, and the vault's
+    master key stays protected by DPAPI.</p>
 
-    <h2 id="pieges">Si ça ne marche pas</h2>
+    <h2 id="pieges">If it does not work</h2>
     <table>
-      <caption class="crumb">Symptômes rencontrés, cause et résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Le script s'arrête immédiatement</td><td>Architecture différente d'AMD64</td><td>Aucune : il n'existe pas de build ARM</td></tr>
-      <tr><td>« Windows a protégé votre ordinateur »</td><td>Exécutable non signé</td><td>Informations complémentaires › Exécuter quand même</td></tr>
-      <tr><td>Le téléchargement de modèle échoue sans message clair</td><td>L'accès contrôlé aux dossiers bloque <code>ollama.exe</code></td><td>Cliquer « Autoriser » dans la notification Windows</td></tr>
-      <tr><td>L'application ne démarre pas après installation</td><td>WebView2 ou runtime Visual C++ absent</td><td>Réserve connue, sans solution documentée à ce jour</td></tr>
-      <tr><td>L'installation s'arrête sans explication</td><td>Un contrôle a échoué : empreinte, taille ou chemin</td><td>Relancer ; si ça persiste, signaler le problème</td></tr>
+      <caption class="crumb">Symptoms you may hit, cause and resolution</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The script stops immediately</td><td>Architecture other than AMD64</td><td>None: there is no ARM build</td></tr>
+      <tr><td>“Windows protected your PC”</td><td>Unsigned executable</td><td>More info › Run anyway</td></tr>
+      <tr><td>The model download fails with no clear message</td><td>Controlled folder access is blocking <code>ollama.exe</code></td><td>Click “Allow” in the Windows notification</td></tr>
+      <tr><td>The application does not start after installation</td><td>WebView2 or the Visual C++ runtime is missing</td><td>Known caveat, with no documented fix to date</td></tr>
+      <tr><td>The installation stops without explanation</td><td>A check failed: fingerprint, size or path</td><td>Run it again; if it persists, report the problem</td></tr>
     </table>
 
-    <p>La suite se passe dans
-    <a href="demarrage-premier-lancement.html">Premier lancement</a>, et les cas
-    non couverts ici dans
-    <a href="reference-depannage-installation.html">Dépannage installation</a>.</p>
+    <p>What comes next is in
+    <a href="demarrage-premier-lancement.html">First launch</a>, and cases not
+    covered here in
+    <a href="reference-depannage-installation.html">Installation troubleshooting</a>.</p>
   </main>
 
   <div class="toc" id="docs-toc"></div>

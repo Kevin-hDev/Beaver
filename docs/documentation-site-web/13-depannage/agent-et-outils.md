@@ -152,7 +152,7 @@ Les zones autorisées sont, dans l'ordre où le code les assemble (`security.rs:
 
 **Côté interface**, le refus d'un dossier de session porte un autre libellé : **« Dossier non autorisé »**, suivi de « Les sessions sont limitées aux dossiers suivants : » et de **« Pour utiliser un autre dossier, modifiez Réglages > Avancé > Accès fichiers. »** (`fr.json:562-564`). C'est là que se règle la liste.
 
-**Deux bornes** (`directory_access.rs:7`, `:9`) : **70 chemins autorisés** au maximum, **4 096 caractères** par chemin. Au-delà, le réglage est refusé avec « Accès au dossier refusé par les réglages. » (`directory_access.rs:10`).
+**Deux bornes** (`directory_access.rs:7`, `:9`) : **70 chemins autorisés** au maximum, **4 096 caractères** par chemin. Au-delà, le réglage est refusé (`directory_access.rs:7-10`). Corrigé le 10 septembre 2026 : ne plus citer « Accès au dossier refusé par les réglages. » — cette chaîne interne n'a jamais été tracée jusqu'à une ligne de rendu (l'écran de session passe par `directoryAccess.*`), on énonce le refus sans citer de message.
 
 **Un lien symbolique n'est jamais suivi** pour les ressources de l'agent : un `memory/` qui pointe ailleurs est simplement ignoré (`agent_resource_access.rs:63-80`, test `:126-139`).
 

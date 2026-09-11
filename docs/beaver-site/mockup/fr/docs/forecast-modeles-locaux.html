@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Modèles de prévision locaux</title>
+<meta name="description" content="Le catalogue des modèles de prévision qui tournent sur ta machine, ce que chaque famille sait faire, et ce qui se passe pendant une installation.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Forecast / Modèles locaux</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="forecast-modeles-locaux.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/forecast-modeles-locaux.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Vingt modèles <em>sur ta machine</em></h1>
+    <p>Le catalogue de prévision de Beaver compte vingt modèles qui tournent sans réseau, répartis en dix familles. Cette page dit ce que chacune sait faire, ce qu'elle demande à ta machine, et ce qui se passe réellement pendant une installation.</p>
+
+    <h2 id="quest-ce-quun-modele">Ce qu'est un modèle de prévision dans Beaver</h2>
+    <p>Un modèle de prévision est un fichier de poids téléchargé sur la machine, accompagné d'un environnement Python qui sait le faire tourner. Ces deux morceaux sont <b>installés séparément et comptés séparément</b> — c'est la clé pour comprendre les états et les messages affichés.</p>
+    <p>Un modèle appartient à une <b>famille</b>, et l'environnement Python est partagé par toute une famille : installer un deuxième modèle Chronos-Bolt ne réinstalle pas le moteur.</p>
+    <p>Le vocabulaire de l'interface : <b>Installer</b>, <b>Préparer</b>, <b>Installé</b>, <b>Préparation requise</b>, <b>Mise à jour requise</b>, <b>Désinstaller</b>, <b>Taille disque</b>, <b>RAM</b>, <b>Horizon max</b>, <b>Fréquences</b>, <b>Capacités du modèle</b>, <b>Moteur utilisé</b>.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Un modèle, c'est deux installations : les poids d'un côté, l'environnement Python de sa famille de l'autre. C'est pourquoi le bouton affiche parfois <b>Préparer</b> au lieu de <b>Installer</b> — les poids sont déjà là, seul le moteur doit être refait, et rien n'est retéléchargé.
+    </div>
+
+    <h2 id="les-fournisseurs">Les dix fournisseurs</h2>
+    <p>Le catalogue est figé dans l'application : dix fournisseurs, dont neuf ne proposent que des modèles locaux — vingt au total. Le dixième, distant, est traité dans <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a>. Les descriptions ci-dessous sont celles que l'application affiche.</p>
+
+    <table>
+      <caption class="crumb">Les dix fournisseurs du catalogue Forecast</caption>
+      <tr><th>Fournisseur</th><th>Description affichée</th><th>Clé API</th></tr>
+      <tr><td><b>Amazon Chronos</b></td><td>« Modèles Chronos locaux pour la prévision de séries temporelles. »</td><td>Non</td></tr>
+      <tr><td><b>Google TimesFM</b></td><td>« TimesFM local, poids ouverts. »</td><td>Non</td></tr>
+      <tr><td><b>Nixtla (TimeGPT-2)</b></td><td>« Famille TimeGPT en cloud, accès par API. »</td><td><b>Oui</b></td></tr>
+      <tr><td><b>Datadog Toto 2.0</b></td><td>« Modèles de fondation Toto, séries temporelles et observabilité. »</td><td>Non</td></tr>
+      <tr><td><b>Salesforce MOIRAI 2.0</b></td><td>« Famille MOIRAI pour la prévision probabiliste. »</td><td>Non</td></tr>
+      <tr><td><b>IBM FlowState</b></td><td>« FlowState local pour séries temporelles. »</td><td>Non</td></tr>
+      <tr><td><b>PriorLabs TabPFN-TS</b></td><td>« Famille TabPFN-TS pour la prévision sans entraînement préalable. »</td><td>Non</td></tr>
+      <tr><td><b>NX-AI TiRex</b></td><td>« TiRex pour la prévision par quantiles, en zero-shot. »</td><td>Non</td></tr>
+      <tr><td><b>Foundation Model Research Kairos</b></td><td>« Kairos pour les séries temporelles multi-régimes. »</td><td>Non</td></tr>
+      <tr><td><b>THUML Sundial</b></td><td>« Sundial pour la prévision probabiliste en zero-shot. »</td><td>Non</td></tr>
+    </table>
+
+    <p>Tous les fournisseurs locaux affichent <b>Local</b> comme palier gratuit ; le fournisseur distant affiche <b>Aperçu / API</b>. Une précision de nommage : <b>Google TimesFM</b> s'écrit toujours en toutes lettres dans Forecast — le catalogue de prévision et celui des modèles de langage sont deux catalogues distincts, et « Google » seul désignerait autre chose.</p>
+
+    <h2 id="le-catalogue">Le catalogue local complet</h2>
+    <p>Vingt modèles, dans l'ordre du catalogue. La mémoire vive et la mémoire vidéo sont les besoins annoncés, <b>avant</b> les 20 % de marge que Beaver ajoute.</p>
+
+    <table>
+      <caption class="crumb">Les vingt modèles locaux, leurs besoins et leurs bornes</caption>
+      <tr><th>Modèle</th><th>Famille</th><th>Paramètres</th><th>Disque</th><th>Mémoire vive</th><th>Mémoire vidéo</th><th>Horizon max</th></tr>
+      <tr><td><b>Chronos-Bolt Tiny</b></td><td>Chronos-Bolt</td><td>9 M</td><td>35 Mo</td><td>150 Mo</td><td>60 Mo</td><td>1 000</td></tr>
+      <tr><td><b>Chronos-Bolt Mini</b></td><td>Chronos-Bolt</td><td>21 M</td><td>85 Mo</td><td>350 Mo</td><td>120 Mo</td><td>1 000</td></tr>
+      <tr><td><b>Chronos-Bolt Small</b></td><td>Chronos-Bolt</td><td>48 M</td><td>191 Mo</td><td>750 Mo</td><td>280 Mo</td><td>1 000</td></tr>
+      <tr><td><b>Chronos-Bolt Base</b></td><td>Chronos-Bolt</td><td>205 M</td><td>821 Mo</td><td>3 200 Mo</td><td>1 200 Mo</td><td>1 000</td></tr>
+      <tr><td><b>Chronos-2</b></td><td>Chronos-2</td><td>120 M</td><td>478 Mo</td><td>2 400 Mo</td><td>1 000 Mo</td><td>1 024</td></tr>
+      <tr><td><b>TimesFM 2.5 200M</b></td><td>TimesFM 2.5</td><td>200 M</td><td>925 Mo</td><td>4 200 Mo</td><td>1 800 Mo</td><td>1 000</td></tr>
+      <tr><td><b>Toto 2.0 4M</b></td><td>Toto-2</td><td>4 M</td><td>17 Mo</td><td>300 Mo</td><td>150 Mo</td><td>2 048</td></tr>
+      <tr><td><b>Toto 2.0 22M</b></td><td>Toto-2</td><td>22 M</td><td>88 Mo</td><td>650 Mo</td><td>320 Mo</td><td>2 048</td></tr>
+      <tr><td><b>Toto 2.0 313M</b></td><td>Toto-2</td><td>313 M</td><td>1 251 Mo</td><td>4 200 Mo</td><td>1 800 Mo</td><td>2 048</td></tr>
+      <tr><td><b>Toto 2.0 1B</b></td><td>Toto-2</td><td>1 Md</td><td>4 164 Mo</td><td>9 000 Mo</td><td>5 200 Mo</td><td>2 048</td></tr>
+      <tr><td><b>Toto 2.0 2.5B</b></td><td>Toto-2</td><td>2,5 Md</td><td>9 817 Mo</td><td>18 000 Mo</td><td>11 000 Mo</td><td>2 048</td></tr>
+      <tr><td><b>MOIRAI 2.0 R Small</b></td><td>Moirai-2</td><td>non publié</td><td>46 Mo</td><td>700 Mo</td><td>280 Mo</td><td>1 024</td></tr>
+      <tr><td><b>FlowState R1</b></td><td>FlowState</td><td>9 M</td><td>36 Mo</td><td>650 Mo</td><td>260 Mo</td><td>4 096</td></tr>
+      <tr><td><b>FlowState R1.1</b></td><td>FlowState</td><td>18,5 M</td><td>74 Mo</td><td>750 Mo</td><td>320 Mo</td><td>4 096</td></tr>
+      <tr><td><b>TabPFN-TS-3</b></td><td>TabPFN-TS</td><td>non publié</td><td>233 Mo</td><td>8 192 Mo</td><td>8 192 Mo</td><td>1 024</td></tr>
+      <tr><td><b>TiRex 35M</b></td><td>TiRex</td><td>35 M</td><td>141 Mo</td><td>900 Mo</td><td>420 Mo</td><td>1 024</td></tr>
+      <tr><td><b>Kairos 10M</b></td><td>Kairos</td><td>10 M</td><td>40 Mo</td><td>320 Mo</td><td>140 Mo</td><td>1 024</td></tr>
+      <tr><td><b>Kairos 23M</b></td><td>Kairos</td><td>23 M</td><td>92 Mo</td><td>520 Mo</td><td>220 Mo</td><td>1 024</td></tr>
+      <tr><td><b>Kairos 50M</b></td><td>Kairos</td><td>50 M</td><td>201 Mo</td><td>980 Mo</td><td>420 Mo</td><td>1 024</td></tr>
+      <tr><td><b>Sundial 128M</b></td><td>Sundial</td><td>128 M</td><td>513 Mo</td><td>2 400 Mo</td><td>1 000 Mo</td><td>1 024</td></tr>
+    </table>
+
+    <p>Les quatre modèles Chronos-Bolt, Chronos-2 et TimesFM 2.5 acceptent les fréquences de la dizaine de secondes à l'année ; les autres acceptent toutes les fréquences proposées. Deux fiches portent <b>non publié</b> dans la colonne des paramètres : le nombre n'est pas renseigné par leur auteur, il ne vaut pas zéro.</p>
+
+    <h2 id="capacites">Ce que chaque famille sait faire</h2>
+    <p>Les capacités ne dépendent pas de la taille du modèle mais de sa famille. Six sont exposées à l'interface.</p>
+
+    <table>
+      <caption class="crumb">Les six capacités affichées et ce qu'elles recouvrent</caption>
+      <tr><th>Capacité affichée</th><th>Ce qu'elle veut dire</th></tr>
+      <tr><td><b>Variables de contexte</b></td><td>Le modèle exploite d'autres colonnes que la cible sur la période passée</td></tr>
+      <tr><td><b>Contexte futur</b></td><td>Il exploite en plus les valeurs futures connues de ces colonnes</td></tr>
+      <tr><td><b>Multi-séries indépendantes</b></td><td>Il prévoit plusieurs séries dans le même fichier, chacune pour elle-même</td></tr>
+      <tr><td><b>Multivarié conjoint</b></td><td>Il tient compte des liens entre les séries</td></tr>
+      <tr><td><b>Prévision probabiliste</b></td><td>Il produit un intervalle, pas seulement une valeur centrale</td></tr>
+      <tr><td><b>Backtesting</b></td><td>Il peut être évalué par la validation temporelle glissante</td></tr>
+    </table>
+
+    <table>
+      <caption class="crumb">Les capacités, famille par famille</caption>
+      <tr><th>Famille</th><th>Variables de contexte</th><th>Contexte futur</th><th>Multi-séries</th><th>Multivarié conjoint</th><th>Probabiliste</th><th>Backtesting</th></tr>
+      <tr><td><b>Chronos-Bolt</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>Chronos-2</b></td><td>oui</td><td>oui</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>TimesFM 2.5</b></td><td>oui</td><td>oui</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>Toto-2</b></td><td>—</td><td>—</td><td>oui</td><td><b>oui</b></td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>Moirai-2</b></td><td>—</td><td>—</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>FlowState</b></td><td>—</td><td>—</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>TabPFN-TS</b></td><td>—</td><td>—</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>TiRex</b></td><td>—</td><td>—</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>Kairos</b></td><td>—</td><td>—</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td><b>Sundial</b></td><td>—</td><td>—</td><td>oui</td><td>—</td><td>oui</td><td>oui</td></tr>
+      <tr><td>TimeGPT-2 (distant)</td><td>oui</td><td>oui</td><td>oui</td><td>selon la variante</td><td>oui</td><td>oui</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Parmi les modèles locaux, seuls <b>Chronos-2</b> et <b>TimesFM 2.5</b> exploitent tes colonnes explicatives. Météo, promotions, jours fériés : les autres modèles locaux ignorent ces colonnes, et Beaver refuse le lancement plutôt que de les laisser passer sans effet — « Variables futures non supportées par ce moteur ».
+    </div>
+
+    <h2 id="parametres">Les paramètres réglables par famille</h2>
+    <p>Chaque famille expose sa propre liste de réglages, affichée sous <b>Paramètres</b>. Quatre reviennent presque partout : relever la borne d'horizon du modèle, choisir combien de points de passé il regarde, demander des niveaux de quantiles en plus de l'intervalle choisi, et empêcher les prévisions négatives.</p>
+    <p>Les autres sont propres à une famille : taille de bloc de décodage et présence de valeurs manquantes pour Toto ; taille de lot pour MOIRAI ; facteur d'échelle et ordre des dimensions pour FlowState ; sortie probabiliste pour TabPFN-TS ; type de sortie — quantiles ou moyenne — pour TiRex ; préservation de la positivité, moyenne avec l'entrée inversée et génération pour Kairos ; nombre d'échantillons et précision numérique pour Sundial.</p>
+    <p>Au plus <b>16 niveaux de quantiles</b> sont retenus, et les trois niveaux de l'intervalle choisi ne sont jamais évincés par les niveaux ajoutés à la main.</p>
+
+    <h2 id="installation">Ce qui se passe pendant une installation</h2>
+    <p><b>1. Le téléchargement des poids.</b> Les fichiers viennent exclusivement de Hugging Face, sur une <b>révision figée</b> inscrite dans l'application — un identifiant de version précis, jamais une branche mouvante. Toute autre destination est refusée, y compris après redirection. Le téléchargement se fait dans un dossier de préparation séparé ; le dossier définitif n'est remplacé qu'à la toute fin, par un renommage indivisible. Une coupure en cours de route laisse donc soit l'ancienne installation entière, soit rien — jamais un modèle à moitié écrit.</p>
+    <p><b>2. La vérification.</b> Chaque fichier téléchargé a une taille et une empreinte attendues. La vérification lit le fichier entier et compare ; toute différence fait échouer l'installation. Le résultat est consigné dans un reçu déposé à côté des poids.</p>
+    <p><b>3. La préparation du moteur Python.</b> Beaver crée un environnement Python isolé pour la famille, puis y installe les bibliothèques. Quatre points comptent :</p>
+    <ul>
+      <li><b>Python 3.12 exactement</b> doit être présent sur la machine. Ni 3.11 ni 3.13. Sans lui, le message est « Runtime Python compatible indisponible ».</li>
+      <li><b>Chaque bibliothèque est épinglée et vérifiée par empreinte</b>, et installée depuis le dépôt public officiel uniquement. Une liste qui contiendrait un paquet non épinglé, un dépôt supplémentaire ou une source locale est refusée avant même de commencer.</li>
+      <li>Le moteur est préparé à côté, lui aussi, puis basculé en place une fois validé.</li>
+      <li>Si la préparation échoue, le moteur préparé pour rien est retiré — sauf s'il existait déjà avant.</li>
+    </ul>
+    <p><b>4. Le test de fumée.</b> Avant de déclarer le modèle prêt, Beaver le fait tourner une fois pour de vrai, <b>sur le processeur</b> et <b>sans accès réseau</b>. Le test dispose de <b>quinze minutes</b> ; au-delà, il est arrêté et l'installation échoue. C'est la raison pour laquelle la fin d'une installation peut sembler longue alors que le téléchargement est terminé.</p>
+
+    <table>
+      <caption class="crumb">Comment lire la barre de progression</caption>
+      <tr><th>Ce que la barre affiche</th><th>Ce qui se passe</th></tr>
+      <tr><td>De 0 à <b>70 %</b></td><td>Le téléchargement des poids</td></tr>
+      <tr><td>De <b>72 à 98 %</b></td><td>La préparation du moteur Python</td></tr>
+      <tr><td><b>99 %</b></td><td>La finalisation</td></tr>
+    </table>
+
+    <p>L'installation est annulable : le bouton <b>Annuler</b> est présent pendant toute la durée, et la touche <b>Échap</b> fait la même chose. Une annulation efface le dossier de préparation.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Python 3.12 doit être installé sur ta machine — exactement cette version, ni 3.11 ni 3.13. Sans elle, aucun modèle local ne peut être préparé.
+    </div>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Tout est vérifié, rien n'est pris sur parole. Les poids viennent d'une version figée et sont contrôlés fichier par fichier par leur empreinte ; les bibliothèques Python sont épinglées à une version et à une empreinte. Une seule différence fait échouer l'installation plutôt que de la laisser passer.
+    </div>
+
+    <h2 id="etats">Les quatre états d'un modèle</h2>
+
+    <table>
+      <caption class="crumb">Les états d'un modèle et ce qu'ils signifient</caption>
+      <tr><th>Libellé affiché</th><th>Ce que ça veut dire</th></tr>
+      <tr><td><b>Non installé</b></td><td>Les poids ne sont pas sur le disque</td></tr>
+      <tr><td>Sans libellé propre</td><td>Les fichiers sont là mais leurs tailles ne correspondent plus à ce qui est attendu ; il faut relancer l'installation</td></tr>
+      <tr><td><b>Mise à jour requise</b> / <b>Préparation requise</b></td><td>Les poids sont là, mais le reçu, le moteur Python ou le test de fumée ne sont plus à jour</td></tr>
+      <tr><td><b>Installé</b></td><td>Tout est vérifié, le modèle est utilisable</td></tr>
+    </table>
+
+    <p>Le passage à l'état <b>Installé</b> exige cinq conditions simultanées : poids présents avec leur marqueur de fin, tailles conformes, reçu à jour, moteur de la famille prêt, test de fumée validé.</p>
+    <p><b>Une mise à jour de Beaver peut faire repasser un modèle en « Préparation requise »</b> sans que rien n'ait bougé sur le disque : il suffit qu'une version de bibliothèque ait changé dans la liste épinglée. Le bouton affiche alors <b>Préparer</b> au lieu de <b>Installer</b>, et les poids ne sont pas retéléchargés.</p>
+
+    <h2 id="materiel">Le matériel : ce que Beaver vérifie avant de lancer</h2>
+    <p>Chaque fiche de modèle porte trois chiffres : la taille sur le disque, la mémoire vive nécessaire et la mémoire vidéo nécessaire. Beaver mesure la machine et compare.</p>
+
+    <table>
+      <caption class="crumb">La règle de comparaison entre le besoin annoncé et la machine</caption>
+      <tr><th>Verdict</th><th>Condition</th></tr>
+      <tr><td><b>Confortable</b></td><td>La mémoire disponible vaut au moins <b>le double</b> du besoin</td></tr>
+      <tr><td><b>Contraint</b></td><td>Elle couvre le besoin plus <b>20 % de marge</b>, sans atteindre le double</td></tr>
+      <tr><td><b>Insuffisant</b></td><td>Elle ne couvre pas le besoin plus <b>20 %</b></td></tr>
+      <tr><td><b>Inconnu</b></td><td>La mesure a échoué</td></tr>
+    </table>
+
+    <p>Beaver retient le meilleur des deux verdicts, carte graphique et processeur : un modèle qui ne tient pas sur la carte graphique reste utilisable s'il tient en mémoire vive. Un verdict <b>Insuffisant</b> donne « Ressources insuffisantes pour ce modèle » ; un verdict <b>Inconnu</b> sur un modèle demandant plus de 2 048 Mo donne « Ressources indisponibles pour ce modèle ». Ce contrôle est fait à chaque prévision et avant chaque évaluation d'un modèle.</p>
+    <p>Sur un Mac à puce Apple, la mémoire est partagée : la mémoire vive disponible sert aussi de mémoire vidéo dans le calcul.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Beaver ajoute 20 % à la mémoire annoncée. Un modèle qui demande 4 200 Mo n'est lancé que si 5 040 Mo sont réellement disponibles. En dessous, il refuse au lieu de lancer un calcul qui ramerait ou échouerait à mi-parcours.
+    </div>
+
+    <h2 id="desinstaller">Désinstaller</h2>
+    <p>La désinstallation se fait en trois temps : le dossier de préparation éventuellement resté d'une installation interrompue, puis le dossier du modèle, puis <b>le moteur Python de la famille — mais seulement si aucun autre modèle de cette famille n'est encore installé</b>.</p>
+    <p>Désinstaller un Chronos-Bolt alors qu'un autre modèle de la même famille est installé ne touche donc pas au moteur, et le second reste utilisable immédiatement.</p>
+    <p>L'action demande une confirmation, et elle est indisponible tant qu'un téléchargement est en cours. Il n'y a <b>pas d'annulation après coup</b> : réinstaller suppose de retélécharger.</p>
+
+    <h2 id="intervalles">Les intervalles de confiance : deux comportements</h2>
+    <p>Tous les modèles ne savent pas produire l'intervalle que tu demandes, et Beaver ne fait pas semblant.</p>
+
+    <table>
+      <caption class="crumb">Les niveaux de confiance acceptés selon la famille</caption>
+      <tr><th>Comportement</th><th>Familles concernées</th><th>Ce qui est proposé</th></tr>
+      <tr><td><b>Grille fixe</b></td><td>TimesFM 2.5, Toto 2.0, FlowState, TabPFN-TS, TiRex, Kairos</td><td><b>60 % ou 80 %</b>, rien d'autre</td></tr>
+      <tr><td><b>Continu</b></td><td>Chronos-Bolt, Chronos-2, MOIRAI 2.0, Sundial, TimeGPT-2</td><td>Tout niveau <b>entier de 50 % à 99 %</b></td></tr>
+    </table>
+
+    <p>Un niveau non supporté est refusé au lieu d'être approché. C'est un choix assumé : un intervalle à 90 % annoncé par un modèle qui n'en sait produire qu'un à 80 % serait faux sans que rien ne le signale.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Runtime Python compatible indisponible »</td><td>Python 3.12 absent de la machine</td><td>Installer Python 3.12 ; les autres versions ne conviennent pas</td></tr>
+      <tr><td>Le bouton affiche <b>Préparer</b> alors que le modèle était installé</td><td>La liste des bibliothèques a changé avec une mise à jour de Beaver</td><td>Cliquer sur Préparer ; les poids ne sont pas retéléchargés</td></tr>
+      <tr><td>L'installation reste bloquée vers 80 %</td><td>C'est l'installation des bibliothèques Python, pas le téléchargement</td><td>Patienter ; la barre repart à 98 % puis 99 %</td></tr>
+      <tr><td>L'installation échoue tout à la fin</td><td>Le test de fumée n'a pas abouti, ou a dépassé quinze minutes</td><td>Réessayer ; vérifier que la machine n'est pas saturée</td></tr>
+      <tr><td>« Ressources insuffisantes pour ce modèle »</td><td>Mémoire disponible inférieure au besoin <b>plus 20 %</b></td><td>Choisir une variante plus petite, ou fermer des applications</td></tr>
+      <tr><td>« Ressources indisponibles pour ce modèle »</td><td>La mémoire n'a pas pu être mesurée et le modèle demande plus de 2 048 Mo</td><td>Choisir un modèle plus léger</td></tr>
+      <tr><td>« Variables futures non supportées par ce moteur »</td><td>Le fichier contient des colonnes explicatives et le modèle choisi ne sait pas les lire</td><td>Passer à Chronos-2 ou TimesFM 2.5, ou retirer ces colonnes</td></tr>
+      <tr><td>Le niveau de confiance voulu n'est pas proposé</td><td>Le modèle ne produit que des intervalles à 60 % ou 80 %</td><td>Choisir 60 % ou 80 %, ou passer à un modèle à intervalle continu</td></tr>
+      <tr><td>Le bouton <b>Désinstaller</b> est grisé</td><td>Un téléchargement est en cours</td><td>Attendre la fin ou l'annuler</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a> — le fournisseur distant et sa clé API.</li>
+      <li><a href="forecast-selection-du-modele.html">Sélection du modèle</a> — choisir un modèle pour une analyse, et la sélection automatique.</li>
+      <li><a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a> — mesurer un modèle contre les références avant de lui faire confiance.</li>
+      <li><a href="modeles-materiel.html">Matériel et VRAM</a> — la mémoire disponible sur ta machine, côté modèles de langage : mêmes principes.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

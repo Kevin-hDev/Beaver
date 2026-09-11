@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver — l'agent complet que tu peux entièrement reprendre</title>
-<meta name="description" content="Un agent de développement qui arrive équipé — modèles locaux et cloud, Git, terminal, navigateur — et dont tu remplaces les outils, le prompt système et l'interface sans le forker.">
+<title>Beaver — the complete agent you can take back</title>
+<meta name="description" content="A development agent that arrives fully equipped — local and cloud models, Git, terminal, browser — and whose tools, system prompt and interface you replace yourself, without forking it.">
+<script src="js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +22,7 @@
 
 <div id="loader">
   <div class="count">0</div>
-  <div class="lbl">Construction du barrage</div>
+  <div class="lbl">Building the dam</div>
 </div>
 
 <canvas id="dust" aria-hidden="true"></canvas>
@@ -30,16 +31,16 @@
 <nav>
   <a class="logo" href="index.html">Beaver<em>.</em></a>
   <div class="nav-pill">
-    <a href="#harnais">Le harnais</a>
-    <a href="barrage.html">Ce qu'il embarque</a>
+    <a href="#harnais">The harness</a>
+    <a href="barrage.html">What it ships with</a>
     <a href="docs.html">Docs</a>
     <a href="https://github.com/Kevin-hDev/Beaver">GitHub</a>
-    <a href="barrage.html#install">Télécharger</a>
-    <span class="lang" role="group" aria-label="Langue">
-      <a class="lang-opt" href="index.html" hreflang="fr" aria-current="true">FR</a>
-      <a class="lang-opt" href="en/index.html" hreflang="en">EN</a>
+    <a href="barrage.html#install">Download</a>
+    <span class="lang" role="group" aria-label="Language">
+      <a class="lang-opt" href="fr/index.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="index.html" hreflang="en" aria-current="true">EN</a>
     </span>
-    <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+    <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
   </div>
 </nav>
 
@@ -47,16 +48,16 @@
   <div>
     <p class="kicker">Open source · macOS · Linux · Windows</p>
     <h1>
-      <span class="reveal"><span>Tout est déjà là</span></span>
-      <span class="reveal l2"><span><em>et tu peux tout</em> reprendre</span></span>
+      <span class="reveal"><span>It's already there</span></span>
+      <span class="reveal l2"><span><em>and you can take it</em> all back</span></span>
     </h1>
-    <p class="lead">Modèles locaux et cloud, Git, terminal, navigateur embarqué,
-    prévision de séries temporelles : Beaver arrive équipé. Puis tu
-    <b>remplaces ses outils</b>, tu <b>réécris son prompt système</b>, tu ajoutes
-    les tiens. Sans le forker.</p>
+    <p class="lead">Local and cloud models, Git, terminal, embedded browser,
+    time-series forecasting: Beaver arrives fully equipped. Then you
+    <b>replace its tools</b>, you <b>rewrite its system prompt</b>, you add
+    your own. Without forking it.</p>
     <div class="ctas">
-      <a class="btn btn-fill" href="barrage.html#install">Télécharger</a>
-      <a class="btn btn-ghost" href="#harnais">Voir comment →</a>
+      <a class="btn btn-fill" href="barrage.html#install">Download</a>
+      <a class="btn btn-ghost" href="#harnais">See how →</a>
     </div>
   </div>
 
@@ -66,48 +67,48 @@
       <div class="blk b-side">Sessions</div>
       <div class="blk b-chat">Chat</div>
       <div class="blk b-term">Terminal</div>
-      <div class="blk b-tools">Outils</div>
-      <div class="blk b-prev">Aperçu</div>
-      <div class="blk mine b-x1">Ton CRM</div>
-      <div class="blk mine b-x2">Ta vue</div>
-      <div class="blk mine b-x3">Ton outil</div>
+      <div class="blk b-tools">Tools</div>
+      <div class="blk b-prev">Preview</div>
+      <div class="blk mine b-x1">Your CRM</div>
+      <div class="blk mine b-x2">Your view</div>
+      <div class="blk mine b-x3">Your tool</div>
     </div>
     <div class="demo-legend">
-      <p class="demo-label" id="demo-label">Beaver, à l'installation</p>
+      <p class="demo-label" id="demo-label">Beaver, as installed</p>
       <div class="demo-dots" id="demo-dots"></div>
     </div>
   </div>
 </header>
 
 <section class="manifesto">
-  <p>Les autres agents te donnent ce qu'ils ont décidé.</p>
-  <p>Beaver te donne tout, <em>puis les clés.</em></p>
+  <p>Other agents give you what they decided.</p>
+  <p>Beaver gives you everything, <em>then the keys.</em></p>
 </section>
 
 <section class="harness" id="harnais">
   <div class="sec-head">
     <div>
-      <p class="kicker">02 / Le harnais</p>
-      <h2>À ta <em>main.</em><span class="l2">Vraiment.</span></h2>
+      <p class="kicker">02 / The harness</p>
+      <h2>In your <em>hands.</em><span class="l2">For real.</span></h2>
     </div>
-    <p class="lead"><b>Pas un fork. Ton Beaver.</b>
-    Une extension n'ajoute pas seulement : elle retire et elle remplace.
-    Le même Beaver, remodulé par toi.</p>
+    <p class="lead"><b>Not a fork. Your Beaver.</b>
+    An extension doesn't only add: it takes away and it replaces.
+    The same Beaver, rebuilt by you.</p>
   </div>
 
   <div class="hwrap">
     <div class="code-card">
-      <div class="code-head"><i></i><i></i><i></i><span>mon-extension.ts — beaverApi: "1"</span></div>
+      <div class="code-head"><i></i><i></i><i></i><span>my-extension.ts — beaverApi: "1"</span></div>
       <pre><span class="k">export default</span> defineExtension({
   activate(beaver) {
-    <span class="c">// ton outil, à côté de ceux de Beaver</span>
-    beaver.registerTool(monOutil)
+    <span class="c">// your tool, right next to Beaver's own</span>
+    beaver.registerTool(myTool)
 
-    <span class="c">// ta vue, dans son interface</span>
+    <span class="c">// your view, inside its interface</span>
     beaver.ui.register({ type: <span class="s">'tab'</span>, id: <span class="s">'crm'</span> })
 
-    <span class="c">// et ce que tu recouvres — API avancée</span>
-    beaver.unstable.registerReplacement(monBash)
+    <span class="c">// and what you override — advanced API</span>
+    beaver.unstable.registerReplacement(myBash)
   },
 })</pre>
     </div>
@@ -116,35 +117,35 @@
       <div class="hpoint">
         <span class="n">01</span>
         <div>
-          <h3>Remplace ses outils</h3>
-          <p>Son outil bash ne te convient pas ? Recouvre-le avec le tien,
-          via l'API avancée. L'agent ne verra que le tien.</p>
+          <h3>Replace its tools</h3>
+          <p>Its bash tool isn't right for you? Override it with yours,
+          through the advanced API. The agent will only ever see yours.</p>
         </div>
       </div>
       <div class="hpoint">
         <span class="n">02</span>
         <div>
-          <h3>Réécris son cerveau</h3>
-          <p>Le prompt système se remplace, se désactive, ou revient à celui
-          du modèle — depuis les réglages, séparément pour le mode agent
-          et le mode chat.</p>
+          <h3>Rewrite its brain</h3>
+          <p>The system prompt can be replaced, switched off, or handed back
+          to the model's own — from the settings, separately for agent mode
+          and chat mode.</p>
         </div>
       </div>
       <div class="hpoint">
         <span class="n">03</span>
         <div>
-          <h3>Ajoute tes panneaux et tes vues</h3>
-          <p>L'interface n'est pas figée : tes panneaux, tes boutons et tes
-          vues prennent leur place à côté des siens.</p>
+          <h3>Add your panels and your views</h3>
+          <p>The interface isn't set in stone: your panels, your buttons and
+          your views take their place right beside its own.</p>
         </div>
       </div>
       <div class="hpoint">
         <span class="n">04</span>
         <div>
-          <h3>Sans jamais tout casser</h3>
-          <p>Chaque extension tourne dans son propre processus, hors du cœur
-          de Beaver. L'une plante, Beaver continue. Et rien ne s'active sans
-          ton accord explicite.</p>
+          <h3>Without ever bringing it down</h3>
+          <p>Every extension runs in its own process, outside Beaver's core.
+          One of them crashes, Beaver keeps going. And nothing activates
+          without your explicit approval.</p>
         </div>
       </div>
     </div>
@@ -154,11 +155,11 @@
 <section class="import">
   <div class="sec-head">
     <div>
-      <p class="kicker">03 / L'arrivée</p>
-      <h2>Tu viens <em>d'ailleurs.</em><span class="l2">Deux minutes.</span></h2>
+      <p class="kicker">03 / Moving in</p>
+      <h2>You come <em>from elsewhere.</em><span class="l2">Two minutes.</span></h2>
     </div>
-    <p class="lead">Tes instructions, tes règles et tes habitudes de travail
-    se reprennent telles quelles. Tu n'abandonnes rien en changeant d'atelier.</p>
+    <p class="lead">Your instructions, your rules and your working habits come
+    across exactly as they are. You give up nothing by changing workshops.</p>
   </div>
   <div class="from-list">
     <span class="from">Claude Code</span>
@@ -168,18 +169,18 @@
     <span class="from">Kimi Code</span>
     <span class="from">ZCode</span>
   </div>
-  <p class="lead import-note">Et l'application parle sept langues :
-  français, anglais, espagnol, allemand, italien, chinois, japonais.</p>
+  <p class="lead import-note">And the application speaks seven languages:
+  French, English, Spanish, German, Italian, Chinese, Japanese.</p>
 </section>
 
 <footer class="foot">
-  <p class="foot-cta">Construis <em>ton</em> barrage.<span class="l2">Puis démonte le nôtre.</span></p>
+  <p class="foot-cta">Build <em>your</em> dam.<span class="l2">Then take ours apart.</span></p>
   <div class="foot-links">
     <div class="foot-nav">
-      <a href="barrage.html">Ce qu'il embarque</a>
+      <a href="barrage.html">What it ships with</a>
       <a href="docs.html">Docs</a>
       <a href="https://github.com/Kevin-hDev/Beaver">GitHub</a>
-      <a href="barrage.html#install">Télécharger</a>
+      <a href="barrage.html#install">Download</a>
     </div>
     <div>
       <div class="beaver-sleep" aria-hidden="true"></div>

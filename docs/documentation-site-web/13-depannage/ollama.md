@@ -178,7 +178,7 @@ C'est le mécanisme le plus mal compris de tout le produit, et il mérite une se
 1. **Vérifier le réglage** dans Réglages › Ollama, hors Mac.
 2. **Sous Linux avec une carte AMD ou NVIDIA** : vérifier que la carte est vue par le système avec `ls /sys/class/drm/`. Si rien n'y correspond, le pilote graphique n'est pas chargé — c'est un problème du système, pas de Beaver.
 3. **Sous Windows** : le pilote de la carte doit être installé ; c'est lui qui fournit le nom que Beaver lit.
-4. **Prendre un modèle plus petit ou plus compressé** — voir *Modèles › Matériel et VRAM*.
+4. **Prendre un modèle plus petit ou une quantification plus forte** — voir *Modèles › Matériel et VRAM*.
 
 ⚠️ **La détection du constructeur ne sert qu'à choisir l'archive à télécharger sous Linux** (voir *Dépannage › Installation*, section 12). Elle ne commande pas le choix processeur/carte graphique du moteur en fonctionnement : ce choix vient du réglage et de l'autodétection propre au moteur.
 
@@ -196,7 +196,7 @@ C'est le mécanisme le plus mal compris de tout le produit, et il mérite une se
 
 **La mesure de la mémoire décide aussi de la taille de contexte** accordée aux modèles locaux, en trois paliers (`services/gpu_vram.rs:44-48`) : **32 768 jetons** au-dessus de 24 000 Mo, **24 576 jetons** au-dessus de 12 000 Mo, **8 192 jetons** en dessous — et **8 192 également quand la mesure échoue**. Un contexte bloqué à 8 192 jetons sur une machine bien dotée est donc le symptôme d'une mesure ratée, pas d'un choix.
 
-**Résolution** — voir *Modèles › Matériel et VRAM*, qui porte la table de correspondance complète. En deux lignes ici : prendre une compression plus forte du même modèle, ou descendre d'une taille.
+**Résolution** — voir *Modèles › Matériel et VRAM*, qui porte la table de correspondance complète. En deux lignes ici : prendre une quantification plus forte du même modèle, ou descendre d'une taille.
 
 ### 9. Redémarrer le moteur
 

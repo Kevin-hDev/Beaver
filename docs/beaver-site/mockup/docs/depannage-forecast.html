@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Dépannage de Forecast</title>
-<meta name="description" content="Un modèle de prévision qui ne s'installe pas, des données refusées, un calcul qui échoue : ce que le message générique du panneau cache vraiment, et comment obtenir la vraie cause.">
+<title>Beaver Docs — Forecast troubleshooting</title>
+<meta name="description" content="A forecasting model that won't install, rejected data, a calculation that fails: what the panel's generic message really hides, and how to get the true cause.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,64 +19,64 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Dépannage / Forecast</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="depannage-forecast.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Troubleshooting / Forecast</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/depannage-forecast.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="depannage-forecast.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Forecast, <em>quand</em> le calcul échoue</h1>
-    <p>Un modèle de prévision qui ne s'installe pas, des données refusées, un calcul qui s'arrête net. Cette page part du message affiché et remonte à la cause réelle — ce qui, sur Forecast, demande un détour, parce que le panneau n'a que trois messages pour une trentaine de pannes différentes.</p>
+    <h1>Forecast, <em>when</em> the calculation fails</h1>
+    <p>A forecasting model that won't install, rejected data, a calculation that stops dead. This page starts from the message displayed and works back to the real cause — which, on Forecast, takes a detour, because the panel has only three messages for some thirty different failures.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>Le message affiché ne nomme presque jamais la cause.</b> Le moteur de prévision produit des phrases précises — « Modèle non installé », « Ressources insuffisantes pour ce modèle », « Clé API Nixtla non configurée » — mais le panneau Forecast les remplace toutes par une seule. Quand « Le calcul a échoué » ne suffit pas, <b>redemande la même prévision à l'agent dans une conversation</b> : lui reçoit la phrase exacte du moteur et te la montre. C'est le conseil le plus utile de cette page.
+      <b>The message displayed almost never names the cause.</b> The forecasting engine produces precise sentences — “Modèle non installé”, “Ressources insuffisantes pour ce modèle”, “Clé API Nixtla non configurée”, written in French whatever your language — but the Forecast panel replaces them all with a single one. When “The calculation failed” is not enough, <b>ask the agent for the same forecast in a conversation</b>: it receives the engine's exact sentence and shows it to you. That is the most useful piece of advice on this page.
     </div>
 
-    <h2 id="deux-endroits">Avant de chercher : les deux endroits où le message est différent</h2>
-    <p>Le même échec produit deux textes très différents selon la façon dont la prévision a été lancée. C'est le premier tri à faire, et il évite la moitié des recherches inutiles.</p>
-    <p><b>Depuis le panneau Forecast</b> — import d'un fichier, puis bouton <b>Lancer le forecast</b> — il n'existe que trois messages possibles.</p>
+    <h2 id="deux-endroits">Before looking: the two places where the message differs</h2>
+    <p>The same failure produces two very different texts depending on how the forecast was launched. That is the first sorting to do, and it avoids half of the fruitless searching.</p>
+    <p><b>From the Forecast panel</b> — importing a file, then the <b>Launch forecast</b> button — only three messages are possible.</p>
 
     <table>
-      <caption class="crumb">Les trois seuls messages du panneau Forecast</caption>
-      <tr><th>Ce qui s'affiche</th><th>Quand</th></tr>
-      <tr><td>« Import impossible. Vérifie le format du fichier. »</td><td>Le fichier n'a pas pu être lu</td></tr>
-      <tr><td>« Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API. »</td><td><b>Toute</b> panne pendant le calcul</td></tr>
-      <tr><td>« Le stockage Forecast est plein. Supprime d'anciennes analyses puis réessaie. »</td><td>Le seul cas particulier reconnu</td></tr>
+      <caption class="crumb">The only three messages of the Forecast panel</caption>
+      <tr><th>What is shown</th><th>When</th></tr>
+      <tr><td>“Import failed. Check the file format.”</td><td>The file could not be read</td></tr>
+      <tr><td>“The calculation failed. Check the columns, model, and API key.”</td><td><b>Any</b> failure during the calculation</td></tr>
+      <tr><td>“Forecast storage is full. Delete older analyses, then try again.”</td><td>The only special case recognized</td></tr>
     </table>
 
-    <p>La deuxième phrase couvre une trentaine de causes distinctes. Elle nomme trois pistes — les colonnes, le modèle, la clé API — mais <b>elle ne dit pas laquelle est en cause</b>, et il arrive que la cause ne soit aucune des trois.</p>
-    <p><b>Depuis une conversation avec l'agent</b> (« fais-moi une prévision sur ce fichier »), le message exact du moteur est renvoyé tel quel dans le résultat de l'outil, accompagné de l'étape suivante suggérée. C'est le seul endroit où la vraie phrase apparaît.</p>
-    <p>Les écrans de l'espace Forecast — Données, Scénarios, Comparaisons, Notes, Évaluation — suivent la même règle : ils affichent un message traduit et générique, jamais celui du moteur.</p>
+    <p>The second sentence covers some thirty distinct causes. It names three leads — the columns, the model, the API key — but <b>it does not say which one is at fault</b>, and sometimes the cause is none of the three.</p>
+    <p><b>From a conversation with the agent</b> (“forecast this file for me”), the engine's exact message is returned as is in the tool result, along with the suggested next step. That is the only place where the true sentence appears.</p>
+    <p>The Forecast workspace screens — Data, Scenarios, Comparisons, Notes, Evaluation — follow the same rule: they show a translated, generic message, never the engine's.</p>
 
-    <h2 id="installation">Le modèle de prévision ne s'installe pas</h2>
-    <p><b>Ce que tu vois</b>, à côté du bouton d'installation, est unique : <b>« Le téléchargement a échoué »</b>. Le moteur ne transmet qu'un seul code d'échec, quelle que soit la cause réelle.</p>
-    <p>Un second message existe, et il ne veut pas dire la même chose : <b>« Impossible d'ajouter ce modèle à la file d'attente. »</b> Celui-là signifie que l'installation n'a <b>pas</b> démarré — la file est pleine, seize téléchargements en attente au maximum.</p>
+    <h2 id="installation">The forecasting model won't install</h2>
+    <p><b>What you see</b>, next to the install button, is unique: <b>“Download failed”</b>. The engine passes on only one failure code, whatever the real cause.</p>
+    <p>A second message exists, and it does not mean the same thing: <b>“This model could not be added to the queue.”</b> That one means the installation did <b>not</b> start — the queue is full, sixteen downloads waiting at most.</p>
 
     <table>
-      <caption class="crumb">Les causes réelles, dans l'ordre où elles surviennent</caption>
-      <tr><th>Cause</th><th>Phrase produite par le moteur</th></tr>
-      <tr><td>Les fichiers du moteur livrés avec l'application sont introuvables ou incomplets</td><td>« Ressources Forecast incomplètes »</td></tr>
-      <tr><td><b>Python 3.12 n'est pas installé sur la machine</b></td><td>« Runtime Python compatible indisponible »</td></tr>
-      <tr><td>Le téléchargement des poids n'aboutit pas</td><td>« Téléchargement du modèle impossible »</td></tr>
-      <tr><td>Le téléchargement dépasse un délai</td><td>« Téléchargement du modèle expiré », « Téléchargement expiré »</td></tr>
-      <tr><td>Le fichier reçu ne correspond pas à son empreinte</td><td>« Téléchargement du modèle invalide »</td></tr>
-      <tr><td>Le disque est plein</td><td>« Écriture du téléchargement impossible »</td></tr>
-      <tr><td>L'installation des bibliothèques Python échoue</td><td>« Installation du moteur Forecast impossible »</td></tr>
-      <tr><td>Le test final du modèle échoue ou dépasse quinze minutes</td><td>« Validation du modèle Forecast impossible », « Validation du modèle Forecast expirée »</td></tr>
+      <caption class="crumb">The real causes, in the order in which they occur</caption>
+      <tr><th>Cause</th><th>Sentence produced by the engine</th></tr>
+      <tr><td>The engine files shipped with the app are missing or incomplete</td><td>“Ressources Forecast incomplètes”</td></tr>
+      <tr><td><b>Python 3.12 is not installed on the machine</b></td><td>“Runtime Python compatible indisponible”</td></tr>
+      <tr><td>Downloading the weights does not complete</td><td>“Téléchargement du modèle impossible”</td></tr>
+      <tr><td>The download goes past a timeout</td><td>“Téléchargement du modèle expiré”, “Téléchargement expiré”</td></tr>
+      <tr><td>The received file does not match its checksum</td><td>“Téléchargement du modèle invalide”</td></tr>
+      <tr><td>The disk is full</td><td>“Écriture du téléchargement impossible”</td></tr>
+      <tr><td>Installing the Python libraries fails</td><td>“Installation du moteur Forecast impossible”</td></tr>
+      <tr><td>The final model test fails or goes past fifteen minutes</td><td>“Validation du modèle Forecast impossible”, “Validation du modèle Forecast expirée”</td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Les modèles de prévision locaux demandent Python 3.12.</b> Exactement 3.12 : ni 3.11, ni 3.13. Beaver cherche successivement <code>python3.12</code>, <code>python3</code> puis <code>python</code> dans le chemin du système, et n'accepte que cette version. C'est la seule dépendance externe des modèles locaux, l'application ne l'installe pas et n'a aucun repli. Sans elle, l'installation échoue avec le message générique « Le téléchargement a échoué », qui ne dit pas que Python est en cause.
+      <span class="t">Warning</span>
+      <b>Local forecasting models require Python 3.12.</b> Exactly 3.12: neither 3.11 nor 3.13. Beaver looks in turn for <code>python3.12</code>, <code>python3</code> then <code>python</code> on the system path, and accepts only that version. It is the only external dependency of the local models, the app does not install it and has no fallback. Without it, the installation fails with the generic message “Download failed”, which does not say that Python is at fault.
     </div>
 
     <div class="term">
@@ -83,255 +84,255 @@
       <pre class="term-body"><span class="prompt">$</span> python3.12 --version</pre>
     </div>
 
-    <p><b>Le cas du réseau d'entreprise.</b> Les poids viennent uniquement de <code>huggingface.co</code> et des domaines liés, et les bibliothèques Python uniquement de <code>pypi.org</code>, avec vérification obligatoire des empreintes et refus de tout paquet à compiler. Un miroir interne, un proxy qui réécrit les réponses ou un blocage de ces deux domaines fait échouer l'installation, et <b>aucun réglage ne permet de la détourner</b>.</p>
+    <p><b>The corporate network case.</b> The weights come only from <code>huggingface.co</code> and related domains, and the Python libraries only from <code>pypi.org</code>, with mandatory checksum verification and refusal of any package that would need compiling. An internal mirror, a proxy that rewrites responses or a block on these two domains makes the installation fail, and <b>no setting allows it to be redirected</b>.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Une installation interrompue repart de zéro.</b> Il n'y a pas de reprise : le dossier de travail temporaire est supprimé à la première erreur, et chaque fichier en cours d'écriture est effacé avec lui. Rien de ce qui a déjà été téléchargé n'est conservé. Sur un modèle de plusieurs gigaoctets et une connexion instable, mieux vaut lancer l'installation à un moment où la machine ne sera pas coupée.
+      <span class="t">Warning</span>
+      <b>An interrupted installation starts over from zero.</b> There is no resume: the temporary working folder is deleted on the first error, and every file being written is erased with it. Nothing already downloaded is kept. On a model of several gigabytes and an unstable connection, it is better to start the installation at a time when the machine will not be cut off.
     </div>
 
-    <h2 id="bloque">L'installation semble bloquée</h2>
-    <p>C'est le symptôme le plus courant, et <b>ce n'est pas une panne</b>. La barre de progression ne mesure pas une seule opération mais quatre, et la troisième est longue et silencieuse.</p>
+    <h2 id="bloque">The installation seems stuck</h2>
+    <p>This is the most common symptom, and <b>it is not a failure</b>. The progress bar does not measure one operation but four, and the third is long and silent.</p>
 
     <table>
-      <caption class="crumb">Ce que la barre montre, et ce qui se passe réellement</caption>
-      <tr><th>Ce que montre la barre</th><th>Ce qui se passe réellement</th></tr>
-      <tr><td>0 à 70 %</td><td>Téléchargement des poids du modèle</td></tr>
-      <tr><td>72 %</td><td>Création de l'environnement Python</td></tr>
-      <tr><td>76 %</td><td>Préparation de l'installateur de bibliothèques</td></tr>
-      <tr><td><b>80 %</b></td><td><b>Installation des bibliothèques Python — l'étape la plus longue</b></td></tr>
-      <tr><td>98 %</td><td>Vérification du moteur</td></tr>
-      <tr><td>99 %</td><td>Mise en place définitive du modèle</td></tr>
+      <caption class="crumb">What the bar shows, and what is really happening</caption>
+      <tr><th>What the bar shows</th><th>What is really happening</th></tr>
+      <tr><td>0 to 70 %</td><td>Downloading the model weights</td></tr>
+      <tr><td>72 %</td><td>Creating the Python environment</td></tr>
+      <tr><td>76 %</td><td>Preparing the library installer</td></tr>
+      <tr><td><b>80 %</b></td><td><b>Installing the Python libraries — the longest step</b></td></tr>
+      <tr><td>98 %</td><td>Verifying the engine</td></tr>
+      <tr><td>99 %</td><td>Putting the model definitively in place</td></tr>
     </table>
 
-    <p>La phase affichée à côté du pourcentage porte les libellés <b>Téléchargement</b>, <b>Préparation du moteur</b>, <b>Installation</b>, <b>Terminé</b>.</p>
-
-    <div class="callout">
-      <span class="t">Note</span>
-      <b>La barre bloquée à 80 % n'est pas une panne.</b> C'est l'installation des bibliothèques Python. Elle peut durer plusieurs minutes sans que le pourcentage bouge, puis repart à 98 % et 99 % : ce n'est pas une progression continue, ce sont quatre paliers.
-    </div>
-
-    <p>À la toute fin, un test réel du modèle est exécuté, avec un délai maximal de <b>quinze minutes</b> — un échec à ce moment-là annule l'installation entière.</p>
-    <p><b>Annuler est possible</b> à tout instant, par le bouton <b>Annuler</b> ou par la touche <b>Échap</b> quand l'écran des modèles est au premier plan. L'annulation supprime ce qui a été téléchargé.</p>
-
-    <h2 id="preparation-requise">Le modèle est installé, mais Beaver affiche « Préparation requise »</h2>
-    <p>Beaver distingue quatre états pour un modèle local.</p>
-
-    <table>
-      <caption class="crumb">Les quatre états d'un modèle de prévision</caption>
-      <tr><th>Ce que tu lis</th><th>Ce que ça signifie</th></tr>
-      <tr><td><b>« Non installé »</b></td><td>Les poids ne sont pas là</td></tr>
-      <tr><td><b>« Préparation requise »</b></td><td>Les fichiers sont là mais n'ont pas la taille attendue</td></tr>
-      <tr><td><b>« Mise à jour requise »</b></td><td>Le reçu, le moteur ou le test de validité n'est plus à jour</td></tr>
-      <tr><td><b>« Installé »</b></td><td>Les cinq conditions sont réunies</td></tr>
-    </table>
-
-    <p>Le passage à « Installé » exige cinq choses simultanément : le dossier du modèle et son marqueur <code>.complete</code>, des fichiers à la taille attendue, un reçu <code>.artifacts-v1.json</code> conforme au catalogue de la version installée, un moteur Python prêt pour la famille du modèle, et une preuve de test à jour.</p>
-    <p><b>Ce qu'il faut en retenir</b> : après une mise à jour de Beaver qui change la liste des bibliothèques Python, un modèle déjà installé bascule en <b>Mise à jour requise</b>, et le bouton affiche <b>Préparer</b> au lieu d'Installer. <b>Les poids ne sont pas retéléchargés</b> : Beaver reconnaît qu'ils sont valides et ne refait que le moteur et la validation.</p>
-    <p>Un écart d'affichage à connaître : des fichiers présents mais de mauvaise taille — typiquement après une copie interrompue — n'ont pas de libellé propre et retombent eux aussi sur <b>« Préparation requise »</b>. Le bouton <b>Préparer</b> relance alors bien un téléchargement complet. L'affichage est trompeur, l'action est la bonne.</p>
-
-    <h2 id="memoire">« Ressources insuffisantes » : la mémoire</h2>
-    <p>Beaver mesure la mémoire disponible avant de lancer un modèle local et refuse plutôt que de laisser la machine s'effondrer. Il y a deux refus distincts :</p>
-    <ul>
-      <li><b>« Ressources insuffisantes pour ce modèle »</b> — la mémoire a été mesurée, et elle ne couvre pas le besoin du modèle <b>majoré de 20 %</b>.</li>
-      <li><b>« Ressources indisponibles pour ce modèle »</b> — la mémoire n'a <b>pas</b> pu être mesurée et le modèle demande plus de <b>2 048 Mo</b>. En dessous de ce seuil, Beaver laisse passer.</li>
-    </ul>
-    <p>Le détail du calcul — mémoire vidéo contre mémoire vive, les cinq verdicts — est dans <a href="forecast-selection-du-modele.html">Sélection du modèle</a>.</p>
-
-    <div class="callout">
-      <span class="t">Attention</span>
-      <b>Rien ne vérifie la mémoire avant de télécharger.</b> Ce contrôle n'a lieu qu'au lancement d'un calcul, jamais à l'installation. Tu peux donc installer plusieurs gigaoctets de modèle, puis découvrir au premier calcul que la machine ne peut pas le faire tourner. Vérifie la mémoire demandée sur la fiche du modèle <b>avant</b> d'installer — voir <a href="modeles-materiel.html">Matériel et VRAM</a>.
-    </div>
-
-    <p>Un point qui rattrape parfois la situation : la mémoire mesurée est celle <b>disponible au moment du calcul</b>. Fermer un navigateur peut suffire à faire passer un modèle refusé cinq minutes plus tôt.</p>
-
-    <h2 id="donnees">Les données sont refusées</h2>
-    <p>Deux moments distincts, deux messages différents.</p>
-    <p><b>À l'import du fichier</b> — <b>« Import impossible. Vérifie le format du fichier. »</b></p>
-
-    <table>
-      <caption class="crumb">Les trois causes d'un import refusé</caption>
-      <tr><th>Cause</th><th>Limite</th></tr>
-      <tr><td>Extension non reconnue</td><td><code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code> seulement</td></tr>
-      <tr><td>Fichier trop lourd</td><td><b>50 Mo</b></td></tr>
-      <tr><td>Fichier introuvable, ou chemin qui ne désigne pas un fichier</td><td>—</td></tr>
-    </table>
-
-    <p><b>À l'audit, juste avant le calcul</b> — le contrôle de qualité examine chaque ligne et produit une liste d'anomalies. <b>Une seule anomalie de gravité Erreur suffit à bloquer le calcul.</b> S'y ajoutent des limites de volume.</p>
-
-    <table>
-      <caption class="crumb">Les limites de volume des données</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Lignes lues dans un fichier</td><td><b>5 000</b></td></tr>
-      <tr><td>Données transmises en une fois</td><td><b>5 Mo</b></td></tr>
-      <tr><td>Colonnes par ligne</td><td><b>256</b></td></tr>
-      <tr><td>Caractères dans une cellule</td><td><b>32 768</b></td></tr>
-      <tr><td>Séries distinctes</td><td><b>256</b></td></tr>
-      <tr><td>Séries × horizon</td><td><b>100 000</b></td></tr>
-      <tr><td>Variables de contexte</td><td><b>64</b></td></tr>
-    </table>
-
-    <p>La liste complète des vingt-deux anomalies et leur remède colonne par colonne est dans <a href="forecast-donnees-et-audit.html">Données et audit</a>.</p>
-    <p><b>Ce qui ne se voit qu'à l'écran, et qui bloque beaucoup de monde</b> : la section <b>Données</b> de l'espace Forecast affiche le nombre d'anomalies et leur gravité — <b>« Erreur bloquante · 3 »</b>, <b>« Avertissement · 12 »</b> — <b>sans jamais nommer l'anomalie</b>. Tu sais donc qu'il y a trois problèmes bloquants, et rien de plus.</p>
-    <p><b>Le détour qui marche</b> : demander l'audit à l'agent. Le message précis — « Dates dupliquées », « Colonne cible non numérique », « Fréquence incohérente » — remonte alors dans le résultat de l'outil.</p>
-
-    <h2 id="calcul">« Le calcul a échoué » : la liste des causes réelles</h2>
-    <p>Voici le parcours d'un calcul lancé depuis le panneau, dans l'ordre. <b>Chaque ligne produit la même phrase à l'écran.</b></p>
-
-    <table>
-      <caption class="crumb">Trente causes derrière une seule phrase</caption>
-      <tr><th>Étape</th><th>Ce qui peut échouer</th><th>Phrase produite par le moteur</th></tr>
-      <tr><td>Lecture du fichier</td><td>Fichier illisible ou format refusé</td><td>« Impossible de lire les données source »</td></tr>
-      <tr><td>Contrôle de la demande</td><td>Horizon nul ou au-delà de la limite du modèle</td><td>« Horizon invalide »</td></tr>
-      <tr><td></td><td>Fréquence hors liste</td><td>« Fréquence invalide »</td></tr>
-      <tr><td></td><td>Fréquence non gérée par ce modèle</td><td>« Fréquence non supportée par ce moteur »</td></tr>
-      <tr><td></td><td>Niveau de confiance non géré</td><td>« Niveau de confiance non supporté par ce moteur »</td></tr>
-      <tr><td></td><td>Colonne série alors que le modèle ne sait pas</td><td>« Multi-séries non supporté par ce moteur »</td></tr>
-      <tr><td></td><td>Colonnes de contexte alors que le modèle ne sait pas</td><td>« Variables de contexte non supportées par ce moteur »</td></tr>
-      <tr><td></td><td>Colonnes en double, ou cible identique à la date</td><td>« Colonnes invalides », « Covariables invalides »</td></tr>
-      <tr><td>Audit des données</td><td>Une anomalie bloquante</td><td>Voir « Les données sont refusées »</td></tr>
-      <tr><td>Contexte futur</td><td>Lignes futures connues et colonnes de contexte, modèle incapable</td><td>« Variables futures non supportées par ce moteur »</td></tr>
-      <tr><td>Choix du moteur</td><td>Modèle absent du catalogue</td><td>« Modèle inconnu »</td></tr>
-      <tr><td></td><td>Modèle sans moteur exécutable</td><td>« Moteur indisponible »</td></tr>
-      <tr><td>Modèle distant</td><td>Aucune clé enregistrée</td><td>« Clé API Nixtla non configurée »</td></tr>
-      <tr><td>Modèle local</td><td>Modèle pas totalement prêt</td><td>« Modèle non installé »</td></tr>
-      <tr><td></td><td>Mémoire insuffisante</td><td>Voir « Ressources insuffisantes »</td></tr>
-      <tr><td></td><td>Le moteur ne démarre pas</td><td>« Impossible de démarrer le service de prédiction »</td></tr>
-      <tr><td>Calcul</td><td>Le moteur répond mal, ou pas</td><td>« Erreur du service de prédiction »</td></tr>
-      <tr><td>Enregistrement</td><td>Plus de place</td><td>Voir « Le stockage Forecast est plein »</td></tr>
-    </table>
-
-    <p><b>Le tri le plus efficace</b>, dans cet ordre :</p>
-    <ul>
-      <li><b>Le modèle choisi est-il marqué « Installé » ?</b> Sinon, c'est là que ça s'arrête.</li>
-      <li><b>La section Données signale-t-elle une erreur bloquante ?</b> Si oui, c'est là.</li>
-      <li><b>Le modèle est-il distant ?</b> Alors vérifie la clé.</li>
-      <li><b>Sinon, relance la même demande via l'agent</b> pour lire la phrase exacte.</li>
-    </ul>
-
-    <h2 id="timegpt">TimeGPT-2 : clé, quota, panne</h2>
-    <p><b>Sans clé enregistrée</b>, l'écran des modèles affiche <b>« Clé API non configurée »</b> à la place de la mention « Cloud (clé requise) », et le calcul refuse.</p>
-    <p><b>Avec une clé</b>, l'appel part vers le service de prévision de Nixtla avec un délai de <b>60 secondes</b> par tentative, <b>trois tentatives au maximum</b>, et des pauses de <b>2 puis 4 secondes</b>. Les reprises sont réservées à quatre situations : <b>429</b> (trop de requêtes), <b>502</b>, <b>503</b> et <b>504</b>. Une clé refusée ou un quota épuisé ne sont <b>pas</b> retentés : l'échec est immédiat.</p>
-    <p><b>Toutes les issues produisent la même phrase : « Erreur du service de prédiction ».</b> Clé invalide, quota dépassé, service en panne, réponse malformée : rien ne les distingue à l'écran. Le seul endroit qui porte l'information est le journal technique de Beaver, qui écrit le code HTTP renvoyé, sans le corps de la réponse.</p>
-    <p><b>Ce que tu peux faire</b>, faute de mieux : vérifier la validité de la clé depuis l'écran des clés API — un bouton de test existe et interroge le fournisseur, voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — puis vérifier l'état du service chez Nixtla. Si le test de clé passe et que le calcul échoue quand même, c'est le quota ou le service.</p>
-    <p>Le détail des variantes du modèle, de leurs réglages et de ce qui sort de la machine est dans <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a>.</p>
-
-    <h2 id="moteur-local">Le moteur local ne démarre pas</h2>
-    <p>Entre le clic sur <b>Lancer le forecast</b> et le calcul, Beaver démarre un petit service Python local. Toutes ses pannes deviennent « Le calcul a échoué » à l'écran.</p>
-
-    <table>
-      <caption class="crumb">Les cinq pannes du service de prévision local</caption>
-      <tr><th>Cause</th><th>Phrase produite par le moteur</th></tr>
-      <tr><td>Le service précédent refuse de s'arrêter</td><td>« Sidecar Forecast indisponible »</td></tr>
-      <tr><td>Le fichier du service est absent</td><td>« Sidecar Python non installé »</td></tr>
-      <tr><td>Le moteur Python de cette famille n'est pas prêt</td><td>« Moteur Forecast non préparé »</td></tr>
-      <tr><td>Le processus ne se lance pas</td><td>« Impossible de lancer le sidecar Forecast »</td></tr>
-      <tr><td>Le service ne répond pas à temps</td><td>« Sidecar Forecast: timeout au démarrage »</td></tr>
-    </table>
-
-    <p><b>Le délai de démarrage est de trente secondes.</b> Sur une machine lente ou pour un gros modèle, un premier lancement peut donc échouer alors que rien n'est cassé — <b>réessayer est une action utile ici</b>, contrairement à la plupart des autres échecs de cette page.</p>
+    <p>The phase shown next to the percentage carries the labels <b>Downloading</b>, <b>Preparing engine</b>, <b>Installing</b>, <b>Completed</b>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>Un modèle installé calcule sans Internet.</b> Le service de prévision est démarré en mode hors ligne, n'écoute que ta machine sur un port libre choisi au lancement, et il est protégé par un jeton tiré au hasard à chaque démarrage. Il ne peut rien télécharger pendant un calcul — ce qui explique aussi qu'une installation incomplète échoue au lieu de se réparer toute seule. Seule l'installation a besoin du réseau.
+      <b>The bar stuck at 80 % is not a failure.</b> That is the installation of the Python libraries. It can last several minutes without the percentage moving, then jump to 98 % and 99 %: it is not continuous progress, it is four steps.
     </div>
 
-    <h2 id="stockage">« Le stockage Forecast est plein »</h2>
-    <p>C'est le seul message précis que le panneau sait afficher : <b>« Le stockage Forecast est plein. Supprime d'anciennes analyses puis réessaie. »</b> Le mécanisme réel est plus subtil que la phrase :</p>
+    <p>At the very end, a real test of the model is run, with a maximum of <b>fifteen minutes</b> — a failure at that point cancels the whole installation.</p>
+    <p><b>Cancelling is possible</b> at any time, using the <b>Cancel</b> button or the <b>Esc</b> key when the models screen is in the foreground. Cancelling deletes what was downloaded.</p>
+
+    <h2 id="preparation-requise">The model is installed, but Beaver shows “Preparation required”</h2>
+    <p>Beaver distinguishes four states for a local model.</p>
+
+    <table>
+      <caption class="crumb">The four states of a forecasting model</caption>
+      <tr><th>What you read</th><th>What it means</th></tr>
+      <tr><td><b>“Not installed”</b></td><td>The weights are not there</td></tr>
+      <tr><td><b>“Preparation required”</b></td><td>The files are there but do not have the expected size</td></tr>
+      <tr><td><b>“Update required”</b></td><td>The receipt, the engine or the validity test is no longer up to date</td></tr>
+      <tr><td><b>“Installed”</b></td><td>The five conditions are met</td></tr>
+    </table>
+
+    <p>Reaching “Installed” requires five things at once: the model folder and its <code>.complete</code> marker, files of the expected size, an <code>.artifacts-v1.json</code> receipt matching the catalog of the installed version, a Python engine ready for the model's family, and an up-to-date test proof.</p>
+    <p><b>What to take away from this</b>: after a Beaver update that changes the list of Python libraries, an already installed model flips to <b>Update required</b>, and the button shows <b>Prepare</b> instead of Install. <b>The weights are not downloaded again</b>: Beaver recognizes that they are valid and only redoes the engine and the validation.</p>
+    <p>One display quirk worth knowing: files that are present but the wrong size — typically after an interrupted copy — have no label of their own and also fall back on <b>“Preparation required”</b>. The <b>Prepare</b> button then does start a full download. The display is misleading, the action is the right one.</p>
+
+    <h2 id="memoire">“Insufficient resources”: memory</h2>
+    <p>Beaver measures the available memory before launching a local model and refuses rather than letting the machine collapse. There are two distinct refusals:</p>
     <ul>
-      <li>la limite est de <b>500 analyses</b> au total ;</li>
-      <li>une fois cette limite atteinte, Beaver <b>supprime automatiquement la plus ancienne analyse du même espace de travail</b> et enregistre la nouvelle ;</li>
-      <li><b>le message n'apparaît que si l'espace de travail courant ne contient aucune analyse à supprimer</b> — c'est-à-dire quand les 500 analyses appartiennent toutes à d'autres projets ou conversations.</li>
+      <li><b>“Ressources insuffisantes pour ce modèle”</b> — the memory was measured, and it does not cover the model's need <b>plus 20 %</b>.</li>
+      <li><b>“Ressources indisponibles pour ce modèle”</b> — the memory could <b>not</b> be measured and the model asks for more than <b>2,048 MB</b>. Below that threshold, Beaver lets it through.</li>
+    </ul>
+    <p>The detail of the calculation — video memory versus main memory, the five verdicts — is in <a href="forecast-selection-du-modele.html">Model selection</a>.</p>
+
+    <div class="callout">
+      <span class="t">Warning</span>
+      <b>Nothing checks the memory before downloading.</b> This check only happens when a calculation is launched, never at installation. You can therefore install several gigabytes of model, then discover on the first calculation that the machine cannot run it. Check the memory required on the model's card <b>before</b> installing — see <a href="modeles-materiel.html">Hardware and VRAM</a>.
+    </div>
+
+    <p>One point that sometimes saves the situation: the memory measured is the one <b>available at the time of the calculation</b>. Closing a browser can be enough to let through a model refused five minutes earlier.</p>
+
+    <h2 id="donnees">The data is rejected</h2>
+    <p>Two distinct moments, two different messages.</p>
+    <p><b>When importing the file</b> — <b>“Import failed. Check the file format.”</b></p>
+
+    <table>
+      <caption class="crumb">The three causes of a refused import</caption>
+      <tr><th>Cause</th><th>Limit</th></tr>
+      <tr><td>Extension not recognized</td><td><code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code> only</td></tr>
+      <tr><td>File too heavy</td><td><b>50 MB</b></td></tr>
+      <tr><td>File not found, or a path that does not point to a file</td><td>—</td></tr>
+    </table>
+
+    <p><b>At the audit, just before the calculation</b> — the quality check examines every row and produces a list of anomalies. <b>A single anomaly of Error severity is enough to block the calculation.</b> Volume limits are added to that.</p>
+
+    <table>
+      <caption class="crumb">The data volume limits</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Rows read from a file</td><td><b>5,000</b></td></tr>
+      <tr><td>Data sent in one go</td><td><b>5 MB</b></td></tr>
+      <tr><td>Columns per row</td><td><b>256</b></td></tr>
+      <tr><td>Characters in a cell</td><td><b>32,768</b></td></tr>
+      <tr><td>Distinct series</td><td><b>256</b></td></tr>
+      <tr><td>Series × horizon</td><td><b>100,000</b></td></tr>
+      <tr><td>Context variables</td><td><b>64</b></td></tr>
+    </table>
+
+    <p>The full list of the twenty-two anomalies and their remedy column by column is in <a href="forecast-donnees-et-audit.html">Data and audit</a>.</p>
+    <p><b>What is only visible on screen, and blocks a lot of people</b>: the <b>Data</b> section of the Forecast workspace shows the number of anomalies and their severity — <b>“Blocking error · 3”</b>, <b>“Warning · 12”</b> — <b>without ever naming the anomaly</b>. So you know there are three blocking problems, and nothing more.</p>
+    <p><b>The detour that works</b>: ask the agent for the audit. The precise message — “Dates dupliquées”, “Colonne cible non numérique”, “Fréquence incohérente” — then comes back in the tool result.</p>
+
+    <h2 id="calcul">“The calculation failed”: the list of real causes</h2>
+    <p>Here is the journey of a calculation launched from the panel, in order. <b>Every line produces the same sentence on screen.</b></p>
+
+    <table>
+      <caption class="crumb">Thirty causes behind a single sentence</caption>
+      <tr><th>Step</th><th>What can fail</th><th>Sentence produced by the engine</th></tr>
+      <tr><td>Reading the file</td><td>File unreadable or format refused</td><td>“Impossible de lire les données source”</td></tr>
+      <tr><td>Checking the request</td><td>Horizon of zero or beyond the model's limit</td><td>“Horizon invalide”</td></tr>
+      <tr><td></td><td>Frequency outside the list</td><td>“Fréquence invalide”</td></tr>
+      <tr><td></td><td>Frequency not handled by this model</td><td>“Fréquence non supportée par ce moteur”</td></tr>
+      <tr><td></td><td>Confidence level not handled</td><td>“Niveau de confiance non supporté par ce moteur”</td></tr>
+      <tr><td></td><td>Series column while the model cannot handle it</td><td>“Multi-séries non supporté par ce moteur”</td></tr>
+      <tr><td></td><td>Context columns while the model cannot handle them</td><td>“Variables de contexte non supportées par ce moteur”</td></tr>
+      <tr><td></td><td>Duplicate columns, or target identical to the date</td><td>“Colonnes invalides”, “Covariables invalides”</td></tr>
+      <tr><td>Data audit</td><td>A blocking anomaly</td><td>See “The data is rejected”</td></tr>
+      <tr><td>Future context</td><td>Known future rows and context columns, model unable</td><td>“Variables futures non supportées par ce moteur”</td></tr>
+      <tr><td>Choosing the engine</td><td>Model missing from the catalog</td><td>“Modèle inconnu”</td></tr>
+      <tr><td></td><td>Model with no runnable engine</td><td>“Moteur indisponible”</td></tr>
+      <tr><td>Remote model</td><td>No key saved</td><td>“Clé API Nixtla non configurée”</td></tr>
+      <tr><td>Local model</td><td>Model not fully ready</td><td>“Modèle non installé”</td></tr>
+      <tr><td></td><td>Insufficient memory</td><td>See “Insufficient resources”</td></tr>
+      <tr><td></td><td>The engine does not start</td><td>“Impossible de démarrer le service de prédiction”</td></tr>
+      <tr><td>Calculation</td><td>The engine answers badly, or not at all</td><td>“Erreur du service de prédiction”</td></tr>
+      <tr><td>Saving</td><td>No room left</td><td>See “Forecast storage is full”</td></tr>
+    </table>
+
+    <p><b>The most efficient sorting</b>, in this order:</p>
+    <ul>
+      <li><b>Is the chosen model marked “Installed”?</b> If not, that is where it stops.</li>
+      <li><b>Does the Data section report a blocking error?</b> If yes, that is it.</li>
+      <li><b>Is the model remote?</b> Then check the key.</li>
+      <li><b>Otherwise, run the same request through the agent</b> to read the exact sentence.</li>
+    </ul>
+
+    <h2 id="timegpt">TimeGPT-2: key, quota, outage</h2>
+    <p><b>With no key saved</b>, the models screen shows <b>“API key not configured”</b> in place of the “Cloud (key required)” label, and the calculation is refused.</p>
+    <p><b>With a key</b>, the call goes to Nixtla's forecasting service with a timeout of <b>60 seconds</b> per attempt, <b>three attempts at most</b>, and pauses of <b>2 then 4 seconds</b>. Retries are reserved for four situations: <b>429</b> (too many requests), <b>502</b>, <b>503</b> and <b>504</b>. A rejected key or an exhausted quota are <b>not</b> retried: the failure is immediate.</p>
+    <p><b>Every outcome produces the same sentence: “Erreur du service de prédiction”.</b> Invalid key, quota exceeded, service down, malformed response: nothing tells them apart on screen. The only place carrying the information is Beaver's technical log, which writes the HTTP code returned, without the response body.</p>
+    <p><b>What you can do</b>, for want of anything better: check the key's validity from the API keys screen — a test button exists and queries the provider, see <a href="reference-coffre-et-cles.html">The vault and API keys</a> — then check the service status at Nixtla. If the key test passes and the calculation still fails, it is the quota or the service.</p>
+    <p>The detail of the model's variants, their settings and what leaves the machine is in <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a>.</p>
+
+    <h2 id="moteur-local">The local engine won't start</h2>
+    <p>Between the click on <b>Launch forecast</b> and the calculation, Beaver starts a small local Python service. All of its failures become “The calculation failed” on screen.</p>
+
+    <table>
+      <caption class="crumb">The five failures of the local forecasting service</caption>
+      <tr><th>Cause</th><th>Sentence produced by the engine</th></tr>
+      <tr><td>The previous service refuses to stop</td><td>“Sidecar Forecast indisponible”</td></tr>
+      <tr><td>The service file is missing</td><td>“Sidecar Python non installé”</td></tr>
+      <tr><td>The Python engine for this family is not ready</td><td>“Moteur Forecast non préparé”</td></tr>
+      <tr><td>The process does not launch</td><td>“Impossible de lancer le sidecar Forecast”</td></tr>
+      <tr><td>The service does not answer in time</td><td>“Sidecar Forecast: timeout au démarrage”</td></tr>
+    </table>
+
+    <p><b>The start timeout is thirty seconds.</b> On a slow machine or for a large model, a first launch can therefore fail while nothing is broken — <b>trying again is a useful action here</b>, unlike most of the other failures on this page.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>An installed model computes without the internet.</b> The forecasting service is started in offline mode, listens only to your machine on a free port chosen at launch, and is protected by a token drawn at random on every start. It can download nothing during a calculation — which also explains why an incomplete installation fails instead of repairing itself. Only the installation needs the network.
+    </div>
+
+    <h2 id="stockage">“Forecast storage is full”</h2>
+    <p>This is the only precise message the panel knows how to show: <b>“Forecast storage is full. Delete older analyses, then try again.”</b> The real mechanism is subtler than the sentence:</p>
+    <ul>
+      <li>the limit is <b>500 analyses</b> in total;</li>
+      <li>once that limit is reached, Beaver <b>automatically deletes the oldest analysis of the same workspace</b> and saves the new one;</li>
+      <li><b>the message only appears if the current workspace contains no analysis to delete</b> — that is, when all 500 analyses belong to other projects or conversations.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Le conseil du message ne s'applique pas là où il s'affiche.</b> Supprimer d'anciennes analyses est bien la bonne action, mais il faut les supprimer <b>dans les autres espaces de travail</b> — pas dans celui où le message apparaît, puisque celui-ci est justement vide de toute analyse.
+      <span class="t">Warning</span>
+      <b>The message's advice does not apply where it is shown.</b> Deleting older analyses is indeed the right action, but you must delete them <b>in the other workspaces</b> — not in the one where the message appears, since that one is precisely empty of any analysis.
     </div>
 
-    <p>Une seconde limite existe, séparée : une analyse individuelle ne peut pas dépasser <b>64 Mo</b> une fois enregistrée, sans quoi elle est refusée avec « Analyse Forecast trop volumineuse ». Elle se rencontre sur des prévisions à très nombreuses séries.</p>
+    <p>A second, separate limit exists: an individual analysis cannot exceed <b>64 MB</b> once saved, otherwise it is refused with “Analyse Forecast trop volumineuse”. It is met on forecasts with very many series.</p>
 
-    <h2 id="sans-solution">Ce qui n'a pas de solution</h2>
-    <p>Sans l'adoucir : dans ces cas, aucune issue n'est prévue.</p>
+    <h2 id="sans-solution">What has no solution</h2>
+    <p>Without softening it: in these cases, no way out is provided.</p>
     <ul>
-      <li><b>Distinguer une clé TimeGPT refusée d'un quota dépassé.</b> Le message est le même et rien dans l'interface ne les sépare.</li>
-      <li><b>Savoir quelle anomalie de données bloque, depuis l'écran.</b> Le compteur donne le nombre, jamais le nom. Le détour par l'agent est le seul chemin.</li>
-      <li><b>Savoir pourquoi une installation a échoué.</b> Un seul code d'échec pour une quinzaine de causes.</li>
-      <li><b>Reprendre une installation interrompue.</b> Tout est supprimé et retéléchargé.</li>
-      <li><b>Faire tourner un modèle local sans Python 3.12.</b> Aucun repli, aucun réglage, aucun moteur intégré de secours.</li>
-      <li><b>Utiliser un miroir de paquets interne.</b> Les adresses de <code>huggingface.co</code> et de <code>pypi.org</code> ne sont pas paramétrables.</li>
-      <li><b>Installer un modèle sur une machine sans Internet.</b> Les poids et les bibliothèques sont téléchargés à l'installation ; seule l'exécution, ensuite, fonctionne hors ligne.</li>
+      <li><b>Telling a rejected TimeGPT key from an exceeded quota.</b> The message is the same and nothing in the interface separates them.</li>
+      <li><b>Knowing which data anomaly is blocking, from the screen.</b> The counter gives the number, never the name. The detour through the agent is the only route.</li>
+      <li><b>Knowing why an installation failed.</b> A single failure code for some fifteen causes.</li>
+      <li><b>Resuming an interrupted installation.</b> Everything is deleted and downloaded again.</li>
+      <li><b>Running a local model without Python 3.12.</b> No fallback, no setting, no built-in backup engine.</li>
+      <li><b>Using an internal package mirror.</b> The addresses of <code>huggingface.co</code> and <code>pypi.org</code> are not configurable.</li>
+      <li><b>Installing a model on a machine with no internet.</b> The weights and the libraries are downloaded at installation; only running them afterwards works offline.</li>
     </ul>
 
-    <h2 id="table-dentree">Le message affiché et sa cause réelle</h2>
+    <h2 id="table-dentree">The message displayed and its real cause</h2>
 
     <table>
-      <caption class="crumb">La table d'entrée : ce que tu lis, et ce que ça veut vraiment dire</caption>
-      <tr><th>Ce que tu lis</th><th>Où</th><th>Ce que ça veut vraiment dire</th></tr>
-      <tr><td>« Import impossible. Vérifie le format du fichier. »</td><td>Panneau Forecast</td><td>Extension refusée, fichier au-delà de 50 Mo, ou fichier illisible</td></tr>
-      <tr><td>« Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API. »</td><td>Panneau Forecast</td><td><b>Trente causes possibles</b></td></tr>
-      <tr><td>« Le stockage Forecast est plein. Supprime d'anciennes analyses puis réessaie. »</td><td>Panneau Forecast</td><td>500 analyses, dont aucune dans l'espace de travail courant</td></tr>
-      <tr><td>« Le téléchargement a échoué »</td><td>Écran des modèles</td><td><b>Quinze causes possibles</b>, dont Python 3.12 absent</td></tr>
-      <tr><td>« Impossible d'ajouter ce modèle à la file d'attente. »</td><td>Écran des modèles</td><td>L'installation n'a pas démarré : 16 téléchargements déjà en attente</td></tr>
-      <tr><td>« Non installé » / « Préparation requise » / « Mise à jour requise » / « Installé »</td><td>Écran des modèles</td><td>Les quatre états d'un modèle</td></tr>
-      <tr><td>« Clé API non configurée »</td><td>Écran des modèles, modèle distant</td><td>Aucune clé Nixtla enregistrée</td></tr>
-      <tr><td>« Erreur bloquante · N »</td><td>Espace Forecast, section Données</td><td>N anomalies bloquantes, <b>sans leur nom</b></td></tr>
-      <tr><td>« Impossible de charger les données de l'analyse. »</td><td>Espace Forecast, section Données</td><td>L'analyse n'a pas pu être relue sur le disque</td></tr>
+      <caption class="crumb">The entry table: what you read, and what it really means</caption>
+      <tr><th>What you read</th><th>Where</th><th>What it really means</th></tr>
+      <tr><td>“Import failed. Check the file format.”</td><td>Forecast panel</td><td>Extension refused, file over 50 MB, or unreadable file</td></tr>
+      <tr><td>“The calculation failed. Check the columns, model, and API key.”</td><td>Forecast panel</td><td><b>Thirty possible causes</b></td></tr>
+      <tr><td>“Forecast storage is full. Delete older analyses, then try again.”</td><td>Forecast panel</td><td>500 analyses, none of them in the current workspace</td></tr>
+      <tr><td>“Download failed”</td><td>Models screen</td><td><b>Fifteen possible causes</b>, including Python 3.12 missing</td></tr>
+      <tr><td>“This model could not be added to the queue.”</td><td>Models screen</td><td>The installation did not start: 16 downloads already waiting</td></tr>
+      <tr><td>“Not installed” / “Preparation required” / “Update required” / “Installed”</td><td>Models screen</td><td>The four states of a model</td></tr>
+      <tr><td>“API key not configured”</td><td>Models screen, remote model</td><td>No Nixtla key saved</td></tr>
+      <tr><td>“Blocking error · N”</td><td>Forecast workspace, Data section</td><td>N blocking anomalies, <b>without their names</b></td></tr>
+      <tr><td>“Unable to load the analysis data.”</td><td>Forecast workspace, Data section</td><td>The analysis could not be read back from the disk</td></tr>
     </table>
 
-    <h2 id="delais">Les délais qui comptent</h2>
+    <h2 id="delais">The timeouts that matter</h2>
 
     <table>
-      <caption class="crumb">Ce qui est borné, et à quelle valeur</caption>
-      <tr><th>Opération</th><th>Délai</th></tr>
-      <tr><td>Connexion pour télécharger un modèle</td><td><b>15 s</b></td></tr>
-      <tr><td>Première réponse du serveur de modèles</td><td><b>30 s</b></td></tr>
-      <tr><td>Entre deux morceaux de téléchargement</td><td><b>60 s</b></td></tr>
-      <tr><td>Test du modèle après installation</td><td><b>15 minutes</b></td></tr>
-      <tr><td>Démarrage du moteur local</td><td><b>30 s</b></td></tr>
-      <tr><td>Une tentative vers TimeGPT</td><td><b>60 s</b></td></tr>
-      <tr><td>Reprises vers TimeGPT</td><td><b>2 tentatives de plus</b>, à 2 s puis 4 s</td></tr>
+      <caption class="crumb">What is bounded, and at what value</caption>
+      <tr><th>Operation</th><th>Timeout</th></tr>
+      <tr><td>Connection to download a model</td><td><b>15 s</b></td></tr>
+      <tr><td>First response from the model server</td><td><b>30 s</b></td></tr>
+      <tr><td>Between two download chunks</td><td><b>60 s</b></td></tr>
+      <tr><td>Model test after installation</td><td><b>15 minutes</b></td></tr>
+      <tr><td>Local engine start</td><td><b>30 s</b></td></tr>
+      <tr><td>One attempt to TimeGPT</td><td><b>60 s</b></td></tr>
+      <tr><td>Retries to TimeGPT</td><td><b>2 further attempts</b>, at 2 s then 4 s</td></tr>
     </table>
 
-    <h2 id="fichiers">Où vivent les fichiers de Forecast</h2>
-    <p>Tous sous <code>~/.local/share/cl-go-dash/</code>, sur les trois systèmes.</p>
+    <h2 id="fichiers">Where the Forecast files live</h2>
+    <p>All under <code>~/.local/share/cl-go-dash/</code>, on all three systems.</p>
 
     <table>
-      <caption class="crumb">Les cinq emplacements de Forecast</caption>
-      <tr><th>Dossier</th><th>Contenu</th></tr>
-      <tr><td><code>forecast-models/&lt;modèle&gt;/</code></td><td>Poids d'un modèle installé, son marqueur <code>.complete</code> et son reçu <code>.artifacts-v1.json</code></td></tr>
-      <tr><td><code>forecast-models/.&lt;modèle&gt;.staging/</code></td><td>Installation en cours ; supprimé en cas d'échec</td></tr>
-      <tr><td><code>forecast-sidecar/</code></td><td>Le service Python et les moteurs par famille</td></tr>
-      <tr><td><code>forecast-sidecar/.hf-cache/</code></td><td>Cache local du chargeur de modèles, jamais alimenté en ligne</td></tr>
-      <tr><td><code>forecast-analyses/</code></td><td>Les analyses enregistrées et leur index</td></tr>
+      <caption class="crumb">The five Forecast locations</caption>
+      <tr><th>Folder</th><th>Content</th></tr>
+      <tr><td><code>forecast-models/&lt;model&gt;/</code></td><td>Weights of an installed model, its <code>.complete</code> marker and its <code>.artifacts-v1.json</code> receipt</td></tr>
+      <tr><td><code>forecast-models/.&lt;model&gt;.staging/</code></td><td>Installation in progress; deleted on failure</td></tr>
+      <tr><td><code>forecast-sidecar/</code></td><td>The Python service and the engines by family</td></tr>
+      <tr><td><code>forecast-sidecar/.hf-cache/</code></td><td>Local cache of the model loader, never filled online</td></tr>
+      <tr><td><code>forecast-analyses/</code></td><td>The saved analyses and their index</td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common traps</h2>
 
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Le calcul a échoué » sans qu'aucune des trois pistes citées ne s'applique</td><td>Le message est unique pour une trentaine de causes</td><td>Relancer la même demande via l'agent pour lire la vraie phrase</td></tr>
-      <tr><td>« Le téléchargement a échoué » alors que la connexion fonctionne</td><td>Le message couvre aussi Python absent, l'installation des bibliothèques en échec, le disque plein, le test final raté</td><td>Vérifier d'abord que <code>python3.12</code> répond dans un terminal</td></tr>
-      <tr><td>L'installation reste à 80 % pendant plusieurs minutes</td><td>C'est l'installation des bibliothèques, pas le téléchargement</td><td>Attendre ; la barre repart à 98 %</td></tr>
-      <tr><td>Le modèle affiche « Préparation requise » alors qu'il vient d'être installé</td><td>Fichiers de mauvaise taille, ou moteur non préparé</td><td>Cliquer <b>Préparer</b> ; les poids valides ne sont pas retéléchargés</td></tr>
-      <tr><td>Un modèle installé refuse de calculer</td><td>La mémoire n'est vérifiée qu'au lancement</td><td>Fermer des applications, ou choisir un modèle plus léger</td></tr>
-      <tr><td>« Le stockage Forecast est plein » alors que ce projet ne contient aucune analyse</td><td>Les 500 analyses appartiennent à d'autres espaces de travail</td><td>Supprimer des analyses <b>dans les autres projets ou conversations</b></td></tr>
-      <tr><td>La section Données dit « Erreur bloquante · 2 » sans en dire plus</td><td>Les codes d'anomalie n'ont pas de libellé affiché</td><td>Demander l'audit à l'agent, ou consulter <a href="forecast-donnees-et-audit.html">Données et audit</a></td></tr>
-      <tr><td>Le calcul échoue une fois puis passe au second essai</td><td>Le moteur local a dépassé les 30 s de démarrage au premier lancement</td><td>Comportement attendu sur une machine lente</td></tr>
-      <tr><td>L'installation échoue sur un poste d'entreprise</td><td><code>huggingface.co</code> ou <code>pypi.org</code> bloqués, ou proxy qui réécrit les réponses</td><td>Aucun réglage ne permet de changer ces adresses</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“The calculation failed” while none of the three leads mentioned applies</td><td>The message is the same for some thirty causes</td><td>Run the same request through the agent to read the true sentence</td></tr>
+      <tr><td>“Download failed” while the connection works</td><td>The message also covers Python missing, failing library installation, a full disk, a failed final test</td><td>Check first that <code>python3.12</code> answers in a terminal</td></tr>
+      <tr><td>The installation stays at 80 % for several minutes</td><td>That is the library installation, not the download</td><td>Wait; the bar starts again at 98 %</td></tr>
+      <tr><td>The model shows “Preparation required” even though it was just installed</td><td>Files of the wrong size, or engine not prepared</td><td>Click <b>Prepare</b>; valid weights are not downloaded again</td></tr>
+      <tr><td>An installed model refuses to compute</td><td>Memory is only checked at launch</td><td>Close applications, or choose a lighter model</td></tr>
+      <tr><td>“Forecast storage is full” while this project contains no analysis</td><td>The 500 analyses belong to other workspaces</td><td>Delete analyses <b>in the other projects or conversations</b></td></tr>
+      <tr><td>The Data section says “Blocking error · 2” and no more</td><td>Anomaly codes have no displayed label</td><td>Ask the agent for the audit, or see <a href="forecast-donnees-et-audit.html">Data and audit</a></td></tr>
+      <tr><td>The calculation fails once then works on the second attempt</td><td>The local engine went past the 30 s start on the first launch</td><td>Expected behavior on a slow machine</td></tr>
+      <tr><td>The installation fails on a corporate machine</td><td><code>huggingface.co</code> or <code>pypi.org</code> blocked, or a proxy rewriting responses</td><td>No setting allows these addresses to be changed</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="forecast-modeles-locaux.html">Modèles locaux</a> — le catalogue, les états d'un modèle, l'installation en détail.</li>
-      <li><a href="forecast-donnees-et-audit.html">Données et audit</a> — la liste complète des contrôles de données et leurs remèdes.</li>
-      <li><a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a> — le modèle distant, ses variantes, ce qui sort de la machine.</li>
-      <li><a href="forecast-selection-du-modele.html">Sélection du modèle</a> — les modes Manuel et Auto, les cinq verdicts de ressources.</li>
-      <li><a href="modeles-materiel.html">Matériel et VRAM</a> — choisir un modèle que la machine peut faire tourner.</li>
-      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — enregistrer et tester une clé.</li>
-      <li><a href="reference-depannage-installation.html">Dépannage de l'installation</a> — l'installation de l'application elle-même.</li>
-      <li><a href="depannage-faq.html">Questions fréquentes</a> — les questions générales.</li>
+      <li><a href="forecast-modeles-locaux.html">Local models</a> — the catalog, a model's states, installation in detail.</li>
+      <li><a href="forecast-donnees-et-audit.html">Data and audit</a> — the full list of data checks and their remedies.</li>
+      <li><a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a> — the remote model, its variants, what leaves the machine.</li>
+      <li><a href="forecast-selection-du-modele.html">Model selection</a> — the Manual and Auto modes, the five resource verdicts.</li>
+      <li><a href="modeles-materiel.html">Hardware and VRAM</a> — choosing a model the machine can run.</li>
+      <li><a href="reference-coffre-et-cles.html">The vault and API keys</a> — saving and testing a key.</li>
+      <li><a href="reference-depannage-installation.html">Installation troubleshooting</a> — installing the app itself.</li>
+      <li><a href="depannage-faq.html">Frequently asked questions</a> — the general questions.</li>
     </ul>
   </main>
 

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Répertoire de travail</title>
-<meta name="description" content="Le dossier auquel une conversation est rattachée, la liste des dossiers que l'agent peut atteindre, et comment restreindre cette portée.">
+<title>Beaver Docs — Working folder</title>
+<meta name="description" content="The folder a conversation is attached to, the list of folders the agent can reach, and how to narrow that scope.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,91 +19,91 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Agent / Répertoire de travail</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="agent-repertoire-de-travail.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Agent / Working folder</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/agent-repertoire-de-travail.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="agent-repertoire-de-travail.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Répertoire de travail et <em>accès disque</em></h1>
-    <p>Deux notions distinctes, souvent confondues : le <b>répertoire de travail</b> est le dossier sur lequel porte une conversation ; la <b>portée d'accès</b> est la liste des dossiers que l'agent peut atteindre, toutes conversations confondues.</p>
+    <h1>Working folder and <em>disk access</em></h1>
+    <p>Two distinct notions, often confused: the <b>working folder</b> is the folder a conversation is about; the <b>access scope</b> is the list of folders the agent can reach, across all conversations.</p>
 
-    <h2 id="repertoire">Le répertoire de travail d'une conversation</h2>
-    <p>Chaque conversation est rattachée à un dossier. Ce dossier détermine :</p>
+    <h2 id="repertoire">A conversation's working folder</h2>
+    <p>Each conversation is attached to a folder. That folder determines:</p>
     <ul>
-      <li>ce que montre l'arbre de fichiers ;</li>
-      <li>où démarre le terminal ;</li>
-      <li>le dépôt Git sur lequel portent les actions de branche ;</li>
-      <li>le contexte que l'agent considère comme « le projet ».</li>
+      <li>what the file tree shows;</li>
+      <li>where the terminal starts;</li>
+      <li>the Git repository the branch actions apply to;</li>
+      <li>the context the agent considers to be “the project”.</li>
     </ul>
-    <p>Il est <b>propre à chaque conversation</b> : deux conversations ouvertes peuvent travailler sur deux dossiers différents.</p>
+    <p>It is <b>specific to each conversation</b>: two open conversations can work on two different folders.</p>
 
-    <h2 id="projets">Les projets</h2>
-    <p>Un <b>projet</b> est un répertoire de travail enregistré, qu'on retrouve d'une conversation à l'autre sans avoir à le resélectionner. Les projets sont stockés dans <code>projects.json</code>.</p>
-    <p>Point à connaître : certaines opérations — notamment les actions Git liées aux clones — <b>exigent que le dossier soit un projet enregistré</b>. Un chemin arbitraire est refusé.</p>
+    <h2 id="projets">Projects</h2>
+    <p>A <b>project</b> is a saved working folder, found again from one conversation to the next without having to reselect it. Projects are stored in <code>projects.json</code>.</p>
+    <p>A point to know: some operations — notably the Git actions tied to clones — <b>require the folder to be a saved project</b>. An arbitrary path is refused.</p>
 
-    <h2 id="portee">La portée d'accès disque</h2>
-    <p>Une liste de dossiers autorisés se règle dans <b>Réglages › Accès aux fichiers</b>. Elle borne ce que l'agent peut atteindre, indépendamment du répertoire de travail. En cas de refus, le message affiché est : <b>« Accès au dossier refusé par les réglages. »</b></p>
+    <h2 id="portee">The disk access scope</h2>
+    <p>A list of allowed folders is set in <b>Settings › File Access</b>. It bounds what the agent can reach, independently of the working folder. When access is refused, the app shows the <b>“Folder not allowed”</b> screen, which lists the permitted folders and points to the setting.</p>
     <div class="callout">
-      <span class="t">Deux choses différentes</span>
-      Le répertoire de travail est le dossier sur lequel porte une conversation. La portée d'accès est la liste des dossiers que l'agent peut atteindre, toutes conversations confondues.
+      <span class="t">Two different things</span>
+      The working folder is the folder a conversation is about. The access scope is the list of folders the agent can reach, across all conversations.
     </div>
 
-    <h2 id="validation">Comment un chemin est validé</h2>
-    <p>Avant toute lecture ou écriture, un chemin est <b>normalisé</b> — les liens et les raccourcis sont résolus jusqu'au chemin réel — puis <b>comparé aux racines autorisées</b>, dans lesquelles il doit se trouver.</p>
-    <p>C'est cette résolution préalable qui empêche de sortir de la zone autorisée par un chemin détourné : un lien symbolique pointant hors des racines est démasqué avant l'accès, pas après.</p>
+    <h2 id="validation">How a path is validated</h2>
+    <p>Before any read or write, a path is <b>normalized</b> — links and shortcuts are resolved down to the real path — then <b>compared against the allowed roots</b>, inside which it must sit.</p>
+    <p>It is this prior resolution that prevents leaving the allowed area through a roundabout path: a symbolic link pointing outside the roots is unmasked before access, not after.</p>
 
-    <h2 id="limites">Les limites</h2>
+    <h2 id="limites">The limits</h2>
     <table>
-      <caption class="crumb">Valeurs de référence</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Dossiers autorisés configurables</td><td><b>70</b></td></tr>
-      <tr><td>Racines d'espace de travail</td><td><b>73</b> (les 70 autorisés, plus 3 internes)</td></tr>
-      <tr><td>Longueur d'un chemin</td><td><b>4 096 caractères</b></td></tr>
+      <caption class="crumb">Reference values</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Configurable allowed folders</td><td><b>70</b></td></tr>
+      <tr><td>Workspace roots</td><td><b>73</b> (the 70 allowed, plus 3 internal ones)</td></tr>
+      <tr><td>Length of a path</td><td><b>4,096 characters</b></td></tr>
     </table>
-    <p>Les trois racines supplémentaires correspondent aux emplacements dont l'application a besoin pour fonctionner.</p>
+    <p>The three extra roots correspond to the locations the application needs in order to work.</p>
 
-    <h2 id="par-defaut">Le réglage par défaut</h2>
-    <p><b>Par défaut, l'agent a accès à l'intégralité du disque.</b></p>
+    <h2 id="par-defaut">The default setting</h2>
+    <p><b>By default, the agent has access to the entire disk.</b></p>
     <table>
-      <caption class="crumb">Racine autorisée à l'installation</caption>
-      <tr><th>Système</th><th>Racine autorisée par défaut</th></tr>
+      <caption class="crumb">Allowed root on installation</caption>
+      <tr><th>System</th><th>Default allowed root</th></tr>
       <tr><td>macOS</td><td><code>/</code></td></tr>
       <tr><td>Linux</td><td><code>/</code></td></tr>
       <tr><td>Windows</td><td><code>C:\</code></td></tr>
     </table>
-    <p>C'est un <b>choix assumé</b>, pas un oubli : l'agent est conçu pour travailler sur n'importe quel dossier de la machine sans configuration préalable, et la protection repose sur les autres mécanismes — la garde de permission, les chemins sensibles toujours soumis à confirmation, et le mode Plan.</p>
+    <p>This is a <b>deliberate choice</b>, not an oversight: the agent is designed to work on any folder on the machine without prior configuration, and protection rests on the other mechanisms — the permission guard, the sensitive paths always subject to confirmation, and Plan mode.</p>
     <div class="callout">
-      <span class="t">L'accès est complet par défaut</span>
-      Beaver peut atteindre tous tes fichiers. C'est ce qui lui permet de travailler sur n'importe quel projet sans réglage préalable. Si tu préfères le restreindre à quelques dossiers, la liste se modifie dans Réglages › Accès aux fichiers — et cette restriction s'applique à toutes tes conversations.
+      <span class="t">Access is full by default</span>
+      Beaver can reach all your files. That is what lets it work on any project without prior setup. If you would rather restrict it to a few folders, the list is edited in Settings › File Access — and that restriction applies to all your conversations.
     </div>
-    <p>Le réglage s'applique dès qu'une liste personnalisée est enregistrée. Une liste vide est ramenée au défaut : tu ne peux pas te retrouver sans aucune racine autorisée par accident.</p>
+    <p>The setting applies as soon as a custom list is saved. An empty list falls back to the default: you cannot end up with no allowed root by accident.</p>
 
-    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <h2 id="pieges">What surprises people most often</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Accès au dossier refusé par les réglages »</td><td>Chemin hors des dossiers autorisés</td><td>Ajouter le dossier dans Réglages › Accès aux fichiers</td></tr>
-      <tr><td>Une action Git est refusée sur un dossier valide</td><td>L'opération exige un projet enregistré</td><td>Enregistrer le dossier comme projet</td></tr>
-      <tr><td>Un lien symbolique ne donne pas accès à sa cible</td><td>Le chemin réel est résolu avant vérification</td><td>Ajouter la cible aux dossiers autorisés</td></tr>
-      <tr><td>Impossible d'ajouter un dossier de plus</td><td>Soixante-dix au maximum</td><td>Regrouper en dossiers parents</td></tr>
-      <tr><td>L'arbre de fichiers est vide</td><td>Répertoire de travail non défini ou inaccessible</td><td>Le définir dans la conversation</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“Folder not allowed”</td><td>Path outside the allowed folders</td><td>Add the folder in Settings › File Access</td></tr>
+      <tr><td>A Git action is refused on a valid folder</td><td>The operation requires a saved project</td><td>Save the folder as a project</td></tr>
+      <tr><td>A symbolic link does not give access to its target</td><td>The real path is resolved before checking</td><td>Add the target to the allowed folders</td></tr>
+      <tr><td>Cannot add another folder</td><td>Seventy at most</td><td>Group them into parent folders</td></tr>
+      <tr><td>The file tree is empty</td><td>Working folder unset or unreachable</td><td>Set it in the conversation</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-permissions.html">Modes de permission</a> — les chemins sensibles restent soumis à confirmation, même dans la zone autorisée.</li>
-      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — le détail du modèle.</li>
-      <li><a href="interface-fichiers-et-previews.html">Fichiers et prévisualisations</a> — l'arbre de fichiers.</li>
-      <li><a href="interface-conversations.html">Conversations</a> — ce qui est propre à chaque conversation.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — sensitive paths remain subject to confirmation, even inside the allowed area.</li>
+      <li><a href="reference-modele-de-securite.html">Security model</a> — the model in detail.</li>
+      <li><a href="interface-fichiers-et-previews.html">Files and previews</a> — the file tree.</li>
+      <li><a href="interface-conversations.html">Conversations</a> — what is specific to each conversation.</li>
     </ul>
   </main>
 

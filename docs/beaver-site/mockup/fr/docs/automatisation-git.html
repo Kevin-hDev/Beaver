@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Travailler avec Git</title>
+<meta name="description" content="Ce que Beaver sait faire avec Git sans quitter l'application, ce qu'il ne fait pas du tout, et ce qui reste au terminal : branches, worktrees, commits, push, fusion, historique et différences.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Automatisation / Git</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="automatisation-git.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/automatisation-git.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Git, <em>sans quitter</em> Beaver</h1>
+    <p>Beaver sait changer de branche, valider, publier et fusionner sans que tu ouvres un terminal. Il ne prétend pas remplacer Git pour autant : plusieurs opérations courantes n'existent pas dans l'application, et cette page commence par les nommer. Mieux vaut savoir tout de suite ce qui reste au terminal que le découvrir au premier message d'erreur.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Beaver ne récupère jamais rien du dépôt distant.</b> Ni <code>fetch</code>, ni <code>pull</code> : aucune des deux opérations n'existe dans l'application. Le retard affiché par rapport au distant — « Des changements distants sont disponibles » — est calculé sur ce que ton dépôt local sait <b>déjà</b>, et il n'est actualisé que par une récupération lancée ailleurs, ou par un Push réussi depuis Beaver. Pour rester à jour, garde un terminal à côté.
+    </div>
+
+    <h2 id="ce-que-beaver-fait">Ce que Beaver fait, et ce qu'il ne fait pas</h2>
+    <p>Chaque « non » de ce tableau est une absence réelle, pas un oubli de la documentation.</p>
+
+    <table>
+      <caption class="crumb">Les opérations Git disponibles, et celles qui ne le sont pas</caption>
+      <tr><th>Opération</th><th>Dans Beaver</th></tr>
+      <tr><td>Lister et changer de branche</td><td><b>Oui</b></td></tr>
+      <tr><td>Créer une branche</td><td><b>Oui</b></td></tr>
+      <tr><td>Supprimer une branche</td><td><b>Oui</b>, en trois modes</td></tr>
+      <tr><td>Valider (« Commit »)</td><td><b>Oui</b>, tout le dossier de travail</td></tr>
+      <tr><td>Valider une sélection de fichiers</td><td><b>Non</b></td></tr>
+      <tr><td>Récupérer (<code>fetch</code>)</td><td><b>Non</b></td></tr>
+      <tr><td>Tirer (<code>pull</code>)</td><td><b>Non</b></td></tr>
+      <tr><td>Publier (« Push »)</td><td><b>Oui</b></td></tr>
+      <tr><td>Fusionner (« Merge »)</td><td><b>Oui</b>, entre branches <b>locales</b></td></tr>
+      <tr><td>Cloner un dépôt distant</td><td><b>Non</b></td></tr>
+      <tr><td>Voir l'historique des commits</td><td><b>Oui</b>, sur la branche courante</td></tr>
+      <tr><td>Voir les différences d'un fichier</td><td><b>Oui</b>, dans un commit ou dans le dossier de travail</td></tr>
+      <tr><td>Lister et supprimer des worktrees</td><td><b>Oui</b></td></tr>
+      <tr><td>Créer un worktree</td><td><b>Non</b></td></tr>
+      <tr><td>Résoudre un conflit de fusion</td><td><b>Non</b></td></tr>
+    </table>
+
+    <p>Deux mots méritent une précision. <b>« Cloner » dans Beaver ne parle pas de Git</b> : il désigne le clone d'une conversation, décrit dans <a href="agent-cloner-une-conversation.html">Cloner une conversation</a>. Et <b>« résoudre un conflit » n'existe pas</b> : quand une fusion en produit un, Beaver l'annule proprement au lieu de te laisser dans un état intermédiaire — la résolution se fait au terminal ou dans un éditeur.</p>
+
+    <h2 id="ou-ca-se-passe">Où ça se passe dans l'application</h2>
+    <p>Git apparaît à deux endroits, avec des rôles différents.</p>
+    <p><b>Le sélecteur de branches</b>, dans la barre de contrôle d'une conversation. Il porte le nom de la branche courante et ouvre un menu contenant un champ <b>« Rechercher dans les branches »</b>, la liste des <b>« Branches »</b>, celle des <b>« Worktrees »</b>, le compteur <b>« Non validés : {{count}} fichier(s) »</b> et l'entrée <b>« Créer et extraire une nouvelle branche… »</b>.</p>
+    <p><b>La section Git du résumé de conversation</b>, qui porte les actions et l'historique : les boutons <b>« Commit »</b>, <b>« Push »</b> et <b>« Merge dans {{branch}} »</b>, puis la liste des <b>« Commits »</b>.</p>
+    <p>Quand le dossier n'est pas un dépôt Git, <b>le sélecteur de branches disparaît entièrement</b> et le résumé affiche <b>« Aucun dépôt Git »</b>. Rien n'est montré en panne : ce qui n'est pas utilisable est invisible.</p>
+
+    <h2 id="condition-dentree">La condition d'entrée : un projet enregistré</h2>
+    <p><b>Toutes</b> les opérations Git passent par un même contrôle : le dossier doit exister <b>et</b> se trouver à l'intérieur d'un projet enregistré dans Beaver. Un dépôt ouvert autrement est refusé.</p>
+    <p><b>Un sous-dossier d'un dépôt fonctionne</b> : la détection remonte l'arborescence jusqu'au dépôt parent. En revanche, <b>un dépôt sans dossier de travail</b> — un dépôt dit « bare » — est refusé.</p>
+
+    <h2 id="branches">Changer de branche, en créer une</h2>
+    <p><b>Seules les branches locales sont listées</b> : les branches distantes n'apparaissent pas, ce qui découle directement de l'absence de récupération. La branche courante est en tête, les autres par ordre alphabétique, et la liste s'arrête à <b>500 branches</b>.</p>
+    <p><b>Créer une branche part de la position courante et s'y place aussitôt</b>, sans rien valider : tes modifications en cours restent en place et suivent sur la nouvelle branche.</p>
+    <p>Le nom est vérifié à la saisie et au moment de créer, avec les mêmes règles des deux côtés.</p>
+
+    <table>
+      <caption class="crumb">Les règles de nommage d'une branche</caption>
+      <tr><th>Règle</th><th>Message en cas d'échec</th></tr>
+      <tr><td><b>100 caractères</b> au maximum</td><td><b>« Nom trop long (max 100 caractères) »</b></td></tr>
+      <tr><td>Ni nom vide, ni tiret en tête, ni <code>..</code>, ni espace, ni caractère de contrôle, ni <code>\ : ~ ^ ? * [</code>, ni barre oblique en début ou en fin, ni suffixe <code>.lock</code></td><td><b>« Nom invalide : caractères interdits ou format incorrect »</b></td></tr>
+      <tr><td>Chaque segment séparé par une barre oblique doit être non vide et ne pas commencer ni finir par un point</td><td>le même</td></tr>
+    </table>
+
+    <p>Trois refus supplémentaires existent : la branche existe déjà — <b>« Cette branche existe déjà »</b> ; le dépôt n'a aucun commit — <b>« Le dépôt n'a aucun commit, crée un commit d'abord »</b> ; le connecteur GitHub n'est pas connecté — <b>« Connecte GitHub avant de créer une branche »</b>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>GitHub est exigé même pour une branche purement locale.</b> Si l'un des distants de ton dépôt pointe vers GitHub — sous la forme <code>https://github.com/</code>, <code>ssh://git@github.com/</code> ou <code>git@github.com:</code> —, Beaver demande que le connecteur GitHub soit connecté avant de créer une branche, y compris quand cette branche ne sera jamais publiée. Un dialogue le propose sur place : <b>« Connectez GitHub pour créer une branche »</b>, avec le bouton <b>« Connecter GitHub »</b>. À défaut, la branche se crée au terminal. Le connecteur est décrit dans <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>.
+    </div>
+
+    <p><b>Changer de branche est refusé s'il reste des fichiers non validés</b>, et le refus arrive <b>avant</b> que Beaver touche au disque : il n'essaie pas d'extraire puis d'annuler. Le dialogue s'intitule <b>« Effectuez un commit pour changer de branche »</b> et explique : <b>« Les modifications apportées aux fichiers suivants seraient remplacées par l'extraction : »</b>. Il propose <b>« Effectuer le commit et changer de branche… »</b>, qui crée un commit de sauvegarde puis extrait. Si rien n'est modifié, l'extraction se fait directement, sans commit.</p>
+
+    <h2 id="modifications-non-validees">Les modifications non validées</h2>
+    <p>Les fichiers en attente sont classés <b>« Créé »</b>, <b>« Modifié »</b>, <b>« Supprimé »</b>, <b>« Renommé »</b> et <b>« Copié »</b>, chacun avec son nombre de lignes ajoutées et supprimées.</p>
+    <p><b>La liste s'arrête à 200 fichiers</b>, mais le compte réel est conservé et la coupure est annoncée : <b>« {{count}} fichiers modifiés. Les chiffres affichés sont partiels. »</b></p>
+    <p><b>Pour un fichier neuf, les lignes ne sont comptées que sous 1 Mo.</b> Au-delà, Beaver annonce zéro plutôt que de lire un gros fichier — un ajout volumineux peut donc apparaître avec un compte de lignes à zéro.</p>
+
+    <h2 id="commit">Valider : « Commit »</h2>
+    <p>Le dialogue s'intitule <b>« Commit des modifications »</b>, avec le champ <b>« Message du commit (facultatif) »</b> et le bouton <b>« Commit »</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Le commit prend tout.</b> Il n'existe pas de sélection de fichiers : le bouton valide l'ensemble du dossier de travail. Pour découper un travail en plusieurs commits, passe par <a href="interface-terminal.html">le terminal intégré</a>.
+    </div>
+
+    <p><b>Le message est facultatif.</b> Laissé vide, le commit porte un sujet de sauvegarde automatique. Il n'y a aucune longueur minimale, un maximum de <b>2 000 caractères</b>, les fins de ligne sont normalisées, et les caractères de contrôle autres que le saut de ligne et la tabulation sont refusés — le message d'erreur est alors <b>« La description du commit est invalide ou trop longue. »</b></p>
+    <p><b>S'il n'y a rien à valider, l'opération réussit sans rien faire.</b> Aucun commit vide n'est créé.</p>
+    <p><b>L'auteur du commit est ton identité Git</b>, cherchée d'abord dans la configuration du dépôt, puis dans celle que <code>git</code> déclare. Si aucune identité n'est configurée, le commit échoue avec <b>« Configure ton nom et ton adresse e-mail Git avant de créer un commit. »</b> — Beaver ne fabrique jamais d'auteur de substitution.</p>
+    <p>Une protection discrète mérite d'être connue : <b>avant chaque commit, le fichier d'index du dépôt est copié</b> ; si le commit échoue, l'index d'origine est remis en place. Un commit raté ne laisse pas le dépôt dans un état intermédiaire.</p>
+
+    <h2 id="push">Publier : « Push »</h2>
+    <p>L'indicateur au-dessus du bouton annonce <b>« {{count}} commit(s) à Push vers {{destination}} · {{branch}} »</b>, la destination étant <b>« GitHub »</b> ou <b>« le dépôt distant »</b>.</p>
+    <p><b>Beaver pousse la branche courante vers son distant, sans forçage.</b> Le distant est choisi dans cet ordre : celui configuré pour la branche, puis <code>origin</code>, puis le premier de la liste. Après un push réussi, Beaver met à jour la référence distante locale et pose la branche amont — <b>c'est le seul moment où l'état du distant est rafraîchi.</b></p>
+    <p>L'authentification est tentée dans un ordre précis, chaque étape une seule fois : l'assistant d'identifiants Git du système, puis le jeton GitHub du connecteur — <b>uniquement pour une adresse en <code>https://github.com/</code></b> —, puis la clé SSH de l'agent, puis le nom d'utilisateur, puis la valeur par défaut. <b>S'il n'y a aucun identifiant utilisable, l'appel échoue</b> : rien ne passe en silence. Un dépôt GitHub en SSH n'utilise pas le jeton du connecteur.</p>
+
+    <table>
+      <caption class="crumb">Les cinq refus de Push et leur message</caption>
+      <tr><th>Situation</th><th>Message affiché</th></tr>
+      <tr><td>Aucun identifiant utilisable</td><td><b>« Connexion Git requise pour effectuer le Push. »</b></td></tr>
+      <tr><td>Le distant refuse</td><td><b>« Le dépôt distant a refusé le Push. Vérifie tes droits ou la protection de la branche. »</b></td></tr>
+      <tr><td>La branche distante a avancé</td><td><b>« La branche distante contient des changements plus récents. Synchronise le dépôt avant de refaire le Push. »</b></td></tr>
+      <tr><td>Réseau injoignable</td><td><b>« Connexion au dépôt distant impossible. »</b></td></tr>
+      <tr><td>La branche a changé depuis l'affichage</td><td><b>« Le projet ou la branche a changé. Relance le Push. »</b></td></tr>
+    </table>
+
+    <p>Le troisième cas est celui qui reviendra le plus souvent, et il découle de l'encadré du haut : <b>Beaver ne sait pas rattraper un retard</b>, puisqu'il ne récupère rien. La résolution passe par un <code>git pull</code> au terminal, puis un nouveau Push.</p>
+    <p>Deux délais réseau sont fixés à <b>30 secondes</b> chacun, pour la connexion et pour l'inactivité. Aucune liste d'adresses autorisées n'existe : n'importe quel distant configuré dans le dépôt est utilisable.</p>
+
+    <h2 id="merge">Fusionner : « Merge »</h2>
+    <p>Le dialogue s'intitule <b>« Merge dans {{branch}} »</b> et explique <b>« Choisis la branche à intégrer dans {{branch}}. »</b>, avec le champ <b>« Branche source »</b>. <b>La fusion est locale</b> : une branche locale dans la branche courante, jamais une branche distante.</p>
+    <p><b>L'aperçu annonce l'ampleur avant d'agir</b> : <b>« {{count}} commit(s) seront ajoutés à {{branch}}. »</b>, et le cas échéant <b>« {{count}} modification(s) feront l'objet d'un Commit avant le Merge. »</b>. Quand il n'y a rien à faire : <b>« Cette branche est déjà mergée dans {{branch}}. »</b></p>
+    <p>Quatre situations font refuser la fusion : la source est la cible ou il n'y a rien à fusionner ; la branche courante n'est pas celle attendue ; le dépôt est déjà au milieu d'une autre opération Git ; il reste des modifications non validées — sauf si tu choisis de les valider d'abord, via <b>« Commit puis Merge dans {{branch}} »</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Un conflit ne casse rien.</b> Beaver annule la fusion, puis <b>vérifie</b> que la position est revenue à sa valeur d'origine, que le dépôt est propre et qu'aucun fichier n'est modifié — ce n'est qu'après ce contrôle qu'il t'annonce le conflit, avec « Le Merge crée un conflit. Il a été annulé sans modifier la branche. ». Il ne propose pas de le résoudre : ça se fait au terminal ou dans un éditeur.
+    </div>
+
+    <p><b>Les crochets du dépôt sont neutralisés pendant la fusion.</b> Le chemin des crochets pointe vers un dossier temporaire vide, la signature cryptographique est désactivée, et aucune invite du terminal ne peut bloquer l'opération. C'est un choix de sécurité assumé : un crochet de dépôt est du code exécutable, et une fusion lancée depuis une interface graphique ne doit pas l'exécuter à ton insu. Voir <a href="reference-modele-de-securite.html">Modèle de sécurité</a>.</p>
+
+    <h2 id="supprimer">Supprimer une branche ou un worktree</h2>
+    <p><b>Un aperçu précède toujours la suppression.</b> Il annonce, s'il y a lieu : que c'est la branche courante et sur quelle branche Beaver se repliera, les fichiers non validés, et le nombre de commits non fusionnés — <b>« {{count}} commit(s) ne sont pas fusionné(s) »</b>.</p>
+    <p><b>La branche de repli</b> est la branche courante si elle diffère de la cible, sinon <code>main</code>, <code>master</code>, <code>develop</code>, <code>dev</code> dans cet ordre, sinon la première autre branche. Le message est <b>« Cette branche est utilisée. Beaver passera sur {{branch}} avant de la supprimer. »</b> ; sans aucune branche de repli, <b>« Crée d'abord une autre branche pour pouvoir supprimer celle-ci. »</b></p>
+
+    <table>
+      <caption class="crumb">Les trois modes de suppression</caption>
+      <tr><th>Mode</th><th>Ce qu'il fait</th><th>Libellé</th></tr>
+      <tr><td>Propre</td><td>Refuse s'il reste des modifications ou des commits non fusionnés</td><td><b>« Confirmer »</b></td></tr>
+      <tr><td>Abandonner</td><td>Jette les modifications puis supprime</td><td><b>« Supprimer et abandonner les modifications »</b>, <b>« Supprimer sans fusionner »</b></td></tr>
+      <tr><td>Préserver</td><td>Valide, se replie, fusionne, puis supprime</td><td><b>« Fusionner puis supprimer »</b>, <b>« Enregistrer, fusionner puis supprimer »</b></td></tr>
+    </table>
+
+    <p>Le comptage des commits non fusionnés s'arrête à <b>10 000</b>. <b>Un worktree suit la même logique</b>, avec les mêmes trois modes et un délai de <b>dix secondes</b> sur l'opération ; le worktree courant, lui, ne peut pas être supprimé.</p>
+
+    <h2 id="historique-et-differences">Lire l'historique et les différences</h2>
+    <p><b>L'historique porte sur la branche courante uniquement.</b> Il se charge par pages de <b>24 commits</b>, la suivante arrivant à l'approche du bas de la liste, jusqu'à <b>1 000 commits</b> affichés. Chaque commit montre <b>sa première ligne de message seulement</b>, bornée à 160 caractères ; sans message, <b>« Commit sans message »</b>. Le parcours s'arrête à <b>10 000 commits</b> ; au-delà, la liste répond <b>« Historique des commits indisponible. »</b>. Une branche sans commit affiche <b>« Aucun commit sur cette branche »</b>.</p>
+    <p><b>Ouvrir un commit</b> montre les fichiers qu'il touche — <b>200 au maximum</b> — puis, fichier par fichier, ses différences. Celles-ci se lisent dans deux modes : un commit contre son parent, ou le dossier de travail contre le dernier commit, avec trois lignes de contexte autour de chaque modification.</p>
+    <p><b>Un aperçu de différence est tronqué plutôt qu'abandonné</b> quand il dépasse ses bornes, et la troncature est annoncée : <b>« Aperçu limité : le fichier contient davantage de modifications. »</b>. Un fichier binaire n'affiche aucune différence, seulement l'indication qu'il l'est ; un fichier illisible affiche <b>« Les différences de ce fichier ne peuvent pas être affichées. »</b></p>
+    <p>Les aperçus de fichiers versionnés ont leurs propres bornes, et toute erreur d'aperçu remonte un message générique : aucun chemin, aucun détail interne n'est jamais affiché.</p>
+
+    <h2 id="worktrees">Les worktrees</h2>
+    <p>Un worktree est un second dossier de travail relié au même dépôt : il permet d'avoir deux branches ouvertes en même temps sur le disque, sans jongler avec les extractions.</p>
+    <p><b>Beaver les liste mais n'en crée pas.</b> La création se fait au terminal, avec <code>git worktree add</code>.</p>
+    <p>La liste s'arrête à <b>100 worktrees</b> et exclut deux catégories : les dépôts sans dossier de travail, et <b>tous les worktrees internes que Beaver crée pour ses propres sous-agents</b>. C'est voulu — ce sont des dossiers de travail temporaires, pas les tiens. Voir <a href="agent-sous-agents.html">Sous-agents</a>.</p>
+    <p><b>Changer de worktree change de dossier de travail</b>, ce qui ne peut pas se faire dans la même conversation. Le dialogue <b>« Changement de dossier »</b> l'explique — <b>« Ce worktree utilise un autre dossier de travail. Crée une nouvelle session pour garder la conversation actuelle intacte. »</b> — et propose <b>« Nouvelle session »</b>.</p>
+
+    <h2 id="detection">La détection automatique des changements</h2>
+    <p>Beaver surveille le dépôt et rafraîchit son affichage tout seul. À l'intérieur du dossier <code>.git</code>, il surveille le fichier de position courante, le dossier des branches et le fichier des références compactées, en regroupant les changements sur <b>200 millisecondes</b>.</p>
+    <p><b>Le dossier de travail, lui, est relu toutes les trois secondes</b>, et l'interface n'est prévenue que si quelque chose a réellement changé : nom de branche, position, nombre de fichiers modifiés, ou une empreinte des premières entrées du dossier.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Ce que tu fais au terminal apparaît tout seul.</b> Un commit, une extraction ou une simple édition faite hors de Beaver se voit dans l'application en <b>trois secondes au plus</b>, sans rien rafraîchir à la main — y compris quand le nombre de fichiers modifiés ne change pas.
+    </div>
+
+    <p><b>Un seul dépôt est surveillé à la fois</b> pour toute l'application : ouvrir un autre projet arrête la surveillance du précédent. Et si aucun dossier <code>.git</code> n'est trouvé, la surveillance ne démarre pas et ne signale rien.</p>
+
+    <h2 id="bornes">Les bornes, en un seul endroit</h2>
+
+    <table>
+      <caption class="crumb">Ce qui est borné dans le domaine Git</caption>
+      <tr><th>Élément</th><th>Borne</th></tr>
+      <tr><td>Branches listées</td><td><b>500</b></td></tr>
+      <tr><td>Worktrees listés</td><td><b>100</b></td></tr>
+      <tr><td>Distants examinés</td><td><b>32</b></td></tr>
+      <tr><td>Fichiers non validés listés</td><td><b>200</b></td></tr>
+      <tr><td>Fichiers listés dans un commit</td><td><b>200</b></td></tr>
+      <tr><td>Longueur d'un nom de branche</td><td><b>100 caractères</b></td></tr>
+      <tr><td>Longueur d'un message de commit</td><td><b>2 000 caractères</b></td></tr>
+      <tr><td>Commits par page d'historique</td><td><b>24</b> par défaut, <b>50</b> au maximum</td></tr>
+      <tr><td>Commits parcourus</td><td><b>10 000</b></td></tr>
+      <tr><td>Commits non fusionnés comptés</td><td><b>10 000</b></td></tr>
+      <tr><td>Aperçu d'une différence</td><td><b>100 blocs</b>, <b>2 000 lignes</b>, <b>16 Ko</b> par ligne, <b>2 Mo</b> au total</td></tr>
+      <tr><td>Aperçu texte d'un fichier versionné</td><td><b>2 Mo</b></td></tr>
+      <tr><td>Aperçu d'un <code>pdf</code> ou d'un <code>docx</code></td><td><b>10 Mo</b></td></tr>
+      <tr><td>Plafond absolu d'un fichier versionné</td><td><b>50 Mo</b></td></tr>
+      <tr><td>Délai réseau (connexion, inactivité)</td><td><b>30 s</b> chacun</td></tr>
+      <tr><td>Délai de suppression d'un worktree</td><td><b>10 s</b></td></tr>
+      <tr><td>Relecture du dossier de travail</td><td><b>3 s</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Le sélecteur de branches n'apparaît pas »</td><td>Le dossier n'est pas un dépôt Git, ou n'est pas dans un projet enregistré</td><td>Enregistrer le dossier comme projet ; vérifier qu'il contient bien un dépôt</td></tr>
+      <tr><td>« Je ne peux pas changer de branche »</td><td>Des fichiers ne sont pas validés</td><td>Utiliser « Effectuer le commit et changer de branche… », ou valider soi-même</td></tr>
+      <tr><td>« Créer une branche m'oblige à connecter GitHub »</td><td>Un distant du dépôt pointe vers GitHub</td><td>Connecter le connecteur GitHub, ou créer la branche au terminal</td></tr>
+      <tr><td>« Le Push est refusé : la branche distante a changé »</td><td>Beaver ne récupère pas les nouveautés</td><td><code>git pull</code> au terminal, puis relancer le Push</td></tr>
+      <tr><td>« Push impossible, connexion Git requise »</td><td>Aucun identifiant utilisable</td><td>Configurer l'assistant d'identifiants, le connecteur GitHub en HTTPS, ou une clé SSH</td></tr>
+      <tr><td>« Le commit échoue : nom et e-mail Git »</td><td>Aucune identité Git n'est configurée</td><td><code>git config user.name</code> et <code>git config user.email</code></td></tr>
+      <tr><td>« Je ne vois pas mes branches distantes »</td><td>Seules les branches locales sont listées</td><td>Créer une branche locale de suivi au terminal</td></tr>
+      <tr><td>« L'aperçu du fichier est coupé »</td><td>La différence dépasse ses bornes</td><td>Comportement attendu, signalé par « Aperçu limité »</td></tr>
+      <tr><td>« Mon worktree n'apparaît pas »</td><td>Plus de 100 worktrees, ou c'est un worktree interne de sous-agent</td><td>Comportement attendu</td></tr>
+      <tr><td>« Impossible de supprimer cette branche »</td><td>C'est la branche courante, ou il n'existe aucune branche de repli</td><td>Changer de branche d'abord, ou en créer une autre</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="interface-terminal.html">Terminal intégré</a> — ce qui reste au terminal : <code>fetch</code>, <code>pull</code>, <code>git worktree add</code>, résolution de conflits.</li>
+      <li><a href="outils-branches-git.html">Branches Git, côté outils</a> — ce que l'agent lui-même peut faire sur un dépôt.</li>
+      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — connecter GitHub.</li>
+      <li><a href="agent-sous-agents.html">Sous-agents</a> — les worktrees internes que Beaver crée et qui n'apparaissent pas dans la liste.</li>
+      <li><a href="agent-cloner-une-conversation.html">Cloner une conversation</a> — à ne pas confondre avec le clone d'un dépôt.</li>
+      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — la neutralisation des crochets de dépôt pendant une fusion.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Navigateur intégré</title>
+<meta name="description" content="Un navigateur Chromium dans le panneau latéral, avec son profil séparé, la détection des serveurs locaux et les capacités volontairement refusées.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Navigateur intégré</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-navigateur.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/interface-navigateur.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Un navigateur <em>bridé</em>, volontairement</h1>
+    <p>Un navigateur web complet, dans le panneau latéral de la conversation, bâti sur un moteur Chromium embarqué. Plusieurs de ses capacités sont refusées d'office — ce ne sont pas des manques, ce sont des choix, et cette page dit lesquels.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Le navigateur intégré est disponible sur <b>macOS et Windows</b>. Il n'existe pas sur Linux : c'est la seule fonctionnalité majeure absente d'un système.
+    </div>
+
+    <h2 id="a-quoi-il-sert">À quoi il sert</h2>
+    <p>Trois usages :</p>
+    <ul>
+      <li>consulter une page sans quitter l'application ;</li>
+      <li>rester connecté à un service d'une conversation à l'autre ;</li>
+      <li>voir le rendu d'un serveur de développement local que l'agent vient de démarrer.</li>
+    </ul>
+    <p>Il partage le panneau latéral avec la prévisualisation et Forecast : l'ouvrir remplace ce qui s'y trouvait. Voir <a href="interface-panneau-lateral.html">Panneau latéral</a>.</p>
+
+    <h2 id="les-onglets">Les onglets</h2>
+    <ul>
+      <li><b>Dix onglets au maximum par conversation.</b></li>
+      <li>Les titres sont tronqués à <b>80 caractères</b>.</li>
+      <li>Les onglets sont rattachés à la conversation : chacune a les siens.</li>
+    </ul>
+
+    <h2 id="sessions-connectees">Les sessions connectées</h2>
+    <ul>
+      <li>Les sessions restaurées sont <b>chiffrées</b> sur le disque.</li>
+      <li>Le navigateur utilise un <b>profil séparé</b>, distinct de ton navigateur habituel.</li>
+      <li>Taille d'un fichier de session : <b>128 Ko</b> au maximum.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Un profil séparé : le navigateur intégré a le sien, indépendant de ton navigateur habituel. Tes cookies et tes sessions personnels ne lui sont pas accessibles.
+    </div>
+
+    <h2 id="serveurs-de-developpement">La détection des serveurs de développement</h2>
+    <p>Beaver examine les ports locaux pour repérer un serveur de développement en cours d'exécution et te le proposer directement. Les résultats sont classés par numéro de port.</p>
+
+    <table>
+      <caption class="crumb">Les bornes du balayage des ports locaux</caption>
+      <tr><th>Borne</th><th>Valeur</th></tr>
+      <tr><td>Ports candidats examinés</td><td>128</td></tr>
+      <tr><td>Résultats retenus</td><td>32</td></tr>
+      <tr><td>Sondages simultanés</td><td>8</td></tr>
+      <tr><td>Contenu lu par site</td><td>64 Ko</td></tr>
+      <tr><td>Longueur du titre</td><td>80 caractères</td></tr>
+      <tr><td>Redirections suivies</td><td>3</td></tr>
+    </table>
+
+    <h2 id="ce-qui-est-bloque">Ce qui est bloqué</h2>
+    <p>Ce n'est pas un navigateur ordinaire. Un navigateur piloté par un agent qui aurait accès au micro et à la caméra poserait un problème évident : ces capacités sont refusées.</p>
+    <ul>
+      <li><b>Seuls <code>http</code> et <code>https</code> sont acceptés.</b> Tout autre schéma d'URL est rejeté.</li>
+      <li><b>La longueur d'une URL est plafonnée à 2 048 caractères.</b></li>
+      <li>Les demandes d'accès aux périphériques — caméra, microphone — sont interceptées par un gestionnaire dédié.</li>
+      <li>Les téléchargements et les cookies passent par des contrôles spécifiques.</li>
+      <li>Quand une capacité est refusée, tu en es informé.</li>
+    </ul>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Les plafonds du navigateur intégré</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Onglets par conversation</td><td><b>10</b></td></tr>
+      <tr><td>Sessions actives</td><td><b>64</b></td></tr>
+      <tr><td>Longueur d'URL</td><td><b>2 048 caractères</b></td></tr>
+      <tr><td>Fichier de session</td><td><b>128 Ko</b></td></tr>
+      <tr><td>Magasin de cookies</td><td><b>256 Mo</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Le navigateur est absent de l'interface</td><td>Système Linux</td><td>Aucune : non disponible</td></tr>
+      <tr><td>Une URL est refusée</td><td>Schéma autre que <code>http</code>/<code>https</code>, ou plus de 2 048 caractères</td><td>Utiliser une adresse web classique</td></tr>
+      <tr><td>Impossible d'ouvrir un onzième onglet</td><td>Plafond de dix par conversation</td><td>Fermer un onglet</td></tr>
+      <tr><td>Un site demande la caméra et ne l'obtient pas</td><td>Refus volontaire</td><td>Utiliser ton navigateur habituel</td></tr>
+      <tr><td>Un serveur local n'est pas détecté</td><td>Hors des ports examinés, ou plus de 32 résultats</td><td>Saisir l'adresse manuellement</td></tr>
+      <tr><td>La session de connexion est perdue</td><td>Fichier de session au-delà de 128 Ko</td><td>Se reconnecter</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="interface-panneau-lateral.html">Panneau latéral</a> — le partage de l'espace avec les prévisualisations et Forecast</li>
+      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — le détail des restrictions</li>
+      <li><a href="demarrage-prerequis.html">Prérequis</a> — la disponibilité par système</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

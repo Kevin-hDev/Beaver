@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Évaluation et comparaison</title>
-<meta name="description" content="Rejouer une prévision dans le passé pour savoir ce qu'elle vaut : les fenêtres, les quatre références, les mesures calculées et la façon dont les modèles sont classés.">
+<title>Beaver Docs — Evaluation and comparison</title>
+<meta name="description" content="Replaying a forecast in the past to find out what it's worth: the windows, the four baselines, the metrics computed and how models are ranked.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,193 +19,193 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Forecast / Évaluation et comparaison</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="forecast-evaluation-et-comparaison.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Forecast / Evaluation and comparison</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/forecast-evaluation-et-comparaison.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="forecast-evaluation-et-comparaison.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Savoir ce que <em>ta prévision vaut</em></h1>
-    <p>Une prévision seule ne dit pas si elle est bonne. Beaver la rejoue dans le passé, sur des périodes dont il connaît déjà le résultat, et compare ce que le modèle aurait prédit à ce qui s'est réellement produit. Cette page explique comment cette mesure est construite et comment la lire.</p>
+    <h1>Knowing what <em>your forecast is worth</em></h1>
+    <p>A forecast on its own doesn't say whether it's any good. Beaver replays it in the past, over periods whose outcome it already knows, and compares what the model would have predicted with what actually happened. This page explains how that measurement is built and how to read it.</p>
 
-    <h2 id="ce-que-fait-levaluation">Ce que fait l'évaluation</h2>
-    <p>Le nom affiché est <b>« Validation temporelle glissante »</b>. Le point essentiel : pendant chaque essai, la partie « à prédire » est <b>effacée des données</b> avant d'être envoyée au modèle. Le modèle ne peut donc pas tricher, même par accident. L'interface le dit en une ligne : « Le backtest compare le modèle actuel à quatre baselines sans utiliser le futur pendant l'entraînement. »</p>
-    <p>L'évaluation se lance depuis la section <b>Évaluation</b> de l'Espace Forecast, avec le bouton <b>« Lancer le backtest »</b>.</p>
+    <h2 id="ce-que-fait-levaluation">What evaluation does</h2>
+    <p>The name shown is <b>“Rolling temporal validation”</b>. The essential point: during each trial, the “to be predicted” part is <b>erased from the data</b> before being sent to the model. The model therefore can't cheat, not even by accident. The interface says it in one line: “The backtest compares the current model with four baselines without training on future data.”</p>
+    <p>Evaluation is launched from the <b>Evaluation</b> section of the Forecast workspace, with the <b>“Run backtest”</b> button.</p>
 
-    <h2 id="decoupe-de-lhistorique">Comment l'historique est découpé</h2>
-    <p>Beaver construit un plan de backtest avant de lancer quoi que ce soit.</p>
-    <p><b>L'horizon d'évaluation</b> est le plus petit de trois nombres : l'horizon de ta prévision, <b>256</b> pas — un plafond absolu — et <b>le tiers du nombre de points</b> de la série la plus courte.</p>
-    <p><b>Le nombre de fenêtres</b> est de <b>3</b>, borné entre 1 et 5. Si l'historique ne permet pas d'en caler trois, Beaver en fait moins. Le nombre de fenêtres n'est pas réglable depuis l'écran : l'interface en demande toujours trois.</p>
-    <p><b>Les fenêtres se décalent dans le temps.</b> Chaque fenêtre entraîne sur tout ce qui précède et teste sur les points suivants ; la dernière finit sur les derniers points connus. La fenêtre d'entraînement grandit à chaque essai — c'est ce que veut dire « glissante ». Le minimum absolu est de <b>4 points</b> par série ; en dessous, le backtest est refusé.</p>
-
-    <table>
-      <caption class="crumb">Les deux avertissements affichés au-dessus du tableau</caption>
-      <tr><th>Déclencheur</th><th>Texte affiché</th></tr>
-      <tr><td>Moins de 3 fenêtres</td><td>« Moins de trois fenêtres sont disponibles : interprétez le classement avec prudence. »</td></tr>
-      <tr><td>Horizon rogné par le plafond ou par la longueur de l'historique</td><td>« L'horizon d'évaluation a été réduit pour conserver des fenêtres temporelles valides. »</td></tr>
-    </table>
-
-    <p>En résumé, sous le tableau : <b>« {n} fenêtres · horizon {h} »</b>.</p>
-
-    <h2 id="les-references">Les quatre références de comparaison</h2>
-    <p>Un chiffre d'erreur seul ne dit rien. Beaver évalue donc systématiquement quatre méthodes simples sur exactement les mêmes fenêtres, et les affiche à côté du modèle.</p>
+    <h2 id="decoupe-de-lhistorique">How the history is cut up</h2>
+    <p>Beaver builds a backtest plan before launching anything.</p>
+    <p><b>The evaluation horizon</b> is the smallest of three numbers: your forecast's horizon, <b>256</b> steps — an absolute ceiling — and <b>a third of the number of points</b> in the shortest series.</p>
+    <p><b>The number of windows</b> is <b>3</b>, bounded between 1 and 5. If the history doesn't allow three to be fitted, Beaver uses fewer. The number of windows isn't adjustable from the screen: the interface always asks for three.</p>
+    <p><b>The windows shift through time.</b> Each window trains on everything that precedes it and tests on the following points; the last one ends on the most recent known points. The training window grows with each trial — that's what “rolling” means. The absolute minimum is <b>4 points</b> per series; below that, the backtest is refused.</p>
 
     <table>
-      <caption class="crumb">Les quatre méthodes de référence et ce qu'elles font</caption>
-      <tr><th>Nom affiché</th><th>Ce qu'elle fait</th><th>Minimum de points</th></tr>
-      <tr><td><b>Naive</b></td><td>Répète la dernière valeur connue</td><td>1</td></tr>
-      <tr><td><b>Naive saisonnier</b></td><td>Répète le dernier cycle complet</td><td>Une période entière</td></tr>
-      <tr><td><b>Drift</b></td><td>Prolonge la droite qui joint le premier et le dernier point</td><td>2</td></tr>
-      <tr><td><b>ETS</b></td><td>Lissage exponentiel avec tendance, meilleur couple de coefficients parmi 0,2 / 0,5 / 0,8</td><td>3</td></tr>
+      <caption class="crumb">The two warnings shown above the table</caption>
+      <tr><th>Trigger</th><th>Text shown</th></tr>
+      <tr><td>Fewer than 3 windows</td><td>“Fewer than three windows are available; interpret the ranking cautiously.”</td></tr>
+      <tr><td>Horizon trimmed by the ceiling or by the history's length</td><td>“The evaluation horizon was reduced to keep valid temporal windows.”</td></tr>
     </table>
 
-    <p><b>La période saisonnière est déduite de la fréquence</b>, sans réglage possible : seconde 60, minute 60, heure 24, jour 7, jour ouvré 5, semaine 52, mois 12, trimestre 4, année 1. Toute fréquence non reconnue tombe sur 1, c'est-à-dire pas de saisonnalité.</p>
-    <p><b>Si aucune des quatre références n'aboutit, le backtest entier échoue.</b> C'est cohérent : sans référence, un classement n'a pas de sens.</p>
-    <p>Les références obtiennent aussi une plage de confiance, construite à partir de leurs propres erreurs passées. Les quatre méthodes sont donc jugées sur la même grille que le modèle, intervalles compris.</p>
+    <p>In summary, under the table: <b>“{n} windows · horizon {h}”</b>.</p>
 
-    <h2 id="les-mesures">Les sept mesures calculées, les quatre affichées</h2>
+    <h2 id="les-references">The four comparison baselines</h2>
+    <p>An error figure on its own says nothing. Beaver therefore systematically evaluates four simple methods over exactly the same windows, and shows them next to the model.</p>
 
     <table>
-      <caption class="crumb">Les sept mesures produites pour chaque modèle évalué</caption>
-      <tr><th>Mesure</th><th>Ce qu'elle mesure</th></tr>
-      <tr><td><b>MASE</b></td><td>Erreur rapportée à celle d'une prévision naïve saisonnière ; <b>1,00 = aussi bon que la méthode naïve</b>, en dessous c'est mieux</td></tr>
-      <tr><td><b>sMAPE</b></td><td>Erreur en pourcentage, symétrique, de 0 à 200</td></tr>
-      <tr><td><b>MAE</b></td><td>Erreur absolue moyenne, dans l'unité de tes données</td></tr>
-      <tr><td><b>RMSE</b></td><td>Racine de l'erreur quadratique moyenne ; pénalise les grosses erreurs</td></tr>
-      <tr><td><b>Biais</b></td><td>Erreur moyenne <b>signée</b> : positif = le modèle surestime</td></tr>
-      <tr><td><b>Stabilité</b></td><td>Écart-type des erreurs moyennes d'une fenêtre à l'autre ; plus c'est bas, plus le modèle est régulier</td></tr>
-      <tr><td><b>Perte quantile</b></td><td>Qualité de la plage de confiance elle-même</td></tr>
+      <caption class="crumb">The four baseline methods and what they do</caption>
+      <tr><th>Name shown</th><th>What it does</th><th>Minimum points</th></tr>
+      <tr><td><b>Naive</b></td><td>Repeats the last known value</td><td>1</td></tr>
+      <tr><td><b>Seasonal Naive</b></td><td>Repeats the last complete cycle</td><td>A whole period</td></tr>
+      <tr><td><b>Drift</b></td><td>Extends the straight line joining the first and last point</td><td>2</td></tr>
+      <tr><td><b>ETS</b></td><td>Exponential smoothing with trend, best pair of coefficients among 0.2 / 0.5 / 0.8</td><td>3</td></tr>
     </table>
 
-    <p><b>Le tableau n'en montre que quatre</b> : Modèle, MASE, sMAPE, MAE, puis Couverture, Durée et Résultat. RMSE, biais, stabilité et perte quantile sont calculés, enregistrés dans l'analyse et utilisés pour départager le classement, mais ne sont pas affichés à l'écran — on les retrouve dans les exports. Les valeurs sont arrondies à deux décimales ; la durée est en millisecondes sous la seconde, en secondes au-delà.</p>
-    <p>Un graphe accompagne le tableau : une barre par modèle évalué, en sMAPE, avec une ligne de moyenne en pointillés. Son titre est <b>« Erreur du backtest (sMAPE) »</b> et son axe vertical porte l'étiquette « sMAPE (%) ». La barre du modèle courant, celles des références et celles des autres modèles portent trois couleurs distinctes.</p>
-    <p><b>Une mesure sort du lot : la mémoire.</b> Pendant l'évaluation d'un modèle local, Beaver échantillonne dix fois par seconde la mémoire de tout l'arbre de processus du moteur et retient le maximum. Elle n'est mesurée que pour les modèles locaux — un modèle distant ne consomme rien chez toi —, elle sert à départager deux modèles à qualité égale, et elle n'est affichée nulle part.</p>
+    <p><b>The seasonal period is derived from the frequency</b>, with no setting available: second 60, minute 60, hour 24, day 7, business day 5, week 52, month 12, quarter 4, year 1. Any unrecognised frequency falls back to 1, that is, no seasonality.</p>
+    <p><b>If none of the four baselines completes, the entire backtest fails.</b> That's consistent: without a baseline, a ranking is meaningless.</p>
+    <p>The baselines also get a confidence range, built from their own past errors. All four methods are therefore judged on the same grid as the model, intervals included.</p>
+
+    <h2 id="les-mesures">The seven metrics computed, the four shown</h2>
+
+    <table>
+      <caption class="crumb">The seven metrics produced for each evaluated model</caption>
+      <tr><th>Metric</th><th>What it measures</th></tr>
+      <tr><td><b>MASE</b></td><td>Error relative to that of a seasonal naive forecast; <b>1.00 = as good as the naive method</b>, below is better</td></tr>
+      <tr><td><b>sMAPE</b></td><td>Percentage error, symmetric, from 0 to 200</td></tr>
+      <tr><td><b>MAE</b></td><td>Mean absolute error, in your data's unit</td></tr>
+      <tr><td><b>RMSE</b></td><td>Root mean square error; penalises large errors</td></tr>
+      <tr><td><b>Bias</b></td><td>Mean <b>signed</b> error: positive = the model overestimates</td></tr>
+      <tr><td><b>Stability</b></td><td>Standard deviation of the mean errors from one window to another; the lower it is, the steadier the model</td></tr>
+      <tr><td><b>Quantile loss</b></td><td>Quality of the confidence range itself</td></tr>
+    </table>
+
+    <p><b>The table shows only four of them</b>: Model, MASE, sMAPE, MAE, then Coverage, Duration and Result. RMSE, bias, stability and quantile loss are computed, saved in the analysis and used to break ties in the ranking, but aren't shown on screen — you find them in the exports. Values are rounded to two decimals; the duration is in milliseconds below one second, in seconds beyond.</p>
+    <p>A chart accompanies the table: one bar per evaluated model, in sMAPE, with a dotted mean line. Its title is <b>“Backtest error (sMAPE)”</b> and its vertical axis carries the label “sMAPE (%)”. The current model's bar, the baselines' bars and the other models' bars carry three distinct colors.</p>
+    <p><b>One measurement stands apart: memory.</b> While evaluating a local model, Beaver samples the memory of the engine's entire process tree ten times a second and keeps the maximum. It is only measured for local models — a remote model consumes nothing on your side — it serves to break ties between two models of equal quality, and it isn't shown anywhere.</p>
 
     <div class="callout">
-      <span class="t">Le repère le plus utile</span>
-      MASE 1,00, c'est le niveau « je répète la dernière valeur ». En dessous de 1, le modèle fait mieux qu'une prévision naïve ; au-dessus, il fait moins bien — et un modèle qui fait moins bien qu'une répétition n'a aucun intérêt sur ces données.
+      <span class="t">The most useful landmark</span>
+      MASE 1.00 is the “I repeat the last value” level. Below 1, the model does better than a naive forecast; above, it does worse — and a model that does worse than a repetition is of no use on that data.
     </div>
 
-    <h2 id="la-couverture">La couverture : la promesse de la plage de confiance</h2>
-    <p>À côté des mesures d'erreur, Beaver vérifie une deuxième chose : <b>la plage de confiance tient-elle sa promesse ?</b> Une plage à 80 % doit contenir la vraie valeur environ 80 fois sur 100.</p>
-    <p>Le calcul produit cinq chiffres : la couverture théorique — le niveau demandé —, la couverture mesurée — la part des points réellement tombés dans la plage —, la largeur moyenne de la plage, la demi-largeur des résidus au niveau demandé, et le nombre de points ayant servi.</p>
-    <p>Le tableau affiche les deux premiers, séparés par une barre oblique : <b>« mesurée / théorique »</b>. Lire « 62,5% / 80,0% » veut dire : la plage promettait 80 %, elle n'a tenu que 62,5 % — elle est trop étroite.</p>
+    <h2 id="la-couverture">Coverage: the confidence range's promise</h2>
+    <p>Alongside the error metrics, Beaver checks a second thing: <b>does the confidence range keep its promise?</b> An 80% range should contain the true value roughly 80 times out of 100.</p>
+    <p>The calculation produces five figures: theoretical coverage — the level requested — measured coverage — the share of points that actually fell within the range — the range's mean width, the half-width of the residuals at the requested level, and the number of points used.</p>
+    <p>The table shows the first two, separated by a slash: <b>“measured / theoretical”</b>. Reading “62.5% / 80.0%” means: the range promised 80%, it only delivered 62.5% — it is too narrow.</p>
 
-    <h2 id="le-classement">Le classement, et « Meilleur que la baseline »</h2>
-    <p>Les résultats sont triés selon dix critères successifs, chacun ne servant qu'à départager les égalités du précédent : <b>MASE</b>, puis perte quantile, puis écart de couverture, puis sMAPE, puis MAE, puis RMSE, puis valeur absolue du biais, puis stabilité, puis mémoire maximale, puis durée.</p>
-    <p>Deux remarques sur cet ordre. Il place la <b>qualité de la plage de confiance en deuxième position</b>, avant toutes les autres mesures d'erreur : Beaver considère qu'un modèle qui se trompe autant mais annonce mieux son incertitude est meilleur. Et il place la <b>rapidité en tout dernier</b> : la vitesse ne fait jamais gagner un modèle moins juste.</p>
-    <p>Un modèle qui a échoué est classé après tous les autres. Le rang affiché est un simple numéro dans la première colonne.</p>
-    <p>La colonne <b>Résultat</b> dit trois choses : <b>« Référence »</b> pour les quatre méthodes simples ; <b>« Meilleur que la baseline »</b> ou <b>« Ne bat pas la baseline »</b> pour un modèle — la comparaison se fait contre <b>la meilleure des quatre</b>, pas contre leur moyenne, et selon les mêmes dix critères ; ou un motif d'échec quand l'évaluation n'a pas abouti.</p>
+    <h2 id="le-classement">The ranking, and “Beats the baseline”</h2>
+    <p>Results are sorted by ten successive criteria, each only breaking ties left by the previous one: <b>MASE</b>, then quantile loss, then coverage gap, then sMAPE, then MAE, then RMSE, then absolute value of the bias, then stability, then maximum memory, then duration.</p>
+    <p>Two remarks about that order. It puts the <b>quality of the confidence range in second position</b>, ahead of every other error metric: Beaver considers that a model that is just as wrong but states its uncertainty better is the better one. And it puts <b>speed dead last</b>: speed never wins it for a less accurate model.</p>
+    <p>A model that failed is ranked after all the others. The rank shown is a plain number in the first column.</p>
+    <p>The <b>Result</b> column says three things: <b>“Reference”</b> for the four simple methods; <b>“Beats the baseline”</b> or <b>“Does not beat the baseline”</b> for a model — the comparison is against <b>the best of the four</b>, not against their average, and by the same ten criteria; or a failure reason when the evaluation didn't complete.</p>
 
-    <h2 id="recalibrage">Ce que le backtest change dans la prévision elle-même</h2>
-    <p>C'est l'effet le moins visible et le plus utile : <b>un backtest recalibre la plage de confiance de ta prévision</b>.</p>
-    <p>Quand le modèle de l'analyse a été évalué avec au moins <b>3 points</b> de mesure, Beaver reprend la demi-largeur des résidus observés et <b>élargit</b> les bornes basse et haute de la prévision jusqu'à au moins cette valeur. Les bornes ne sont jamais rétrécies. Autrement dit : si le modèle s'est trompé de plus que ce que sa plage annonçait, la plage affichée s'élargit pour refléter les erreurs réellement constatées. Le plancher à zéro des grandeurs qui ne peuvent pas être négatives est réappliqué ensuite, et l'ordre des trois bornes revalidé.</p>
-    <p><b>Ce changement est enregistré</b> : il modifie l'analyse sauvegardée, pas seulement l'affichage.</p>
+    <h2 id="recalibrage">What the backtest changes in the forecast itself</h2>
+    <p>This is the least visible and most useful effect: <b>a backtest recalibrates your forecast's confidence range</b>.</p>
+    <p>When the analysis's model has been evaluated with at least <b>3 points</b> of measurement, Beaver takes the half-width of the observed residuals and <b>widens</b> the forecast's low and high bounds to at least that value. The bounds are never narrowed. In other words: if the model was wrong by more than its range announced, the displayed range widens to reflect the errors actually observed. The zero floor for quantities that can't be negative is then reapplied, and the ordering of the three bounds revalidated.</p>
+    <p><b>This change is saved</b>: it modifies the stored analysis, not just the display.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Le backtest élargit la plage de confiance de ta prévision. Si le modèle s'est trompé de plus que ce que sa plage annonçait, elle s'élargit après le backtest pour refléter ses erreurs réelles. Elle n'est jamais rétrécie.
+      The backtest widens your forecast's confidence range. If the model was wrong by more than its range announced, the range widens after the backtest to reflect its real errors. It is never narrowed.
     </div>
 
-    <h2 id="echecs">Quand un modèle ne peut pas être évalué</h2>
-    <p>Un modèle peut être refusé <b>avant</b> tout calcul, ou échouer en cours de route. L'interface regroupe ces cas en six messages.</p>
+    <h2 id="echecs">When a model can't be evaluated</h2>
+    <p>A model can be refused <b>before</b> any calculation, or fail along the way. The interface groups these cases into six messages.</p>
 
     <table>
-      <caption class="crumb">Les six messages d'échec et ce qu'ils recouvrent</caption>
-      <tr><th>Message affiché</th><th>Causes réelles</th></tr>
-      <tr><td><b>Historique insuffisant</b></td><td>Pas assez de points pour la référence concernée</td></tr>
-      <tr><td><b>Service cloud non configuré</b></td><td>Pas de clé API, ou cloud interdit dans ce contexte</td></tr>
-      <tr><td><b>Modèle non installé</b></td><td>Modèle local absent du disque</td></tr>
-      <tr><td><b>Ressources insuffisantes</b></td><td>La machine n'a pas la mémoire demandée par le modèle</td></tr>
-      <tr><td><b>Évaluation incomplète</b></td><td>Le moteur n'a pas démarré, une fenêtre a échoué, ou les prédictions renvoyées sont incomplètes</td></tr>
-      <tr><td><b>Résultat indisponible</b></td><td>Tout le reste</td></tr>
+      <caption class="crumb">The six failure messages and what they cover</caption>
+      <tr><th>Message shown</th><th>Real causes</th></tr>
+      <tr><td><b>Insufficient history</b></td><td>Not enough points for the baseline concerned</td></tr>
+      <tr><td><b>Cloud service not configured</b></td><td>No API key, or cloud forbidden in this context</td></tr>
+      <tr><td><b>Model not installed</b></td><td>Local model absent from the disk</td></tr>
+      <tr><td><b>Insufficient resources</b></td><td>The machine doesn't have the memory the model asks for</td></tr>
+      <tr><td><b>Incomplete evaluation</b></td><td>The engine didn't start, a window failed, or the predictions returned are incomplete</td></tr>
+      <tr><td><b>Result unavailable</b></td><td>Everything else</td></tr>
     </table>
 
-    <p>Les vérifications faites avant de lancer un modèle : il existe et sait prédire ; il accepte le niveau de confiance de l'analyse ; si tes données contiennent plusieurs séries, il doit savoir les traiter ; si tu utilises des variables de contexte, il doit accepter le contexte futur ; un modèle local doit être installé et la machine doit avoir les ressources ; un modèle distant demande une clé API, et l'autorisation du cloud si le modèle évalué n'est pas celui de l'analyse.</p>
+    <p>The checks made before launching a model: it exists and can predict; it accepts the analysis's confidence level; if your data contains several series, it must be able to handle them; if you use context variables, it must accept the future context; a local model must be installed and the machine must have the resources; a remote model requires an API key, and cloud permission if the model evaluated isn't the analysis's own.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Évaluer un modèle distant envoie tes données autant de fois qu'il y a de fenêtres — trois requêtes par défaut, en plus de la prévision d'origine. Voir <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a>.
+      <span class="t">Warning</span>
+      Evaluating a remote model sends your data as many times as there are windows — three requests by default, in addition to the original forecast. See <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a>.
     </div>
 
-    <h2 id="comparaison-et-ensemble">La section Comparaison et l'ensemble pondéré</h2>
-    <p><b>Évaluation et Comparaison sont le même écran</b>, avec deux différences seulement : le bouton — « Lancer le backtest » d'un côté, la création d'un ensemble de l'autre, qui exige au moins deux modèles évalués avec succès — et le texte affiché quand rien n'a encore été mesuré : « Lancez un backtest dans l'espace Évaluation pour obtenir un classement fiable. »</p>
-    <p><b>Deux chemins mènent au backtest, et ils n'offrent pas les mêmes possibilités.</b></p>
-    <p>Depuis <b>l'écran</b>, le bouton lance toujours le backtest sur le modèle de l'analyse, avec trois fenêtres : un seul modèle face aux quatre références. Et comme chaque backtest remplace le précédent, on ne peut pas accumuler deux modèles en lançant deux fois.</p>
-    <p>Depuis <b>la conversation</b>, c'est différent. L'outil <code>forecast_backtest</code> accepte jusqu'à cinq modèles et un nombre de fenêtres de 1 à 5, et <code>forecast_analyze</code> construit l'ensemble à partir de deux à quatre modèles évalués avec succès. L'agent dispose aussi de <code>forecast_compare_models</code> pour relire le classement enregistré. Ces sept outils sont <b>éteints par défaut</b> et s'activent dans les réglages de l'agent — voir <a href="outils-forecast.html">Forecast, côté outils</a>.</p>
+    <h2 id="comparaison-et-ensemble">The Comparison section and the weighted ensemble</h2>
+    <p><b>Evaluation and Comparison are the same screen</b>, with only two differences: the button — “Run backtest” on one side, creating an ensemble on the other, which requires at least two successfully evaluated models — and the text shown when nothing has been measured yet: “Run a backtest in Evaluation to obtain a reliable ranking.”</p>
+    <p><b>Two paths lead to the backtest, and they don't offer the same possibilities.</b></p>
+    <p>From <b>the screen</b>, the button always runs the backtest on the analysis's model, with three windows: a single model against the four baselines. And since each backtest replaces the previous one, you can't accumulate two models by running it twice.</p>
+    <p>From <b>the conversation</b>, it's different. The <code>forecast_backtest</code> tool accepts up to five models and a number of windows from 1 to 5, and <code>forecast_analyze</code> builds the ensemble from two to four successfully evaluated models. The agent also has <code>forecast_compare_models</code> to re-read the saved ranking. These seven tools are <b>off by default</b> and are turned on in the agent's settings — see <a href="outils-forecast.html">Forecast, on the tools side</a>.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      La comparaison de plusieurs modèles et l'ensemble pondéré passent aujourd'hui par la conversation, pas par les boutons de l'Espace Forecast. Un backtest lancé à la souris mesure un seul modèle contre les quatre références.
+      <span class="t">Key point</span>
+      Comparing several models and the weighted ensemble go through the conversation today, not through the Forecast workspace's buttons. A backtest launched with the mouse measures a single model against the four baselines.
     </div>
 
-    <p><b>L'ensemble pondéré</b> combine plusieurs modèles déjà évalués en une seule courbe :</p>
+    <p><b>The weighted ensemble</b> combines several already-evaluated models into a single curve:</p>
     <ul>
-      <li>il faut <b>au moins 2</b> modèles évalués sans échec, et au plus <b>4</b> ;</li>
-      <li><b>le poids de chaque modèle est l'inverse de son MASE</b>, normalisé pour que la somme fasse 1 : un modèle deux fois plus juste pèse deux fois plus ;</li>
-      <li>les modèles qui ne sont pas celui de l'analyse sont relancés sur les mêmes données pour produire leur prévision ;</li>
-      <li>les prévisions doivent être parfaitement alignées — mêmes dates, mêmes séries, même nombre de points — sinon la création est refusée ;</li>
-      <li>prédictions et bornes de confiance sont moyennées avec ces poids, et le résultat est refusé s'il produit un intervalle mal ordonné.</li>
+      <li>you need <b>at least 2</b> models evaluated without failure, and at most <b>4</b>;</li>
+      <li><b>each model's weight is the inverse of its MASE</b>, normalised so the sum is 1: a model twice as accurate weighs twice as much;</li>
+      <li>the models that aren't the analysis's own are re-run on the same data to produce their forecast;</li>
+      <li>the forecasts must be perfectly aligned — same dates, same series, same number of points — otherwise the creation is refused;</li>
+      <li>predictions and confidence bounds are averaged with those weights, and the result is refused if it produces a badly ordered interval.</li>
     </ul>
-    <p>Sur le graphe principal, la courbe de l'ensemble porte l'étiquette <b>« Ensemble pondéré »</b>.</p>
+    <p>On the main chart, the ensemble's curve carries the label <b>“Weighted ensemble”</b>.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Un ensemble n'est pas un modèle validé. Chacun de ses membres a été mesuré séparément ; leur mélange, lui, n'a été mesuré par rien. Beaver l'écrit dans le fichier d'analyse et l'affiche à l'écran : « Ensemble créé à partir de modèles backtestés. Sa combinaison reste à valider séparément. »
+      <span class="t">Warning</span>
+      An ensemble is not a validated model. Each of its members was measured separately; their blend, on the other hand, was measured by nothing. Beaver writes this in the analysis file and shows it on screen: “Ensemble created from backtested models. The combination still requires separate validation.”
     </div>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Relancer un backtest supprime l'ensemble existant. Les poids sont calculés à partir de l'évaluation en cours ; quand celle-ci est remplacée, l'ensemble l'est aussi. Il faut le recréer.
+      <span class="t">Warning</span>
+      Running a backtest again deletes the existing ensemble. The weights are computed from the current evaluation; when that one is replaced, so is the ensemble. It has to be recreated.
     </div>
 
-    <h2 id="les-limites">Les limites</h2>
+    <h2 id="les-limites">The limits</h2>
 
     <table>
-      <caption class="crumb">Les bornes de l'évaluation</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Backtests simultanés</td><td><b>1</b> pour toute l'application</td></tr>
-      <tr><td>Modèles par backtest</td><td><b>5</b> — accessible par l'agent uniquement</td></tr>
-      <tr><td>Fenêtres</td><td><b>5</b> au maximum, <b>3</b> par défaut</td></tr>
-      <tr><td>Horizon d'évaluation</td><td><b>256</b> pas</td></tr>
-      <tr><td>Lignes de résultats</td><td><b>9</b></td></tr>
-      <tr><td>Membres d'un ensemble</td><td><b>2 à 4</b></td></tr>
-      <tr><td>Points minimum par série</td><td><b>4</b></td></tr>
-      <tr><td>Points minimum pour recalibrer</td><td><b>3</b></td></tr>
+      <caption class="crumb">The bounds of evaluation</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Simultaneous backtests</td><td><b>1</b> for the whole application</td></tr>
+      <tr><td>Models per backtest</td><td><b>5</b> — reachable by the agent only</td></tr>
+      <tr><td>Windows</td><td><b>5</b> at most, <b>3</b> by default</td></tr>
+      <tr><td>Evaluation horizon</td><td><b>256</b> steps</td></tr>
+      <tr><td>Result rows</td><td><b>9</b></td></tr>
+      <tr><td>Members of an ensemble</td><td><b>2 to 4</b></td></tr>
+      <tr><td>Minimum points per series</td><td><b>4</b></td></tr>
+      <tr><td>Minimum points to recalibrate</td><td><b>3</b></td></tr>
     </table>
 
-    <p>Un deuxième backtest lancé pendant qu'un premier tourne est <b>refusé immédiatement</b>, pas mis en file d'attente.</p>
+    <p>A second backtest launched while a first one is running is <b>refused immediately</b>, not queued.</p>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Le backtest refuse de démarrer, historique trop court</td><td>Moins de 4 points sur la série la plus courte, ou pas assez pour caler une seule fenêtre</td><td>Allonger l'historique, ou réduire l'horizon de la prévision</td></tr>
-      <tr><td>L'horizon évalué est plus court que celui de la prévision</td><td>Plafond à 256 pas, ou historique inférieur au triple de l'horizon</td><td>C'est normal ; l'avertissement le signale</td></tr>
-      <tr><td>Moins de trois fenêtres</td><td>Historique court</td><td>Interpréter le classement avec prudence, comme le dit l'avertissement</td></tr>
-      <tr><td>« Ressources insuffisantes » sur un modèle installé</td><td>La mémoire libre ne couvre pas le besoin déclaré, majoré de la marge de sécurité</td><td>Voir <a href="forecast-modeles-locaux.html">Modèles locaux</a></td></tr>
-      <tr><td>« Modèle non installé » alors qu'il apparaît dans la liste</td><td>Modèle du catalogue jamais téléchargé, ou installation incomplète</td><td>L'installer depuis l'écran des modèles</td></tr>
-      <tr><td>« Service cloud non configuré »</td><td>Pas de clé API, ou cloud interdit en mode Auto</td><td>Voir <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a></td></tr>
-      <tr><td>La création d'un ensemble reste hors d'atteinte</td><td>Elle exige deux modèles évalués dans la même évaluation, et l'écran n'en évalue qu'un</td><td>Passer par l'agent</td></tr>
-      <tr><td>Un deuxième backtest est refusé</td><td>Un autre tourne déjà</td><td>Attendre la fin du premier</td></tr>
-      <tr><td>Toutes les lignes affichent « — » dans les colonnes de mesure</td><td>Les observations contenaient une valeur non finie, ou des bornes de confiance mal ordonnées</td><td>Vérifier la qualité des données dans la section Données</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The backtest refuses to start, history too short</td><td>Fewer than 4 points in the shortest series, or not enough to fit a single window</td><td>Lengthen the history, or reduce the forecast's horizon</td></tr>
+      <tr><td>The evaluated horizon is shorter than the forecast's</td><td>256-step ceiling, or a history shorter than three times the horizon</td><td>That's normal; the warning flags it</td></tr>
+      <tr><td>Fewer than three windows</td><td>Short history</td><td>Interpret the ranking cautiously, as the warning says</td></tr>
+      <tr><td>“Insufficient resources” on an installed model</td><td>Free memory doesn't cover the declared requirement plus the safety margin</td><td>See <a href="forecast-modeles-locaux.html">Local models</a></td></tr>
+      <tr><td>“Model not installed” even though it appears in the list</td><td>Catalog model never downloaded, or incomplete installation</td><td>Install it from the models screen</td></tr>
+      <tr><td>“Cloud service not configured”</td><td>No API key, or cloud forbidden in Auto mode</td><td>See <a href="forecast-modele-cloud-timegpt.html">TimeGPT (cloud)</a></td></tr>
+      <tr><td>Creating an ensemble stays out of reach</td><td>It requires two models evaluated in the same evaluation, and the screen only evaluates one</td><td>Go through the agent</td></tr>
+      <tr><td>A second backtest is refused</td><td>Another one is already running</td><td>Wait for the first one to finish</td></tr>
+      <tr><td>Every row shows “—” in the metric columns</td><td>The observations contained a non-finite value, or badly ordered confidence bounds</td><td>Check the data quality in the Data section</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="forecast-modeles-locaux.html">Modèles locaux</a> — les modèles évaluables sans réseau, leur installation et leurs besoins matériels.</li>
-      <li><a href="forecast-selection-du-modele.html">Sélection du modèle</a> — comment le mode Auto se sert des résumés de backtest.</li>
-      <li><a href="forecast-analyse-avancee.html">Analyse avancée</a> — les mesures calculées automatiquement à chaque prévision, sans backtest.</li>
-      <li><a href="forecast-donnees-et-audit.html">Données et audit</a> — les contrôles de qualité qui conditionnent un backtest exploitable.</li>
+      <li><a href="forecast-modeles-locaux.html">Local models</a> — the models that can be evaluated without a network, their installation and their hardware requirements.</li>
+      <li><a href="forecast-selection-du-modele.html">Model selection</a> — how Auto mode uses the backtest summaries.</li>
+      <li><a href="forecast-analyse-avancee.html">Advanced analysis</a> — the metrics computed automatically at every forecast, without a backtest.</li>
+      <li><a href="forecast-donnees-et-audit.html">Data and audit</a> — the quality checks that make a usable backtest possible.</li>
     </ul>
   </main>
 

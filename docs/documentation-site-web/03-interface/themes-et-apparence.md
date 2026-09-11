@@ -33,7 +33,7 @@ Tableau complet en section Tableaux.
 - L'option **Système** suit le réglage clair/sombre du système d'exploitation.
 - Elle bascule entre **Clair** et **Sombre** uniquement. Les quatre thèmes colorés ne sont jamais choisis automatiquement.
 
-C'est le point qui surprend : quelqu'un qui aime Emerald Night et met « Système » ne retrouvera pas Emerald Night la nuit, mais le thème Sombre standard.
+C'est le point qui surprend : quelqu'un qui aime Émeraude nocturne et met « Système » ne retrouvera pas Émeraude nocturne la nuit, mais le thème Sombre standard.
 
 ### 3. La taille du texte
 
@@ -70,10 +70,10 @@ Le thème et la langue sont également proposés pendant le parcours d'accueil.
 |---|---|---|
 | Clair | Clair | `light` |
 | Sombre | Sombre | `dark` |
-| Emerald Night | Sombre | `emerald-night` |
-| Cobalt Frost | Clair | `cobalt-frost` |
-| Astral Mist | Sombre | `astral-mist` |
-| Crimson Eclipse | Sombre | `crimson-eclipse` |
+| Émeraude nocturne (« Emerald Night » en anglais) | Sombre | `emerald-night` |
+| Cobalt givré (« Frosted Cobalt » en anglais) | Clair | `cobalt-frost` |
+| Brume astrale (« Astral Mist » en anglais) | Sombre | `astral-mist` |
+| Éclipse écarlate (« Crimson Eclipse » en anglais) | Sombre | `crimson-eclipse` |
 | Système | Suit le système, entre Clair et Sombre | `system` |
 
 ### Tableau — Les polices
@@ -112,7 +112,7 @@ Le thème et la langue sont également proposés pendant le parcours d'accueil.
 ## Encadrés
 
 **Encadré « Le mode Système ne couvre que deux thèmes »**
-> L'option Système alterne entre Clair et Sombre selon le réglage de votre système d'exploitation. Les thèmes colorés — Emerald Night, Cobalt Frost, Astral Mist, Crimson Eclipse — se choisissent explicitement.
+> L'option Système alterne entre Clair et Sombre selon le réglage de votre système d'exploitation. Les thèmes colorés — Émeraude nocturne, Cobalt givré, Brume astrale, Éclipse écarlate — se choisissent explicitement.
 
 **Encadré « Une seule coloration à régler »**
 > Chaque thème de coloration du code existe en version claire et sombre. Beaver choisit la bonne selon le thème de l'application : vous n'avez qu'un réglage à faire.
@@ -141,7 +141,7 @@ Le thème et la langue sont également proposés pendant le parcours d'accueil.
 
 ## Points à confirmer
 
-- **Les noms des thèmes sont-ils traduits ?** Ils sont définis avec des clés de traduction. Vérifier ce qui s'affiche réellement en français : « Emerald Night » ou une traduction. La page doit employer les mêmes mots que l'interface.
+- **Les noms des thèmes sont-ils traduits ?** Répondu le 10 septembre 2026 : oui. `fr.json` affiche « Émeraude nocturne », « Cobalt givré », « Brume astrale », « Éclipse écarlate » ; `en.json` affiche « Emerald Night », « Frosted Cobalt » (et non « Cobalt Frost », qui n'est que le nom du fichier CSS), « Astral Mist », « Crimson Eclipse ». Chaque langue de la page emploie les noms de sa langue.
 - **L'effet de la police sur les blocs de code.** Vérifier si le réglage de police s'applique aussi au code, ou seulement au texte courant — deux des sept polices sont manuscrites, ce qui rendrait le code illisible.
 - **La persistance des réglages.** Ils semblent stockés côté navigateur plutôt que dans le dossier de données. Confirmer, et en déduire ce qui survit à une réinstallation.
 - **Les thèmes sont-ils personnalisables ?** Six fichiers de palette existent dans le dépôt. Confirmer qu'il n'existe aucun moyen d'en ajouter un depuis l'application, et le dire.

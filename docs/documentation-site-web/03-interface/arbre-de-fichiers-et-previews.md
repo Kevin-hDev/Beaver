@@ -47,7 +47,7 @@ Tableau complet en section Tableaux. À retenir :
 
 - Tableurs : **`csv`, `tsv`, `xlsx`, `xls`, `ods`, `xlsm`**
 - Documents : **`docx`, `pdf`** — et rien d'autre. Un `.doc` ancien, un `.odt` ou un `.rtf` ne sont pas prévisualisables.
-- Tout autre format renvoie « Format non supporté ».
+- Tout autre format affiche « Le fichier n'a pas pu être lu. Il a peut-être été supprimé ou déplacé. » (`filePreview.fileNotFound`, fr.json:1307). Corrigé le 10 septembre 2026 : « Format non supporté » (`file_preview_office.rs:66`) est une chaîne interne jetée par les quatre composants de prévisualisation (`.catch` sans paramètre) — ne plus la citer.
 
 ### 5. Les limites de taille
 
@@ -108,7 +108,7 @@ La limite de 2 Mo sur le texte surprend quand on ouvre un gros journal ou un jeu
 
 | Symptôme | Cause | Résolution |
 |---|---|---|
-| « Format non supporté » | Extension hors des listes ci-dessus | Ouvrir dans un éditeur externe |
+| « Le fichier n'a pas pu être lu. Il a peut-être été supprimé ou déplacé. » | Extension hors des listes ci-dessus | Ouvrir dans un éditeur externe |
 | Un gros fichier texte refuse de s'ouvrir | Plafond de 2 Mo | Éditeur externe |
 | Un tableur est tronqué | 500 lignes par défaut | Augmenter jusqu'à 5 000, ou ouvrir dans un tableur |
 | L'arbre ne reflète pas un changement | Regroupement de 200 ms, ou surveillance non déclenchée | Attendre, puis rafraîchir |

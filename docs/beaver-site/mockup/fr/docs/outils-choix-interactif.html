@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Choix interactif</title>
+<meta name="description" content="Pourquoi l'agent te pose parfois une question à choix, ce que fait chaque réponse possible, et ce que change la désactivation du groupe.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Choix interactif</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-choix-interactif.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/outils-choix-interactif.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Quand l'agent <em>demande.</em></h1>
+    <p><code>ask_user_choice</code> permet à l'agent d'interrompre son travail pour te poser une question à choix, et d'attendre ta réponse avant de continuer. Il appartient au groupe <b>Choix utilisateur</b>, optionnel et <b>actif par défaut</b>. La conversation est réellement suspendue : l'agent ne devine pas, ne poursuit pas en parallèle. Il attend.</p>
+
+    <h2 id="quand-il-demande">Quand l'agent est censé s'en servir</h2>
+    <p>L'usage de l'outil est encadré de façon assez stricte, et c'est ce qui explique pourquoi les questions sont rares.</p>
+    <p><b>L'agent doit demander quand</b> :</p>
+    <ul>
+      <li>plusieurs approches sont valables et le choix t'appartient ;</li>
+      <li>ta demande est ambiguë et la suite dépend de ta préférence ;</li>
+      <li>en mode Plan, une question de conception reste ouverte avant de proposer le plan.</li>
+    </ul>
+    <p><b>L'agent ne doit pas demander quand</b> :</p>
+    <ul>
+      <li>une option par défaut raisonnable existe — il la prend, la mentionne, et continue ;</li>
+      <li>il cherche seulement un accord sur un plan, ce qui relève du mode Plan ;</li>
+      <li>la réponse se trouve en lisant le code ou la documentation.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Une question interactive signifie que la décision t'appartient vraiment. Ce n'est pas une demande de validation, et ce n'est pas un aveu d'ignorance : l'agent a pour consigne de trancher seul dès qu'une option par défaut raisonnable existe.
+    </div>
+
+    <h2 id="forme-dune-question">À quoi ressemble une question</h2>
+    <p>Le format est contraint, ce qui garantit une présentation homogène :</p>
+    <ul>
+      <li><b>1 à 5 questions</b> en une seule fois, <b>2 à 4 options</b> par question ;</li>
+      <li>un intitulé très court par question — <b>30 caractères maximum</b> — et la question elle-même, <b>500 caractères maximum</b> ;</li>
+      <li>pour chaque option, un libellé court (<b>80 caractères</b>) et une phrase qui explique ce qu'elle implique (<b>1 500 caractères</b>) ;</li>
+      <li><b>exactement une option recommandée par question</b> — ni zéro, ni deux. C'est vérifié, et une question qui n'en a pas est refusée ;</li>
+      <li>une option peut porter un <b>aperçu</b> : un extrait de code, une maquette en texte, un exemple de configuration, pour comparer visuellement ;</li>
+      <li>une question peut autoriser <b>plusieurs réponses</b> à la fois quand les options ne s'excluent pas.</li>
+    </ul>
+    <p>La recommandation est signalée par l'interface, pas par le texte : l'agent n'a pas le droit d'écrire « (recommandé) » dans un libellé. Une option <b>« Autre »</b> est toujours disponible et permet d'écrire une réponse libre, jusqu'à <b>1 500 caractères</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Une seule option est recommandée, toujours. L'agent est obligé d'avoir un avis : il ne peut pas présenter quatre options sur le même plan et te laisser seul face au choix.
+    </div>
+
+    <h2 id="repondre">Répondre, ou ne pas répondre</h2>
+    <table>
+      <caption class="crumb">Trois issues, trois effets différents</caption>
+      <tr><th>Ce que tu fais</th><th>Ce qui se passe</th></tr>
+      <tr><td>Tu réponds</td><td>Les réponses sont transmises à l'agent, qui reprend son travail</td></tr>
+      <tr><td><b>Tu fermes la question sans répondre</b></td><td><b>L'agent s'arrête</b> — il ne poursuit pas la tâche</td></tr>
+      <tr><td>Tu arrêtes la réponse en cours</td><td>L'appel est annulé comme n'importe quel autre outil</td></tr>
+    </table>
+    <p>Les réponses sont validées avant d'être transmises : une réponse incomplète, une option inconnue, un choix multiple sur une question qui n'en accepte qu'un, ou une réponse libre sans avoir choisi « Autre » sont refusés.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Fermer la question arrête l'agent. Ce n'est pas « décide toi-même », c'est « n'y va pas ». Pour le laisser trancher, il faut choisir une option — la recommandée fait l'affaire.
+    </div>
+
+    <h2 id="desactiver">Désactiver les questions</h2>
+    <p>Couper le groupe <b>Choix utilisateur</b> dans les réglages a deux effets, et le second est peu évident :</p>
+    <ul>
+      <li>l'outil disparaît — l'agent ne peut plus poser de question ;</li>
+      <li><b>toute la section du prompt système qui décrit les choix interactifs est retirée</b>. Le modèle ne sait même pas que ce mode d'interaction existe.</li>
+    </ul>
+    <p>Résultat : l'agent tranche seul systématiquement, et mentionne son choix dans sa réponse plutôt que de te le soumettre. C'est le bon réglage si tu préfères un agent qui avance sans s'arrêter — au prix de décisions prises à ta place.</p>
+
+    <h2 id="limites-de-format">Les limites de format</h2>
+    <table>
+      <caption class="crumb">Ce qu'une question peut contenir</caption>
+      <tr><th>Élément</th><th>Limite</th></tr>
+      <tr><td>Questions en une fois</td><td><b>1 à 5</b></td></tr>
+      <tr><td>Options par question</td><td><b>2 à 4</b></td></tr>
+      <tr><td>Options recommandées par question</td><td><b>Exactement 1</b></td></tr>
+      <tr><td>Intitulé court</td><td><b>30 caractères</b></td></tr>
+      <tr><td>Texte de la question</td><td><b>500 caractères</b></td></tr>
+      <tr><td>Libellé d'une option</td><td><b>80 caractères</b></td></tr>
+      <tr><td>Description d'une option</td><td><b>1 500 caractères</b></td></tr>
+      <tr><td>Aperçu d'une option</td><td><b>1 500 caractères</b></td></tr>
+      <tr><td>Réponse libre</td><td><b>1 500 caractères</b></td></tr>
+    </table>
+
+    <h2 id="refus-de-format">Les refus de format</h2>
+    <table>
+      <caption class="crumb">Message et cause</caption>
+      <tr><th>Message</th><th>Cause</th></tr>
+      <tr><td><code>questions</code> doit contenir entre 1 et 5 éléments</td><td>Trop ou pas assez de questions</td></tr>
+      <tr><td>Chaque question doit avoir 2 à 4 options</td><td>Nombre d'options hors bornes</td></tr>
+      <tr><td>Chaque question doit avoir exactement une option recommandée</td><td>Zéro ou plusieurs recommandations</td></tr>
+      <tr><td>Réponse interactive incomplète</td><td>Une question sans réponse</td></tr>
+      <tr><td>Choix multiple non autorisé</td><td>Plusieurs réponses sur une question à choix unique</td></tr>
+      <tr><td>Choix inconnu</td><td>Option absente de celles proposées</td></tr>
+      <tr><td>Réponse autre invalide</td><td>Réponse libre sans avoir choisi « Autre », ou l'inverse</td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent s'est arrêté après une question que tu as fermée</td><td>Fermer une question interactive arrête l'agent</td><td>Choisir une option, ou relancer avec un message</td></tr>
+      <tr><td>L'agent ne demande jamais rien</td><td>Groupe Choix utilisateur désactivé, ou aucune décision réellement ouverte</td><td>Vérifier les réglages</td></tr>
+      <tr><td>L'agent demande trop souvent ton avis</td><td>Le modèle applique mal la consigne de trancher par défaut</td><td>Désactiver le groupe, ou le lui demander dans le message</td></tr>
+      <tr><td>Tu voulais répondre autre chose que les options</td><td>L'option « Autre » existe toujours</td><td>La choisir et écrire la réponse</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-permissions.html">Modes de permission</a> — la différence entre une question interactive et une demande d'approbation.</li>
+      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — l'effet de la désactivation sur le prompt système.</li>
+      <li><a href="agent-fonctionnement.html">Fonctionnement de l'agent</a> — comment l'agent s'arrête.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

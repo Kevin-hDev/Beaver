@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Fichiers</title>
-<meta name="description" content="Comment l'agent lit, crée et modifie tes fichiers, et le garde-fou qui l'empêche de réécrire un fichier qu'il n'a pas vu.">
+<title>Beaver Docs — Files</title>
+<meta name="description" content="How the agent reads, creates and edits your files, and the guardrail that stops it rewriting a file it has not seen.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,155 +19,155 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Fichiers</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-fichiers.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / Files</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-fichiers.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-fichiers.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Lire et <em>écrire</em> des fichiers.</h1>
-    <p>Quatre outils forment le groupe <b>Fichiers</b>, verrouillé et impossible à désactiver : sans eux, l'agent ne pourrait rien faire d'un projet. Cette page décrit ce qu'ils savent faire, leurs limites, et les gardes qui protègent ton disque.</p>
+    <h1>Reading and <em>writing</em> files.</h1>
+    <p>Four tools make up the <b>Files</b> group, locked and impossible to turn off: without them the agent could do nothing with a project. This page describes what they can do, their limits, and the guards that protect your disk.</p>
 
-    <h2 id="les-quatre-outils">Les quatre outils</h2>
+    <h2 id="les-quatre-outils">The four tools</h2>
     <table>
-      <caption class="crumb">Le groupe Fichiers</caption>
-      <tr><th>Outil</th><th>Rôle</th><th>Écrit sur le disque</th></tr>
-      <tr><td><code>read_file</code></td><td>Lit un fichier texte</td><td>Non</td></tr>
-      <tr><td><code>edit_file</code></td><td>Remplace un passage précis dans un fichier existant</td><td><b>Oui</b></td></tr>
-      <tr><td><code>write_file</code></td><td>Crée un fichier ou le remplace entièrement</td><td><b>Oui</b></td></tr>
-      <tr><td><code>list_dir</code></td><td>Affiche l'arborescence d'un dossier</td><td>Non</td></tr>
+      <caption class="crumb">The Files group</caption>
+      <tr><th>Tool</th><th>Role</th><th>Writes to disk</th></tr>
+      <tr><td><code>read_file</code></td><td>Reads a text file</td><td>No</td></tr>
+      <tr><td><code>edit_file</code></td><td>Replaces a specific passage in an existing file</td><td><b>Yes</b></td></tr>
+      <tr><td><code>write_file</code></td><td>Creates a file or replaces it entirely</td><td><b>Yes</b></td></tr>
+      <tr><td><code>list_dir</code></td><td>Shows a folder's tree</td><td>No</td></tr>
     </table>
-    <p>Les deux outils qui écrivent demandent une approbation en mode <b>Demander l'autorisation</b>. Les deux autres non.</p>
+    <p>The two tools that write ask for approval in <b>Ask permission</b> mode. The other two do not.</p>
 
-    <h2 id="lire-un-fichier">Lire un fichier</h2>
+    <h2 id="lire-un-fichier">Reading a file</h2>
     <ul>
-      <li><code>read_file</code> ne lit que du <b>texte encodé en UTF-8</b>. Une image, un PDF, un <code>.docx</code> ou un exécutable renvoient une erreur. Des outils dédiés existent pour ces formats, dans des groupes optionnels à activer.</li>
-      <li>Taille maximale : <b>20 Mo</b>. Au-delà, le fichier est refusé, pas tronqué.</li>
-      <li>Le contenu revient <b>numéroté ligne par ligne</b>, ce qui permet à l'agent de désigner un emplacement précis et de citer un numéro de ligne dans sa réponse.</li>
-      <li>Par défaut l'agent reçoit les <b>2 000 premières lignes</b>, et jusqu'à <b>50 000</b> s'il le demande. Quand il en reste, le résultat indique combien de lignes n'ont pas été lues et à partir d'où reprendre — l'agent enchaîne alors tout seul.</li>
-      <li>Le chemin peut être relatif au répertoire de travail ou absolu. Dans les deux cas il doit tomber dans une zone autorisée en lecture.</li>
+      <li><code>read_file</code> only reads <b>UTF-8 encoded text</b>. An image, a PDF, a <code>.docx</code> or an executable return an error. Dedicated tools exist for these formats, in optional groups you have to turn on.</li>
+      <li>Maximum size: <b>20 MB</b>. Beyond that the file is refused, not truncated.</li>
+      <li>The content comes back <b>numbered line by line</b>, which lets the agent point at an exact spot and quote a line number in its answer.</li>
+      <li>By default the agent receives the <b>first 2,000 lines</b>, and up to <b>50,000</b> if it asks. When some are left over, the result states how many lines were not read and where to resume — the agent then carries on by itself.</li>
+      <li>The path can be relative to the working directory or absolute. Either way it must fall inside an area allowed for reading.</li>
     </ul>
 
-    <h2 id="lire-avant-decrire">La règle « lire avant d'écrire »</h2>
-    <p>C'est le garde-fou le plus utile de Beaver, et il se voit dans la conversation. <b>L'agent ne peut pas modifier un fichier existant sans l'avoir vu d'abord.</b> S'il essaie, l'écriture est bloquée avec un message qui lui dit d'aller le lire.</p>
-    <p>Sans cette règle, un modèle qui « croit se souvenir » du contenu d'un fichier peut le réécrire à partir de sa mémoire et effacer tout ce qu'il ne savait pas. Avec la règle, il doit constater l'état réel avant d'y toucher.</p>
-    <p>Compte comme « avoir vu le fichier » :</p>
+    <h2 id="lire-avant-decrire">The "read before write" rule</h2>
+    <p>This is Beaver's most useful guardrail, and you can see it in the conversation. <b>The agent cannot edit an existing file without having seen it first.</b> If it tries, the write is blocked with a message telling it to go and read the file.</p>
+    <p>Without this rule, a model that "thinks it remembers" a file's content could rewrite it from memory and erase everything it did not know about. With the rule, it has to observe the real state before touching anything.</p>
+    <p>These count as "having seen the file":</p>
     <ul>
-      <li>l'avoir lu avec <code>read_file</code>, ou avec les outils de lecture de documents, de tableurs et d'images ;</li>
-      <li>l'avoir vu <b>apparaître dans un résultat</b> de recherche par motif, de recherche par nom ou de listing de dossier ;</li>
-      <li>l'avoir écrit ou modifié soi-même auparavant dans la même conversation ;</li>
-      <li>l'avoir modifié via une commande shell — les fichiers touchés par une commande sont enregistrés automatiquement.</li>
+      <li>having read it with <code>read_file</code>, or with the document, spreadsheet and image reading tools;</li>
+      <li>having seen it <b>appear in a result</b> from a pattern search, a filename search or a folder listing;</li>
+      <li>having written or edited it earlier in the same conversation;</li>
+      <li>having modified it through a shell command — files touched by a command are recorded automatically.</li>
     </ul>
-    <p>Deux précisions : <b>la règle ne s'applique qu'aux fichiers existants</b> — créer un fichier neuf ne demande rien — et la liste des fichiers vus est <b>bornée à 1 000 chemins par conversation</b>. Au-delà, les 100 plus anciens sont oubliés : un fichier lu très tôt dans une conversation très longue peut donc redemander une lecture.</p>
+    <p>Two details: <b>the rule only applies to existing files</b> — creating a brand new file requires nothing — and the list of seen files is <b>capped at 1,000 paths per conversation</b>. Beyond that, the 100 oldest are forgotten: a file read very early in a very long conversation may therefore require a fresh read.</p>
 
     <div class="callout">
-      <span class="t">À retenir</span>
-      L'agent ne réécrit pas un fichier de mémoire. Il doit l'avoir consulté dans la conversation en cours avant de pouvoir le modifier.
+      <span class="t">Key point</span>
+      The agent does not rewrite a file from memory. It must have looked at it in the current conversation before it can edit it.
     </div>
 
-    <h2 id="modifier-un-fichier">Modifier un fichier existant</h2>
-    <p><code>edit_file</code> remplace <b>un passage exact par un autre</b>, une seule fois.</p>
+    <h2 id="modifier-un-fichier">Editing an existing file</h2>
+    <p><code>edit_file</code> replaces <b>one exact passage with another</b>, a single time.</p>
     <ul>
-      <li>Le passage cherché doit être <b>présent une seule fois</b> dans le fichier. S'il apparaît plusieurs fois, l'outil refuse et <b>dit combien de fois</b> il l'a trouvé, en suggérant d'ajouter des lignes autour pour lever l'ambiguïté. L'agent recommence avec plus de contexte.</li>
-      <li>La correspondance est <b>exacte au caractère près</b> : espaces, tabulations et retours à la ligne compris.</li>
-      <li>Il n'y a <b>pas de remplacement global</b>. Renommer un symbole présent vingt fois demande vingt appels, ou une réécriture complète du fichier.</li>
-      <li>En cas de succès, l'outil renvoie le <b>numéro de la ligne modifiée</b>, ce qui alimente l'affichage des différences dans la conversation.</li>
+      <li>The passage being searched for must appear <b>exactly once</b> in the file. If it appears several times, the tool refuses and <b>says how many times</b> it found it, suggesting that surrounding lines be added to remove the ambiguity. The agent tries again with more context.</li>
+      <li>The match is <b>exact down to the character</b>: spaces, tabs and line breaks included.</li>
+      <li>There is <b>no global replace</b>. Renaming a symbol that appears twenty times takes twenty calls, or a full rewrite of the file.</li>
+      <li>On success, the tool returns the <b>number of the edited line</b>, which feeds the diff display in the conversation.</li>
     </ul>
-    <p>C'est l'outil à préférer pour toute modification : il ne transmet que la portion changée, là où une réécriture complète renvoie tout le fichier et consomme beaucoup plus de contexte. Une réécriture complète, elle, écrase sans discuter tout ce qui n'était pas dans le nouveau contenu.</p>
+    <p>This is the tool to prefer for any edit: it only transmits the changed portion, where a full rewrite sends back the whole file and consumes far more context. A full rewrite, for its part, overwrites without discussion everything that was not in the new content.</p>
 
-    <h2 id="creer-ou-remplacer">Créer ou remplacer un fichier</h2>
-    <p><code>write_file</code> écrit un contenu entier. Il sert à <b>créer</b> un fichier, ou à le <b>réécrire de bout en bout</b>.</p>
+    <h2 id="creer-ou-remplacer">Creating or replacing a file</h2>
+    <p><code>write_file</code> writes a whole content. It serves to <b>create</b> a file, or to <b>rewrite it end to end</b>.</p>
     <ul>
-      <li>Les dossiers parents manquants sont créés automatiquement.</li>
-      <li>L'écriture est refusée hors des zones autorisées : le répertoire de travail, les chemins configurés dans les réglages avancés, et les espaces de travail gérés par l'application.</li>
-      <li><b>Les liens symboliques ne sont jamais suivis.</b> Écrire sur un lien est refusé, et le refus est vérifié trois fois : avant la résolution du chemin, après, et au moment même de l'ouverture du fichier.</li>
-      <li>Le dossier parent réel est revérifié après résolution : un chemin qui traverse un lien pour ressortir hors des zones autorisées est refusé.</li>
-    </ul>
-
-    <div class="callout">
-      <span class="t">Sécurité</span>
-      Un lien symbolique posé dans le projet ne peut pas servir de passage vers le reste du disque : c'est exactement ce que ce triple contrôle empêche.
-    </div>
-
-    <h2 id="parcourir-un-dossier">Parcourir un dossier</h2>
-    <p><code>list_dir</code> donne une <b>arborescence indentée</b>, pas une liste à plat.</p>
-    <ul>
-      <li>Descend jusqu'à <b>3 niveaux</b> de profondeur. Les dossiers sont suffixés d'une barre oblique, en tri alphabétique.</li>
-      <li><b>Aucune taille, aucune date, aucune permission</b> — juste des noms. Pour ces informations, l'agent passe par une commande shell.</li>
-      <li><b>Sont masqués</b> : tout ce qui commence par un point, ainsi que <code>node_modules</code> et <code>target</code>, qui contiennent des dizaines de milliers d'entrées sans intérêt.</li>
-      <li>Plafonné à <b>500 entrées</b>. Au-delà, le résultat le signale explicitement.</li>
-      <li>Un dossier vide renvoie « (dossier vide) », pas un résultat vide.</li>
-      <li>Quand certains sous-dossiers n'ont pas pu être ouverts, le résultat le dit et <b>donne leur nombre</b> — il ne prétend jamais avoir tout listé.</li>
+      <li>Missing parent folders are created automatically.</li>
+      <li>Writing is refused outside the allowed areas: the working directory, the paths configured in the advanced settings, and the workspaces managed by the application.</li>
+      <li><b>Symbolic links are never followed.</b> Writing to a link is refused, and the refusal is checked three times: before path resolution, after it, and at the very moment the file is opened.</li>
+      <li>The real parent folder is re-checked after resolution: a path that goes through a link to come back out outside the allowed areas is refused.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <code>list_dir</code> ne montre pas tout. Ce n'est pas un explorateur de fichiers, c'est un aperçu de structure. Un agent à qui tu demandes de lire un fichier caché ne le trouvera pas en listant le dossier : donne-lui le nom.
+      <span class="t">Security</span>
+      A symbolic link placed in the project cannot serve as a passage to the rest of the disk: that is exactly what this triple check prevents.
     </div>
 
-    <h2 id="hors-du-dossier-de-travail">Quand l'agent sort du dossier de travail</h2>
-    <p>Toute opération qui modifie un fichier <b>hors du répertoire de travail</b> ajoute un avertissement au résultat, qui rappelle à l'agent quel est l'espace de travail actif et lui demande d'y revenir sauf demande explicite de ta part.</p>
-    <p>Ce n'est <b>pas un blocage</b> : l'opération a eu lieu. C'est un rappel destiné au modèle, pour éviter la dérive silencieuse où une session finit par éparpiller des fichiers un peu partout.</p>
-
-    <h2 id="les-limites">Les limites</h2>
-    <table>
-      <caption class="crumb">Les bornes du groupe Fichiers</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Taille maximale d'un fichier lu</td><td><b>20 Mo</b></td></tr>
-      <tr><td>Lignes par lecture, par défaut</td><td><b>2 000</b></td></tr>
-      <tr><td>Lignes par lecture, maximum</td><td><b>50 000</b></td></tr>
-      <tr><td>Profondeur de <code>list_dir</code></td><td><b>3 niveaux</b></td></tr>
-      <tr><td>Entrées listées par <code>list_dir</code></td><td><b>500</b></td></tr>
-      <tr><td>Fichiers mémorisés comme « vus »</td><td><b>1 000</b> par conversation</td></tr>
-    </table>
-
-    <h2 id="les-erreurs">Les erreurs et leur signification</h2>
-    <table>
-      <caption class="crumb">Ce que dit chaque message d'erreur</caption>
-      <tr><th>Message</th><th>Cause</th><th>Réessayable</th></tr>
-      <tr><td>Fichier introuvable</td><td>Le chemin n'existe pas</td><td>Non</td></tr>
-      <tr><td>Permission refusée</td><td>Le système d'exploitation refuse</td><td>Non</td></tr>
-      <tr><td>Lecture interdite hors des zones autorisées</td><td>Chemin en dehors de la portée d'accès</td><td>Non</td></tr>
-      <tr><td>Écriture interdite hors des zones autorisées</td><td>Idem, en écriture</td><td>Non</td></tr>
-      <tr><td>Fichier trop volumineux (max 20 Mo)</td><td>Dépassement de taille</td><td>Non</td></tr>
-      <tr><td>Le fichier n'est pas de l'UTF-8</td><td>Fichier binaire ou autre encodage</td><td>Non</td></tr>
-      <tr><td>Le chemin est un dossier</td><td>Confusion fichier / dossier</td><td>Non</td></tr>
-      <tr><td>Écriture sur symlink interdite</td><td>La cible est un lien symbolique</td><td>Non</td></tr>
-      <tr><td>Chaîne non trouvée</td><td>Le passage cherché n'existe pas dans le fichier</td><td>Non</td></tr>
-      <tr><td>Chaîne trouvée N fois (doit être unique)</td><td>Passage ambigu</td><td>Non — l'agent reformule</td></tr>
-      <tr><td>Écriture bloquée : fichier non lu avant modification</td><td>Règle « lire avant d'écrire »</td><td>Non — l'agent doit lire d'abord</td></tr>
-      <tr><td>Délai d'entrée-sortie dépassé</td><td>Disque lent, montage réseau</td><td><b>Oui</b>, sauf en écriture</td></tr>
-    </table>
-    <p>Une <b>écriture</b> interrompue par un délai dépassé n'est <b>jamais</b> annoncée comme réessayable, et le message ajoute que l'état du fichier peut être partiel. On ne rejoue pas à l'aveugle une écriture dont on ignore si elle a abouti.</p>
-    <p>Les erreurs système sont <b>réécrites</b> avant d'être remontées : ni l'agent ni toi ne voyez le message brut du système d'exploitation, qui révélerait des chemins internes, des noms d'utilisateur ou la structure du disque.</p>
-
-    <h2 id="pieges">Pièges fréquents</h2>
-    <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'agent n'arrive pas à lire un PDF</td><td><code>read_file</code> ne lit que du texte UTF-8</td><td>Activer le groupe <a href="outils-documents.html">Document</a>, ou convertir le fichier</td></tr>
-      <tr><td>L'agent dit qu'il doit d'abord lire le fichier</td><td>Règle « lire avant d'écrire »</td><td>Normal : il lit puis modifie, sans intervention</td></tr>
-      <tr><td>L'agent s'y reprend à trois fois pour une modification</td><td>Le passage cherché apparaissait plusieurs fois</td><td>Normal : il ajoute du contexte jusqu'à lever l'ambiguïté</td></tr>
-      <tr><td>Un fichier de configuration n'apparaît pas dans la liste</td><td>Les fichiers cachés sont masqués</td><td>Donner le nom du fichier à l'agent</td></tr>
-      <tr><td>L'agent ne voit pas les fichiers d'un sous-dossier profond</td><td>Profondeur limitée à 3 niveaux</td><td>Lui donner le chemin du sous-dossier, ou passer par une commande shell</td></tr>
-      <tr><td>L'écriture est refusée alors que le dossier existe</td><td>Chemin hors des zones autorisées, ou lien symbolique</td><td>Vérifier la portée d'accès dans les réglages</td></tr>
-      <tr><td>Le fichier n'a été modifié qu'à moitié</td><td>Écriture interrompue</td><td>L'agent est averti que l'état peut être partiel ; lui demander de relire le fichier</td></tr>
-    </table>
-
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="parcourir-un-dossier">Browsing a folder</h2>
+    <p><code>list_dir</code> gives an <b>indented tree</b>, not a flat list.</p>
     <ul>
-      <li><a href="agent-permissions.html">Modes de permission</a> — quelles écritures demandent une approbation, et les fichiers protégés.</li>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée d'accès en lecture et en écriture.</li>
-      <li><a href="outils-recherche-de-fichiers.html">Recherche de fichiers</a> — trouver un fichier avant de le lire.</li>
-      <li><a href="outils-tableurs.html">Tableurs</a>, <a href="outils-documents.html">Documents</a>, <a href="outils-images.html">Images</a> — les formats que <code>read_file</code> ne sait pas lire.</li>
+      <li>Goes down <b>3 levels</b> deep. Folders are suffixed with a slash, in alphabetical order.</li>
+      <li><b>No size, no date, no permissions</b> — just names. For that information, the agent goes through a shell command.</li>
+      <li><b>Hidden from view</b>: anything starting with a dot, along with <code>node_modules</code> and <code>target</code>, which hold tens of thousands of pointless entries.</li>
+      <li>Capped at <b>500 entries</b>. Beyond that, the result says so explicitly.</li>
+      <li>An empty folder returns "(empty folder)", not an empty result.</li>
+      <li>When some subfolders could not be opened, the result says so and <b>gives their number</b> — it never claims to have listed everything.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Careful</span>
+      <code>list_dir</code> does not show everything. It is not a file explorer, it is a structural overview. An agent you ask to read a hidden file will not find it by listing the folder: give it the name.
+    </div>
+
+    <h2 id="hors-du-dossier-de-travail">When the agent leaves the working folder</h2>
+    <p>Any operation that modifies a file <b>outside the working directory</b> adds a warning to the result, reminding the agent which workspace is active and asking it to come back unless you explicitly asked otherwise.</p>
+    <p>This is <b>not a block</b>: the operation did happen. It is a reminder aimed at the model, to avoid the silent drift where a session ends up scattering files all over the place.</p>
+
+    <h2 id="les-limites">The limits</h2>
+    <table>
+      <caption class="crumb">The bounds of the Files group</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Maximum size of a file read</td><td><b>20 MB</b></td></tr>
+      <tr><td>Lines per read, by default</td><td><b>2,000</b></td></tr>
+      <tr><td>Lines per read, maximum</td><td><b>50,000</b></td></tr>
+      <tr><td>Depth of <code>list_dir</code></td><td><b>3 levels</b></td></tr>
+      <tr><td>Entries listed by <code>list_dir</code></td><td><b>500</b></td></tr>
+      <tr><td>Files remembered as "seen"</td><td><b>1,000</b> per conversation</td></tr>
+    </table>
+
+    <h2 id="les-erreurs">The errors and what they mean</h2>
+    <table>
+      <caption class="crumb">What each error message says</caption>
+      <tr><th>Message</th><th>Cause</th><th>Retryable</th></tr>
+      <tr><td>File not found</td><td>The path does not exist</td><td>No</td></tr>
+      <tr><td>Permission denied</td><td>The operating system refuses</td><td>No</td></tr>
+      <tr><td>Reading forbidden outside the allowed areas</td><td>Path outside the access scope</td><td>No</td></tr>
+      <tr><td>Writing forbidden outside the allowed areas</td><td>Same, for writing</td><td>No</td></tr>
+      <tr><td>File too large (max 20 MB)</td><td>Size exceeded</td><td>No</td></tr>
+      <tr><td>The file is not UTF-8</td><td>Binary file or another encoding</td><td>No</td></tr>
+      <tr><td>The path is a folder</td><td>File / folder confusion</td><td>No</td></tr>
+      <tr><td>Writing to a symlink forbidden</td><td>The target is a symbolic link</td><td>No</td></tr>
+      <tr><td>String not found</td><td>The passage being searched for does not exist in the file</td><td>No</td></tr>
+      <tr><td>String found N times (must be unique)</td><td>Ambiguous passage</td><td>No — the agent rephrases</td></tr>
+      <tr><td>Write blocked: file not read before editing</td><td>The "read before write" rule</td><td>No — the agent has to read first</td></tr>
+      <tr><td>Input/output timeout</td><td>Slow disk, network mount</td><td><b>Yes</b>, except when writing</td></tr>
+    </table>
+    <p>A <b>write</b> interrupted by a timeout is <b>never</b> announced as retryable, and the message adds that the file's state may be partial. You do not blindly replay a write when you do not know whether it went through.</p>
+    <p>System errors are <b>rewritten</b> before being surfaced: neither the agent nor you see the operating system's raw message, which would reveal internal paths, user names or the disk's structure.</p>
+
+    <h2 id="pieges">Common pitfalls</h2>
+    <table>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The agent cannot read a PDF</td><td><code>read_file</code> only reads UTF-8 text</td><td>Turn on the <a href="outils-documents.html">Document</a> group, or convert the file</td></tr>
+      <tr><td>The agent says it has to read the file first</td><td>The "read before write" rule</td><td>Normal: it reads then edits, with no input from you</td></tr>
+      <tr><td>The agent takes three tries for one edit</td><td>The passage it looked for appeared several times</td><td>Normal: it adds context until the ambiguity is gone</td></tr>
+      <tr><td>A configuration file does not appear in the list</td><td>Hidden files are not shown</td><td>Give the file name to the agent</td></tr>
+      <tr><td>The agent does not see files in a deep subfolder</td><td>Depth limited to 3 levels</td><td>Give it the subfolder's path, or go through a shell command</td></tr>
+      <tr><td>Writing is refused even though the folder exists</td><td>Path outside the allowed areas, or symbolic link</td><td>Check the access scope in the settings</td></tr>
+      <tr><td>The file was only half edited</td><td>Interrupted write</td><td>The agent is warned that the state may be partial; ask it to read the file again</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Going further</h2>
+    <ul>
+      <li><a href="agent-permissions.html">Permission modes</a> — which writes require approval, and the protected files.</li>
+      <li><a href="agent-repertoire-de-travail.html">Working directory</a> — the read and write access scope.</li>
+      <li><a href="outils-recherche-de-fichiers.html">File search</a> — finding a file before reading it.</li>
+      <li><a href="outils-tableurs.html">Spreadsheets</a>, <a href="outils-documents.html">Documents</a>, <a href="outils-images.html">Images</a> — the formats <code>read_file</code> cannot read.</li>
     </ul>
   </main>
 

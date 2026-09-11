@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — TimeGPT, le modèle distant</title>
+<meta name="description" content="Le seul fournisseur de prévision distant du catalogue Beaver : sa clé API, ce qui sort exactement de ta machine, et comment l'appel est fait.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Forecast / TimeGPT (cloud)</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="forecast-modele-cloud-timegpt.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/forecast-modele-cloud-timegpt.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le modèle qui tourne <em>ailleurs</em></h1>
+    <p>TimeGPT-2, de Nixtla, est le seul fournisseur de prévision distant du catalogue de Beaver. Rien n'est téléchargé, rien n'est installé : tes données partent vers le service, qui renvoie la prévision. Cette page dit ce que ça implique, champ par champ.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Cette page ne donne aucun prix ni aucune limite d'usage. Ces informations appartiennent à Nixtla et changent sans que Beaver en sache rien. L'adresse d'inscription proposée par le catalogue est <code>https://dashboard.nixtla.io</code>.
+    </div>
+
+    <h2 id="ce-que-cest">Ce que c'est dans Beaver</h2>
+    <p>Dans l'interface, ces modèles portent la mention <b>« Cloud (clé requise) »</b>, et l'absence de clé se traduit par <b>« Clé API non configurée »</b>. Le fournisseur s'appelle <b>Nixtla (TimeGPT-2)</b> et sa description affichée est « Famille TimeGPT en cloud, accès par API. »</p>
+    <p>Le catalogue contient plusieurs variantes de cette famille. <b>Ce qui les distingue n'est pas décrit par Beaver</b> : leurs capacités déclarées sont presque identiques, et le site ne tranche pas à la place de Nixtla — sa documentation fait autorité sur ce point. Aucune de ces variantes ne publie de nombre de paramètres, de taille de fichier ni de besoin en mémoire : rien ne tourne sur ta machine.</p>
+
+    <h2 id="ce-quil-apporte">Ce qu'il apporte face aux modèles locaux</h2>
+    <p><b>L'horizon.</b> La famille accepte <b>5 000 pas</b> — c'est aussi la borne absolue de Beaver. Les modèles locaux plafonnent entre 1 000 et 4 096 selon la famille.</p>
+    <p><b>Les variables de contexte, avec le futur.</b> Elle lit des colonnes explicatives sur le passé <b>et</b> sur la période à prévoir. Parmi les modèles locaux, seuls Chronos-2 et TimesFM 2.5 en sont capables.</p>
+    <p><b>Les variables de contexte non numériques.</b> Des catégories textuelles — un nom de promotion, un type de jour — sont acceptées : Beaver les repère et les signale au service comme telles. Une colonne doit être <b>entièrement numérique ou entièrement textuelle</b>, passé et futur confondus ; un mélange est refusé avec « Covariables invalides ». Les valeurs vraies et fausses sont converties en 1 et 0, et une catégorie fait au plus 256 caractères.</p>
+    <p><b>Le multivarié conjoint</b> — tenir compte des liens entre les séries — n'est déclaré que par la variante la plus récente de la famille, et seulement sous condition : il faut <b>plus d'une série</b> et que <b>toutes les séries portent exactement les mêmes dates</b>, historique et futur compris.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Le multivarié conjoint exige des séries parfaitement alignées. Si l'alignement manque, la requête part quand même, en mode séries indépendantes, sans avertissement à l'écran. Des séries mal alignées perdent donc l'avantage sans que rien ne le dise.
+    </div>
+
+    <h2 id="la-cle-api">Configurer la clé API</h2>
+    <p>La clé se saisit dans l'écran des clés API, sous le fournisseur <b>Nixtla (TimeGPT-2)</b>. Elle est rangée dans le coffre chiffré comme toutes les autres — le mécanisme complet est décrit dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+    <p>Trois faits propres à Forecast :</p>
+    <ul>
+      <li><b>Tant que la clé n'est pas enregistrée, les modèles distants restent visibles mais non sélectionnables.</b> C'est volontaire : ils apparaissent dans le catalogue avec la mention « Clé API non configurée » plutôt que de disparaître sans explication.</li>
+      <li><b>La clé est lue au moment de chaque prévision</b>, jamais stockée dans l'analyse. Une prévision lancée sans clé échoue avec « Clé API Nixtla non configurée ».</li>
+      <li><b>La clé n'est jamais écrite dans les traces.</b> En cas d'échec, Beaver n'enregistre que le code d'état de la réponse.</li>
+    </ul>
+
+    <h2 id="ce-qui-sort">Ce qui sort de ta machine, exactement</h2>
+    <p>C'est le cœur de la page, et il se décrit champ par champ.</p>
+
+    <table>
+      <caption class="crumb">Ce que contient la requête envoyée au service</caption>
+      <tr><th>Ce qui part</th><th>Contenu</th></tr>
+      <tr><td>Les valeurs de la cible</td><td><b>Toutes les valeurs de la colonne cible</b>, série après série, à la suite</td></tr>
+      <tr><td>Les tailles de séries</td><td>Le nombre de points de chaque série</td></tr>
+      <tr><td>Les variables de contexte, passé</td><td>Les valeurs passées des colonnes de contexte choisies</td></tr>
+      <tr><td>Les variables de contexte, futur</td><td>Leurs valeurs futures</td></tr>
+      <tr><td>Les colonnes textuelles</td><td>La position des colonnes de contexte textuelles</td></tr>
+      <tr><td>La fréquence</td><td>La fréquence déclarée</td></tr>
+      <tr><td>L'horizon</td><td>Le nombre de périodes demandé</td></tr>
+      <tr><td>Le modèle</td><td>L'identifiant de la variante choisie</td></tr>
+      <tr><td>Le niveau de confiance</td><td>En pourcentage entier</td></tr>
+      <tr><td>Les réglages</td><td>Le nettoyage des variables de contexte, et les réglages d'affinage s'ils ont été modifiés</td></tr>
+    </table>
+
+    <p>Ce qui <b>ne part pas</b>, et qui mérite d'être dit :</p>
+    <ul>
+      <li><b>Aucune date.</b> La requête ne contient que des valeurs et des tailles de séries ; les dates des prévisions sont recalculées sur ta machine à partir de la fréquence et de la fin de l'historique.</li>
+      <li><b>Aucun nom de colonne.</b> Les colonnes sont transmises comme des listes de nombres, dans l'ordre.</li>
+      <li><b>Aucun identifiant de série.</b> Les séries sont transmises collées les unes aux autres, séparées par le tableau des tailles.</li>
+      <li><b>Aucune autre colonne du fichier.</b> Celles que tu n'as pas choisies comme cible, date ou contexte ne sont pas lues.</li>
+      <li><b>Aucune note, aucun scénario, aucun nom d'analyse.</b> Ces éléments vivent uniquement sur ton disque.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Ce qui part chez Nixtla, ce sont tes valeurs — pas leurs étiquettes. C'est déjà beaucoup : une série de chiffre d'affaires reste une série de chiffre d'affaires. Mais le contexte qui la rend identifiable — noms, dates, autres colonnes — ne quitte pas la machine.
+    </div>
+
+    <h2 id="lappel">Comment l'appel est fait, et ce qu'il devient s'il échoue</h2>
+    <p><b>L'adresse</b> du service est écrite en dur dans l'application : <code>https://api.nixtla.io</code>. Elle n'est pas configurable. <b>L'authentification</b> passe par un en-tête posé au dernier moment à partir d'une copie protégée de la clé, effacée de la mémoire après usage. <b>Les redirections</b> ne sont jamais suivies vers un autre serveur, et un test dédié vérifie que ni la clé ni les données n'atteignent la destination d'une redirection.</p>
+
+    <table>
+      <caption class="crumb">Les délais, les reprises et les bornes de l'appel</caption>
+      <tr><th>Élément</th><th>Valeur</th></tr>
+      <tr><td>Délai maximal d'une requête</td><td><b>60 secondes</b></td></tr>
+      <tr><td>Délai maximal du client</td><td><b>120 secondes</b></td></tr>
+      <tr><td>Nouvelles tentatives</td><td><b>2</b>, après <b>2 s</b> puis <b>4 s</b></td></tr>
+      <tr><td>Ce qui déclenche une reprise</td><td>Service surchargé ou temporairement indisponible</td></tr>
+      <tr><td>Taille maximale de la réponse lue</td><td><b>32 Mo</b></td></tr>
+    </table>
+
+    <p>Une erreur d'authentification ou de requête <b>n'est pas retentée</b> : elle échoue immédiatement. Le message affiché est générique dans tous les cas — « Erreur du service de prédiction ».</p>
+    <p><b>La réponse est vérifiée avant d'être acceptée</b> : le nombre de valeurs renvoyées doit correspondre exactement au nombre de séries multiplié par l'horizon, et chaque borne d'intervalle doit être présente et finie. Une réponse incomplète est rejetée plutôt qu'affichée partiellement.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Une erreur d'authentification n'est pas retentée. Seules les surcharges et les pannes passagères du service déclenchent deux nouvelles tentatives, à deux puis quatre secondes.
+    </div>
+
+    <h2 id="les-reglages">Les réglages propres au modèle distant</h2>
+    <p>C'est la seule famille dont les réglages portent sur l'<b>affinage</b> du modèle plutôt que sur la longueur de contexte.</p>
+
+    <table>
+      <caption class="crumb">Les réglages, leur valeur par défaut et leurs bornes</caption>
+      <tr><th>Réglage</th><th>Par défaut</th><th>Bornes</th></tr>
+      <tr><td>Relever la borne d'horizon</td><td>—</td><td>Relève la borne du modèle</td></tr>
+      <tr><td>Nettoyage des variables de contexte</td><td><b>activé</b></td><td>Activé ou non</td></tr>
+      <tr><td>Étapes d'affinage</td><td><b>0</b></td><td>De 0 à <b>1 000</b></td></tr>
+      <tr><td>Fonction de perte de l'affinage</td><td><b>par défaut</b></td><td>Par défaut, MAE, MSE, RMSE</td></tr>
+      <tr><td>Profondeur d'affinage</td><td><b>1</b></td><td>De <b>1 à 5</b></td></tr>
+      <tr><td>Contributions des variables</td><td><b>désactivé</b></td><td>Activé ou non</td></tr>
+    </table>
+
+    <p>Ce que ce modèle n'a pas, contrairement aux modèles locaux : pas de longueur de contexte réglable, pas de quantiles supplémentaires, pas de plancher à zéro. Ces réglages ne sont pas proposés parce que le service ne les accepte pas.</p>
+    <p><b>L'intervalle de confiance est continu</b> : tout niveau entier de 50 % à 99 % est accepté. C'est un avantage sur TimesFM, Toto, FlowState, TabPFN-TS, TiRex et Kairos, qui n'offrent que 60 % ou 80 %.</p>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Les bornes valables pour toute prévision, distante ou locale</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Horizon</td><td><b>5 000</b> pas</td></tr>
+      <tr><td>Séries dans un fichier</td><td><b>256</b></td></tr>
+      <tr><td>Prédictions au total (séries × horizon)</td><td><b>100 000</b></td></tr>
+      <tr><td>Colonnes de contexte</td><td><b>64</b></td></tr>
+      <tr><td>Lignes du fichier source</td><td><b>5 000</b></td></tr>
+      <tr><td>Colonnes du fichier source</td><td><b>256</b></td></tr>
+      <tr><td>Données converties</td><td><b>5 Mo</b></td></tr>
+      <tr><td>Fichier tableur importé</td><td><b>50 Mo</b></td></tr>
+      <tr><td>Réponse du service</td><td><b>32 Mo</b></td></tr>
+    </table>
+
+    <p>Le dépassement du produit séries × horizon est refusé <b>avant</b> l'appel, avec « Volume de prédictions trop important ». Rien ne part dans ce cas.</p>
+
+    <h2 id="selection-automatique">Le modèle distant et la sélection automatique</h2>
+    <p>Beaver propose deux modes de choix du modèle, Manuel et Auto, décrits dans <a href="forecast-selection-du-modele.html">Sélection du modèle</a>. Un réglage les accompagne : autoriser ou non le cloud en mode Auto.</p>
+    <ul>
+      <li><b>Le mode Auto refuse le cloud par défaut.</b> L'interrupteur reste fermé tant que tu ne l'ouvres pas, et le mode par défaut lui-même est Manuel.</li>
+      <li><b>Le même réglage borne l'évaluation.</b> Pendant un backtest, un modèle distant qui n'est pas celui de l'analyse est refusé si le cloud n'est pas autorisé.</li>
+      <li><b>Choisir le modèle distant à la main reste toujours possible</b>, quel que soit ce réglage : il ne concerne que la sélection automatique.</li>
+    </ul>
+    <p>Un point à mesurer avant de lancer une évaluation : <b>évaluer un modèle distant envoie tes données autant de fois qu'il y a de fenêtres</b> — trois par défaut, en plus de la prévision d'origine.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Clé API Nixtla non configurée »</td><td>Aucune clé enregistrée pour ce fournisseur</td><td>La saisir dans l'écran des clés API</td></tr>
+      <tr><td>Les modèles distants sont grisés</td><td>Même cause</td><td>Idem</td></tr>
+      <tr><td>« Erreur du service de prédiction »</td><td>Message unique pour toutes les pannes distantes : clé refusée, quota atteint, service indisponible, réponse illisible</td><td>Vérifier la clé et l'état du service chez le fournisseur</td></tr>
+      <tr><td>« Covariables invalides »</td><td>Une colonne de contexte mélange nombres et texte, ou contient une case vide</td><td>Compléter la colonne, ou lui donner un type unique</td></tr>
+      <tr><td>« Données de contexte futur invalides »</td><td>Il manque des lignes futures : il en faut exactement une par pas d'horizon et par série</td><td>Compléter le fichier</td></tr>
+      <tr><td>« Volume de prédictions trop important »</td><td>Séries × horizon dépasse <b>100 000</b></td><td>Réduire l'horizon ou le nombre de séries</td></tr>
+      <tr><td>« Réponse de prédiction incomplète »</td><td>Le service a renvoyé moins de valeurs qu'attendu</td><td>Réessayer ; signaler si cela persiste</td></tr>
+      <tr><td>Le multivarié conjoint ne semble rien changer</td><td>Les séries ne sont pas alignées sur les mêmes dates</td><td>Aligner les dates de toutes les séries</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="forecast-modeles-locaux.html">Modèles locaux</a> — les vingt modèles qui tournent sans réseau.</li>
+      <li><a href="forecast-selection-du-modele.html">Sélection du modèle</a> — le mode Auto et l'autorisation du cloud.</li>
+      <li><a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a> — comparer le modèle distant aux modèles locaux sur tes propres données.</li>
+      <li><a href="reference-confidentialite.html">Confidentialité</a> — le choix général entre traitement local et distant.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

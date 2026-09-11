@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Contexte</title>
+<meta name="description" content="Ce que le modèle a sous les yeux, ce qui occupe la place, la réserve gardée pour la réponse et les leviers pour libérer de l'espace.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Contexte</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-contexte.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/agent-contexte.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le <em>contexte</em></h1>
+    <p>Le contexte, c'est tout ce que le modèle a sous les yeux au moment de répondre : ton message, l'historique, les résultats d'outils, la mémoire, les instructions. Cette page explique ce qui l'occupe, pourquoi la place utilisable est plus petite que la fenêtre annoncée, et comment libérer de l'espace.</p>
+
+    <h2 id="ce-que-cest">Ce qu'est le contexte</h2>
+    <p>Sa taille est <b>fixée par le modèle</b>, pas par Beaver. Un modèle à petite fenêtre saturera vite, quel que soit le réglage.</p>
+    <div class="callout">
+      <span class="t">Contexte ou mémoire ?</span>
+      Le contexte est ce que le modèle voit maintenant. La mémoire, elle, survit à la conversation. Saturer ton contexte ne te fait rien perdre de ta mémoire. Voir <a href="agent-memoire.html">Mémoire persistante</a>.
+    </div>
+
+    <h2 id="ce-qui-occupe">Ce qui l'occupe</h2>
+    <p>Beaver répartit l'occupation en sept catégories.</p>
+    <table>
+      <caption class="crumb">Les sept catégories d'occupation</caption>
+      <tr><th>Catégorie</th><th>Contenu</th></tr>
+      <tr><td>Messages</td><td>La conversation et les résultats d'outils</td></tr>
+      <tr><td>Outils système</td><td>Les descriptions des outils disponibles</td></tr>
+      <tr><td>Connecteurs MCP</td><td>Les descriptions des outils de connecteurs</td></tr>
+      <tr><td>Skills</td><td>Les skills chargés</td></tr>
+      <tr><td>Mémoire</td><td>Les notes injectées</td></tr>
+      <tr><td>Méta-contexte</td><td>Le catalogue des skills disponibles</td></tr>
+      <tr><td>Prompt système</td><td>Les instructions de départ</td></tr>
+    </table>
+    <p>C'est l'information la plus utile de la page : un contexte peut être saturé <b>avant même</b> que tu aies écrit un message, si trop de connecteurs sont actifs et trop de skills disponibles.</p>
+    <div class="callout">
+      <span class="t">Note</span>
+      Les descriptions des outils et des connecteurs actifs occupent du contexte en permanence. Avec beaucoup de connecteurs activés, la place disponible se réduit avant le premier message.
+    </div>
+    <p>Détail à connaître : pour l'un des fournisseurs distants, le raisonnement du modèle n'est pas compté dans l'occupation. L'estimation peut donc différer d'un fournisseur à l'autre.</p>
+
+    <h2 id="reserve">La réserve de réponse</h2>
+    <p>Beaver ne remplit jamais la fenêtre entièrement : une part est réservée à la réponse.</p>
+    <table>
+      <caption class="crumb">La part gardée pour la réponse du modèle</caption>
+      <tr><th>Réserve</th><th>Valeur</th></tr>
+      <tr><td>Part de la fenêtre réservée</td><td><b>15 %</b></td></tr>
+      <tr><td>Plancher</td><td><b>4 096 jetons</b></td></tr>
+      <tr><td>Plafond</td><td><b>16 384 jetons</b></td></tr>
+    </table>
+    <p>Sans cette réserve, le modèle serait coupé au milieu de sa réponse. C'est pour ça que la place utilisable est inférieure à la fenêtre annoncée par le fournisseur — l'écart n'est pas une erreur.</p>
+
+    <h2 id="ecran-usage">L'écran d'usage du contexte</h2>
+    <p>Un écran dédié montre la répartition par catégorie pour la conversation en cours. C'est l'outil de diagnostic à privilégier : plutôt que de deviner ce qui remplit le contexte, tu le lis.</p>
+
+    <h2 id="sature">Quand le contexte est saturé</h2>
+    <p>L'erreur porte le code <code>context_capacity_exceeded</code>. Elle survient quand ce qui doit être envoyé ne tient pas dans la fenêtre du modèle, réserve de réponse déduite.</p>
+    <p>Beaver <b>élague l'historique</b> avant d'en arriver là. Quand l'élagage ne suffit pas, la compression prend le relais.</p>
+
+    <h2 id="reduire">Réduire l'occupation</h2>
+    <p>Les leviers, par ordre d'efficacité :</p>
+    <ul>
+      <li><b>Changer de modèle</b> pour un modèle à plus grande fenêtre — le levier le plus direct.</li>
+      <li><b>Désactiver les connecteurs MCP inutiles</b> : chaque connecteur actif ajoute la description de tous ses outils.</li>
+      <li><b>Désactiver les groupes d'outils inutiles</b>, pour la même raison.</li>
+      <li><b>Alléger la mémoire injectée</b> en réduisant son budget.</li>
+      <li><b>Alléger les instructions permanentes</b> — jusqu'à 200 Ko peuvent y passer.</li>
+      <li><b>Cloner la conversation</b> à un message antérieur pour repartir avec un contexte allégé.</li>
+    </ul>
+
+    <h2 id="trois-notions">Contexte, mémoire, instructions permanentes</h2>
+    <table>
+      <caption class="crumb">Trois choses différentes, souvent confondues</caption>
+      <tr><th></th><th>Contexte</th><th>Mémoire</th><th>Instructions permanentes</th></tr>
+      <tr><td>Durée de vie</td><td>La conversation</td><td>Illimitée</td><td>Illimitée</td></tr>
+      <tr><td>Écrit par</td><td>L'échange en cours</td><td>L'agent ou toi</td><td>Toi</td></tr>
+      <tr><td>Occupe du contexte</td><td>Par nature</td><td>Oui, jusqu'à 3 000 jetons</td><td>Oui, jusqu'à 200 Ko</td></tr>
+      <tr><td>Limite fixée par</td><td>Le modèle</td><td>Un réglage</td><td>Un réglage</td></tr>
+    </table>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Capacité de contexte dépassée »</td><td>Le contenu ne tient pas dans la fenêtre du modèle</td><td>Changer de modèle, ou cloner à un message antérieur</td></tr>
+      <tr><td>La fenêtre annoncée n'est pas celle disponible</td><td>Réserve de réponse de 15 %</td><td>Comportement voulu</td></tr>
+      <tr><td>Le contexte se remplit vite sans raison apparente</td><td>Connecteurs et outils actifs, mémoire, instructions</td><td>Consulter l'écran d'usage du contexte</td></tr>
+      <tr><td>Les premiers messages semblent oubliés</td><td>Élagage de l'historique</td><td>Cloner en mode résumé pour conserver l'acquis</td></tr>
+      <tr><td>L'usage affiché diffère du décompte du fournisseur</td><td>Estimation, et raisonnement non compté chez un fournisseur</td><td>Écart normal</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-memoire.html">Mémoire persistante</a> — le budget d'injection.</li>
+      <li><a href="agent-instructions-permanentes.html">Instructions permanentes</a> — la limite de 200 Ko.</li>
+      <li><a href="agent-cloner-une-conversation.html">Cloner une conversation</a> — repartir avec un contexte allégé.</li>
+      <li><a href="outils-vue-densemble.html">Outils</a> — désactiver ce qui ne sert pas.</li>
+      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — le poste qui grossit le plus vite.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

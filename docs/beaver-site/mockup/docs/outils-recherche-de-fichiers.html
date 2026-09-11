@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Recherche de fichiers</title>
-<meta name="description" content="Comment l'agent retrouve un fichier ou une ligne de code dans ton projet, avec grep et glob, et ce que ces deux outils fouillent réellement.">
+<title>Beaver Docs — File search</title>
+<meta name="description" content="How the agent finds a file or a line of code in your project, with grep and glob, and what these two tools actually search through.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,145 +19,145 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Outils / Recherche de fichiers</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="outils-recherche-de-fichiers.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Tools / File search</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/outils-recherche-de-fichiers.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="outils-recherche-de-fichiers.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Chercher dans <em>le projet.</em></h1>
-    <p>Deux outils forment le groupe <b>Recherche de fichiers</b>, verrouillé et impossible à désactiver. Ils répondent à deux questions différentes : où un mot est écrit, et quels fichiers portent un nom donné.</p>
+    <h1>Searching in <em>the project.</em></h1>
+    <p>Two tools make up the <b>File search</b> group, locked and impossible to turn off. They answer two different questions: where a word is written, and which files carry a given name.</p>
 
-    <h2 id="deux-outils">Deux outils, deux questions</h2>
+    <h2 id="deux-outils">Two tools, two questions</h2>
     <table>
-      <caption class="crumb">La question que se pose l'agent, et l'outil qu'il choisit</caption>
-      <tr><th>Question de l'agent</th><th>Outil</th></tr>
-      <tr><td>« Où est écrit ce mot dans le projet ? »</td><td><code>grep</code> — cherche dans le <b>contenu</b></td></tr>
-      <tr><td>« Quels fichiers portent ce nom ? »</td><td><code>glob</code> — cherche par <b>nom de fichier</b></td></tr>
+      <caption class="crumb">The question the agent asks itself, and the tool it picks</caption>
+      <tr><th>The agent's question</th><th>Tool</th></tr>
+      <tr><td>"Where is this word written in the project?"</td><td><code>grep</code> — searches the <b>content</b></td></tr>
+      <tr><td>"Which files carry this name?"</td><td><code>glob</code> — searches by <b>file name</b></td></tr>
     </table>
-    <p>Aucun des deux ne modifie quoi que ce soit et ils ne demandent jamais d'approbation. Ils partent du répertoire de travail par défaut et peuvent viser un sous-dossier ; comme partout, le dossier ciblé doit rester dans les zones autorisées en lecture.</p>
-    <p><b>Effet secondaire à connaître</b> : un fichier apparu dans un résultat de recherche est enregistré comme « vu ». Il devient donc modifiable sans nouvelle lecture — voir la règle <a href="outils-fichiers.html">« lire avant d'écrire »</a>.</p>
+    <p>Neither modifies anything and they never ask for approval. They start from the working directory by default and can target a subfolder; as everywhere, the folder they target must stay inside the areas allowed for reading.</p>
+    <p><b>A side effect worth knowing</b>: a file that appeared in a search result is recorded as "seen". It therefore becomes editable without a fresh read — see the <a href="outils-fichiers.html">"read before write"</a> rule.</p>
 
-    <h2 id="chercher-dans-le-contenu">Chercher dans le contenu</h2>
-    <p><code>grep</code> cherche une <b>expression régulière</b> dans les fichiers.</p>
+    <h2 id="chercher-dans-le-contenu">Searching the content</h2>
+    <p><code>grep</code> searches for a <b>regular expression</b> in files.</p>
     <ul>
-      <li>Chaque correspondance revient sous la forme <code>chemin:ligne:contenu</code>. Le numéro de ligne est <b>toujours</b> présent : l'agent peut donc citer un emplacement exact.</li>
-      <li>La recherche <b>distingue les majuscules des minuscules</b>, sans possibilité de l'en empêcher.</li>
-      <li>Il n'y a <b>pas de lignes de contexte</b> autour d'une correspondance, pas de mode « liste des fichiers seulement », pas de mode comptage. Un seul mode : les lignes qui correspondent.</li>
-      <li>Un filtre par nom de fichier peut restreindre la recherche — par exemple aux fichiers d'une seule extension. C'est ce qui rend une recherche rapide sur un gros projet.</li>
-      <li>Le motif est limité à <b>500 caractères</b>.</li>
-      <li>La syntaxe des expressions régulières est celle de Rust : pas de références arrière, pas d'anticipation. Un motif qui les emploie est rejeté avec un message explicite, et l'agent le reformule.</li>
+      <li>Every match comes back as <code>path:line:content</code>. The line number is <b>always</b> there: the agent can therefore quote an exact location.</li>
+      <li>The search is <b>case-sensitive</b>, with no way to prevent it.</li>
+      <li>There are <b>no context lines</b> around a match, no "file list only" mode, no count mode. A single mode: the lines that match.</li>
+      <li>A file name filter can narrow the search — to files with a single extension, for instance. That is what makes a search fast on a large project.</li>
+      <li>The pattern is limited to <b>500 characters</b>.</li>
+      <li>The regular expression syntax is Rust's: no back-references, no lookahead. A pattern that uses them is rejected with an explicit message, and the agent rephrases it.</li>
     </ul>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <code>grep</code> distingue les majuscules des minuscules, toujours, sans option pour le désactiver. Une recherche de <code>Config</code> ne trouve pas <code>config</code>. L'agent le sait et adapte son motif ; si tu lis la commande, sache-le aussi.
+      <span class="t">Careful</span>
+      <code>grep</code> is case-sensitive, always, with no option to turn that off. A search for <code>Config</code> does not find <code>config</code>. The agent knows this and adapts its pattern; if you read the command, know it too.
     </div>
 
-    <h2 id="chercher-par-nom">Chercher par nom de fichier</h2>
-    <p><code>glob</code> liste les fichiers dont le chemin correspond à un motif de nom.</p>
+    <h2 id="chercher-par-nom">Searching by file name</h2>
+    <p><code>glob</code> lists the files whose path matches a name pattern.</p>
     <ul>
-      <li>La syntaxe est celle des motifs de fichiers classiques : <code>*</code> pour n'importe quelle suite de caractères, <code>?</code> pour un caractère, <code>**</code> pour traverser les sous-dossiers, <code>[abc]</code> pour un choix de caractères, <code>{a,b}</code> pour une alternative.</li>
-      <li><b>Seuls les fichiers sont renvoyés</b>, jamais les dossiers.</li>
-      <li>Les chemins reviennent <b>absolus</b>, un par ligne.</li>
-      <li><b>L'ordre n'est pas garanti</b> : il dépend du système de fichiers et n'est pas alphabétique. Ce point compte si tu compares deux exécutions.</li>
-      <li>Le motif s'applique au chemin <b>relatif</b> au dossier de départ, pas au chemin absolu.</li>
+      <li>The syntax is that of classic file patterns: <code>*</code> for any sequence of characters, <code>?</code> for one character, <code>**</code> to cross subfolders, <code>[abc]</code> for a choice of characters, <code>{a,b}</code> for an alternative.</li>
+      <li><b>Only files are returned</b>, never folders.</li>
+      <li>Paths come back <b>absolute</b>, one per line.</li>
+      <li><b>The order is not guaranteed</b>: it depends on the file system and is not alphabetical. This matters if you compare two runs.</li>
+      <li>The pattern applies to the path <b>relative</b> to the starting folder, not to the absolute path.</li>
     </ul>
 
-    <h2 id="ce-qui-est-fouille">Ce qui est fouillé</h2>
-    <p><b>Les deux outils ignorent complètement les règles d'exclusion de Git.</b> C'est un choix explicite, et il a des conséquences :</p>
+    <h2 id="ce-qui-est-fouille">What gets searched</h2>
+    <p><b>Both tools completely ignore Git's exclusion rules.</b> That is an explicit choice, and it has consequences:</p>
     <ul>
-      <li>les fichiers <b>cachés</b> sont fouillés ;</li>
-      <li>les fichiers listés dans un <code>.gitignore</code> sont fouillés — y compris <code>node_modules</code>, les dossiers de compilation, les caches ;</li>
-      <li>les fichiers d'environnement et de secrets présents dans le projet sont fouillés.</li>
+      <li><b>hidden</b> files are searched;</li>
+      <li>files listed in a <code>.gitignore</code> are searched — including <code>node_modules</code>, build folders and caches;</li>
+      <li>the environment and secret files present in the project are searched.</li>
     </ul>
-    <p>Deux effets pratiques. D'abord, <b>une recherche sur un projet avec ses dépendances installées est lente et bruyante</b> : l'agent apprend vite à filtrer par extension ou à viser un sous-dossier, mais la première recherche d'une conversation peut ratisser très large.</p>
-    <p>Ensuite, <b>l'agent voit les fichiers de configuration et d'environnement du projet</b>. C'est voulu, et c'est nécessaire : un agent aveugle à un fichier <code>.env</code> conclut qu'il n'existe pas et part sur une fausse piste — il proposera de créer une configuration déjà en place. Tous les assistants de développement en ligne de commande fonctionnent ainsi. La protection ne vit pas dans ce que l'agent peut voir, mais dans le mode de permission, la portée d'accès disque et le choix du modèle.</p>
-    <p>Un contournement existe, et il est même suggéré à l'agent : passer par une commande shell quand il lui faut une vue qui respecte les exclusions de Git.</p>
+    <p>Two practical effects. First, <b>a search on a project with its dependencies installed is slow and noisy</b>: the agent quickly learns to filter by extension or target a subfolder, but the first search in a conversation can cast a very wide net.</p>
+    <p>Second, <b>the agent sees the project's configuration and environment files</b>. That is intended, and it is necessary: an agent blind to a <code>.env</code> file concludes it does not exist and heads down a false trail — it will offer to create a configuration that is already in place. Every command-line development assistant works this way. The protection does not live in what the agent can see, but in the permission mode, the disk access scope and the choice of model.</p>
+    <p>A workaround exists, and it is even suggested to the agent: go through a shell command when it needs a view that respects Git's exclusions.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Les exclusions de Git ne sont pas respectées : fichiers cachés, dossiers de dépendances et artefacts de compilation sont tous fouillés. C'est délibéré, au prix d'une recherche large plus lente.
+      Git's exclusions are not honoured: hidden files, dependency folders and build artefacts are all searched. This is deliberate, at the cost of a slower broad search.
     </div>
 
-    <h2 id="limites-de-resultats">Les limites de résultats</h2>
+    <h2 id="limites-de-resultats">The result limits</h2>
     <table>
-      <caption class="crumb">Nombre de résultats avant arrêt de la recherche</caption>
-      <tr><th>Outil</th><th>Résultats maximum</th></tr>
-      <tr><td><code>grep</code></td><td><b>250 correspondances</b></td></tr>
-      <tr><td><code>glob</code></td><td><b>100 fichiers</b></td></tr>
+      <caption class="crumb">Number of results before the search stops</caption>
+      <tr><th>Tool</th><th>Maximum results</th></tr>
+      <tr><td><code>grep</code></td><td><b>250 matches</b></td></tr>
+      <tr><td><code>glob</code></td><td><b>100 files</b></td></tr>
     </table>
-    <p>Au-delà, la recherche <b>s'arrête</b> et le résultat porte une mention de troncature. Elle ne continue pas en silence.</p>
-    <p>S'ajoute une seconde limite, plus loin dans la chaîne : le résultat transmis au modèle est plafonné à <b>10 000 caractères</b> pour <code>grep</code> et <b>5 000</b> pour <code>glob</code>. Un résultat plus long est réduit à un aperçu, le texte complet étant écrit sur le disque et relisible par l'agent.</p>
-    <p>Quand aucun fichier ne correspond, le résultat dit « (aucun résultat) » — jamais une réponse vide.</p>
+    <p>Beyond that, the search <b>stops</b> and the result carries a truncation note. It does not carry on silently.</p>
+    <p>A second limit comes further down the chain: the result passed to the model is capped at <b>10,000 characters</b> for <code>grep</code> and <b>5,000</b> for <code>glob</code>. A longer result is reduced to a preview, the full text being written to disk and readable back by the agent.</p>
+    <p>When no file matches, the result says "(no results)" — never an empty answer.</p>
 
-    <h2 id="recherche-trop-longue">Quand une recherche est trop longue</h2>
+    <h2 id="recherche-trop-longue">When a search takes too long</h2>
     <ul>
-      <li>Une recherche est abandonnée au bout de <b>600 secondes</b>, soit dix minutes, avec une erreur de délai dépassé signalée comme <b>réessayable</b>.</li>
-      <li>Ce délai est très large exprès : il évite qu'une recherche partie sur un disque entier bloque la conversation indéfiniment, pas de cadencer les recherches ordinaires. Une recherche normale prend moins d'une seconde.</li>
-      <li>L'arrêt est propre : le travail en cours est interrompu, il ne continue pas en tâche de fond.</li>
+      <li>A search is abandoned after <b>600 seconds</b>, or ten minutes, with a timeout error flagged as <b>retryable</b>.</li>
+      <li>This limit is very generous on purpose: it exists to stop a search launched across an entire disk from blocking the conversation indefinitely, not to pace ordinary searches. A normal search takes less than a second.</li>
+      <li>The stop is clean: the work in progress is interrupted, it does not carry on in the background.</li>
     </ul>
 
-    <h2 id="ce-qui-echappe">Ce qui échappe à ces outils</h2>
-    <p>Quand certains fichiers ou dossiers n'ont pas pu être lus — droits insuffisants, lien cassé, fichier en cours d'écriture — le résultat est marqué comme <b>partiel</b> et <b>donne le nombre</b> d'éléments ignorés. Il ne prétend jamais avoir tout fouillé.</p>
-    <p>Si <b>aucun</b> fichier n'a pu être lu, c'est une erreur franche, pas un résultat vide. La distinction compte : « je n'ai rien trouvé » et « je n'ai rien pu lire » ne mènent pas aux mêmes conclusions.</p>
+    <h2 id="ce-qui-echappe">What escapes these tools</h2>
+    <p>When some files or folders could not be read — insufficient rights, broken link, file being written — the result is marked as <b>partial</b> and <b>gives the number</b> of skipped items. It never claims to have searched everything.</p>
+    <p>If <b>no</b> file could be read, that is an outright error, not an empty result. The distinction matters: "I found nothing" and "I could read nothing" do not lead to the same conclusions.</p>
 
-    <h2 id="comparaison">Les deux outils côte à côte</h2>
+    <h2 id="comparaison">The two tools side by side</h2>
     <table>
-      <caption class="crumb">Ce qui distingue grep de glob</caption>
+      <caption class="crumb">What sets grep apart from glob</caption>
       <tr><th></th><th><code>grep</code></th><th><code>glob</code></th></tr>
-      <tr><td>Cherche dans</td><td>Le contenu des fichiers</td><td>Le nom des fichiers</td></tr>
-      <tr><td>Syntaxe</td><td>Expression régulière (style Rust)</td><td>Motif de fichier (<code>*</code>, <code>**</code>, <code>?</code>, <code>[]</code>, <code>{}</code>)</td></tr>
-      <tr><td>Résultat</td><td><code>chemin:ligne:contenu</code></td><td>Chemins absolus</td></tr>
-      <tr><td>Sensible à la casse</td><td><b>Oui</b>, toujours</td><td>Selon le motif</td></tr>
-      <tr><td>Filtre supplémentaire</td><td>Filtre par nom de fichier</td><td>Aucun</td></tr>
-      <tr><td>Résultats maximum</td><td><b>250</b></td><td><b>100</b></td></tr>
-      <tr><td>Longueur du motif</td><td><b>500 caractères</b></td><td>Non limitée explicitement</td></tr>
-      <tr><td>Ordre</td><td>Ordre de parcours</td><td><b>Non garanti</b></td></tr>
-      <tr><td>Renvoie des dossiers</td><td>Non</td><td>Non</td></tr>
+      <tr><td>Searches in</td><td>File content</td><td>File names</td></tr>
+      <tr><td>Syntax</td><td>Regular expression (Rust style)</td><td>File pattern (<code>*</code>, <code>**</code>, <code>?</code>, <code>[]</code>, <code>{}</code>)</td></tr>
+      <tr><td>Result</td><td><code>path:line:content</code></td><td>Absolute paths</td></tr>
+      <tr><td>Case-sensitive</td><td><b>Yes</b>, always</td><td>Depends on the pattern</td></tr>
+      <tr><td>Extra filter</td><td>File name filter</td><td>None</td></tr>
+      <tr><td>Maximum results</td><td><b>250</b></td><td><b>100</b></td></tr>
+      <tr><td>Pattern length</td><td><b>500 characters</b></td><td>Not explicitly limited</td></tr>
+      <tr><td>Order</td><td>Traversal order</td><td><b>Not guaranteed</b></td></tr>
+      <tr><td>Returns folders</td><td>No</td><td>No</td></tr>
     </table>
 
-    <h2 id="les-erreurs">Les erreurs</h2>
+    <h2 id="les-erreurs">The errors</h2>
     <table>
-      <caption class="crumb">Message, cause, et si l'agent peut réessayer</caption>
-      <tr><th>Message</th><th>Cause</th><th>Réessayable</th></tr>
-      <tr><td>Motif d'expression régulière invalide</td><td>Syntaxe non supportée (référence arrière, anticipation)</td><td>Non</td></tr>
-      <tr><td>Motif trop long (max 500 caractères)</td><td>Motif trop long</td><td>Non</td></tr>
-      <tr><td>Filtre de fichiers invalide</td><td>Motif de nom mal formé</td><td>Non</td></tr>
-      <tr><td>Motif de fichiers invalide</td><td>Idem, pour <code>glob</code></td><td>Non</td></tr>
-      <tr><td>Fichier introuvable</td><td>Le dossier de départ n'existe pas</td><td>Non</td></tr>
-      <tr><td>Permission refusée</td><td>Droits insuffisants sur le dossier de départ</td><td>Non</td></tr>
-      <tr><td>Chemin de recherche invalide</td><td>Chemin hors des zones autorisées</td><td>Non</td></tr>
-      <tr><td>Aucun fichier lisible ; N erreur(s) de lecture</td><td>Rien n'a pu être ouvert</td><td><b>Oui</b></td></tr>
-      <tr><td>Délai dépassé après 600 s</td><td>Recherche trop vaste</td><td><b>Oui</b></td></tr>
-      <tr><td>Le moteur de recherche interne s'est interrompu</td><td>Défaillance interne</td><td><b>Oui</b></td></tr>
+      <caption class="crumb">Message, cause, and whether the agent can retry</caption>
+      <tr><th>Message</th><th>Cause</th><th>Retryable</th></tr>
+      <tr><td>Invalid regular expression pattern</td><td>Unsupported syntax (back-reference, lookahead)</td><td>No</td></tr>
+      <tr><td>Pattern too long (max 500 characters)</td><td>Pattern too long</td><td>No</td></tr>
+      <tr><td>Invalid file filter</td><td>Malformed name pattern</td><td>No</td></tr>
+      <tr><td>Invalid file pattern</td><td>Same, for <code>glob</code></td><td>No</td></tr>
+      <tr><td>File not found</td><td>The starting folder does not exist</td><td>No</td></tr>
+      <tr><td>Permission denied</td><td>Insufficient rights on the starting folder</td><td>No</td></tr>
+      <tr><td>Invalid search path</td><td>Path outside the allowed areas</td><td>No</td></tr>
+      <tr><td>No readable file; N read error(s)</td><td>Nothing could be opened</td><td><b>Yes</b></td></tr>
+      <tr><td>Timed out after 600 s</td><td>Search too broad</td><td><b>Yes</b></td></tr>
+      <tr><td>The internal search engine stopped</td><td>Internal failure</td><td><b>Yes</b></td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>L'agent ne trouve pas un mot pourtant visible dans le fichier</td><td>Recherche sensible à la casse, ou caractères spéciaux non échappés</td><td>Attendu ; l'agent reformule seul en général</td></tr>
-      <tr><td>La recherche remonte des résultats dans <code>node_modules</code></td><td>Les exclusions de Git ne sont pas appliquées</td><td>Demander à l'agent de viser un sous-dossier ou de filtrer par extension</td></tr>
-      <tr><td>L'agent annonce 250 résultats, pile</td><td>Limite atteinte, résultat tronqué</td><td>Restreindre la recherche</td></tr>
-      <tr><td>Une recherche a pris dix minutes puis a échoué</td><td>Dossier de départ trop vaste</td><td>Restreindre le dossier de départ ; vérifier la portée d'accès disque</td></tr>
-      <tr><td>Les fichiers ne sortent pas dans le même ordre d'une fois sur l'autre</td><td>L'ordre n'est pas garanti</td><td>Comportement attendu</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>The agent cannot find a word that is plainly visible in the file</td><td>Case-sensitive search, or unescaped special characters</td><td>Expected; the agent usually rephrases on its own</td></tr>
+      <tr><td>The search brings back results in <code>node_modules</code></td><td>Git's exclusions are not applied</td><td>Ask the agent to target a subfolder or filter by extension</td></tr>
+      <tr><td>The agent reports exactly 250 results</td><td>Limit reached, result truncated</td><td>Narrow the search</td></tr>
+      <tr><td>A search took ten minutes then failed</td><td>Starting folder too broad</td><td>Narrow the starting folder; check the disk access scope</td></tr>
+      <tr><td>Files do not come out in the same order from one run to the next</td><td>The order is not guaranteed</td><td>Expected behaviour</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="outils-fichiers.html">Fichiers</a> — lire ce qui a été trouvé, et la règle « lire avant d'écrire ».</li>
-      <li><a href="outils-terminal-et-shell.html">Terminal et shell</a> — l'alternative pour une recherche qui respecte les exclusions de Git.</li>
-      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée de la recherche.</li>
-      <li><a href="agent-permissions.html">Modes de permission</a> — la protection des fichiers sensibles.</li>
+      <li><a href="outils-fichiers.html">Files</a> — reading what was found, and the "read before write" rule.</li>
+      <li><a href="outils-terminal-et-shell.html">Terminal and shell</a> — the alternative for a search that honours Git's exclusions.</li>
+      <li><a href="agent-repertoire-de-travail.html">Working directory</a> — the scope of the search.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — the protection of sensitive files.</li>
     </ul>
   </main>
 

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Sous-agents</title>
-<meta name="description" content="Déléguer une partie du travail à une session enfant : isolation, suivi, inspection des changements, limites et ce qu'un sous-agent ne peut pas faire.">
+<title>Beaver Docs — Subagents</title>
+<meta name="description" content="Delegating part of the work to a child session: isolation, monitoring, inspecting changes, limits, and what a subagent cannot do.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,164 +19,164 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Agent / Sous-agents</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="agent-sous-agents.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Agent / Subagents</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/agent-sous-agents.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="agent-sous-agents.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Les <em>sous-agents</em></h1>
-    <p>L'agent principal peut confier une partie du travail à une session enfant, qui dispose de son propre contexte et travaille de son côté. Deux bénéfices : ton contexte reste léger, parce que l'exploration fastidieuse a lieu chez l'enfant et que seul le résultat remonte ; et le travail est isolé, parce que l'enfant modifie des fichiers dans un espace séparé, pas directement dans ton dossier.</p>
+    <h1>The <em>subagents</em></h1>
+    <p>The main agent can hand part of the work to a child session, which has its own context and works on its own side. Two benefits: your context stays light, because the tedious exploration happens in the child and only the result comes back; and the work is isolated, because the child modifies files in a separate space, not directly in your folder.</p>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      <b>Les sous-agents ne demandent pas de confirmation.</b> Ils s'exécutent dans un mode interne réservé aux sessions déléguées, qui contourne la garde de permission — même si ta conversation est en Demander l'autorisation. Le contrôle ne disparaît pas, il se déplace : en amont, au moment de décider quoi déléguer, et en aval, en inspectant leurs changements avant de les appliquer.
+      <span class="t">Security</span>
+      <b>Subagents do not ask for confirmation.</b> They run in an internal mode reserved for delegated sessions, which bypasses the permission guard — even if your conversation is set to Ask permission. Control does not disappear, it moves: upstream, when deciding what to delegate, and downstream, by inspecting their changes before applying them.
     </div>
 
-    <h2 id="les-outils">Les neuf outils</h2>
+    <h2 id="les-outils">The nine tools</h2>
     <table>
-      <caption class="crumb">Le groupe Sous-agents, actif par défaut</caption>
-      <tr><th>Outil</th><th>Rôle</th></tr>
-      <tr><td><code>delegate_task</code></td><td>Lancer un sous-agent sur une tâche</td></tr>
-      <tr><td><code>list_subagents</code></td><td>Lister les sous-agents et leur état</td></tr>
-      <tr><td><code>get_subagent</code></td><td>Consulter le détail de l'un d'eux</td></tr>
-      <tr><td><code>message_subagent</code></td><td>Lui envoyer une consigne en cours de route</td></tr>
-      <tr><td><code>cancel_subagent</code></td><td>L'interrompre</td></tr>
-      <tr><td><code>archive_subagent</code></td><td>L'archiver une fois terminé</td></tr>
-      <tr><td><code>inspect_subagent_changes</code></td><td>Voir ce qu'il a modifié</td></tr>
-      <tr><td><code>apply_subagent_changes</code></td><td>Appliquer ses changements</td></tr>
-      <tr><td><code>discard_subagent_changes</code></td><td>Les jeter</td></tr>
+      <caption class="crumb">The Subagents group, active by default</caption>
+      <tr><th>Tool</th><th>Role</th></tr>
+      <tr><td><code>delegate_task</code></td><td>Start a subagent on a task</td></tr>
+      <tr><td><code>list_subagents</code></td><td>List the subagents and their state</td></tr>
+      <tr><td><code>get_subagent</code></td><td>View the details of one of them</td></tr>
+      <tr><td><code>message_subagent</code></td><td>Send it an instruction along the way</td></tr>
+      <tr><td><code>cancel_subagent</code></td><td>Interrupt it</td></tr>
+      <tr><td><code>archive_subagent</code></td><td>Archive it once finished</td></tr>
+      <tr><td><code>inspect_subagent_changes</code></td><td>See what it modified</td></tr>
+      <tr><td><code>apply_subagent_changes</code></td><td>Apply its changes</td></tr>
+      <tr><td><code>discard_subagent_changes</code></td><td>Discard them</td></tr>
     </table>
-    <p><b><code>apply_subagent_changes</code> est soumis à confirmation</b> en mode Demander l'autorisation. C'est le point de contrôle central : l'enfant travaille librement, mais l'intégration de son travail passe par toi.</p>
+    <p><b><code>apply_subagent_changes</code> is subject to confirmation</b> in Ask permission mode. This is the central control point: the child works freely, but integrating its work goes through you.</p>
 
-    <h2 id="isolation">L'isolation : deux types d'espace de travail</h2>
+    <h2 id="isolation">Isolation: two kinds of workspace</h2>
     <table>
-      <caption class="crumb">Où travaille un sous-agent</caption>
-      <tr><th>Type</th><th>Mécanisme</th></tr>
-      <tr><td>Git</td><td>Une copie de travail Git séparée, dans <code>subagent-worktrees/</code></td></tr>
-      <tr><td>Dossier</td><td>Une copie du dossier, quand le projet n'est pas un dépôt Git</td></tr>
+      <caption class="crumb">Where a subagent works</caption>
+      <tr><th>Type</th><th>Mechanism</th></tr>
+      <tr><td>Git</td><td>A separate Git working copy, in <code>subagent-worktrees/</code></td></tr>
+      <tr><td>Folder</td><td>A copy of the folder, when the project is not a Git repository</td></tr>
     </table>
-    <p>Le second cas est borné, parce que copier un dossier peut coûter cher.</p>
+    <p>The second case is bounded, because copying a folder can be expensive.</p>
     <table>
-      <caption class="crumb">Limites d'un instantané de dossier</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Fichiers</td><td><b>20 000</b></td></tr>
-      <tr><td>Taille totale</td><td><b>512 Mo</b></td></tr>
-      <tr><td>Taille d'un fichier</td><td><b>64 Mo</b></td></tr>
+      <caption class="crumb">Limits of a folder snapshot</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Files</td><td><b>20,000</b></td></tr>
+      <tr><td>Total size</td><td><b>512 MB</b></td></tr>
+      <tr><td>Size of one file</td><td><b>64 MB</b></td></tr>
     </table>
-    <p>Au-delà, l'instantané est refusé — c'est ce qui explique qu'une délégation échoue sur un projet contenant un gros dossier de dépendances.</p>
+    <p>Beyond that, the snapshot is refused — which is why a delegation fails on a project containing a large dependencies folder.</p>
 
-    <h2 id="suivre">Suivre et corriger un sous-agent en cours</h2>
+    <h2 id="suivre">Following and correcting a running subagent</h2>
     <ul>
-      <li>L'état de chaque sous-agent est visible en direct.</li>
-      <li>Une <b>consigne peut lui être envoyée pendant qu'il travaille</b>, pour le corriger, le réorienter ou lui donner une précision.</li>
-      <li>Les consignes sont mises en file : <b>huit au maximum</b> en attente, <b>50 000 caractères</b> chacune au plus.</li>
-      <li>Un sous-agent peut être <b>interrompu</b> à tout moment.</li>
+      <li>The state of each subagent is visible live.</li>
+      <li>An <b>instruction can be sent to it while it works</b>, to correct it, redirect it or give it a detail.</li>
+      <li>Instructions are queued: <b>eight at most</b> waiting, <b>50,000 characters</b> each at most.</li>
+      <li>A subagent can be <b>interrupted</b> at any time.</li>
     </ul>
-    <p>Un onglet de conversation peut réclamer l'attention quand un sous-agent attend une réponse.</p>
+    <p>A conversation tab can call for attention when a subagent is waiting for an answer.</p>
 
-    <h2 id="inspecter">Inspecter et appliquer les changements</h2>
-    <p>Chaque lot de changements passe par quatre états.</p>
+    <h2 id="inspecter">Inspecting and applying changes</h2>
+    <p>Each batch of changes goes through four states.</p>
     <table>
-      <caption class="crumb">Le cycle d'un lot de changements</caption>
-      <tr><th>État</th><th>Signification</th></tr>
-      <tr><td>En attente</td><td>Le sous-agent a terminé, rien n'est appliqué</td></tr>
-      <tr><td>Conflit</td><td>Les changements entrent en conflit avec l'état actuel</td></tr>
-      <tr><td>Appliqué</td><td>Intégrés à ton dossier</td></tr>
-      <tr><td>Écarté</td><td>Jetés</td></tr>
+      <caption class="crumb">The lifecycle of a batch of changes</caption>
+      <tr><th>State</th><th>Meaning</th></tr>
+      <tr><td>Pending</td><td>The subagent has finished, nothing is applied</td></tr>
+      <tr><td>Conflict</td><td>The changes conflict with the current state</td></tr>
+      <tr><td>Applied</td><td>Integrated into your folder</td></tr>
+      <tr><td>Discarded</td><td>Thrown away</td></tr>
     </table>
-    <p>Avant d'appliquer, tu vois la <b>liste des fichiers touchés</b>, avec la nature de chaque modification.</p>
+    <p>Before applying, you see the <b>list of files touched</b>, with the nature of each modification.</p>
     <div class="callout">
-      <span class="t">Conflit</span>
-      Si ton dossier a changé pendant que le sous-agent travaillait, ses changements passent en conflit. Beaver refuse de les appliquer aveuglément plutôt que d'écraser ton travail.
+      <span class="t">Conflict</span>
+      If your folder changed while the subagent was working, its changes move to conflict. Beaver refuses to apply them blindly rather than overwrite your work.
     </div>
 
-    <h2 id="combien">Combien de sous-agents à la fois</h2>
+    <h2 id="combien">How many subagents at once</h2>
     <table>
-      <caption class="crumb">Deux plafonds, dont un global</caption>
-      <tr><th>Plafond</th><th>Valeur</th></tr>
-      <tr><td>Sous-agents actifs par session</td><td><b>4</b></td></tr>
-      <tr><td>Sous-agents actifs au total, toutes sessions confondues</td><td><b>8</b></td></tr>
+      <caption class="crumb">Two ceilings, one of them global</caption>
+      <tr><th>Ceiling</th><th>Value</th></tr>
+      <tr><td>Active subagents per session</td><td><b>4</b></td></tr>
+      <tr><td>Active subagents in total, across all sessions</td><td><b>8</b></td></tr>
     </table>
-    <p>Le second est le plus surprenant : deux conversations qui délèguent en même temps se partagent le même budget global de huit.</p>
+    <p>The second is the more surprising one: two conversations delegating at the same time share the same global budget of eight.</p>
 
-    <h2 id="restrictions">Ce qu'un sous-agent ne peut pas faire</h2>
-    <p><b>Déléguer à son tour.</b> La cascade est explicitement interdite : l'arborescence est <b>plate, sur un seul niveau</b> — ta conversation et ses enfants, jamais de petits-enfants. C'est un choix de conception : la délégation en cascade rend le suivi impossible et la consommation de jetons imprévisible.</p>
-    <p>Les autres restrictions :</p>
+    <h2 id="restrictions">What a subagent cannot do</h2>
+    <p><b>Delegate in turn.</b> Cascading is explicitly forbidden: the tree is <b>flat, one level deep</b> — your conversation and its children, never grandchildren. This is a design choice: cascading delegation makes monitoring impossible and token consumption unpredictable.</p>
+    <p>The other restrictions:</p>
     <ul>
-      <li><b>Être cloné</b> — le clonage est refusé sur une conversation de sous-agent.</li>
-      <li><b>Écrire dans la mémoire</b> — un sous-agent peut la lire, pas la modifier ; il peut seulement proposer une note au parent.</li>
-      <li><b>Sortir de son dossier de travail</b> — chaque chemin passé à un outil est vérifié comme contenu dans le répertoire de travail du sous-agent, et toute remontée d'arborescence (<code>..</code>) est refusée, y compris le dossier de travail indiqué pour une commande shell.</li>
-      <li><b>Recevoir tes instructions permanentes</b> — ni <code>AGENTS.md</code> ni les fichiers de personnalité ne sont injectés dans une session de sous-agent. Si tes conventions comptent pour la tâche déléguée, reprends-les dans l'instruction de délégation.</li>
-      <li><b>Disposer de tous les outils</b> — chaque sous-agent reçoit un profil d'outils restreint selon son type, et un outil hors profil est refusé.</li>
-      <li><b>Être archivé dans n'importe quel état</b> — l'archivage refuse certains cas.</li>
+      <li><b>Be cloned</b> — cloning is refused on a subagent conversation.</li>
+      <li><b>Write to memory</b> — a subagent can read it, not modify it; it can only propose a note to the parent.</li>
+      <li><b>Leave its working folder</b> — every path passed to a tool is checked as being inside the subagent's working folder, and any upward traversal (<code>..</code>) is refused, including the working folder given for a shell command.</li>
+      <li><b>Receive your standing instructions</b> — neither <code>AGENTS.md</code> nor the personality files are injected into a subagent session. If your conventions matter for the delegated task, restate them in the delegation instruction.</li>
+      <li><b>Have every tool</b> — each subagent receives a restricted tool profile according to its type, and a tool outside the profile is refused.</li>
+      <li><b>Be archived in any state</b> — archiving refuses certain cases.</li>
     </ul>
-    <p><b>Deux types de sous-agents, et deux seulement</b> : explorateur et codeur. Toute autre valeur est refusée à la délégation. Le type codeur exige en plus d'être lancé depuis un dossier valide.</p>
+    <p><b>Two types of subagent, and only two</b>: explorer and coder. Any other value is refused at delegation time. The coder type additionally requires being started from a valid folder.</p>
 
-    <h2 id="limites">Toutes les limites</h2>
+    <h2 id="limites">All the limits</h2>
     <table>
-      <caption class="crumb">Valeurs de référence</caption>
-      <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Taille d'une consigne</td><td>50 000 caractères</td></tr>
-      <tr><td>Consignes en file d'attente</td><td>8</td></tr>
-      <tr><td>Chemins modifiés par lot</td><td>128</td></tr>
-      <tr><td>Longueur d'un chemin</td><td>512 caractères</td></tr>
-      <tr><td>Lots de changements conservés</td><td>256</td></tr>
-      <tr><td>Descriptif d'un lot</td><td>128 Ko</td></tr>
-      <tr><td>Fichiers dans un instantané de dossier</td><td>20 000</td></tr>
-      <tr><td>Taille d'un instantané</td><td>512 Mo</td></tr>
-      <tr><td>Taille d'un fichier dans l'instantané</td><td>64 Mo</td></tr>
-      <tr><td>Sous-agents actifs par session</td><td><b>4</b></td></tr>
-      <tr><td>Sous-agents actifs au total</td><td><b>8</b></td></tr>
-      <tr><td>Profondeur de délégation</td><td>1 niveau — la cascade est interdite</td></tr>
+      <caption class="crumb">Reference values</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Size of an instruction</td><td>50,000 characters</td></tr>
+      <tr><td>Queued instructions</td><td>8</td></tr>
+      <tr><td>Paths modified per batch</td><td>128</td></tr>
+      <tr><td>Length of a path</td><td>512 characters</td></tr>
+      <tr><td>Change batches kept</td><td>256</td></tr>
+      <tr><td>Description of a batch</td><td>128 KB</td></tr>
+      <tr><td>Files in a folder snapshot</td><td>20,000</td></tr>
+      <tr><td>Size of a snapshot</td><td>512 MB</td></tr>
+      <tr><td>Size of a file in the snapshot</td><td>64 MB</td></tr>
+      <tr><td>Active subagents per session</td><td><b>4</b></td></tr>
+      <tr><td>Active subagents in total</td><td><b>8</b></td></tr>
+      <tr><td>Delegation depth</td><td>1 level — cascading is forbidden</td></tr>
     </table>
 
-    <h2 id="sous-agent-ou-clone">Sous-agent ou clone ?</h2>
+    <h2 id="sous-agent-ou-clone">Subagent or clone?</h2>
     <table>
-      <caption class="crumb">Deux façons de paralléliser</caption>
-      <tr><th></th><th>Sous-agent</th><th>Clone</th></tr>
-      <tr><td>Qui le lance</td><td>L'agent, ou toi</td><td>Toi</td></tr>
-      <tr><td>Point de départ</td><td>Des instructions neuves</td><td>Un message précis d'une conversation</td></tr>
-      <tr><td>Espace de travail</td><td>Isolé, copie séparée</td><td>Le même que l'originale</td></tr>
-      <tr><td>Résultat</td><td>Rendu à l'agent parent</td><td>Une conversation que tu mènes</td></tr>
-      <tr><td>Demande de confirmation</td><td>Non</td><td>Selon ton mode</td></tr>
-      <tr><td>Clonable</td><td>Non</td><td>Oui</td></tr>
+      <caption class="crumb">Two ways of working in parallel</caption>
+      <tr><th></th><th>Subagent</th><th>Clone</th></tr>
+      <tr><td>Who starts it</td><td>The agent, or you</td><td>You</td></tr>
+      <tr><td>Starting point</td><td>Fresh instructions</td><td>A specific message from a conversation</td></tr>
+      <tr><td>Workspace</td><td>Isolated, separate copy</td><td>The same as the original</td></tr>
+      <tr><td>Result</td><td>Handed back to the parent agent</td><td>A conversation you drive</td></tr>
+      <tr><td>Confirmation request</td><td>No</td><td>Depending on your mode</td></tr>
+      <tr><td>Can be cloned</td><td>No</td><td>Yes</td></tr>
     </table>
 
-    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <h2 id="pieges">What surprises people most often</h2>
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>Un sous-agent modifie des fichiers sans rien demander</td><td>Les sous-agents contournent la garde de permission</td><td>Inspecter ses changements avant de les appliquer</td></tr>
-      <tr><td>La délégation échoue sur un gros projet</td><td>Instantané au-delà de 20 000 fichiers ou 512 Mo</td><td>Exclure les dossiers volumineux, ou travailler dans un dépôt Git</td></tr>
-      <tr><td>Les changements sont en conflit</td><td>Le dossier a changé pendant le travail du sous-agent</td><td>Inspecter, puis appliquer ou jeter</td></tr>
-      <tr><td>Impossible d'envoyer une consigne de plus</td><td>Huit consignes déjà en file</td><td>Attendre qu'il en traite</td></tr>
-      <tr><td>Impossible de cloner un sous-agent</td><td>Volontaire</td><td>Cloner la conversation parente</td></tr>
-      <tr><td>Limite de 4 sous-agents par session atteinte</td><td>Quatre enfants actifs pour cette conversation</td><td>Attendre qu'un termine, ou en interrompre un</td></tr>
-      <tr><td>Limite de 8 sous-agents actifs atteinte</td><td>Huit enfants actifs toutes conversations confondues</td><td>Vérifier les autres conversations : le plafond est global</td></tr>
-      <tr><td>Un sous-agent ne peut pas en lancer un autre</td><td>La délégation en cascade est interdite</td><td>Faire déléguer par la conversation principale</td></tr>
-      <tr><td>Un sous-agent codeur est refusé au lancement</td><td>Pas de répertoire de travail utilisable</td><td>Définir un répertoire de travail valide</td></tr>
-      <tr><td>Un sous-agent ne peut pas écrire en mémoire</td><td>Accès en lecture seule</td><td>Normal : il peut proposer une note, pas l'écrire</td></tr>
-      <tr><td>Un chemin est refusé comme hors du dossier autorisé</td><td>Le sous-agent a visé un fichier hors de son espace isolé</td><td>Normal : sa portée disque est confinée</td></tr>
-      <tr><td>Un sous-agent ignore les conventions de <code>AGENTS.md</code></td><td>Les instructions permanentes ne lui sont pas injectées</td><td>Les reprendre dans l'instruction de délégation</td></tr>
-      <tr><td>Un sous-agent refuse d'être archivé</td><td>État incompatible</td><td>Attendre qu'il termine, ou l'interrompre</td></tr>
-      <tr><td>Un ancien lot de changements a disparu</td><td>256 lots conservés</td><td>Normal</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>A subagent modifies files without asking anything</td><td>Subagents bypass the permission guard</td><td>Inspect its changes before applying them</td></tr>
+      <tr><td>Delegation fails on a large project</td><td>Snapshot over 20,000 files or 512 MB</td><td>Exclude the bulky folders, or work in a Git repository</td></tr>
+      <tr><td>The changes are in conflict</td><td>The folder changed while the subagent was working</td><td>Inspect, then apply or discard</td></tr>
+      <tr><td>Cannot send another instruction</td><td>Eight instructions already queued</td><td>Wait for it to process some</td></tr>
+      <tr><td>Cannot clone a subagent</td><td>Deliberate</td><td>Clone the parent conversation</td></tr>
+      <tr><td>Limit of 4 subagents per session reached</td><td>Four active children for this conversation</td><td>Wait for one to finish, or interrupt one</td></tr>
+      <tr><td>Limit of 8 active subagents reached</td><td>Eight active children across all conversations</td><td>Check the other conversations: the ceiling is global</td></tr>
+      <tr><td>A subagent cannot start another one</td><td>Cascading delegation is forbidden</td><td>Have the main conversation delegate</td></tr>
+      <tr><td>A coder subagent is refused at startup</td><td>No usable working folder</td><td>Set a valid working folder</td></tr>
+      <tr><td>A subagent cannot write to memory</td><td>Read-only access</td><td>Normal: it can propose a note, not write it</td></tr>
+      <tr><td>A path is refused as outside the allowed folder</td><td>The subagent targeted a file outside its isolated space</td><td>Normal: its disk scope is confined</td></tr>
+      <tr><td>A subagent ignores the conventions in <code>AGENTS.md</code></td><td>Standing instructions are not injected into it</td><td>Restate them in the delegation instruction</td></tr>
+      <tr><td>A subagent refuses to be archived</td><td>Incompatible state</td><td>Wait for it to finish, or interrupt it</td></tr>
+      <tr><td>An old batch of changes has disappeared</td><td>256 batches kept</td><td>Normal</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="agent-permissions.html">Modes de permission</a> — pourquoi les sous-agents ne demandent pas.</li>
-      <li><a href="agent-cloner-une-conversation.html">Cloner une conversation</a> — l'autre façon de paralléliser.</li>
-      <li><a href="outils-sous-agents.html">Sous-agents (outils)</a> — le détail des neuf outils et des profils.</li>
-      <li><a href="outils-branches-git.html">Branches Git</a> — les copies de travail.</li>
+      <li><a href="agent-permissions.html">Permission modes</a> — why subagents do not ask.</li>
+      <li><a href="agent-cloner-une-conversation.html">Cloning a conversation</a> — the other way of working in parallel.</li>
+      <li><a href="outils-sous-agents.html">Subagents (tools)</a> — the nine tools and the profiles in detail.</li>
+      <li><a href="outils-branches-git.html">Git branches</a> — the working copies.</li>
     </ul>
   </main>
 

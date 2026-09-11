@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Dépannage des clés et des fournisseurs</title>
-<meta name="description" content="Une clé refusée, un quota atteint, une connexion expirée ou un fournisseur disparu de la liste : ce que dit chaque message, ce qui se règle dans Beaver et ce qui se règle chez le fournisseur.">
+<title>Beaver Docs — Keys and providers troubleshooting</title>
+<meta name="description" content="A rejected key, a quota reached, an expired connection or a provider gone from the list: what each message says, what is settled inside Beaver and what is settled at the provider.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,276 +19,276 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Dépannage / Clés et fournisseurs</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="depannage-cles-et-fournisseurs.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Troubleshooting / Keys and providers</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/depannage-cles-et-fournisseurs.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="depannage-cles-et-fournisseurs.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Clés et fournisseurs, <em>quand</em> ça refuse</h1>
-    <p>Ta clé est refusée, ton quota est atteint, ta connexion a expiré, ou un fournisseur a disparu de la liste. Cette page part du message affiché et remonte à la cause. Elle dit aussi, franchement, ce qui ne se règle pas dans Beaver : une bonne partie de ces situations se traite chez le fournisseur, sur son site, et le savoir tout de suite évite une demi-heure de recherche au mauvais endroit.</p>
-    <p>Elle ne réexplique ni <a href="modeles-fournisseurs-api.html">la saisie d'une clé</a>, ni <a href="modeles-connexion-par-compte.html">la connexion par compte web</a>, ni <a href="reference-coffre-et-cles.html">le fonctionnement du coffre</a> — elle y renvoie.</p>
+    <h1>Keys and providers, <em>when</em> they refuse</h1>
+    <p>Your key is rejected, your quota is reached, your connection has expired, or a provider has gone from the list. This page starts from the message displayed and works back to the cause. It also says, plainly, what cannot be settled inside Beaver: a good part of these situations is handled at the provider, on their site, and knowing that right away saves half an hour of looking in the wrong place.</p>
+    <p>It does not re-explain <a href="modeles-fournisseurs-api.html">entering a key</a>, <a href="modeles-connexion-par-compte.html">signing in with a web account</a>, or <a href="reference-coffre-et-cles.html">how the vault works</a> — it points to them.</p>
 
-    <h2 id="cle-ou-compte">La question à se poser en premier : clé ou compte ?</h2>
-    <p>Beaver connaît <b>deux façons d'accéder à un fournisseur</b>. Les symptômes se ressemblent, les remèdes n'ont rien à voir.</p>
-
-    <table>
-      <caption class="crumb">Deux mécanismes d'accès, deux pannes différentes</caption>
-      <tr><th></th><th>Clé API</th><th>Compte web</th></tr>
-      <tr><td>Ce que tu fournis</td><td>Une chaîne de caractères copiée chez le fournisseur</td><td>Une connexion dans un navigateur</td></tr>
-      <tr><td>Ce qui expire</td><td>Rien, sauf si tu révoques la clé</td><td><b>Le jeton, régulièrement</b></td></tr>
-      <tr><td>Ce que Beaver renouvelle tout seul</td><td>Rien</td><td><b>Le jeton, automatiquement</b></td></tr>
-      <tr><td>Ce qui se passe quand ça casse</td><td>La clé est refusée à chaque requête</td><td><b>La connexion est effacée</b> et le fournisseur disparaît</td></tr>
-      <tr><td>Fournisseurs concernés</td><td>Tous ceux de l'écran Clés API</td><td><b>OpenAI (Codex), Grok (xAI), Kimi</b></td></tr>
-    </table>
-
-    <p>La question pratique : ton fournisseur est-il dans l'onglet <b>« Clés API »</b> ou dans l'onglet <b>« OAuth »</b> ? Les quatre sections qui suivent traitent du premier cas ; la connexion par compte vient ensuite.</p>
-
-    <h2 id="enregistrement">« L'opération a échoué. Réessaye. » à l'enregistrement d'une clé</h2>
-    <p><b>Ce que tu vois</b> — dans le dialogue d'ajout d'une clé, après <b>« Ajouter et tester »</b>, l'indicateur passe de <b>« Test de la clé en cours… »</b> à <b>« L'opération a échoué. Réessaye. »</b>. Quand tout va bien, le message est <b>« Clé valide, provider connecté. »</b> et le dialogue se ferme après une demi-seconde.</p>
-    <p><b>Ce message ne dit jamais ce qui a échoué.</b> Beaver distingue pourtant sept causes en interne, toutes remplacées par ce texte unique à l'affichage. Les voici, avec leur remède.</p>
+    <h2 id="cle-ou-compte">The first question to ask: key or account?</h2>
+    <p>Beaver knows <b>two ways of accessing a provider</b>. The symptoms look alike, the remedies have nothing in common.</p>
 
     <table>
-      <caption class="crumb">Les sept causes réelles derrière un seul message</caption>
-      <tr><th>Ce qui s'est passé</th><th>Remède</th></tr>
-      <tr><td>La clé est <b>vide ou dépasse 256 caractères</b></td><td>Vérifier qu'aucun espace ni retour à la ligne n'a été collé avec</td></tr>
-      <tr><td>La clé contient un <b>caractère de contrôle</b></td><td>Recopier la clé depuis le site du fournisseur, sans passer par un traitement de texte</td></tr>
-      <tr><td>Le fournisseur <b>n'est pas au catalogue</b></td><td>Passer par l'écran des clés API, pas par une valeur saisie à la main</td></tr>
-      <tr><td>Le fournisseur <b>a refusé la clé</b> (401 ou 403)</td><td>Voir « Authentification échouée », plus bas</td></tr>
-      <tr><td>Le fournisseur <b>a signalé un quota dépassé</b> (429)</td><td>Voir « Quota, limite de débit, crédits »</td></tr>
-      <tr><td>Le fournisseur <b>a refusé pour une autre raison</b></td><td>Vérifier l'état du service chez le fournisseur</td></tr>
-      <tr><td>Le <b>test n'a pas pu partir</b> — réseau, proxy, service injoignable</td><td>Voir « Erreurs réseau »</td></tr>
+      <caption class="crumb">Two access mechanisms, two different failures</caption>
+      <tr><th></th><th>API key</th><th>Web account</th></tr>
+      <tr><td>What you provide</td><td>A string copied from the provider</td><td>A sign-in in a browser</td></tr>
+      <tr><td>What expires</td><td>Nothing, unless you revoke the key</td><td><b>The token, regularly</b></td></tr>
+      <tr><td>What Beaver renews on its own</td><td>Nothing</td><td><b>The token, automatically</b></td></tr>
+      <tr><td>What happens when it breaks</td><td>The key is rejected on every request</td><td><b>The connection is erased</b> and the provider disappears</td></tr>
+      <tr><td>Providers concerned</td><td>All those on the API Keys screen</td><td><b>OpenAI (Codex), Grok (xAI), Kimi</b></td></tr>
     </table>
 
-    <p><b>Le cas particulier de Qwen</b> mérite d'être connu, parce qu'il produit un échec là où la clé est pourtant valable : une clé commençant par <code>sk-sp-</code> est refusée avant même d'être testée. Ce sont les clés d'espace de travail, que Beaver ne prend pas en charge. Il faut une clé de compte.</p>
-    <p><b>Que faire, dans cet ordre :</b></p>
+    <p>The practical question: is your provider in the <b>“API Keys”</b> tab or in the <b>“OAuth”</b> tab? The four sections that follow deal with the first case; signing in with an account comes next.</p>
+
+    <h2 id="enregistrement">“Operation failed. Please try again.” when saving a key</h2>
+    <p><b>What you see</b> — in the add-a-key dialog, after <b>“Add and test”</b>, the indicator goes from <b>“Testing key…”</b> to <b>“Operation failed. Please try again.”</b>. When all is well, the message is <b>“Key valid, provider connected.”</b> and the dialog closes after half a second.</p>
+    <p><b>This message never says what failed.</b> Beaver does distinguish seven causes internally, all replaced by this single text on screen. Here they are, with their remedy.</p>
+
+    <table>
+      <caption class="crumb">The seven real causes behind a single message</caption>
+      <tr><th>What happened</th><th>Remedy</th></tr>
+      <tr><td>The key is <b>empty or longer than 256 characters</b></td><td>Check that no space or line break was pasted along with it</td></tr>
+      <tr><td>The key contains a <b>control character</b></td><td>Copy the key again from the provider's site, without going through a word processor</td></tr>
+      <tr><td>The provider is <b>not in the catalog</b></td><td>Go through the API keys screen, not through a value typed by hand</td></tr>
+      <tr><td>The provider <b>rejected the key</b> (401 or 403)</td><td>See “Authentication failed”, further down</td></tr>
+      <tr><td>The provider <b>reported a quota exceeded</b> (429)</td><td>See “Quota, rate limit, credits”</td></tr>
+      <tr><td>The provider <b>refused for another reason</b></td><td>Check the service status at the provider</td></tr>
+      <tr><td>The <b>test could not be sent</b> — network, proxy, service unreachable</td><td>See “Network errors”</td></tr>
+    </table>
+
+    <p><b>The special case of Qwen</b> is worth knowing, because it produces a failure where the key is nonetheless valid: a key starting with <code>sk-sp-</code> is rejected before it is even tested. Those are workspace keys, which Beaver does not support. You need an account key.</p>
+    <p><b>What to do, in this order:</b></p>
     <ul>
-      <li><b>Recopier la clé</b> depuis le site du fournisseur, en une seule fois, sans espace autour.</li>
-      <li><b>Vérifier qu'elle est active</b> dans le tableau de bord du fournisseur.</li>
-      <li><b>Vérifier que le compte a du crédit</b> — beaucoup de fournisseurs refusent une clé valable sur un compte sans solde, et cela se présente exactement comme une clé invalide.</li>
-      <li><b>Réessayer plus tard</b> si le service du fournisseur est en incident.</li>
+      <li><b>Copy the key again</b> from the provider's site, in one go, with no surrounding space.</li>
+      <li><b>Check that it is active</b> in the provider's dashboard.</li>
+      <li><b>Check that the account has credit</b> — many providers reject a valid key on an account with no balance, and that looks exactly like an invalid key.</li>
+      <li><b>Try again later</b> if the provider's service is having an incident.</li>
     </ul>
 
-    <h2 id="authentification">« Authentification échouée, vérifie ta clé API »</h2>
-    <p><b>Ce que tu vois</b> — ce message apparaît dans une conversation, ou à la place de la liste des modèles d'un fournisseur.</p>
-    <p><b>La cause</b> — le fournisseur a répondu <b>401</b> à une requête de Beaver. Autrement dit : la clé enregistrée n'est pas, ou n'est plus, acceptée. Quatre raisons possibles, dont la troisième surprend :</p>
+    <h2 id="authentification">“Authentication failed, check your API key”</h2>
+    <p><b>What you see</b> — this message appears in a conversation, or in place of a provider's model list.</p>
+    <p><b>The cause</b> — the provider answered <b>401</b> to a request from Beaver. In other words: the saved key is not, or is no longer, accepted. Four possible reasons, the third of which is surprising:</p>
     <ul>
-      <li>La clé a été <b>révoquée ou supprimée</b> chez le fournisseur.</li>
-      <li>La clé a été <b>mal copiée</b> au moment de l'enregistrement — et personne ne peut plus la relire pour vérifier.</li>
-      <li>Le <b>compte a été suspendu</b>, ou son moyen de paiement a expiré. Beaucoup de fournisseurs répondent alors 401, ce qui se présente comme une clé invalide.</li>
-      <li>La clé est <b>valable mais pas pour ce modèle</b> — certains fournisseurs restreignent l'accès par clé.</li>
+      <li>The key was <b>revoked or deleted</b> at the provider.</li>
+      <li>The key was <b>copied wrong</b> when it was saved — and nobody can read it back to check.</li>
+      <li>The <b>account was suspended</b>, or its payment method expired. Many providers then answer 401, which presents itself as an invalid key.</li>
+      <li>The key is <b>valid but not for this model</b> — some providers restrict access per key.</li>
     </ul>
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>Une clé enregistrée ne peut plus être relue</b>, y compris par Beaver lui-même : aucune commande ne permet d'afficher une clé du coffre. En cas de doute sur celle qui est en place, il n'y a pas de moyen de la vérifier — il faut en générer une nouvelle chez le fournisseur et la ressaisir. C'est la seule voie fiable. Voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.
+      <b>A saved key can no longer be read back</b>, including by Beaver itself: no command displays a key from the vault. If you have a doubt about the one in place, there is no way to check it — you must generate a new one at the provider and enter it again. That is the only reliable route. See <a href="reference-coffre-et-cles.html">The vault and API keys</a>.
     </div>
 
     <div class="callout">
-      <span class="t">Sécurité</span>
-      <b>Supprimer une clé dans Beaver ne la révoque pas.</b> Elle reste parfaitement valable sur ton compte chez le fournisseur. Si tu penses qu'elle a fuité, la seule action efficace est de la <b>supprimer sur le site du fournisseur</b>.
+      <span class="t">Security</span>
+      <b>Deleting a key in Beaver does not revoke it.</b> It stays perfectly valid on your account at the provider. If you think it has leaked, the only effective action is to <b>delete it on the provider's site</b>.
     </div>
 
-    <p><b>Un cas voisin, avec un message différent</b> : <b>« La connexion OAuth a expiré. Reconnecte le provider. »</b>. Celui-là concerne les comptes web, pas les clés. Le même code 401 produit l'un ou l'autre message selon le contexte : sur un test de clé c'est « Authentification échouée », sur un catalogue de modèles c'est le message de connexion expirée.</p>
+    <p><b>A neighboring case, with a different message</b>: <b>“The OAuth connection has expired. Reconnect the provider.”</b>. That one concerns web accounts, not keys. The same 401 code produces one message or the other depending on the context: on a key test it is “Authentication failed”, on a model catalog it is the expired connection message.</p>
 
-    <h2 id="quota">Quota, limite de débit, crédits épuisés</h2>
-    <p>Trois situations distinctes, trois messages différents, et il vaut mieux les séparer parce que les remèdes n'ont rien à voir.</p>
+    <h2 id="quota">Quota, rate limit, credits exhausted</h2>
+    <p>Three distinct situations, three different messages, and they are better kept apart because the remedies have nothing in common.</p>
 
-    <p><b>a) « Le service ou son fournisseur en amont limite actuellement les requêtes. Réessaie plus tard. Un solde disponible ne supprime pas ces limites, notamment sur les modèles gratuits. »</b></p>
-    <p>Le fournisseur a répondu <b>429</b>. C'est une limite de <b>débit</b> : trop de requêtes dans un intervalle court. Le remède est d'attendre.</p>
+    <p><b>a) “The service or its upstream provider is currently rate limiting requests. Try again later. Available credit does not remove these limits, especially for free models.”</b></p>
+    <p>The provider answered <b>429</b>. This is a <b>rate</b> limit: too many requests in a short interval. The remedy is to wait.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Recharger ton compte ne lève pas une limite de débit.</b> Le message de Beaver le dit déjà, et il a raison de le dire : une limite de requêtes par minute est indépendante de ton solde, et elle est particulièrement basse sur les modèles annoncés gratuits.
+      <span class="t">Warning</span>
+      <b>Topping up your account does not lift a rate limit.</b> Beaver's message already says so, and it is right to: a requests-per-minute limit is independent of your balance, and it is particularly low on models advertised as free.
     </div>
 
-    <p><b>b) « xAI indique qu'un abonnement Grok ou des crédits sont requis. »</b> et <b>« Le quota de l'abonnement xAI est épuisé ou momentanément indisponible. »</b></p>
-    <p>Le fournisseur a répondu <b>402</b>, et sa réponse portait le code de dépassement de plafond propre à xAI. Le remède est chez xAI : vérifier l'abonnement Grok ou ajouter des crédits. Rien à faire dans Beaver.</p>
+    <p><b>b) “xAI reports that a Grok subscription or credits are required.”</b> and <b>“The xAI subscription quota is exhausted or temporarily unavailable.”</b></p>
+    <p>The provider answered <b>402</b>, and its response carried xAI's own over-limit code. The remedy is at xAI: check the Grok subscription or add credits. Nothing to do inside Beaver.</p>
 
-    <p><b>c) « Moonshot ne parvient pas à confirmer un abonnement Kimi Code actif. »</b></p>
-    <p>Même mécanisme, sur un message précis renvoyé par Moonshot en réponse à un 402. Vérifier l'abonnement Kimi Code chez Moonshot. Ce message apparaît <b>aussi juste après une connexion réussie</b>, sous une forme plus longue : <b>« Connexion réussie, mais Moonshot ne parvient pas à confirmer un abonnement Kimi Code actif. Vérifie l'abonnement puis réessaie. »</b></p>
+    <p><b>c) “Moonshot cannot confirm an active Kimi Code membership.”</b></p>
+    <p>Same mechanism, on a specific message returned by Moonshot in response to a 402. Check the Kimi Code subscription at Moonshot. This message also appears <b>right after a successful sign-in</b>, in a longer form: <b>“Sign-in succeeded, but Moonshot cannot confirm an active Kimi Code membership. Check the subscription and try again.”</b></p>
 
-    <p><b>Deux autres refus se confondent facilement avec un quota :</b></p>
+    <p><b>Two other refusals are easily mistaken for a quota:</b></p>
     <ul>
-      <li><b>« OpenRouter demande une confirmation de majorité pour ce modèle. Confirme tes 18 ans ou plus dans openrouter.ai/settings/preferences, puis réessaie. »</b> — le seul message du produit qui donne l'adresse exacte de la page à ouvrir.</li>
-      <li><b>« Le provider refuse actuellement l'accès au modèle. »</b> — un refus d'accès générique, sur un 402 ou un 403 non reconnu.</li>
+      <li><b>“OpenRouter requires age confirmation for this model. Confirm that you are 18 or older at openrouter.ai/settings/preferences, then try again.”</b> — the only message in the product that gives the exact address of the page to open.</li>
+      <li><b>“The provider is currently refusing access to the model.”</b> — a generic access refusal, on an unrecognized 402 or 403.</li>
     </ul>
 
-    <h2 id="reseau">Erreurs réseau, et pourquoi rien n'est réessayé</h2>
+    <h2 id="reseau">Network errors, and why nothing is retried</h2>
 
     <table>
-      <caption class="crumb">Les messages réseau et ce qu'ils recouvrent</caption>
+      <caption class="crumb">The network messages and what they cover</caption>
       <tr><th>Message</th><th>Cause</th></tr>
-      <tr><td><b>« Connexion au provider impossible. »</b></td><td>La requête n'a pas pu partir ou atteindre le fournisseur</td></tr>
-      <tr><td><b>« La connexion au provider a été perdue. Réessaye. »</b></td><td>La réponse s'est interrompue en cours</td></tr>
-      <tr><td><b>« Le provider a mis trop de temps à répondre. Réessaye. »</b></td><td>Délai dépassé</td></tr>
-      <tr><td><b>« Le provider est momentanément surchargé. Réessaye dans un instant. »</b></td><td>Le fournisseur signale une surcharge</td></tr>
-      <tr><td><b>« Le provider est temporairement indisponible. Réessaie dans un instant. »</b></td><td>Service en incident</td></tr>
-      <tr><td><b>« Le provider a refusé la requête. »</b></td><td>Refus non classé — tout code HTTP hors 401, 402, 403 et 429</td></tr>
-      <tr><td><b>« Le provider n'a pas pu terminer la requête. Réessaye. »</b></td><td>Échec générique</td></tr>
+      <tr><td><b>“Unable to connect to the provider.”</b></td><td>The request could not leave or reach the provider</td></tr>
+      <tr><td><b>“Connection to the provider was lost. Try again.”</b></td><td>The response was interrupted midway</td></tr>
+      <tr><td><b>“The provider took too long to respond. Try again.”</b></td><td>Timed out</td></tr>
+      <tr><td><b>“The provider is temporarily overloaded. Try again shortly.”</b></td><td>The provider reports an overload</td></tr>
+      <tr><td><b>“The provider is temporarily unavailable. Try again shortly.”</b></td><td>Service having an incident</td></tr>
+      <tr><td><b>“The provider rejected the request.”</b></td><td>Unclassified refusal — any HTTP code other than 401, 402, 403 and 429</td></tr>
+      <tr><td><b>“The provider could not complete the request. Try again.”</b></td><td>Generic failure</td></tr>
     </table>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Beaver ne réessaie jamais tout seul une requête à un fournisseur distant.</b> C'est un choix, pas un oubli : une requête qui semble perdue a peut-être abouti chez le fournisseur, et la rejouer automatiquement la facturerait deux fois. Tant qu'un transport ne transmet pas de clé d'idempotence — de quoi dire au fournisseur « c'est la même requête, ne la compte pas deux fois » —, les reprises automatiques restent fermées. Quand un message se termine par « Réessaye », <b>c'est une consigne, pas une politesse : c'est à toi de relancer</b>.
+      <span class="t">Warning</span>
+      <b>Beaver never retries a request to a remote provider on its own.</b> That is a choice, not an oversight: a request that seems lost may well have gone through at the provider, and replaying it automatically would bill it twice. As long as a transport does not carry an idempotency key — something to tell the provider “this is the same request, do not count it twice” —, automatic retries stay closed. When a message ends with “Try again”, <b>it is an instruction, not a courtesy: it is up to you to send it again</b>.
     </div>
 
-    <p>L'asymétrie avec le moteur local est voulue : <a href="depannage-ollama.html">celui-ci réessaie jusqu'à dix fois</a>, parce qu'il ne facture rien.</p>
-    <p><b>Que faire</b> — vérifier ta connexion, vérifier la page d'état du fournisseur, puis relancer la requête à la main. Sur un réseau d'entreprise, vérifier qu'un proxy ne bloque pas le domaine du fournisseur.</p>
+    <p>The asymmetry with the local engine is deliberate: <a href="depannage-ollama.html">that one retries up to ten times</a>, because it bills nothing.</p>
+    <p><b>What to do</b> — check your connection, check the provider's status page, then send the request again by hand. On a corporate network, check that a proxy is not blocking the provider's domain.</p>
 
-    <h2 id="connexion-expiree">Une connexion par compte web a expiré</h2>
-    <p><b>Ce que tu vois</b> — <b>« La connexion a expiré. Reconnecte ce provider. »</b> dans l'écran du fournisseur, ou <b>« La connexion OAuth a expiré. Reconnecte le provider. »</b> dans une conversation.</p>
-    <p><b>Comment ça marche quand tout va bien</b>, parce que ça éclaire la panne : un jeton d'accès a une durée de vie courte, et Beaver le renouvelle <b>tout seul, avant expiration</b>, sans jamais te solliciter.</p>
+    <h2 id="connexion-expiree">A web account sign-in has expired</h2>
+    <p><b>What you see</b> — <b>“The connection has expired. Reconnect this provider.”</b> on the provider screen, or <b>“The OAuth connection has expired. Reconnect the provider.”</b> in a conversation.</p>
+    <p><b>How it works when all is well</b>, because it sheds light on the failure: an access token has a short life, and Beaver renews it <b>on its own, before it expires</b>, without ever asking you.</p>
 
     <table>
-      <caption class="crumb">La marge de renouvellement, par type de connexion</caption>
-      <tr><th>Compte</th><th>Marge avant expiration</th></tr>
-      <tr><td><b>Grok (xAI)</b> et <b>Kimi</b></td><td><b>60 secondes</b></td></tr>
+      <caption class="crumb">The renewal margin, by connection type</caption>
+      <tr><th>Account</th><th>Margin before expiry</th></tr>
+      <tr><td><b>Grok (xAI)</b> and <b>Kimi</b></td><td><b>60 seconds</b></td></tr>
       <tr><td><b>OpenAI (Codex)</b></td><td><b>5 minutes</b></td></tr>
-      <tr><td><a href="integrations-authentification-mcp.html">Connecteurs MCP</a></td><td><b>30 secondes</b></td></tr>
+      <tr><td><a href="integrations-authentification-mcp.html">MCP connectors</a></td><td><b>30 seconds</b></td></tr>
     </table>
 
-    <p><b>Quand le renouvellement échoue, deux issues très différentes :</b></p>
+    <p><b>When the renewal fails, two very different outcomes:</b></p>
     <ul>
-      <li><b>Le fournisseur répond « non autorisé »</b> — jeton de renouvellement révoqué, mot de passe changé, session fermée depuis son site. Beaver <b>efface la connexion</b> et la considère comme inexistante. Le fournisseur disparaît alors de la liste des comptes connectés, et rien ne prévient que c'est arrivé.</li>
-      <li><b>Le renouvellement échoue pour une autre raison</b> — réseau, service en panne. La connexion est <b>conservée</b> ; il suffit de réessayer plus tard.</li>
+      <li><b>The provider answers “not authorized”</b> — refresh token revoked, password changed, session closed from their site. Beaver <b>erases the connection</b> and treats it as non-existent. The provider then disappears from the list of connected accounts, and nothing warns you it happened.</li>
+      <li><b>The renewal fails for another reason</b> — network, service down. The connection is <b>kept</b>; you only need to try again later.</li>
     </ul>
-    <p>Cette distinction est importante et elle est invisible à l'écran : dans un cas il faut se reconnecter, dans l'autre il faut attendre. En pratique, réessaie une fois ; si le fournisseur a disparu de la liste, c'est le premier cas.</p>
-    <p><b>Un détail rassurant</b> : pour OpenAI, si le renouvellement échoue alors que le jeton actuel est encore valable quelques minutes, Beaver <b>continue avec le jeton en cours</b> au lieu d'échouer. Une coupure réseau passagère au mauvais moment ne casse donc pas la session.</p>
-    <p><b>Que faire :</b></p>
+    <p>This distinction matters and it is invisible on screen: in one case you must sign in again, in the other you must wait. In practice, try once; if the provider has gone from the list, it is the first case.</p>
+    <p><b>A reassuring detail</b>: for OpenAI, if the renewal fails while the current token is still valid for a few minutes, Beaver <b>carries on with the current token</b> instead of failing. A brief network cut at the wrong moment therefore does not break the session.</p>
+    <p><b>What to do:</b></p>
     <ul>
-      <li>Ouvrir l'onglet <b>OAuth</b>, sélectionner le fournisseur, cliquer sur <b>« Se connecter »</b>.</li>
-      <li>Suivre le parcours dans le navigateur. Les étapes affichées sont <b>« En attente de connexion… »</b>, <b>« Validation requise »</b>, puis <b>« Connecté »</b> ; en cas d'échec, <b>« Connexion impossible »</b>, et si tu abandonnes, <b>« Connexion annulée »</b>.</li>
-      <li>Si le message revient immédiatement après une reconnexion réussie, ce n'est pas un problème de connexion mais d'abonnement : voir plus haut.</li>
+      <li>Open the <b>OAuth</b> tab, select the provider, click <b>“Connect”</b>.</li>
+      <li>Follow the journey in the browser. The steps shown are <b>“Waiting for sign-in…”</b>, <b>“Verification required”</b>, then <b>“Connected”</b>; on failure, <b>“Unable to connect”</b>, and if you give up, <b>“Sign-in cancelled”</b>.</li>
+      <li>If the message comes back immediately after a successful sign-in, it is not a connection problem but a subscription one: see above.</li>
     </ul>
-    <p><b>« Se déconnecter »</b> efface l'entrée du coffre pour ce fournisseur seulement ; les autres connexions ne sont pas touchées.</p>
+    <p><b>“Disconnect”</b> erases the vault entry for that provider only; the other connections are untouched.</p>
 
-    <h2 id="disparu">Un fournisseur a disparu de la liste</h2>
-    <p><b>Ce que tu vois</b> — un fournisseur qui était là hier n'apparaît plus dans le sélecteur de modèles, ou plus dans la liste des comptes connectés. Quatre causes, à traiter séparément.</p>
+    <h2 id="disparu">A provider has gone from the list</h2>
+    <p><b>What you see</b> — a provider that was there yesterday no longer appears in the model selector, or no longer in the list of connected accounts. Four causes, to be handled separately.</p>
     <ul>
-      <li><b>Sa clé a été supprimée.</b> La liste des fournisseurs configurés est reconstruite à chaque modification, et un fournisseur sans clé n'apparaît plus.</li>
-      <li><b>Sa connexion par compte web a été effacée</b> après un refus de renouvellement. C'est le cas décrit juste au-dessus : Beaver efface lui-même la connexion quand le fournisseur déclare le jeton de renouvellement invalide. Aucun message ne le signale — le fournisseur est simplement absent au chargement suivant.</li>
-      <li><b>Son catalogue de modèles a échoué</b> — et là, il ne disparaît pas complètement. Il reste visible avec un compteur à <b>0</b>, et la raison s'affiche à l'intérieur quand tu le déplies.</li>
-      <li><b>Le catalogue entier est injoignable.</b> Si Beaver n'arrive pas à obtenir la liste des fournisseurs disponibles, <b>tous</b> les fournisseurs configurés passent en échec avec la même raison : <b>« Le catalogue de modèles est temporairement indisponible. Réessaie plus tard. »</b></li>
+      <li><b>Its key was deleted.</b> The list of configured providers is rebuilt on every change, and a provider without a key no longer appears.</li>
+      <li><b>Its web account sign-in was erased</b> after a refused renewal. This is the case described just above: Beaver itself erases the connection when the provider declares the refresh token invalid. No message reports it — the provider is simply absent on the next load.</li>
+      <li><b>Its model catalog failed</b> — and there, it does not disappear completely. It stays visible with a counter at <b>0</b>, and the reason is shown inside when you expand it.</li>
+      <li><b>The whole catalog is unreachable.</b> If Beaver cannot obtain the list of available providers, <b>all</b> the configured providers go into failure with the same reason: <b>“The model catalog is temporarily unavailable. Try again later.”</b></li>
     </ul>
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>Un fournisseur à zéro modèle n'est pas cassé.</b> Déplie-le : la raison exacte s'affiche à l'intérieur. C'est la seule façon de savoir si c'est une limite passagère, une connexion expirée ou un problème d'abonnement.
+      <b>A provider at zero models is not broken.</b> Expand it: the exact reason is shown inside. That is the only way to know whether it is a passing limit, an expired connection or a subscription problem.
     </div>
 
-    <p><b>Que faire :</b></p>
+    <p><b>What to do:</b></p>
     <ul>
-      <li><b>Ouvrir l'écran Clés API</b> : si le fournisseur y figure, sa clé est toujours enregistrée et le problème est ailleurs.</li>
-      <li><b>Ouvrir l'onglet OAuth</b> : si le fournisseur y figure comme déconnecté, il faut se reconnecter.</li>
-      <li><b>Déplier le fournisseur dans le sélecteur de modèles</b> pour lire la raison exacte.</li>
-      <li><b>Cliquer sur « Réessayer »</b> dans l'écran du fournisseur, ce qui relance la récupération du catalogue.</li>
+      <li><b>Open the API Keys screen</b>: if the provider is listed there, its key is still saved and the problem is elsewhere.</li>
+      <li><b>Open the OAuth tab</b>: if the provider is listed there as disconnected, you need to sign in again.</li>
+      <li><b>Expand the provider in the model selector</b> to read the exact reason.</li>
+      <li><b>Click “Try again”</b> on the provider screen, which fetches the catalog again.</li>
     </ul>
 
-    <h2 id="aucun-modele">Le fournisseur est là, mais aucun modèle n'apparaît</h2>
-    <p><b>Ce que tu vois</b> — le fournisseur est visible, son compteur affiche <b>0</b>, et une ligne grisée à l'intérieur donne la raison. Il y en a six.</p>
+    <h2 id="aucun-modele">The provider is there, but no model appears</h2>
+    <p><b>What you see</b> — the provider is visible, its counter shows <b>0</b>, and a grayed line inside gives the reason. There are six of them.</p>
 
     <table>
-      <caption class="crumb">Les six raisons d'un catalogue vide</caption>
-      <tr><th>Message</th><th>Ce qui s'est passé</th><th>Remède</th></tr>
-      <tr><td>« Le catalogue de modèles est temporairement indisponible. Réessaie plus tard. »</td><td>Cause non identifiée, ou catalogue injoignable</td><td>Réessayer</td></tr>
-      <tr><td>« Le catalogue est temporairement limité. Réessaie dans un instant. »</td><td>Limite de débit sur la requête de catalogue</td><td>Attendre</td></tr>
-      <tr><td>« Le provider refuse actuellement l'accès au catalogue. »</td><td>Refus d'accès</td><td>Vérifier le compte chez le fournisseur</td></tr>
-      <tr><td>« La connexion a expiré. Reconnecte ce provider. »</td><td>Jeton expiré</td><td>Se reconnecter dans l'onglet OAuth</td></tr>
-      <tr><td>« Connexion réussie, mais Moonshot ne parvient pas à confirmer un abonnement Kimi Code actif… »</td><td>Abonnement non confirmé</td><td>Vérifier l'abonnement chez Moonshot</td></tr>
-      <tr><td>« xAI indique que l'abonnement Grok ou les crédits requis sont absents ou épuisés. »</td><td>Abonnement ou crédits</td><td>Vérifier chez xAI</td></tr>
+      <caption class="crumb">The six reasons for an empty catalog</caption>
+      <tr><th>Message</th><th>What happened</th><th>Remedy</th></tr>
+      <tr><td>“The model catalog is temporarily unavailable. Try again later.”</td><td>Cause not identified, or catalog unreachable</td><td>Try again</td></tr>
+      <tr><td>“The catalog is temporarily rate limited. Try again shortly.”</td><td>Rate limit on the catalog request</td><td>Wait</td></tr>
+      <tr><td>“The provider is currently refusing access to the catalog.”</td><td>Access refused</td><td>Check the account at the provider</td></tr>
+      <tr><td>“The connection has expired. Reconnect this provider.”</td><td>Token expired</td><td>Sign in again in the OAuth tab</td></tr>
+      <tr><td>“Sign-in succeeded, but Moonshot cannot confirm an active Kimi Code membership…”</td><td>Subscription not confirmed</td><td>Check the subscription at Moonshot</td></tr>
+      <tr><td>“xAI reports that a Grok subscription or the required credits are missing or exhausted.”</td><td>Subscription or credits</td><td>Check at xAI</td></tr>
     </table>
 
-    <p><b>Ces six messages viennent du catalogue, pas d'une conversation.</b> Un fournisseur peut très bien avoir un catalogue en échec et fonctionner par ailleurs, ou l'inverse : le test d'une clé et la récupération du catalogue sont deux appels différents.</p>
-    <p><b>Un dernier message, rencontré en cours de conversation</b> : <b>« Ce modèle n'est plus disponible. Choisis un autre modèle puis réessaie. »</b> Le fournisseur a retiré ce modèle. Il n'y a rien à réparer — il faut en choisir un autre.</p>
+    <p><b>These six messages come from the catalog, not from a conversation.</b> A provider can perfectly well have a failing catalog and work otherwise, or the reverse: testing a key and fetching the catalog are two different calls.</p>
+    <p><b>One last message, met during a conversation</b>: <b>“This model is no longer available. Choose another model and try again.”</b> The provider withdrew this model. There is nothing to repair — you have to choose another one.</p>
 
-    <h2 id="recherche-web">Les fournisseurs de recherche web</h2>
-    <p>Les trois fournisseurs de recherche — <b>Brave</b>, <b>Exa</b>, <b>Firecrawl</b> — utilisent le même écran de clés et les mêmes messages que les fournisseurs de modèles, avec une différence à connaître.</p>
+    <h2 id="recherche-web">The web search providers</h2>
+    <p>The three search providers — <b>Brave</b>, <b>Exa</b>, <b>Firecrawl</b> — use the same key screen and the same messages as the model providers, with one difference worth knowing.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      <b>Tester une clé de recherche consomme du quota.</b> Le test n'est pas une vérification à vide : c'est une vraie recherche sur Brave, une vraie recherche sur Exa, une consultation de crédits sur Firecrawl. Sur un quota mensuel serré, teste une fois, pas dix. Voir <a href="integrations-recherche-web.html">Recherche web</a>.
+      <span class="t">Warning</span>
+      <b>Testing a search key consumes quota.</b> The test is not an empty check: it is a real search on Brave, a real search on Exa, a credit lookup on Firecrawl. On a tight monthly quota, test once, not ten times. See <a href="integrations-recherche-web.html">Web search</a>.
     </div>
 
-    <h2 id="codes-http">Quel code HTTP produit quel message</h2>
-    <p>Toute la classification tient en cinq lignes. C'est ce qui explique pourquoi deux pannes très différentes affichent parfois le même texte.</p>
+    <h2 id="codes-http">Which HTTP code produces which message</h2>
+    <p>The whole classification fits in five lines. That is what explains why two very different failures sometimes show the same text.</p>
 
     <table>
-      <caption class="crumb">De la réponse du fournisseur au message affiché</caption>
-      <tr><th>Réponse du fournisseur</th><th>Ce que Beaver en conclut</th><th>Message affiché</th></tr>
-      <tr><td><b>401</b></td><td>Authentification refusée</td><td>« Authentification échouée, vérifie ta clé API » — ou le message de connexion expirée, selon le contexte</td></tr>
-      <tr><td><b>402</b></td><td>Paiement requis ; le corps de la réponse est examiné pour xAI et Moonshot</td><td>« xAI indique qu'un abonnement… », « Moonshot ne parvient pas… », ou « Le provider refuse actuellement l'accès au modèle. »</td></tr>
-      <tr><td><b>403</b></td><td>Refus d'accès ; le corps est examiné pour le cas OpenRouter</td><td>« OpenRouter demande une confirmation de majorité… » ou « Le provider refuse actuellement l'accès au modèle. »</td></tr>
-      <tr><td><b>429</b></td><td>Limite de débit</td><td>« Le service ou son fournisseur en amont limite actuellement les requêtes… »</td></tr>
-      <tr><td><b>Tout le reste</b></td><td>Refus non classé</td><td>« Le provider a refusé la requête. »</td></tr>
+      <caption class="crumb">From the provider's response to the message displayed</caption>
+      <tr><th>Provider's response</th><th>What Beaver concludes</th><th>Message displayed</th></tr>
+      <tr><td><b>401</b></td><td>Authentication refused</td><td>“Authentication failed, check your API key” — or the expired connection message, depending on the context</td></tr>
+      <tr><td><b>402</b></td><td>Payment required; the response body is examined for xAI and Moonshot</td><td>“xAI reports that a subscription…”, “Moonshot cannot confirm…”, or “The provider is currently refusing access to the model.”</td></tr>
+      <tr><td><b>403</b></td><td>Access refused; the body is examined for the OpenRouter case</td><td>“OpenRouter requires age confirmation…” or “The provider is currently refusing access to the model.”</td></tr>
+      <tr><td><b>429</b></td><td>Rate limit</td><td>“The service or its upstream provider is currently rate limiting requests…”</td></tr>
+      <tr><td><b>Everything else</b></td><td>Unclassified refusal</td><td>“The provider rejected the request.”</td></tr>
     </table>
 
-    <h2 id="limites">Les limites du côté de Beaver</h2>
+    <h2 id="limites">The limits on Beaver's side</h2>
 
     <table>
-      <caption class="crumb">Ce qui est borné, et à quelle valeur</caption>
-      <tr><th>Ce qui est borné</th><th>Valeur</th></tr>
-      <tr><td>Longueur d'une clé API</td><td><b>256 caractères</b></td></tr>
-      <tr><td>Délai d'un test de clé</td><td><b>10 secondes</b></td></tr>
-      <tr><td>Reprises automatiques vers un fournisseur distant</td><td><b>0</b></td></tr>
-      <tr><td>Durée d'attente lue dans une réponse 429</td><td>au plus <b>86 400 secondes</b></td></tr>
-      <tr><td>Marge de renouvellement Grok et Kimi</td><td><b>60 secondes</b></td></tr>
-      <tr><td>Marge de renouvellement OpenAI</td><td><b>5 minutes</b></td></tr>
-      <tr><td>Marge de renouvellement d'un connecteur MCP</td><td><b>30 secondes</b></td></tr>
-      <tr><td>Longueur d'un jeton Grok ou Kimi</td><td><b>4 096 caractères</b></td></tr>
-      <tr><td>Corps d'erreur d'un fournisseur conservé pour les traces</td><td><b>200 caractères</b>, filtré</td></tr>
+      <caption class="crumb">What is bounded, and at what value</caption>
+      <tr><th>What is bounded</th><th>Value</th></tr>
+      <tr><td>Length of an API key</td><td><b>256 characters</b></td></tr>
+      <tr><td>Timeout of a key test</td><td><b>10 seconds</b></td></tr>
+      <tr><td>Automatic retries to a remote provider</td><td><b>0</b></td></tr>
+      <tr><td>Wait time read from a 429 response</td><td>at most <b>86,400 seconds</b></td></tr>
+      <tr><td>Grok and Kimi renewal margin</td><td><b>60 seconds</b></td></tr>
+      <tr><td>OpenAI renewal margin</td><td><b>5 minutes</b></td></tr>
+      <tr><td>MCP connector renewal margin</td><td><b>30 seconds</b></td></tr>
+      <tr><td>Length of a Grok or Kimi token</td><td><b>4,096 characters</b></td></tr>
+      <tr><td>Provider error body kept for traces</td><td><b>200 characters</b>, filtered</td></tr>
     </table>
 
-    <h2 id="ou-ca-se-regle">Où se règle chaque problème</h2>
+    <h2 id="ou-ca-se-regle">Where each problem is settled</h2>
 
     <table>
-      <caption class="crumb">Ce qui se traite dans Beaver et ce qui se traite chez le fournisseur</caption>
-      <tr><th>Symptôme</th><th>Dans Beaver</th><th>Chez le fournisseur</th></tr>
-      <tr><td>Clé mal collée</td><td><b>Oui</b> — la ressaisir</td><td>—</td></tr>
-      <tr><td>Clé révoquée</td><td>Ressaisir la nouvelle</td><td><b>Oui</b> — en générer une</td></tr>
-      <tr><td>Compte sans crédit</td><td>—</td><td><b>Oui</b></td></tr>
-      <tr><td>Limite de débit atteinte</td><td>—</td><td>Attendre ; recharger ne sert à rien</td></tr>
-      <tr><td>Abonnement Grok ou Kimi non confirmé</td><td>—</td><td><b>Oui</b></td></tr>
-      <tr><td>Confirmation de majorité OpenRouter</td><td>—</td><td><b>Oui</b>, sur openrouter.ai</td></tr>
-      <tr><td>Connexion par compte expirée</td><td><b>Oui</b> — se reconnecter</td><td>—</td></tr>
-      <tr><td>Connexion effacée après révocation</td><td><b>Oui</b> — se reconnecter</td><td>Vérifier que la session n'a pas été fermée depuis leur site</td></tr>
-      <tr><td>Réseau, proxy, fournisseur en panne</td><td>Relancer à la main</td><td>—</td></tr>
-      <tr><td>Catalogue de modèles en échec</td><td><b>Oui</b> — « Réessayer »</td><td>—</td></tr>
+      <caption class="crumb">What is handled inside Beaver and what is handled at the provider</caption>
+      <tr><th>Symptom</th><th>In Beaver</th><th>At the provider</th></tr>
+      <tr><td>Key pasted wrong</td><td><b>Yes</b> — enter it again</td><td>—</td></tr>
+      <tr><td>Key revoked</td><td>Enter the new one</td><td><b>Yes</b> — generate one</td></tr>
+      <tr><td>Account with no credit</td><td>—</td><td><b>Yes</b></td></tr>
+      <tr><td>Rate limit reached</td><td>—</td><td>Wait; topping up is no use</td></tr>
+      <tr><td>Grok or Kimi subscription not confirmed</td><td>—</td><td><b>Yes</b></td></tr>
+      <tr><td>OpenRouter age confirmation</td><td>—</td><td><b>Yes</b>, on openrouter.ai</td></tr>
+      <tr><td>Account sign-in expired</td><td><b>Yes</b> — sign in again</td><td>—</td></tr>
+      <tr><td>Connection erased after a revocation</td><td><b>Yes</b> — sign in again</td><td>Check that the session was not closed from their site</td></tr>
+      <tr><td>Network, proxy, provider down</td><td>Send it again by hand</td><td>—</td></tr>
+      <tr><td>Model catalog failing</td><td><b>Yes</b> — “Try again”</td><td>—</td></tr>
     </table>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common traps</h2>
 
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« L'opération a échoué. Réessaye. » sans autre indication</td><td>Un message unique couvre les sept causes</td><td>Reprendre le tableau des sept causes</td></tr>
-      <tr><td>Ma clé Qwen est refusée alors qu'elle marche ailleurs</td><td>Les clés d'espace de travail <code>sk-sp-</code> ne sont pas prises en charge</td><td>Utiliser une clé de compte</td></tr>
-      <tr><td>Ma clé est refusée après un espace collé sans le vouloir</td><td>La validation refuse au-delà de 256 caractères et sur caractère de contrôle</td><td>Recopier proprement, sans passer par un traitement de texte</td></tr>
-      <tr><td>Mon fournisseur a disparu du jour au lendemain</td><td>Sa connexion par compte a été effacée après un refus de renouvellement</td><td>Se reconnecter dans l'onglet OAuth</td></tr>
-      <tr><td>Je me reconnecte et le message revient aussitôt</td><td>Ce n'est pas la connexion, c'est l'abonnement</td><td>Vérifier l'abonnement chez le fournisseur</td></tr>
-      <tr><td>J'attends que Beaver réessaie et rien ne se passe</td><td>Aucune reprise automatique n'existe vers un fournisseur distant</td><td>Relancer soi-même</td></tr>
-      <tr><td>« Clé valide » mais aucun modèle ne s'affiche</td><td>Le test et le catalogue sont deux appels différents</td><td>Déplier le fournisseur pour lire la raison</td></tr>
-      <tr><td>Mes clés ont disparu après une réinstallation du système</td><td>La clé maîtresse du coffre vivait dans le trousseau du système</td><td>Voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a></td></tr>
-      <tr><td>Le message parle d'un fournisseur « en amont »</td><td>Un intermédiaire comme OpenRouter relaie un autre fournisseur</td><td>Le refus vient du fournisseur final, pas de l'intermédiaire</td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“Operation failed. Please try again.” with no other indication</td><td>A single message covers the seven causes</td><td>Go back to the table of seven causes</td></tr>
+      <tr><td>My Qwen key is rejected even though it works elsewhere</td><td>Workspace keys <code>sk-sp-</code> are not supported</td><td>Use an account key</td></tr>
+      <tr><td>My key is rejected after a space was pasted by accident</td><td>Validation refuses anything past 256 characters and any control character</td><td>Copy it cleanly, without going through a word processor</td></tr>
+      <tr><td>My provider disappeared overnight</td><td>Its account sign-in was erased after a refused renewal</td><td>Sign in again in the OAuth tab</td></tr>
+      <tr><td>I sign in again and the message comes straight back</td><td>It is not the connection, it is the subscription</td><td>Check the subscription at the provider</td></tr>
+      <tr><td>I wait for Beaver to retry and nothing happens</td><td>No automatic retry exists towards a remote provider</td><td>Send it again yourself</td></tr>
+      <tr><td>“Key valid” but no model appears</td><td>The test and the catalog are two different calls</td><td>Expand the provider to read the reason</td></tr>
+      <tr><td>My keys disappeared after a system reinstall</td><td>The vault master key lived in the system keychain</td><td>See <a href="reference-coffre-et-cles.html">The vault and API keys</a></td></tr>
+      <tr><td>The message mentions an “upstream” provider</td><td>An intermediary such as OpenRouter relays another provider</td><td>The refusal comes from the final provider, not from the intermediary</td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="modeles-fournisseurs-api.html">Fournisseurs API</a> — la liste des fournisseurs, où récupérer une clé et comment la saisir.</li>
-      <li><a href="modeles-connexion-par-compte.html">Connexion par compte</a> — se connecter avec un compte OpenAI, Grok ou Kimi.</li>
-      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — où va la clé, et pourquoi elle ne peut plus être relue.</li>
-      <li><a href="integrations-authentification-mcp.html">Authentification des connecteurs</a> — les jetons des connecteurs MCP, qui suivent le même mécanisme.</li>
-      <li><a href="integrations-recherche-web.html">Recherche web</a> — les trois fournisseurs de recherche et leur usage.</li>
-      <li><a href="depannage-ollama.html">Moteur Ollama</a> — le moteur local, qui n'a besoin d'aucune clé.</li>
-      <li><a href="reference-depannage-installation.html">Dépannage de l'installation</a> — les échecs qui précèdent tout usage de fournisseur.</li>
+      <li><a href="modeles-fournisseurs-api.html">API providers</a> — the list of providers, where to get a key and how to enter it.</li>
+      <li><a href="modeles-connexion-par-compte.html">Signing in with an account</a> — connecting with an OpenAI, Grok or Kimi account.</li>
+      <li><a href="reference-coffre-et-cles.html">The vault and API keys</a> — where the key goes, and why it can no longer be read back.</li>
+      <li><a href="integrations-authentification-mcp.html">Connector authentication</a> — MCP connector tokens, which follow the same mechanism.</li>
+      <li><a href="integrations-recherche-web.html">Web search</a> — the three search providers and how they are used.</li>
+      <li><a href="depannage-ollama.html">Ollama engine</a> — the local engine, which needs no key.</li>
+      <li><a href="reference-depannage-installation.html">Installation troubleshooting</a> — the failures that come before any use of a provider.</li>
     </ul>
   </main>
 

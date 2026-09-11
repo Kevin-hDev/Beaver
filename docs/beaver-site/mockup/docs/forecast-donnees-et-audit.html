@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beaver Docs — Données et audit</title>
-<meta name="description" content="À quoi doit ressembler ton fichier de données, ce que Beaver vérifie avant de calculer une prévision, et que faire quand il refuse.">
+<title>Beaver Docs — Data and audit</title>
+<meta name="description" content="What your data file should look like, what Beaver checks before computing a forecast, and what to do when it refuses.">
+<script src="../js/lang-redirect.js"></script>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,234 +19,234 @@
 
 <header class="docs-top">
   <a class="logo" href="../index.html">Beaver<em>.</em></a>
-  <span class="crumb">Docs / Forecast / Données et audit</span>
-  <span class="lang" role="group" aria-label="Langue">
-    <a class="lang-opt" href="forecast-donnees-et-audit.html" hreflang="fr" aria-current="true">FR</a>
-    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  <span class="crumb">Docs / Forecast / Data and audit</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/forecast-donnees-et-audit.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="forecast-donnees-et-audit.html" hreflang="en" aria-current="true">EN</a>
   </span>
-  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 
 <div class="wrap">
   <aside>
-    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
   </aside>
 
   <main class="doc">
-    <h1>Ce que ton fichier <em>doit dire</em></h1>
-    <p>Avant chaque calcul, Beaver relit tes données et les contrôle. Un défaut bloquant arrête la prévision, une alerte l'accompagne. Cette page dit à quoi doit ressembler le fichier, ce qui est vérifié, et comment lire le résultat de ce contrôle.</p>
+    <h1>What your file <em>has to say</em></h1>
+    <p>Before every calculation, Beaver re-reads your data and checks it. A blocking flaw stops the forecast, an alert accompanies it. This page says what the file should look like, what is checked, and how to read the result of that check.</p>
 
     <div class="callout">
-      <span class="t">Le fichier en quatre règles</span>
-      Une ligne par observation, une colonne de dates au format année-mois-jour, une colonne numérique à prévoir, et la même distance de temps entre deux lignes consécutives. Le reste — colonne de série, covariables, lignes futures — est facultatif.
+      <span class="t">The file in four rules</span>
+      One row per observation, a column of dates in year-month-day format, a numeric column to forecast, and the same time distance between two consecutive rows. The rest — series column, covariates, future rows — is optional.
     </div>
 
-    <h2 id="forme-du-fichier">La forme attendue du fichier</h2>
-    <p>Un tableau, une ligne par observation, une première ligne d'en-têtes. Six extensions sont acceptées : <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code>. Toute autre extension renvoie « Format non supporté ».</p>
+    <h2 id="forme-du-fichier">The expected shape of the file</h2>
+    <p>A table, one row per observation, a first row of headers. Six extensions are accepted: <code>csv</code>, <code>tsv</code>, <code>xlsx</code>, <code>xls</code>, <code>ods</code>, <code>xlsm</code>. Any other extension returns “Unsupported format”.</p>
 
     <table>
-      <caption class="crumb">Les bornes appliquées dès la lecture, avant tout contrôle de contenu</caption>
-      <tr><th>Ce qui est borné</th><th>Valeur</th></tr>
-      <tr><td>Taille du fichier ouvert</td><td><b>50 Mo</b></td></tr>
-      <tr><td>Lignes lues</td><td><b>5 000</b></td></tr>
-      <tr><td>Données une fois converties</td><td><b>5 Mo</b></td></tr>
-      <tr><td>Colonnes</td><td><b>256</b></td></tr>
-      <tr><td>Caractères par nom de colonne</td><td><b>80</b></td></tr>
-      <tr><td>Caractères par cellule</td><td><b>32 768</b></td></tr>
+      <caption class="crumb">The bounds applied at read time, before any content check</caption>
+      <tr><th>What is bounded</th><th>Value</th></tr>
+      <tr><td>Size of the opened file</td><td><b>50 MB</b></td></tr>
+      <tr><td>Rows read</td><td><b>5,000</b></td></tr>
+      <tr><td>Data once converted</td><td><b>5 MB</b></td></tr>
+      <tr><td>Columns</td><td><b>256</b></td></tr>
+      <tr><td>Characters per column name</td><td><b>80</b></td></tr>
+      <tr><td>Characters per cell</td><td><b>32,768</b></td></tr>
     </table>
 
-    <p>Deux commodités sont appliquées automatiquement à la lecture. Une colonne <b>sans en-tête</b> reçoit un nom de repli : <code>column_1</code>, <code>column_2</code>, et ainsi de suite. Un nombre écrit <b>avec une virgule décimale</b> est reconnu comme un nombre — <code>1234,5</code> devient <code>1234.5</code>. En revanche, un séparateur de milliers — <code>1 234,5</code> ou <code>1.234,5</code> — fait échouer la conversion : la valeur reste du texte, et provoquera plus loin un refus « Colonne cible non numérique ».</p>
-    <p><b>Deux en-têtes identiques font échouer l'import.</b> Renommer l'une des deux colonnes suffit.</p>
+    <p>Two conveniences are applied automatically at read time. A column <b>with no header</b> receives a fallback name: <code>column_1</code>, <code>column_2</code>, and so on. A number written <b>with a decimal comma</b> is recognised as a number — <code>1234,5</code> becomes <code>1234.5</code>. A thousands separator, on the other hand — <code>1 234,5</code> or <code>1.234,5</code> — makes the conversion fail: the value stays text, and will later trigger a “Target column is not numeric” refusal.</p>
+    <p><b>Two identical headers make the import fail.</b> Renaming one of the two columns is enough.</p>
 
-    <h2 id="roles-de-colonne">Les quatre rôles de colonne</h2>
-    <p>À la configuration, chaque colonne reçoit un rôle. Deux sont obligatoires, deux sont facultatifs.</p>
+    <h2 id="roles-de-colonne">The four column roles</h2>
+    <p>At configuration time, each column receives a role. Two are required, two are optional.</p>
 
     <table>
-      <caption class="crumb">Les quatre rôles de colonne et leur usage</caption>
-      <tr><th>Libellé affiché</th><th>Obligatoire</th><th>À quoi ça sert</th></tr>
-      <tr><td><b>Cible</b></td><td>Oui</td><td>C'est la colonne prolongée. Elle doit être numérique</td></tr>
-      <tr><td><b>Colonne date</b></td><td>Oui</td><td>Fixe l'ordre et le pas de temps</td></tr>
-      <tr><td><b>Colonne série</b></td><td>Non</td><td>Permet de prévoir plusieurs séries d'un coup — un produit par magasin, par exemple</td></tr>
-      <tr><td><b>Covariables</b></td><td>Non</td><td>Colonnes explicatives que certains modèles savent exploiter</td></tr>
+      <caption class="crumb">The four column roles and their use</caption>
+      <tr><th>Label shown</th><th>Required</th><th>What it's for</th></tr>
+      <tr><td><b>Target</b></td><td>Yes</td><td>This is the column being extended. It must be numeric</td></tr>
+      <tr><td><b>Date column</b></td><td>Yes</td><td>Sets the order and the time step</td></tr>
+      <tr><td><b>Series column</b></td><td>No</td><td>Lets you forecast several series at once — one product per store, for example</td></tr>
+      <tr><td><b>Covariates</b></td><td>No</td><td>Explanatory columns that some models can exploit</td></tr>
     </table>
 
-    <p>Une colonne demandée mais absente du fichier bloque le calcul, avec un message qui nomme le rôle manquant : <b>« Colonne cible introuvable »</b>, <b>« Colonne date introuvable »</b> ou <b>« Covariable introuvable »</b>.</p>
-    <p>Sans colonne série, toutes les lignes forment une seule série. Avec une colonne série, la limite est de <b>256 séries</b>, et le produit <i>nombre de séries × horizon</i> ne doit pas dépasser <b>100 000 points prévus</b>. Une covariable dont les valeurs ne sont ni numériques, ni booléennes, ni vides déclenche une alerte, pas un blocage. Au plus <b>64 covariables</b>.</p>
+    <p>A column that is requested but absent from the file blocks the calculation, with a message that names the missing role: <b>“Target column not found”</b>, <b>“Date column not found”</b> or <b>“Covariate not found”</b>.</p>
+    <p>Without a series column, all rows form a single series. With a series column, the limit is <b>256 series</b>, and the product <i>number of series × horizon</i> must not exceed <b>100,000 predicted points</b>. A covariate whose values are neither numeric, nor boolean, nor empty triggers an alert, not a block. At most <b>64 covariates</b>.</p>
 
     <div class="callout">
-      <span class="t">Deux mots, une même chose</span>
-      L'écran de configuration dit <b>« Covariables »</b> ; la section Données de l'Espace Forecast dit <b>« Variables externes »</b>. Ce sont les mêmes colonnes.
+      <span class="t">Two words, one thing</span>
+      The configuration screen says <b>“Covariates”</b>; the Data section of the Forecast workspace says <b>“External variables”</b>. They are the same columns.
     </div>
 
-    <h2 id="lignes-futures">Les lignes futures connues</h2>
-    <p>C'est le mécanisme le moins évident du fichier d'entrée. La règle : une ligne qui porte une date mais <b>aucune valeur dans la colonne cible</b> est comprise comme une ligne future, pas comme une donnée manquante. Elle sert à deux choses — fixer les dates de sortie, et fournir à l'avance les valeurs des covariables sur la période à prévoir : une promotion prévue, une température annoncée, un jour férié connu.</p>
-    <p>Trois contraintes, toutes vérifiées :</p>
+    <h2 id="lignes-futures">Known future rows</h2>
+    <p>This is the least obvious mechanism of the input file. The rule: a row that carries a date but <b>no value in the target column</b> is understood as a future row, not as missing data. It serves two purposes — setting the output dates, and supplying in advance the covariate values over the period to be forecast: a planned promotion, a forecast temperature, a known public holiday.</p>
+    <p>Three constraints, all checked:</p>
     <ul>
-      <li>Les lignes futures viennent <b>après</b> l'historique. Une ligne avec valeur qui apparaît après une ligne future est bloquante.</li>
-      <li>Quand il y a des lignes futures, <b>chaque série doit en avoir exactement autant que l'horizon demandé</b>. L'écran de configuration le dit avant le lancement : « Horizon incohérent — des lignes futures connues ont été détectées, mais l'horizon actuel ne leur correspond pas. »</li>
-      <li>La première ligne future doit suivre la dernière ligne d'historique <b>d'un seul pas de temps</b>.</li>
+      <li>Future rows come <b>after</b> the history. A row with a value appearing after a future row is blocking.</li>
+      <li>When there are future rows, <b>each series must have exactly as many of them as the requested horizon</b>. The configuration screen says so before launching: “Horizon mismatch — known future rows were detected, but the current horizon does not match them.”</li>
+      <li>The first future row must follow the last history row <b>by exactly one time step</b>.</li>
     </ul>
-    <p><b>Un modèle qui ne sait pas exploiter le futur connu refuse le calcul</b> plutôt que de l'ignorer : « Variables futures non supportées par ce moteur ». L'écran de configuration prévient avant : « Contexte futur non disponible — Ce modèle lit l'historique principal, mais n'exploite pas les valeurs futures connues des covariables. » Et quand aucune covariable n'est sélectionnée alors que des lignes futures existent : « Dates futures seulement — Les lignes futures connues serviront surtout à fixer les dates de sortie tant qu'aucune covariable n'est sélectionnée. »</p>
+    <p><b>A model that can't exploit the known future refuses the calculation</b> rather than ignore it: “Future variables are not supported by this engine”. The configuration screen warns beforehand: “Future context unavailable — This model reads the main history, but does not use future-known covariate values.” And when no covariate is selected while future rows exist: “Future dates only — Known future rows will mostly be used to set output dates while no covariate is selected.”</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Une cellule cible vide ne veut pas dire « valeur manquante ». Beaver comprend une ligne datée sans valeur cible comme une <b>ligne future</b>. Un trou au milieu de ton historique sera donc lu comme le début du futur, et toute donnée qui suit déclenchera un refus. Supprime les lignes incomplètes de l'historique.
+      <span class="t">Warning</span>
+      An empty target cell does not mean “missing value”. Beaver understands a dated row with no target value as a <b>future row</b>. A gap in the middle of your history will therefore be read as the start of the future, and any data that follows will trigger a refusal. Delete incomplete rows from the history.
     </div>
 
-    <h2 id="les-dates">Les dates : ce qui est lu, ce qui ne l'est pas</h2>
+    <h2 id="les-dates">Dates: what is read, what isn't</h2>
 
     <table>
-      <caption class="crumb">Les huit formats de date reconnus, dans l'ordre d'essai</caption>
-      <tr><th>Forme</th><th>Exemple</th></tr>
-      <tr><td>Date et heure avec fuseau</td><td><code>2026-07-23T14:30:00Z</code>, <code>2026-07-23T14:30:00+02:00</code></td></tr>
-      <tr><td>Année-mois-jour, heure, minute, seconde</td><td><code>2026-07-23 14:30:00</code></td></tr>
-      <tr><td>Année-mois-jour, heure et minute</td><td><code>2026-07-23 14:30</code></td></tr>
-      <tr><td>Avec un <code>T</code> de séparation</td><td><code>2026-07-23T14:30:00</code></td></tr>
-      <tr><td>Avec un <code>T</code>, sans les secondes</td><td><code>2026-07-23T14:30</code></td></tr>
-      <tr><td>Avec des barres obliques</td><td><code>2026/07/23 14:30:00</code></td></tr>
-      <tr><td>Barres obliques, sans les secondes</td><td><code>2026/07/23 14:30</code></td></tr>
-      <tr><td>Date seule</td><td><code>2026-07-23</code> ou <code>2026/07/23</code></td></tr>
+      <caption class="crumb">The eight recognised date formats, in the order they are tried</caption>
+      <tr><th>Form</th><th>Example</th></tr>
+      <tr><td>Date and time with time zone</td><td><code>2026-07-23T14:30:00Z</code>, <code>2026-07-23T14:30:00+02:00</code></td></tr>
+      <tr><td>Year-month-day, hour, minute, second</td><td><code>2026-07-23 14:30:00</code></td></tr>
+      <tr><td>Year-month-day, hour and minute</td><td><code>2026-07-23 14:30</code></td></tr>
+      <tr><td>With a separating <code>T</code></td><td><code>2026-07-23T14:30:00</code></td></tr>
+      <tr><td>With a <code>T</code>, without the seconds</td><td><code>2026-07-23T14:30</code></td></tr>
+      <tr><td>With slashes</td><td><code>2026/07/23 14:30:00</code></td></tr>
+      <tr><td>Slashes, without the seconds</td><td><code>2026/07/23 14:30</code></td></tr>
+      <tr><td>Date only</td><td><code>2026-07-23</code> or <code>2026/07/23</code></td></tr>
     </table>
 
-    <p>Une date lue sans heure est ramenée à minuit. Les dates des points prévus reprennent la forme de la dernière date d'entrée : avec un <code>T</code> si l'entrée en avait un, avec heure si l'entrée en avait, sinon en date seule.</p>
+    <p>A date read without a time is set to midnight. The dates of the predicted points take the form of the last input date: with a <code>T</code> if the input had one, with a time if the input had one, otherwise date only.</p>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      Le format jour/mois/année n'est pas reconnu. <code>23/07/2026</code> est refusé, ainsi que les mois écrits en toutes lettres, le format américain <code>07/23/2026</code> et les numéros de série de tableur non convertis. Les formats acceptés commencent tous par l'année. C'est la cause de refus la plus courante et la plus facile à corriger : reformate la colonne de dates dans ton tableur avant l'import.
+      <span class="t">Warning</span>
+      The day/month/year format is not recognised. <code>23/07/2026</code> is refused, as are months written out in words, the American format <code>07/23/2026</code> and unconverted spreadsheet serial numbers. The accepted formats all start with the year. This is the most common cause of refusal and the easiest to fix: reformat the date column in your spreadsheet before importing.
     </div>
 
-    <h2 id="la-frequence">La fréquence, et pourquoi elle compte autant</h2>
-    <p>La fréquence n'est pas décorative : elle définit <b>ce qu'est un pas de temps</b>, et donc ce qu'est une période manquante, une date mal alignée ou une ligne future correctement placée. Tous les contrôles de séquence en dépendent.</p>
+    <h2 id="la-frequence">Frequency, and why it matters so much</h2>
+    <p>Frequency isn't decorative: it defines <b>what a time step is</b>, and therefore what a missing period, a misaligned date or a correctly placed future row is. Every sequence check depends on it.</p>
 
     <table>
-      <caption class="crumb">Les huit fréquences proposées et le pas de temps appliqué</caption>
-      <tr><th>Libellé affiché</th><th>Pas de temps appliqué</th></tr>
+      <caption class="crumb">The eight frequencies offered and the time step applied</caption>
+      <tr><th>Label shown</th><th>Time step applied</th></tr>
       <tr><td><b>Minute</b></td><td>1 minute</td></tr>
-      <tr><td><b>Heure</b></td><td>1 heure</td></tr>
-      <tr><td><b>Jour</b></td><td>1 jour</td></tr>
-      <tr><td><b>Jour ouvré</b></td><td>Le jour suivant, en sautant samedi et dimanche</td></tr>
-      <tr><td><b>Semaine</b></td><td>7 jours</td></tr>
-      <tr><td><b>Mois</b></td><td>1 mois calendaire</td></tr>
-      <tr><td><b>Trimestre</b></td><td>3 mois</td></tr>
-      <tr><td><b>Année</b></td><td>12 mois</td></tr>
+      <tr><td><b>Hour</b></td><td>1 hour</td></tr>
+      <tr><td><b>Day</b></td><td>1 day</td></tr>
+      <tr><td><b>Business day</b></td><td>The next day, skipping Saturday and Sunday</td></tr>
+      <tr><td><b>Week</b></td><td>7 days</td></tr>
+      <tr><td><b>Month</b></td><td>1 calendar month</td></tr>
+      <tr><td><b>Quarter</b></td><td>3 months</td></tr>
+      <tr><td><b>Year</b></td><td>12 months</td></tr>
     </table>
 
     <div class="callout">
       <span class="t">Note</span>
-      « Jour ouvré » ne saute que les samedis et les dimanches. Les jours fériés ne sont pas connus de Beaver et créeront des périodes manquantes.
+      “Business day” only skips Saturdays and Sundays. Public holidays are unknown to Beaver and will create missing periods.
     </div>
 
-    <h2 id="ce-qui-est-controle">Ce que Beaver contrôle avant de calculer</h2>
-    <p>L'audit tourne systématiquement, avant tout calcul, et son résultat s'appelle le <b>profil de données</b>. L'agent peut le lancer seul avec l'outil <code>forecast_data_audit</code>.</p>
-    <p>Le profil retient les colonnes retenues pour chaque rôle, la fréquence, l'horizon, le niveau de confiance, le nombre de lignes source, le nombre de points d'historique au total et par série, le nombre de lignes futures, le nombre de séries et leurs identifiants, la première et la dernière date, le nombre de périodes manquantes, le nombre de valeurs atypiques, et la liste des anomalies relevées avec leur gravité et jusqu'à <b>dix exemples</b> chacune.</p>
-    <p>Chaque anomalie porte l'une de deux gravités : <b>Erreur</b>, et le calcul est refusé ; <b>Avertissement</b>, et le calcul a lieu, l'alerte étant enregistrée avec le résultat. Au plus <b>50 anomalies distinctes</b> sont retenues par profil ; une anomalie qui se répète est comptée, pas dupliquée.</p>
-    <p><b>Le refus nomme la première erreur rencontrée, pas toutes.</b> Un fichier qui cumule deux défauts demandera donc deux passages.</p>
+    <h2 id="ce-qui-est-controle">What Beaver checks before computing</h2>
+    <p>The audit runs systematically, before any calculation, and its result is called the <b>data profile</b>. The agent can run it on its own with the <code>forecast_data_audit</code> tool.</p>
+    <p>The profile holds the columns kept for each role, the frequency, the horizon, the confidence level, the number of source rows, the number of history points in total and per series, the number of future rows, the number of series and their identifiers, the first and last date, the number of missing periods, the number of outliers, and the list of anomalies found with their severity and up to <b>ten examples</b> each.</p>
+    <p>Each anomaly carries one of two severities: <b>Error</b>, and the calculation is refused; <b>Warning</b>, and the calculation happens, the alert being saved with the result. At most <b>50 distinct anomalies</b> are kept per profile; a repeating anomaly is counted, not duplicated.</p>
+    <p><b>The refusal names the first error encountered, not all of them.</b> A file that piles up two flaws will therefore need two passes.</p>
 
-    <h2 id="controles-bloquants">Les contrôles qui bloquent</h2>
-
-    <table>
-      <caption class="crumb">Ce qui arrête le calcul, et le message correspondant</caption>
-      <tr><th>Ce qui est détecté</th><th>Message</th></tr>
-      <tr><td>Une colonne demandée n'existe pas</td><td><b>Colonne cible introuvable</b> / <b>Colonne date introuvable</b> / <b>Covariable introuvable</b></td></tr>
-      <tr><td>Une date illisible</td><td><b>Dates invalides</b></td></tr>
-      <tr><td>Deux lignes à la même date dans une même série</td><td><b>Dates dupliquées</b></td></tr>
-      <tr><td>Des dates dans le désordre</td><td><b>Dates non chronologiques</b></td></tr>
-      <tr><td>Un écart de date qui ne tombe pas sur un multiple du pas</td><td><b>Fréquence incohérente</b></td></tr>
-      <tr><td>Une valeur cible non numérique</td><td><b>Colonne cible non numérique</b></td></tr>
-      <tr><td>Une ligne d'historique après une ligne future</td><td><b>Lignes futures invalides</b></td></tr>
-      <tr><td>Une date future mal alignée</td><td><b>Dates futures invalides</b></td></tr>
-      <tr><td>Un nombre de lignes futures différent de l'horizon</td><td><b>Lignes futures invalides</b></td></tr>
-      <tr><td>Moins de deux points d'historique dans une série</td><td><b>Historique insuffisant</b></td></tr>
-      <tr><td>Aucune série exploitable</td><td><b>Historique insuffisant</b></td></tr>
-      <tr><td>Plus de 256 séries</td><td><b>Trop de séries</b></td></tr>
-      <tr><td>Séries × horizon au-delà de 100 000 points</td><td><b>Volume de prédictions trop important</b></td></tr>
-      <tr><td>Ligne mal formée, trop de colonnes, cellule trop longue, identifiant de série illisible</td><td><b>Données Forecast invalides</b></td></tr>
-    </table>
-
-    <p>Deux points de lecture importants. <b>« Historique insuffisant » veut dire moins de deux points</b>, pas « pas assez de recul » : c'est un plancher technique, très bas. Et les quatre derniers défauts du tableau tombent tous dans le même message générique <b>« Données Forecast invalides »</b>, qui ne dit pas lequel s'est produit.</p>
-
-    <h2 id="controles-alertes">Les contrôles qui alertent sans bloquer</h2>
-    <p>Six alertes n'empêchent pas le calcul mais accompagnent le résultat.</p>
+    <h2 id="controles-bloquants">The checks that block</h2>
 
     <table>
-      <caption class="crumb">Les six alertes et la façon dont elles sont mesurées</caption>
-      <tr><th>Ce qui est détecté</th><th>Comment c'est mesuré</th></tr>
-      <tr><td>Des périodes absentes dans l'historique</td><td>Chaque écart de plus d'un pas entre deux dates consécutives compte les pas manquants</td></tr>
-      <tr><td>Un historique court par rapport à l'horizon</td><td>Moins de <b>deux fois l'horizon</b> de points d'historique</td></tr>
-      <tr><td>Des valeurs atypiques</td><td>Méthode de l'écart interquartile, facteur <b>3</b> — au moins <b>8 valeurs</b> requises</td></tr>
-      <tr><td>Un changement de régime</td><td>La moyenne de la seconde moitié s'écarte de la première de plus de <b>2,5 écarts-types</b> — au moins <b>12 valeurs</b> requises</td></tr>
-      <tr><td>Des covariables sans valeur sur les lignes futures</td><td>Compte les cases vides ou absentes sur les lignes futures</td></tr>
-      <tr><td>Une covariable textuelle</td><td>Valeur ni numérique, ni booléenne, ni vide</td></tr>
+      <caption class="crumb">What stops the calculation, and the corresponding message</caption>
+      <tr><th>What is detected</th><th>Message</th></tr>
+      <tr><td>A requested column doesn't exist</td><td><b>Target column not found</b> / <b>Date column not found</b> / <b>Covariate not found</b></td></tr>
+      <tr><td>An unreadable date</td><td><b>Invalid dates</b></td></tr>
+      <tr><td>Two rows at the same date within a single series</td><td><b>Duplicate dates</b></td></tr>
+      <tr><td>Dates out of order</td><td><b>Non-chronological dates</b></td></tr>
+      <tr><td>A date gap that isn't a multiple of the step</td><td><b>Inconsistent frequency</b></td></tr>
+      <tr><td>A non-numeric target value</td><td><b>Target column is not numeric</b></td></tr>
+      <tr><td>A history row after a future row</td><td><b>Invalid future rows</b></td></tr>
+      <tr><td>A misaligned future date</td><td><b>Invalid future dates</b></td></tr>
+      <tr><td>A number of future rows different from the horizon</td><td><b>Invalid future rows</b></td></tr>
+      <tr><td>Fewer than two history points in a series</td><td><b>Insufficient history</b></td></tr>
+      <tr><td>No usable series</td><td><b>Insufficient history</b></td></tr>
+      <tr><td>More than 256 series</td><td><b>Too many series</b></td></tr>
+      <tr><td>Series × horizon beyond 100,000 points</td><td><b>Prediction volume too large</b></td></tr>
+      <tr><td>Malformed row, too many columns, cell too long, unreadable series identifier</td><td><b>Invalid Forecast data</b></td></tr>
     </table>
 
-    <p><b>Comment lire le nombre de valeurs atypiques.</b> Le facteur 3 est volontairement prudent — la règle courante utilise 1,5, ce qui signale beaucoup plus de points. Un compte non nul désigne donc des valeurs franchement à part, pas une simple dispersion.</p>
+    <p>Two important reading points. <b>“Insufficient history” means fewer than two points</b>, not “not enough hindsight”: it's a technical floor, and a very low one. And the last four flaws in the table all fall into the same generic message <b>“Invalid Forecast data”</b>, which doesn't say which one occurred.</p>
+
+    <h2 id="controles-alertes">The checks that alert without blocking</h2>
+    <p>Six alerts don't prevent the calculation but accompany the result.</p>
+
+    <table>
+      <caption class="crumb">The six alerts and how they are measured</caption>
+      <tr><th>What is detected</th><th>How it's measured</th></tr>
+      <tr><td>Periods absent from the history</td><td>Every gap of more than one step between two consecutive dates counts the missing steps</td></tr>
+      <tr><td>A history that is short relative to the horizon</td><td>Fewer than <b>twice the horizon</b> in history points</td></tr>
+      <tr><td>Outliers</td><td>Interquartile range method, factor <b>3</b> — at least <b>8 values</b> required</td></tr>
+      <tr><td>A regime change</td><td>The mean of the second half departs from the first by more than <b>2.5 standard deviations</b> — at least <b>12 values</b> required</td></tr>
+      <tr><td>Covariates with no value on the future rows</td><td>Counts the empty or absent cells on the future rows</td></tr>
+      <tr><td>A textual covariate</td><td>A value that is neither numeric, nor boolean, nor empty</td></tr>
+    </table>
+
+    <p><b>How to read the outlier count.</b> The factor of 3 is deliberately cautious — the common rule uses 1.5, which flags far more points. A non-zero count therefore designates values that are clearly apart, not mere dispersion.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Les valeurs atypiques sont comptées, jamais corrigées. Beaver ne retire aucun point de tes données : il signale ce qui est franchement à part et te laisse juger si c'est réel ou fautif.
+      Outliers are counted, never corrected. Beaver removes no point from your data: it flags what is clearly apart and leaves you to judge whether it is real or faulty.
     </div>
 
     <div class="callout">
-      <span class="t">Attention</span>
-      L'absence d'alerte n'est pas une garantie. La détection des valeurs atypiques demande au moins huit points, celle d'un changement de régime au moins douze. En dessous, aucune alerte ne peut apparaître, quelles que soient les données.
+      <span class="t">Warning</span>
+      The absence of an alert is not a guarantee. Outlier detection needs at least eight points, regime-change detection at least twelve. Below that, no alert can appear, whatever the data.
     </div>
 
-    <h2 id="lire-le-profil">Lire le profil de données à l'écran</h2>
-    <p>Le profil s'affiche dans la section <b>Données</b> de la fenêtre Espace Forecast. Six compteurs en haut : <b>Lignes source</b>, le nombre de lignes du fichier ; <b>Points historiques</b>, les lignes qui portent une valeur cible ; <b>Lignes futures</b>, les lignes datées sans valeur cible ; <b>Séries</b> ; <b>Périodes manquantes</b>, les pas de temps absents ; <b>Valeurs atypiques</b>.</p>
-    <p>Quatre rappels de correspondance suivent — <b>Cible</b>, <b>Date</b>, <b>Fréquence</b>, <b>Variables externes</b>, cette dernière affichant « Aucune » quand aucune covariable n'est retenue.</p>
+    <h2 id="lire-le-profil">Reading the data profile on screen</h2>
+    <p>The profile appears in the <b>Data</b> section of the Forecast workspace window. Six counters at the top: <b>Source rows</b>, the number of rows in the file; <b>Historical points</b>, the rows carrying a target value; <b>Future rows</b>, the dated rows with no target value; <b>Series</b>; <b>Missing periods</b>, the absent time steps; <b>Outliers</b>.</p>
+    <p>Four mapping reminders follow — <b>Target</b>, <b>Date</b>, <b>Frequency</b>, <b>External variables</b>, the last showing “None” when no covariate is kept.</p>
 
     <table>
-      <caption class="crumb">Les trois états de l'encadré de synthèse</caption>
-      <tr><th>Libellé affiché</th><th>Quand</th></tr>
-      <tr><td><b>Données validées</b></td><td>Aucune erreur bloquante</td></tr>
-      <tr><td><b>Attention requise</b></td><td>Au moins une erreur bloquante enregistrée</td></tr>
-      <tr><td><b>Contrôle indisponible pour cette ancienne analyse</b></td><td>L'analyse est antérieure au profil de données</td></tr>
+      <caption class="crumb">The three states of the summary box</caption>
+      <tr><th>Label shown</th><th>When</th></tr>
+      <tr><td><b>Data validated</b></td><td>No blocking error</td></tr>
+      <tr><td><b>Attention required</b></td><td>At least one blocking error recorded</td></tr>
+      <tr><td><b>Quality check unavailable for this legacy analysis</b></td><td>The analysis predates the data profile</td></tr>
     </table>
 
-    <p>Les anomalies sont listées sous cet encadré, une ligne chacune, sous la forme « Erreur bloquante · 3 » ou « Avertissement · 12 ». <b>Cette liste donne le compte, pas la nature de chaque anomalie</b> : pour savoir ce qui a été détecté, il faut relire les contrôles décrits plus haut au regard de ton fichier.</p>
-    <p>Le tableau des données sous ces blocs est limité à <b>200 lignes et 32 colonnes</b>, avec la mention « L'aperçu est limité aux 200 premières lignes. » Dans la vue principale du panneau, les alertes de qualité apparaissent aussi comme une couche du graphique, filtrable sous le nom <b>« Alertes qualité »</b>, positionnée à la date de fin de l'historique.</p>
+    <p>Anomalies are listed under that box, one line each, in the form “Blocking error · 3” or “Warning · 12”. <b>That list gives the count, not the nature of each anomaly</b>: to know what was detected, you have to reread the checks described above against your file.</p>
+    <p>The data table under these blocks is limited to <b>200 rows and 32 columns</b>, with the note “The preview is limited to the first 200 rows.” In the panel's main view, quality alerts also appear as a chart layer, filterable under the name <b>“Data quality alerts”</b>, positioned at the history's end date.</p>
 
-    <h2 id="duree-de-vie-du-profil">La durée de vie d'un profil</h2>
-    <p>Un profil validé est enregistré et <b>réutilisable</b> : il évite de renvoyer les données à chaque prévision. C'est ce que fait l'agent, qui reçoit un identifiant de profil et le repasse à l'outil de calcul.</p>
+    <h2 id="duree-de-vie-du-profil">The lifetime of a profile</h2>
+    <p>A validated profile is saved and <b>reusable</b>: it avoids resending the data at every forecast. That's what the agent does, receiving a profile identifier and passing it back to the calculation tool.</p>
 
     <table>
-      <caption class="crumb">Les règles de conservation d'un profil de données</caption>
-      <tr><th>Règle</th><th>Valeur</th></tr>
-      <tr><td>Un profil invalide n'est jamais enregistré</td><td>—</td></tr>
-      <tr><td>Profils gardés par espace de travail</td><td><b>20</b>, les plus anciens supprimés au-delà</td></tr>
-      <tr><td>Rangement</td><td>Un dossier par projet ou par conversation</td></tr>
-      <tr><td>Écriture</td><td>Fichier temporaire puis renommage</td></tr>
+      <caption class="crumb">The retention rules for a data profile</caption>
+      <tr><th>Rule</th><th>Value</th></tr>
+      <tr><td>An invalid profile is never saved</td><td>—</td></tr>
+      <tr><td>Profiles kept per workspace</td><td><b>20</b>, the oldest deleted beyond that</td></tr>
+      <tr><td>Filing</td><td>One folder per project or per conversation</td></tr>
+      <tr><td>Writing</td><td>Temporary file then rename</td></tr>
     </table>
 
-    <p>Chaque profil porte une <b>empreinte de ses données</b>. C'est elle qui permet de refuser une sélection de modèle établie sur d'autres données — voir <a href="forecast-selection-du-modele.html">Sélection du modèle</a>.</p>
+    <p>Every profile carries a <b>fingerprint of its data</b>. That is what makes it possible to refuse a model selection established on different data — see <a href="forecast-selection-du-modele.html">Model selection</a>.</p>
 
-    <h2 id="pieges">Pièges fréquents</h2>
+    <h2 id="pieges">Common pitfalls</h2>
 
     <table>
-      <caption class="crumb">Symptôme, cause, résolution</caption>
-      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
-      <tr><td>« Dates invalides »</td><td>Format jour/mois/année, mois en toutes lettres, ou numéro de série de tableur</td><td>Reformater la colonne en <code>AAAA-MM-JJ</code></td></tr>
-      <tr><td>« Colonne cible non numérique »</td><td>Séparateur de milliers, symbole monétaire, ou texte dans la colonne</td><td>Nettoyer la colonne ; la virgule décimale seule est acceptée</td></tr>
-      <tr><td>« Fréquence incohérente »</td><td>La fréquence choisie ne correspond pas à l'espacement réel des lignes</td><td>Vérifier le pas réel du fichier et changer le réglage <b>Fréquence</b></td></tr>
-      <tr><td>« Dates dupliquées »</td><td>Deux lignes à la même date, souvent après une fusion de fichiers</td><td>Agréger ou supprimer le doublon</td></tr>
-      <tr><td>« Dates non chronologiques »</td><td>Fichier trié à l'envers ou par une autre colonne</td><td>Trier par date croissante</td></tr>
-      <tr><td>« Lignes futures invalides »</td><td>Un trou dans l'historique lu comme un début de futur, ou un nombre de lignes futures différent de l'horizon</td><td>Supprimer les lignes cibles vides du milieu, ou ajuster l'horizon</td></tr>
-      <tr><td>« Dates futures invalides »</td><td>La première ligne future ne suit pas la dernière ligne d'historique d'un seul pas</td><td>Combler l'écart ou supprimer les lignes futures</td></tr>
-      <tr><td>« Historique insuffisant »</td><td>Moins de deux points dans une série</td><td>Fournir plus de lignes, ou retirer la colonne série qui découpe trop finement</td></tr>
-      <tr><td>« Trop de séries »</td><td>Plus de <b>256</b> valeurs distinctes dans la colonne série</td><td>Filtrer le fichier, ou choisir une autre colonne série</td></tr>
-      <tr><td>« Volume de prédictions trop important »</td><td>Séries × horizon au-delà de <b>100 000</b></td><td>Réduire l'horizon ou le nombre de séries</td></tr>
-      <tr><td>« Données Forecast invalides »</td><td>Message de repli : ligne mal formée, trop de colonnes, cellule trop longue, identifiant de série illisible</td><td>Vérifier la structure du fichier ; le message ne précise pas lequel des quatre</td></tr>
-      <tr><td>« Import impossible. Vérifie le format du fichier. »</td><td>Extension non acceptée, deux en-têtes identiques, ou dépassement d'une borne de lecture</td><td>Renommer la colonne en double, réduire le fichier</td></tr>
-      <tr><td>« Périodes manquantes : 43 » sans que rien ne soit cassé</td><td>Alerte, pas erreur : des pas de temps sont absents de l'historique</td><td>Combler les trous améliore la prévision, mais le calcul a bien eu lieu</td></tr>
-      <tr><td>Beaucoup de périodes manquantes sur une série quotidienne</td><td>La fréquence <b>Jour</b> est appliquée à des données de jours ouvrés</td><td>Choisir <b>Jour ouvré</b></td></tr>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>“Invalid dates”</td><td>Day/month/year format, months spelled out, or a spreadsheet serial number</td><td>Reformat the column as <code>YYYY-MM-DD</code></td></tr>
+      <tr><td>“Target column is not numeric”</td><td>Thousands separator, currency symbol, or text in the column</td><td>Clean the column; only the decimal comma is accepted</td></tr>
+      <tr><td>“Inconsistent frequency”</td><td>The chosen frequency doesn't match the real spacing of the rows</td><td>Check the file's real step and change the <b>Frequency</b> setting</td></tr>
+      <tr><td>“Duplicate dates”</td><td>Two rows at the same date, often after merging files</td><td>Aggregate or delete the duplicate</td></tr>
+      <tr><td>“Non-chronological dates”</td><td>File sorted backwards or by another column</td><td>Sort by ascending date</td></tr>
+      <tr><td>“Invalid future rows”</td><td>A gap in the history read as the start of the future, or a number of future rows different from the horizon</td><td>Delete the empty target rows in the middle, or adjust the horizon</td></tr>
+      <tr><td>“Invalid future dates”</td><td>The first future row doesn't follow the last history row by exactly one step</td><td>Fill the gap or delete the future rows</td></tr>
+      <tr><td>“Insufficient history”</td><td>Fewer than two points in a series</td><td>Supply more rows, or remove the series column that splits too finely</td></tr>
+      <tr><td>“Too many series”</td><td>More than <b>256</b> distinct values in the series column</td><td>Filter the file, or choose another series column</td></tr>
+      <tr><td>“Prediction volume too large”</td><td>Series × horizon beyond <b>100,000</b></td><td>Reduce the horizon or the number of series</td></tr>
+      <tr><td>“Invalid Forecast data”</td><td>Fallback message: malformed row, too many columns, cell too long, unreadable series identifier</td><td>Check the file's structure; the message doesn't say which of the four</td></tr>
+      <tr><td>“Import failed. Check the file format.”</td><td>Unaccepted extension, two identical headers, or a reading bound exceeded</td><td>Rename the duplicate column, shrink the file</td></tr>
+      <tr><td>“Missing periods: 43” with nothing broken</td><td>An alert, not an error: some time steps are absent from the history</td><td>Filling the gaps improves the forecast, but the calculation did take place</td></tr>
+      <tr><td>Many missing periods on a daily series</td><td>The <b>Day</b> frequency is applied to business-day data</td><td>Choose <b>Business day</b></td></tr>
     </table>
 
-    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <h2 id="pour-aller-plus-loin">Going further</h2>
     <ul>
-      <li><a href="forecast-vue-densemble.html">Vue d'ensemble</a> — le parcours complet et l'écran de configuration.</li>
-      <li><a href="forecast-selection-du-modele.html">Sélection du modèle</a> — l'empreinte des données et les tickets de sélection.</li>
-      <li><a href="forecast-analyse-avancee.html">Analyse avancée</a> — les anomalies détectées <i>après</i> le calcul, sur les écarts du modèle, à ne pas confondre avec les valeurs atypiques de cette page.</li>
-      <li><a href="forecast-evaluation-et-comparaison.html">Évaluation et comparaison</a> — pourquoi un historique court limite l'évaluation.</li>
+      <li><a href="forecast-vue-densemble.html">Overview</a> — the full journey and the configuration screen.</li>
+      <li><a href="forecast-selection-du-modele.html">Model selection</a> — the data fingerprint and the selection tickets.</li>
+      <li><a href="forecast-analyse-avancee.html">Advanced analysis</a> — the anomalies detected <i>after</i> the calculation, on the model's residuals, not to be confused with the outliers on this page.</li>
+      <li><a href="forecast-evaluation-et-comparaison.html">Evaluation and comparison</a> — why a short history limits evaluation.</li>
     </ul>
   </main>
 

@@ -28,14 +28,18 @@ src-tauri/resources/extension-host/ui-build.mjs
 !/docs/beaver-site/
 /docs/beaver-site/*
 !/docs/beaver-site/direction-artistique.md
+# Guide de reprise du site et liste du travail restant (créés le 11 sept. 2026) : publics, comme le reste du site.
+!/docs/beaver-site/MAINTENANCE.md
+!/docs/beaver-site/A-FAIRE.md
 !/docs/beaver-site/mockup/
 /docs/beaver-site/mockup/*
 !/docs/beaver-site/mockup/*.html
 !/docs/beaver-site/mockup/css/
 !/docs/beaver-site/mockup/js/
 !/docs/beaver-site/mockup/assets/
-# Version anglaise des pages (ajoutée le 9 sept. 2026) : publique, comme le reste de la maquette.
-!/docs/beaver-site/mockup/en/
+# Copie française des pages sous fr/ (restructuration du 10 sept. 2026 : la racine
+# est passée en anglais, l'ancien dossier en/ a disparu) : publique, comme le reste.
+!/docs/beaver-site/mockup/fr/
 # Pages de la documentation (ajoutées le 10 sept. 2026) : publiques, comme le
 # reste de la maquette — c'est le contenu servi par le site.
 !/docs/beaver-site/mockup/docs/

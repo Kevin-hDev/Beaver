@@ -595,3 +595,69 @@ Le détail complet et les sources fichier:ligne sont dans la section « Anomalie
   Beaver dont l'effet est garanti par le noyau et non par le code de
   l'application, et **c'est un argument fort qui n'apparaît nulle part dans la
   documentation existante**.
+
+## Relevé en traduisant le site en anglais (10 septembre 2026)
+
+La passe de traduction (7 agents, 98 pages) a mis au jour des textes que l'utilisateur anglophone voit **en français** dans l'application, parce qu'ils sont codés en dur hors du système i18n. La documentation anglaise cite leur traduction : elle annonce donc des messages que l'écran n'affiche pas, et l'écart se refermera seulement quand ces chaînes passeront par i18n.
+
+| Fichier:ligne | Chaîne française codée en dur | Traduction citée par la doc EN |
+|---|---|---|
+| `install.sh:170` | Système non pris en charge. | "Unsupported system" |
+| `install.sh:135,145` | Une application est déjà installée. Utilise sa mise à jour intégrée. | "An application is already installed. Use its built-in update." |
+| `install.sh:125,127,128,130,133,138,153,154,173` | Installation impossible. | "Installation failed" |
+| `install.sh:175` | Impossible de récupérer la version. | "Could not retrieve the version" |
+| `install.sh:152` | Paquet d'installation invalide. | "Invalid installation package" |
+| `install.ps1:185` | ERREUR Installation impossible. | (non citée) |
+| `services/agent_local/tool_skill_loader.rs:22` | Identifiant de skill invalide | "Invalid skill identifier" |
+| `services/agent_local/tool_skill_loader.rs:23` | Skill introuvable | "Skill not found" |
+| `services/agent_local/tool_skill_loader.rs:24` | Skill indisponible | (non citée) |
+| `services/agent_local/subagent_explorer_bash.rs:52,66,76` | Commande d'exploration refusée. | "Exploration command refused." |
+| `services/agent_local/subagent_explorer_bash_options.rs:1` | Option d'exploration refusée. | "Exploration option refused." |
+
+**Le constat qui compte plus que la liste — mécanisme exact, lu dans le code de rendu** (`src/lib/tool-error-message.ts` + `components/agent-local/tool-detail-row.tsx:149-163`) : une erreur d'outil s'affiche en deux parties. Le **titre** passe par `toolErrorMessage()` et ses `CATEGORY_KEYS` (dix catégories, complétude garantie par TypeScript) — toujours traduit. Le **détail** en dessous vaut la chaîne brute du backend, SAUF si le code d'erreur figure dans `ERROR_CODE_KEYS` — qui ne contient **qu'un seul code** (`web_search_runtime_unavailable`). Conséquence : **~252 littéraux français sur 69 fichiers** de `services/agent_local/` (chemin `ToolResult`) s'affichent tels quels en détail d'erreur sur une interface anglaise — titre « Not found » en anglais, « Skill introuvable » en français juste dessous. Échantillon : « requête vide », « requête trop longue », « aucun provider configuré », « limite de requêtes », « délai dépassé », « réponse invalide ».
+
+**Trois catégories à distinguer — le correctif diffère** (vérifié jusqu'à la ligne JSX qui rend le texte, `tool-detail-row.tsx:156-162`) :
+1. **Détail sous titre traduit** (erreurs avec code, ex. `tool_skill_loader.rs:22-24` — codes stables `invalid_skill_id`/`skill_not_found`/`skill_unavailable` déjà attribués par `tool_dispatcher_error.rs:28-40`) → peupler `ERROR_CODE_KEYS` + clés i18n, sans toucher une chaîne Rust.
+2. **Titre entièrement brut** — déclencheur vérifié : PAS les `Err(String)` nus (sur le chemin vivant, les deux constructeurs d'erreur attachent toujours un code), mais une asymétrie de repli : `tool-detail-row.tsx:113` lit `t.result_meta?.error` SANS repli, là où `tool-result-model.ts:25` a le repli `legacyError()`. Pour une conversation enregistrée avant l'existence de `result_meta`, le modèle reçoit un code propre et l'écran la chaîne brute (démontré sur données réelles : 42 appels, 1 erreur sans code). Correctif : une ligne dans `tool-detail-row.tsx`, calquée sur `legacyError()` qui existe juste à côté. Mécanisme précisé le 10 septembre 2026 (contre-vérifié par deux agents indépendants) : dans `types_tool_result.rs:19-23`, `is_error: bool` est toujours sérialisé mais `error: Option<ToolErrorInfo>` porte `skip_serializing_if = "Option::is_none"` — une conversation d'avant le contrat se relit donc avec `is_error: true` et `error` absent ; l'erreur sans code vient du disque, jamais de l'exécution (les trois seuls poseurs de statut d'erreur — `error()` :51-62, `cancelled()` :80-90, `with_error_info()` :114-124 — attachent tous un `ToolErrorInfo`, et les neuf constructeurs de `types_tool_result_errors.rs` délèguent à `Self::error`).
+3. **Texte destiné au modèle** (`with_error_hint`) : jamais rendu, le français n'y est pas un défaut.
+
+Leçon de méthode à retenir (trois allers-retours pour l'apprendre) : aucun critère indirect n'a tenu — ni « c'est un `Err` », ni « ça passe par `ToolResult` ». La seule vérification fiable est de remonter jusqu'à la ligne JSX qui rend le texte. Trois faux positifs écartés en contre-vérification : `directory_access.rs:10` (jamais affiché, écran réel via `directoryAccess.*`), `file_preview_office.rs:66` (jeté par les quatre `.catch` de prévisualisation, écran réel `filePreview.fileNotFound`), `with_error_hint(...)` (destiné au modèle, zéro occurrence dans `src/`). Les pages Répertoire de travail et Fichiers citaient les deux premiers comme visibles — corrigées le 10 septembre 2026. Deuxième problème, distinct : `install.sh`/`install.ps1` écrivent leurs messages français directement à l'écran, sans frontend pour les rattraper — l'internationalisation se joue dans les scripts eux-mêmes.
+
+Trouvé aussi pendant la même passe : la page française du terminal citait « Trop de terminaux ouverts », message qui n'existe pas — le vrai est `terminal.liveLimitReached` (« La limite de terminaux actifs est atteinte. » / "The active terminal limit has been reached.") ; corrigé sur les deux langues le 10 septembre 2026.
+
+### Guillemets trompeurs côté français (relevé pendant la traduction, 10 septembre 2026)
+
+Des pages présentent **entre guillemets** des messages qui n'existent pas dans l'application — des paraphrases d'auteur qui se lisent comme des citations d'écran. La traduction anglaise les a reproduites fidèlement (même registre descriptif, sans inventer de libellé), mais **la correction se fait d'abord côté français**, sinon les deux langues divergeront :
+
+- Pages Modèles/Intégrations, onze paraphrases citées comme messages : « Le moteur n'est pas installé », « Limite de requêtes atteinte », « environnement requis introuvable », « Endpoint MCP non autorisé », « Commande MCP non autorisée », « Limite de connecteurs atteinte », « Endpoint OAuth non autorisé », « Token expiré et pas de refresh », « Configuration Gateway invalide », « Le schéma d'un outil doit décrire un objet. », « Une extension Node.js possède un accès complet. »
+- `modeles-raisonnement` : l'échelle écrite Faible / Élevé / Maximum là où l'app affiche Limitée / Forte / Max (`agentLocal.reasoning*`), et un palier nommé « Automatique » qui s'appelle « Activée » (fr) / « On » (en) (`agentLocal.reasoningAuto`).
+- `modeles-personnalisation` : « Automatique » comme valeur par défaut de la longueur de contexte — à vérifier contre le libellé réel.
+- Thèmes des paramètres Ollama (Contexte / Longueur / Créativité / Répétition / Échantillonnage) : noms simplifiés par rapport aux groupes réels de l'application.
+- `reference-coffre-et-cles` (corrigé le 10 septembre 2026, deux langues + brief `11-securite/vault-et-cles-api.md`) : trois « symptômes » cités comme messages d'écran (« clé API invalide (vide ou trop longue) », « limite du coffre atteinte », « Clé valide mais quota dépassé ») ne s'affichent jamais — le dialogue remplace toute erreur par « L'opération a échoué. Réessaye. » (`api-keys-config-dialog.tsx:92-94`, déjà relevé en anomalie 1 de `13-depannage/providers-et-cles.md`). Reformulés sans guillemets ; le vrai message générique cité une fois. Les deux phrases que le traducteur avait ajoutées côté EN (« shown in French whatever the language ») affirmaient l'inverse du comportement réel et ont été retirées.
+- `reference-themes` (corrigé le 10 septembre 2026) : la page française citait les thèmes colorés sous des noms anglais, dont un inexistant (« Cobalt Frost », qui n'est que le nom du fichier CSS). L'app affiche « Émeraude nocturne / Cobalt givré / Brume astrale / Éclipse écarlate » en français (`fr.json:823-826`) et « Emerald Night / Frosted Cobalt / Astral Mist / Crimson Eclipse » en anglais (`en.json:823-826`). Page fr + brief `03-interface/themes-et-apparence.md` corrigés ; `reglages-preferences` disait déjà juste dans les deux langues.
+
+Règle à ajouter aux briefs : **des guillemets = une citation d'écran vérifiée dans fr.json ; une paraphrase s'écrit sans guillemets.**
+
+### Chaînes en dur supplémentaires signalées par le lot Forecast/Réglages (10 septembre 2026)
+
+Visibilité **non tracée jusqu'à la ligne de rendu** (leçon de méthode ci-dessus : à confirmer avant tout correctif) — signalées par la traduction parce que les pages les citent :
+
+| Chaîne française en dur | Source |
+|---|---|
+| « Ce groupe d'outils est verrouillé. » | `services/agent_local/tool_group_catalog.rs:107` |
+| « Ce tool est verrouillé. » | `services/agent_local/tool_catalog.rs:147` |
+| « Dossier de sortie invalide. » | `commands/config.rs:71` |
+| Toute la table d'erreurs d'audit Forecast | `services/forecast/data_quality/types.rs:55-108` |
+| Les deux refus de ressources | `services/forecast/hardware_profile.rs:108-110` |
+
+Noms littéraux voisins mais **assumés** (le lecteur doit les retrouver à l'identique) : thème de code « Défaut » (`use-settings.ts:35`, seul nom traduit parmi des noms propres), feuilles Excel « Historique »/« Prévisions » (`export/xlsx.rs:13,20` — la huitième s'appelle déjà « Input data » : incohérence de langue dans un même classeur), légende du graphique exporté « Historique / Prevision / Confiance » (`export/chart.rs:88-90`, « Prevision » **sans accent**). Ces trois-là mériteraient une passe produit (anglais partout dans les exports, ou français cohérent).
+
+Incohérence corrigée le 10 septembre 2026 : le verdict `constrained` s'affichait « Juste » sur la page Modèles locaux et « Contraint » sur Sélection du modèle — aligné sur « Contraint » (fr) / « Constrained » (en) partout.
+
+### Vocabulaire quantification — relevé le 10 septembre 2026 (retour de Kevin sur la table VRAM du site)
+
+La doc du site disait « compression » pour parler de la quantification des modèles (Q4/Q5/Q8/f16), alors que l'app dit déjà « quantification » (`vramTableDesc`, fr.json:1084). Corrigé le 10 septembre 2026 sur les 8 pages concernées (les deux langues) et dans 4 briefs ; unités « Go »/« GB » ajoutées aux cellules des tables VRAM. Les sens « compression du contexte » et « compression d'archives Office » n'ont pas bougé. Reste deux anomalies **côté app**, dans fr.json :
+
+- `models.quantization` (fr.json:679) : le libellé français est le mot anglais « Quantization » — l'écran de détail d'un modèle l'affiche tel quel. Attendu : « Quantification ».
+- `vramFormula` (fr.json:1086) : la formule française affiche « 0.5 GB » (point décimal + unité anglaise). Attendu : « 0,5 Go ». La page du site cite l'écran tel qu'il est aujourd'hui ; si l'app est corrigée, mettre à jour la citation dans `modeles-materiel.html` (fr) et le brief `materiel-et-vram.md`.
+- Cas laissé ouvert : `06-modeles/ollama-runtime.md` l.164 parle de « compression du cache » (le réglage `OLLAMA_KV_CACHE_TYPE` d'Ollama, quantification du cache d'attention — un troisième objet). Phrase exacte mais vocabulaire à trancher si on veut « quantification du cache ».

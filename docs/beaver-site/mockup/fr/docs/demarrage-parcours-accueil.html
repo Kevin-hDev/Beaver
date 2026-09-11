@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Parcours d'accueil</title>
+<meta name="description" content="Les quatre à cinq étapes proposées au premier démarrage de Beaver, ce qu'on peut passer, et où retrouver chaque réglage ensuite.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Démarrage / Parcours d'accueil</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="demarrage-parcours-accueil.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/demarrage-parcours-accueil.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le parcours d'<em>accueil</em></h1>
+    <p>Au premier démarrage, Beaver te fait traverser quatre ou cinq écrans :
+    préférences, import depuis un autre assistant, connexion d'un fournisseur, et
+    installation du moteur local si nécessaire. Rien n'y est obligatoire.</p>
+
+    <div class="callout">
+      <span class="t">Rien n'est définitif</span>
+      Aucune étape du parcours d'accueil n'est obligatoire. Tout ce qui y est
+      proposé se retrouve dans les réglages.
+    </div>
+
+    <h2 id="vue-d-ensemble">Vue d'ensemble</h2>
+    <p>Le parcours compte <b>quatre ou cinq étapes</b>, présentées en
+    diapositives horizontales. La cinquième — Ollama — <b>n'apparaît que si
+    Ollama n'est pas déjà disponible</b> sur ta machine. Aucune étape n'est
+    bloquante : tu peux traverser le parcours sans rien configurer et tout faire
+    plus tard dans les réglages.</p>
+
+    <table>
+      <caption class="crumb">Les étapes, dans l'ordre</caption>
+      <tr><th>Ordre</th><th>Étape</th><th>Ce qu'on y fait</th><th>Facultative</th></tr>
+      <tr><td>1</td><td>Bienvenue</td><td>Rien, écran de présentation</td><td>—</td></tr>
+      <tr><td>2</td><td>Préférences</td><td>Thème et langue</td><td>Oui</td></tr>
+      <tr><td>3</td><td>Import</td><td>Reprendre instructions, skills et règles d'un autre assistant</td><td>Oui</td></tr>
+      <tr><td>4</td><td>Fournisseur</td><td>Saisir une clé API</td><td>Oui</td></tr>
+      <tr><td>5</td><td>Ollama</td><td>Télécharger le moteur local</td><td>Oui, et affichée seulement si nécessaire</td></tr>
+    </table>
+
+    <h2 id="bienvenue">Étape 1 — Bienvenue</h2>
+    <p>Un écran de présentation avec l'illustration du castor, un titre, une
+    description et un bouton pour commencer. Rien à saisir.</p>
+
+    <h2 id="preferences">Étape 2 — Préférences</h2>
+    <p>Deux réglages, et deux seulement : le <b>thème</b>, parmi ceux
+    disponibles, et la <b>langue</b>, parmi les sept langues de l'interface. On
+    les retrouve ensuite dans Réglages › Général.</p>
+
+    <h2 id="import">Étape 3 — Import depuis un autre assistant</h2>
+    <p>Cette étape propose de reprendre les instructions, les skills et les
+    règles depuis une autre application d'agent déjà installée. <b>Neuf</b>
+    sources sont reconnues, détaillées dans
+    <a href="demarrage-importer.html">Importer d'un autre agent</a>.</p>
+
+    <h2 id="fournisseur">Étape 4 — Connexion d'un fournisseur</h2>
+    <p>Une <b>grille de cartes</b>, une par fournisseur de modèles, avec son
+    icône, son nom et une courte description. Seuls les fournisseurs de catégorie
+    LLM sont affichés, <b>32 au maximum</b>. Ceux qui sont déjà configurés
+    portent la mention « Connecté ».</p>
+    <p>Tu sélectionnes une carte, tu saisis la clé, tu enregistres ; un lien mène
+    à la page de création de clé du fournisseur. La clé saisie est effacée du
+    champ dès que tu quittes l'étape.</p>
+
+    <div class="callout">
+      <span class="t">Sans clé API</span>
+      Tu peux traverser cette étape sans rien saisir. Beaver fonctionne avec un
+      modèle local, sans compte ni clé.
+    </div>
+
+    <h2 id="ollama">Étape 5 — Ollama, si nécessaire</h2>
+    <p>Cette étape <b>n'apparaît pas</b> si un démon Ollama est déjà disponible,
+    ou si le binaire est déjà présent dans le dossier de données. Sinon, elle
+    propose le téléchargement et l'installation d'Ollama, et peut être passée :
+    l'application reste utilisable avec des modèles distants uniquement. Le
+    détail du téléchargement est dans
+    <a href="demarrage-premier-lancement.html">Premier lancement</a>.</p>
+
+    <h2 id="revenir-en-arriere">Revenir en arrière, passer une étape</h2>
+    <p>Les étapes Import et Fournisseur proposent un retour en arrière.
+    L'enchaînement s'adapte : si l'étape Ollama n'est pas nécessaire, valider
+    l'étape Fournisseur termine directement le parcours.</p>
+
+    <div class="callout">
+      <span class="t">Le mode de permission n'est pas demandé ici</span>
+      Le parcours d'accueil ne propose pas de choisir un mode de permission :
+      l'application démarre en <b>Accès complet</b>, où l'agent exécute ses
+      outils sans demander confirmation. C'est à changer dans les réglages si tu
+      préfères valider chaque action.
+    </div>
+
+    <h2 id="refaire-plus-tard">Refaire ces réglages plus tard</h2>
+    <table>
+      <caption class="crumb">Où retrouver chaque réglage après le parcours</caption>
+      <tr><th>Réglage</th><th>Emplacement</th></tr>
+      <tr><td>Thème</td><td>Réglages › Général</td></tr>
+      <tr><td>Langue</td><td>Réglages › Général</td></tr>
+      <tr><td>Clés de fournisseurs</td><td>Réglages › Fournisseurs</td></tr>
+      <tr><td>Ollama</td><td>Réglages › Ollama</td></tr>
+    </table>
+
+    <h2 id="pieges">Si quelque chose cloche</h2>
+    <table>
+      <caption class="crumb">Symptômes pendant le parcours</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>La grille de fournisseurs reste vide</td><td>Le catalogue n'a pas pu être chargé</td><td>Passer l'étape et configurer plus tard dans les réglages</td></tr>
+      <tr><td>L'étape Ollama n'apparaît pas</td><td>Ollama est déjà disponible sur la machine</td><td>Normal : Beaver réutilise l'installation existante</td></tr>
+      <tr><td>Le parcours ne réapparaît pas au lancement suivant</td><td>Il ne s'affiche qu'une fois</td><td>Tous les réglages restent accessibles dans Réglages</td></tr>
+      <tr><td>La clé saisie semble perdue en revenant en arrière</td><td>Le champ est vidé au changement de fournisseur et en fin d'étape</td><td>Vérifier dans Réglages › Fournisseurs que la clé est bien enregistrée</td></tr>
+    </table>
+
+    <p>Pour configurer une clé après coup, voir
+    <a href="modeles-fournisseurs-api.html">Fournisseurs API</a> et
+    <a href="modeles-connexion-par-compte.html">Connexion par compte</a>. Pour le
+    thème et la langue,
+    <a href="reference-themes.html">Thèmes et apparence</a> et
+    <a href="reference-langues.html">Langues</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

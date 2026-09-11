@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Modes de permission</title>
+<meta name="description" content="Les trois modes de permission, ce qui déclenche une confirmation, la règle particulière des commandes shell et les limites de « autoriser pour la session ».">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Modes de permission</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-permissions.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/agent-permissions.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Modes de <em>permission</em></h1>
+    <p>Ce que l'agent peut faire sans te demander, ce qui déclenche une confirmation, et comment tu changes ça. C'est la page à lire en entier si tu tiens à savoir exactement où passe la frontière.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      À l'installation, Beaver est en <b>Accès complet</b> : l'agent exécute ses outils sans jamais demander. Passe en <b>Demander l'autorisation</b> si tu préfères valider chaque action sensible.
+    </div>
+
+    <h2 id="trois-modes">Les trois modes</h2>
+    <table>
+      <caption class="crumb">Les modes proposés dans une conversation</caption>
+      <tr><th>Mode</th><th>Comportement</th></tr>
+      <tr><td>Accès complet</td><td>L'agent exécute ses outils sans jamais demander</td></tr>
+      <tr><td>Demander l'autorisation</td><td>Les actions sensibles déclenchent une confirmation</td></tr>
+      <tr><td>Chatbot</td><td>Deux outils seulement : recherche web et lecture d'une page</td></tr>
+    </table>
+    <p><b>Accès complet est aussi la valeur de repli.</b> Fichier de réglages absent, illisible ou portant une valeur inconnue : le mode retenu est Accès complet.</p>
+
+    <h2 id="chatbot">Ce que le mode Chatbot fait exactement</h2>
+    <p>Le mode Chatbot n'est pas « aucun outil ». L'agent y garde <code>web_search</code> et <code>web_fetch</code> : chercher sur le web, et lire une page. Autrement dit, <b>il ne peut ni lire ni écrire sur ta machine</b>, mais il reste capable d'aller chercher une information en ligne.</p>
+    <p>La restriction tient sur deux barrières simultanées. Le catalogue envoyé au modèle est <b>réduit à ces deux outils</b> avant l'envoi, pour les fournisseurs distants comme pour les modèles locaux : le modèle ignore que les autres existent. Et si un modèle invente malgré tout un nom d'outil, l'appel est <b>refusé à l'exécution</b>.</p>
+    <div class="callout">
+      <span class="t">Chatbot n'est pas « sans outil »</span>
+      En mode Chatbot, l'agent garde la recherche web et la lecture d'une page. Il ne reçoit pas non plus tes instructions permanentes : <code>AGENTS.md</code> et les fichiers de personnalité ne sont pas injectés. Une consigne qui semble ignorée dans ce mode l'est réellement.
+    </div>
+
+    <h2 id="ce-qui-declenche">Ce qui déclenche une demande</h2>
+    <p>En mode Demander l'autorisation, <b>douze outils</b> déclenchent systématiquement une confirmation : <code>write_file</code>, <code>edit_file</code>, <code>web_fetch</code>, <code>write_spreadsheet</code>, <code>write_document</code>, <code>create_branch</code>, <code>checkout_branch</code>, <code>apply_subagent_changes</code>, <code>manage_automation</code>, <code>forecast_data_audit</code>, <code>forecast_run</code>, <code>forecast_backtest</code>.</p>
+    <p><b>Quatre outils</b> déclenchent une confirmation sous condition.</p>
+    <table>
+      <caption class="crumb">Les outils conditionnels</caption>
+      <tr><th>Outil</th><th>Condition</th></tr>
+      <tr><td><code>bash</code></td><td>La commande n'est pas reconnue comme sûre</td></tr>
+      <tr><td><code>bash_control</code></td><td>Des caractères sont envoyés au processus</td></tr>
+      <tr><td><code>transform_image</code></td><td>Au moins une opération est demandée</td></tr>
+      <tr><td><code>search_mcp_tools</code></td><td>Le mode est l'appel d'un outil — la simple recherche d'outils ne demande rien</td></tr>
+    </table>
+    <p><b>Tous les autres outils natifs passent sans confirmation</b>, y compris en mode Demander l'autorisation : lire un fichier, lister un dossier, chercher par nom ou par contenu, chercher sur le web. C'est un choix de conception : demander confirmation pour chaque lecture de fichier rendrait le mode inutilisable, et tu finirais par tout approuver sans lire.</p>
+
+    <h2 id="outils-extension">Les outils fournis par une extension</h2>
+    <p>Ils échappent aux deux listes ci-dessus. Leur besoin de confirmation dépend de <b>l'effet déclaré</b> par l'extension pour cet outil.</p>
+    <table>
+      <caption class="crumb">Confirmation selon l'effet déclaré</caption>
+      <tr><th>Effet déclaré</th><th>Confirmation</th><th>Mémorisable pour la session</th></tr>
+      <tr><td>Lecture seule</td><td>Non</td><td>Non</td></tr>
+      <tr><td>Lecture externe (réseau)</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Écriture locale, écriture externe</td><td>Oui</td><td>Oui</td></tr>
+      <tr><td>Processus, secret, effet inconnu</td><td>Oui</td><td>Non</td></tr>
+    </table>
+    <p>Seule la lecture seule passe sans rien demander ; tout le reste est confirmé.</p>
+
+    <h2 id="commandes-shell">Les commandes shell : la règle particulière</h2>
+    <p>Une commande <code>bash</code> passe <b>sans confirmation</b> si elle satisfait les <b>trois conditions à la fois</b> : elle ne touche à aucune donnée sensible, elle ne contient aucun opérateur de contrôle, et elle correspond à l'un des motifs reconnus comme sûrs.</p>
+    <p><b>Les opérateurs qui disqualifient une commande</b> — leur seule présence suffit, quinze contrôles : <code>;</code> <code>&amp;&amp;</code> <code>||</code> <code>|</code> <code>`</code> <code>$(</code> <code>&lt;(</code> <code>&gt;(</code> <code>&lt;&lt;</code> <code>&gt;</code> <code>&lt;</code> <code>&amp;</code> <code>$'</code>, le retour à la ligne et le retour chariot.</p>
+    <p>Autrement dit : <code>ls</code> passe, <code>ls | grep foo</code> ne passe pas. La raison est solide — un opérateur permet d'enchaîner n'importe quelle commande derrière une commande anodine.</p>
+    <p><b>Les motifs reconnus comme sûrs</b> couvrent une vingtaine de familles de commandes, toutes en lecture ou en vérification.</p>
+    <table>
+      <caption class="crumb">Les familles de commandes qui passent sans confirmation</caption>
+      <tr><th>Catégorie</th><th>Commandes</th></tr>
+      <tr><td>Lecture de fichiers</td><td><code>ls</code>, <code>cat</code>, <code>head</code>, <code>tail</code>, <code>wc</code>, <code>file</code>, <code>stat</code></td></tr>
+      <tr><td>Recherche</td><td><code>grep</code>, <code>find</code>, <code>tree</code></td></tr>
+      <tr><td>Système</td><td><code>pwd</code>, <code>echo</code>, <code>which</code>, <code>du</code>, <code>df</code></td></tr>
+      <tr><td>Git en lecture</td><td><code>git status</code>, <code>git log</code>, <code>git diff</code>, <code>git show</code>, <code>git remote</code>, <code>git tag</code>, <code>git branch</code> seul</td></tr>
+      <tr><td>Vérification de projet</td><td><code>cargo check</code>, <code>cargo test</code>, <code>cargo clippy</code>, <code>cargo build</code>, <code>npx tsc</code>, <code>npm run</code>, <code>npm test</code></td></tr>
+    </table>
+    <p>Toute autre commande déclenche une confirmation. Un cas mérite d'être signalé : <b><code>git branch</code> seul est sûr, <code>git branch -d</code> ne l'est pas</b>. C'est le seul motif de la liste qui refuse toute option ; les autres acceptent des arguments après le nom de la commande.</p>
+    <div class="callout">
+      <span class="t">Note</span>
+      En mode Demander l'autorisation, une commande de lecture reconnue comme sûre — <code>ls</code>, <code>cat</code>, <code>git status</code> — s'exécute sans confirmation. Dès qu'une commande contient un enchaînement, une redirection ou un chemin sensible, la confirmation est demandée.
+    </div>
+
+    <h2 id="donnees-sensibles">Les données sensibles</h2>
+    <p>Une commande qui mentionne un chemin sensible est <b>toujours</b> soumise à confirmation, même si elle correspond à un motif sûr. Un <code>cat ~/.ssh/id_rsa</code> ne passe pas.</p>
+    <p><b>Seize marqueurs sont surveillés</b> : <code>.env</code>, <code>.ssh/</code>, <code>/.ssh</code>, <code>id_rsa</code>, <code>id_ed25519</code>, <code>id_ecdsa</code>, <code>id_dsa</code>, <code>.npmrc</code>, <code>.pypirc</code>, <code>.netrc</code>, <code>.aws/credentials</code>, <code>.config/gcloud</code>, <code>.kube/config</code>, <code>credentials</code>, <code>login.keychain</code>, <code>keychain-db</code>.</p>
+    <p><b>Quatre fichiers de l'application</b> sont également protégés : <code>config.json</code>, <code>secrets.enc</code>, <code>agent-settings.json</code>, <code>configured-providers.json</code>.</p>
+    <p>Un raffinement évite les fausses alertes : le contenu des blocs de texte multiligne est retiré avant l'analyse. Écrire un <code>.gitignore</code> qui <b>mentionne</b> <code>.env</code> ne déclenche rien ; seul un vrai chemin passé en argument compte.</p>
+
+    <h2 id="reponses">Les trois réponses possibles</h2>
+    <table>
+      <caption class="crumb">Répondre à une demande de confirmation</caption>
+      <tr><th>Réponse</th><th>Effet</th></tr>
+      <tr><td>Autoriser</td><td>L'action s'exécute, une fois</td></tr>
+      <tr><td>Autoriser pour la session</td><td>L'action s'exécute, et l'outil ne redemande plus — sous conditions</td></tr>
+      <tr><td>Refuser</td><td>L'action n'est pas exécutée</td></tr>
+    </table>
+
+    <h2 id="autoriser-session">« Autoriser pour la session » et ses exceptions</h2>
+    <p><b>Trois outils ne sont jamais mémorisés</b>, quoi que tu répondes : <code>bash</code>, <code>bash_control</code> et <code>search_mcp_tools</code>. Chaque appel redemande. La raison est bonne : ces trois outils peuvent faire n'importe quoi selon leurs arguments, et autoriser <code>bash</code> une fois pour la session reviendrait à passer en Accès complet sans le savoir.</p>
+    <p>Pour les autres outils, l'autorisation est mémorisée avec des bornes.</p>
+    <table>
+      <caption class="crumb">Bornes de la mémorisation</caption>
+      <tr><th>Borne</th><th>Valeur</th></tr>
+      <tr><td>Durée de validité</td><td><b>1 heure</b></td></tr>
+      <tr><td>Sessions mémorisées</td><td><b>64</b> au maximum</td></tr>
+      <tr><td>Outils mémorisés par session</td><td><b>16</b> au maximum</td></tr>
+    </table>
+    <p>Les autorisations expirées sont purgées automatiquement.</p>
+    <div class="callout">
+      <span class="t">Attention</span>
+      L'option « autoriser pour la session » ne s'applique ni aux commandes shell, ni aux appels d'outils externes. Ces actions redemandent à chaque fois, parce qu'une même commande peut faire n'importe quoi selon ses arguments.
+    </div>
+
+    <h2 id="refus-par-defaut">Ce qui se passe en cas de doute</h2>
+    <p>Le principe est <b>le refus par défaut</b>. Trois situations :</p>
+    <ul>
+      <li>la conversation est annulée pendant qu'une demande est en attente : refus ;</li>
+      <li>plus de <b>64 demandes</b> attendent en même temps : refus automatique ;</li>
+      <li>une réponse arrive pour une demande inconnue ou périmée : elle est ignorée et journalisée.</li>
+    </ul>
+    <p>Chaque décision est écrite dans <code>logs/permission-diagnostics.jsonl</code>, avec rotation à <b>2 Mo</b>.</p>
+
+    <h2 id="sous-agents">Les sous-agents ne demandent pas</h2>
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Les sessions déléguées à des sous-agents s'exécutent sans confirmation, même si ta conversation est en Demander l'autorisation. Le contrôle se fait en amont, au moment de décider quoi déléguer, et en aval, en inspectant leurs changements avant de les appliquer. Voir <a href="agent-sous-agents.html">Sous-agents</a>.
+    </div>
+
+    <h2 id="changer-de-mode">Changer de mode</h2>
+    <ul>
+      <li>Le mode se change <b>depuis la conversation</b>, à tout moment, via un sélecteur dédié.</li>
+      <li>Les touches <b>1</b>, <b>2</b> et <b>3</b> sélectionnent directement un mode quand le sélecteur est ouvert.</li>
+      <li>Un mode par défaut se définit dans les réglages.</li>
+      <li>Le mode est <b>propre à chaque conversation</b>.</li>
+    </ul>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Une commande shell s'exécute sans confirmation</td><td>Elle correspond à un motif sûr, sans opérateur ni chemin sensible</td><td>Comportement voulu ; passer en Chatbot pour tout bloquer</td></tr>
+      <tr><td><code>ls</code> passe mais <code>ls | grep x</code> demande confirmation</td><td>Le caractère <code>|</code> disqualifie la commande</td><td>Normal</td></tr>
+      <tr><td>« Autoriser pour la session » sans effet sur <code>bash</code></td><td>Cet outil n'est jamais mémorisé</td><td>Volontaire</td></tr>
+      <tr><td>L'autorisation redemande après un moment</td><td>Validité d'une heure</td><td>Normal</td></tr>
+      <tr><td>Une action est refusée sans que tu aies répondu</td><td>Conversation annulée, ou trop de demandes en attente</td><td>Relancer l'action</td></tr>
+      <tr><td>L'agent ne lit aucun fichier et ne lance aucune commande</td><td>Mode Chatbot</td><td>Changer de mode</td></tr>
+      <tr><td>En mode Chatbot, les consignes de <code>AGENTS.md</code> semblent ignorées</td><td>Elles le sont : rien n'est injecté dans ce mode</td><td>Changer de mode</td></tr>
+      <tr><td>Un outil d'extension demande confirmation alors qu'il ne figure dans aucune liste</td><td>Sa confirmation dépend de l'effet déclaré par l'extension</td><td>Normal ; seul l'effet « lecture seule » passe</td></tr>
+      <tr><td>Un sous-agent modifie des fichiers sans rien demander</td><td>Les sous-agents contournent la garde</td><td>Inspecter ses changements avant de les appliquer</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-sous-agents.html">Sous-agents</a> — pourquoi ils ne demandent pas, et où se déplace le contrôle.</li>
+      <li><a href="outils-terminal-et-shell.html">Terminal et shell</a> — l'outil <code>bash</code> en détail.</li>
+      <li><a href="agent-repertoire-de-travail.html">Répertoire de travail</a> — la portée d'accès disque, qui se cumule avec ces règles.</li>
+      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — la vue d'ensemble.</li>
+      <li><a href="demarrage-premier-lancement.html">Premier lancement</a> — le mode par défaut.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Se connecter avec un compte</title>
+<meta name="description" content="Utiliser un abonnement existant OpenAI, xAI ou Kimi dans Beaver, sans clé API : le parcours de connexion, les jetons et leur renouvellement.">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Connexion par compte</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-connexion-par-compte.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/modeles-connexion-par-compte.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Ton <em>abonnement</em>, sans clé</h1>
+    <p>Tu as déjà un abonnement chez un fournisseur et tu ne veux pas ouvrir de compte développeur ni gérer une facturation séparée. Trois fournisseurs acceptent une connexion par compte : tu t'authentifies chez eux, Beaver reçoit un jeton, et c'est tout.</p>
+
+    <h2 id="deux-facons-de-se-connecter">Deux façons de se connecter</h2>
+
+    <table>
+      <caption class="crumb">Clé API et connexion par compte, ce qui les distingue</caption>
+      <tr><th></th><th>Clé API</th><th>Compte</th></tr>
+      <tr><td>Ce qu'il faut</td><td>Une clé générée sur le site du fournisseur</td><td>Tes identifiants habituels</td></tr>
+      <tr><td>Facturation</td><td>À l'usage, sur le compte développeur</td><td>Sur l'abonnement existant</td></tr>
+      <tr><td>Mise en place</td><td>Copier-coller une clé</td><td>Se connecter dans le navigateur</td></tr>
+      <tr><td>Expire</td><td>Non</td><td><b>Oui — renouvelé automatiquement</b></td></tr>
+    </table>
+
+    <p>La connexion par clé est décrite dans <a href="modeles-fournisseurs-api.html">Fournisseurs API</a>.</p>
+
+    <h2 id="les-trois-fournisseurs">Les trois fournisseurs concernés</h2>
+
+    <table>
+      <caption class="crumb">Les fournisseurs qui acceptent une connexion par compte</caption>
+      <tr><th>Fournisseur</th><th>État</th></tr>
+      <tr><td><b>OpenAI</b></td><td>Disponible</td></tr>
+      <tr><td><b>xAI</b> (Grok)</td><td>Disponible</td></tr>
+      <tr><td><b>Moonshot</b> (Kimi)</td><td><b>Expérimental</b></td></tr>
+    </table>
+
+    <p>Ce que la connexion par compte donne réellement comme accès ne dépend pas de Beaver mais du fournisseur : selon l'abonnement, les modèles disponibles et les limites d'usage diffèrent. Une connexion par compte n'équivaut pas forcément à une clé API.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      La connexion Kimi est expérimentale. Elle peut être instable ou changer. Une clé API reste l'option fiable pour ce fournisseur.
+    </div>
+
+    <h2 id="se-connecter-a-openai">Se connecter à OpenAI</h2>
+    <ul>
+      <li>Beaver ouvre ton navigateur sur la page de connexion d'OpenAI.</li>
+      <li>Tu t'authentifies chez OpenAI — <b>jamais dans Beaver</b>.</li>
+      <li>OpenAI renvoie vers Beaver, qui reçoit la réponse sur un petit serveur local, actif uniquement pendant la connexion.</li>
+      <li>Beaver échange cette réponse contre des jetons d'accès.</li>
+    </ul>
+    <p>Deux protections méritent d'être connues. <b>Beaver ne voit jamais ton mot de passe</b> : l'authentification se fait entièrement sur le site du fournisseur. Et la demande est <b>liée à la session</b> par un secret à usage unique généré au départ — un tiers qui intercepterait la réponse ne pourrait rien en faire sans ce secret.</p>
+    <p>Une fois connecté, Beaver affiche <b>l'adresse du compte</b>, extraite du jeton reçu. Elle sert uniquement à savoir quel compte est relié.</p>
+
+    <h2 id="se-connecter-a-xai-ou-kimi">Se connecter à xAI ou Kimi</h2>
+    <p>Ces deux fournisseurs utilisent un mécanisme différent, pensé pour les appareils sans navigateur intégré :</p>
+    <ul>
+      <li>Beaver affiche <b>un code court</b> et une adresse web.</li>
+      <li>Tu ouvres cette adresse, tu te connectes, et tu saisis le code.</li>
+      <li>Pendant ce temps, Beaver <b>interroge le fournisseur à intervalle régulier</b> jusqu'à ce que l'autorisation soit accordée.</li>
+    </ul>
+    <p>L'avancement est affiché en direct dans Beaver : démarrage, attente, succès, annulation, échec. <b>La connexion est abandonnée au bout de 15 minutes.</b> Tu peux l'annuler à tout moment ; l'annulation est immédiate et propre.</p>
+
+    <h2 id="ou-vont-les-jetons">Où vont les jetons</h2>
+    <p><b>Dans le même coffre chiffré que les clés API</b>, avec les mêmes protections : chiffrement sur le disque, clé maîtresse dans le gestionnaire de mots de passe du système, aucune commande de lecture exposée à l'interface, effacement de la mémoire après usage. Le détail est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+    <p>Chaque fournisseur a son <b>entrée distincte</b> dans le coffre : te déconnecter de l'un ne touche pas à l'autre.</p>
+    <p>Les jetons sont validés avant enregistrement — longueur bornée à <b>4 096 caractères</b>, date d'expiration cohérente. Un jeton aberrant est refusé plutôt que stocké.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Beaver ne voit jamais ton mot de passe. L'authentification a lieu entièrement sur le site du fournisseur ; Beaver ne reçoit qu'un jeton d'accès, révocable.
+    </div>
+
+    <h2 id="renouvellement">Le renouvellement automatique</h2>
+    <p>Un jeton d'accès a une durée de vie limitée. Beaver le renouvelle tout seul, <b>une minute avant son expiration réelle</b> — cette marge évite qu'une requête parte avec un jeton qui expire pendant son trajet.</p>
+    <p>Tu n'as rien à faire. Une connexion établie reste valable tant que tu ne te déconnectes pas et que le fournisseur ne révoque pas l'accès.</p>
+    <p>Un mécanisme de génération protège contre un cas subtil : si tu te reconnectes pendant qu'un renouvellement est en cours, <b>le renouvellement périmé n'écrase pas la nouvelle connexion</b>. Sans cette protection, une reconnexion pourrait être annulée quelques secondes plus tard par une opération lancée avant elle.</p>
+
+    <h2 id="se-deconnecter">Se déconnecter</h2>
+    <p>La déconnexion annule toute connexion en cours et efface les jetons du coffre. Le fournisseur passe à l'état non connecté et ses modèles quittent le sélecteur.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Te déconnecter de Beaver ne révoque pas l'accès chez le fournisseur. Pour couper l'accès entièrement, passe aussi par la page de sécurité de ton compte chez lui.
+    </div>
+
+    <h2 id="ce-qui-peut-echouer">Ce qui peut échouer</h2>
+
+    <table>
+      <caption class="crumb">Les issues d'une tentative de connexion</caption>
+      <tr><th>Échec</th><th>Ce que ça veut dire</th></tr>
+      <tr><td>Annulé</td><td>Tu as interrompu, ou fermé la fenêtre</td></tr>
+      <tr><td>Refusé</td><td>L'autorisation a été refusée sur la page du fournisseur</td></tr>
+      <tr><td>Expiré</td><td>Plus de 15 minutes se sont écoulées</td></tr>
+      <tr><td>Non autorisé</td><td>Le compte n'a pas accès à ce service</td></tr>
+      <tr><td>Échec</td><td>Réseau, ou panne côté fournisseur</td></tr>
+    </table>
+
+    <p>Les messages affichés restent volontairement <b>génériques</b> — « Connexion impossible », « Connexion annulée ». Le détail technique va dans les traces, pas à l'écran.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui coince le plus souvent pendant une connexion par compte</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Rien ne se passe après la connexion dans le navigateur</td><td>La page de retour n'a pas atteint Beaver</td><td>Vérifier qu'un pare-feu ne bloque pas les connexions locales, réessayer</td></tr>
+      <tr><td>« Connexion expirée »</td><td>Plus de 15 minutes entre le début et la validation</td><td>Recommencer</td></tr>
+      <tr><td>Le code n'est pas accepté</td><td>Code mal recopié, ou déjà expiré</td><td>Relancer la connexion pour obtenir un nouveau code</td></tr>
+      <tr><td>Tu étais connecté et tu ne l'es plus</td><td>Accès révoqué chez le fournisseur, ou changement de mot de passe</td><td>Se reconnecter</td></tr>
+      <tr><td>« Connexion impossible » sans plus de détail</td><td>Message volontairement générique</td><td>Consulter les traces de l'application</td></tr>
+      <tr><td>Les modèles OpenAI n'apparaissent pas</td><td>Connexion établie mais compte sans accès à ces modèles</td><td>Vérifier l'abonnement chez le fournisseur</td></tr>
+    </table>
+
+    <p>Le même mécanisme d'autorisation sert aux connecteurs externes : voir <a href="integrations-authentification-mcp.html">Authentification des connecteurs</a>. Et une fois connecté, les modèles disponibles se parcourent depuis <a href="modeles-catalogue-et-favoris.html">Catalogue et favoris</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>
