@@ -74,10 +74,6 @@ pub(crate) use text_validation::{
 pub use types::*;
 pub(crate) use validation::validate_schedule;
 
-#[expect(
-    dead_code,
-    reason = "cli_support consumes this stable relay after the CLI branch rebase"
-)]
 pub(crate) const fn history_max_lines() -> usize {
     history_store::MAX_LINES
 }

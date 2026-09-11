@@ -8,8 +8,7 @@ pub use crate::services::vault::vault_path;
 
 pub const APP_LOG_MAX_BYTES: u64 = crate::services::app_log::MAX_FILE_BYTES as u64;
 pub const WAKEUP_LOG_MAX_LINES: usize = crate::services::automations::history_max_lines();
-pub const WAKEUP_LOG_MAX_LINE_BYTES: usize =
-    crate::services::automations::history_max_line_bytes();
+pub const WAKEUP_LOG_MAX_LINE_BYTES: usize = crate::services::automations::history_max_line_bytes();
 
 pub fn version_gt(remote: &str, local: &str) -> bool {
     crate::commands::app_update::version_gt(remote, local)
