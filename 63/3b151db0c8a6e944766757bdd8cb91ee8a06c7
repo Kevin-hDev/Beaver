@@ -1,0 +1,1 @@
+Cause: Beaver-generated subagent reports were mislabeled as provider assistant output. Validation: node ../scripts/ci/run-rust-test-filter.mjs --filter report_context_is_user_without_continuation_and_xml_escaped; node ../scripts/ci/run-rust-test-filter.mjs --filter multiple_ready_reports_share_one_batch. Both passed with one test executed.
