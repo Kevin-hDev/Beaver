@@ -1,6 +1,7 @@
+use super::reserved_automation_ids_at;
 use super::runtime_store::{
-    read_at, recover_startup_at, reserved_automation_ids_at, scan_and_advance_at,
-    AutomationOccurrence, AutomationRuntime, OccurrenceState,
+    read_at, recover_startup_at, scan_and_advance_at, AutomationOccurrence, AutomationRuntime,
+    OccurrenceState,
 };
 use chrono::{TimeZone, Utc};
 use uuid::Uuid;
@@ -53,6 +54,7 @@ async fn scan_persists_occurrence_and_checkpoint_together() {
             schema_version: 1,
             last_checked_at: start,
             occurrences: Vec::new(),
+            retired_automation_ids: Vec::new(),
         },
     )
     .await
@@ -91,6 +93,7 @@ async fn recovery_terminalizes_running_and_pending_and_is_idempotent() {
             schema_version: 1,
             last_checked_at: now,
             occurrences: vec![pending, running],
+            retired_automation_ids: Vec::new(),
         },
     )
     .await
@@ -122,6 +125,7 @@ async fn runtime_rejects_more_than_128_occurrences() {
             schema_version: 1,
             last_checked_at: now,
             occurrences,
+            retired_automation_ids: Vec::new(),
         }
     )
     .await
@@ -140,6 +144,7 @@ async fn runtime_rejects_two_pending_occurrences_for_one_automation() {
             AutomationOccurrence::pending(automation_id, now),
             AutomationOccurrence::pending(automation_id, now),
         ],
+        retired_automation_ids: Vec::new(),
     };
     assert!(super::runtime_store::write_at(root.path(), &runtime)
         .await
@@ -157,6 +162,7 @@ async fn runtime_wire_shape_depends_on_the_occurrence_state() {
             schema_version: 1,
             last_checked_at: now,
             occurrences: vec![pending],
+            retired_automation_ids: Vec::new(),
         },
     )
     .await
@@ -202,6 +208,7 @@ async fn retry_before_or_after_scan_does_not_lose_or_duplicate_an_occurrence() {
             schema_version: 1,
             last_checked_at: start,
             occurrences: Vec::new(),
+            retired_automation_ids: Vec::new(),
         },
     )
     .await
@@ -240,6 +247,7 @@ async fn overdue_ticks_merge_behind_a_running_occurrence_instead_of_becoming_mis
             schema_version: 1,
             last_checked_at: start,
             occurrences: vec![running],
+            retired_automation_ids: Vec::new(),
         },
     )
     .await

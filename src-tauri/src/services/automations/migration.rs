@@ -49,10 +49,8 @@ async fn migrate_legacy_impl(
     timezone_override: Option<Tz>,
     stop_after: Option<u8>,
 ) -> Result<AutomationMigrationStatus, String> {
-    {
-        let _guard = super::store_lock().await;
-        super::migration_conflict::resume_at(root).await?;
-    }
+    let _guard = super::store_lock().await;
+    super::migration_conflict::resume_at(root).await?;
     let config_path = root.join("config.json");
     let bytes = match crate::services::private_store::read_bounded_regular_async(
         config_path.clone(),
@@ -67,15 +65,12 @@ async fn migrate_legacy_impl(
     let mut config: Value = serde_json::from_slice(&bytes).map_err(|_| migration_error())?;
     let entries = legacy_entries(&config)?;
     if entries.is_empty() {
-        let _guard = super::store_lock().await;
         finish_interrupted_publication(root).await?;
         return Ok(cleanup(root));
     }
     let Some(timezone) = timezone_override else {
         return Ok(AutomationMigrationStatus::NeedsTimezone);
     };
-
-    let _guard = super::store_lock().await;
     reconcile(
         root,
         &config_path,
@@ -104,7 +99,7 @@ async fn reconcile(
     .await?;
     stop(1, stop_after)?;
     let mut definitions = super::store::read_all_unlocked_at(root).await?;
-    let reserved = super::runtime_store::reserved_automation_ids_unlocked_at(root).await?;
+    let reserved = super::reserved_unlocked_at(root).await?;
     let mut retained = Vec::new();
     let mut conflicts = Vec::new();
     for raw in entries {
@@ -156,6 +151,7 @@ async fn ensure_runtime(root: &Path) -> Result<(), String> {
             schema_version: super::runtime_store::AUTOMATION_RUNTIME_SCHEMA_VERSION,
             last_checked_at,
             occurrences: Vec::new(),
+            retired_automation_ids: Vec::new(),
         },
     )
     .await?;

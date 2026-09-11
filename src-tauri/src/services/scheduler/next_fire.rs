@@ -4,12 +4,6 @@ use chrono_tz::Tz;
 use croner::Cron;
 use std::str::FromStr;
 
-#[path = "next_fire_legacy.rs"]
-#[allow(dead_code)]
-mod legacy;
-#[allow(unused_imports)]
-pub use legacy::legacy_next_fire_at;
-
 const MAX_CRON_EXPRESSION_BYTES: usize = 128;
 const MAX_DELAY_MINUTES: u32 = 525_600;
 const MAX_DST_GAP_MINUTES: usize = 24 * 60;
@@ -18,7 +12,6 @@ const MISSED_GRACE_MINUTES: i64 = 5;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScheduleError {
     InvalidSchedule,
-    InvalidTimezone,
     CalculationFailed,
 }
 
@@ -40,13 +33,6 @@ pub struct DueRange {
 pub struct DueBatch {
     pub missed: Option<DueRange>,
     pub admissible: Option<DueRange>,
-}
-
-#[allow(dead_code)]
-pub fn parse_timezone(value: &str) -> Result<Tz, ScheduleError> {
-    value
-        .parse::<Tz>()
-        .map_err(|_| ScheduleError::InvalidTimezone)
 }
 
 pub fn next_fire_at(

@@ -10,9 +10,16 @@ pub(super) fn validate(runtime: &AutomationRuntime) -> Result<(), String> {
         .iter()
         .map(|item| item.id)
         .collect::<HashSet<_>>();
+    let retired = runtime
+        .retired_automation_ids
+        .iter()
+        .copied()
+        .collect::<HashSet<_>>();
     if runtime.schema_version != AUTOMATION_RUNTIME_SCHEMA_VERSION
         || runtime.occurrences.len() > 128
         || unique.len() != runtime.occurrences.len()
+        || runtime.retired_automation_ids.len() > 128
+        || retired.len() != runtime.retired_automation_ids.len()
     {
         return Err(error());
     }

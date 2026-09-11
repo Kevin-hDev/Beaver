@@ -15,6 +15,7 @@ mod migration_files;
 mod runtime_lifecycle;
 #[allow(dead_code)]
 mod runtime_recovery;
+mod runtime_retired;
 #[allow(dead_code)]
 mod runtime_scan;
 #[allow(dead_code)]
@@ -47,24 +48,38 @@ pub(crate) async fn read_runtime() -> Result<AutomationRuntime, AutomationError>
     read_runtime_at(&crate::services::paths::data_dir()).await
 }
 
-pub(crate) use history_store::{all_at as all_history_at, append_at as append_history_at};
+#[cfg(test)]
+pub(crate) use history_store::all_at as all_history_at;
+pub(crate) use history_store::append_at as append_history_at;
 #[cfg(test)]
 pub(crate) use runtime_lifecycle::{admit_at as admit_runtime_at, RuntimeAdmission};
 pub(crate) use runtime_lifecycle::{
     mark_running_at as mark_runtime_running_at, mark_terminal_at as mark_runtime_terminal_at,
-    remove_terminal_at as remove_runtime_terminal_at, runtime_at as read_runtime_at,
-    terminal_at as read_terminal_at,
+    remove_terminal_unlocked_at, runtime_at as read_runtime_at, terminal_unlocked_at,
+};
+#[cfg(test)]
+pub(crate) use runtime_retired::reserved_at as reserved_automation_ids_at;
+#[allow(
+    unused_imports,
+    reason = "API de réservation prévue pour la migration externe"
+)]
+pub use runtime_retired::reserved_automation_ids;
+pub(crate) use runtime_retired::{
+    release_unlocked_at as release_retired_unlocked_at, reserved_unlocked_at,
+    retire_if_referenced_unlocked_at,
 };
 #[allow(unused_imports)]
 pub use runtime_store::{
-    recover_startup, reserved_automation_ids, scan_and_advance, AutomationOccurrence,
-    AutomationRuntime, OccurrenceResult, OccurrenceResultStatus, OccurrenceState,
+    recover_startup, scan_and_advance, AutomationOccurrence, AutomationRuntime, OccurrenceResult,
+    OccurrenceResultStatus, OccurrenceState,
 };
 #[allow(unused_imports)]
 pub use service::{
     create, delete, disable_missing_target, get, history, list, record_completion, update,
 };
+#[cfg(test)]
 pub(crate) use service_mutations::record_completion_at;
+pub(crate) use service_mutations::record_completion_unlocked_at;
 #[allow(unused_imports)]
 pub use store::{mutate, read_all};
 pub use types::*;
@@ -82,6 +97,10 @@ pub(crate) const fn history_max_line_bytes() -> usize {
 mod actor_context_tests;
 #[cfg(test)]
 mod audit_store_tests;
+#[cfg(test)]
+mod automation_e2e_tests;
+#[cfg(test)]
+mod automation_race_tests;
 #[cfg(test)]
 mod history_store_tests;
 #[cfg(test)]

@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
@@ -99,15 +98,12 @@ pub use super::runtime_recovery::recover_startup;
 pub(crate) use super::runtime_recovery::recover_startup_at;
 pub use super::runtime_scan::scan_and_advance;
 
-pub async fn reserved_automation_ids() -> Result<HashSet<Uuid>, String> {
-    reserved_automation_ids_at(&crate::services::paths::data_dir()).await
-}
-
 #[derive(Debug, Clone)]
 pub struct AutomationRuntime {
     pub schema_version: u32,
     pub last_checked_at: DateTime<Utc>,
     pub occurrences: Vec<AutomationOccurrence>,
+    pub retired_automation_ids: Vec<Uuid>,
 }
 
 pub(crate) async fn read_at(root: &Path) -> Result<Option<AutomationRuntime>, String> {
@@ -130,6 +126,7 @@ pub(crate) async fn scan_and_advance_at(
         schema_version: AUTOMATION_RUNTIME_SCHEMA_VERSION,
         last_checked_at: through,
         occurrences: Vec::new(),
+        retired_automation_ids: Vec::new(),
     });
     if through < runtime.last_checked_at {
         return Err(runtime_error());
@@ -148,26 +145,6 @@ pub(crate) async fn scan_and_advance_at(
     runtime.last_checked_at = through;
     write_unlocked_at(root, &runtime).await?;
     Ok(ids)
-}
-
-pub(crate) async fn reserved_automation_ids_at(root: &Path) -> Result<HashSet<Uuid>, String> {
-    let _guard = super::store_lock().await;
-    reserved_automation_ids_unlocked_at(root).await
-}
-
-pub(crate) async fn reserved_automation_ids_unlocked_at(
-    root: &Path,
-) -> Result<HashSet<Uuid>, String> {
-    Ok(read_unlocked_at(root)
-        .await?
-        .map(|runtime| {
-            runtime
-                .occurrences
-                .into_iter()
-                .map(|item| item.automation_id)
-                .collect()
-        })
-        .unwrap_or_default())
 }
 
 pub(crate) async fn remove_pending_unlocked_at(

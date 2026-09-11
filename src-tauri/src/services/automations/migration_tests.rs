@@ -159,6 +159,7 @@ async fn occurrence_reserves_a_deleted_definition_identifier() {
             schema_version: 1,
             last_checked_at: now,
             occurrences: vec![AutomationOccurrence::pending(automation_id, now)],
+            retired_automation_ids: Vec::new(),
         },
     )
     .await

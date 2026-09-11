@@ -122,7 +122,11 @@ async fn apply(root: &Path, journal: &ResolutionJournal) -> Result<(), String> {
         root.join("config.json"),
         serde_json::to_vec_pretty(&config).map_err(|_| error())?,
     )
-    .await
+    .await?;
+    if let Ok(id) = Uuid::parse_str(&journal.legacy_id) {
+        super::release_retired_unlocked_at(root, id).await?;
+    }
+    Ok(())
 }
 
 async fn read_config(root: &Path) -> Result<Value, String> {

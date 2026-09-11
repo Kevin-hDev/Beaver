@@ -1,7 +1,5 @@
 use serde_json::{json, Value};
 
-static TOOL_TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-
 fn valid_requests() -> Vec<Value> {
     vec![
         json!({"action":"list"}),
@@ -86,7 +84,7 @@ fn schema_is_strict_and_does_not_advertise_legacy_fields() {
 
 #[tokio::test]
 async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
-    let _guard = TOOL_TEST_LOCK.lock().await;
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
     crate::services::automations::mutate(|items| {
         items.clear();
         Ok(())

@@ -1,4 +1,4 @@
-use super::next_fire::{due_between, next_fire_at, parse_timezone, ScheduleError};
+use super::next_fire::{due_between, next_fire_at, ScheduleError};
 use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus, AutomationTarget};
 use chrono::{NaiveDate, TimeZone, Utc};
 use uuid::Uuid;
@@ -120,14 +120,6 @@ fn cron_rejects_noncanonical_grammar() {
             "expression {expression:?} must be rejected"
         );
     }
-}
-
-#[test]
-fn invalid_iana_timezone_is_rejected() {
-    assert_eq!(
-        parse_timezone("Mars/Olympus"),
-        Err(ScheduleError::InvalidTimezone)
-    );
 }
 
 #[test]

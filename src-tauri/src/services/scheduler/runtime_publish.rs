@@ -6,7 +6,8 @@ use std::path::Path;
 use uuid::Uuid;
 
 pub(crate) async fn publish_terminal_at(root: &Path, id: Uuid) -> Result<(), AutomationError> {
-    let occurrence = crate::services::automations::read_terminal_at(root, id).await?;
+    let _guard = crate::services::automations::store_lock().await;
+    let occurrence = crate::services::automations::terminal_unlocked_at(root, id).await?;
     let result = occurrence
         .result
         .as_ref()
@@ -17,13 +18,13 @@ pub(crate) async fn publish_terminal_at(root: &Path, id: Uuid) -> Result<(), Aut
     )
     .await
     .map_err(|_| AutomationError::StoreUnavailable)?;
-    crate::services::automations::record_completion_at(
+    crate::services::automations::record_completion_unlocked_at(
         root,
         occurrence.automation_id,
         result.finished_at,
     )
     .await?;
-    crate::services::automations::remove_runtime_terminal_at(root, id).await?;
+    crate::services::automations::remove_terminal_unlocked_at(root, id).await?;
     super::notify_config_changed();
     Ok(())
 }

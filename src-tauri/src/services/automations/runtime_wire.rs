@@ -11,6 +11,8 @@ struct RuntimeWire {
     schema_version: u32,
     last_checked_at: DateTime<Utc>,
     occurrences: Vec<OccurrenceWire>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    retired_automation_ids: Vec<Uuid>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -75,6 +77,7 @@ pub(super) fn encode(runtime: &AutomationRuntime) -> Result<Vec<u8>, String> {
             .iter()
             .map(to_wire)
             .collect::<Result<_, _>>()?,
+        retired_automation_ids: runtime.retired_automation_ids.clone(),
     };
     serde_json::to_vec_pretty(&wire).map_err(|_| super::runtime_store::runtime_error())
 }
@@ -89,6 +92,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<Option<AutomationRuntime>, String> 
         schema_version: wire.schema_version,
         last_checked_at: wire.last_checked_at,
         occurrences: wire.occurrences.into_iter().map(from_wire).collect(),
+        retired_automation_ids: wire.retired_automation_ids,
     }))
 }
 

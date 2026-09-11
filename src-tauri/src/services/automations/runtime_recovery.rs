@@ -22,6 +22,7 @@ pub(crate) async fn recover_startup_at(
                 schema_version: AUTOMATION_RUNTIME_SCHEMA_VERSION,
                 last_checked_at: now,
                 occurrences: Vec::new(),
+                retired_automation_ids: Vec::new(),
             },
         )
         .await?;

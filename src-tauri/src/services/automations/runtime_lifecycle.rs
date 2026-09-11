@@ -118,6 +118,7 @@ async fn load(root: &Path, now: DateTime<Utc>) -> Result<AutomationRuntime, Auto
             schema_version: AUTOMATION_RUNTIME_SCHEMA_VERSION,
             last_checked_at: now,
             occurrences: Vec::new(),
+            retired_automation_ids: Vec::new(),
         }))
 }
 
@@ -188,8 +189,14 @@ pub async fn runtime_at(root: &Path) -> Result<AutomationRuntime, AutomationErro
         .ok_or(AutomationError::NotFound)
 }
 
-pub async fn terminal_at(root: &Path, id: Uuid) -> Result<AutomationOccurrence, AutomationError> {
-    let runtime = runtime_at(root).await?;
+pub(crate) async fn terminal_unlocked_at(
+    root: &Path,
+    id: Uuid,
+) -> Result<AutomationOccurrence, AutomationError> {
+    let runtime = super::runtime_store::read_unlocked_at(root)
+        .await
+        .map_err(|_| AutomationError::StoreUnavailable)?
+        .ok_or(AutomationError::NotFound)?;
     runtime
         .occurrences
         .into_iter()
@@ -197,8 +204,10 @@ pub async fn terminal_at(root: &Path, id: Uuid) -> Result<AutomationOccurrence, 
         .ok_or(AutomationError::NotFound)
 }
 
-pub async fn remove_terminal_at(root: &Path, id: Uuid) -> Result<(), AutomationError> {
-    let _guard = super::store_lock().await;
+pub(crate) async fn remove_terminal_unlocked_at(
+    root: &Path,
+    id: Uuid,
+) -> Result<(), AutomationError> {
     let mut runtime = load(root, Utc::now()).await?;
     let before = runtime.occurrences.len();
     runtime

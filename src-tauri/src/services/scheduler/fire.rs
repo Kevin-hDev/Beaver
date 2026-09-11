@@ -172,6 +172,15 @@ async fn target_session(definition: &AutomationDefinition) -> Result<TargetSessi
     }
 }
 
+#[cfg(test)]
+pub(crate) async fn target_session_for_test(
+    definition: &AutomationDefinition,
+) -> Result<(String, bool), &'static str> {
+    target_session(definition)
+        .await
+        .map(|target| (target.id, target.created))
+}
+
 async fn create_session(
     definition: &AutomationDefinition,
     project_id: Option<String>,

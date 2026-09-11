@@ -101,11 +101,13 @@ pub(crate) async fn delete_at(
         let mut definitions = super::store::read_all_unlocked_at(root)
             .await
             .map_err(|_| AutomationError::StoreUnavailable)?;
-        let before = definitions.len();
-        definitions.retain(|item| item.id != id);
-        if definitions.len() == before {
+        if !definitions.iter().any(|item| item.id == id) {
             return Err(AutomationError::NotFound);
         }
+        super::retire_if_referenced_unlocked_at(root, id).await?;
+        let before = definitions.len();
+        definitions.retain(|item| item.id != id);
+        debug_assert_ne!(definitions.len(), before);
         super::store::write_definitions_unlocked_at(root, definitions)
             .await
             .map_err(|_| AutomationError::StoreUnavailable)?;
@@ -123,6 +125,14 @@ pub(crate) async fn record_completion_at(
     finished_at: DateTime<Utc>,
 ) -> Result<(), AutomationError> {
     let _guard = super::store_lock().await;
+    record_completion_unlocked_at(root, id, finished_at).await
+}
+
+pub(crate) async fn record_completion_unlocked_at(
+    root: &Path,
+    id: Uuid,
+    finished_at: DateTime<Utc>,
+) -> Result<(), AutomationError> {
     let mut definitions = super::store::read_all_unlocked_at(root)
         .await
         .map_err(|_| AutomationError::StoreUnavailable)?;

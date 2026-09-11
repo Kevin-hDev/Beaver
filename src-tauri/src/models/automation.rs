@@ -102,26 +102,3 @@ pub enum WakeupRunErrorCode {
     ProviderUnavailable,
     ModelUnavailable,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WakeupRun {
-    pub wakeup_id: String,
-    pub scheduled_for: String,
-    pub fired_at: String,
-    pub status: WakeupRunStatus,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<WakeupRunErrorCode>,
-    #[serde(rename = "error", default, skip_serializing)]
-    pub _legacy_error: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub session_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tokens: Option<u32>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WakeupStatusSummary {
-    pub wakeup_id: String,
-    pub next_fire_at: Option<String>,
-    pub last_run: Option<WakeupRun>,
-}

@@ -3,11 +3,6 @@ mod agentic;
 mod agentic_modes_tests;
 pub mod fire;
 mod fire_actor;
-#[allow(
-    dead_code,
-    reason = "compatibilité temporaire, supprimée par la tâche 8"
-)]
-pub mod log;
 pub mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
@@ -29,6 +24,13 @@ use tauri::AppHandle;
 use tokio::sync::watch;
 pub use work_supervision::SchedulerDiagnostics;
 use work_supervision::SchedulerWorkServices;
+
+#[cfg(test)]
+pub(crate) use runtime::{
+    admit_due_at as admit_due_for_test, mark_running_at as mark_running_for_test,
+    mark_terminal_at as mark_terminal_for_test, publish_terminal_at as publish_terminal_for_test,
+    runtime_at as runtime_for_test,
+};
 
 static RELOAD_SENDER: OnceLock<Mutex<Option<watch::Sender<u64>>>> = OnceLock::new();
 

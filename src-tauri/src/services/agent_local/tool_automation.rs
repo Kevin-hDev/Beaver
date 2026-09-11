@@ -9,6 +9,10 @@ use crate::services::automations::{AutomationActor, AutomationError, CreateAutom
 use serde_json::{json, Value};
 use std::path::Path;
 
+#[cfg(test)]
+pub(crate) static AUTOMATION_TOOL_TEST_LOCK: tokio::sync::Mutex<()> =
+    tokio::sync::Mutex::const_new(());
+
 pub async fn execute(
     args: &Value,
     _working_dir: &Path,
