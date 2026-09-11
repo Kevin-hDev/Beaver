@@ -1,0 +1,9 @@
+CI correction: persistence migration contracts detected six unreviewed data_dir() call sites introduced by the Beaver CLI.
+
+Fix: register the five CLI commands and the Ollama CLI access bridge in the exact reviewed inventory. All calls still route through cli_support or the centralized services::paths authority; no storage path or behavior changed.
+
+Validated:
+- npm run test:persistence-migration: 10/10
+- npm run test:brand-boundaries: 15/15, unknown occurrences 0
+- git diff --check
+- graphify update .: no topology changes
