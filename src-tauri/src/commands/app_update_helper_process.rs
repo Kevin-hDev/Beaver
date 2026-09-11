@@ -1,7 +1,7 @@
 use super::app_update_helper::{
-    cli_update_paths_for, copy_helper_while, current_install_directory, helper_resource_name,
-    TemporaryHelper,
+    copy_helper_while, current_install_directory, helper_resource_name, TemporaryHelper,
 };
+use super::app_update_helper_cli_paths::cli_update_paths_for;
 use crate::services::process_identity::ProcessIdentity;
 use crate::services::update_handoff::UpdateHandoff;
 use crate::services::work_registry::ServiceWorkCancellation;

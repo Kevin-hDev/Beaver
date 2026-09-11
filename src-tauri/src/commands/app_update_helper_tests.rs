@@ -1,6 +1,7 @@
 use std::fs;
 
-use super::{cli_update_paths_for, copy_helper, copy_helper_while, current_install_directory_for};
+use super::{copy_helper, copy_helper_while, current_install_directory_for};
+use crate::commands::app_update_helper_cli_paths::cli_update_paths_for;
 
 #[test]
 fn copies_a_bounded_regular_helper_with_private_permissions() {

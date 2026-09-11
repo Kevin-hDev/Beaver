@@ -36,6 +36,7 @@ pub(crate) mod app_update_assets;
 pub(crate) mod app_update_cli;
 pub(crate) mod app_update_download;
 pub(crate) mod app_update_helper;
+pub(crate) mod app_update_helper_cli_paths;
 pub(crate) mod app_update_helper_process;
 pub mod app_update_install;
 pub(crate) mod app_update_install_temp;
