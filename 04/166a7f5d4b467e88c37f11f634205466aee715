@@ -1,0 +1,5 @@
+Task 7 decision: capacity, realtime interruption, compression eligibility, checkpoint validation, and the post-compression preparation all consume the conservative capacity_tokens derived from the prepared semantic payload. The previous provider usage remains diagnostic and cannot decide whether a modified next request fits.
+
+Compression now reads the current tool set at each turn, rejects unknown capacity without mutation, returns context_capacity_unverified for explicit/local closed paths, and atomically saves the replacement transcript with the Ready preparation while preserving last_measurement. The exact response reserve remains clamp(window * 15%, 4096, 16384), bounded by half the window; 200000 yields 16384 once.
+
+Validation: realtime_budget 7, agent_loop_compression 2, compress 190 passed plus 1 ignored developer test, conversation_journal 10; TypeScript check, frontend error-code test 11, lint, cargo fmt/check, strict clippy, source size policy, diff check, and graphify update passed.
