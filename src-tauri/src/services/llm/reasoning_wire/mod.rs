@@ -11,6 +11,8 @@ mod tool_link_capture;
 
 #[cfg(test)]
 mod anthropic_contract_tests;
+#[cfg(test)]
+mod subagent_report_contract_tests;
 
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
 use crate::services::reasoning_continuity::capture_budget::CaptureBudget;
