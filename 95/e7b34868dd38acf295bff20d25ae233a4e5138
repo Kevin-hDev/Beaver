@@ -1,1 +1,3 @@
 CI Frontend après fusion de main — Ajoute les deux pages françaises générées qui documentent légitimement l'ancien paquet Linux à la liste de compatibilité, puis synchronise les compteurs et l'empreinte visibles avec l'arbre fusionné. Avant : 8 références cl-go inconnues, puis compteurs et empreinte obsolètes. Après : test:brand-boundaries 15/15, 0 référence inconnue. Aucun contenu du site modifié. Graphify mis à jour.
+
+Validation frontend complète après correction : npm test vert, 604 fichiers Vitest et 3329 tests, 60 tests de build, 21 tests CI, 3 fichiers, 45 CEF plus 1 ignoré, 100 E2E, 120 hôte d'extensions, 10 plus 2 fixtures de raisonnement, puis contrats.
