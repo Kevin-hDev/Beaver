@@ -55,8 +55,6 @@ mod subagent_git_run;
 #[cfg(test)]
 mod subagent_inheritance_tests;
 #[cfg(test)]
-mod subagent_max_turn_tests;
-#[cfg(test)]
 mod subagent_parent_stream_ownership_tests;
 mod subagent_prompt_sections;
 mod subagent_runtime_context;
@@ -76,7 +74,6 @@ pub(crate) mod subagent_tool_profile;
 mod subagent_tool_profile_tests;
 #[cfg(test)]
 mod subagent_tool_runtime_tests;
-mod subagent_turn_limit;
 mod subagent_worktree_cleanup;
 #[cfg(test)]
 mod subagent_worktree_cleanup_tests;

@@ -1,13 +1,18 @@
 pub mod agent_definition;
 pub mod agent_loop;
+#[cfg(test)]
+mod agent_loop_unbounded_tests;
+#[cfg(test)]
+pub(crate) mod agent_loop_test_provider;
 pub mod agent_loop_completion;
 mod agent_loop_compression;
-pub mod agent_loop_errors;
 pub mod agent_loop_finish;
 mod agent_loop_interrupted;
-pub mod agent_loop_limits;
 mod agent_loop_ollama_media;
+mod agent_loop_ollama_replay;
 mod agent_loop_ollama_request;
+#[cfg(test)]
+mod agent_loop_ollama_test_request;
 pub mod agent_loop_plan;
 pub mod agent_loop_support;
 pub mod agent_loop_thinking_retry;

@@ -5,8 +5,6 @@ use super::stream_events::AgentEventEmitter;
 use super::subagent_orchestration::ParentSubagentOrchestrator;
 use super::types_ollama::{ChatMessage, OllamaThink, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
-use crate::services::reasoning_continuity::contract::{ContinuationUse, ReplayTarget};
-use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
@@ -51,6 +49,18 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         .subagents
         .prepare_for_model_request(params.messages)
         .await?;
+    #[cfg(test)]
+    if let Some(output) = super::agent_loop_ollama_test_request::run(
+        params.request_id,
+        &params.cancel,
+        params.subagents,
+        params.messages,
+        &completion_cancel,
+    )
+    .await?
+    {
+        return Ok(output);
+    }
     super::session_security::sanitize_chat_messages(params.messages);
     super::tool_result_budget::apply_budget(params.messages);
     let report = super::context_budget::prepare_for_request(
@@ -94,7 +104,12 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     request.capture_reasoning = params.capture_reasoning;
     request.live_replay_target = params
         .live_replay_target
-        .map(|target| live_target_for_request(target, follows_tool_result(params.messages)))
+        .map(|target| {
+            super::agent_loop_ollama_replay::for_request(
+                target,
+                super::agent_loop_ollama_replay::follows_tool_result(params.messages),
+            )
+        })
         .transpose()?;
     #[cfg(debug_assertions)]
     {
@@ -197,32 +212,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         input_tokens,
         generation,
     })
-}
-
-fn follows_tool_result(messages: &[ChatMessage]) -> bool {
-    messages
-        .last()
-        .is_some_and(|message| message.role == "tool")
-}
-
-fn live_target_for_request(
-    target: &ReplayTarget,
-    follows_tool_result: bool,
-) -> Result<ReplayTarget, String> {
-    let mut target = target.clone();
-    target.continuation_use = if follows_tool_result {
-        ContinuationUse::ToolContinuation
-    } else {
-        ContinuationUse::UserContinuation
-    };
-    let allowed = crate::services::reasoning_continuity::registry::replay_policy(&target)
-        .is_some_and(|policy| {
-            policy.activation() == ActivationState::LiveValidated
-                && policy.requirement() != ReplayRequirement::Forbidden
-        });
-    allowed
-        .then_some(target)
-        .ok_or_else(|| "reasoning_continuity_invalid".to_string())
 }
 
 #[cfg(test)]

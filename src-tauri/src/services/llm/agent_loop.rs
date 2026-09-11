@@ -5,10 +5,10 @@
 use super::agent_loop_compression::{LastCounts, LoopCompression};
 use super::{agent_loop_request::ApiRequestParams, agent_loop_tools};
 use crate::services::agent_local::{
-    agent_loop_finish, agent_loop_limits::MAX_TURNS, agent_loop_plan, circuit_breaker,
-    context_usage_buckets::ContextUsageSeed, context_usage_runtime,
-    generation_metrics::GenerationAggregate, stream_events::AgentEventEmitter,
-    subagent_orchestration, types_ollama::ChatMessage, write_guard_registry,
+    agent_loop_finish, agent_loop_plan, circuit_breaker, context_usage_buckets::ContextUsageSeed,
+    context_usage_runtime, generation_metrics::GenerationAggregate,
+    stream_events::AgentEventEmitter, subagent_orchestration, types_ollama::ChatMessage,
+    write_guard_registry,
 };
 use crate::services::token_counting;
 use std::path::PathBuf;
@@ -78,7 +78,7 @@ pub async fn run_agent_loop(
         plan_mode_active,
         working_dir: &working_dir,
     };
-    for turn in 0..MAX_TURNS {
+    for turn in 0usize.. {
         if cancel.is_cancelled() {
             return Err("Annulé".to_string());
         }
@@ -177,12 +177,7 @@ pub async fn run_agent_loop(
             .await;
         if result.tool_calls.is_empty() {
             if subagents
-                .continue_after_no_tool_turn(
-                    on_event,
-                    messages,
-                    cancel.clone(),
-                    turn + 1 < MAX_TURNS,
-                )
+                .continue_after_no_tool_turn(on_event, messages, cancel.clone())
                 .await?
             {
                 continue;
@@ -200,7 +195,6 @@ pub async fn run_agent_loop(
             cancel: cancel.clone(),
             write_guard: &mut write_guard,
             plan_active,
-            turn,
             breaker: &mut breaker,
             journal: journal.as_deref_mut(),
             tools: &mut tools,

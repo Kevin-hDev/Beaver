@@ -4,7 +4,6 @@
 )]
 use super::{
     agent_loop_compression::LoopCompression,
-    agent_loop_limits::MAX_TURNS,
     agent_loop_ollama_request::OllamaRequestParams,
     agent_loop_plan, agent_loop_support, circuit_breaker,
     context_usage_buckets::ContextUsageSeed,
@@ -66,7 +65,7 @@ pub async fn run_agent_loop(
         plan_mode_active,
         working_dir: &working_dir,
     };
-    for turn in 0..MAX_TURNS {
+    for turn in 0usize.. {
         agent_loop_support::ensure_not_cancelled(&cancel)?;
         let request_output = super::agent_loop_ollama_request::run(OllamaRequestParams {
             on_event,
@@ -169,12 +168,7 @@ pub async fn run_agent_loop(
         if result.tool_calls.is_empty() {
             eager_handle.abort();
             if subagents
-                .continue_after_no_tool_turn(
-                    on_event,
-                    messages,
-                    cancel.clone(),
-                    turn + 1 < MAX_TURNS,
-                )
+                .continue_after_no_tool_turn(on_event, messages, cancel.clone())
                 .await?
             {
                 continue;
@@ -195,7 +189,6 @@ pub async fn run_agent_loop(
                 write_guard: &mut write_guard,
                 plan_active,
                 fixture_mode,
-                turn,
                 model,
                 breaker: &mut breaker,
                 journal: journal.as_deref_mut(),

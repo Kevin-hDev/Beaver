@@ -10,6 +10,18 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         .subagents
         .prepare_for_model_request(params.messages)
         .await?;
+    #[cfg(test)]
+    if let Some(output) = super::agent_loop_test_request::run(
+        params.request_id,
+        &params.cancel,
+        params.subagents,
+        params.messages,
+        &completion_cancel,
+    )
+    .await?
+    {
+        return Ok(output);
+    }
     crate::services::agent_local::tool_result_budget::apply_budget(params.messages);
     let report = crate::services::agent_local::context_budget::prepare_for_request(
         params.messages,
