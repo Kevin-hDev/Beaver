@@ -7,16 +7,16 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 41,
   CLGO: 32,
-  // Les parcours E2E nomment explicitement le binaire historique sur chaque OS.
+  // Les parcours E2E et la CLI nomment explicitement le binaire historique sur chaque OS.
   // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
   // Les guides Forecast, Réglages, Compression, Automatisation et Dépannage citent les noms persistés.
-  "cl-go-dash": 424,
+  "cl-go-dash": 435,
   // Les thèmes d'extension, leurs parcours et les guides Réglages et Dépannage rejouent ces clés.
   clgo: 146,
   // Les guides et leurs pages générées citent le nom exact de l'ancien paquet Linux.
   "cl-go": 111,
-  // Les deux branches main appellent explicitement la bibliothèque Rust.
-  cl_go_dash: 48,
+  // Les deux branches main et la CLI appellent explicitement la bibliothèque Rust.
+  cl_go_dash: 78,
 });
 
 export const COMPATIBILITY_CONTRACTS = Object.freeze([
