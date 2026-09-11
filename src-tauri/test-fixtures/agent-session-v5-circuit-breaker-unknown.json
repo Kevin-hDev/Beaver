@@ -1,0 +1,57 @@
+{
+  "schema_version": 5,
+  "id": "00000000-0000-4000-8000-000000000071",
+  "name": "historical-circuit-breaker",
+  "created_at": "2026-09-10T20:00:00Z",
+  "model": "fixture-model",
+  "provider": "ollama",
+  "thinking_enabled": false,
+  "fast_mode_enabled": false,
+  "preserve_reasoning": "off",
+  "accumulated_tokens": 0,
+  "compression_count": 0,
+  "messages": [],
+  "todos": [],
+  "todo_neglect_count": 0,
+  "todo_runs": [],
+  "stream_failures": [],
+  "diagnostic_runs": [
+    {
+      "request_id": "00000000-0000-4000-8000-000000000072",
+      "provider": "ollama",
+      "model": "fixture-model",
+      "generation": 1,
+      "status": "failed",
+      "severity": "error",
+      "started_at": "2026-09-10T20:00:00Z",
+      "updated_at": "2026-09-10T20:00:01Z",
+      "ended_at": "2026-09-10T20:00:01Z",
+      "phase": "model_stream",
+      "error_type": "unknown",
+      "last_tool": {
+        "name": "bash_control",
+        "status": "completed",
+        "is_error": false,
+        "truncated": false,
+        "warning_count": 0
+      },
+      "safe_summary": "Interruption après le dernier tool bash_control (unknown).",
+      "events": [
+        {
+          "at": "2026-09-10T20:00:01Z",
+          "phase": "failed",
+          "message": "Circuit breaker : 6 appels identiques consécutifs détectés.",
+          "tool_name": "bash_control",
+          "error_type": "unknown"
+        }
+      ]
+    }
+  ],
+  "plan_mode_enabled": false,
+  "plan_runs": [],
+  "plan_workflow_status": "needs_context",
+  "is_heartbeat": false,
+  "is_gateway": false,
+  "working_dir": "/fixture/workspace",
+  "working_dir_managed": false
+}

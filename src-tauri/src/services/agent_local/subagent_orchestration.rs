@@ -93,12 +93,7 @@ impl ParentSubagentOrchestrator {
         on_event: &AgentEventEmitter,
         messages: &mut Vec<ChatMessage>,
         cancel: CancellationToken,
-        can_request_again: bool,
     ) -> Result<bool, String> {
-        if !can_request_again {
-            self.ensure_no_followup_at_turn_limit().await?;
-            return Ok(false);
-        }
         let should_continue =
             super::subagent_instruction_delivery::drain(&self.parent_session_id, messages).await?
                 > 0
@@ -107,13 +102,6 @@ impl ParentSubagentOrchestrator {
             let _ = on_event.send(StreamEvent::TurnEnd {});
         }
         Ok(should_continue)
-    }
-
-    pub async fn ensure_no_followup_at_turn_limit(&mut self) -> Result<(), String> {
-        if let Some(inbox) = &self.parent_message_inbox {
-            inbox.close().await;
-        }
-        super::subagent_turn_limit::ensure(&self.parent_session_id, &mut self.report_delivery).await
     }
 
     pub async fn wait_after_tool_batch(

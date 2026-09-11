@@ -131,7 +131,15 @@ async fn caller_cancellation_stops_the_running_command() {
     let command_cancel = cancel.clone();
     let path = dir.path().to_path_buf();
     let task = tokio::spawn(async move {
-        managed("sleep 30", &path, &owner, None, Some(30_000), command_cancel).await
+        managed(
+            "sleep 30",
+            &path,
+            &owner,
+            None,
+            Some(30_000),
+            command_cancel,
+        )
+        .await
     });
 
     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -144,4 +152,200 @@ async fn caller_cancellation_stops_the_running_command() {
         Err(error) => assert!(error.contains("annulee")),
     }
     assert!(started.elapsed() < Duration::from_secs(2));
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn repeated_passive_bash_control_is_allowed() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
+    let output = managed(
+        "sleep 30",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("start long command");
+    let process_id = process_id(&output.stdout).to_string();
+    let mut breaker = crate::services::agent_local::circuit_breaker::CircuitBreaker::new();
+
+    for attempt in 1..=20_u64 {
+        let calls = vec![(
+            "bash_control".to_string(),
+            serde_json::json!({
+                "session_id": process_id,
+                "chars": "",
+                "eof": false,
+                "stop": false,
+                "yield_time_ms": attempt * 10,
+            }),
+        )];
+        assert!(
+            breaker.check(&calls, &owner).is_ok(),
+            "passive control #{attempt} should be allowed"
+        );
+    }
+
+    let write = vec![("write_file".to_string(), serde_json::json!({ "path": "x" }))];
+    for _ in 0..5 {
+        assert!(breaker.check(&write, &owner).is_ok());
+    }
+    let passive = vec![(
+        "bash_control".to_string(),
+        serde_json::json!({ "session_id": process_id, "yield-time-ms": 20 }),
+    )];
+    assert!(breaker.check(&passive, &owner).is_ok());
+    assert_eq!(
+        breaker.check(&write, &owner),
+        Err("circuit_breaker".to_string())
+    );
+
+    control_shell_session(
+        &process_id,
+        None,
+        false,
+        true,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("stop process");
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn passive_control_in_a_mixed_batch_does_not_hide_active_work() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
+    let output = managed(
+        "sleep 30",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("start long command");
+    let process_id = process_id(&output.stdout).to_string();
+    let calls = vec![
+        (
+            "bash_control".to_string(),
+            serde_json::json!({ "session_id": process_id }),
+        ),
+        ("write_file".to_string(), serde_json::json!({ "path": "x" })),
+    ];
+    let mut breaker = crate::services::agent_local::circuit_breaker::CircuitBreaker::new();
+    for _ in 0..5 {
+        assert!(breaker.check(&calls, &owner).is_ok());
+    }
+    assert_eq!(
+        breaker.check(&calls, &owner),
+        Err("circuit_breaker".to_string())
+    );
+
+    control_shell_session(
+        &process_id,
+        None,
+        false,
+        true,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("stop process");
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn finished_shell_session_controls_are_bounded() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
+    let output = managed(
+        "sleep 30",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("start long command");
+    let process_id = process_id(&output.stdout).to_string();
+    control_shell_session(
+        &process_id,
+        None,
+        false,
+        true,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("stop process");
+
+    let calls = vec![(
+        "bash_control".to_string(),
+        serde_json::json!({ "session_id": process_id }),
+    )];
+    let mut breaker = crate::services::agent_local::circuit_breaker::CircuitBreaker::new();
+    for _ in 0..5 {
+        assert!(breaker.check(&calls, &owner).is_ok());
+    }
+    assert_eq!(
+        breaker.check(&calls, &owner),
+        Err("circuit_breaker".to_string())
+    );
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn foreign_shell_session_controls_are_bounded() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
+    let foreign_owner = uuid::Uuid::new_v4().to_string();
+    let output = managed(
+        "sleep 30",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("start long command");
+    let process_id = process_id(&output.stdout).to_string();
+    let calls = vec![(
+        "bash_control".to_string(),
+        serde_json::json!({ "session_id": process_id }),
+    )];
+    let mut breaker = crate::services::agent_local::circuit_breaker::CircuitBreaker::new();
+    for _ in 0..5 {
+        assert!(breaker.check(&calls, &foreign_owner).is_ok());
+    }
+    assert_eq!(
+        breaker.check(&calls, &foreign_owner),
+        Err("circuit_breaker".to_string())
+    );
+
+    control_shell_session(
+        &process_id,
+        None,
+        false,
+        true,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("stop process");
 }

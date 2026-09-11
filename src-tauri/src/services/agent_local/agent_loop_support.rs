@@ -136,15 +136,6 @@ pub async fn decharge_gpu(model: &str) {
         .await;
 }
 
-pub async fn ensure_more_turns(turn: usize, model: &str) -> Result<(), String> {
-    if turn == super::agent_loop_limits::MAX_TURNS - 1 {
-        decharge_gpu(model).await;
-        Err(super::agent_loop_errors::max_turns_message())
-    } else {
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 #[path = "agent_loop_support_tests.rs"]
 mod tests;

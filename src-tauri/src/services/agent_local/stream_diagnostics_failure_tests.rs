@@ -37,7 +37,11 @@ fn run(phase: &str, tool_status: &str) -> AgentDiagnosticRun {
 
 #[test]
 fn completion_failures_keep_their_specific_diagnostic_codes() {
-    for code in ["provider_empty_response", "provider_output_limit", "provider_content_filtered"] {
+    for code in [
+        "provider_empty_response",
+        "provider_output_limit",
+        "provider_content_filtered",
+    ] {
         assert_eq!(classify_error(code, false), code);
         assert_eq!(safe_code(code), code);
         assert!(!is_connection_error(code));
@@ -110,6 +114,25 @@ fn compression_failure_keeps_its_stable_code() {
         "compression_failed"
     );
     assert_eq!(safe_code("compression_failed"), "compression_failed");
+}
+
+#[test]
+fn historical_circuit_breaker_sentence_is_classified() {
+    assert_eq!(
+        classify_error(
+            "Circuit breaker : 6 appels identiques consécutifs détectés.",
+            false,
+        ),
+        "circuit_breaker"
+    );
+}
+
+#[test]
+fn session_capacity_code_is_preserved() {
+    assert_eq!(
+        classify_error("session_capacity_reached", false),
+        "session_capacity_reached"
+    );
 }
 
 #[test]

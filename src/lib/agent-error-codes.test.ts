@@ -69,6 +69,7 @@ describe("KNOWN_ERROR_KEYS", () => {
 
   it.each([
     ["session_inconsistent", "errors.sessionInconsistent"],
+    ["session_capacity_reached", "errors.sessionCapacityReached"],
     ["model_invalid", "errors.modelInvalid"],
   ])("restaure le motif précis %s dans les sept langues", (code, key) => {
     expect(KNOWN_ERROR_KEYS[code]).toBe(key);

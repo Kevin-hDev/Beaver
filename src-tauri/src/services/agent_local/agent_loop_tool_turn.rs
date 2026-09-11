@@ -23,8 +23,6 @@ pub(super) struct ToolTurnContext<'a> {
     pub write_guard: &'a mut WriteGuard,
     pub plan_active: bool,
     pub fixture_mode: bool,
-    pub turn: usize,
-    pub model: &'a str,
     pub breaker: &'a mut CircuitBreaker,
     pub journal: Option<&'a mut ConversationJournal>,
     pub tools: &'a mut ExtensionToolSet,
@@ -50,8 +48,7 @@ pub(super) async fn run(mut context: ToolTurnContext<'_>) -> Result<ToolTurnOutp
         eager_handle,
         context.fixture_mode,
         &context.result.tool_calls,
-        context.turn,
-        context.model,
+        context.session_id,
         context.breaker,
     )
     .await?;

@@ -1,4 +1,4 @@
-use super::live_target_for_request;
+use super::super::agent_loop_ollama_replay::for_request as live_target_for_request;
 use crate::services::reasoning_continuity::contract::{
     ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
 };

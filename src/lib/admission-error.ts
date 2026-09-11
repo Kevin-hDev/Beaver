@@ -12,6 +12,7 @@ export const ADMISSION_ERROR_CODES = [
   "active-stream-limit-reached",
   "stream-replaced",
   SUBAGENT_READ_ONLY_CODE,
+  "session_capacity_reached",
 ] as const;
 
 type AdmissionErrorCode = typeof ADMISSION_ERROR_CODES[number];
@@ -28,6 +29,7 @@ const ADMISSION_ERROR_KEYS = {
   "active-stream-limit-reached": "errors.admission.activeStreamCapacity",
   "stream-replaced": "errors.admission.streamReplaced",
   "subagent-read-only": "errors.admission.subagentReadOnly",
+  session_capacity_reached: "errors.sessionCapacityReached",
 } as const;
 const KNOWN_CODES = new Set<string>(ADMISSION_ERROR_CODES);
 

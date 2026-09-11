@@ -15,6 +15,30 @@ use tokio_util::sync::CancellationToken;
 
 pub type EagerHandle = JoinHandle<HashMap<usize, ToolResult>>;
 
+pub struct EagerHandleGuard(Option<EagerHandle>);
+
+impl EagerHandleGuard {
+    pub fn new(handle: EagerHandle) -> Self {
+        Self(Some(handle))
+    }
+
+    pub fn abort(&mut self) {
+        if let Some(handle) = self.0.take() {
+            handle.abort();
+        }
+    }
+
+    pub fn take(&mut self) -> EagerHandle {
+        self.0.take().expect("eager handle is available")
+    }
+}
+
+impl Drop for EagerHandleGuard {
+    fn drop(&mut self) {
+        self.abort();
+    }
+}
+
 pub struct ThinkingRetryParams<'a> {
     pub on_event: &'a AgentEventEmitter,
     pub request: &'a ChatRequest,
@@ -70,7 +94,7 @@ pub async fn retry_if_needed(
 
     params.eager_handle.abort();
     let (retry_tx, retry_rx) = tokio::sync::mpsc::unbounded_channel();
-    let eager_handle = spawn_eager_handle(
+    let mut eager_handle = EagerHandleGuard::new(spawn_eager_handle(
         retry_rx,
         params.working_dir,
         params.session_id.clone(),
@@ -78,7 +102,7 @@ pub async fn retry_if_needed(
         params.chat_mode,
         params.cancel.clone(),
         params.enable_eager_tools,
-    );
+    ));
     let retry_outcome = super::ollama_stream::stream_chat_with_tool_notify(
         params.on_event,
         &retry_req,
@@ -99,7 +123,7 @@ pub async fn retry_if_needed(
 
     Ok(ThinkingRetryOutput {
         result,
-        eager_handle,
+        eager_handle: eager_handle.take(),
         interrupted,
         generation,
     })
@@ -163,5 +187,15 @@ mod tests {
 
         assert_eq!(result.content, "partiel");
         assert!(interrupted);
+    }
+
+    #[tokio::test]
+    async fn dropping_eager_guard_aborts_the_task() {
+        let handle = tokio::spawn(std::future::pending::<HashMap<usize, ToolResult>>());
+        let abort = handle.abort_handle();
+        drop(EagerHandleGuard::new(handle));
+
+        tokio::task::yield_now().await;
+        assert!(abort.is_finished());
     }
 }

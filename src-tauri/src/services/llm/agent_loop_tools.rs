@@ -1,5 +1,3 @@
-use crate::services::agent_local::agent_loop_errors;
-use crate::services::agent_local::agent_loop_limits::MAX_TURNS;
 use crate::services::agent_local::circuit_breaker::CircuitBreaker;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_execution_outcome::ToolExecutionOutcome;
@@ -19,7 +17,6 @@ pub(super) struct ToolTurnContext<'a> {
     pub cancel: CancellationToken,
     pub write_guard: &'a mut WriteGuard,
     pub plan_active: bool,
-    pub turn: usize,
     pub breaker: &'a mut CircuitBreaker,
     pub journal:
         Option<&'a mut crate::services::agent_local::conversation_journal::ConversationJournal>,
@@ -41,13 +38,10 @@ pub(super) struct ToolTurnOutput {
 
 pub(super) async fn prepare_tool_batch(
     tool_calls: &[(String, serde_json::Value)],
-    turn: usize,
+    session_id: &str,
     breaker: &mut CircuitBreaker,
 ) -> Result<bool, String> {
-    if turn == MAX_TURNS - 1 {
-        return Err(agent_loop_errors::max_turns_message());
-    }
-    breaker.check(tool_calls)?;
+    breaker.check(tool_calls, session_id)?;
     Ok(crate::services::agent_local::subagent_tool_control::is_control_only(tool_calls))
 }
 
@@ -100,8 +94,12 @@ pub(super) async fn execute_tool_batch(context: ToolBatchContext<'_>) -> ToolExe
 pub(super) async fn run_tool_turn(
     mut context: ToolTurnContext<'_>,
 ) -> Result<ToolTurnOutput, String> {
-    let control_only =
-        prepare_tool_batch(&context.result.tool_calls, context.turn, context.breaker).await?;
+    let control_only = prepare_tool_batch(
+        &context.result.tool_calls,
+        context.session_id,
+        context.breaker,
+    )
+    .await?;
     let tool_start = context.messages.len();
     let mut outcome = execute_tool_batch(ToolBatchContext {
         on_event: context.on_event,

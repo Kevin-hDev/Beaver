@@ -9,8 +9,12 @@ mod agent_loop_compression;
 mod agent_loop_message;
 mod agent_loop_request;
 mod agent_loop_request_types;
+#[cfg(test)]
+mod agent_loop_test_request;
 pub(crate) mod agent_loop_tools;
 mod agent_loop_turn;
+#[cfg(test)]
+mod agent_loop_unbounded_tests;
 pub(crate) mod anthropic;
 pub(crate) mod api_key_probe;
 #[cfg(test)]
