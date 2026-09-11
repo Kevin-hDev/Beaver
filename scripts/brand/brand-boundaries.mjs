@@ -20,6 +20,8 @@ const PACKAGE_COMPATIBILITY_FILES = new Set([
   // Ces sources et leurs pages générées documentent les métadonnées exactes de l'ancien paquet Linux.
   "docs/beaver-site/mockup/docs/demarrage-installation-linux.html",
   "docs/beaver-site/mockup/docs/reference-depannage-installation.html",
+  "docs/beaver-site/mockup/fr/docs/demarrage-installation-linux.html",
+  "docs/beaver-site/mockup/fr/docs/reference-depannage-installation.html",
   "docs/documentation-site-web/02-installation/installation-linux.md",
   "docs/documentation-site-web/13-depannage/installation.md",
   "install.sh",
