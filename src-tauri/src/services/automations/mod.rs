@@ -1,5 +1,3 @@
-pub(crate) mod migration;
-// Temporaire : la tâche 7 expose ces décisions via les commandes de migration.
 pub(crate) mod actor_context;
 mod audit_store;
 mod history_cursor;
@@ -7,29 +5,24 @@ mod history_metadata;
 mod history_store;
 #[cfg(test)]
 mod history_store_test_support;
-#[allow(dead_code)]
+pub(crate) mod migration;
 pub(crate) mod migration_conflict;
 mod migration_convert;
 mod migration_files;
-// Temporaire : les tâches 3 et 4 branchent ces stockages sur le service et le scheduler.
+pub(crate) mod next_fire;
+#[cfg(test)]
+mod next_fire_tests;
 mod runtime_lifecycle;
-#[allow(dead_code)]
 mod runtime_recovery;
 mod runtime_retired;
-#[allow(dead_code)]
 mod runtime_scan;
-#[allow(dead_code)]
 mod runtime_store;
-#[allow(dead_code)]
 mod runtime_validation;
-#[allow(dead_code)]
 mod runtime_wire;
 mod service;
 mod service_helpers;
 mod service_mutations;
-#[allow(dead_code)]
 mod store;
-#[allow(dead_code)]
 mod store_wire;
 mod types;
 mod validation;
@@ -48,6 +41,8 @@ pub(crate) async fn read_runtime() -> Result<AutomationRuntime, AutomationError>
     read_runtime_at(&crate::services::paths::data_dir()).await
 }
 
+pub(crate) use runtime_scan::scan_definitions_at as scan_and_advance_at;
+
 #[cfg(test)]
 pub(crate) use history_store::all_at as all_history_at;
 pub(crate) use history_store::append_at as append_history_at;
@@ -59,32 +54,28 @@ pub(crate) use runtime_lifecycle::{
 };
 #[cfg(test)]
 pub(crate) use runtime_retired::reserved_at as reserved_automation_ids_at;
-#[allow(
-    unused_imports,
-    reason = "API de réservation prévue pour la migration externe"
-)]
-pub use runtime_retired::reserved_automation_ids;
 pub(crate) use runtime_retired::{
     release_unlocked_at as release_retired_unlocked_at, reserved_unlocked_at,
     retire_if_referenced_unlocked_at,
 };
-#[allow(unused_imports)]
 pub use runtime_store::{
-    recover_startup, scan_and_advance, AutomationOccurrence, AutomationRuntime, OccurrenceResult,
+    recover_startup, AutomationOccurrence, AutomationRuntime, OccurrenceResult,
     OccurrenceResultStatus, OccurrenceState,
 };
-#[allow(unused_imports)]
-pub use service::{
-    create, delete, disable_missing_target, get, history, list, record_completion, update,
-};
+pub use service::{create, delete, disable_missing_target, get, history, list, update};
 #[cfg(test)]
 pub(crate) use service_mutations::record_completion_at;
 pub(crate) use service_mutations::record_completion_unlocked_at;
-#[allow(unused_imports)]
-pub use store::{mutate, read_all};
+#[cfg(test)]
+pub(crate) use store::mutate;
+pub use store::read_all;
 pub use types::*;
 pub(crate) use validation::validate_schedule;
 
+#[expect(
+    dead_code,
+    reason = "cli_support consumes this stable relay after the CLI branch rebase"
+)]
 pub(crate) const fn history_max_lines() -> usize {
     history_store::MAX_LINES
 }

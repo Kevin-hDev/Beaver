@@ -60,23 +60,12 @@ pub async fn history(
     history_at(&crate::services::paths::data_dir(), actor, query).await
 }
 
-pub async fn record_completion(
-    id: Uuid,
-    finished_at: DateTime<Utc>,
-) -> Result<(), AutomationError> {
-    super::service_mutations::record_completion_at(
-        &crate::services::paths::data_dir(),
-        id,
-        finished_at,
-    )
-    .await
-}
-
 pub async fn disable_missing_target(id: Uuid) -> Result<(), AutomationError> {
     super::service_mutations::disable_missing_target_at(&crate::services::paths::data_dir(), id)
         .await
 }
 
+#[cfg(test)]
 pub(crate) async fn list_at(
     root: &Path,
     actor: &AutomationActor,

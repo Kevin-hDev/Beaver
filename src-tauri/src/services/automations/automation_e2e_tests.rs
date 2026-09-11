@@ -175,7 +175,7 @@ async fn definition(id: Uuid) -> crate::models::AutomationDefinition {
 }
 
 fn next_fire(definition: &crate::models::AutomationDefinition) -> DateTime<Utc> {
-    crate::services::scheduler::next_fire::next_fire_at(definition, definition.created_at)
+    super::next_fire::next_fire_at(definition, definition.created_at)
         .unwrap()
         .unwrap()
         .at

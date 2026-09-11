@@ -1,14 +1,18 @@
 use super::runtime_store::AUTOMATION_RUNTIME_SCHEMA_VERSION;
 use super::{AutomationError, AutomationOccurrence};
 use super::{AutomationRuntime, OccurrenceResult, OccurrenceState};
+#[cfg(test)]
 use crate::models::AutomationDefinition;
-use chrono::{DateTime, Duration, Utc};
+#[cfg(test)]
+use chrono::Duration;
+use chrono::{DateTime, Utc};
 use std::path::Path;
 use uuid::Uuid;
 
+#[cfg(test)]
 const MAX_OCCURRENCES: usize = 128;
-const GRACE_MINUTES: i64 = 5;
 
+#[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuntimeAdmission {
     Ready { occurrence_id: Uuid },
@@ -17,6 +21,7 @@ pub enum RuntimeAdmission {
     Missed { occurrence_id: Uuid },
 }
 
+#[cfg(test)]
 pub async fn admit_at(
     root: &Path,
     definition: &AutomationDefinition,
@@ -35,6 +40,7 @@ pub async fn admit_at(
     Ok(admission)
 }
 
+#[cfg(test)]
 fn admit_into(
     runtime: &mut AutomationRuntime,
     automation_id: Uuid,
@@ -47,12 +53,14 @@ fn admit_into(
     add_occurrence(runtime, automation_id, scheduled_for, now)
 }
 
+#[cfg(test)]
 fn pending_position(runtime: &AutomationRuntime, automation_id: Uuid) -> Option<usize> {
     runtime.occurrences.iter().position(|item| {
         item.automation_id == automation_id && item.state == OccurrenceState::Pending
     })
 }
 
+#[cfg(test)]
 fn merge_at(
     runtime: &mut AutomationRuntime,
     index: usize,
@@ -78,6 +86,7 @@ fn merge_at(
     })
 }
 
+#[cfg(test)]
 fn add_occurrence(
     runtime: &mut AutomationRuntime,
     automation_id: Uuid,
@@ -91,7 +100,9 @@ fn add_occurrence(
         .occurrences
         .iter()
         .any(|item| item.automation_id == automation_id && item.state == OccurrenceState::Running);
-    let occurrence = if !has_running && now - scheduled_for > Duration::minutes(GRACE_MINUTES) {
+    let occurrence = if !has_running
+        && now - scheduled_for > Duration::minutes(super::next_fire::MISSED_GRACE_MINUTES)
+    {
         AutomationOccurrence::missed(automation_id, scheduled_for, scheduled_for, 1, now)
     } else {
         let mut pending = AutomationOccurrence::pending(automation_id, scheduled_for);

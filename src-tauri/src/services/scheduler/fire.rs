@@ -185,10 +185,7 @@ async fn create_session(
     definition: &AutomationDefinition,
     project_id: Option<String>,
 ) -> Result<String, String> {
-    let name = format!(
-        "Automatisation • {} • {}",
-        definition.name, definition.model
-    );
+    let name = format!("⏰ {} • {}", definition.name, definition.model);
     session_store::create_with_project(
         &name,
         &definition.model,

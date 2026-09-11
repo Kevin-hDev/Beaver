@@ -14,6 +14,7 @@ pub enum AutomationMigrationStatus {
     Ready,
     NeedsTimezone,
     Conflicts(Vec<MigrationConflict>),
+    Unavailable,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize)]

@@ -4,12 +4,7 @@ use uuid::Uuid;
 
 const MAX_RETIRED_IDS: usize = 128;
 
-pub async fn reserved_automation_ids() -> Result<HashSet<Uuid>, super::AutomationError> {
-    reserved_at(&crate::services::paths::data_dir())
-        .await
-        .map_err(|_| super::AutomationError::StoreUnavailable)
-}
-
+#[cfg(test)]
 pub(crate) async fn reserved_at(root: &Path) -> Result<HashSet<Uuid>, String> {
     let _guard = super::store_lock().await;
     reserved_unlocked_at(root).await

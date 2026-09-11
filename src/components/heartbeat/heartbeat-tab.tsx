@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { PanelSlot } from "@/components/ui/panel-slots";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { useWakeups } from "@/hooks/use-wakeups";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import { formatDateTime, formatSchedule } from "@/lib/wakeup-format";
@@ -26,10 +27,18 @@ export const HeartbeatTab = memo(function HeartbeatTab({
   const [selectedId, setSelectedIdState] = useState<string | null>(null);
   const [dialog, setDialog] = useState<"none" | "create" | "edit">("none");
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [timezoneFilter, setTimezoneFilter] = useState(timezone);
   const timezones = useMemo(() => {
     const supported = (Intl as typeof Intl & { supportedValuesOf?: (key: "timeZone") => string[] }).supportedValuesOf;
     return supported?.("timeZone") ?? [];
   }, []);
+  const timezoneOptions = useMemo(() => {
+    const needle = timezoneFilter.trim().toLocaleLowerCase();
+    return timezones
+      .filter((zone) => !needle || zone.toLocaleLowerCase().includes(needle))
+      .slice(0, 100)
+      .map((zone) => ({ value: zone, label: zone }));
+  }, [timezoneFilter, timezones]);
 
   useEffect(() => {
     if (activeWakeupId !== undefined) setSelectedIdState(activeWakeupId);
@@ -73,8 +82,14 @@ export const HeartbeatTab = memo(function HeartbeatTab({
     </div>
   ), [selectedId, select, t, wakeupsApi]);
 
+  if (wakeupsApi.loading) {
+    return <PanelSlot name="detail"><div className="wk-blocking">{t("common.loading")}</div></PanelSlot>;
+  }
+  if (wakeupsApi.migration?.status === "unavailable") {
+    return <PanelSlot name="detail"><div className="wk-blocking" role="alert">{t("heartbeat.errors.migration_unavailable")}</div></PanelSlot>;
+  }
   if (wakeupsApi.migration?.status === "needs_timezone") {
-    return <PanelSlot name="detail"><div className="wk-blocking"><h2>{t("heartbeat.migration.title")}</h2><p>{t("heartbeat.migration.timezone")}</p><input className="field" list="wk-timezones" value={timezone} onChange={(event) => setTimezone(event.target.value)} /><datalist id="wk-timezones">{timezones.map((zone) => <option key={zone} value={zone} />)}</datalist><button className="btn btn-primary" type="button" onClick={() => void wakeupsApi.chooseTimezone(timezone)}>{t("heartbeat.migration.continue")}</button></div></PanelSlot>;
+    return <PanelSlot name="detail"><div className="wk-blocking"><h2>{t("heartbeat.migration.title")}</h2><p>{t("heartbeat.migration.timezone")}</p><input aria-label={t("heartbeat.migration.timezone")} className="field" value={timezoneFilter} onChange={(event) => setTimezoneFilter(event.target.value)} /><CustomSelect ariaLabel={t("heartbeat.migration.timezone")} options={timezoneOptions} value={timezone} onChange={setTimezone} /><button className="btn btn-primary" type="button" onClick={() => void wakeupsApi.chooseTimezone(timezone)}>{t("heartbeat.migration.continue")}</button></div></PanelSlot>;
   }
 
   const definition: WakeupDefinition | null = wakeupsApi.detail?.definition ?? null;

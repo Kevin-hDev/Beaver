@@ -1,8 +1,12 @@
 use super::{AutomationError, CreateAutomation, UpdateAutomation};
 use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus, AutomationTarget};
 use crate::services::llm;
+use chrono::{DateTime, Utc};
 
-pub(super) async fn validate_create(input: &CreateAutomation) -> Result<(), AutomationError> {
+pub(super) async fn validate_create(
+    input: &CreateAutomation,
+    now: DateTime<Utc>,
+) -> Result<(), AutomationError> {
     if input.status == AutomationStatus::Completed {
         return Err(AutomationError::InvalidInput);
     }
@@ -11,16 +15,20 @@ pub(super) async fn validate_create(input: &CreateAutomation) -> Result<(), Auto
     validate_text(&input.prompt, 12_000)?;
     validate_target(&input.target)?;
     validate_model(&input.provider, &input.model).await?;
-    validate_schedule(&input.schedule)
+    validate_schedule_at(&input.schedule, now)
 }
 
 pub(super) async fn validate_update(
     current: &AutomationDefinition,
     patch: &UpdateAutomation,
+    now: DateTime<Utc>,
 ) -> Result<(), AutomationError> {
     validate_update_locked(current, patch)?;
     if let Some(model) = &patch.model {
         validate_model(&current.provider, model).await?;
+    }
+    if let Some(schedule) = &patch.schedule {
+        validate_schedule_at(schedule, now)?;
     }
     Ok(())
 }
@@ -37,7 +45,10 @@ pub(super) fn validate_update_locked(
     }
     if current.status == AutomationStatus::Completed
         && patch.schedule.is_some()
-        && patch.status != Some(AutomationStatus::Active)
+        && !matches!(
+            patch.status,
+            Some(AutomationStatus::Active | AutomationStatus::Disabled)
+        )
     {
         return Err(AutomationError::InvalidSchedule);
     }
@@ -114,25 +125,11 @@ pub(crate) fn validate_schedule(schedule: &AutomationSchedule) -> Result<(), Aut
             expression,
             timezone,
         } => {
-            let probe = AutomationDefinition {
-                id: uuid::Uuid::nil(),
-                revision: 1,
-                name: "probe".into(),
-                description: None,
-                prompt: "probe".into(),
-                creator_session_id: None,
-                target: AutomationTarget::NewSession { project_id: None },
-                provider: "probe".into(),
-                model: "probe".into(),
-                schedule: AutomationSchedule::Cron {
-                    expression: expression.clone(),
-                    timezone: *timezone,
-                },
-                status: AutomationStatus::Active,
-                created_at: chrono::Utc::now(),
-                anchor_at: None,
-            };
-            crate::services::scheduler::next_fire::next_fire_at(&probe, chrono::Utc::now())
+            let probe = schedule_probe(AutomationSchedule::Cron {
+                expression: expression.clone(),
+                timezone: *timezone,
+            });
+            super::next_fire::next_fire_at(&probe, Utc::now())
                 .map(|_| ())
                 .map_err(|_| AutomationError::InvalidSchedule)
         }
@@ -142,6 +139,41 @@ pub(crate) fn validate_schedule(schedule: &AutomationSchedule) -> Result<(), Aut
             Err(AutomationError::InvalidSchedule)
         }
         _ => Ok(()),
+    }
+}
+
+fn validate_schedule_at(
+    schedule: &AutomationSchedule,
+    now: DateTime<Utc>,
+) -> Result<(), AutomationError> {
+    validate_schedule(schedule)?;
+    if let AutomationSchedule::Once { .. } = schedule {
+        let probe = schedule_probe(schedule.clone());
+        if super::next_fire::next_fire_at(&probe, now)
+            .map_err(|_| AutomationError::InvalidSchedule)?
+            .is_none()
+        {
+            return Err(AutomationError::InvalidSchedule);
+        }
+    }
+    Ok(())
+}
+
+fn schedule_probe(schedule: AutomationSchedule) -> AutomationDefinition {
+    AutomationDefinition {
+        id: uuid::Uuid::nil(),
+        revision: 1,
+        name: "probe".into(),
+        description: None,
+        prompt: "probe".into(),
+        creator_session_id: None,
+        target: AutomationTarget::NewSession { project_id: None },
+        provider: "probe".into(),
+        model: "probe".into(),
+        schedule,
+        status: AutomationStatus::Active,
+        created_at: Utc::now(),
+        anchor_at: None,
     }
 }
 
@@ -155,7 +187,9 @@ fn validate_target(target: &AutomationTarget) -> Result<(), AutomationError> {
 }
 
 fn validate_text(value: &str, max: usize) -> Result<(), AutomationError> {
-    if value.trim().is_empty() || value.chars().count() > max || value.chars().any(char::is_control)
+    if value.trim().is_empty()
+        || value.chars().count() > max
+        || value.chars().any(disallowed_control)
     {
         return Err(AutomationError::InvalidInput);
     }
@@ -163,9 +197,14 @@ fn validate_text(value: &str, max: usize) -> Result<(), AutomationError> {
 }
 
 fn validate_optional_text(value: Option<&str>, max: usize) -> Result<(), AutomationError> {
-    if value.is_some_and(|value| value.chars().count() > max || value.chars().any(char::is_control))
+    if value
+        .is_some_and(|value| value.chars().count() > max || value.chars().any(disallowed_control))
     {
         return Err(AutomationError::InvalidInput);
     }
     Ok(())
+}
+
+fn disallowed_control(character: char) -> bool {
+    character.is_control() && !matches!(character, '\n' | '\r' | '\t')
 }

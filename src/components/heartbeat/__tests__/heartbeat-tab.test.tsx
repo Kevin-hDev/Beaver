@@ -36,9 +36,25 @@ describe("HeartbeatTab migration", () => {
   it("reprend la migration avec le fuseau choisi", () => {
     useWakeups.mockReturnValue(api({ status: "needs_timezone" }));
     render(<HeartbeatTab />);
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Europe/Paris" } });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Europe/Paris" } });
+    fireEvent.click(screen.getByRole("button", { name: "heartbeat.migration.timezone" }));
+    fireEvent.click(screen.getByRole("option", { name: "Europe/Paris" }));
     fireEvent.click(screen.getByRole("button", { name: "heartbeat.migration.continue" }));
     expect(chooseTimezone).toHaveBeenCalledWith("Europe/Paris");
+  });
+
+  it("distingue le chargement initial de la liste vide", () => {
+    useWakeups.mockReturnValue({ ...api({ status: "ready" }), loading: true });
+    render(<HeartbeatTab />);
+    expect(screen.getByText("common.loading")).toBeInTheDocument();
+    expect(screen.queryByText("heartbeat.empty")).not.toBeInTheDocument();
+  });
+
+  it("bloque l'écran quand la migration est indisponible", () => {
+    useWakeups.mockReturnValue(api({ status: "unavailable" }));
+    render(<HeartbeatTab />);
+    expect(screen.getByText("heartbeat.errors.migration_unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("heartbeat.newWakeup")).not.toBeInTheDocument();
   });
 
   it("expose les deux décisions de conflit et la pause globale", () => {

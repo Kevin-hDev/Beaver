@@ -109,6 +109,7 @@ export interface MigrationConflict {
 export type AutomationMigrationStatus =
   | { status: "ready" }
   | { status: "needs_timezone" }
+  | { status: "unavailable" }
   | { status: "conflicts"; conflicts: MigrationConflict[] };
 
 export type AutomationErrorCode =

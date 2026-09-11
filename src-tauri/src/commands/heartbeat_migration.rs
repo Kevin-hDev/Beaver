@@ -11,7 +11,7 @@ pub(super) async fn status_at(
         .transpose()?;
     let status = crate::services::automations::migration::migrate_legacy(root, timezone)
         .await
-        .map_err(|_| "migration_unavailable")?;
+        .unwrap_or(crate::services::automations::migration::AutomationMigrationStatus::Unavailable);
     Ok(MigrationStatusView::from(status))
 }
 
@@ -57,6 +57,10 @@ impl From<crate::services::automations::migration::AutomationMigrationStatus>
             Status::Conflicts(conflicts) => Self {
                 status: "conflicts",
                 conflicts,
+            },
+            Status::Unavailable => Self {
+                status: "unavailable",
+                conflicts: Vec::new(),
             },
         }
     }

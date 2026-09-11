@@ -100,7 +100,7 @@ pub async fn list_wakeup_runs(
 }
 
 #[tauri::command]
-pub async fn get_automation_migration_status(
+pub async fn reconcile_automation_migration(
     timezone: Option<String>,
 ) -> Result<MigrationStatusView, String> {
     let detected = timezone.or_else(|| iana_time_zone::get_timezone().ok());

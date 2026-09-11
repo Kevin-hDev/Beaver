@@ -191,6 +191,89 @@ async fn dispatcher_runs_the_full_contract_and_allows_self_deletion() {
     super::session_store::remove_session_lock(&session.id).await;
 }
 
+#[tokio::test]
+async fn external_instruction_cannot_mutate_another_sessions_automation_without_manual_approval() {
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK.lock().await;
+    crate::services::automations::mutate(|items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let owner = super::session_store::create_full(
+        "Owner",
+        "gpt-5.6-luna",
+        "codex-oauth",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let caller = super::session_store::create_full(
+        "Caller",
+        "gpt-5.6-luna",
+        "codex-oauth",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let created = dispatch(
+        &owner.id,
+        std::path::Path::new("."),
+        tokio_util::sync::CancellationToken::new(),
+        json!({
+            "action":"create",
+            "name":"CI",
+            "prompt":"Vérifie",
+            "target_mode":"resume_session",
+            "schedule":{"kind":"after_completion","delay_minutes":10}
+        }),
+    )
+    .await;
+    let id = created["data"]["id"].as_str().unwrap();
+    for (request_id, args) in [
+        (
+            "external-instruction-update",
+            json!({"action":"update","automation_id":id,"patch":{"name":"Piratée"}}),
+        ),
+        (
+            "external-instruction-delete",
+            json!({"action":"delete","automation_id":id}),
+        ),
+    ] {
+        let cancel = tokio_util::sync::CancellationToken::new();
+        cancel.cancel();
+        let result = super::tool_executor_write::execute_write(
+            &super::stream_events::AgentEventEmitter::test(caller.id.clone()),
+            "manage_automation",
+            &args,
+            std::path::Path::new("."),
+            "manual",
+            &mut super::write_guard::WriteGuard::new(),
+            &caller.id,
+            request_id,
+            cancel,
+            false,
+            None,
+        )
+        .await;
+        assert!(result.is_error);
+    }
+
+    assert_eq!(crate::services::automations::read_all().await.unwrap().len(), 1);
+    for session in [&owner.id, &caller.id] {
+        super::session_store::delete_one(session).await.unwrap();
+        super::session_store::remove_session_lock(session).await;
+    }
+    crate::services::automations::mutate(|items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+}
+
 async fn dispatch(
     session_id: &str,
     cwd: &std::path::Path,

@@ -95,6 +95,22 @@ async fn create_list_get_update_delete_advances_revisions() {
 }
 
 #[tokio::test]
+async fn multiline_prompts_and_descriptions_are_accepted() {
+    let root = tempfile::tempdir().unwrap();
+    let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
+    let mut request = input(AutomationSchedule::AfterCompletion { delay_minutes: 10 });
+    request.prompt = "Vérifie la CI\n\tPuis résume les erreurs".into();
+    request.description = Some("Étape 1\r\nÉtape 2".into());
+
+    let created = create_at(root.path(), &actor(), request, now)
+        .await
+        .unwrap();
+
+    assert!(created.definition.prompt.contains('\n'));
+    assert!(created.definition.description.unwrap().contains("\r\n"));
+}
+
+#[tokio::test]
 async fn list_reports_a_persisted_running_occurrence() {
     let root = tempfile::tempdir().unwrap();
     let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
@@ -350,4 +366,112 @@ async fn completion_and_reactivation_follow_the_current_schedule() {
         .await
         .unwrap()
         .is_empty());
+}
+
+#[tokio::test]
+async fn completed_automation_can_receive_a_disabled_replacement_schedule() {
+    let root = tempfile::tempdir().unwrap();
+    let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
+    let once = create_at(
+        root.path(),
+        &actor(),
+        input(AutomationSchedule::Once {
+            local_datetime: now.naive_utc() + chrono::Duration::hours(1),
+            timezone: chrono_tz::UTC,
+        }),
+        now,
+    )
+    .await
+    .unwrap();
+    record_completion_at(root.path(), once.definition.id, now)
+        .await
+        .unwrap();
+
+    let updated = update_at(
+        root.path(),
+        &actor(),
+        once.definition.id,
+        UpdateAutomation {
+            schedule: Some(AutomationSchedule::Once {
+                local_datetime: now.naive_utc() + chrono::Duration::hours(2),
+                timezone: chrono_tz::UTC,
+            }),
+            status: Some(AutomationStatus::Disabled),
+            ..Default::default()
+        },
+        now,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(updated.definition.status, AutomationStatus::Disabled);
+}
+
+#[tokio::test]
+async fn once_in_the_past_is_rejected_on_create_and_update() {
+    let root = tempfile::tempdir().unwrap();
+    let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
+    let past = AutomationSchedule::Once {
+        local_datetime: now.naive_utc() - chrono::Duration::minutes(1),
+        timezone: chrono_tz::UTC,
+    };
+    assert_eq!(
+        create_at(root.path(), &actor(), input(past.clone()), now)
+            .await
+            .unwrap_err(),
+        AutomationError::InvalidSchedule
+    );
+
+    let created = create_at(
+        root.path(),
+        &actor(),
+        input(AutomationSchedule::AfterCompletion { delay_minutes: 10 }),
+        now,
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        update_at(
+            root.path(),
+            &actor(),
+            created.definition.id,
+            UpdateAutomation {
+                schedule: Some(past),
+                ..Default::default()
+            },
+            now,
+        )
+        .await
+        .unwrap_err(),
+        AutomationError::InvalidSchedule
+    );
+}
+
+#[tokio::test]
+async fn identical_after_completion_schedule_does_not_move_its_anchor() {
+    let root = tempfile::tempdir().unwrap();
+    let now = Utc.with_ymd_and_hms(2026, 9, 10, 10, 0, 0).unwrap();
+    let created = create_at(
+        root.path(),
+        &actor(),
+        input(AutomationSchedule::AfterCompletion { delay_minutes: 10 }),
+        now,
+    )
+    .await
+    .unwrap();
+
+    let updated = update_at(
+        root.path(),
+        &actor(),
+        created.definition.id,
+        UpdateAutomation {
+            schedule: Some(AutomationSchedule::AfterCompletion { delay_minutes: 10 }),
+            ..Default::default()
+        },
+        now + chrono::Duration::minutes(3),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(updated.definition.anchor_at, Some(now));
 }

@@ -9,6 +9,7 @@ interface WakeupRowProps {
 }
 
 export function WakeupRow({ wakeup, onClick }: WakeupRowProps) {
+  const { t } = useTranslation();
   return (
     <button className="wk-row" onClick={onClick} type="button">
       <span className="wk-row-info">
@@ -17,7 +18,7 @@ export function WakeupRow({ wakeup, onClick }: WakeupRowProps) {
           <span className="wk-provider-tag" title={wakeup.provider}>{wakeup.provider}</span>
         </span>
         <span className="wk-row-desc">{wakeup.model} · {formatTarget(wakeup.target)}</span>
-        <span className="wk-row-next">{formatDateTime(wakeup.next_fire_at)} · {formatRunStatus(wakeup.last_run?.status)}</span>
+        <span className="wk-row-next">{t("heartbeat.fields.nextFire")}: {formatDateTime(wakeup.next_fire_at)} · {formatRunStatus(wakeup.last_run?.status)}</span>
       </span>
       <span className="wk-row-badges">
         <ScheduleBadge schedule={wakeup.schedule} />
@@ -27,3 +28,4 @@ export function WakeupRow({ wakeup, onClick }: WakeupRowProps) {
     </button>
   );
 }
+import { useTranslation } from "react-i18next";

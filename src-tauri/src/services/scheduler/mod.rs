@@ -3,11 +3,10 @@ mod agentic;
 mod agentic_modes_tests;
 pub mod fire;
 mod fire_actor;
-pub mod next_fire;
-#[cfg(test)]
-mod next_fire_tests;
 mod runtime;
 mod runtime_publish;
+#[cfg(test)]
+mod runtime_test_support;
 #[cfg(test)]
 mod runtime_tests;
 #[cfg(test)]
@@ -26,7 +25,7 @@ pub use work_supervision::SchedulerDiagnostics;
 use work_supervision::SchedulerWorkServices;
 
 #[cfg(test)]
-pub(crate) use runtime::{
+pub(crate) use runtime_test_support::{
     admit_due_at as admit_due_for_test, mark_running_at as mark_running_for_test,
     mark_terminal_at as mark_terminal_for_test, publish_terminal_at as publish_terminal_for_test,
     runtime_at as runtime_for_test,

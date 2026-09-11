@@ -7,7 +7,7 @@ use std::str::FromStr;
 const MAX_CRON_EXPRESSION_BYTES: usize = 128;
 const MAX_DELAY_MINUTES: u32 = 525_600;
 const MAX_DST_GAP_MINUTES: usize = 24 * 60;
-const MISSED_GRACE_MINUTES: i64 = 5;
+pub(crate) const MISSED_GRACE_MINUTES: i64 = 5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScheduleError {

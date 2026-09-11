@@ -1,7 +1,5 @@
 use super::work_supervision::SchedulerWakeupWork;
 use crate::models::{AutomationDefinition, AutomationStatus};
-#[cfg(test)]
-use crate::services::automations::RuntimeAdmission;
 use crate::services::automations::{
     AutomationError, AutomationRuntime, OccurrenceResult, OccurrenceState,
 };
@@ -14,8 +12,6 @@ use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-#[cfg(test)]
-pub(crate) type Admission = RuntimeAdmission;
 pub type AutomationRunResult = OccurrenceResult;
 
 pub(super) async fn run_loop(
@@ -61,34 +57,57 @@ async fn tick(
         .map(|config| config.heartbeat.global_paused)
         .unwrap_or(true);
     let now = Utc::now();
-    let scanned = if paused { &[][..] } else { &definitions };
-    match crate::services::automations::scan_and_advance(now, scanned).await {
-        Ok(ids) => publish_scanned_terminals(ids).await,
+    match scan_if_active_at(
+        &crate::services::paths::data_dir(),
+        paused,
+        now,
+        &definitions,
+    )
+    .await
+    {
+        Ok(_) => {}
         Err(_) => {
             ::log::warn!("[scheduler] balayage des automatisations indisponible");
             return std::time::Duration::from_secs(60);
         }
     }
+    let runtime = match crate::services::automations::read_runtime().await {
+        Ok(runtime) => runtime,
+        Err(_) => {
+            ::log::warn!("[scheduler] runtime des automatisations indisponible");
+            return std::time::Duration::from_secs(60);
+        }
+    };
+    publish_all(terminal_ids(&runtime)).await;
     if !paused {
         launch_ready(app, lifetime, work, &definitions).await;
     }
-    sleep_until_next(&definitions, paused, now)
+    let has_pending = runtime
+        .occurrences
+        .iter()
+        .any(|item| item.state == OccurrenceState::Pending);
+    sleep_until_next(&definitions, paused, now, has_pending)
 }
 
-async fn publish_scanned_terminals(ids: Vec<Uuid>) {
-    let Ok(runtime) = crate::services::automations::read_runtime().await else {
-        return;
-    };
-    let terminals = ids
-        .into_iter()
-        .filter(|id| {
-            runtime
-                .occurrences
-                .iter()
-                .any(|item| item.id == *id && item.state == OccurrenceState::Terminal)
-        })
-        .collect();
-    publish_all(terminals).await;
+pub(crate) async fn scan_if_active_at(
+    root: &Path,
+    paused: bool,
+    now: DateTime<Utc>,
+    definitions: &[AutomationDefinition],
+) -> Result<Vec<Uuid>, String> {
+    if paused {
+        return Ok(Vec::new());
+    }
+    crate::services::automations::scan_and_advance_at(root, now, definitions).await
+}
+
+pub(crate) fn terminal_ids(runtime: &AutomationRuntime) -> Vec<Uuid> {
+    runtime
+        .occurrences
+        .iter()
+        .filter(|item| item.state == OccurrenceState::Terminal)
+        .map(|item| item.id)
+        .collect()
 }
 
 async fn publish_all(ids: Vec<Uuid>) {
@@ -155,18 +174,23 @@ fn ready(runtime: &AutomationRuntime, definitions: &[AutomationDefinition]) -> V
         .collect()
 }
 
-fn sleep_until_next(
+pub(crate) fn sleep_until_next(
     definitions: &[AutomationDefinition],
     paused: bool,
     now: DateTime<Utc>,
+    has_pending: bool,
 ) -> std::time::Duration {
-    if paused {
+    if paused || has_pending {
         return std::time::Duration::from_secs(60);
     }
     let cap = now + Duration::minutes(60);
     let next = definitions
         .iter()
-        .filter_map(|item| super::next_fire::next_fire_at(item, now).ok().flatten())
+        .filter_map(|item| {
+            crate::services::automations::next_fire::next_fire_at(item, now)
+                .ok()
+                .flatten()
+        })
         .map(|item| item.at)
         .min()
         .unwrap_or(cap)
@@ -177,47 +201,23 @@ fn sleep_until_next(
 }
 
 pub async fn mark_running(id: Uuid, started_at: DateTime<Utc>) -> Result<(), AutomationError> {
-    mark_running_at(&crate::services::paths::data_dir(), id, started_at).await
+    crate::services::automations::mark_runtime_running_at(
+        &crate::services::paths::data_dir(),
+        id,
+        started_at,
+    )
+    .await
 }
 
 pub async fn mark_terminal(id: Uuid, result: AutomationRunResult) -> Result<(), AutomationError> {
-    mark_terminal_at(&crate::services::paths::data_dir(), id, result).await
+    crate::services::automations::mark_runtime_terminal_at(
+        &crate::services::paths::data_dir(),
+        id,
+        result,
+    )
+    .await
 }
 
 pub async fn publish_terminal(id: Uuid) -> Result<(), AutomationError> {
     super::runtime_publish::publish_terminal_at(&crate::services::paths::data_dir(), id).await
 }
-
-#[cfg(test)]
-pub(crate) async fn admit_due_at(
-    root: &Path,
-    definition: &AutomationDefinition,
-    scheduled_for: DateTime<Utc>,
-    now: DateTime<Utc>,
-) -> Result<Admission, AutomationError> {
-    crate::services::automations::admit_runtime_at(root, definition, scheduled_for, now).await
-}
-
-pub(crate) async fn mark_running_at(
-    root: &Path,
-    id: Uuid,
-    started_at: DateTime<Utc>,
-) -> Result<(), AutomationError> {
-    crate::services::automations::mark_runtime_running_at(root, id, started_at).await
-}
-
-pub(crate) async fn mark_terminal_at(
-    root: &Path,
-    id: Uuid,
-    result: AutomationRunResult,
-) -> Result<(), AutomationError> {
-    crate::services::automations::mark_runtime_terminal_at(root, id, result).await
-}
-
-#[cfg(test)]
-pub(crate) async fn runtime_at(root: &Path) -> Result<AutomationRuntime, AutomationError> {
-    crate::services::automations::read_runtime_at(root).await
-}
-
-#[cfg(test)]
-pub(crate) use super::runtime_publish::publish_terminal_at;

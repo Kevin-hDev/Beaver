@@ -16,12 +16,14 @@ pub(crate) async fn read_all_at(root: &Path) -> Result<Vec<AutomationDefinition>
     read_all_unlocked_at(root).await
 }
 
+#[cfg(test)]
 pub async fn mutate<R>(
     change: impl FnOnce(&mut Vec<AutomationDefinition>) -> Result<R, String>,
 ) -> Result<R, String> {
     mutate_at(&crate::services::paths::data_dir(), change).await
 }
 
+#[cfg(test)]
 pub(crate) async fn mutate_at<R>(
     root: &Path,
     change: impl FnOnce(&mut Vec<AutomationDefinition>) -> Result<R, String>,
@@ -33,6 +35,7 @@ pub(crate) async fn mutate_at<R>(
     Ok(result)
 }
 
+#[cfg(test)]
 pub(crate) async fn write_file_at(root: &Path, file: &AutomationFile) -> Result<(), String> {
     let _guard = super::store_lock().await;
     write_definitions_unlocked_at(root, decode_file(file)?).await

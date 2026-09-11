@@ -3,13 +3,6 @@ use crate::models::AutomationDefinition;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-pub async fn scan_and_advance(
-    through: DateTime<Utc>,
-    definitions: &[AutomationDefinition],
-) -> Result<Vec<Uuid>, String> {
-    scan_definitions_at(&crate::services::paths::data_dir(), through, definitions).await
-}
-
 pub(crate) async fn scan_definitions_at(
     root: &std::path::Path,
     through: DateTime<Utc>,
@@ -44,9 +37,8 @@ fn collect(
 ) -> Result<Vec<AutomationOccurrence>, String> {
     let mut occurrences = Vec::new();
     for definition in definitions {
-        let due =
-            crate::services::scheduler::next_fire::due_between(definition, last_checked, through)
-                .map_err(|_| "AUTOMATION_SCHEDULE_INVALID".to_string())?;
+        let due = super::next_fire::due_between(definition, last_checked, through)
+            .map_err(|_| "AUTOMATION_SCHEDULE_INVALID".to_string())?;
         for range in [due.missed, due.admissible].into_iter().flatten() {
             if range.dst_adjusted_count > 0 {
                 diagnostics.push(DstDiagnostic {

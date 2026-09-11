@@ -96,7 +96,6 @@ pub enum OccurrenceResultStatus {
 pub use super::runtime_recovery::recover_startup;
 #[cfg(test)]
 pub(crate) use super::runtime_recovery::recover_startup_at;
-pub use super::runtime_scan::scan_and_advance;
 
 #[derive(Debug, Clone)]
 pub struct AutomationRuntime {
@@ -106,11 +105,13 @@ pub struct AutomationRuntime {
     pub retired_automation_ids: Vec<Uuid>,
 }
 
+#[cfg(test)]
 pub(crate) async fn read_at(root: &Path) -> Result<Option<AutomationRuntime>, String> {
     let _guard = super::store_lock().await;
     read_unlocked_at(root).await
 }
 
+#[cfg(test)]
 pub(crate) async fn write_at(root: &Path, runtime: &AutomationRuntime) -> Result<(), String> {
     let _guard = super::store_lock().await;
     write_unlocked_at(root, runtime).await

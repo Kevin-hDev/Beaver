@@ -17,17 +17,13 @@ pub(super) fn detail(
     definition: AutomationDefinition,
     now: DateTime<Utc>,
 ) -> Result<AutomationDetail, AutomationError> {
-    let next_fire_at = crate::services::scheduler::next_fire::next_fire_at(&definition, now)
+    let next_fire_at = super::next_fire::next_fire_at(&definition, now)
         .map_err(|_| AutomationError::InvalidSchedule)?
         .map(|next| next.at);
     Ok(AutomationDetail {
         definition,
         next_fire_at,
     })
-}
-
-pub(super) fn summary(definition: AutomationDefinition, now: DateTime<Utc>) -> AutomationSummary {
-    summary_with_state(definition, now, false, false, None)
 }
 
 pub(super) fn summary_with_state(
@@ -37,7 +33,7 @@ pub(super) fn summary_with_state(
     running: bool,
     last_run: Option<AutomationLastRun>,
 ) -> AutomationSummary {
-    let next_fire_at = crate::services::scheduler::next_fire::next_fire_at(&definition, now)
+    let next_fire_at = super::next_fire::next_fire_at(&definition, now)
         .ok()
         .flatten()
         .map(|next| next.at);
@@ -90,7 +86,10 @@ pub(super) fn apply_patch(
     let was_active = current.status == AutomationStatus::Active;
     let was_after_completion =
         matches!(current.schedule, AutomationSchedule::AfterCompletion { .. });
-    let schedule_changed = patch.schedule.is_some();
+    let schedule_changed = patch
+        .schedule
+        .as_ref()
+        .is_some_and(|schedule| schedule != &current.schedule);
     if let Some(name) = patch.name {
         current.name = name;
     }

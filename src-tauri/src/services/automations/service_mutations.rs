@@ -25,7 +25,7 @@ pub(crate) async fn create_at(
     .collect();
     let operation = super::audit_store::begin(root, actor, "create", None, fields).await?;
     let result = async {
-        super::validation::validate_create(&input).await?;
+        super::validation::validate_create(&input, now).await?;
         super::service_helpers::validate_resume_actor(actor, &input.target)?;
         let definition = super::service_helpers::new_definition(actor, input, now);
         super::validation::validate_definition(&definition)?;
@@ -65,7 +65,7 @@ pub(crate) async fn update_at(
     .await?;
     let result = async {
         let current = super::service_helpers::find(root, id).await?;
-        super::validation::validate_update(&current, &patch).await?;
+        super::validation::validate_update(&current, &patch, now).await?;
         let guard = super::store_lock().await;
         let mut definitions = super::store::read_all_unlocked_at(root)
             .await
@@ -119,6 +119,7 @@ pub(crate) async fn delete_at(
     super::audit_store::complete(root, actor, operation, "delete", Some(id), result, None).await
 }
 
+#[cfg(test)]
 pub(crate) async fn record_completion_at(
     root: &Path,
     id: Uuid,

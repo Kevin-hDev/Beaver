@@ -145,6 +145,22 @@ async fn migration_waits_for_timezone_then_resolves_both_conflict_choices() {
     assert!(audit.contains("resolve_migration_conflict"));
 }
 
+#[tokio::test]
+async fn corrupt_legacy_config_is_reported_as_an_unavailable_migration() {
+    let root = tempfile::tempdir().unwrap();
+    std::fs::write(root.path().join("config.json"), b"{not-json").unwrap();
+
+    let status = migration_status_at(root.path(), Some("Europe/Paris"))
+        .await
+        .unwrap();
+
+    assert_eq!(status.status, "unavailable");
+    assert_eq!(
+        std::fs::read(root.path().join("config.json")).unwrap(),
+        b"{not-json"
+    );
+}
+
 fn write_legacy(root: &std::path::Path, id: uuid::Uuid, name: &str) {
     std::fs::write(
         root.join("config.json"),

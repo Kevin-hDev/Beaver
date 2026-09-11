@@ -52,7 +52,7 @@ macro_rules! generate {
             crate::commands::set_global_paused,
             crate::commands::get_heartbeat_config,
             crate::commands::list_wakeup_runs,
-            crate::commands::get_automation_migration_status,
+            crate::commands::reconcile_automation_migration,
             crate::commands::resolve_automation_migration_conflict,
             crate::commands::list_personality_files,
             crate::commands::read_personality_file,

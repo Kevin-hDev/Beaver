@@ -1,4 +1,5 @@
-use super::runtime::{
+use super::runtime::{scan_if_active_at, sleep_until_next, terminal_ids};
+use super::runtime_test_support::{
     admit_due_at, mark_running_at, mark_terminal_at, publish_terminal_at, runtime_at, Admission,
     AutomationRunResult,
 };
@@ -113,6 +114,67 @@ async fn a_busy_session_keeps_pending_without_age_expiration() {
         .unwrap();
     assert_eq!(pending.state, OccurrenceState::Pending);
     assert_eq!(pending.updated_at, at(1));
+}
+
+#[tokio::test]
+async fn pause_crossing_a_deadline_keeps_the_checkpoint_for_resume() {
+    let root = tempfile::tempdir().unwrap();
+    let mut automation = definition(Uuid::new_v4());
+    automation.schedule = AutomationSchedule::Once {
+        local_datetime: at(0).naive_utc(),
+        timezone: chrono_tz::UTC,
+    };
+    let before_deadline = at(0) - chrono::Duration::minutes(1);
+    crate::services::automations::scan_and_advance_at(root.path(), before_deadline, &[])
+        .await
+        .unwrap();
+
+    scan_if_active_at(root.path(), true, at(10), &[automation.clone()])
+        .await
+        .unwrap();
+    assert_eq!(
+        runtime_at(root.path()).await.unwrap().last_checked_at,
+        before_deadline
+    );
+
+    scan_if_active_at(root.path(), false, at(10), &[automation])
+        .await
+        .unwrap();
+    let runtime = runtime_at(root.path()).await.unwrap();
+    assert_eq!(runtime.last_checked_at, at(10));
+    assert!(runtime.occurrences.iter().any(|item| {
+        item.state == OccurrenceState::Terminal
+            && item
+                .result
+                .as_ref()
+                .is_some_and(|result| result.status == OccurrenceResultStatus::Missed)
+    }));
+}
+
+#[test]
+fn pending_work_caps_the_scheduler_sleep_to_one_minute() {
+    assert_eq!(
+        sleep_until_next(&[], false, at(0), true),
+        std::time::Duration::from_secs(60)
+    );
+}
+
+#[test]
+fn every_terminal_occurrence_is_selected_for_retry() {
+    let mut terminal =
+        crate::services::automations::AutomationOccurrence::pending(Uuid::new_v4(), at(0));
+    terminal.state = OccurrenceState::Terminal;
+    terminal.result = Some(result());
+    let pending =
+        crate::services::automations::AutomationOccurrence::pending(Uuid::new_v4(), at(1));
+    let runtime = crate::services::automations::AutomationRuntime {
+        schema_version: 1,
+        last_checked_at: at(1),
+        occurrences: vec![terminal.clone(), pending],
+        retired_automation_ids: Vec::new(),
+    };
+
+    assert_eq!(terminal_ids(&runtime), vec![terminal.id]);
 }
 
 #[tokio::test]

@@ -32,7 +32,7 @@ function mockInitialLoad() {
   vi.mocked(invoke).mockImplementation((command) => {
     if (command === "list_wakeups") return Promise.resolve([wakeup]);
     if (command === "get_heartbeat_config") return Promise.resolve({ global_paused: false });
-    if (command === "get_automation_migration_status") {
+    if (command === "reconcile_automation_migration") {
       return Promise.resolve({ status: "ready", conflicts: [] });
     }
     if (command === "get_wakeup") return Promise.resolve(detail);

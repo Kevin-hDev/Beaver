@@ -45,7 +45,7 @@ export function useWakeups() {
       const [list, heartbeat, migrationStatus] = await Promise.all([
         invoke<ScheduledWakeup[]>("list_wakeups"),
         invoke<HeartbeatConfig>("get_heartbeat_config"),
-        invoke<AutomationMigrationStatus>("get_automation_migration_status", { timezone: null }),
+        invoke<AutomationMigrationStatus>("reconcile_automation_migration", { timezone: null }),
       ]);
       setWakeups(list);
       setGlobalPaused(heartbeat.global_paused);
@@ -159,7 +159,7 @@ export function useWakeups() {
 
   const chooseTimezone = useCallback(async (timezone: string) => {
     try {
-      const status = await invoke<AutomationMigrationStatus>("get_automation_migration_status", { timezone });
+      const status = await invoke<AutomationMigrationStatus>("reconcile_automation_migration", { timezone });
       setMigration(status);
       await refresh();
     } catch (cause) { reportError(cause); }
