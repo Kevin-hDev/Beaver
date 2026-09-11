@@ -63,6 +63,10 @@ fn payload_uses_native_system_tools_required_limit_and_cache() {
     })];
 
     let prepared = super::build_payload(&config(&messages, &tools, "off"), 4_096).unwrap();
+    assert_eq!(
+        prepared.context_count,
+        crate::services::agent_local::prepared_context_count::anthropic(&prepared.payload)
+    );
     let payload = prepared.payload;
 
     assert_eq!(payload["max_tokens"], 4_096);

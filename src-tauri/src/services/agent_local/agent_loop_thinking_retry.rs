@@ -65,6 +65,7 @@ pub struct ThinkingRetryOutput {
     pub interrupted: bool,
     pub generation: GenerationAggregate,
     pub attempt: u32,
+    pub input_tokens: u32,
 }
 
 pub async fn retry_if_needed(
@@ -80,6 +81,7 @@ pub async fn retry_if_needed(
             interrupted: false,
             generation,
             attempt: 1,
+            input_tokens: params.input_tokens,
         });
     };
 
@@ -98,7 +100,8 @@ pub async fn retry_if_needed(
         send_retry_indicator(params.on_event, REASON_THINKING_ONLY, 1, 1);
     }
 
-    super::context_usage_runtime::ContextAttempt {
+    let preparation = super::context_usage_runtime::PreparedContextAttempt::new(
+        super::context_usage_runtime::ContextAttempt {
         on_event: params.on_event,
         journal: params.journal,
         provider_id: "ollama",
@@ -108,9 +111,9 @@ pub async fn retry_if_needed(
         context_limit: params.context_limit,
         measured_input_source:
             super::context_usage_record::ContextCountSource::NativeCounter,
-    }
-    .persist_preparation(params.input_tokens as usize, params.breakdown)
-    .await?;
+        },
+        params.breakdown,
+    );
 
     params.eager_handle.abort();
     let (retry_tx, retry_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -133,6 +136,7 @@ pub async fn retry_if_needed(
         super::ollama_stream_request::ReplayDiagnosticContext {
             session_id: &params.session_id,
             request_id: &params.request_id,
+            preparation: Some(&preparation),
         },
     )
     .await?;
@@ -147,6 +151,7 @@ pub async fn retry_if_needed(
         interrupted,
         generation,
         attempt: 2,
+        input_tokens: preparation.input_tokens(),
     })
 }
 

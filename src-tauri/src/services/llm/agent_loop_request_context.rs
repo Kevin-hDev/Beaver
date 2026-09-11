@@ -1,18 +1,8 @@
 use super::agent_loop_request_types::ApiRequestParams;
 use crate::services::agent_local::context_usage_buckets::RequestContextUsage;
 use crate::services::agent_local::context_usage_runtime::ContextAttempt;
+use crate::services::agent_local::context_usage_runtime::PreparedContextAttempt;
 use crate::services::agent_local::types_ollama::StreamResult;
-
-pub(super) async fn persist_preparation(
-    params: &ApiRequestParams<'_>,
-    attempt: u32,
-    input_tokens: usize,
-    breakdown: RequestContextUsage,
-) -> Result<u32, String> {
-    context_attempt(params, attempt)
-        .persist_preparation(input_tokens, breakdown)
-        .await
-}
 
 pub(super) async fn persist_result(
     params: &ApiRequestParams<'_>,
@@ -22,6 +12,14 @@ pub(super) async fn persist_result(
     context_attempt(params, attempt)
         .persist_result(result)
         .await
+}
+
+pub(super) fn prepared_attempt<'a>(
+    params: &'a ApiRequestParams<'a>,
+    attempt: u32,
+    breakdown: RequestContextUsage,
+) -> PreparedContextAttempt<'a> {
+    PreparedContextAttempt::new(context_attempt(params, attempt), breakdown)
 }
 
 fn context_attempt<'a>(params: &'a ApiRequestParams<'a>, attempt: u32) -> ContextAttempt<'a> {

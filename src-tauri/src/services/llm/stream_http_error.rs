@@ -5,6 +5,27 @@ pub enum RequestError {
     InvalidConfiguration,
 }
 
+pub(super) async fn read_provider_error(
+    mut response: reqwest::Response,
+) -> zeroize::Zeroizing<String> {
+    let mut routing = super::provider_diagnostics::openrouter::take(&mut response);
+    let body = match crate::services::secure_http::read_bounded(
+        response,
+        crate::services::secure_http::PROVIDER_ERROR_LIMIT,
+    )
+    .await
+    {
+        Ok(bytes) => zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()),
+        Err(_) => zeroize::Zeroizing::new(String::new()),
+    };
+    if let Some(routing) = routing.as_mut() {
+        if let Ok(value) = serde_json::from_str(&body) {
+            routing.observe(&value);
+        }
+    }
+    body
+}
+
 impl std::fmt::Display for RequestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -63,5 +84,14 @@ pub(super) fn classify_error(
                 .as_str()
                 .to_string(),
         ),
+    }
+}
+
+pub(super) fn request_error_for_limit(
+    error: super::stream_max_tokens::ResolveError,
+) -> RequestError {
+    match error {
+        super::stream_max_tokens::ResolveError::ContextExhausted => RequestError::PayloadTooLarge,
+        super::stream_max_tokens::ResolveError::InvalidLimit => RequestError::InvalidConfiguration,
     }
 }

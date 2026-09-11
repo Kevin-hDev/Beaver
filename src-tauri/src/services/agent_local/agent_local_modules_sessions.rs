@@ -9,6 +9,9 @@ pub mod context_usage_record;
 mod context_usage_record_tests;
 pub mod context_usage_runtime;
 pub mod context_usage_startup;
+pub mod prepared_context_count;
+#[cfg(test)]
+mod prepared_context_count_tests;
 pub mod conversation_admission;
 mod conversation_admission_ids;
 mod conversation_admission_replay;

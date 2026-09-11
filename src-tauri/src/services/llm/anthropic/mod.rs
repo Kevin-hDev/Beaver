@@ -28,6 +28,7 @@ mod stream_state_support;
 )]
 pub(super) mod tools;
 mod transport;
+mod transport_error;
 
 pub(super) use client::{list_models, test_connection};
 #[allow(

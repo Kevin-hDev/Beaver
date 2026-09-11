@@ -1,7 +1,6 @@
 use super::agent_loop_request_types::ApiRequestOutput;
 pub(super) use super::agent_loop_request_types::ApiRequestParams;
 use crate::services::agent_local::context_usage_buckets::RequestContextUsage;
-use crate::services::agent_local::generation_metrics::GenerationAggregate;
 use crate::services::compress::realtime_budget::RealtimeBudget;
 
 pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput, String> {
@@ -42,13 +41,6 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.context_usage_seed,
     );
     let mut textual_input_tokens = breakdown.total_tokens();
-    let mut input_tokens = super::agent_loop_request_context::persist_preparation(
-        &params,
-        1,
-        textual_input_tokens,
-        breakdown,
-    )
-    .await?;
     let realtime_budget = RealtimeBudget::for_session(
         params.session_id,
         params.configured_context,
@@ -90,6 +82,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     .await;
     let mut next_attempt = 1_u32;
     let turn = super::agent_loop_turn::metric_turn(params.turn);
+    let first_preparation =
+        super::agent_loop_request_context::prepared_attempt(&params, 1, breakdown);
     let first_attempt = super::retry::retry_stream(
         params.on_event,
         params.session_id,
@@ -109,6 +103,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         plan_active,
         realtime_budget,
         params.continuation_target.as_ref(),
+        Some(&first_preparation),
     )
     .await;
     let (outcome, completed_attempt) = match first_attempt {
@@ -138,13 +133,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.context_usage_seed,
             );
             textual_input_tokens = breakdown.total_tokens();
-            input_tokens = super::agent_loop_request_context::persist_preparation(
-                &params,
-                2,
-                textual_input_tokens,
-                breakdown,
-            )
-            .await?;
+            let reduced_preparation =
+                super::agent_loop_request_context::prepared_attempt(&params, 2, breakdown);
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,
                 params.request_id,
@@ -176,47 +166,32 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 plan_active,
                 reduced_budget,
                 params.continuation_target.as_ref(),
+                Some(&reduced_preparation),
             )
             .await?;
-            (outcome, 2)
+            let input_tokens = reduced_preparation.input_tokens();
+            return super::agent_loop_request_finish::finish(
+                params,
+                outcome,
+                2,
+                input_tokens,
+                plan_active,
+                completion_cancel,
+            )
+            .await;
         }
         Err(error) => return Err(error),
     };
-    let interrupted = outcome.is_interrupted();
-    let result = outcome.into_result();
-    super::agent_loop_request_context::persist_result(&params, completed_attempt, &result).await?;
-    let mut generation = GenerationAggregate::default();
-    generation.add_result(&result);
-    crate::services::provider_usage::record_for_session(
-        params.provider_id,
-        params.model,
-        params.session_id,
-        crate::services::provider_usage::UsageWorkload::Primary,
-        result.usage.as_ref(),
-    )
-    .await;
-    crate::services::agent_local::stream_diagnostics_model::record_model_result(
-        params.session_id,
-        params.request_id,
-        params.turn,
-        &result,
-    )
-    .await;
-    params
-        .subagents
-        .complete_model_request(
-            !interrupted && result.completion_error.is_none(),
-            &completion_cancel,
-            params.messages,
-        )
-        .await?;
-    Ok(ApiRequestOutput {
-        result,
-        plan_active,
-        interrupted,
+    let input_tokens = first_preparation.input_tokens();
+    super::agent_loop_request_finish::finish(
+        params,
+        outcome,
+        completed_attempt,
         input_tokens,
-        generation,
-    })
+        plan_active,
+        completion_cancel,
+    )
+    .await
 }
 
 #[cfg(test)]

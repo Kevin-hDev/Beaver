@@ -89,6 +89,18 @@ fn native_payload_uses_ollama_thinking_and_strips_local_tool_ids() {
 }
 
 #[test]
+fn ollama_count_is_attached_after_native_wire_projection() {
+    let request = request();
+    let messages = [ChatMessage::user("hello".into())];
+    let prepared = chat_request_with_evidence(&request, &messages).unwrap();
+
+    assert_eq!(
+        prepared.context_count,
+        crate::services::agent_local::prepared_context_count::ollama(&prepared.payload)
+    );
+}
+
+#[test]
 fn chat_payload_disables_ollama_truncation() {
     let value = chat_request(&request(), &[]).unwrap();
     assert_eq!(value["truncate"], false);

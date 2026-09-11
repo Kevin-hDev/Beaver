@@ -1,9 +1,11 @@
 use super::provider_error::ProviderErrorCode;
-pub(super) use super::stream_http_error::{classify_error, RequestError};
+pub(super) use super::stream_http_error::{
+    classify_error, read_provider_error, request_error_for_limit, RequestError,
+};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
 use crate::services::llm::route;
-use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
+use crate::services::secure_http::AuthenticatedClient;
 pub struct RequestConfig<'a> {
     pub provider_id: &'a str,
     pub model: &'a str,
@@ -27,26 +29,13 @@ pub struct RequestConfig<'a> {
 use super::stream_http_payload::build_chat_payload;
 use super::stream_http_payload::build_chat_payload_with_evidence;
 
-pub(super) async fn read_provider_error(
-    mut response: reqwest::Response,
-) -> zeroize::Zeroizing<String> {
-    let mut routing = super::provider_diagnostics::openrouter::take(&mut response);
-    let body = match read_bounded(response, PROVIDER_ERROR_LIMIT).await {
-        Ok(bytes) => zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()),
-        Err(_) => zeroize::Zeroizing::new(String::new()),
-    };
-    if let Some(routing) = routing.as_mut() {
-        if let Ok(value) = serde_json::from_str(&body) {
-            routing.observe(&value);
-        }
-    }
-    body
-}
-
 pub(super) async fn post_chat_request_measured(
     cfg: &RequestConfig<'_>,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, RequestError> {
     post_chat_request_with_timeout_and_policy(
         cfg,
@@ -54,6 +43,7 @@ pub(super) async fn post_chat_request_measured(
         measurement,
         request_id,
         None,
+        preparation,
     )
     .await
 }
@@ -63,6 +53,9 @@ pub(super) async fn post_chat_request_with_payload_policy(
     payload_policy: super::route_profile::ResolvedPayloadPolicy,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, RequestError> {
     post_chat_request_with_timeout_and_policy(
         cfg,
@@ -70,6 +63,7 @@ pub(super) async fn post_chat_request_with_payload_policy(
         measurement,
         request_id,
         Some(payload_policy),
+        preparation,
     )
     .await
 }
@@ -88,7 +82,8 @@ pub(super) async fn post_chat_request_with_timeout_measured(
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
 ) -> Result<reqwest::Response, RequestError> {
-    post_chat_request_with_timeout_and_policy(cfg, timeout, measurement, request_id, None).await
+    post_chat_request_with_timeout_and_policy(cfg, timeout, measurement, request_id, None, None)
+        .await
 }
 
 async fn post_chat_request_with_timeout_and_policy(
@@ -97,6 +92,9 @@ async fn post_chat_request_with_timeout_and_policy(
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
     payload_policy: Option<super::route_profile::ResolvedPayloadPolicy>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, RequestError> {
     if cfg.model.len() > 128 {
         return Err(RequestError::Fatal("nom de modèle trop long".into()));
@@ -133,7 +131,14 @@ async fn post_chat_request_with_timeout_and_policy(
         None => build_chat_payload_with_evidence(cfg, &route, max_tokens),
     }
     .map_err(|_| RequestError::Fatal("reasoning_continuity_invalid".to_string()))?;
+    let context_count = prepared.context_count;
     let payload = prepared.payload;
+    if let Some(preparation) = preparation {
+        preparation
+            .persist_payload(context_count)
+            .await
+            .map_err(RequestError::Fatal)?;
+    }
     super::reasoning_wire::replay::record_evidence(cfg.session_id, request_id, &prepared.replayed)
         .await;
     #[cfg(test)]
@@ -211,13 +216,6 @@ async fn post_chat_request_with_timeout_and_policy(
         ));
     }
     Ok(resp)
-}
-
-fn request_error_for_limit(error: super::stream_max_tokens::ResolveError) -> RequestError {
-    match error {
-        super::stream_max_tokens::ResolveError::ContextExhausted => RequestError::PayloadTooLarge,
-        super::stream_max_tokens::ResolveError::InvalidLimit => RequestError::InvalidConfiguration,
-    }
 }
 
 #[cfg(test)]

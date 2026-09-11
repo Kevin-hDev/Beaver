@@ -92,6 +92,7 @@ async fn invalid_routing_configuration_is_a_permanent_rejection() {
         false,
         None,
         &mut measurement,
+        None,
     )
     .await
     .unwrap_err();
@@ -122,6 +123,7 @@ async fn invalid_routing_configuration_never_disables_websocket_or_falls_back() 
         FastModeRequest::Fast,
         tokio_util::sync::CancellationToken::new(),
         false,
+        None,
         None,
         None,
         None,

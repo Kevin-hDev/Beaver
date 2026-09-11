@@ -37,3 +37,31 @@ pub(super) fn requires_responses_backend(request: &super::stream_http::RequestCo
                 && policy.requirement() == ReplayRequirement::Required
         })
 }
+
+pub(super) fn catalog_reasoning_mode<'a>(
+    model: &'a crate::services::llm_oauth::XaiCatalogModel,
+    requested_mode: Option<&'a str>,
+) -> Option<&'a str> {
+    requested_mode
+        .filter(|mode| {
+            model
+                .reasoning_modes
+                .iter()
+                .any(|candidate| candidate == mode)
+        })
+        .or_else(|| {
+            model.default_reasoning_mode.as_deref().filter(|mode| {
+                model
+                    .reasoning_modes
+                    .iter()
+                    .any(|candidate| candidate == mode)
+            })
+        })
+}
+
+pub(super) const fn backend_path(backend: crate::services::llm_oauth::XaiBackend) -> &'static str {
+    match backend {
+        crate::services::llm_oauth::XaiBackend::ChatCompletions => "/chat/completions",
+        crate::services::llm_oauth::XaiBackend::Responses => "/responses",
+    }
+}

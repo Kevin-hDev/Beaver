@@ -71,19 +71,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         "ollama",
     )?;
     super::context_budget::record_repairs(&report, params.session_id, params.request_id).await;
-    let breakdown = RequestContextUsage::from_request(
-        "ollama",
-        params.messages,
-        params.tools,
-        params.context_usage_seed,
-    );
-    let textual_input_tokens = breakdown.total_tokens();
-    let realtime_budget = RealtimeBudget::for_session(
-        params.session_id,
-        params.configured_context,
-        textual_input_tokens,
-    )
-    .await;
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let mut request = super::agent_loop_support::build_request(
@@ -110,13 +97,21 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     {
         request.fixture_candidate = params.fixture_candidate.cloned();
     }
-    let input_tokens = super::agent_loop_ollama_context::persist_preparation(
-        &params,
-        1,
+    let breakdown = RequestContextUsage::from_request(
+        "ollama",
+        &request.messages,
+        request.tools.as_deref().unwrap_or_default(),
+        params.context_usage_seed,
+    );
+    let textual_input_tokens = breakdown.total_tokens();
+    let realtime_budget = RealtimeBudget::for_session(
+        params.session_id,
+        params.configured_context,
         textual_input_tokens,
-        breakdown,
     )
-    .await?;
+    .await;
+    let preparation =
+        super::agent_loop_ollama_context::prepared_attempt(&params, 1, breakdown);
     if !request.capture_reasoning {
         crate::services::reasoning_continuity::diagnostics::record_blocked(
             params.session_id,
@@ -166,9 +161,11 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         super::ollama_stream_request::ReplayDiagnosticContext {
             session_id: params.session_id,
             request_id: params.request_id,
+            preparation: Some(&preparation),
         },
     )
     .await?;
+    let mut input_tokens = preparation.input_tokens();
     let mut interrupted = outcome.is_interrupted();
     let mut result = outcome.into_result();
     let mut generation = GenerationAggregate::default();
@@ -201,6 +198,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         })
         .await?;
         result = retry.result;
+        input_tokens = retry.input_tokens;
         eager_handle = EagerHandleGuard::new(retry.eager_handle);
         interrupted = retry.interrupted;
         generation = retry.generation;

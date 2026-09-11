@@ -10,6 +10,7 @@ use super::conversation_journal::ConversationJournal;
 use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult};
 use crate::services::token_counting;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 pub struct ContextAttempt<'a> {
     pub on_event: &'a AgentEventEmitter,
@@ -23,12 +24,25 @@ pub struct ContextAttempt<'a> {
 }
 
 impl ContextAttempt<'_> {
+    #[cfg(test)]
     pub async fn persist_preparation(
         &self,
         input_tokens: usize,
         breakdown: RequestContextUsage,
     ) -> Result<u32, String> {
-        let input_tokens = bounded_tokens(input_tokens);
+        self.persist_prepared_count(
+            complete_count(bounded_tokens(input_tokens), ContextCountSource::Heuristic),
+            breakdown,
+        )
+        .await
+    }
+
+    pub async fn persist_prepared_count(
+        &self,
+        input: ContextTokenCount,
+        breakdown: RequestContextUsage,
+    ) -> Result<u32, String> {
+        let input_tokens = input.tokens.unwrap_or(0);
         let Some(journal) = self.journal else {
             return Ok(input_tokens);
         };
@@ -40,7 +54,7 @@ impl ContextAttempt<'_> {
                 self.model,
             ),
             context_limit: bounded_limit(self.context_limit),
-            input: complete_count(input_tokens, ContextCountSource::Heuristic),
+            input,
             state: ContextPreparationState::InFlight,
             breakdown: Some(breakdown),
             updated_at: Utc::now(),
@@ -90,6 +104,35 @@ impl ContextAttempt<'_> {
         }
         journal.complete_context_attempt(&identity).await?;
         emit_record(self.on_event, journal).await
+    }
+}
+
+pub struct PreparedContextAttempt<'a> {
+    context: ContextAttempt<'a>,
+    breakdown: RequestContextUsage,
+    input_tokens: AtomicU32,
+}
+
+impl<'a> PreparedContextAttempt<'a> {
+    pub fn new(context: ContextAttempt<'a>, breakdown: RequestContextUsage) -> Self {
+        Self {
+            context,
+            breakdown,
+            input_tokens: AtomicU32::new(0),
+        }
+    }
+
+    pub async fn persist_payload(&self, count: ContextTokenCount) -> Result<(), String> {
+        let tokens = self
+            .context
+            .persist_prepared_count(count, self.breakdown)
+            .await?;
+        self.input_tokens.store(tokens, Ordering::Relaxed);
+        Ok(())
+    }
+
+    pub fn input_tokens(&self) -> u32 {
+        self.input_tokens.load(Ordering::Relaxed)
     }
 }
 

@@ -35,6 +35,9 @@ pub async fn retry_stream(
     continuation_target: Option<
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<StreamOutcome, String> {
     if cancel.is_cancelled() {
         return Err("Annulé".to_string());
@@ -69,6 +72,7 @@ pub async fn retry_stream(
             .transpose()
             .map_err(|_| "provider_configuration_invalid".to_string())?,
         request_target.as_ref(),
+        preparation,
     )
     .await
 }

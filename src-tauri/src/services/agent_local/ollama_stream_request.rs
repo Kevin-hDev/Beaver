@@ -31,6 +31,7 @@ pub(super) struct StreamChatOptions {
 pub struct ReplayDiagnosticContext<'a> {
     pub session_id: &'a str,
     pub request_id: &'a str,
+    pub preparation: Option<&'a super::context_usage_runtime::PreparedContextAttempt<'a>>,
 }
 
 pub enum OpenChatResponse {
@@ -63,7 +64,13 @@ pub async fn open_chat_response(
         &prepared.replayed,
     )
     .await;
+    let context_count = prepared.context_count;
     let wire_request = prepared.payload;
+    if let Some(preparation) = diagnostics.preparation {
+        preparation
+            .persist_payload(context_count)
+            .await?;
+    }
 
     #[cfg(debug_assertions)]
     crate::services::reasoning_fixture_budget::authorize_payload(&wire_request)?;
