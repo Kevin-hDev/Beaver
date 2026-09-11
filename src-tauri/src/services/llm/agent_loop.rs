@@ -108,7 +108,6 @@ pub async fn run_agent_loop(
         generation.merge(request_output.generation);
         let interrupted = request_output.interrupted;
         let plan_active = request_output.plan_active;
-        let _input_tokens = request_output.input_tokens;
         let result = request_output.result;
         super::stream_completion::reject_if_failed(
             on_event,

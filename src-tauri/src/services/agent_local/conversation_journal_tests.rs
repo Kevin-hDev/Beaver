@@ -334,6 +334,44 @@ async fn context_attempts_measurements_and_output_keep_distinct_lifetimes() {
 }
 
 #[tokio::test]
+async fn stale_preparation_cannot_be_completed_after_invalidation() {
+    let session = session_store::create_full("Stale context", "gpt-5", "openai", false, None)
+        .await
+        .unwrap();
+    let journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .unwrap();
+    journal.activate_context_request().await.unwrap();
+    let identity = context_identity(&journal, 0, 1);
+    assert!(journal
+        .persist_context_preparation(preparation(&journal, 0, 1, 120))
+        .await
+        .unwrap());
+    let mut invalidated = session_store::get(&session.id).await.unwrap();
+    invalidated.context_usage.invalidate_preparation();
+    session_store::save(&invalidated).await.unwrap();
+
+    assert!(!journal.complete_context_attempt(&identity).await.unwrap());
+    journal
+        .finish_context_request(ContextPreparationState::Completed)
+        .await
+        .unwrap();
+
+    let saved = session_store::get(&session.id).await.unwrap();
+    assert_eq!(saved.context_usage.active_request_id, None);
+    assert_eq!(
+        saved.context_usage.current_preparation.unwrap().state,
+        ContextPreparationState::Stale
+    );
+    session_store::delete_one(&session.id).await.unwrap();
+}
+
+#[tokio::test]
 async fn full_session_reports_its_capacity_instead_of_a_generic_journal_failure() {
     let mut session = session_store::create_full("Full journal", "model", "ollama", false, None)
         .await

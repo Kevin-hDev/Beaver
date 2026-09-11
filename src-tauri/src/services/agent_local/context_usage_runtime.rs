@@ -29,7 +29,7 @@ impl ContextAttempt<'_> {
         &self,
         input_tokens: usize,
         breakdown: RequestContextUsage,
-    ) -> Result<u32, String> {
+    ) -> Result<(), String> {
         self.persist_prepared_count(
             complete_count(bounded_tokens(input_tokens), ContextCountSource::Heuristic),
             breakdown,
@@ -41,10 +41,9 @@ impl ContextAttempt<'_> {
         &self,
         input: ContextTokenCount,
         breakdown: RequestContextUsage,
-    ) -> Result<u32, String> {
-        let input_tokens = input.tokens.unwrap_or(0);
+    ) -> Result<(), String> {
         let Some(journal) = self.journal else {
-            return Ok(input_tokens);
+            return Ok(());
         };
         let preparation = ContextPreparationSnapshot {
             identity: journal.context_identity(
@@ -62,7 +61,7 @@ impl ContextAttempt<'_> {
         if journal.persist_context_preparation(preparation).await? {
             emit_record(self.on_event, journal).await?;
         }
-        Ok(input_tokens)
+        Ok(())
     }
 
     pub async fn persist_result(&self, result: &StreamResult) -> Result<(), String> {

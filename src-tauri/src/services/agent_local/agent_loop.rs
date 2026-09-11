@@ -109,7 +109,6 @@ pub async fn run_agent_loop(
             );
             let interrupted = request_output.interrupted;
             let plan_active = request_output.plan_active;
-            let _input_tokens = request_output.input_tokens;
             let result = request_output.result;
             if interrupted {
                 eager_handle.abort();

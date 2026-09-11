@@ -40,7 +40,6 @@ pub(super) struct OllamaRequestOutput {
     pub eager_handle: EagerHandle,
     pub plan_active: bool,
     pub interrupted: bool,
-    pub input_tokens: u32,
     pub generation: GenerationAggregate,
 }
 
@@ -160,7 +159,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         },
     )
     .await?;
-    let mut input_tokens = preparation.input_tokens();
     let mut interrupted = outcome.is_interrupted();
     let mut result = outcome.into_result();
     let mut generation = GenerationAggregate::default();
@@ -187,13 +185,11 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             realtime_budget,
             enable_eager_tools: params.enable_eager_tools,
             journal: params.journal,
-            input_tokens,
             context_limit: params.configured_context,
             breakdown,
         })
         .await?;
         result = retry.result;
-        input_tokens = retry.input_tokens;
         eager_handle = EagerHandleGuard::new(retry.eager_handle);
         interrupted = retry.interrupted;
         generation = retry.generation;
@@ -211,7 +207,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         eager_handle: eager_handle.take(),
         plan_active,
         interrupted,
-        input_tokens,
         generation,
     })
 }

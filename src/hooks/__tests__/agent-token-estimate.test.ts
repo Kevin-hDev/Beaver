@@ -57,23 +57,12 @@ describe("agent-token-estimate", () => {
     expect(estimateAgentMessagesTokens([message])).toBe(Math.ceil(expectedUnits / 4));
   });
 
-  it("distingue le total complet du simple compteur de messages", () => {
+  it("utilise le cumul de session avant la reconstruction des messages", () => {
     const session = {
       accumulated_tokens: 100,
-      context_tokens: 900,
       messages: [msg("a".repeat(400))],
     } as AgentSession;
 
-    expect(resolveSessionContext(session)).toEqual({
-      sessionTokenCount: 900,
-      contextUsageRecord: {
-        activeRequestId: null, currentPreparation: null,
-        lastMeasurement: null, lastOutput: null,
-      },
-      contextUsageVisible: false,
-    });
-
-    delete session.context_tokens;
     expect(resolveSessionContext(session)).toEqual({
       sessionTokenCount: 100,
       contextUsageRecord: {
@@ -82,6 +71,7 @@ describe("agent-token-estimate", () => {
       },
       contextUsageVisible: false,
     });
+
   });
 
   it("priorise la mesure et sa limite tout en gardant la préparation B secondaire", () => {

@@ -7,7 +7,6 @@ pub(super) async fn finish(
     params: ApiRequestParams<'_>,
     outcome: StreamOutcome,
     completed_attempt: u32,
-    input_tokens: u32,
     plan_active: bool,
     completion_cancel: CancellationToken,
 ) -> Result<ApiRequestOutput, String> {
@@ -43,7 +42,6 @@ pub(super) async fn finish(
         result,
         plan_active,
         interrupted,
-        input_tokens,
         generation,
     })
 }

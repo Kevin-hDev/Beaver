@@ -4,6 +4,9 @@ use crate::services::agent_local::context_usage_record::{
     ContextPreparationState, ContextRequestIdentity, ContextUsageRecord,
 };
 
+#[path = "conversation_journal_context_validation.rs"]
+mod validation;
+
 impl ConversationJournal {
     pub(crate) fn context_identity(
         &self,
@@ -40,13 +43,13 @@ impl ConversationJournal {
         &self,
         preparation: ContextPreparationSnapshot,
     ) -> Result<bool, String> {
-        validate_preparation(&preparation)?;
+        validation::preparation(&preparation)?;
         if !self.matches_identity(&preparation.identity) {
             return Err(super::error());
         }
         let request_id = self.request_id.clone();
         self.update_if_active(move |record| {
-            if is_older_than_current(record, &preparation.identity) {
+            if validation::is_older_than_current(record, &preparation.identity) {
                 return false;
             }
             record.current_preparation = Some(preparation);
@@ -59,13 +62,13 @@ impl ConversationJournal {
         &self,
         measurement: ContextMeasurementSnapshot,
     ) -> Result<bool, String> {
-        validate_measurement(&measurement)?;
+        validation::measurement(&measurement)?;
         if !self.matches_identity(&measurement.identity) {
             return Err(super::error());
         }
         let request_id = self.request_id.clone();
         self.update_if_active(move |record| {
-            if !matches_current(record, &measurement.identity) {
+            if !validation::matches_current(record, &measurement.identity) {
                 return false;
             }
             record.last_measurement = Some(measurement);
@@ -78,13 +81,13 @@ impl ConversationJournal {
         &self,
         output: ContextOutputSnapshot,
     ) -> Result<bool, String> {
-        validate_output(&output)?;
+        validation::output(&output)?;
         if !self.matches_identity(&output.identity) {
             return Err(super::error());
         }
         let request_id = self.request_id.clone();
         self.update_if_active(move |record| {
-            if !matches_current(record, &output.identity) {
+            if !validation::matches_current(record, &output.identity) {
                 return false;
             }
             record.last_output = Some(output);
@@ -111,7 +114,12 @@ impl ConversationJournal {
                 return Ok(());
             }
             if let Some(current) = &mut session.context_usage.current_preparation {
-                if current.identity.request_id == request_id {
+                if current.identity.request_id == request_id
+                    && matches!(
+                        current.state,
+                        ContextPreparationState::Ready | ContextPreparationState::InFlight
+                    )
+                {
                     current.state = state;
                     current.updated_at = chrono::Utc::now();
                 }
@@ -138,6 +146,12 @@ impl ConversationJournal {
                     return false;
                 };
                 if current.identity != identity {
+                    return false;
+                }
+                if !matches!(
+                    current.state,
+                    ContextPreparationState::Ready | ContextPreparationState::InFlight
+                ) {
                     return false;
                 }
                 current.state = ContextPreparationState::Completed;
@@ -177,46 +191,4 @@ impl ConversationJournal {
         .await?;
         Ok(changed)
     }
-}
-
-fn is_older_than_current(record: &ContextUsageRecord, identity: &ContextRequestIdentity) -> bool {
-    record.current_preparation.as_ref().is_some_and(|current| {
-        current.identity.request_id == identity.request_id
-            && (identity.turn, identity.attempt)
-                < (current.identity.turn, current.identity.attempt)
-    })
-}
-
-fn matches_current(record: &ContextUsageRecord, identity: &ContextRequestIdentity) -> bool {
-    record
-        .current_preparation
-        .as_ref()
-        .is_some_and(|current| current.identity == *identity)
-}
-
-fn validate_preparation(value: &ContextPreparationSnapshot) -> Result<(), String> {
-    ContextUsageRecord {
-        current_preparation: Some(value.clone()),
-        ..ContextUsageRecord::default()
-    }
-    .validate()
-    .map_err(|_| super::error())
-}
-
-fn validate_measurement(value: &ContextMeasurementSnapshot) -> Result<(), String> {
-    ContextUsageRecord {
-        last_measurement: Some(value.clone()),
-        ..ContextUsageRecord::default()
-    }
-    .validate()
-    .map_err(|_| super::error())
-}
-
-fn validate_output(value: &ContextOutputSnapshot) -> Result<(), String> {
-    ContextUsageRecord {
-        last_output: Some(value.clone()),
-        ..ContextUsageRecord::default()
-    }
-    .validate()
-    .map_err(|_| super::error())
 }

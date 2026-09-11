@@ -8,7 +8,8 @@ pub async fn cleanup_interrupted_requests(startup_cutoff: DateTime<Utc>) {
         return;
     };
     for meta in metas {
-        if meta.updated_at.unwrap_or(meta.created_at) <= startup_cutoff
+        if meta.has_active_context_request
+            && meta.updated_at.unwrap_or(meta.created_at) <= startup_cutoff
             && cleanup_one(&meta.id, startup_cutoff).await.is_err()
         {
             ::log::warn!("[startup] context usage recovery skipped");
@@ -79,6 +80,13 @@ mod tests {
             updated_at: Utc::now(),
         });
         super::super::session_store::save(&session).await.unwrap();
+        let before = super::super::session_index::read_index()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|meta| meta.id == session.id)
+            .unwrap();
+        assert!(before.has_active_context_request);
 
         assert!(cleanup_one(&session.id, Utc::now()).await.unwrap());
         let saved = super::super::session_store::get(&session.id).await.unwrap();
@@ -87,6 +95,13 @@ mod tests {
             saved.context_usage.current_preparation.unwrap().state,
             ContextPreparationState::Interrupted
         );
+        let after = super::super::session_index::read_index()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|meta| meta.id == session.id)
+            .unwrap();
+        assert!(!after.has_active_context_request);
         super::super::session_store::delete_one(&session.id)
             .await
             .unwrap();

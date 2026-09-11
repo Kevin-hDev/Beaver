@@ -20,6 +20,7 @@ fn meta(id: &str, minutes_ago: i64) -> AgentSessionMeta {
         message_count: 0,
         is_heartbeat: false,
         is_gateway: false,
+        has_active_context_request: false,
         gateway_channel_key: None,
         project_id: None,
         parent_session_id: None,

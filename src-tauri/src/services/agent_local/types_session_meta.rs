@@ -30,6 +30,8 @@ pub struct AgentSessionMeta {
     pub is_heartbeat: bool,
     #[serde(default)]
     pub is_gateway: bool,
+    #[serde(default)]
+    pub has_active_context_request: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gateway_channel_key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

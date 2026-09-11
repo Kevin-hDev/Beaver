@@ -30,7 +30,6 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
         preserve_reasoning: effective_preserve_reasoning(session),
         continuity_capability: continuity_capability(session),
         accumulated_tokens: session.accumulated_tokens,
-        context_tokens: session.context_tokens,
         context_usage: session.context_usage.clone(),
         automatic_compression_suspended: session.automatic_compression_guard.suspended,
         messages: session

@@ -162,12 +162,10 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 Some(&reduced_preparation),
             )
             .await?;
-            let input_tokens = reduced_preparation.input_tokens();
             return super::agent_loop_request_finish::finish(
                 params,
                 outcome,
                 2,
-                input_tokens,
                 plan_active,
                 completion_cancel,
             )
@@ -175,12 +173,10 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         }
         Err(error) => return Err(error),
     };
-    let input_tokens = first_preparation.input_tokens();
     super::agent_loop_request_finish::finish(
         params,
         outcome,
         completed_attempt,
-        input_tokens,
         plan_active,
         completion_cancel,
     )

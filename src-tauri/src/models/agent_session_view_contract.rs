@@ -86,9 +86,6 @@ pub struct AgentSessionView {
     #[cfg_attr(test, ts(optional))]
     pub continuity_capability: Option<ContinuityCapability>,
     pub accumulated_tokens: u32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(test, ts(optional))]
-    pub context_tokens: Option<u32>,
     pub context_usage: ContextUsageRecord,
     pub automatic_compression_suspended: bool,
     pub messages: Vec<AgentMessageView>,

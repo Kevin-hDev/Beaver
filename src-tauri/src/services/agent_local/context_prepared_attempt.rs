@@ -1,5 +1,3 @@
-use std::sync::atomic::{AtomicU32, Ordering};
-
 use super::context_usage_buckets::RequestContextUsage;
 use super::context_usage_record::ContextTokenCount;
 use super::context_usage_runtime::ContextAttempt;
@@ -7,7 +5,6 @@ use super::context_usage_runtime::ContextAttempt;
 pub struct PreparedContextAttempt<'a> {
     context: ContextAttempt<'a>,
     breakdown: RequestContextUsage,
-    input_tokens: AtomicU32,
     realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
 }
 
@@ -16,7 +13,6 @@ impl<'a> PreparedContextAttempt<'a> {
         Self {
             context,
             breakdown,
-            input_tokens: AtomicU32::new(0),
             realtime_budget: None,
         }
     }
@@ -33,15 +29,8 @@ impl<'a> PreparedContextAttempt<'a> {
         if let Some(budget) = &self.realtime_budget {
             budget.attach_prepared_count(&count);
         }
-        let tokens = self
-            .context
+        self.context
             .persist_prepared_count(count, self.breakdown)
-            .await?;
-        self.input_tokens.store(tokens, Ordering::Relaxed);
-        Ok(())
-    }
-
-    pub fn input_tokens(&self) -> u32 {
-        self.input_tokens.load(Ordering::Relaxed)
+            .await
     }
 }

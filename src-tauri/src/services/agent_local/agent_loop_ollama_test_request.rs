@@ -25,7 +25,6 @@ pub(super) async fn run(
         eager_handle: tokio::spawn(async { std::collections::HashMap::new() }),
         plan_active: false,
         interrupted: false,
-        input_tokens: 0,
         generation,
     }))
 }

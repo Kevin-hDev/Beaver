@@ -54,7 +54,6 @@ pub struct ThinkingRetryParams<'a> {
     pub realtime_budget: Option<RealtimeBudget>,
     pub enable_eager_tools: bool,
     pub journal: Option<&'a super::conversation_journal::ConversationJournal>,
-    pub input_tokens: u32,
     pub context_limit: u64,
     pub breakdown: super::context_usage_buckets::RequestContextUsage,
 }
@@ -65,7 +64,6 @@ pub struct ThinkingRetryOutput {
     pub interrupted: bool,
     pub generation: GenerationAggregate,
     pub attempt: u32,
-    pub input_tokens: u32,
 }
 
 pub async fn retry_if_needed(
@@ -81,7 +79,6 @@ pub async fn retry_if_needed(
             interrupted: false,
             generation,
             attempt: 1,
-            input_tokens: params.input_tokens,
         });
     };
 
@@ -152,7 +149,6 @@ pub async fn retry_if_needed(
         interrupted,
         generation,
         attempt: 2,
-        input_tokens: preparation.input_tokens(),
     })
 }
 

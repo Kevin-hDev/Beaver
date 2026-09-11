@@ -43,10 +43,8 @@ export function resolveSessionContext(session: AgentSession): {
   contextUsageRecord: ContextUsageRecord;
   contextUsageVisible: boolean;
 } {
-  const contextTokens = session.context_tokens ?? 0;
   return {
-    sessionTokenCount: contextTokens || session.accumulated_tokens
-      || estimateAgentMessagesTokens(session.messages),
+    sessionTokenCount: session.accumulated_tokens || estimateAgentMessagesTokens(session.messages),
     contextUsageRecord: session.context_usage ?? EMPTY_CONTEXT_USAGE_RECORD,
     contextUsageVisible: session.messages.some((message) => message.role === "assistant"),
   };
