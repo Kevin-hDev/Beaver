@@ -1,7 +1,6 @@
 use std::fs;
 
 use super::{copy_helper, copy_helper_while, current_install_directory_for};
-use crate::commands::app_update_helper_cli_paths::cli_update_paths_for;
 
 #[test]
 fn copies_a_bounded_regular_helper_with_private_permissions() {
@@ -116,7 +115,8 @@ fn cli_beaver_lie_resout_les_dossiers_du_bundle() {
     let link = root.path().join("beaver");
     symlink(macos.join("beaver"), &link).unwrap();
 
-    let (resource_root, working_directory) = cli_update_paths_for(&link).unwrap();
+    let (resource_root, working_directory) =
+        crate::commands::app_update_helper_cli_paths::cli_update_paths_for(&link).unwrap();
 
     assert_eq!(working_directory, macos.canonicalize().unwrap());
     assert_eq!(resource_root, resources.canonicalize().unwrap());
