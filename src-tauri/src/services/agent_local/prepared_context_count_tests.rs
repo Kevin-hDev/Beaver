@@ -73,6 +73,13 @@ fn bounded_media_has_capacity_but_remote_and_opaque_blocks_do_not() {
         "instructions": "continue",
         "input": [{"type": "reasoning", "encrypted_content": "opaque"}]
     });
+    let signed_tool_call = json!({"messages": [{
+        "role": "assistant",
+        "tool_calls": [{
+            "extra_content": {"google": {"thought_signature": "opaque"}},
+            "function": {"name": "lookup", "arguments": "{}"}
+        }]
+    }]});
     let anthropic_image = json!({"messages": [{"role": "user", "content": [{
         "type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "aGVsbG8="}
     }]}]});
@@ -82,10 +89,53 @@ fn bounded_media_has_capacity_but_remote_and_opaque_blocks_do_not() {
     assert!(inline_count.capacity_tokens.unwrap() >= inline_count.tokens.unwrap());
     assert_eq!(anthropic(&anthropic_image).coverage, ContextCountCoverage::Partial);
 
-    for count in [chat_completions(&remote), responses(&opaque)] {
+    for count in [
+        chat_completions(&remote),
+        responses(&opaque),
+        chat_completions(&signed_tool_call),
+    ] {
         assert_eq!(count.coverage, ContextCountCoverage::Unknown);
         assert_eq!(count.tokens, None);
         assert_eq!(count.capacity_tokens, None);
         assert_eq!(count.source, None);
+    }
+}
+
+#[test]
+fn tool_schema_and_arguments_may_use_opaque_field_names_as_plain_data() {
+    let chat = json!({
+        "messages": [{"role": "user", "content": "sign it"}],
+        "tools": [{
+            "type": "function",
+            "function": {
+                "name": "sign_document",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "signature": {"type": "string"},
+                        "images": {"type": "array"}
+                    }
+                }
+            }
+        }]
+    });
+    let ollama_payload = json!({
+        "messages": [{
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [{
+                "function": {
+                    "name": "sign_document",
+                    "arguments": {"signature": "visible", "images": ["one"]}
+                }
+            }]
+        }],
+        "tools": chat["tools"].clone()
+    });
+
+    for count in [chat_completions(&chat), ollama(&ollama_payload)] {
+        assert_eq!(count.coverage, ContextCountCoverage::Complete);
+        assert!(count.tokens.is_some());
+        assert_eq!(count.tokens, count.capacity_tokens);
     }
 }

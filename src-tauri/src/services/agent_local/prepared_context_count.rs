@@ -25,7 +25,11 @@ fn count_fields(payload: &Value, fields: &[&str]) -> ContextTokenCount {
     let mut count = SemanticCount::default();
     for field in fields {
         if let Some(value) = payload.get(field) {
-            count.value(value, Some(field));
+            if *field == "tools" {
+                count.plain_value(value);
+            } else {
+                count.value(value, false);
+            }
         }
     }
     count.finish()
@@ -40,21 +44,7 @@ struct SemanticCount {
 }
 
 impl SemanticCount {
-    fn value(&mut self, value: &Value, key: Option<&str>) {
-        if matches!(key, Some("encrypted_content" | "signature" | "thought_signature")) {
-            self.partial = true;
-            self.unbounded = true;
-            self.text(value.as_str().unwrap_or_default());
-            return;
-        }
-        if key == Some("image_url") {
-            self.image_url(value);
-            return;
-        }
-        if key == Some("images") {
-            self.images(value);
-            return;
-        }
+    fn value(&mut self, value: &Value, opaque_scope: bool) {
         match value {
             Value::Null => {}
             Value::Bool(value) => self.text(if *value { "true" } else { "false" }),
@@ -62,11 +52,12 @@ impl SemanticCount {
             Value::String(value) => self.text(value),
             Value::Array(values) => {
                 for value in values {
-                    self.value(value, None);
+                    self.value(value, opaque_scope);
                 }
             }
             Value::Object(values) => {
-                if values.get("type").and_then(Value::as_str) == Some("image") {
+                let kind = values.get("type").and_then(Value::as_str);
+                if kind == Some("image") {
                     self.text("image");
                     let data = values
                         .get("source")
@@ -77,7 +68,37 @@ impl SemanticCount {
                 }
                 for (key, value) in values {
                     self.text(key);
-                    self.value(value, Some(key));
+                    if opaque_field(kind, key, opaque_scope) {
+                        self.partial = true;
+                        self.unbounded = true;
+                        self.text(value.as_str().unwrap_or_default());
+                    } else if key == "image_url"
+                        && matches!(kind, Some("image_url" | "input_image"))
+                    {
+                        self.image_url(value);
+                    } else if key == "images" && values.contains_key("role") {
+                        self.images(value);
+                    } else if key == "arguments" && values.contains_key("name") {
+                        self.plain_value(value);
+                    } else {
+                        self.value(value, opaque_scope || key == "extra_content");
+                    }
+                }
+            }
+        }
+    }
+
+    fn plain_value(&mut self, value: &Value) {
+        match value {
+            Value::Null => {}
+            Value::Bool(value) => self.text(if *value { "true" } else { "false" }),
+            Value::Number(value) => self.text(&value.to_string()),
+            Value::String(value) => self.text(value),
+            Value::Array(values) => values.iter().for_each(|value| self.plain_value(value)),
+            Value::Object(values) => {
+                for (key, value) in values {
+                    self.text(key);
+                    self.plain_value(value);
                 }
             }
         }
@@ -144,6 +165,15 @@ impl SemanticCount {
             },
         }
     }
+}
+
+fn opaque_field(kind: Option<&str>, key: &str, opaque_scope: bool) -> bool {
+    let reasoning = matches!(
+        kind,
+        Some("reasoning" | "reasoning.text" | "thinking" | "redacted_thinking")
+    );
+    (reasoning && matches!(key, "encrypted_content" | "signature" | "thought_signature"))
+        || (opaque_scope && matches!(key, "signature" | "thought_signature"))
 }
 
 fn bounded(value: usize) -> u32 {
