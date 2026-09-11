@@ -1,0 +1,1 @@
+Cause: reasoning_continuity_invalid fell through to generic diagnostics. Validation: exact-code filter passed 1 test; stream_diagnostics_failure passed 11 tests; agent-error-codes.test.ts passed 11 tests; all seven translations verified.
