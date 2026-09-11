@@ -1,0 +1,3 @@
+Review corrections C-m1..C-m5 and D-m4..D-m5 — compressed context accounting.
+
+Decision: preserve transient provider overhead as one snapshot delta and apply it to every rebuilt candidate, because the provider payload is the capacity authority. Reject unverified capacity before persistence or provider work. Treat system and developer messages as the canonical head. Use the selected local route policy and compare the exact Ollama wire count in tests. The Anthropic transport is active; only stale candidate annotations and unused re-exports were removed.
