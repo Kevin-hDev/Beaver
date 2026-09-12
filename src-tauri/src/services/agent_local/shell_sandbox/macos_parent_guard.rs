@@ -13,6 +13,24 @@ pub(super) fn prepare(
     arguments: &[String],
     path: &OsStr,
 ) -> Result<super::launch::PreparedShellCommand, String> {
+    #[cfg(test)]
+    {
+        let mut command = tokio::process::Command::new(shell);
+        command.args(arguments).env("PATH", path);
+        return Ok(super::launch::PreparedShellCommand {
+            command,
+            cleanup_dir: None,
+        });
+    }
+    #[cfg(not(test))]
+    guarded_command(shell, arguments, path)
+}
+
+fn guarded_command(
+    shell: &OsStr,
+    arguments: &[String],
+    path: &OsStr,
+) -> Result<super::launch::PreparedShellCommand, String> {
     let mut command = tokio::process::Command::new(super::launch::helper_executable()?);
     super::environment::protect_helper(&mut command);
     command
@@ -25,6 +43,15 @@ pub(super) fn prepare(
         command,
         cleanup_dir: None,
     })
+}
+
+#[cfg(test)]
+pub(super) fn guarded_command_for_test(
+    shell: &OsStr,
+    arguments: &[String],
+    path: &OsStr,
+) -> Result<super::launch::PreparedShellCommand, String> {
+    guarded_command(shell, arguments, path)
 }
 
 pub(super) fn run_guarded(arguments: Vec<OsString>) -> Result<i32, String> {

@@ -1,4 +1,4 @@
-use super::tool_bash_security::initialize_for_test;
+use super::tool_bash_security::{blocked_reason, initialize_for_test};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
@@ -26,4 +26,13 @@ async fn transient_spawn_failure_is_retried_and_success_is_reused() {
         .await
         .expect("reuse succeeds");
     assert_eq!(attempts.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn shared_boundary_distinguishes_allowed_and_blocked_commands() {
+    assert_eq!(blocked_reason("printf safe").await, Ok(None));
+    assert!(blocked_reason("sudo rm file.txt")
+        .await
+        .expect("command check")
+        .is_some());
 }

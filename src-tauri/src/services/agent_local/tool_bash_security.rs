@@ -12,6 +12,11 @@ pub(crate) async fn initialize() -> Result<(), String> {
     .await
 }
 
+pub(crate) async fn blocked_reason(command: &str) -> Result<Option<String>, String> {
+    initialize().await?;
+    Ok(super::security::check_destructive_command(command).err())
+}
+
 async fn initialize_with<F>(ready: &tokio::sync::OnceCell<()>, spawn: F) -> Result<(), String>
 where
     F: FnOnce(Box<dyn FnOnce() + Send>) -> std::io::Result<()>,

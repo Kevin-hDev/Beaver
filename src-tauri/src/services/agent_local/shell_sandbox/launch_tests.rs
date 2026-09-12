@@ -41,10 +41,12 @@ async fn unrestricted_shell_inherits_the_application_environment() {
 #[cfg(target_os = "macos")]
 #[test]
 fn unrestricted_macos_parent_guard_routes_through_helper() {
-    let prepared = prepare_command(
+    let source = include_str!("launch.rs");
+    assert!(source.contains("return super::macos_parent_guard::prepare"));
+    let prepared = super::super::macos_parent_guard::guarded_command_for_test(
         std::ffi::OsStr::new("/bin/sh"),
         &["-c".to_string(), "true".to_string()],
-        &std::env::temp_dir(),
+        std::ffi::OsStr::new("/usr/bin:/bin"),
     )
     .expect("prepare guarded shell");
     let command = prepared.command.as_std();
