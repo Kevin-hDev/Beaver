@@ -14,6 +14,20 @@ fn convert_extracts_system_as_instructions() {
 }
 
 #[test]
+fn convert_omits_empty_interrupted_assistant_markers() {
+    let messages = vec![
+        ChatMessage::user("before interruption".into()),
+        ChatMessage::assistant(String::new(), None, None, None, None),
+        ChatMessage::user("after interruption".into()),
+    ];
+
+    let (_, input) = convert_messages(&messages);
+
+    assert_eq!(input.len(), 2);
+    assert!(input.iter().all(|item| item["role"] == "user"));
+}
+
+#[test]
 fn vision_converts_user_images_to_responses_parts() {
     let msgs = vec![
         ChatMessage::user("Decris cette image".into()).with_images(vec!["iVBORw0KGgo=".into()])

@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::fmt;
 
 use chrono::Utc;
 use uuid::Uuid;
@@ -12,6 +11,9 @@ use crate::services::reasoning_continuity::contract::ReplayTarget;
 
 use super::conversation_admission_ids::allocate_ids;
 pub(super) use super::conversation_admission_ids::unique_uuid;
+use super::conversation_admission_error::capacity_error;
+pub(super) use super::conversation_admission_error::error;
+pub use super::conversation_admission_error::ConversationAdmissionError;
 use super::conversation_history::{ConversationHistory, ProviderRole};
 use super::conversation_input::ResolvedTurnInput;
 use super::types_message::AgentMessage;
@@ -24,7 +26,6 @@ pub(crate) use reasoning::{
     new_automation_turn_with_lease_and_reasoning, new_turn_with_lease_and_reasoning,
 };
 
-pub const PUBLIC_ERROR_CODE: &str = super::conversation_history::PUBLIC_ERROR_CODE;
 #[cfg(test)]
 pub(crate) use super::conversation_edit::{
     edit_user_message, edit_user_message_after_preflight_with_key_and_writer,
@@ -32,17 +33,6 @@ pub(crate) use super::conversation_edit::{
 };
 #[cfg(test)]
 pub(crate) use super::conversation_resume::resume_with_key;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ConversationAdmissionError(&'static str);
-
-impl fmt::Display for ConversationAdmissionError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.0)
-    }
-}
-
-impl std::error::Error for ConversationAdmissionError {}
 
 #[derive(Debug)]
 pub struct AdmittedTurn {
@@ -218,14 +208,6 @@ where
         assistant_message_id,
         history,
     })
-}
-
-pub(super) const fn error() -> ConversationAdmissionError {
-    ConversationAdmissionError(PUBLIC_ERROR_CODE)
-}
-
-const fn capacity_error() -> ConversationAdmissionError {
-    ConversationAdmissionError(super::session_limits::SESSION_CAPACITY_REACHED)
 }
 
 #[cfg(test)]

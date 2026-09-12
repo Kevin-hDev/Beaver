@@ -14,6 +14,7 @@ pub mod prepared_context_count;
 #[cfg(test)]
 mod prepared_context_count_tests;
 pub mod conversation_admission;
+mod conversation_admission_error;
 mod conversation_admission_ids;
 mod conversation_admission_replay;
 #[cfg(test)]
