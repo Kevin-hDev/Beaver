@@ -1,4 +1,5 @@
 use super::conversation_journal::{validate_tool_results, ConversationJournal};
+use super::conversation_history_tests::support::message;
 use super::session_store;
 use super::types_ollama::ChatMessage;
 use crate::services::agent_local::tool_artifact::{
@@ -187,6 +188,79 @@ async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable(
 
 fn tool(id: &str) -> ChatMessage {
     ChatMessage::tool("result".into(), Some(id.into()), Some("bash".into()))
+}
+
+#[tokio::test]
+async fn superseded_run_cannot_append_a_late_tool_result() {
+    let mut session = session_store::create_full(
+        "Superseded journal",
+        "model",
+        "openai",
+        false,
+        None,
+    )
+    .await
+    .expect("create session");
+    let old_turn = uuid::Uuid::new_v4().to_string();
+    let old_user = uuid::Uuid::new_v4().to_string();
+    let old_assistant = uuid::Uuid::new_v4().to_string();
+    let old_request = uuid::Uuid::new_v4().to_string();
+    session.messages.push(message(&old_user, &old_turn, "user", "run tool"));
+    session_store::save(&session).await.expect("persist old user");
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        old_turn.clone(),
+        old_user,
+        old_assistant,
+        old_request,
+    )
+    .expect("create old journal");
+    journal
+        .persist_assistant_step(&ChatMessage::assistant(
+            String::new(),
+            None,
+            None,
+            None,
+            Some(vec![super::types_ollama::ToolCallOllama {
+                id: Some("call-late".into()),
+                function: super::types_ollama::ToolCallFunction {
+                    name: "bash".into(),
+                    arguments: serde_json::json!({"command": "sleep 1"}),
+                },
+                extra_content: None,
+            }]),
+        ))
+        .await
+        .expect("persist pending call");
+
+    let mut recovered = session_store::get(&session.id).await.expect("reload");
+    let current_request = uuid::Uuid::new_v4().to_string();
+    super::conversation_interrupted_tail::close_recoverable(
+        &mut recovered,
+        Some(&current_request),
+    )
+    .expect("close orphan");
+    let new_turn = uuid::Uuid::new_v4().to_string();
+    recovered.messages.push(message(
+        &uuid::Uuid::new_v4().to_string(),
+        &new_turn,
+        "user",
+        "continue",
+    ));
+    session_store::save(&recovered).await.expect("persist recovery");
+
+    assert!(journal
+        .persist_tool_results(&[tool("call-late")], &[])
+        .await
+        .is_err());
+    let saved = session_store::get(&session.id).await.expect("reload final");
+    assert_eq!(saved.messages.last().unwrap().turn_id, new_turn);
+    assert_eq!(
+        saved.messages.iter().filter(|item| item.tool_call_id.as_deref() == Some("call-late")).count(),
+        1,
+    );
+    super::conversation_history_validation::validate(&saved.messages).expect("history stays valid");
+    session_store::delete_one(&session.id).await.expect("delete session");
 }
 
 fn context_identity(journal: &ConversationJournal, turn: u32, attempt: u32) -> ContextRequestIdentity {

@@ -199,11 +199,19 @@ impl ConversationJournal {
         if records.is_empty() {
             return Err(error());
         }
+        let turn_id = self.turn_id.clone();
         self.update(move |session| {
             if session.messages.len().saturating_add(records.len())
                 > super::session_limits::MAX_MESSAGES_PER_SESSION
             {
                 return Err(capacity_error());
+            }
+            if session
+                .messages
+                .last()
+                .is_some_and(|message| message.turn_id != turn_id)
+            {
+                return Err(error());
             }
             session.messages.extend(records);
             session.updated_at = Some(Utc::now());

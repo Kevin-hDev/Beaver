@@ -164,6 +164,30 @@ async fn active_request_cannot_close_its_own_pending_tool() {
 }
 
 #[tokio::test]
+async fn malformed_execution_identities_never_close_pending_tools() {
+    for malformed_current in [true, false] {
+        let mut session = recoverable_tail().await;
+        session.messages.pop();
+        let pending = if malformed_current {
+            uuid::Uuid::new_v4().to_string()
+        } else {
+            "not-a-uuid".into()
+        };
+        session.messages.last_mut().unwrap().stream_run_id = Some(pending);
+        let current = if malformed_current {
+            "not-a-uuid".to_string()
+        } else {
+            uuid::Uuid::new_v4().to_string()
+        };
+        let before = serde_json::to_value(&session.messages).unwrap();
+
+        assert!(close_recoverable(&mut session, Some(&current)).is_err());
+        assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
+        cleanup(&session.id).await;
+    }
+}
+
+#[tokio::test]
 async fn missing_results_and_terminal_marker_respect_session_capacity() {
     let mut session = recoverable_tail().await;
     session.messages.pop();
