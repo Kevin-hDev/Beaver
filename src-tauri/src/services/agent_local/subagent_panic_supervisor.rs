@@ -28,6 +28,7 @@ pub async fn recover_panicked_completion(
 ) -> bool {
     let mut summary = SUBAGENT_PANIC_SUMMARY.to_string();
     let mut retain_branch = false;
+    let mut retain_worktree = subagent_type == "coder" && expected_worktree_path.is_some();
     let project_path = if subagent_type == "coder" {
         super::subagent_coder_project::for_child(child_session_id)
             .await
@@ -47,8 +48,9 @@ pub async fn recover_panicked_completion(
             Ok(Some(metadata)) => {
                 summary.push_str(&metadata);
                 retain_branch = true;
+                retain_worktree = false;
             }
-            Ok(None) => {}
+            Ok(None) => retain_worktree = false,
             Err(_) => retain_branch = true,
         }
     }
@@ -64,8 +66,14 @@ pub async fn recover_panicked_completion(
         emitter,
     )
     .await;
-    cleanup(child_session_id, execution_id, expected_worktree_path).await;
-    if !retain_branch {
+    cleanup(
+        child_session_id,
+        execution_id,
+        expected_worktree_path,
+        retain_worktree,
+    )
+    .await;
+    if !retain_branch && !retain_worktree {
         if let Some(project) = project_path.as_deref() {
             super::subagent_task_change::delete_empty_workspace(
                 project,
@@ -78,12 +86,19 @@ pub async fn recover_panicked_completion(
     !matches!(completion, Ok(None))
 }
 
-async fn cleanup(child_session_id: &str, execution_id: &str, expected_worktree_path: Option<&str>) {
-    super::subagent_working_dir::cleanup_owned(
-        child_session_id,
-        execution_id,
-        expected_worktree_path,
-    )
-    .await;
+async fn cleanup(
+    child_session_id: &str,
+    execution_id: &str,
+    expected_worktree_path: Option<&str>,
+    retain_worktree: bool,
+) {
+    if !retain_worktree {
+        super::subagent_working_dir::cleanup_owned(
+            child_session_id,
+            execution_id,
+            expected_worktree_path,
+        )
+        .await;
+    }
     super::session_store::remove_session_lock(child_session_id).await;
 }

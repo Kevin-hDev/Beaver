@@ -57,6 +57,7 @@ pub(super) async fn run(
     let working_dir = prepared.path().to_string_lossy().to_string();
     let project_path = prepared.project_path().to_path_buf();
     let mut retain_branch = false;
+    let mut retain_worktree = false;
     loop {
         let Some(active) = subagent_registry::active_run_for_child(&child_session_id).await else {
             break;
@@ -132,13 +133,15 @@ pub(super) async fn run(
                 Ok(Some(metadata)) => {
                     summary.push_str(&metadata);
                     retain_branch = true;
+                    retain_worktree = false;
                 }
-                Ok(None) => {}
+                Ok(None) => retain_worktree = false,
                 Err(_) => {
                     success = false;
                     status = super::subagent_status::FAILED.to_string();
                     summary = "Le changement du sous-agent n'a pas pu être conservé.".into();
                     retain_branch = true;
+                    retain_worktree = true;
                 }
             }
         }
@@ -171,6 +174,7 @@ pub(super) async fn run(
         &execution_id,
         prepared.worktree_path(),
         is_explorer || retain_branch,
+        retain_worktree,
     )
     .await;
     session_store::remove_session_lock(&child_session_id).await;

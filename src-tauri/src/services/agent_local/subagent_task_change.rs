@@ -1,5 +1,9 @@
 use std::path::Path;
 
+#[cfg(test)]
+static FAIL_CAPTURE_CHILDREN: tokio::sync::Mutex<Vec<String>> =
+    tokio::sync::Mutex::const_new(Vec::new());
+
 #[derive(serde::Serialize)]
 struct PromptChangeMetadata<'a> {
     subagent_id: &'a str,
@@ -14,6 +18,14 @@ pub async fn capture(
     execution_id: &str,
     worktree: &Path,
 ) -> Result<Option<String>, String> {
+    #[cfg(test)]
+    {
+        let mut children = FAIL_CAPTURE_CHILDREN.lock().await;
+        if let Some(index) = children.iter().position(|candidate| candidate == child_id) {
+            children.swap_remove(index);
+            return Err("injected capture failure".to_string());
+        }
+    }
     let Some(meta) = super::subagent_git_run::capture(
         project_path,
         child_id,
@@ -58,7 +70,11 @@ pub async fn cleanup_execution(
     execution_id: &str,
     worktree_path: Option<&str>,
     retain_change: bool,
+    retain_worktree: bool,
 ) {
+    if retain_worktree {
+        return;
+    }
     super::subagent_working_dir::cleanup_owned(child_id, execution_id, worktree_path).await;
     if !retain_change {
         delete_empty_workspace(project_path, child_id, execution_id).await;
@@ -76,6 +92,12 @@ pub async fn recover_and_remove_orphan(
     }
     let identity = super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree)?;
     identity.require_child(&session.id)?;
+    identity.reject_symlinks().await?;
+    match tokio::fs::symlink_metadata(&identity.path).await {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(_) => return Err("Chemin worktree invalide".to_string()),
+    }
     let saved_project = super::project_store::list()
         .await
         .unwrap_or_default()
@@ -88,32 +110,27 @@ pub async fn recover_and_remove_orphan(
             let path = std::path::PathBuf::from(&session.working_dir);
             path.is_dir().then_some(path)
         });
-    let mut retain_branch = false;
-    if let Some(project) = project_path.as_deref() {
-        retain_branch = capture(
-            project,
-            &session.id,
-            &identity.execution_id,
-            &identity.path,
-        )
-        .await
-        .ok()
-        .flatten()
+    let project = project_path
+        .as_deref()
+        .ok_or_else(|| "Projet sous-agent indisponible".to_string())?;
+    let retain_branch = capture(project, &session.id, &identity.execution_id, &identity.path)
+        .await?
         .is_some();
-    }
     super::subagent_worktree::remove_for_child(worktree, &session.id).await?;
     if !retain_branch {
-        if let Some(project) = project_path.as_deref() {
-            delete_empty_workspace(project, &session.id, &identity.execution_id).await;
-        } else {
-            let _ = super::subagent_directory_workspace::remove_repository(
-                &session.id,
-                &identity.execution_id,
-            )
-            .await;
-        }
+        delete_empty_workspace(project, &session.id, &identity.execution_id).await;
     }
     Ok(())
+}
+
+#[cfg(test)]
+pub(super) async fn fail_next_capture_for_child(child_id: &str) {
+    let mut children = FAIL_CAPTURE_CHILDREN.lock().await;
+    if children.iter().any(|candidate| candidate == child_id) {
+        return;
+    }
+    assert!(children.len() < 16, "capture failure seam capacity");
+    children.push(child_id.to_string());
 }
 
 #[cfg(test)]
