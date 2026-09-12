@@ -59,7 +59,7 @@ async fn read_file_at_the_limit_is_unchanged() {
 }
 
 #[tokio::test]
-async fn oversized_log_read_is_bounded_and_retained_outside_the_context() {
+async fn oversized_log_read_uses_the_full_read_file_envelope() {
     let session_id = uuid::Uuid::new_v4().to_string();
     // The reported 707,488-character log was 260,347 OpenAI tokens. Character
     // bounds are deterministic here; provider token ratios are not.
@@ -76,7 +76,8 @@ async fn oversized_log_read_is_bounded_and_retained_outside_the_context() {
     .await;
 
     assert!(result.truncated);
-    assert!(result.content.chars().count() < 3_000);
+    assert!(result.content.chars().count() > 198_000);
+    assert!(result.content.chars().count() <= MAX_CHARS_READ_FILE);
     let directory = data_dir().join("tool-results").join(&session_id);
     let files = std::fs::read_dir(&directory)
         .expect("persisted result directory")
@@ -99,6 +100,8 @@ async fn read_file_over_the_limit_is_truncated_without_splitting_utf8() {
     .await;
 
     assert!(result.truncated);
+    assert!(result.content.chars().count() > 198_000);
+    assert!(result.content.chars().count() <= MAX_CHARS_READ_FILE);
     let directory = data_dir().join("tool-results").join(&session_id);
     let stored = std::fs::read_dir(&directory)
         .unwrap()
@@ -126,7 +129,7 @@ fn persistence_failure_is_explicit_and_does_not_change_an_error_to_success() {
 
 #[tokio::test]
 async fn result_storage_rejects_an_invalid_session_path() {
-    assert!(persist_result("secret".into(), "../outside")
+    assert!(persist_result("secret", "../outside")
         .await
         .is_none());
 }
@@ -135,7 +138,7 @@ async fn result_storage_rejects_an_invalid_session_path() {
 async fn persisted_result_path_is_directly_readable_by_the_file_tool() {
     let session_id = uuid::Uuid::new_v4().to_string();
     let full = "complete result\n".repeat(20_000);
-    let path = persist_result(full, &session_id)
+    let path = persist_result(&full, &session_id)
         .await
         .expect("persisted result path");
     assert!(std::path::Path::new(&path).is_absolute());
@@ -148,7 +151,8 @@ async fn persisted_result_path_is_directly_readable_by_the_file_tool() {
 
     let bounded = truncate_result(read_result, "read_file", &session_id).await;
     assert!(bounded.truncated);
-    assert!(bounded.content.chars().count() < 3_000);
+    assert!(bounded.content.chars().count() > 198_000);
+    assert!(bounded.content.chars().count() <= MAX_CHARS_READ_FILE);
     assert_eq!(
         std::fs::read_dir(data_dir().join("tool-results").join(&session_id))
             .unwrap()
@@ -157,4 +161,31 @@ async fn persisted_result_path_is_directly_readable_by_the_file_tool() {
     );
 
     let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
+}
+
+#[tokio::test]
+async fn one_character_overflow_keeps_the_full_read_file_envelope() {
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let full = "r".repeat(MAX_CHARS_READ_FILE + 1);
+
+    let result = truncate_result(ToolResult::ok(full), "read_file", &session_id).await;
+
+    assert!(result.content.chars().count() > 198_000);
+    assert!(result.content.chars().count() <= MAX_CHARS_READ_FILE);
+    let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
+}
+
+#[tokio::test]
+async fn other_tools_keep_the_small_preview() {
+    for tool in ["bash", "grep"] {
+        let session_id = uuid::Uuid::new_v4().to_string();
+        let result = truncate_result(
+            ToolResult::ok("x".repeat(MAX_CHARS_BASH + 1)),
+            tool,
+            &session_id,
+        )
+        .await;
+        assert!(result.content.chars().count() < 3_000, "{tool}");
+        let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
+    }
 }

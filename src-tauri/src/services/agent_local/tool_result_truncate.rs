@@ -51,14 +51,33 @@ pub(crate) async fn truncate_result(
         return result;
     }
 
-    let preview = result.content.chars().take(PREVIEW_SIZE).collect();
+    let use_read_file_envelope = !result.is_error && tool_name == "read_file";
     let existing_path = retained_source_path(&result, tool_name, session_id);
     let full_content = std::mem::take(&mut result.content);
     let persist_path = match existing_path {
         Some(path) => Some(path),
-        None => persist_result(full_content, session_id).await,
+        None => persist_result(&full_content, session_id).await,
     };
+    let preview_size = if use_read_file_envelope {
+        read_file_preview_size(max, total, persist_path.as_deref())
+    } else {
+        PREVIEW_SIZE
+    };
+    let preview = full_content.chars().take(preview_size).collect();
     apply_truncation(result, preview, persist_path, total)
+}
+
+fn read_file_preview_size(max: usize, total: usize, persist_path: Option<&str>) -> usize {
+    let total_kb = total / 1024;
+    let file_hint = persist_path
+        .map(|path| format!("\n{FULL_RESULT_PREFIX}{path}]"))
+        .unwrap_or_default();
+    let prefix = format!(
+        "[Résultat tronqué — {total_kb} Ko total, preview ci-dessous]{file_hint}\n"
+    );
+    const U64_DECIMAL_CHARS: usize = 20;
+    let suffix_chars = "\n[ chars omis]".chars().count() + U64_DECIMAL_CHARS;
+    max.saturating_sub(prefix.chars().count() + suffix_chars)
 }
 
 fn retained_source_path(result: &ToolResult, tool_name: &str, session_id: &str) -> Option<String> {
@@ -76,7 +95,7 @@ fn apply_truncation(
     persist_path: Option<String>,
     total: usize,
 ) -> ToolResult {
-    let omitted = total - PREVIEW_SIZE;
+    let omitted = total.saturating_sub(preview.chars().count());
     let total_kb = total / 1024;
 
     let file_hint = match persist_path.as_deref() {
@@ -94,12 +113,12 @@ fn apply_truncation(
     result
 }
 
-async fn persist_result(content: String, session_id: &str) -> Option<String> {
+async fn persist_result(content: &str, session_id: &str) -> Option<String> {
     super::session_store::validate_session_id(session_id).ok()?;
     let dir = data_dir().join("tool-results").join(session_id);
     let file_name = format!("{}.txt", uuid::Uuid::new_v4());
     let path = dir.join(&file_name);
-    crate::services::private_store::atomic_write_async(path.clone(), content.into_bytes())
+    crate::services::private_store::atomic_write_async(path.clone(), content.as_bytes().to_vec())
         .await
         .ok()?;
     Some(path.to_string_lossy().into_owned())
