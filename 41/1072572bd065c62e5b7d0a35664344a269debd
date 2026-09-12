@@ -1,0 +1,7 @@
+Decision: heap-pin the shared native tool dispatcher future at its single entry boundary.
+
+Reason: macOS crash reports for session 697d2c40-705c-4bcc-a1b7-e43d6785983e show SIGBUS stack-guard failures on a 2 MiB Tokio worker while entering dispatch_inner. Debug async state machines nested several large frames; changing output limits or individual tools would not address the shared cause.
+
+Scope: all native tool dispatches through dispatch_with_progress. No provider, tool behavior, or output contract changes.
+
+Evidence: the full agent loop executes real grep and bash dispatch on an explicitly 2 MiB thread without overflowing. The dispatch future boundary test stays below 8 KiB. The rebuilt arm64 debug binary reserves about 56 KiB in dispatch_with_progress, while dispatch_inner remains isolated behind Pin<Box<_>> rather than embedded in every parent state machine.
