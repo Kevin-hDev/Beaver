@@ -77,3 +77,86 @@ fn tool_turns(count: usize) -> Vec<StreamResult> {
         })
         .collect()
 }
+
+#[test]
+fn ollama_native_tool_dispatch_fits_the_production_worker_stack() {
+    std::thread::Builder::new()
+        .name("ollama-agent-stack-regression".into())
+        .stack_size(2 * 1024 * 1024)
+        .spawn(run_native_tool)
+        .expect("spawn bounded worker")
+        .join()
+        .expect("native tool dispatch must not overflow");
+}
+
+fn run_native_tool() {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime")
+        .block_on(async {
+            let root = tempfile::tempdir().expect("temporary project");
+            std::fs::write(root.path().join("needle.txt"), "stack-proof\n").expect("fixture");
+            let session = super::session_store::create_full(
+                "Ollama native tool stack",
+                "fixture",
+                "ollama",
+                false,
+                None,
+            )
+            .await
+            .expect("session");
+            let request_id = uuid::Uuid::new_v4().to_string();
+            let _script = agent_loop_test_provider::install(
+                &request_id,
+                vec![
+                    StreamResult {
+                        tool_calls: vec![(
+                            "grep".into(),
+                            json!({ "pattern": "stack-proof", "path": root.path() }),
+                        )],
+                        tool_call_ids: vec!["call-grep".into()],
+                        ..Default::default()
+                    },
+                    StreamResult::default(),
+                ],
+            );
+            let mut messages = vec![ChatMessage::user("run native tool".into())];
+
+            super::agent_loop::run_agent_loop(
+                &AgentEventEmitter::test(session.id.clone()),
+                &mut messages,
+                "fixture",
+                ExtensionToolSet::passthrough(Vec::new()),
+                OllamaThink::Bool(false),
+                root.path().to_path_buf(),
+                session.id.clone(),
+                request_id,
+                None,
+                CancellationToken::new(),
+                1_000_000,
+                1_000_000,
+                "auto",
+                false,
+                ContextUsageSeed::default(),
+                false,
+                None,
+                None,
+                None,
+                None,
+            )
+            .await
+            .expect("agent loop");
+
+            let tool_outputs: Vec<_> = messages
+                .iter()
+                .filter(|message| message.role == "tool")
+                .map(|message| message.content.as_str())
+                .collect();
+            assert_eq!(tool_outputs.len(), 1);
+            assert!(tool_outputs[0].contains("stack-proof"), "{tool_outputs:?}");
+            super::session_store::delete_one(&session.id)
+                .await
+                .expect("delete session");
+        });
+}
