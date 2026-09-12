@@ -110,6 +110,10 @@ function attachResult(tools: ToolActivityRecord[], message: AgentMessage) {
   const pending = matching ?? tools.find((tool) => tool.result === undefined);
   if (!pending) return;
   pending.result = message.content;
+  const persisted = message.tool_activities?.find((tool) => tool.name === pending.name)
+    ?? message.tool_activities?.[0];
+  pending.is_error = persisted?.is_error;
+  pending.result_meta = persisted?.result_meta;
   const artifacts = message.tool_activities?.flatMap((tool) => tool.artifacts ?? []);
   if (artifacts?.length) pending.artifacts = artifacts;
 }

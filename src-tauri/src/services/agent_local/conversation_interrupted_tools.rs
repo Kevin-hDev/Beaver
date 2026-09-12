@@ -77,6 +77,7 @@ fn interrupted_result(
         super::tool_result_contract::ToolErrorCategory::Cancelled,
         false,
     ));
+    let activity = interrupted_activity(&tool_name, &result);
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
         turn_id: turn_id.to_string(),
@@ -89,7 +90,7 @@ fn interrupted_result(
         tool_call_id: Some(tool_call_id),
         continuation: None,
         replay_source: None,
-        tool_activities: None,
+        tool_activities: Some(vec![activity]),
         segments: None,
         files: Vec::new(),
         timestamp,
@@ -99,5 +100,33 @@ fn interrupted_result(
         skill_ids: None,
         stream_run_id: None,
         stream_part: None,
+    }
+}
+
+fn interrupted_activity(
+    tool_name: &str,
+    result: &super::types_tools::ToolResult,
+) -> super::types_message::ToolActivityRecord {
+    super::types_message::ToolActivityRecord {
+        name: tool_name.to_string(),
+        summary: String::new(),
+        domain: None,
+        resolved_path: None,
+        args: None,
+        result: None,
+        is_error: Some(true),
+        result_meta: Some(super::types_message::PersistedToolResultMeta {
+            status: result.status,
+            error: result.error.clone(),
+            warnings: result.warnings.clone(),
+            truncated: result.truncated,
+        }),
+        content: None,
+        old_text: None,
+        new_text: None,
+        start_line: None,
+        affected_paths: Vec::new(),
+        file_changes: Vec::new(),
+        artifacts: Vec::new(),
     }
 }

@@ -453,6 +453,7 @@
       "resultCancelled": "Cancelado.",
       "resultTruncated": "Resultado truncado.",
       "resultMissing": "Falta el resultado de la herramienta tras finalizar el flujo.",
+      "interruptedUnknown": "Beaver se detuvo antes de guardar el resultado de la herramienta. El resultado es desconocido. Comprueba el estado externo antes de volver a intentarlo.",
       "webSearchRuntimeUnavailable": "La búsqueda web local no está disponible temporalmente. Comprueba que Python 3.14 esté instalado y vuelve a intentarlo.",
       "verifyBeforeRetry": "Comprueba el estado resultante antes de reintentar, ya que la acción podría haberse ejecutado.",
       "errorCategories": {

@@ -453,6 +453,7 @@
       "resultCancelled": "Abgebrochen.",
       "resultTruncated": "Ergebnis gekürzt.",
       "resultMissing": "Das Werkzeugergebnis fehlt nach dem Ende des Streams.",
+      "interruptedUnknown": "Beaver wurde beendet, bevor das Werkzeugergebnis gespeichert wurde. Das Ergebnis ist unbekannt. Prüfe den externen Zustand, bevor du es erneut versuchst.",
       "webSearchRuntimeUnavailable": "Die lokale Websuche ist vorübergehend nicht verfügbar. Prüfe, ob Python 3.14 installiert ist, und versuche es erneut.",
       "verifyBeforeRetry": "Prüfen Sie vor einem erneuten Versuch den Zustand, da die Aktion bereits ausgeführt worden sein könnte.",
       "errorCategories": {

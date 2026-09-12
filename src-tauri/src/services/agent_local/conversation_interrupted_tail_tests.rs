@@ -144,6 +144,20 @@ async fn closes_missing_results_only_for_a_proven_older_request() {
     assert_eq!(result.tool_call_id.as_deref(), Some("call-read"));
     assert!(result.content.contains(r#""code":"tool_interrupted""#));
     assert!(result.content.contains("outcome is unknown"));
+    let activity = &result.tool_activities.as_ref().unwrap()[0];
+    assert_eq!(activity.is_error, Some(true));
+    assert_eq!(
+        activity
+            .result_meta
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .unwrap()
+            .code
+            .as_ref(),
+        "tool_interrupted"
+    );
     assert_eq!(session.messages[3].role, "assistant");
     conversation_history_validation::validate(&session.messages).unwrap();
     cleanup(&session.id).await;

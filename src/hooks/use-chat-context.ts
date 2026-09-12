@@ -29,5 +29,5 @@ export function useChatContext(args: ChatContextArgs) {
     supportsTools: args.supportsTools,
     contextUsageIncludesReasoning: args.includesReasoning,
   });
-  return { breakdown, summary: progress.summary!, max: progress.summary?.max ?? 0 };
+  return { breakdown, summary: progress.summary, max: progress.summary?.max ?? 0 };
 }
