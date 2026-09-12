@@ -6,7 +6,6 @@ use std::process::Stdio;
 
 const READY: u8 = 0x42;
 const READY_TIMEOUT_MS: i32 = 2_000;
-const WATCH_INTERVAL_MS: u64 = 100;
 
 pub(super) fn prepare(
     shell: &OsStr,
@@ -112,24 +111,14 @@ pub(super) fn run_watchdog(arguments: Vec<OsString>) -> Result<i32, String> {
     if crate::services::owned_process::OwnedProcess::identity(parent.pid).ok() != Some(parent) {
         return Err(error());
     }
-    let root = inspect_root(root_pid, root_start)?.ok_or_else(error)?;
+    let root = super::macos_parent_watchdog::inspect_root(root_pid, root_start)?
+        .ok_or_else(error)?;
     if root.native_scope != u64::from(root.pid) {
         return Err(error());
     }
     std::io::stdout().write_all(&[READY]).map_err(|_| error())?;
     std::io::stdout().flush().map_err(|_| error())?;
-    loop {
-        let parent_alive =
-            crate::services::owned_process::OwnedProcess::identity(parent.pid).ok() == Some(parent);
-        let Some(current_root) = inspect_root(root_pid, root_start)? else {
-            return Ok(0);
-        };
-        if !parent_alive {
-            let _ = crate::services::owned_process::OwnedProcess::signal_exact(current_root, true);
-            return Ok(0);
-        }
-        std::thread::sleep(std::time::Duration::from_millis(WATCH_INTERVAL_MS));
-    }
+    super::macos_parent_watchdog::run(parent, root_pid, root_start)
 }
 
 fn wait_ready(output: std::process::ChildStdout) -> Result<(), String> {
@@ -152,20 +141,6 @@ fn wait_ready_with_timeout(
     let mut byte = [0_u8; 1];
     output.read_exact(&mut byte).map_err(|_| error())?;
     (byte == [READY]).then_some(()).ok_or_else(error)
-}
-
-fn inspect_root(
-    pid: u32,
-    start: u64,
-) -> Result<Option<crate::services::owned_process::OwnedProcessIdentity>, String> {
-    match crate::services::owned_process::OwnedProcess::inspect_for_recovery(pid, start) {
-        Ok(crate::services::owned_process::OwnedProcessInspection::Owned(identity)) => {
-            Ok(Some(identity))
-        }
-        Ok(crate::services::owned_process::OwnedProcessInspection::Unowned) => Ok(None),
-        Err(_) if !crate::services::owned_process::OwnedProcess::process_exists(pid) => Ok(None),
-        Err(_) => Err(error()),
-    }
 }
 
 fn identity_args(

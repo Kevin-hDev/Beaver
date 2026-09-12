@@ -1,4 +1,5 @@
 use super::{parse_watchdog, wait_ready_with_timeout, READY};
+use super::super::macos_parent_watchdog::{watchdog_action, WatchdogAction};
 use std::ffi::OsString;
 use std::process::{Command, Stdio};
 
@@ -23,6 +24,12 @@ fn readiness_rejects_timeout_eof_and_invalid_byte() {
     assert_ready("true", 100, false);
     assert_ready("printf X", 100, false);
     assert_ready(&format!("printf '\\{:03o}'", READY), 100, true);
+}
+
+#[test]
+fn transient_process_inspection_keeps_the_watchdog_alive() {
+    assert_eq!(watchdog_action(Err(()), Ok(true)), WatchdogAction::Wait);
+    assert_eq!(watchdog_action(Ok(false), Err(())), WatchdogAction::Wait);
 }
 
 fn assert_ready(script: &str, timeout_ms: i32, expected: bool) {

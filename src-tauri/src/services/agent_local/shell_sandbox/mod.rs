@@ -20,6 +20,8 @@ mod linux_namespace;
 mod macos;
 #[cfg(target_os = "macos")]
 mod macos_parent_guard;
+#[cfg(target_os = "macos")]
+mod macos_parent_watchdog;
 #[cfg(windows)]
 mod windows;
 
