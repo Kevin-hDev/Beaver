@@ -12,7 +12,7 @@ impl fmt::Display for ConversationAdmissionError {
 impl std::error::Error for ConversationAdmissionError {}
 
 pub(super) const fn error() -> ConversationAdmissionError {
-    ConversationAdmissionError(super::conversation_history::PUBLIC_ERROR_CODE)
+    ConversationAdmissionError(super::conversation_admission::PUBLIC_ERROR_CODE)
 }
 
 pub(super) const fn capacity_error() -> ConversationAdmissionError {

@@ -26,6 +26,7 @@ pub(crate) use reasoning::{
     new_automation_turn_with_lease_and_reasoning, new_turn_with_lease_and_reasoning,
 };
 
+pub const PUBLIC_ERROR_CODE: &str = super::conversation_history::PUBLIC_ERROR_CODE;
 #[cfg(test)]
 pub(crate) use super::conversation_edit::{
     edit_user_message, edit_user_message_after_preflight_with_key_and_writer,
