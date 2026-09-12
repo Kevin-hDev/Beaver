@@ -1,0 +1,7 @@
+Decision: apply the durable turn fence only to main-session journals. Subagent journals rely on their existing registry ownership check at every write.
+
+Reason: a live instruction is intentionally persisted to a child session with a new turn identity while the same child execution continues. Treating that instruction as supersession aborts a legitimate run. The subagent registry already verifies child, run, and execution ownership before each journal mutation, so a second turn fence is both redundant and incorrect there.
+
+The main-session fence remains unchanged and continues to reject late writes from cancelled requests.
+
+Validation: all 13 conversation journal tests pass, including a real queue drain between two writes by the same owned child journal and the deterministic main-session late-write regression.
