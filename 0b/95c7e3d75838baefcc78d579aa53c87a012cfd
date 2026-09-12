@@ -1,0 +1,5 @@
+Decision: keep message-to-record conversion, including artifact grouping, in conversation_journal_record.rs.
+
+Reason: the durable journal remains the single write authority, while record construction is a separate responsibility. Moving the existing helper keeps the production journal below the 230-line source limit without changing behavior or duplicating validation.
+
+Validation: formatting passes and all 12 conversation journal tests pass.
