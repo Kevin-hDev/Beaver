@@ -1,0 +1,12 @@
+Decision: the context panel exposes one current total, derived from the same seven category buckets displayed below it.
+
+The provider input measurement, output count, provenance and preparation status remain internal for compression and diagnostics. A completed preparation is no longer reused as the visible breakdown because it predates the assistant response; Beaver rebuilds the buckets from the persisted current conversation instead.
+
+Reason: a user-facing panel must not present several incomparable token authorities as if they described the same moment.
+
+Validation:
+- exact persisted session f118bab9-dfec-4893-9d12-6bc39f93e15d shows 8.1K total and Messages 11
+- visual inspection in Beaver Dev on dark and light themes
+- 607 frontend test files / 3347 tests passed
+- 5527 Rust library tests, 51 CLI tests and 1 prelogger test passed
+- TypeScript, ESLint, Rust clippy and Graphify update passed
