@@ -1,0 +1,7 @@
+Decision: prove the shell implementation directly on a 2 MiB worker stack in addition to the full cloud agent-loop dispatch test.
+
+Reason: the unit agent loop cannot initialize a real Tauri AppHandle, so its bash call correctly stops at the application-context boundary. Heap-pinning means the parent loop state and dispatch_inner state are separate; testing the full parent with grep and bash entry, then the real managed shell implementation on the same bounded worker, verifies both sides without adding a mutable global test seam.
+
+The internal execute_command_with_work boundary is crate-visible so the sibling LLM regression can exercise the real managed shell while still remaining unavailable outside Beaver.
+
+Validation: both native-tool stack tests pass on a 2 MiB thread, including exact stdout from a real shell process.
