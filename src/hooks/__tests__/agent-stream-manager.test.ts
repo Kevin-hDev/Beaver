@@ -316,6 +316,7 @@ describe("agentStreamManager", () => {
         input: { tokens: 24_044, capacityTokens: 24_044, source: "heuristic", coverage: "complete" },
         state: "completed",
         breakdown: null,
+        transientOverheadTokens: 0,
         updatedAt: "2026-09-11T00:00:00Z",
       },
       lastMeasurement: null,

@@ -164,3 +164,61 @@ async fn provider_measurement_and_output_follow_the_active_request_identity() {
         .await
         .unwrap();
 }
+
+#[tokio::test]
+async fn prepared_payload_persists_only_its_provider_overhead_delta() {
+    let session = super::super::session_store::create_full(
+        "Provider overhead",
+        "gpt-5",
+        "openai",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let journal = super::super::conversation_journal::ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .unwrap();
+    journal.activate_context_request().await.unwrap();
+    let emitter = super::super::stream_events::AgentEventEmitter::test(session.id.clone());
+    let count = |tokens| ContextTokenCount {
+        tokens: Some(tokens),
+        capacity_tokens: Some(tokens),
+        source: Some(ContextCountSource::Heuristic),
+        coverage: ContextCountCoverage::Complete,
+    };
+    let attempt = PreparedContextAttempt::new(
+        ContextAttempt {
+            on_event: &emitter,
+            journal: Some(&journal),
+            provider_id: "openai",
+            model: "gpt-5",
+            turn: 0,
+            attempt: 1,
+            context_limit: 200_000,
+            measured_input_source: ContextCountSource::Provider,
+        },
+        Default::default(),
+    )
+    .with_baseline_count(count(100));
+
+    attempt.persist_payload(count(137)).await.unwrap();
+
+    let saved = super::super::session_store::get(&session.id).await.unwrap();
+    assert_eq!(
+        saved
+            .context_usage
+            .current_preparation
+            .unwrap()
+            .transient_overhead_tokens,
+        37
+    );
+    super::super::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}

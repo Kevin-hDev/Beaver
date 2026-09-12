@@ -26,11 +26,18 @@ pub struct CompressionRunRequest<'a> {
 }
 
 pub async fn run_compression(
-    request: CompressionRunRequest<'_>,
+    mut request: CompressionRunRequest<'_>,
 ) -> Result<Option<CompressionCommitReport>, CompressionError> {
     let session = crate::services::agent_local::session_store::get(request.session_id)
         .await
         .map_err(|_| CompressionError::SnapshotInvalid)?;
+    request.prepared_count = prepared_count_with_overhead(
+        request.prepared_count,
+        &session.context_usage,
+        request.request_id,
+        request.provider_id,
+        &session.model,
+    );
     let profile = super::profile_resolve::resolve_for_session(&session)
         .map_err(|_| CompressionError::Unavailable)?;
     let Some(used) = request
@@ -137,6 +144,26 @@ pub async fn run_compression(
         let _ = on_event.send(StreamEvent::CompressionComplete {});
     }
     result.map(|value| Some(value.report))
+}
+
+pub(super) fn prepared_count_with_overhead(
+    count: crate::services::agent_local::context_usage_record::ContextTokenCount,
+    record: &crate::services::agent_local::context_usage_record::ContextUsageRecord,
+    request_id: &str,
+    provider_id: &str,
+    model: &str,
+) -> crate::services::agent_local::context_usage_record::ContextTokenCount {
+    let overhead = record
+        .current_preparation
+        .as_ref()
+        .filter(|value| {
+            record.active_request_id.as_deref() == Some(request_id)
+                && value.identity.request_id == request_id
+                && value.identity.provider_id == provider_id
+                && value.identity.model == model
+        })
+        .map_or(0, |value| value.transient_overhead_tokens);
+    super::prepared_request::add_overhead(count, overhead)
 }
 
 pub(super) fn should_record_failure(trigger: CompressionTrigger, error: CompressionError) -> bool {

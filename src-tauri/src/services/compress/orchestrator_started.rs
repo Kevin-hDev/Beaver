@@ -36,8 +36,7 @@ pub(super) async fn run(
         request.runtime_messages,
         request.provider_tools.to_vec(),
         request.prepared_count.clone(),
-    )
-    .map_err(|_| CompressionError::SnapshotInvalid)?;
+    )?;
     let images = collect_images(&snapshot);
     let snapshot = snapshot
         .with_checkpoint_images(images)

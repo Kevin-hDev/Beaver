@@ -99,3 +99,17 @@ fn prepared_snapshot_keeps_transient_provider_overhead() {
         ["system", "developer"]
     );
 }
+
+#[test]
+fn prepared_snapshot_preserves_the_capacity_unverified_error() {
+    let session = session();
+    let messages =
+        vec![crate::services::agent_local::types_ollama::ChatMessage::user("continue".into())];
+    let mut unknown = super::prepared_request::count("ollama", &session.model, &messages, &[]);
+    unknown.capacity_tokens = None;
+
+    assert!(matches!(
+        snapshot(&session).with_prepared_context(&messages, Vec::new(), unknown),
+        Err(super::checkpoint_transaction::CompressionError::CapacityUnverified)
+    ));
+}

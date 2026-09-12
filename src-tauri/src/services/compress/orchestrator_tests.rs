@@ -3,6 +3,57 @@ use super::profile_resolve::resolve_from_document;
 use super::profile_store_document::CompressionProfileDocument;
 use super::profile_types::CompressionTrigger;
 
+#[test]
+fn matching_preparation_adds_its_real_provider_overhead() {
+    use crate::services::agent_local::context_usage_record::*;
+
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let count = ContextTokenCount {
+        tokens: Some(100),
+        capacity_tokens: Some(100),
+        source: Some(ContextCountSource::Heuristic),
+        coverage: ContextCountCoverage::Complete,
+    };
+    let record = ContextUsageRecord {
+        active_request_id: Some(request_id.clone()),
+        current_preparation: Some(ContextPreparationSnapshot {
+            identity: ContextRequestIdentity {
+                request_id: request_id.clone(),
+                turn_id: uuid::Uuid::new_v4().to_string(),
+                turn: 0,
+                attempt: 1,
+                provider_id: "openai".into(),
+                model: "gpt-5".into(),
+            },
+            context_limit: Some(200_000),
+            input: count.clone(),
+            state: ContextPreparationState::Completed,
+            breakdown: None,
+            transient_overhead_tokens: 37,
+            updated_at: chrono::Utc::now(),
+        }),
+        ..Default::default()
+    };
+
+    let adjusted = super::orchestrator::prepared_count_with_overhead(
+        count.clone(),
+        &record,
+        &request_id,
+        "openai",
+        "gpt-5",
+    );
+    let stale = super::orchestrator::prepared_count_with_overhead(
+        count,
+        &record,
+        &uuid::Uuid::new_v4().to_string(),
+        "openai",
+        "gpt-5",
+    );
+
+    assert_eq!(adjusted.capacity_tokens, Some(137));
+    assert_eq!(stale.capacity_tokens, Some(100));
+}
+
 fn profile() -> super::profile_resolve::ResolvedCompressionProfile {
     resolve_from_document(None, &CompressionProfileDocument::default()).unwrap()
 }

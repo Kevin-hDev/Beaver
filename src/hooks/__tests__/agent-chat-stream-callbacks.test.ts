@@ -21,7 +21,7 @@ function contextUsageData(inputTokens: number, outputTokens = 0, breakdown: Requ
         identity, contextLimit: 372_000,
         input: { tokens: inputTokens, capacityTokens: inputTokens, source: "heuristic" as const, coverage: "complete" as const },
         state: outputTokens === 0 ? "in_flight" as const : "completed" as const,
-        breakdown, updatedAt: "2026-09-11T00:00:00Z",
+        breakdown, transientOverheadTokens: 0, updatedAt: "2026-09-11T00:00:00Z",
       },
       lastMeasurement: outputTokens > 0 ? {
         identity, contextLimit: 372_000,

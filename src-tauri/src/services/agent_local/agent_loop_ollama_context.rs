@@ -27,6 +27,12 @@ pub(super) fn prepared_attempt<'a>(
     attempt: u32,
     breakdown: RequestContextUsage,
 ) -> super::context_usage_runtime::PreparedContextAttempt<'a> {
+    let baseline = crate::services::compress::prepared_request::count(
+        "ollama",
+        params.model,
+        params.messages,
+        params.tools,
+    );
     super::context_usage_runtime::PreparedContextAttempt::new(
         super::context_usage_runtime::ContextAttempt {
             on_event: params.on_event,
@@ -41,4 +47,5 @@ pub(super) fn prepared_attempt<'a>(
         },
         breakdown,
     )
+    .with_baseline_count(baseline)
 }

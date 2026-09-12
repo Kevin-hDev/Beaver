@@ -137,6 +137,7 @@ async fn commit_replaces_preparation_and_preserves_last_measurement_atomically()
         input: old.clone(),
         state: ContextPreparationState::Completed,
         breakdown: None,
+        transient_overhead_tokens: 0,
         updated_at: chrono::Utc::now(),
     });
     session.context_usage.last_measurement = Some(ContextMeasurementSnapshot {

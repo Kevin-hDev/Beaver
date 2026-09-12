@@ -84,7 +84,7 @@ describe("agent-token-estimate", () => {
       currentPreparation: {
         identity: identity("B"), contextLimit: 100_000,
         input: { tokens: 80_000, capacityTokens: 80_000, source: "heuristic", coverage: "complete" },
-        state: "completed", breakdown: null, updatedAt: "2026-09-11T00:00:02Z",
+        state: "completed", breakdown: null, transientOverheadTokens: 0, updatedAt: "2026-09-11T00:00:02Z",
       },
       lastMeasurement: {
         identity: identity("A"), contextLimit: 200_000,
@@ -142,7 +142,7 @@ describe("agent-token-estimate", () => {
       currentPreparation: {
         identity, contextLimit: 200_000,
         input: { tokens: 6_000, capacityTokens: 6_000, source: "heuristic", coverage: "complete" },
-        state: "completed", breakdown: null, updatedAt: "2026-09-11T00:00:00Z",
+        state: "completed", breakdown: null, transientOverheadTokens: 0, updatedAt: "2026-09-11T00:00:00Z",
       },
       lastMeasurement: null,
       lastOutput: null,

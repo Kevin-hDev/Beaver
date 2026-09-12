@@ -77,6 +77,7 @@ pub async fn commit_candidate(
     session.updated_at = Some(chrono::Utc::now());
     if let Some(preparation) = &mut session.context_usage.current_preparation {
         preparation.input = candidate.prepared_count.clone();
+        preparation.transient_overhead_tokens = 0;
         preparation.state =
             crate::services::agent_local::context_usage_record::ContextPreparationState::Ready;
         preparation.updated_at = chrono::Utc::now();

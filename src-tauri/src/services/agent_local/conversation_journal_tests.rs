@@ -214,6 +214,7 @@ fn preparation(
         input: context_count(tokens, ContextCountSource::Heuristic),
         state: ContextPreparationState::InFlight,
         breakdown: None,
+        transient_overhead_tokens: 0,
         updated_at: chrono::Utc::now(),
     }
 }

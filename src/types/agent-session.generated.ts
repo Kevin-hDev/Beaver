@@ -23,7 +23,7 @@ export type ContextTokenCount = { tokens: number | null, capacityTokens: number 
 
 export type RequestContextUsage = { messages: number, systemTools: number, mcpConnectors: number, skills: number, memory: number, metaContext: number, systemPrompt: number, reasoningIncluded: boolean, };
 
-export type ContextPreparationSnapshot = { identity: ContextRequestIdentity, contextLimit: number | null, input: ContextTokenCount, state: ContextPreparationState, breakdown: RequestContextUsage | null, updatedAt: string, };
+export type ContextPreparationSnapshot = { identity: ContextRequestIdentity, contextLimit: number | null, input: ContextTokenCount, state: ContextPreparationState, breakdown: RequestContextUsage | null, transientOverheadTokens: number, updatedAt: string, };
 
 export type ContextMeasurementSnapshot = { identity: ContextRequestIdentity, contextLimit: number | null, input: ContextTokenCount, updatedAt: string, };
 

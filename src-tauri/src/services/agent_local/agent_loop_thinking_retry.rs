@@ -111,6 +111,12 @@ pub async fn retry_if_needed(
         },
         params.breakdown,
     )
+    .with_baseline_count(crate::services::compress::prepared_request::count(
+        "ollama",
+        &params.request.model,
+        &retry_req.messages,
+        retry_req.tools.as_deref().unwrap_or_default(),
+    ))
     .with_realtime_budget(params.realtime_budget.clone());
 
     params.eager_handle.abort();

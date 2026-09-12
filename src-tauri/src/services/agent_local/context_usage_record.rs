@@ -72,6 +72,8 @@ pub struct ContextPreparationSnapshot {
     pub input: ContextTokenCount,
     pub state: ContextPreparationState,
     pub breakdown: Option<RequestContextUsage>,
+    #[serde(default)]
+    pub transient_overhead_tokens: u32,
     #[cfg_attr(test, ts(type = "string"))]
     pub updated_at: DateTime<Utc>,
 }

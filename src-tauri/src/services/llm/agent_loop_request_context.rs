@@ -19,7 +19,14 @@ pub(super) fn prepared_attempt<'a>(
     attempt: u32,
     breakdown: RequestContextUsage,
 ) -> PreparedContextAttempt<'a> {
+    let baseline = crate::services::compress::prepared_request::count(
+        params.provider_id,
+        params.model,
+        params.messages,
+        params.tools,
+    );
     PreparedContextAttempt::new(context_attempt(params, attempt), breakdown)
+        .with_baseline_count(baseline)
 }
 
 fn context_attempt<'a>(params: &'a ApiRequestParams<'a>, attempt: u32) -> ContextAttempt<'a> {

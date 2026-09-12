@@ -33,6 +33,7 @@ impl ContextAttempt<'_> {
         self.persist_prepared_count(
             complete_count(bounded_tokens(input_tokens), ContextCountSource::Heuristic),
             breakdown,
+            0,
         )
         .await
     }
@@ -41,6 +42,7 @@ impl ContextAttempt<'_> {
         &self,
         input: ContextTokenCount,
         breakdown: RequestContextUsage,
+        transient_overhead_tokens: u32,
     ) -> Result<(), String> {
         let Some(journal) = self.journal else {
             return Ok(());
@@ -56,6 +58,7 @@ impl ContextAttempt<'_> {
             input,
             state: ContextPreparationState::InFlight,
             breakdown: Some(breakdown),
+            transient_overhead_tokens,
             updated_at: Utc::now(),
         };
         if journal.persist_context_preparation(preparation).await? {

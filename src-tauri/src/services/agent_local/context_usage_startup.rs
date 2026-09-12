@@ -77,6 +77,7 @@ mod tests {
             },
             state: ContextPreparationState::InFlight,
             breakdown: None,
+            transient_overhead_tokens: 0,
             updated_at: Utc::now(),
         });
         super::super::session_store::save(&session).await.unwrap();

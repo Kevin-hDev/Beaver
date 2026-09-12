@@ -56,7 +56,7 @@ describe("retryIndicator", () => {
           identity: { requestId: "request-1", turnId: "turn-1", turn: 0, attempt: 1, providerId: "openai", model: "gpt-5" },
           contextLimit: 200_000,
           input: { tokens: 100, capacityTokens: 100, source: "heuristic", coverage: "complete" },
-          state: "in_flight", breakdown: null, updatedAt: "2026-09-11T00:00:00Z",
+          state: "in_flight", breakdown: null, transientOverheadTokens: 0, updatedAt: "2026-09-11T00:00:00Z",
         },
         lastMeasurement: null,
         lastOutput: null,

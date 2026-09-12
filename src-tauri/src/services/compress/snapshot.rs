@@ -93,9 +93,9 @@ impl CompressionSnapshot {
         runtime_messages: &[ChatMessage],
         provider_tools: Vec<serde_json::Value>,
         prepared_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, super::checkpoint_transaction::CompressionError> {
         if provider_tools.len() > 256 {
-            return Err("compression_snapshot_invalid".to_string());
+            return Err(super::checkpoint_transaction::CompressionError::SnapshotInvalid);
         }
         let baseline = super::prepared_request::count(
             &self.provider_id,
@@ -104,19 +104,19 @@ impl CompressionSnapshot {
             &provider_tools,
         )
         .capacity_tokens
-        .ok_or_else(|| "compression_snapshot_invalid".to_string())?;
+        .ok_or(super::checkpoint_transaction::CompressionError::CapacityUnverified)?;
         self.canonical_messages = runtime_messages
             .iter()
             .filter(|message| matches!(message.role.as_str(), "system" | "developer"))
             .cloned()
             .collect();
         if self.canonical_messages.len() > 64 {
-            return Err("compression_snapshot_invalid".to_string());
+            return Err(super::checkpoint_transaction::CompressionError::SnapshotInvalid);
         }
         self.provider_tools = provider_tools;
         self.transient_overhead_tokens = prepared_count
             .capacity_tokens
-            .ok_or_else(|| "compression_snapshot_invalid".to_string())?
+            .ok_or(super::checkpoint_transaction::CompressionError::CapacityUnverified)?
             .saturating_sub(baseline);
         self.prepared_count = prepared_count;
         self.system_head_count = super::prepared_request::system_head(
