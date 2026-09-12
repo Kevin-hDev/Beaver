@@ -68,6 +68,14 @@ pub(crate) async fn new_turn_for_execution(
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     let lease = super::session_locks::acquire_admission_lease(session_id).await;
+    super::stream_recovery_apply::recover_session_with_lease(
+        &lease,
+        super::stream_recovery_apply::StreamRecoveryMode::Admission {
+            current_execution_id,
+        },
+    )
+    .await
+    .map_err(|_| error())?;
     new_turn_inner(
         lease.session_id(),
         input,
@@ -118,13 +126,17 @@ where
     if session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION {
         return Err(capacity_error());
     }
-    super::conversation_interrupted_tail::close_recoverable(&mut session, current_execution_id)
-        .map_err(|failure| match failure {
-            super::conversation_interrupted_tail::CloseInterruptedTailError::History => error(),
-            super::conversation_interrupted_tail::CloseInterruptedTailError::Capacity => {
+    #[cfg(test)]
+    super::stream_recovery_apply::close_admission_fallback(&mut session, current_execution_id)
+        .map_err(|failure| {
+            if failure == "session_capacity_reached" {
                 capacity_error()
+            } else {
+                error()
             }
         })?;
+    #[cfg(not(test))]
+    let _ = current_execution_id;
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session, &target, key_source, None,
     )

@@ -4,6 +4,12 @@ use crate::services::agent_local::session_store;
 
 #[tauri::command]
 pub async fn get_agent_session(id: String) -> Result<AgentSessionView, String> {
+    crate::services::agent_local::stream_recovery_apply::recover_session(
+        &id,
+        crate::services::agent_local::stream_recovery_apply::StreamRecoveryMode::StaleOnly,
+    )
+    .await
+    .map_err(|_| "Session indisponible".to_string())?;
     let session = session_store::get(&id).await?;
     let mut view = crate::services::agent_local::session_view::from_session(&session)?;
     crate::services::agent_local::session_artifact_verification::apply(&session, &mut view).await;
@@ -95,4 +101,88 @@ pub async fn create_agent_session(
         }
     }
     crate::services::agent_local::session_view::from_session(&session)
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn agent_session_views_recovers_a_stale_stream_before_projection() {
+        use crate::services::agent_local::stream_recovery_log::StreamRecoveryLog;
+        use crate::services::agent_local::stream_recovery_record::{
+            process_instance_id, RecoverableStreamEvent, StreamRecoveryHeader,
+            STREAM_RECOVERY_VERSION,
+        };
+        let mut session = crate::services::agent_local::session_store::create_full(
+            "View recovery",
+            "model",
+            "openai",
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+        let header = StreamRecoveryHeader {
+            version: STREAM_RECOVERY_VERSION,
+            process_instance_id: process_instance_id().into(),
+            session_id: session.id.clone(),
+            request_id: uuid::Uuid::new_v4().to_string(),
+            turn_id: uuid::Uuid::new_v4().to_string(),
+            user_message_id: uuid::Uuid::new_v4().to_string(),
+            assistant_message_id: uuid::Uuid::new_v4().to_string(),
+            subagent_owner: None,
+            created_at: chrono::Utc::now(),
+        };
+        session
+            .messages
+            .push(crate::services::agent_local::types_message::AgentMessage {
+                id: header.user_message_id.clone(),
+                turn_id: header.turn_id.clone(),
+                role: "user".into(),
+                content: "continue".into(),
+                message_kind: None,
+                thinking: None,
+                tool_calls: None,
+                tool_name: None,
+                tool_call_id: None,
+                continuation: None,
+                replay_source: None,
+                tool_activities: None,
+                segments: None,
+                files: Vec::new(),
+                timestamp: chrono::Utc::now(),
+                tokens: 0,
+                work_duration_ms: None,
+                skill_names: None,
+                skill_ids: None,
+                stream_run_id: None,
+                stream_part: None,
+            });
+        crate::services::agent_local::session_store::save(&session)
+            .await
+            .unwrap();
+        let (log, lease) =
+            StreamRecoveryLog::create(header, tokio_util::sync::CancellationToken::new())
+                .await
+                .unwrap();
+        log.record_event(RecoverableStreamEvent::Token {
+            content: "restored in view".into(),
+            phase: None,
+        })
+        .unwrap();
+        drop(log);
+        drop(lease);
+
+        super::get_agent_session(session.id.clone()).await.unwrap();
+        assert!(
+            crate::services::agent_local::session_store::get(&session.id)
+                .await
+                .unwrap()
+                .messages
+                .iter()
+                .any(|message| message.content == "restored in view")
+        );
+        crate::services::agent_local::session_store::delete_one(&session.id)
+            .await
+            .unwrap();
+    }
 }

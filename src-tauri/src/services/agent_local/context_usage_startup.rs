@@ -26,6 +26,21 @@ async fn cleanup_one(id: &str, startup_cutoff: DateTime<Utc>) -> Result<bool, St
     {
         return Ok(false);
     }
+    mark_interrupted(&mut session, None);
+    session.updated_at = Some(Utc::now());
+    super::session_store::save(&session).await?;
+    Ok(true)
+}
+
+pub(crate) fn mark_interrupted(
+    session: &mut super::types_session::AgentSession,
+    request_id: Option<&str>,
+) {
+    if request_id.is_some_and(|request_id| {
+        session.context_usage.active_request_id.as_deref() != Some(request_id)
+    }) {
+        return;
+    }
     if let Some(preparation) = &mut session.context_usage.current_preparation {
         if preparation.state == ContextPreparationState::InFlight {
             preparation.state = ContextPreparationState::Interrupted;
@@ -33,9 +48,6 @@ async fn cleanup_one(id: &str, startup_cutoff: DateTime<Utc>) -> Result<bool, St
         }
     }
     session.context_usage.active_request_id = None;
-    session.updated_at = Some(Utc::now());
-    super::session_store::save(&session).await?;
-    Ok(true)
 }
 
 #[cfg(test)]

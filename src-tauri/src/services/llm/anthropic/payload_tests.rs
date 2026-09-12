@@ -138,6 +138,19 @@ fn interrupted_turn_marker_is_not_sent_to_anthropic() {
 }
 
 #[test]
+fn recovered_display_thinking_is_not_sent_to_anthropic() {
+    let mut recovered = message("assistant", "visible checkpoint");
+    recovered.display_thinking = Some("partial private thinking".into());
+
+    let converted = super::messages::convert(&[recovered], &[], None).unwrap();
+    let serialized = serde_json::to_string(&converted.messages).unwrap();
+
+    assert!(serialized.contains("visible checkpoint"));
+    assert!(!serialized.contains("partial private thinking"));
+    assert!(!serialized.contains("thinking"));
+}
+
+#[test]
 fn payload_projects_verified_preview_in_its_matching_anthropic_tool_result() {
     let mut tool = message("tool", "done");
     tool.tool_call_id = Some("call-preview".into());

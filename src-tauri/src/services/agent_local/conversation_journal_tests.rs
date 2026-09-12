@@ -302,7 +302,9 @@ async fn superseded_run_cannot_append_a_late_tool_result() {
     let current_request = uuid::Uuid::new_v4().to_string();
     super::conversation_interrupted_tail::close_recoverable(
         &mut recovered,
-        Some(&current_request),
+        super::conversation_interrupted_tail::RecoveryProof::AdmissionFallback {
+            current_execution_id: &current_request,
+        },
     )
     .expect("close orphan");
     let new_turn = uuid::Uuid::new_v4().to_string();

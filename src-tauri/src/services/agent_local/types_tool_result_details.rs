@@ -10,13 +10,13 @@ pub(crate) const MAX_STORED_AFFECTED_PATH_BYTES: usize = 64 * 1024;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(super) struct ToolResultDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    display_summary: Option<Box<str>>,
+    pub(super) display_summary: Option<Box<str>>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    affected_paths: Vec<String>,
+    pub(super) affected_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    file_changes: Vec<ToolFileChange>,
+    pub(super) file_changes: Vec<ToolFileChange>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    start_line: Option<usize>,
+    pub(super) start_line: Option<usize>,
 }
 
 impl ToolResult {

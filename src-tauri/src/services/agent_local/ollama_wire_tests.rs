@@ -108,6 +108,24 @@ fn chat_payload_disables_ollama_truncation() {
 }
 
 #[test]
+fn recovered_display_thinking_is_not_sent_to_ollama() {
+    let messages = [ChatMessage::assistant(
+        "visible checkpoint".into(),
+        Some("partial private thinking".into()),
+        None,
+        None,
+        None,
+    )];
+
+    let value = chat_request(&request(), &messages).unwrap();
+    let serialized = value.to_string();
+
+    assert_eq!(value["messages"][0]["content"], "visible checkpoint");
+    assert!(!serialized.contains("partial private thinking"));
+    assert!(value["messages"][0].get("thinking").is_none());
+}
+
+#[test]
 fn cloud_glm_payload_keeps_native_thinking_and_images_only() {
     let messages = [
         ChatMessage {

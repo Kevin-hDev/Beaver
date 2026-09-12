@@ -1,5 +1,5 @@
 use super::conversation_history_validation;
-use super::conversation_interrupted_tail::close_recoverable;
+use super::conversation_interrupted_tail::{close_recoverable, RecoveryProof};
 use super::conversation_history_tests::support::{
     cleanup, complete_turn, message, resolved, tool_result,
 };
@@ -8,6 +8,20 @@ use super::types_session::AgentSession;
 use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, NonReplayTarget, ReasoningModeId, RouteId,
 };
+
+const CURRENT_REQUEST: &str = "00000000-0000-4000-8000-000000000001";
+
+fn fallback() -> RecoveryProof<'static> {
+    RecoveryProof::AdmissionFallback {
+        current_execution_id: CURRENT_REQUEST,
+    }
+}
+
+fn fallback_for(current_execution_id: &str) -> RecoveryProof<'_> {
+    RecoveryProof::AdmissionFallback {
+        current_execution_id,
+    }
+}
 
 async fn recoverable_tail() -> AgentSession {
     let mut session = super::conversation_history_tests::support::create_session().await;
@@ -45,7 +59,7 @@ async fn closes_an_interrupted_turn_before_the_first_assistant_token() {
         "ca va ?",
     )];
 
-    assert!(close_recoverable(&mut session, None).expect("recover user-only tail"));
+    assert!(close_recoverable(&mut session, fallback()).expect("recover user-only tail"));
 
     let terminal = session.messages.last().expect("terminal marker");
     assert_eq!(terminal.role, "assistant");
@@ -90,7 +104,7 @@ async fn closes_only_a_tail_with_all_tool_results() {
     let mut session = recoverable_tail().await;
     assert!(conversation_history_validation::validate(&session.messages).is_err());
 
-    assert!(close_recoverable(&mut session, None).expect("recoverable tail"));
+    assert!(close_recoverable(&mut session, fallback()).expect("recoverable tail"));
 
     let terminal = session.messages.last().expect("terminal marker");
     assert_eq!(terminal.role, "assistant");
@@ -107,10 +121,10 @@ async fn closes_only_a_tail_with_all_tool_results() {
 #[tokio::test]
 async fn closing_is_idempotent() {
     let mut session = recoverable_tail().await;
-    assert!(close_recoverable(&mut session, None).unwrap());
+    assert!(close_recoverable(&mut session, fallback()).unwrap());
     let once = session.messages.len();
 
-    assert!(!close_recoverable(&mut session, None).unwrap());
+    assert!(!close_recoverable(&mut session, fallback()).unwrap());
     assert_eq!(session.messages.len(), once);
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
@@ -122,7 +136,7 @@ async fn missing_tool_result_is_never_invented() {
     session.messages.pop();
     let before = serde_json::to_value(&session.messages).unwrap();
 
-    assert!(close_recoverable(&mut session, None).is_err());
+    assert!(close_recoverable(&mut session, fallback()).is_err());
     assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
@@ -137,7 +151,7 @@ async fn closes_missing_results_only_for_a_proven_older_request() {
     session.messages.last_mut().unwrap().stream_part = Some("checkpoint".into());
     let active_request = uuid::Uuid::new_v4().to_string();
 
-    assert!(close_recoverable(&mut session, Some(&active_request)).unwrap());
+    assert!(close_recoverable(&mut session, fallback_for(&active_request)).unwrap());
 
     let result = &session.messages[2];
     assert_eq!(result.role, "tool");
@@ -172,7 +186,7 @@ async fn active_request_cannot_close_its_own_pending_tool() {
     session.messages.last_mut().unwrap().stream_part = Some("checkpoint".into());
     let before = serde_json::to_value(&session.messages).unwrap();
 
-    assert!(close_recoverable(&mut session, Some(&active_request)).is_err());
+    assert!(close_recoverable(&mut session, fallback_for(&active_request)).is_err());
     assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
     cleanup(&session.id).await;
 }
@@ -195,7 +209,7 @@ async fn malformed_execution_identities_never_close_pending_tools() {
         };
         let before = serde_json::to_value(&session.messages).unwrap();
 
-        assert!(close_recoverable(&mut session, Some(&current)).is_err());
+        assert!(close_recoverable(&mut session, fallback_for(&current)).is_err());
         assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
         cleanup(&session.id).await;
     }
@@ -224,7 +238,10 @@ async fn missing_results_and_terminal_marker_respect_session_capacity() {
     let before = serde_json::to_value(&session.messages).unwrap();
 
     assert_eq!(
-        close_recoverable(&mut session, Some(&uuid::Uuid::new_v4().to_string())),
+        close_recoverable(
+            &mut session,
+            fallback_for(&uuid::Uuid::new_v4().to_string()),
+        ),
         Err(super::conversation_interrupted_tail::CloseInterruptedTailError::Capacity)
     );
     assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
@@ -239,7 +256,7 @@ async fn copies_only_a_valid_stream_run_as_final() {
     result.stream_run_id = Some(run_id.clone());
     result.stream_part = Some("checkpoint".into());
 
-    close_recoverable(&mut session, None).unwrap();
+    close_recoverable(&mut session, fallback()).unwrap();
 
     let marker = session.messages.last().unwrap();
     assert_eq!(marker.stream_run_id.as_deref(), Some(run_id.as_str()));
@@ -252,7 +269,7 @@ async fn invalid_history_stays_closed() {
     let mut session = recoverable_tail().await;
     session.messages.last_mut().unwrap().role = "unknown".into();
 
-    assert!(close_recoverable(&mut session, None).is_err());
+    assert!(close_recoverable(&mut session, fallback()).is_err());
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
 }

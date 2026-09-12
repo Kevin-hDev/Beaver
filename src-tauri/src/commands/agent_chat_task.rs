@@ -15,6 +15,8 @@ mod ollama_thinking;
 mod params;
 mod prompt_settings;
 mod reasoning_diagnostics;
+#[path = "agent_chat_task_recovery.rs"]
+mod recovery;
 mod session_events;
 pub(crate) mod tool_policy;
 mod workspace_prompt;
@@ -25,9 +27,6 @@ pub(crate) use conversation::StreamConversation;
 pub(crate) use params::{StreamCapabilityHints, StreamPermissionMode, StreamTaskParams};
 
 use crate::services::agent_local::agent_loop_finish::CompletedStreamTurn;
-use crate::services::mascot::MascotSessionOutcome;
-use std::future::Future;
-use std::pin::Pin;
 
 pub(crate) use common::merge_personality;
 
@@ -45,10 +44,12 @@ fn chat_engine(provider: &str) -> ChatEngine {
     }
 }
 
-pub(crate) type SpawnedStreamTask =
-    Pin<Box<dyn Future<Output = Result<CompletedStreamTurn, String>> + Send + 'static>>;
+pub(crate) use recovery::SpawnedStreamTask;
 
 pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
+    let recovery_session_id = params.session_id.clone();
+    let recovery_request_id = params.request_id.clone();
+    let recovery_cancel = params.cancel.clone();
     let mascot_session = params.on_event.start_mascot_session();
     #[cfg(debug_assertions)]
     let fixture_limits = params.fixture_run.as_ref().map(|run| run.limits());
@@ -56,18 +57,36 @@ pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
     let fixture_cancel = params.cancel.clone();
     let inner = Box::pin(run_stream_task_inner(params));
     Box::pin(async move {
-        #[cfg(debug_assertions)]
-        let result = match fixture_limits {
-            Some(limits) => {
-                crate::services::reasoning_fixture_budget::run_scoped(limits, fixture_cancel, inner)
-                    .await
+        let guarded = recovery::guard(async move {
+            #[cfg(debug_assertions)]
+            {
+                match fixture_limits {
+                    Some(limits) => {
+                        crate::services::reasoning_fixture_budget::run_scoped(
+                            limits,
+                            fixture_cancel,
+                            inner,
+                        )
+                        .await
+                    }
+                    None => inner.await,
+                }
             }
-            None => inner.await,
-        };
-        #[cfg(not(debug_assertions))]
-        let result = inner.await;
+            #[cfg(not(debug_assertions))]
+            {
+                inner.await
+            }
+        })
+        .await;
+        let result = recovery::finish(
+            guarded,
+            &recovery_session_id,
+            &recovery_request_id,
+            &recovery_cancel,
+        )
+        .await;
         if let Some(session) = mascot_session {
-            session.finish(mascot_outcome(&result));
+            session.finish(recovery::mascot_outcome(&result));
         }
         result
     })
@@ -159,59 +178,6 @@ pub(crate) fn validate_target_profile(
     Ok(())
 }
 
-fn mascot_outcome(result: &Result<CompletedStreamTurn, String>) -> MascotSessionOutcome {
-    match result {
-        Ok(_) => MascotSessionOutcome::Success,
-        Err(message) if message == "Annulé" => MascotSessionOutcome::Cancelled,
-        Err(_) => MascotSessionOutcome::Failed,
-    }
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn grok_and_kimi_oauth_use_the_native_agent_loop() {
-        assert_eq!(chat_engine("xai-oauth"), ChatEngine::NativeApi);
-        assert_eq!(chat_engine("moonshot-oauth"), ChatEngine::NativeApi);
-        assert_eq!(chat_engine("xai"), ChatEngine::NativeApi);
-        assert_eq!(chat_engine("moonshot"), ChatEngine::NativeApi);
-    }
-
-    #[test]
-    fn mascot_outcome_covers_every_terminal_path() {
-        assert_eq!(
-            mascot_outcome(&Ok(CompletedStreamTurn::compression(Vec::new()))),
-            MascotSessionOutcome::Success
-        );
-        assert_eq!(
-            mascot_outcome(&Err("Annulé".into())),
-            MascotSessionOutcome::Cancelled
-        );
-        assert_eq!(
-            mascot_outcome(&Err("indisponible".into())),
-            MascotSessionOutcome::Failed
-        );
-        assert_eq!(
-            context_lifecycle::terminal_state(&Ok(CompletedStreamTurn::compression(Vec::new()))),
-            crate::services::agent_local::context_usage_record::ContextPreparationState::Completed
-        );
-        assert_eq!(
-            context_lifecycle::terminal_state(&Err("Annulé".into())),
-            crate::services::agent_local::context_usage_record::ContextPreparationState::Interrupted
-        );
-        assert_eq!(
-            context_lifecycle::terminal_state(&Err("indisponible".into())),
-            crate::services::agent_local::context_usage_record::ContextPreparationState::Failed
-        );
-    }
-
-    #[test]
-    fn every_stream_consumer_receives_a_boxed_agent_loop() {
-        type StreamRun = fn(StreamTaskParams) -> SpawnedStreamTask;
-
-        // La coercition échoue à la compilation si la boucle redevient non boxed.
-        let _run: StreamRun = run_stream_task;
-    }
-}
+#[path = "agent_chat_task_tests.rs"]
+mod tests;

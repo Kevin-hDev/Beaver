@@ -132,6 +132,16 @@ pub mod stream_events;
 mod stream_events_recovery_tests;
 pub(crate) mod stream_recovery_log;
 mod stream_recovery_log_sync;
+pub(crate) mod stream_recovery_apply;
+#[cfg(test)]
+mod stream_recovery_apply_tests;
+mod stream_recovery_apply_validation;
+pub(crate) mod stream_recovery_projection;
+#[cfg(test)]
+mod stream_recovery_projection_tests;
+#[cfg(test)]
+mod stream_recovery_process_tests;
+mod stream_recovery_projection_messages;
 #[cfg(test)]
 mod stream_recovery_log_tests;
 pub(crate) mod stream_recovery_owners;
@@ -141,6 +151,8 @@ pub(crate) mod stream_recovery_record;
 #[cfg(test)]
 mod stream_recovery_record_tests;
 pub(crate) mod stream_recovery_store;
+mod stream_recovery_store_discovery;
+pub(crate) mod stream_recovery_startup;
 #[cfg(test)]
 mod stream_recovery_store_tests;
 #[cfg(test)]

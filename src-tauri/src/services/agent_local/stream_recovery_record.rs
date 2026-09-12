@@ -73,6 +73,7 @@ pub(crate) struct RecoverableToolCall {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct RecoverableToolResult {
+    pub message_id: String,
     pub name: String,
     pub content: String,
     pub is_error: bool,

@@ -8,9 +8,17 @@ pub(crate) enum CloseInterruptedTailError {
     Capacity,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum RecoveryProof<'a> {
+    RecoveredJournal { request_id: &'a str },
+    AdmissionFallback { current_execution_id: &'a str },
+    #[cfg(test)]
+    LegacyWithoutExecution,
+}
+
 pub(crate) fn close_recoverable(
     session: &mut AgentSession,
-    current_execution_id: Option<&str>,
+    proof: RecoveryProof<'_>,
 ) -> Result<bool, CloseInterruptedTailError> {
     let original_len = session.messages.len();
     let user_only_tail = session.messages.last().is_some_and(|message| message.role == "user");
@@ -19,7 +27,7 @@ pub(crate) fn close_recoverable(
     {
         TailState::Terminal if !user_only_tail => return Ok(false),
         TailState::ToolsPending => {
-            if !belongs_to_older_execution(session, current_execution_id) {
+            if !may_close_pending_tools(session, proof) {
                 return Err(CloseInterruptedTailError::History);
             }
             super::conversation_interrupted_tools::append_missing_results(session).map_err(
@@ -76,14 +84,21 @@ pub(crate) fn close_recoverable(
     Ok(true)
 }
 
-fn belongs_to_older_execution(session: &AgentSession, current_execution_id: Option<&str>) -> bool {
-    let Some(current) = current_execution_id.filter(|id| uuid::Uuid::parse_str(id).is_ok()) else {
-        return false;
-    };
-    session
+fn may_close_pending_tools(session: &AgentSession, proof: RecoveryProof<'_>) -> bool {
+    let pending = session
         .messages
         .iter()
         .rfind(|message| message.role == "assistant" && message.tool_calls.is_some())
-        .and_then(|message| message.stream_run_id.as_deref())
-        .is_some_and(|pending| uuid::Uuid::parse_str(pending).is_ok() && pending != current)
+        .and_then(|message| message.stream_run_id.as_deref());
+    let Some(pending) = pending.filter(|id| uuid::Uuid::parse_str(id).is_ok()) else {
+        return false;
+    };
+    match proof {
+        RecoveryProof::RecoveredJournal { request_id } => pending == request_id,
+        RecoveryProof::AdmissionFallback {
+            current_execution_id,
+        } => uuid::Uuid::parse_str(current_execution_id).is_ok() && pending != current_execution_id,
+        #[cfg(test)]
+        RecoveryProof::LegacyWithoutExecution => false,
+    }
 }

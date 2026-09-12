@@ -18,12 +18,17 @@ pub(super) fn from_continuation(
         // Elle recule toujours au début du tour concerné, jamais au milieu.
         super::conversation_transition::for_continuation(session, target).compatible_suffix_start
     });
-    let mut messages = session
-        .messages
-        .iter()
-        .enumerate()
-        .map(|(index, message)| convert(message, index >= suffix, target.replay()))
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut messages = Vec::with_capacity(session.messages.len());
+    let mut compatible_suffix_start = 0usize;
+    for (index, message) in session.messages.iter().enumerate() {
+        if recovered_thinking_only_checkpoint(message) {
+            continue;
+        }
+        if index < suffix {
+            compatible_suffix_start += 1;
+        }
+        messages.push(convert(message, index >= suffix, target.replay())?);
+    }
     let history_len = messages.len();
     let mut prefix_count = 0usize;
     if let Some(summary) = session.clone_summary.as_deref() {
@@ -45,9 +50,9 @@ pub(super) fn from_continuation(
         );
         prefix_count += 1;
     }
-    if suffix > 0 && history_len > 0 {
-        let boundary_index = if suffix < history_len {
-            suffix + prefix_count
+    if compatible_suffix_start > 0 && history_len > 0 {
+        let boundary_index = if compatible_suffix_start < history_len {
+            compatible_suffix_start + prefix_count
         } else {
             history_len + prefix_count - 1
         };
@@ -55,8 +60,17 @@ pub(super) fn from_continuation(
     }
     Ok(ConversationHistory {
         messages,
-        compatible_suffix_start: suffix + prefix_count,
+        compatible_suffix_start: compatible_suffix_start + prefix_count,
     })
+}
+
+fn recovered_thinking_only_checkpoint(message: &AgentMessage) -> bool {
+    message.role == "assistant"
+        && message.content.is_empty()
+        && message.tool_calls.is_none()
+        && message.thinking.as_ref().is_some_and(|thinking| !thinking.is_empty())
+        && message.continuation.is_none()
+        && message.stream_part.as_deref() == Some("checkpoint")
 }
 
 fn context_message(turn_id: String, content: String) -> ProviderMessage {

@@ -456,3 +456,37 @@ fn ollama_thinking(envelope: &ReasoningEnvelope) -> Option<&str> {
         _ => None,
     }
 }
+
+#[tokio::test]
+async fn recovered_thinking_only_checkpoint_is_visible_but_absent_from_provider_history() {
+    let mut session = create_session().await;
+    let turn_id = uuid::Uuid::new_v4().to_string();
+    let mut user = message(
+        &uuid::Uuid::new_v4().to_string(),
+        &turn_id,
+        "user",
+        "question",
+    );
+    let mut checkpoint = message(
+        &uuid::Uuid::new_v4().to_string(),
+        &turn_id,
+        "assistant",
+        "",
+    );
+    checkpoint.thinking = Some("visible recovered work".into());
+    checkpoint.stream_run_id = Some(uuid::Uuid::new_v4().to_string());
+    checkpoint.stream_part = Some("checkpoint".into());
+    user.replay_source = None;
+    session.messages = vec![user, checkpoint];
+
+    let history = super::super::conversation_history_build::from_continuation(
+        &session,
+        &ContinuationTarget::Replay(target("model-a")),
+    )
+    .unwrap();
+
+    assert_eq!(history.messages.len(), 1);
+    assert_eq!(history.messages[0].role, conversation_history::ProviderRole::User);
+    assert_eq!(session.messages[1].thinking.as_deref(), Some("visible recovered work"));
+    cleanup(&session.id).await;
+}

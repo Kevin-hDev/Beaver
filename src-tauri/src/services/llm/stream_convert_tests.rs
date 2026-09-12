@@ -80,3 +80,21 @@ fn deepseek_tool_call_keeps_non_null_assistant_content() {
 
     assert_eq!(out["content"], "");
 }
+
+#[test]
+fn recovered_display_thinking_is_not_sent_to_openai_compatible_routes() {
+    let recovered = ChatMessage::assistant(
+        "visible checkpoint".into(),
+        Some("partial private thinking".into()),
+        None,
+        None,
+        None,
+    );
+
+    let out = message_to_openai(&recovered, policy("deepseek", "deepseek-v4-flash"));
+    let serialized = out.to_string();
+
+    assert_eq!(out["content"], "visible checkpoint");
+    assert!(!serialized.contains("partial private thinking"));
+    assert!(out.get("reasoning_content").is_none());
+}

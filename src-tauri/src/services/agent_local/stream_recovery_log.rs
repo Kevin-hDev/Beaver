@@ -70,12 +70,9 @@ impl StreamRecoveryLog {
         lock(&self.inner).sticky_error.clone()
     }
 
+    #[cfg(test)]
     pub(crate) fn path(&self) -> PathBuf {
         lock(&self.inner).path.clone()
-    }
-
-    pub(crate) fn header(&self) -> StreamRecoveryHeader {
-        lock(&self.inner).header.clone()
     }
 
     pub(super) fn append_with(

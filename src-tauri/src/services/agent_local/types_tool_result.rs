@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use super::tool_result_contract::{ToolErrorCategory, ToolErrorInfo, ToolResultStatus};
 use super::types_tool_result_details::ToolResultDetails;
 
+#[path = "types_tool_result_recovery.rs"]
+mod recovery;
+
 const MAX_TOOL_WARNINGS: usize = 16;
 const MAX_TOOL_WARNING_CHARS: usize = 1_000;
 
@@ -45,48 +48,6 @@ pub enum ToolFollowUp {
 }
 
 impl ToolResult {
-    pub(crate) fn persistence_snapshot(
-        &self,
-        name: &str,
-        tool_call_index: usize,
-        tool_call_id: Option<&str>,
-        resolved_path: Option<String>,
-        domain: Option<String>,
-        artifacts: Vec<super::tool_artifact_record::ToolArtifactRecord>,
-    ) -> super::stream_recovery_record::RecoverableToolResult {
-        use super::stream_recovery_record::RecoverableToolFollowUp;
-
-        let follow_up = match self.follow_up.as_deref() {
-            None | Some(ToolFollowUp::None) => RecoverableToolFollowUp::None,
-            Some(ToolFollowUp::UserMessage(value)) => {
-                RecoverableToolFollowUp::UserMessage(value.clone())
-            }
-            Some(ToolFollowUp::SystemMessage(value)) => {
-                RecoverableToolFollowUp::SystemMessage(value.clone())
-            }
-            Some(ToolFollowUp::Stop) => RecoverableToolFollowUp::Stop,
-        };
-        super::stream_recovery_record::RecoverableToolResult {
-            name: name.to_string(),
-            content: self.content.clone(),
-            is_error: self.is_error,
-            status: self.status,
-            error: self.error.clone(),
-            warnings: self.warnings.clone(),
-            truncated: self.truncated,
-            display_summary: self.display_summary().map(str::to_owned),
-            tool_call_index,
-            tool_call_id: tool_call_id.map(str::to_owned),
-            resolved_path,
-            domain,
-            affected_paths: self.affected_paths().to_vec(),
-            file_changes: self.file_changes().to_vec(),
-            start_line: self.start_line(),
-            artifacts,
-            follow_up,
-        }
-    }
-
     pub fn ok(content: impl Into<String>) -> Self {
         Self::build(content, ToolResultStatus::Success, None)
     }
