@@ -95,8 +95,9 @@ export function ContextProgress({ breakdown, compression, summary }: ContextProg
 
   if (!summary) return null;
 
-  const percentage = summary.used !== null && summary.max
-    ? Math.min((summary.used / summary.max) * 100, 100)
+  const used = breakdown?.used ?? summary.used;
+  const percentage = used !== null && summary.max
+    ? Math.min((used / summary.max) * 100, 100)
     : null;
   const colorKey = colorForPercentage(percentage ?? 0);
   const offset = CIRCUMFERENCE - ((percentage ?? 0) / 100) * CIRCUMFERENCE;
@@ -173,7 +174,7 @@ export function ContextProgress({ breakdown, compression, summary }: ContextProg
         onBlur={scheduleClose}
       >
         <ContextProgressPanel
-          summary={summary}
+          summary={{ ...summary, used }}
           breakdown={breakdown}
           compression={compression}
           percentage={percentage}

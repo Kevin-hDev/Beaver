@@ -42,8 +42,12 @@ export function useContextUsage({
   supportsTools,
   contextUsageIncludesReasoning: modelIncludesReasoning,
 }: UseContextUsageArgs): ContextUsageBreakdown {
+  const preparation = stream.contextUsageRecord.currentPreparation;
+  const activeBreakdown = preparation?.state === "ready" || preparation?.state === "in_flight"
+    ? preparation.breakdown
+    : null;
   const hiddenUsage = useContextHiddenUsage({
-    enabled: !(stream.contextUsageRecord.currentPreparation?.breakdown ?? stream.contextUsageBuckets),
+    enabled: !(activeBreakdown ?? stream.contextUsageBuckets),
     sessionId,
     model,
     provider,
@@ -63,8 +67,8 @@ export function useContextUsage({
     contextUsageIncludesReasoning,
   } = stream;
   const includeThinking = modelIncludesReasoning ?? contextUsageIncludesReasoning;
-  const recordBuckets = stream.contextUsageRecord.currentPreparation?.breakdown
-    ? contextBucketsFromRecord(stream.contextUsageRecord.currentPreparation.breakdown)
+  const recordBuckets = activeBreakdown
+    ? contextBucketsFromRecord(activeBreakdown)
     : null;
   const preparedBuckets = useMemo(
     () => resolvePreparedContextBuckets({

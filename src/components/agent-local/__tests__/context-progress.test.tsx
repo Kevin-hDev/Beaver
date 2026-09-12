@@ -18,12 +18,6 @@ vi.mock("react-i18next", () => ({
         "agentLocal.contextUsage.categories.memory": "Memory",
         "agentLocal.contextUsage.categories.metaContext": "Meta context",
         "agentLocal.contextUsage.categories.systemPrompt": "System prompt",
-        "agentLocal.contextUsage.measured": "Last measured input",
-        "agentLocal.contextUsage.completedEstimated": "Last request estimated",
-        "agentLocal.contextUsage.reconstructed": "Reconstructed estimate",
-        "agentLocal.contextUsage.sourceProvider": "Provider measurement",
-        "agentLocal.contextUsage.sourceHeuristic": "Beaver estimate",
-        "agentLocal.contextUsage.estimatedBreakdown": "Estimated breakdown",
       };
       return labels[key] ?? key;
     },
@@ -59,6 +53,28 @@ function contextSummary(used: number, max: number): ResolvedContextUsage {
 }
 
 describe("ContextProgress", () => {
+  it("affiche un seul total égal à la somme des catégories", () => {
+    const view = render(
+      <ContextProgress
+        breakdown={{ ...breakdown, used: 8_297 }}
+        summary={{
+          used: 6_371, max: 258_400, output: 13, status: "measured",
+          secondaryStatus: null, source: "provider", coverage: "complete", breakdown: null,
+        }}
+      />,
+    );
+
+    fireEvent.mouseEnter(view.getByLabelText("Context window"));
+
+    expect(view.getByText("8.3K / 258.4K (3.2%)")).toBeTruthy();
+    expect(view.getByText("Messages")).toBeTruthy();
+    expect(view.queryByText("Last measured input")).toBeNull();
+    expect(view.queryByText("Provider measurement")).toBeNull();
+    expect(view.queryByText("Estimated breakdown · 8.3K")).toBeNull();
+    expect(view.queryByText("Output")).toBeNull();
+    expect(view.queryByText("13")).toBeNull();
+  });
+
   it("affiche le panneau détaillé avec les 7 catégories", () => {
     const { getByText, getByLabelText } = render(
       <ContextProgress summary={contextSummary(100, 1000)} breakdown={breakdown} />,
@@ -87,7 +103,7 @@ describe("ContextProgress", () => {
     expect(document.querySelector(".context-ring-bar")).toBeNull();
   });
 
-  it("identifie la ventilation comme estimée quand le total est indisponible", () => {
+  it("utilise les catégories quand la mesure fournisseur est indisponible", () => {
     const { getByLabelText, getByText } = render(
       <ContextProgress breakdown={breakdown} summary={{
         used: null, max: null, output: null, status: "unavailable",
@@ -96,36 +112,8 @@ describe("ContextProgress", () => {
     );
 
     fireEvent.mouseEnter(getByLabelText("Context window"));
-    expect(getByText("Estimated breakdown · 100")).toBeTruthy();
+    expect(getByText("100")).toBeTruthy();
   });
-
-  it.each([[6_000, 5_000], [62_000, 45_000]])(
-    "garde le total mesuré %i malgré une ventilation à %i",
-    (measured, estimated) => {
-      const estimatedBreakdown = {
-        used: estimated,
-        items: breakdown.items.map((item, index) => ({
-          ...item, tokens: index === 0 ? estimated : 0,
-          percentage: index === 0 ? 100 : 0,
-        })),
-      };
-      const summary = {
-        used: measured, max: 200_000, output: 50,
-        status: "measured" as const, secondaryStatus: null,
-        source: "provider" as const, coverage: "complete" as const,
-        breakdown: null,
-      };
-      const view = render(
-        <ContextProgress breakdown={estimatedBreakdown} summary={summary} />,
-      );
-      fireEvent.mouseEnter(view.getByLabelText("Context window"));
-      expect(view.getByText(
-        `${measured / 1000}K / 200K (${(measured / 2_000).toFixed(1)}%)`,
-      )).toBeTruthy();
-      expect(view.getByText(`Estimated breakdown · ${estimated / 1000}K`)).toBeTruthy();
-      expect(view.getByText("Provider measurement")).toBeTruthy();
-    },
-  );
 
   it("actualise aussi le panneau détaillé pendant le stream", () => {
     const { getByText, rerender } = render(
