@@ -92,6 +92,24 @@ fn run_native_tools() {
                     && tool_outputs[1].contains("shell_dispatch_failed"),
                 "{tool_outputs:?}",
             );
+            let work = crate::services::agent_local::agent_work_supervision::ShellWork::new(
+                crate::app_exit::AppExitCoordinator::initialize()
+                    .expect("exit coordinator")
+                    .work_supervisor(),
+            );
+            let shell =
+                crate::services::agent_local::tool_dispatcher_shell::execute_command_with_work(
+                    &json!({ "command": "printf stack-proof-shell" }),
+                    root.path(),
+                    &session.id,
+                    CancellationToken::new(),
+                    None,
+                    None,
+                    work,
+                )
+                .await
+                .expect("execute real shell");
+            assert_eq!(shell.stdout, "stack-proof-shell");
             crate::services::agent_local::session_store::delete_one(&session.id)
                 .await
                 .expect("delete session");

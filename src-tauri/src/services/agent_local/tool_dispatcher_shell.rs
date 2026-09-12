@@ -61,7 +61,7 @@ async fn execute_command(
     .await
 }
 
-pub(super) async fn execute_command_with_work(
+pub(crate) async fn execute_command_with_work(
     args: &Value,
     working_dir: &Path,
     session_id: &str,
