@@ -1,0 +1,4 @@
+Decision: persist recoverable stream events before UI emission, reset discarded retry attempts, and replace deltas with the exact AgentMessage before each atomic session write.
+Reason: the user must never see hours of work that Beaver has no restart path to recover; retries must converge to their final attempt, and ConversationJournal remains the only final-history writer.
+Validation: stream_events_recovery: 3 passed, status 0; conversation_journal: 14 passed, status 0; stream_completion: 6 passed, status 0; cargo check: status 0; npx vitest run src/hooks/__tests__/agent-chat-stream-retry.test.ts: 5 passed, status 0.
+Coverage: rg confirmed both ConversationJournal constructors and every persist_assistant_step, persist_tool_results, persist_partial, and commit_turn callsite route through the journal implementation.
