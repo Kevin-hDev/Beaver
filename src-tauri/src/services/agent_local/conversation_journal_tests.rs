@@ -263,6 +263,75 @@ async fn superseded_run_cannot_append_a_late_tool_result() {
     session_store::delete_one(&session.id).await.expect("delete session");
 }
 
+#[tokio::test]
+async fn live_subagent_instruction_does_not_supersede_its_owned_journal() {
+    let parent = session_store::create_full("Parent", "model", "ollama", false, None)
+        .await
+        .expect("create parent");
+    let mut child = session_store::create_full("Child", "model", "ollama", false, None)
+        .await
+        .expect("create child");
+    child.parent_session_id = Some(parent.id.clone());
+    let execution = super::subagent_registry::register_execution(
+        &parent.id,
+        &child.id,
+        tokio_util::sync::CancellationToken::new(),
+    )
+    .await
+    .expect("register child");
+    child.subagent_run_id = Some(execution.run_id.clone());
+    let turn_id = uuid::Uuid::new_v4().to_string();
+    let user_id = uuid::Uuid::new_v4().to_string();
+    child.messages.push(message(&user_id, &turn_id, "user", "initial mission"));
+    session_store::save(&child).await.expect("save child");
+    let mut journal = ConversationJournal::new_for_subagent(
+        child.id.clone(),
+        turn_id,
+        user_id,
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        execution.run_id,
+        execution.execution_id,
+    )
+    .expect("create child journal");
+    journal
+        .persist_assistant_step(&ChatMessage::assistant(
+            "first step".into(),
+            None,
+            None,
+            None,
+            None,
+        ))
+        .await
+        .expect("persist first step");
+
+    let mut queued = session_store::get(&child.id).await.expect("reload child");
+    super::subagent_instruction_delivery::enqueue(&mut queued, "new instruction")
+        .expect("queue instruction");
+    session_store::save(&queued).await.expect("save queue");
+    super::subagent_instruction_delivery::drain(&child.id, &mut Vec::new())
+        .await
+        .expect("drain instruction");
+
+    journal
+        .persist_assistant_step(&ChatMessage::assistant(
+            "continued step".into(),
+            None,
+            None,
+            None,
+            None,
+        ))
+        .await
+        .expect("owned journal remains writable");
+    journal.commit_turn().await.expect("commit child turn");
+    let saved = session_store::get(&child.id).await.expect("reload child");
+    assert_eq!(saved.messages.last().unwrap().content, "continued step");
+
+    super::subagent_registry::unregister(&child.id).await;
+    session_store::delete_one(&child.id).await.expect("delete child");
+    session_store::delete_one(&parent.id).await.expect("delete parent");
+}
+
 fn context_identity(journal: &ConversationJournal, turn: u32, attempt: u32) -> ContextRequestIdentity {
     journal.context_identity(turn, attempt, "openai", "gpt-5")
 }

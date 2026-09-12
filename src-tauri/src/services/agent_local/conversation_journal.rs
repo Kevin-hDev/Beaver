@@ -200,16 +200,18 @@ impl ConversationJournal {
             return Err(error());
         }
         let turn_id = self.turn_id.clone();
+        let fence_turn = self.subagent_owner.is_none();
         self.update(move |session| {
             if session.messages.len().saturating_add(records.len())
                 > super::session_limits::MAX_MESSAGES_PER_SESSION
             {
                 return Err(capacity_error());
             }
-            if session
-                .messages
-                .last()
-                .is_some_and(|message| message.turn_id != turn_id)
+            if fence_turn
+                && session
+                    .messages
+                    .last()
+                    .is_some_and(|message| message.turn_id != turn_id)
             {
                 return Err(error());
             }
