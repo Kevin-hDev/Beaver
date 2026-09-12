@@ -5,7 +5,7 @@ pub(crate) async fn initialize() -> Result<(), String> {
     initialize_with(&READY, |task| {
         std::thread::Builder::new()
             .name("beaver-command-check".to_string())
-            .stack_size(8 * 1024 * 1024)
+            .stack_size(crate::runtime_async::WORKER_STACK_BYTES)
             .spawn(task)
             .map(|_| ())
     })
