@@ -76,10 +76,11 @@ pub(crate) async fn recover_session_with_lease(
             claimed.push(path);
             continue;
         }
-        let _ = super::stream_recovery_apply_validation::apply_projection(
+        let _ = super::conversation_interrupted_tail::apply_recovered_projection(
             &mut session,
             &projection,
-        )?;
+        )
+        .map_err(super::stream_recovery_apply_validation::map_tail_error)?;
         let _ = super::conversation_interrupted_tail::close_recoverable(
             &mut session,
             RecoveryProof::RecoveredJournal {

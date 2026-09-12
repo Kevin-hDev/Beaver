@@ -17,10 +17,10 @@ pub(super) fn prepare(
     {
         let mut command = tokio::process::Command::new(shell);
         command.args(arguments).env("PATH", path);
-        return Ok(super::launch::PreparedShellCommand {
+        Ok(super::launch::PreparedShellCommand {
             command,
             cleanup_dir: None,
-        });
+        })
     }
     #[cfg(not(test))]
     guarded_command(shell, arguments, path)

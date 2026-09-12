@@ -1,6 +1,7 @@
 use super::conversation_history_validation::TailState;
 use super::types_message::AgentMessage;
 use super::types_session::AgentSession;
+use super::stream_recovery_projection::RecoveryProjection;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum CloseInterruptedTailError {
@@ -82,6 +83,37 @@ pub(crate) fn close_recoverable(
         return Err(CloseInterruptedTailError::History);
     }
     Ok(true)
+}
+
+pub(crate) fn apply_recovered_projection(
+    session: &mut AgentSession,
+    projection: &RecoveryProjection,
+) -> Result<bool, CloseInterruptedTailError> {
+    let mut changed = false;
+    for message in &projection.messages {
+        if let Some(existing) = session.messages.iter().find(|existing| existing.id == message.id) {
+            if serde_json::to_value(existing).ok() != serde_json::to_value(message).ok() {
+                return Err(CloseInterruptedTailError::History);
+            }
+            continue;
+        }
+        if session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION {
+            return Err(CloseInterruptedTailError::Capacity);
+        }
+        session.messages.push(message.clone());
+        changed = true;
+    }
+    if projection.turn_ready {
+        for message in &mut session.messages {
+            if message.stream_run_id.as_deref() == Some(&projection.header.request_id)
+                && message.stream_part.as_deref() != Some("final")
+            {
+                message.stream_part = Some("final".into());
+                changed = true;
+            }
+        }
+    }
+    Ok(changed)
 }
 
 fn may_close_pending_tools(session: &AgentSession, proof: RecoveryProof<'_>) -> bool {

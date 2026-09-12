@@ -30,6 +30,10 @@ pub(crate) struct StreamRecoveryOwner {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "data", rename_all = "snake_case", deny_unknown_fields)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "recovery reads one bounded record at a time; boxing would add allocation to every journal write"
+)]
 pub(crate) enum StreamRecoveryRecord {
     Header(StreamRecoveryHeader),
     Event {
@@ -50,6 +54,10 @@ pub(crate) enum StreamRecoveryRecord {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "event", content = "data", rename_all = "snake_case", deny_unknown_fields)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "recovery reads one bounded event at a time; boxing would add allocation to every journal write"
+)]
 pub(crate) enum RecoverableStreamEvent {
     Token { content: String, phase: Option<TokenPhase> },
     Thinking { content: String },

@@ -46,37 +46,6 @@ pub(super) fn superseded(session: &AgentSession, projection: &RecoveryProjection
             .any(|message| message.role == "user" && message.turn_id != projection.header.turn_id)
 }
 
-pub(super) fn apply_projection(
-    session: &mut AgentSession,
-    projection: &RecoveryProjection,
-) -> Result<bool, String> {
-    let mut changed = false;
-    for message in &projection.messages {
-        if let Some(existing) = session.messages.iter().find(|existing| existing.id == message.id) {
-            if serde_json::to_value(existing).ok() != serde_json::to_value(message).ok() {
-                return Err(error());
-            }
-            continue;
-        }
-        if session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION {
-            return Err("session_capacity_reached".into());
-        }
-        session.messages.push(message.clone());
-        changed = true;
-    }
-    if projection.turn_ready {
-        for message in &mut session.messages {
-            if message.stream_run_id.as_deref() == Some(&projection.header.request_id)
-                && message.stream_part.as_deref() != Some("final")
-            {
-                message.stream_part = Some("final".into());
-                changed = true;
-            }
-        }
-    }
-    Ok(changed)
-}
-
 pub(super) fn mark_terminal(
     session: &mut AgentSession,
     request_id: &str,

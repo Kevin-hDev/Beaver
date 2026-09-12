@@ -69,10 +69,7 @@ pub(crate) fn visit_records(
     let mut reader = BufReader::new(file);
     let mut previous = None;
     let mut first = true;
-    loop {
-        let Some((line, terminated)) = read_line(&mut reader)? else {
-            break;
-        };
+    while let Some((line, terminated)) = read_line(&mut reader)? {
         if !terminated {
             break;
         }
