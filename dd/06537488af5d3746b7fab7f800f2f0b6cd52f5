@@ -1,0 +1,3 @@
+Decision: serialize create, remove, claim, quarantine, and whole-session cleanup through the recovery store's single mutation gate.
+Reason: capacity scanning and journal creation share one filesystem namespace; any concurrent rename or deletion can invalidate that scan or remove its parent directory before the atomic write. The symlink security test also holds this gate while deliberately mutating the namespace.
+Validation: removal_waits_for_the_store_mutation_gate failed before the fix and passed after it; cargo test stream_recovery_store_tests --lib (7 passed); cargo test stream_recovery_ --lib (31 passed); cargo clippy --all-targets -- -D warnings (exit 0); cargo test --lib (5604 passed, 0 failed, 21 ignored); cargo fmt --all -- --check and git diff --check passed.
