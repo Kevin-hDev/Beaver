@@ -1,0 +1,7 @@
+Decision: keep the recovery sentence in English for the model-facing tool protocol, persist its structured tool_interrupted metadata, and replace it with localized user-facing text when Beaver renders saved tool details.
+
+Reason: recovered tool results are visible after session reload. The model needs one stable protocol payload, while users must see a clear message in their selected language. Structured metadata is the authority that connects those two representations; matching human prose would be fragile.
+
+The message is provided in all seven supported languages. The UI explains that the outcome is unknown and asks the user to verify external state before retrying. The unrelated non-null assertion on optional context progress was also removed.
+
+Validation: 16 interrupted-tail tests, saved-history and error-localization tests, TypeScript, and the full frontend lint pass.
