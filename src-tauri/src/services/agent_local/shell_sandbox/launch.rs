@@ -40,12 +40,17 @@ pub fn prepare_command(
     let roots = super::super::directory_access::workspace_roots(working_dir)?;
     let shell_path = super::super::shell_environment::value();
     if super::super::directory_access::roots_allow_full_disk(&configured) {
-        let mut command = Command::new(shell);
-        command.args(arguments).env("PATH", &shell_path);
-        return Ok(PreparedShellCommand {
-            command,
-            cleanup_dir: None,
-        });
+        #[cfg(target_os = "macos")]
+        return super::macos_parent_guard::prepare(shell, arguments, &shell_path);
+        #[cfg(not(target_os = "macos"))]
+        {
+            let mut command = Command::new(shell);
+            command.args(arguments).env("PATH", &shell_path);
+            return Ok(PreparedShellCommand {
+                command,
+                cleanup_dir: None,
+            });
+        }
     }
 
     let temp_dir = create_sandbox_temp()?;
@@ -123,7 +128,7 @@ pub(crate) fn prepare_profile_capture(
     })
 }
 
-fn helper_executable() -> Result<PathBuf, String> {
+pub(super) fn helper_executable() -> Result<PathBuf, String> {
     let executable = std::env::current_exe()
         .map_err(|_| sandbox_error())
         .and_then(|path| dunce::canonicalize(path).map_err(|_| sandbox_error()))?;
