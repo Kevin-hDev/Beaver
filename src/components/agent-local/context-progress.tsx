@@ -14,7 +14,7 @@ import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
 import { ContextProgressPanel } from "./context-progress-panel";
 
 interface ContextProgressProps {
-  breakdown?: ContextUsageBreakdown;
+  breakdown: ContextUsageBreakdown;
   compression?: ResolvedCompressionProfileView | null;
   summary?: ResolvedContextUsage;
 }
@@ -95,7 +95,7 @@ export function ContextProgress({ breakdown, compression, summary }: ContextProg
 
   if (!summary) return null;
 
-  const used = breakdown?.used ?? summary.used;
+  const used = breakdown.used;
   const percentage = used !== null && summary.max
     ? Math.min((used / summary.max) * 100, 100)
     : null;

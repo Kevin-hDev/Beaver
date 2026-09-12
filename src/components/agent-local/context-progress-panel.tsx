@@ -8,7 +8,7 @@ import { ContextUsageRow } from "./context-progress-row";
 
 interface ContextProgressPanelProps {
   summary: ResolvedContextUsage;
-  breakdown?: ContextUsageBreakdown;
+  breakdown: ContextUsageBreakdown;
   compression?: ResolvedCompressionProfileView | null;
   percentage: number | null;
   onCompressionHelpOpen: (open: boolean) => void;
@@ -26,9 +26,9 @@ export function ContextProgressPanel({
     {percentage !== null && <div className="context-ring-bar" aria-hidden="true">
       <div className="context-ring-bar-fill" style={{ width: `${percentage}%` }} />
     </div>}
-    {breakdown && <div className="context-ring-list">
+    <div className="context-ring-list">
       {breakdown.items.map((item) => <ContextUsageRow key={item.key} item={item} />)}
-    </div>}
+    </div>
     <div className="context-ring-compression-row">
       {compression ? compression.available ? <>
         <span>{t("agentLocal.contextUsage.compression")}</span>

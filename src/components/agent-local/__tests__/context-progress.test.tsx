@@ -46,10 +46,7 @@ const breakdown: ContextUsageBreakdown = {
 };
 
 function contextSummary(used: number, max: number): ResolvedContextUsage {
-  return {
-    used, max, output: null, status: "reconstructed", secondaryStatus: null,
-    source: "reconstructed", coverage: "complete", breakdown: null,
-  };
+  return { used, max, output: null };
 }
 
 describe("ContextProgress", () => {
@@ -58,8 +55,7 @@ describe("ContextProgress", () => {
       <ContextProgress
         breakdown={{ ...breakdown, used: 8_297 }}
         summary={{
-          used: 6_371, max: 258_400, output: 13, status: "measured",
-          secondaryStatus: null, source: "provider", coverage: "complete", breakdown: null,
+          used: 6_371, max: 258_400, output: 13,
         }}
       />,
     );
@@ -94,8 +90,7 @@ describe("ContextProgress", () => {
   it("affiche le total sans inventer de pourcentage si le maximum est inconnu", () => {
     const { getByLabelText, getByText } = render(
       <ContextProgress breakdown={breakdown} summary={{
-        used: 100, max: null, output: null, status: "measured",
-        secondaryStatus: null, source: "provider", coverage: "complete", breakdown: null,
+        used: 100, max: null, output: null,
       }} />,
     );
     fireEvent.mouseEnter(getByLabelText("Context window"));
@@ -106,8 +101,7 @@ describe("ContextProgress", () => {
   it("utilise les catégories quand la mesure fournisseur est indisponible", () => {
     const { getByLabelText, getByText } = render(
       <ContextProgress breakdown={breakdown} summary={{
-        used: null, max: null, output: null, status: "unavailable",
-        secondaryStatus: null, source: null, coverage: null, breakdown: null,
+        used: null, max: null, output: null,
       }} />,
     );
 
@@ -135,7 +129,10 @@ describe("ContextProgress", () => {
 
   it("affiche 1M et place le focus dans le panneau activé au clavier", async () => {
     const { getByLabelText, getByRole, getByText } = render(
-      <ContextProgress summary={contextSummary(400_000, 1_000_000)} />,
+      <ContextProgress
+        summary={contextSummary(400_000, 1_000_000)}
+        breakdown={{ ...breakdown, used: 400_000 }}
+      />,
     );
     const trigger = getByLabelText("Context window");
 
@@ -149,7 +146,7 @@ describe("ContextProgress", () => {
     const user = userEvent.setup();
     const { getByLabelText, getByRole } = render(
       <>
-        <ContextProgress summary={contextSummary(400, 1_000)} />
+        <ContextProgress summary={contextSummary(400, 1_000)} breakdown={breakdown} />
         <button type="button">Après l’anneau</button>
       </>,
     );

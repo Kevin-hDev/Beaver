@@ -1,11 +1,6 @@
 import type { AgentMessage, AgentSession } from "@/types/agent";
 import type {
-  ContextCountCoverage,
-  ContextCountSource,
-  ContextPreparationState,
-  ContextRequestIdentity,
   ContextUsageRecord,
-  RequestContextUsage,
 } from "@/types/agent-session.generated";
 import { restoredToolArguments } from "./agent-chat-utils";
 import { toolsFromMessage } from "@/lib/message-tools";
@@ -19,19 +14,10 @@ export const EMPTY_CONTEXT_USAGE_RECORD: ContextUsageRecord = {
   lastOutput: null,
 };
 
-export type ContextUsageStatus = "prepared" | "streaming" | "measured"
-  | "completedEstimated" | "stale" | "interrupted" | "failed"
-  | "reconstructed" | "partial" | "unavailable";
-
 export interface ResolvedContextUsage {
   used: number | null;
   max: number | null;
   output: number | null;
-  status: ContextUsageStatus;
-  secondaryStatus: ContextUsageStatus | null;
-  source: ContextCountSource | null;
-  coverage: ContextCountCoverage | null;
-  breakdown: RequestContextUsage | null;
 }
 
 export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
@@ -64,42 +50,13 @@ export function resolveContextUsage(
   const input = primary?.input;
   const used = validCount(input?.tokens);
   const reconstructed = used === null ? validPositiveCount(reconstructedTokens) : null;
-  const secondaryStatus = !active && record.lastMeasurement && preparation
-    && (preparation.state !== "completed"
-      || !sameIdentity(preparation.identity, record.lastMeasurement.identity))
-    ? stateStatus(preparation.state)
-    : null;
   return {
     used: used ?? reconstructed,
     max: primary
       ? validPositiveCount(primary.contextLimit)
       : reconstructed !== null ? validPositiveCount(reconstructedLimit) : null,
     output: validCount(record.lastOutput?.output.tokens),
-    status: used !== null
-      ? input?.coverage === "partial" ? "partial" : primaryStatus(active, record, preparation)
-      : reconstructed !== null ? "reconstructed" : "unavailable",
-    secondaryStatus,
-    source: used !== null ? input?.source ?? null : reconstructed !== null ? "reconstructed" : null,
-    coverage: used !== null ? input?.coverage ?? null : reconstructed !== null ? "complete" : null,
-    breakdown: preparation?.breakdown ?? null,
   };
-}
-
-function primaryStatus(
-  active: ContextUsageRecord["currentPreparation"],
-  record: ContextUsageRecord,
-  preparation: ContextUsageRecord["currentPreparation"],
-): ContextUsageStatus {
-  if (active?.state === "ready") return "prepared";
-  if (active?.state === "in_flight") return "streaming";
-  if (record.lastMeasurement) return "measured";
-  return preparation?.state === "completed" ? "completedEstimated" : "unavailable";
-}
-
-function stateStatus(state: ContextPreparationState): ContextUsageStatus | null {
-  if (state === "completed") return "completedEstimated";
-  if (state === "stale" || state === "interrupted" || state === "failed") return state;
-  return null;
 }
 
 function validCount(value: number | null | undefined): number | null {
@@ -111,16 +68,6 @@ function validCount(value: number | null | undefined): number | null {
 function validPositiveCount(value: number | null | undefined): number | null {
   const count = validCount(value);
   return count !== null && count > 0 ? count : null;
-}
-
-function sameIdentity(
-  left: ContextRequestIdentity,
-  right: ContextRequestIdentity,
-): boolean {
-  return left.requestId === right.requestId
-    && left.turnId === right.turnId
-    && left.turn === right.turn
-    && left.attempt === right.attempt;
 }
 
 function estimateMessage(message: AgentMessage): number {

@@ -74,7 +74,7 @@ describe("agent-token-estimate", () => {
 
   });
 
-  it("priorise la mesure et sa limite tout en gardant la préparation B secondaire", () => {
+  it("priorise la mesure et sa limite sur la préparation suivante", () => {
     const identity = (requestId: string) => ({
       requestId, turnId: `turn-${requestId}`, turn: 0, attempt: 1,
       providerId: "openai", model: requestId === "A" ? "gpt-a" : "gpt-b",
@@ -98,10 +98,7 @@ describe("agent-token-estimate", () => {
       },
     }, 45_000, 100_000);
 
-    expect(resolved).toMatchObject({
-      used: 62_000, max: 200_000, output: 20,
-      status: "measured", secondaryStatus: "completedEstimated", source: "provider",
-    });
+    expect(resolved).toEqual({ used: 62_000, max: 200_000, output: 20 });
   });
 
   it("ignore un ancien historique de 900K quand la dernière requête mesurée vaut 31K", () => {
@@ -120,19 +117,15 @@ describe("agent-token-estimate", () => {
       lastOutput: null,
     }, 900_000, 258_400);
 
-    expect(resolved).toMatchObject({
-      used: 31_000, max: 258_400, status: "measured", source: "provider",
-    });
+    expect(resolved).toEqual({ used: 31_000, max: 258_400, output: null });
   });
 
   it("reconstruit seulement un record vide et ne fabrique aucune limite historique", () => {
     const empty = { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null };
-    expect(resolveContextUsage(empty, 45_000, 200_000)).toMatchObject({
-      used: 45_000, max: 200_000, status: "reconstructed", source: "reconstructed",
-    });
-    expect(resolveContextUsage(empty, 0, 200_000)).toMatchObject({
-      used: null, max: null, status: "unavailable", source: null,
-    });
+    expect(resolveContextUsage(empty, 45_000, 200_000))
+      .toEqual({ used: 45_000, max: 200_000, output: null });
+    expect(resolveContextUsage(empty, 0, 200_000))
+      .toEqual({ used: null, max: null, output: null });
   });
 
   it("conserve le précompte terminé du premier appel après reload", () => {
@@ -147,9 +140,7 @@ describe("agent-token-estimate", () => {
       lastMeasurement: null,
       lastOutput: null,
     });
-    expect(resolved).toMatchObject({
-      used: 6_000, max: 200_000, status: "completedEstimated", source: "heuristic",
-    });
+    expect(resolved).toEqual({ used: 6_000, max: 200_000, output: null });
   });
 
   it("n'invente aucun pourcentage quand la mesure n'a pas de limite", () => {
@@ -163,7 +154,7 @@ describe("agent-token-estimate", () => {
       },
       lastOutput: null,
     });
-    expect(resolved).toMatchObject({ used: 62_000, max: null, status: "partial" });
+    expect(resolved).toEqual({ used: 62_000, max: null, output: null });
   });
 
   it("conserve une vraie mesure nulle sans la remplacer par une reconstruction", () => {
@@ -182,9 +173,7 @@ describe("agent-token-estimate", () => {
       },
     }, 45_000, 200_000);
 
-    expect(resolved).toMatchObject({
-      used: 0, max: 200_000, output: 0, status: "measured", source: "provider",
-    });
+    expect(resolved).toEqual({ used: 0, max: 200_000, output: 0 });
   });
 
   it("affiche le contexte d'une session seulement après une réponse assistant", () => {

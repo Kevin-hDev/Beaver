@@ -107,11 +107,13 @@ export function ChatInputActionsRow({
           <AdvancedMountAnchor placement="agent.composer.leading" />
         </>
       )}
-      <ContextProgress
-        breakdown={contextBreakdown}
-        compression={compression.effective}
-        summary={contextSummary}
-      />
+      {contextBreakdown && (
+        <ContextProgress
+          breakdown={contextBreakdown}
+          compression={compression.effective}
+          summary={contextSummary}
+        />
+      )}
       <div className="mdp-anchor">
         <PermissionModeSelector
           mode={permissionMode}
