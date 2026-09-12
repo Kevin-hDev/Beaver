@@ -6,10 +6,11 @@ use super::types_session::AgentSession;
 pub(crate) fn close_recoverable(
     session: &mut AgentSession,
 ) -> Result<bool, ConversationHistoryError> {
+    let user_only_tail = session.messages.last().is_some_and(|message| message.role == "user");
     match super::conversation_history_validation::tail_state(&session.messages)? {
-        TailState::Terminal => return Ok(false),
+        TailState::Terminal if !user_only_tail => return Ok(false),
         TailState::ToolsPending => return Err(ConversationHistoryError),
-        TailState::ResultsComplete => {}
+        TailState::Terminal | TailState::ResultsComplete => {}
     }
 
     let previous = session.messages.last().ok_or(ConversationHistoryError)?;

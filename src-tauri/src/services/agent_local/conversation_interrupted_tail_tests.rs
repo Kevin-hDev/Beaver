@@ -36,6 +36,56 @@ async fn recoverable_tail() -> AgentSession {
 }
 
 #[tokio::test]
+async fn closes_an_interrupted_turn_before_the_first_assistant_token() {
+    let mut session = super::conversation_history_tests::support::create_session().await;
+    session.messages = vec![message(
+        "user-interrupted",
+        "turn-interrupted",
+        "user",
+        "ca va ?",
+    )];
+
+    assert!(close_recoverable(&mut session).expect("recover user-only tail"));
+
+    let terminal = session.messages.last().expect("terminal marker");
+    assert_eq!(terminal.role, "assistant");
+    assert_eq!(terminal.turn_id, "turn-interrupted");
+    assert!(terminal.content.is_empty());
+    conversation_history_validation::validate(&session.messages).expect("strictly closed");
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn codex_admission_continues_after_cancellation_before_the_first_token() {
+    let mut session = super::conversation_history_tests::support::create_session().await;
+    session.provider = "codex-oauth".into();
+    session.messages = complete_turn("older", "previous answer", None);
+    session.messages.push(message(
+        "user-interrupted",
+        "turn-interrupted",
+        "user",
+        "ca va ?",
+    ));
+    super::session_store::save(&session).await.unwrap();
+
+    super::conversation_admission::new_turn_for_continuation(
+        &session.id,
+        resolved("continue after cancellation"),
+        forbidden(RouteId::CodexOauth),
+    )
+    .await
+    .expect("Codex admission accepts the repaired history");
+
+    let loaded = super::session_store::get(&session.id).await.unwrap();
+    assert_eq!(loaded.messages[3].role, "assistant");
+    assert_eq!(loaded.messages[3].turn_id, "turn-interrupted");
+    assert!(loaded.messages[3].content.is_empty());
+    assert_eq!(loaded.messages[4].role, "user");
+    conversation_history_validation::validate(&loaded.messages).unwrap();
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn closes_only_a_tail_with_all_tool_results() {
     let mut session = recoverable_tail().await;
     assert!(conversation_history_validation::validate(&session.messages).is_err());
