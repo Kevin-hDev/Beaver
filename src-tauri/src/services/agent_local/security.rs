@@ -28,6 +28,13 @@ static RSYNC_DELETE_REGEX: LazyLock<Regex> =
 static DD_DEVICE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\bdd\b.*\bof=/dev/").unwrap());
 
+pub(crate) fn initialize_destructive_patterns() {
+    LazyLock::force(&S7_EVAL_REGEX);
+    LazyLock::force(&FIND_DELETE_REGEX);
+    LazyLock::force(&RSYNC_DELETE_REGEX);
+    LazyLock::force(&DD_DEVICE_REGEX);
+}
+
 pub(crate) fn allowed_write_roots_for(working_dir: Option<&Path>) -> Vec<PathBuf> {
     let mut roots = base_allowed_roots();
     if let Some(working_dir) = working_dir {

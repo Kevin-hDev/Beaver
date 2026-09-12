@@ -76,6 +76,9 @@ pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
 async fn run_stream_task_inner(
     mut params: StreamTaskParams,
 ) -> Result<CompletedStreamTurn, String> {
+    crate::services::agent_local::tool_bash_security::initialize()
+        .await
+        .map_err(|_| "stream_error".to_string())?;
     if let Some(permission_emitter) = params.permission_emitter.take() {
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }

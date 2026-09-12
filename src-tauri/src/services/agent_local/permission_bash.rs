@@ -29,6 +29,10 @@ static SAFE_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
     .collect()
 });
 
+pub(crate) fn initialize_safe_patterns() {
+    LazyLock::force(&SAFE_PATTERNS);
+}
+
 pub fn is_safe(command: &str) -> bool {
     let trimmed = command.trim();
     if crate::services::agent_local::sensitive_data::bash_touches_sensitive_data(trimmed)

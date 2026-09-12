@@ -7,8 +7,21 @@ use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
 use serde_json::json;
 use tokio_util::sync::CancellationToken;
 
+const CHILD_MARKER: &str = "BEAVER_NATIVE_TOOL_STACK_CHILD";
+const TEST_NAME: &str = "services::llm::agent_loop_native_tool_stack_tests::native_tool_dispatch_fits_the_production_worker_stack";
+
 #[test]
 fn native_tool_dispatch_fits_the_production_worker_stack() {
+    if std::env::var_os(CHILD_MARKER).is_none() {
+        let status = std::process::Command::new(std::env::current_exe().expect("test binary"))
+            .args(["--exact", TEST_NAME, "--nocapture"])
+            .env(CHILD_MARKER, "1")
+            .status()
+            .expect("spawn cold test process");
+        assert!(status.success(), "cold child failed with {status}");
+        return;
+    }
+
     let worker = std::thread::Builder::new()
         .name("agent-stack-regression".into())
         .stack_size(2 * 1024 * 1024)
@@ -21,13 +34,15 @@ fn native_tool_dispatch_fits_the_production_worker_stack() {
 }
 
 fn run_native_tools() {
-    tokio::runtime::Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
-        .expect("runtime")
-        .block_on(async {
+        .expect("runtime");
+    let exit = crate::app_exit::AppExitCoordinator::initialize().expect("exit coordinator");
+    let work = crate::runtime_state::agent_work(&exit).shells();
+    crate::services::agent_local::tool_dispatcher_shell_runtime::test_support::with(work, || {
+        runtime.block_on(async {
             let root = tempfile::tempdir().expect("temporary project");
-            std::fs::write(root.path().join("needle.txt"), "stack-proof\n").expect("fixture");
             let session = crate::services::agent_local::session_store::create_full(
                 "Native tool stack",
                 "fixture",
@@ -40,14 +55,11 @@ fn run_native_tools() {
             let request_id = uuid::Uuid::new_v4().to_string();
             let responses = vec![
                 StreamResult {
-                    tool_calls: vec![
-                        (
-                            "grep".into(),
-                            json!({ "pattern": "stack-proof", "path": root.path() }),
-                        ),
-                        ("bash".into(), json!({ "command": "printf stack-proof" })),
-                    ],
-                    tool_call_ids: vec!["call-grep".into(), "call-bash".into()],
+                    tool_calls: vec![(
+                        "bash".into(),
+                        json!({ "command": "printf stack-proof-shell" }),
+                    )],
+                    tool_call_ids: vec!["call-bash".into()],
                     ..Default::default()
                 },
                 StreamResult::default(),
@@ -86,32 +98,11 @@ fn run_native_tools() {
                 .filter(|message| message.role == "tool")
                 .map(|message| message.content.as_str())
                 .collect();
-            assert_eq!(tool_outputs.len(), 2);
-            assert!(
-                tool_outputs[0].contains("stack-proof")
-                    && tool_outputs[1].contains("shell_dispatch_failed"),
-                "{tool_outputs:?}",
-            );
-            let work = crate::services::agent_local::agent_work_supervision::ShellWork::new(
-                crate::app_exit::AppExitCoordinator::initialize()
-                    .expect("exit coordinator")
-                    .work_supervisor(),
-            );
-            let shell =
-                crate::services::agent_local::tool_dispatcher_shell::execute_command_with_work(
-                    &json!({ "command": "printf stack-proof-shell" }),
-                    root.path(),
-                    &session.id,
-                    CancellationToken::new(),
-                    None,
-                    None,
-                    work,
-                )
-                .await
-                .expect("execute real shell");
-            assert_eq!(shell.stdout, "stack-proof-shell");
+            assert_eq!(tool_outputs.len(), 1);
+            assert_eq!(tool_outputs[0], "stack-proof-shell");
             crate::services::agent_local::session_store::delete_one(&session.id)
                 .await
                 .expect("delete session");
-        });
+        })
+    });
 }

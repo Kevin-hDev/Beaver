@@ -21,6 +21,10 @@ pub mod tool_bash_result;
 pub mod tool_bash_session;
 pub mod tool_bash_shell;
 mod tool_bash_spawn_error;
+pub(crate) mod tool_bash_security;
+#[cfg(test)]
+mod tool_bash_security_tests;
 pub mod tool_bash_storage;
 pub mod tool_bash_wait;
 pub mod tool_bash_watch_roots;
+pub(crate) mod tool_dispatcher_shell_runtime;
