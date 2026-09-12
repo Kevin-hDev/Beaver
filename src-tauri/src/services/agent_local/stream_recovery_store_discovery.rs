@@ -41,6 +41,7 @@ pub(super) fn list_session_ids(root: &Path) -> Result<Vec<String>, String> {
 }
 
 pub(crate) async fn claim(path: PathBuf) -> Result<PathBuf, String> {
+    let _gate = super::stream_recovery_store::lock_mutations().await;
     tokio::task::spawn_blocking(move || {
         let name = path.file_name().and_then(|name| name.to_str()).ok_or_else(error)?;
         if name.ends_with(".recovering") {
@@ -58,6 +59,7 @@ pub(crate) async fn claim(path: PathBuf) -> Result<PathBuf, String> {
 }
 
 pub(crate) async fn quarantine(path: PathBuf) -> Result<(), String> {
+    let _gate = super::stream_recovery_store::lock_mutations().await;
     tokio::task::spawn_blocking(move || {
         let session_id = path
             .parent()
@@ -88,6 +90,7 @@ pub(crate) async fn quarantine(path: PathBuf) -> Result<(), String> {
 
 pub(crate) async fn remove_session(session_id: &str) -> Result<(), String> {
     super::session_store::validate_session_id(session_id)?;
+    let _gate = super::stream_recovery_store::lock_mutations().await;
     let root = super::stream_recovery_store::root();
     let directories = [root.join(session_id), root.join(QUARANTINE_DIR).join(session_id)];
     tokio::task::spawn_blocking(move || {

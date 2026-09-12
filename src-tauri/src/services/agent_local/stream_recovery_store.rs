@@ -10,9 +10,13 @@ pub(crate) const MAX_LOGS_PER_SESSION: usize = 4;
 pub(crate) const MAX_DISCOVERY_ENTRIES: usize = 4_096;
 static STORE_GATE: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
+pub(super) async fn lock_mutations() -> tokio::sync::MutexGuard<'static, ()> {
+    STORE_GATE.lock().await
+}
+
 pub(crate) async fn create(header: &StreamRecoveryHeader) -> Result<(PathBuf, File), String> {
     validate_header(header)?;
-    let _gate = STORE_GATE.lock().await;
+    let _gate = lock_mutations().await;
     let path = path_for(&header.session_id, &header.request_id)?;
     ensure_capacity(&header.session_id).await?;
     let mut bytes = serde_json::to_vec(&StreamRecoveryRecord::Header(header.clone()))
@@ -44,6 +48,7 @@ pub(crate) fn root() -> PathBuf {
 }
 
 pub(crate) async fn remove(path: PathBuf) -> Result<(), String> {
+    let _gate = lock_mutations().await;
     tokio::task::spawn_blocking(move || {
         if path.exists() {
             std::fs::remove_file(&path).map_err(|_| error())?;

@@ -43,6 +43,7 @@ async fn append_rejects_symlinks_and_hardlinks() {
     let header = header();
     let (path, file) = create(&header).await.unwrap();
     drop(file);
+    let _gate = lock_mutations().await;
     let target = tempfile::NamedTempFile::new().unwrap();
     std::fs::remove_file(&path).unwrap();
     std::os::unix::fs::symlink(target.path(), &path).unwrap();
@@ -85,6 +86,21 @@ async fn oversized_log_is_refused_before_record_parsing() {
 
     assert!(visit_records(&path, |_| Ok(())).is_err());
     remove(path).await.unwrap();
+}
+
+#[tokio::test]
+async fn removal_waits_for_the_store_mutation_gate() {
+    let value = header();
+    let (path, file) = create(&value).await.unwrap();
+    drop(file);
+    let gate = lock_mutations().await;
+    let mut removal = tokio::spawn(remove(path));
+
+    assert!(tokio::time::timeout(std::time::Duration::from_millis(100), &mut removal)
+        .await
+        .is_err());
+    drop(gate);
+    removal.await.unwrap().unwrap();
 }
 
 #[test]
