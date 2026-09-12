@@ -1,0 +1,11 @@
+Decision: every durable message append through ConversationJournal is fenced by the last persisted turn identity, after the capacity check.
+
+Reason: cancellation stops accepting the old stream but does not synchronously join its task. If a new request repairs the pending tool call and persists its user turn first, the old task must be rejected at the single journal write boundary; otherwise its late real result can invalidate the repaired history permanently. If the old result wins the session lock first, the following admission sees a complete tool result and remains valid.
+
+The existing session-capacity error keeps priority. Main sessions are fenced by durable turn identity; subagents retain their stronger registry ownership check. Malformed current or persisted request UUIDs remain fail-closed.
+
+Legacy migration deliberately synthesizes missing results without a live execution identity: it runs while loading old on-disk data, where no request can still own the tool call. Its best-effort repair remains separate from live admission.
+
+The synthetic English sentence is model-facing protocol data. Beaver's message list renders only user and assistant roles, so this tool-role record is not user-visible UI text and does not require seven UI translations.
+
+Validation: 12 conversation journal tests and 16 interrupted-tail tests pass, including a deterministic late-result race regression, malformed identities, and the exact session-capacity contract.
