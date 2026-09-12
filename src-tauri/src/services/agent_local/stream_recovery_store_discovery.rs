@@ -12,30 +12,32 @@ pub(crate) async fn session_paths(session_id: &str) -> Result<Vec<PathBuf>, Stri
 
 pub(crate) async fn all_session_ids() -> Result<Vec<String>, String> {
     let root = super::stream_recovery_store::root();
-    tokio::task::spawn_blocking(move || {
-        let mut ids = Vec::new();
-        let Some(entries) = read_dir_if_present(&root)? else {
-            return Ok(ids);
-        };
-        for (inspected, entry) in entries.enumerate() {
-            if inspected >= super::stream_recovery_store::MAX_DISCOVERY_ENTRIES {
-                return Err(error());
-            }
-            let entry = entry.map_err(|_| error())?;
-            if !entry.file_type().map_err(|_| error())?.is_dir()
-                || entry.file_name() == QUARANTINE_DIR
-            {
-                continue;
-            }
-            let id = entry.file_name().to_string_lossy().into_owned();
-            if uuid::Uuid::parse_str(&id).is_ok() {
-                ids.push(id);
-            }
-        }
-        Ok(ids)
-    })
+    tokio::task::spawn_blocking(move || list_session_ids(&root))
     .await
     .map_err(|_| error())?
+}
+
+pub(super) fn list_session_ids(root: &Path) -> Result<Vec<String>, String> {
+    let mut ids = Vec::new();
+    let Some(entries) = read_dir_if_present(root)? else {
+        return Ok(ids);
+    };
+    for (inspected, entry) in entries.enumerate() {
+        if inspected >= super::stream_recovery_store::MAX_DISCOVERY_ENTRIES {
+            return Err(error());
+        }
+        let entry = entry.map_err(|_| error())?;
+        if !entry.file_type().map_err(|_| error())?.is_dir()
+            || entry.file_name() == QUARANTINE_DIR
+        {
+            continue;
+        }
+        let id = entry.file_name().to_string_lossy().into_owned();
+        if uuid::Uuid::parse_str(&id).is_ok() {
+            ids.push(id);
+        }
+    }
+    Ok(ids)
 }
 
 pub(crate) async fn claim(path: PathBuf) -> Result<PathBuf, String> {

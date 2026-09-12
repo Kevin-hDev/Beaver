@@ -114,6 +114,9 @@ pub(super) fn start_sync_task(inner: Weak<Inner>) {
             let Some(current) = inner.upgrade() else {
                 break;
             };
+            if should_stop(&current) {
+                break;
+            }
             tokio::select! {
                 _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {}
                 _ = current.sync_needed.notified() => {}
@@ -122,11 +125,18 @@ pub(super) fn start_sync_task(inner: Weak<Inner>) {
             let Some(current) = inner.upgrade() else {
                 break;
             };
+            if should_stop(&current) {
+                break;
+            }
             if sync_inner(current).await.is_err() {
                 break;
             }
         }
     });
+}
+
+pub(super) fn should_stop(inner: &Inner) -> bool {
+    lock(inner).sealed
 }
 
 async fn sync_inner(inner: Arc<Inner>) -> Result<(), String> {

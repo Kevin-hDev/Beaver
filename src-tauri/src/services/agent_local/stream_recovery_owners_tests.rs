@@ -11,3 +11,18 @@ fn lease_exclusively_owns_one_request_until_drop() {
     assert!(!is_live(&session, &request));
     drop(claim(&session, &request).expect("reclaimed"));
 }
+
+#[test]
+fn registry_refuses_an_owner_beyond_its_global_limit() {
+    let mut owners = std::collections::HashMap::new();
+    for index in 0..MAX_STREAM_RECOVERY_LOGS {
+        insert_owner(
+            &mut owners,
+            (format!("session-{index}"), format!("request-{index}")),
+            index as u64,
+        )
+        .unwrap();
+    }
+
+    assert!(insert_owner(&mut owners, ("extra".into(), "extra".into()), u64::MAX).is_err());
+}

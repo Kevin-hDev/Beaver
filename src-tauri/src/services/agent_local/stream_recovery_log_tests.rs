@@ -108,3 +108,36 @@ async fn oversized_record_is_sticky_and_cancels_the_owner() {
     super::stream_recovery_store::remove(log.path()).await.unwrap();
     drop(lease);
 }
+
+#[tokio::test]
+async fn total_log_limit_is_sticky_and_cancels_the_owner() {
+    let cancel = CancellationToken::new();
+    let (log, lease) = StreamRecoveryLog::create(header(), cancel.clone())
+        .await
+        .unwrap();
+    super::stream_recovery_log::lock(&log.inner).bytes =
+        super::stream_recovery_store::MAX_LOG_BYTES;
+
+    let result = log.record_event(RecoverableStreamEvent::Token {
+        content: "over limit".into(),
+        phase: None,
+    });
+
+    assert!(result.is_err());
+    assert!(cancel.is_cancelled());
+    assert!(log.sticky_error().is_some());
+    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    drop(lease);
+}
+
+#[tokio::test]
+async fn sealed_log_stops_its_background_sync() {
+    let (log, lease) = StreamRecoveryLog::create(header(), CancellationToken::new())
+        .await
+        .unwrap();
+
+    log.seal_and_remove().await.unwrap();
+
+    assert!(super::stream_recovery_log_sync::should_stop(&log.inner));
+    drop(lease);
+}

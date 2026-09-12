@@ -17,12 +17,21 @@ pub(crate) struct OwnerLease {
 pub(crate) fn claim(session_id: &str, request_id: &str) -> Result<OwnerLease, String> {
     let key = (session_id.to_string(), request_id.to_string());
     let mut owners = OWNERS.lock().unwrap_or_else(|failure| failure.into_inner());
+    let owner = NEXT_OWNER.fetch_add(1, Ordering::Relaxed);
+    insert_owner(&mut owners, key.clone(), owner)?;
+    Ok(OwnerLease { key, owner })
+}
+
+pub(super) fn insert_owner(
+    owners: &mut HashMap<Key, u64>,
+    key: Key,
+    owner: u64,
+) -> Result<(), String> {
     if owners.contains_key(&key) || owners.len() >= MAX_STREAM_RECOVERY_LOGS {
         return Err(error());
     }
-    let owner = NEXT_OWNER.fetch_add(1, Ordering::Relaxed);
-    owners.insert(key.clone(), owner);
-    Ok(OwnerLease { key, owner })
+    owners.insert(key, owner);
+    Ok(())
 }
 
 pub(crate) fn is_live(session_id: &str, request_id: &str) -> bool {
