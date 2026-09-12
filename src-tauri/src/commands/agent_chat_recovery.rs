@@ -9,5 +9,28 @@ pub(crate) async fn before_admission(
         },
     )
     .await
-    .map_err(|_| "conversation_admission_failed".to_string())
+    .map_err(public_error)
+}
+
+fn public_error(code: String) -> String {
+    if code == crate::services::agent_local::session_limits::SESSION_CAPACITY_REACHED {
+        code
+    } else {
+        "conversation_admission_failed".to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn recovery_capacity_keeps_its_public_code() {
+        assert_eq!(
+            super::public_error("session_capacity_reached".into()),
+            "session_capacity_reached"
+        );
+        assert_eq!(
+            super::public_error("private recovery detail".into()),
+            "conversation_admission_failed"
+        );
+    }
 }

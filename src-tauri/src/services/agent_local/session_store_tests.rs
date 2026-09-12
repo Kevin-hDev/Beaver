@@ -62,6 +62,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn document_existence_uses_the_session_store_authority() {
+        let session = super::super::create_full(
+            "document existence",
+            "model",
+            "provider",
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+        assert!(super::super::document_exists(&session.id).await);
+
+        super::super::delete_one(&session.id).await.unwrap();
+        assert!(!super::super::document_exists(&session.id).await);
+    }
+
+    #[tokio::test]
     async fn deleting_a_session_preserves_its_managed_files() {
         let mut session =
             super::super::create_full("preserve files", "model", "provider", false, None)

@@ -75,7 +75,7 @@ pub(crate) async fn new_turn_for_execution(
         },
     )
     .await
-    .map_err(|_| error())?;
+    .map_err(|code| super::conversation_admission_error::recovery_error(&code))?;
     new_turn_inner(
         lease.session_id(),
         input,

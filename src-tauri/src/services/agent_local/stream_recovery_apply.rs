@@ -32,7 +32,7 @@ pub(crate) async fn recover_session_with_lease(
     let mut session = match super::session_store::get(lease.session_id()).await {
         Ok(session) => session,
         Err(error) if paths.is_empty() => return Err(error),
-        Err(_) if !session_document_exists(lease.session_id()) => {
+        Err(_) if !super::session_store::document_exists(lease.session_id()).await => {
             for path in paths {
                 super::stream_recovery_store::remove(path).await?;
             }
@@ -69,35 +69,36 @@ pub(crate) async fn recover_session_with_lease(
     let mut recovered_any = false;
     for (_, path) in projections {
         let path = super::stream_recovery_store_discovery::claim(path).await?;
-        let projection = super::stream_recovery_projection::from_path(&path)?;
+        let Some(projection) = load_claimed(&path).await? else {
+            continue;
+        };
         if super::stream_recovery_apply_validation::superseded(&session, &projection)
             || !super::stream_recovery_apply_validation::owner_matches(&session, &projection)
         {
             claimed.push(path);
             continue;
         }
-        let _ = super::conversation_interrupted_tail::apply_recovered_projection(
+        changed |= super::conversation_interrupted_tail::apply_recovered_projection(
             &mut session,
             &projection,
         )
         .map_err(super::stream_recovery_apply_validation::map_tail_error)?;
-        let _ = super::conversation_interrupted_tail::close_recoverable(
+        changed |= super::conversation_interrupted_tail::close_recoverable(
             &mut session,
             RecoveryProof::RecoveredJournal {
                 request_id: &projection.header.request_id,
             },
         )
         .map_err(super::stream_recovery_apply_validation::map_tail_error)?;
-        super::stream_recovery_apply_validation::mark_terminal(
+        changed |= super::stream_recovery_apply_validation::mark_terminal(
             &mut session,
             &projection.header.request_id,
             &mode,
         );
-        super::context_usage_startup::mark_interrupted(
+        changed |= super::context_usage_startup::mark_interrupted(
             &mut session,
             Some(&projection.header.request_id),
         );
-        changed = true;
         recovered_any = true;
         claimed.push(path);
     }
@@ -134,6 +135,18 @@ pub(crate) async fn recover_session_with_lease(
     Ok(())
 }
 
+pub(super) async fn load_claimed(
+    path: &std::path::Path,
+) -> Result<Option<super::stream_recovery_projection::RecoveryProjection>, String> {
+    match super::stream_recovery_projection::from_path(path) {
+        Ok(projection) => Ok(Some(projection)),
+        Err(_) => {
+            super::stream_recovery_store_discovery::quarantine(path.to_path_buf()).await?;
+            Ok(None)
+        }
+    }
+}
+
 #[cfg(test)]
 pub(crate) fn close_admission_fallback(
     session: &mut super::types_session::AgentSession,
@@ -151,11 +164,4 @@ pub(crate) fn close_admission_fallback(
 
 fn error() -> String {
     "stream_recovery_unavailable".into()
-}
-
-fn session_document_exists(session_id: &str) -> bool {
-    crate::services::paths::data_dir()
-        .join("agent-sessions")
-        .join(format!("{session_id}.json"))
-        .exists()
 }

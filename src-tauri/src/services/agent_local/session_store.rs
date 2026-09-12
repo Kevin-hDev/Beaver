@@ -25,6 +25,13 @@ pub async fn get(id: &str) -> Result<AgentSession, String> {
         })
 }
 
+pub(crate) async fn document_exists(id: &str) -> bool {
+    validate_session_id(id).is_ok()
+        && crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
+            .await
+            .is_ok()
+}
+
 pub async fn list() -> Result<Vec<AgentSessionMeta>, String> {
     let mut metas = crate::services::agent_local::session_index::read_index().await?;
     metas.retain(super::session_archive::is_active);

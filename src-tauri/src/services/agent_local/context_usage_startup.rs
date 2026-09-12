@@ -35,19 +35,22 @@ async fn cleanup_one(id: &str, startup_cutoff: DateTime<Utc>) -> Result<bool, St
 pub(crate) fn mark_interrupted(
     session: &mut super::types_session::AgentSession,
     request_id: Option<&str>,
-) {
+) -> bool {
     if request_id.is_some_and(|request_id| {
         session.context_usage.active_request_id.as_deref() != Some(request_id)
     }) {
-        return;
+        return false;
     }
+    let mut changed = false;
     if let Some(preparation) = &mut session.context_usage.current_preparation {
         if preparation.state == ContextPreparationState::InFlight {
             preparation.state = ContextPreparationState::Interrupted;
             preparation.updated_at = Utc::now();
+            changed = true;
         }
     }
-    session.context_usage.active_request_id = None;
+    changed |= session.context_usage.active_request_id.take().is_some();
+    changed
 }
 
 #[cfg(test)]
@@ -118,5 +121,23 @@ mod tests {
         super::super::session_store::delete_one(&session.id)
             .await
             .unwrap();
+    }
+
+    #[tokio::test]
+    async fn interruption_reports_only_a_real_mutation() {
+        let mut session = super::super::session_store::create_full(
+            "Context mutation",
+            "gpt-5",
+            "openai",
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+        session.context_usage.active_request_id = Some(uuid::Uuid::new_v4().to_string());
+
+        assert!(mark_interrupted(&mut session, None));
+        assert!(!mark_interrupted(&mut session, None));
+        super::super::session_store::delete_one(&session.id).await.unwrap();
     }
 }

@@ -125,6 +125,59 @@ async fn stream_recovery_apply_is_idempotent_and_closes_pending_tools() {
 }
 
 #[tokio::test]
+async fn replay_after_saved_recovery_preserves_terminal_diagnostics() {
+    let (session, mut header) = session_and_header().await;
+    header.request_id = super::stream_diagnostics::start_request(&session.id, 1).await;
+    let (log, lease) = StreamRecoveryLog::create(header.clone(), CancellationToken::new())
+        .await
+        .unwrap();
+    log.record_event(RecoverableStreamEvent::Thinking {
+        content: "durable work".into(),
+    })
+    .unwrap();
+    let path = log.path();
+    let journal = std::fs::read(&path).unwrap();
+
+    recover_session(
+        &session.id,
+        StreamRecoveryMode::Owner {
+            request_id: &header.request_id,
+            terminal: OwnerTerminal::Cancelled,
+        },
+    )
+    .await
+    .unwrap();
+    let first = super::session_store::get(&session.id).await.unwrap();
+    assert_eq!(first.diagnostic_runs[0].status, "cancelled");
+    assert!(first.stream_failures.is_empty());
+    let session_path = crate::services::paths::data_dir()
+        .join("agent-sessions")
+        .join(format!("{}.json", session.id));
+    let first_bytes = std::fs::read(&session_path).unwrap();
+
+    drop(log);
+    drop(lease);
+    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(&path, journal).unwrap();
+    recover_session(&session.id, StreamRecoveryMode::StaleOnly)
+        .await
+        .unwrap();
+    let replayed = super::session_store::get(&session.id).await.unwrap();
+
+    let first_run = &first.diagnostic_runs[0];
+    let replayed_run = &replayed.diagnostic_runs[0];
+    assert_eq!(replayed_run.status, first_run.status);
+    assert_eq!(replayed_run.error_type, first_run.error_type);
+    assert_eq!(replayed_run.ended_at, first_run.ended_at);
+    assert_eq!(replayed_run.events.len(), first_run.events.len());
+    assert_eq!(replayed.stream_failures.len(), first.stream_failures.len());
+    assert_eq!(replayed.updated_at, first.updated_at);
+    assert_eq!(std::fs::read(session_path).unwrap(), first_bytes);
+    super::session_store::delete_one(&session.id).await.unwrap();
+}
+
+#[tokio::test]
 async fn stream_recovery_apply_ignores_a_live_non_owner_log() {
     let (session, header) = session_and_header().await;
     let (log, lease) = StreamRecoveryLog::create(header, CancellationToken::new())
@@ -207,6 +260,35 @@ async fn stream_recovery_apply_quarantines_corruption_without_blocking_the_sessi
         .join("quarantine")
         .join(&session.id);
     assert_eq!(std::fs::read_dir(&quarantine).unwrap().count(), 1);
+    super::session_store::delete_one(&session.id).await.unwrap();
+    assert!(!quarantine.exists());
+}
+
+#[tokio::test]
+async fn claimed_journal_corruption_is_quarantined() {
+    let (session, header) = session_and_header().await;
+    let (log, lease) = StreamRecoveryLog::create(header, CancellationToken::new())
+        .await
+        .unwrap();
+    let claimed = super::stream_recovery_store_discovery::claim(log.path())
+        .await
+        .unwrap();
+    std::io::Write::write_all(
+        &mut std::fs::OpenOptions::new().append(true).open(&claimed).unwrap(),
+        b"{broken}\n",
+    )
+    .unwrap();
+
+    assert!(super::stream_recovery_apply::load_claimed(&claimed)
+        .await
+        .unwrap()
+        .is_none());
+    let quarantine = super::stream_recovery_store::root()
+        .join("quarantine")
+        .join(&session.id);
+    assert_eq!(std::fs::read_dir(&quarantine).unwrap().count(), 1);
+    drop(log);
+    drop(lease);
     super::session_store::delete_one(&session.id).await.unwrap();
     assert!(!quarantine.exists());
 }

@@ -50,7 +50,7 @@ pub(super) fn mark_terminal(
     session: &mut AgentSession,
     request_id: &str,
     mode: &StreamRecoveryMode<'_>,
-) {
+) -> bool {
     match mode {
         StreamRecoveryMode::Owner {
             request_id: owner_id,
