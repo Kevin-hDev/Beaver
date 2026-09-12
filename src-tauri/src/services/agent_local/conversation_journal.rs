@@ -6,6 +6,8 @@ mod store;
 mod context;
 #[path = "conversation_journal_validation.rs"]
 mod validation;
+#[path = "conversation_journal_recovery.rs"]
+mod recovery;
 
 use chrono::Utc;
 
@@ -25,6 +27,8 @@ pub(crate) struct ConversationJournal {
     subagent_owner: Option<SubagentOwner>,
     partial: bool,
     committed: bool,
+    recovery_log: Option<super::stream_recovery_log::StreamRecoveryLog>,
+    recovery_owner: Option<super::stream_recovery_owners::OwnerLease>,
 }
 
 struct SubagentOwner {
@@ -33,14 +37,6 @@ struct SubagentOwner {
 }
 
 impl ConversationJournal {
-    pub(crate) fn turn_ids(&self) -> (&str, &str, &str) {
-        (
-            &self.turn_id,
-            &self.user_message_id,
-            &self.assistant_message_id,
-        )
-    }
-
     pub(crate) fn new(
         session_id: String,
         turn_id: String,
@@ -111,6 +107,8 @@ impl ConversationJournal {
             subagent_owner,
             partial: false,
             committed: false,
+            recovery_log: None,
+            recovery_owner: None,
         })
     }
 
@@ -127,7 +125,7 @@ impl ConversationJournal {
         } else {
             uuid::Uuid::new_v4().to_string()
         };
-        self.append(vec![record::from_message(
+        self.append_staged(vec![record::from_message(
             message,
             message_id,
             &self.turn_id,
@@ -171,7 +169,7 @@ impl ConversationJournal {
                 Ok::<_, String>(record)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        self.append(records).await?;
+        self.append_staged(records).await?;
         self.expected_tool_ids.clear();
         Ok(())
     }
@@ -184,7 +182,7 @@ impl ConversationJournal {
             envelope.completion =
                 crate::services::reasoning_continuity::envelope::CompletionState::Partial;
         }
-        self.append(vec![record::from_message(
+        self.append_staged(vec![record::from_message(
             &message,
             uuid::Uuid::new_v4().to_string(),
             &self.turn_id,

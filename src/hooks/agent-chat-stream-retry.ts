@@ -2,16 +2,12 @@ import type { ManagedStreamState } from "./agent-chat-stream-types";
 import type { RetryIndicatorState } from "@/types/agent";
 import { resolveContextUsage } from "./agent-token-estimate";
 
-const PROVIDER_RETRY_REASON = "agentLocal.retry.provider";
-
 export function applyRetryIndicator(
   state: ManagedStreamState,
   indicator: RetryIndicatorState,
   now: number,
 ) {
   state.retryIndicator = indicator;
-  if (indicator.reasonKey !== PROVIDER_RETRY_REASON) return;
-
   const resolved = resolveContextUsage(state.contextUsageRecord);
   const discardedTokens = safeTokenCount(state.requestOutputTokens);
   if (resolved.used !== null) {

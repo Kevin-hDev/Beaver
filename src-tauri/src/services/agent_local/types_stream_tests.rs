@@ -22,6 +22,7 @@ fn tool_result_serializes_readable_display_summary() {
         file_changes: Vec::new(),
         start_line: None,
         artifacts: Vec::new(),
+        persistence: Box::new(test_persistence()),
     };
 
     let serialized = serde_json::to_value(event).expect("stream event should serialize");
@@ -66,6 +67,7 @@ fn tool_result_serializes_artifact_metadata_without_payload_or_internal_path() {
                 catalog_fingerprint: "b".repeat(64),
             },
         })],
+        persistence: Box::new(test_persistence()),
     };
 
     let json = serde_json::to_string(&event).expect("serialize stream artifact");
@@ -84,6 +86,7 @@ fn tool_call_serializes_stable_identity_for_the_frontend() {
         tool_call_index: 2,
         tool_call_id: Some("call-2".to_string()),
         domain: None,
+        extra_content: Some(serde_json::json!({"signature": "private"})),
     };
 
     let serialized = serde_json::to_value(event).expect("serialize tool call");
@@ -91,6 +94,12 @@ fn tool_call_serializes_stable_identity_for_the_frontend() {
     assert_eq!(serialized["data"]["toolCallIndex"], 2);
     assert_eq!(serialized["data"]["toolCallId"], "call-2");
     assert!(serialized["data"].get("tool_call_index").is_none());
+    assert!(serialized["data"].get("extraContent").is_none());
+}
+
+fn test_persistence() -> crate::services::agent_local::stream_recovery_record::RecoverableToolResult {
+    crate::services::agent_local::types_tools::ToolResult::ok("ok")
+        .persistence_snapshot("tool", 0, None, None, None, Vec::new())
 }
 
 #[test]

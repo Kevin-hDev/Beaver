@@ -89,4 +89,21 @@ describe("retryIndicator", () => {
     expect(next.liveTokenCount).toBe(15);
     expect(next.sessionTokenCount).toBe(100);
   });
+
+  it("efface aussi une tentative abandonnée pour un autre retry", () => {
+    const state = makeState({
+      currentContent: "réponse abandonnée",
+      currentThinking: "travail abandonné",
+      currentTools: [{ name: "read_file", args: { path: "test" } }],
+    });
+
+    const { state: next } = applyStreamEvent(state, {
+      event: "retryIndicator",
+      data: { reasonKey: "agentLocal.retry.server", attempt: 2, maxAttempts: 10 },
+    });
+
+    expect(next.currentContent).toBe("");
+    expect(next.currentThinking).toBe("");
+    expect(next.currentTools).toEqual([]);
+  });
 });

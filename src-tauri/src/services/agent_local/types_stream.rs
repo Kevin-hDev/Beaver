@@ -51,6 +51,8 @@ pub enum StreamEvent {
         tool_call_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         domain: Option<String>,
+        #[serde(skip_serializing)]
+        extra_content: Option<serde_json::Value>,
     },
     #[serde(rename_all = "camelCase")]
     ToolOutput {
@@ -87,6 +89,8 @@ pub enum StreamEvent {
         start_line: Option<usize>,
         #[serde(skip_serializing_if = "Vec::is_empty", default)]
         artifacts: Vec<crate::models::agent_session_contract::ToolArtifactRecordView>,
+        #[serde(skip_serializing)]
+        persistence: Box<super::stream_recovery_record::RecoverableToolResult>,
     },
     TurnEnd {},
     PermissionRequest(super::permission_request::PermissionRequest),

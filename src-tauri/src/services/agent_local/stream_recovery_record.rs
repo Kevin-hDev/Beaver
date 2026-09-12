@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::types_message::AgentMessage;
 use super::types_stream::TokenPhase;
+use super::types_stream::StreamEvent;
 
 pub(crate) const STREAM_RECOVERY_VERSION: u8 = 1;
 
@@ -99,6 +100,48 @@ pub(crate) enum RecoverableToolFollowUp {
     UserMessage(String),
     SystemMessage(String),
     Stop,
+}
+
+impl RecoverableStreamEvent {
+    pub(crate) fn from_stream_event(event: &StreamEvent) -> Option<Self> {
+        match event {
+            StreamEvent::Token { content, phase, .. } => Some(Self::Token {
+                content: content.clone(),
+                phase: phase.clone(),
+            }),
+            StreamEvent::Thinking { content, .. } => Some(Self::Thinking {
+                content: content.clone(),
+            }),
+            StreamEvent::ContentPhase { phase } => {
+                Some(Self::ContentPhase { phase: phase.clone() })
+            }
+            StreamEvent::RetryIndicator {
+                reason_key, attempt, ..
+            } => Some(Self::AttemptRestarted {
+                reason_key: reason_key.clone(),
+                attempt: *attempt,
+            }),
+            StreamEvent::ToolCall {
+                name,
+                arguments,
+                tool_call_index,
+                tool_call_id,
+                domain,
+                extra_content,
+            } => Some(Self::ToolCall(RecoverableToolCall {
+                name: name.clone(),
+                arguments: arguments.clone(),
+                tool_call_index: *tool_call_index,
+                tool_call_id: tool_call_id.clone(),
+                domain: domain.clone(),
+                extra_content: extra_content.clone(),
+            })),
+            StreamEvent::ToolResult { persistence, .. } => {
+                Some(Self::ToolResult((**persistence).clone()))
+            }
+            _ => None,
+        }
+    }
 }
 
 pub(crate) fn process_instance_id() -> &'static str {

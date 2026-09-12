@@ -110,6 +110,7 @@ impl<'a> StreamTool<'a> {
             arguments: arguments.clone(),
             tool_call_index: result.tool_calls.len(),
             tool_call_id: Some(id.clone()),
+            extra_content: None,
         });
         result.tool_calls.push((name, arguments));
         result.tool_call_ids.push(id);

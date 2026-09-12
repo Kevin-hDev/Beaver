@@ -2,6 +2,8 @@ use super::conversation_journal::{validate_tool_results, ConversationJournal};
 use super::conversation_history_tests::support::message;
 use super::session_store;
 use super::types_ollama::ChatMessage;
+use super::stream_recovery_log::StreamRecoveryLog;
+use tokio_util::sync::CancellationToken;
 use crate::services::agent_local::tool_artifact::{
     ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
 };
@@ -184,6 +186,69 @@ async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable(
     session_store::delete_one(&session.id)
         .await
         .expect("delete session");
+}
+
+#[tokio::test]
+async fn conversation_journal_stages_exact_messages_and_turn_before_session_writes() {
+    let session = session_store::create_full("Recovery journal", "model", "openai", false, None)
+        .await
+        .expect("create session");
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .expect("create journal");
+    let (log, owner) = StreamRecoveryLog::create(
+        journal.recovery_header(),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("create recovery log");
+    let path = log.path();
+    journal.attach_recovery(log.clone(), owner);
+
+    journal
+        .persist_assistant_step(&ChatMessage::assistant(
+            "durable assistant".into(),
+            None,
+            None,
+            None,
+            None,
+        ))
+        .await
+        .expect("persist assistant");
+    let records = recovery_records(&path);
+    assert_eq!(records.len(), 1, "successful save clears pending batch");
+
+    assert!(journal
+        .commit_turn_with_injected_write_failure()
+        .await
+        .is_err());
+    assert!(matches!(
+        recovery_records(&path).last(),
+        Some(super::stream_recovery_record::StreamRecoveryRecord::TurnReady { .. })
+    ));
+
+    journal.commit_turn().await.expect("retry commit");
+    assert!(!path.exists(), "journal is removed only after durable commit");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+}
+
+fn recovery_records(
+    path: &std::path::Path,
+) -> Vec<super::stream_recovery_record::StreamRecoveryRecord> {
+    let mut records = Vec::new();
+    super::stream_recovery_store::visit_records(path, |record| {
+        records.push(record);
+        Ok(())
+    })
+    .expect("read recovery records");
+    records
 }
 
 fn tool(id: &str) -> ChatMessage {

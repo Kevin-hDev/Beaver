@@ -89,6 +89,17 @@ async fn run_stream_task_inner(
         .ok_or_else(|| "conversation_admission_failed".to_string())?;
     let (messages, mut journal) = conversation
         .into_messages_and_journal(params.session_id.clone(), params.request_id.clone())?;
+    if let Some(current) = journal.as_mut() {
+        let (log, owner) =
+            crate::services::agent_local::stream_recovery_log::StreamRecoveryLog::create(
+                current.recovery_header(),
+                params.cancel.clone(),
+            )
+            .await
+            .map_err(|_| "stream_error".to_string())?;
+        params.on_event = params.on_event.with_recovery_log(log.clone());
+        current.attach_recovery(log, owner);
+    }
     context_lifecycle::activate(journal.as_ref()).await?;
     let outcome = context_lifecycle::run(params, messages, &mut journal).await;
     context_lifecycle::finish(journal.as_ref(), &outcome).await?;

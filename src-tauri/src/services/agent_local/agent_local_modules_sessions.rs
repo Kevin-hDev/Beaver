@@ -128,6 +128,8 @@ mod stream_diagnostics_support_tests;
 pub mod stream_diagnostics_tests;
 mod stream_diagnostics_tool_record;
 pub mod stream_events;
+#[cfg(test)]
+mod stream_events_recovery_tests;
 pub(crate) mod stream_recovery_log;
 mod stream_recovery_log_sync;
 #[cfg(test)]

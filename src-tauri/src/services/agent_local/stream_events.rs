@@ -19,6 +19,7 @@ pub struct AgentEventEmitter {
     session_id: String,
     generation: Option<u64>,
     permission_emitter: Option<Box<AgentEventEmitter>>,
+    recovery_log: Option<super::stream_recovery_log::StreamRecoveryLog>,
 }
 
 #[derive(Clone, Serialize)]
@@ -39,6 +40,7 @@ impl AgentEventEmitter {
             session_id,
             generation: None,
             permission_emitter: None,
+            recovery_log: None,
         }
     }
 
@@ -49,6 +51,7 @@ impl AgentEventEmitter {
             session_id,
             generation: None,
             permission_emitter: None,
+            recovery_log: None,
         }
     }
 
@@ -60,11 +63,20 @@ impl AgentEventEmitter {
             session_id,
             generation: Some(generation),
             permission_emitter: None,
+            recovery_log: None,
         }
     }
 
     pub fn with_permission_emitter(mut self, emitter: AgentEventEmitter) -> Self {
         self.permission_emitter = Some(Box::new(emitter));
+        self
+    }
+
+    pub(crate) fn with_recovery_log(
+        mut self,
+        recovery_log: super::stream_recovery_log::StreamRecoveryLog,
+    ) -> Self {
+        self.recovery_log = Some(recovery_log);
         self
     }
 
@@ -80,6 +92,14 @@ impl AgentEventEmitter {
             if let Some(emitter) = self.permission_emitter.as_deref() {
                 return emitter.send(event);
             }
+        }
+        if let Some(event) =
+            super::stream_recovery_record::RecoverableStreamEvent::from_stream_event(&event)
+        {
+            self.recovery_log
+                .as_ref()
+                .map(|log| log.record_event(event))
+                .transpose()?;
         }
         let Some(app) = self.app() else {
             return Ok(());
