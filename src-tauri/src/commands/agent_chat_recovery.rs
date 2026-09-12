@@ -1,11 +1,13 @@
 pub(crate) async fn before_admission(
     lease: &crate::services::agent_local::session_locks::AdmissionLease,
     current_execution_id: &str,
+    resume_message_id: Option<&str>,
 ) -> Result<(), String> {
     crate::services::agent_local::stream_recovery_apply::recover_session_with_lease(
         lease,
         crate::services::agent_local::stream_recovery_apply::StreamRecoveryMode::Admission {
             current_execution_id,
+            resume_message_id,
         },
     )
     .await

@@ -6,7 +6,10 @@ pub(crate) enum StreamRecoveryMode<'a> {
         request_id: &'a str,
         terminal: OwnerTerminal<'a>,
     },
-    Admission { current_execution_id: &'a str },
+    Admission {
+        current_execution_id: &'a str,
+        resume_message_id: Option<&'a str>,
+    },
     StaleOnly,
 }
 
@@ -106,15 +109,26 @@ pub(crate) async fn recover_session_with_lease(
     if !recovered_any {
         if let StreamRecoveryMode::Admission {
             current_execution_id,
+            resume_message_id,
         } = mode
         {
-            changed |= super::conversation_interrupted_tail::close_recoverable(
-                &mut session,
-                RecoveryProof::AdmissionFallback {
-                    current_execution_id,
-                },
-            )
-            .map_err(super::stream_recovery_apply_validation::map_tail_error)?;
+            // An explicit Resume owns this user-only tail. Closing it here would
+            // make conversation_resume reject the message immediately after.
+            let resumes_current_tail = resume_message_id.is_some_and(|message_id| {
+                session
+                    .messages
+                    .last()
+                    .is_some_and(|message| message.role == "user" && message.id == message_id)
+            });
+            if !resumes_current_tail {
+                changed |= super::conversation_interrupted_tail::close_recoverable(
+                    &mut session,
+                    RecoveryProof::AdmissionFallback {
+                        current_execution_id,
+                    },
+                )
+                .map_err(super::stream_recovery_apply_validation::map_tail_error)?;
+            }
         }
     }
     if changed {

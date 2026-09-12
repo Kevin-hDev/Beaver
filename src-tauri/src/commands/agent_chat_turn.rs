@@ -105,7 +105,12 @@ pub(super) async fn admit_current_with_kind(
             return Err("conversation_admission_failed".to_string());
         }
     };
-    super::agent_chat_recovery::before_admission(&lease, &active_request_id).await?;
+    let resume_message_id = match &turn {
+        PreparedTurn::New(_) => None,
+        PreparedTurn::Resume(input) => Some(input.message_id.as_str()),
+    };
+    super::agent_chat_recovery::before_admission(&lease, &active_request_id, resume_message_id)
+        .await?;
     let before = crate::services::agent_local::session_store::get(session_id)
         .await
         .map_err(|_| "conversation_admission_failed".to_string())?;

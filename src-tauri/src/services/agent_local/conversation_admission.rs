@@ -72,6 +72,7 @@ pub(crate) async fn new_turn_for_execution(
         &lease,
         super::stream_recovery_apply::StreamRecoveryMode::Admission {
             current_execution_id,
+            resume_message_id: None,
         },
     )
     .await

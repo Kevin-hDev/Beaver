@@ -339,17 +339,28 @@ async fn accepted_execution_failure_keeps_the_user_message_resumable() {
     )
     .await
     .expect("Retry can find the persisted message");
-    let resumed = crate::services::agent_local::conversation_resume::resume_for_continuation(
+    let retry_stream = admission(&session.id, 10).await;
+    streams
+        .0
+        .lock()
+        .await
+        .insert(session.id.clone(), entry(&retry_stream));
+    let resumed = super::agent_chat_turn::admit_current(
+        &streams,
         &session.id,
-        crate::models::agent_turn_contract::ResumeTurnInput {
-            message_id: admitted.turn.user_message_id.clone(),
-        },
+        retry_stream.generation,
+        super::agent_chat_turn::PreparedTurn::Resume(
+            crate::models::agent_turn_contract::ResumeTurnInput {
+                message_id: admitted.turn.user_message_id.clone(),
+            },
+        ),
         forbidden_target(),
+        reasoning_update(&session),
     )
     .await
-    .expect("Retry resumes the same admitted turn");
-    assert_eq!(resumed.user_message_id, admitted.turn.user_message_id);
-    assert_eq!(resumed.turn_id, admitted.turn.turn_id);
+    .expect("Retry resumes the same admitted turn through crash recovery");
+    assert_eq!(resumed.turn.user_message_id, admitted.turn.user_message_id);
+    assert_eq!(resumed.turn.turn_id, admitted.turn.turn_id);
     cleanup(&session.id).await;
 }
 
