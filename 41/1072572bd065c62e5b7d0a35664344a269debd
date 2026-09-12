@@ -2,6 +2,6 @@ Decision: heap-pin the shared native tool dispatcher future at its single entry 
 
 Reason: macOS crash reports for session 697d2c40-705c-4bcc-a1b7-e43d6785983e show SIGBUS stack-guard failures on a 2 MiB Tokio worker while entering dispatch_inner. Debug async state machines nested several large frames; changing output limits or individual tools would not address the shared cause.
 
-Scope: all native tool dispatches through dispatch_with_progress. No provider, tool behavior, or output contract changes.
+Scope: cloud and Ollama native tools that route through dispatch_with_progress share this boundary. ask_user_choice and plan_mode intentionally use their dedicated interactive paths and do not build the large dispatch_inner future implicated by the crash.
 
-Evidence: the full agent loop executes real grep and bash dispatch on an explicitly 2 MiB thread without overflowing. The dispatch future boundary test stays below 8 KiB. The rebuilt arm64 debug binary reserves about 56 KiB in dispatch_with_progress, while dispatch_inner remains isolated behind Pin<Box<_>> rather than embedded in every parent state machine.
+Evidence: the full cloud agent loop executes real grep and reaches bash dispatch on an explicitly 2 MiB thread without overflowing. In the unit environment, bash stops at the missing Tauri application context before a shell process is launched; this test does not claim to execute the shell backend. The dispatch future boundary test stays below 8 KiB. The rebuilt arm64 debug binary reserves about 56 KiB in dispatch_with_progress, while dispatch_inner remains isolated behind Pin<Box<_>> rather than embedded in every parent state machine.
