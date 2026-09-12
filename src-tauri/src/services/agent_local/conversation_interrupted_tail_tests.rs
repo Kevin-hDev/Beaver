@@ -45,7 +45,7 @@ async fn closes_an_interrupted_turn_before_the_first_assistant_token() {
         "ca va ?",
     )];
 
-    assert!(close_recoverable(&mut session).expect("recover user-only tail"));
+    assert!(close_recoverable(&mut session, None).expect("recover user-only tail"));
 
     let terminal = session.messages.last().expect("terminal marker");
     assert_eq!(terminal.role, "assistant");
@@ -90,7 +90,7 @@ async fn closes_only_a_tail_with_all_tool_results() {
     let mut session = recoverable_tail().await;
     assert!(conversation_history_validation::validate(&session.messages).is_err());
 
-    assert!(close_recoverable(&mut session).expect("recoverable tail"));
+    assert!(close_recoverable(&mut session, None).expect("recoverable tail"));
 
     let terminal = session.messages.last().expect("terminal marker");
     assert_eq!(terminal.role, "assistant");
@@ -107,10 +107,10 @@ async fn closes_only_a_tail_with_all_tool_results() {
 #[tokio::test]
 async fn closing_is_idempotent() {
     let mut session = recoverable_tail().await;
-    assert!(close_recoverable(&mut session).unwrap());
+    assert!(close_recoverable(&mut session, None).unwrap());
     let once = session.messages.len();
 
-    assert!(!close_recoverable(&mut session).unwrap());
+    assert!(!close_recoverable(&mut session, None).unwrap());
     assert_eq!(session.messages.len(), once);
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
@@ -122,10 +122,75 @@ async fn missing_tool_result_is_never_invented() {
     session.messages.pop();
     let before = serde_json::to_value(&session.messages).unwrap();
 
-    assert!(close_recoverable(&mut session).is_err());
+    assert!(close_recoverable(&mut session, None).is_err());
     assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn closes_missing_results_only_for_a_proven_older_request() {
+    let mut session = recoverable_tail().await;
+    session.messages.pop();
+    let old_request = uuid::Uuid::new_v4().to_string();
+    session.messages.last_mut().unwrap().stream_run_id = Some(old_request);
+    session.messages.last_mut().unwrap().stream_part = Some("checkpoint".into());
+    let active_request = uuid::Uuid::new_v4().to_string();
+
+    assert!(close_recoverable(&mut session, Some(&active_request)).unwrap());
+
+    let result = &session.messages[2];
+    assert_eq!(result.role, "tool");
+    assert_eq!(result.tool_call_id.as_deref(), Some("call-read"));
+    assert!(result.content.contains(r#""code":"tool_interrupted""#));
+    assert!(result.content.contains("outcome is unknown"));
+    assert_eq!(session.messages[3].role, "assistant");
+    conversation_history_validation::validate(&session.messages).unwrap();
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn active_request_cannot_close_its_own_pending_tool() {
+    let mut session = recoverable_tail().await;
+    session.messages.pop();
+    let active_request = uuid::Uuid::new_v4().to_string();
+    session.messages.last_mut().unwrap().stream_run_id = Some(active_request.clone());
+    session.messages.last_mut().unwrap().stream_part = Some("checkpoint".into());
+    let before = serde_json::to_value(&session.messages).unwrap();
+
+    assert!(close_recoverable(&mut session, Some(&active_request)).is_err());
+    assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn missing_results_and_terminal_marker_respect_session_capacity() {
+    let mut session = recoverable_tail().await;
+    session.messages.pop();
+    let assistant = session.messages.last_mut().unwrap();
+    assistant.tool_calls.as_mut().unwrap().push(ToolCallRequest {
+        id: "call-second".into(),
+        extra_content: None,
+        function: ToolCallRequestFunction {
+            name: "grep".into(),
+            arguments: serde_json::json!({"pattern": "error"}),
+        },
+    });
+    assistant.stream_run_id = Some(uuid::Uuid::new_v4().to_string());
+    assistant.stream_part = Some("checkpoint".into());
+    let tail = std::mem::take(&mut session.messages);
+    session.messages = (0..998)
+        .flat_map(|index| complete_turn(&format!("full-{index}"), "answer", None))
+        .collect();
+    session.messages.extend(tail);
+    let before = serde_json::to_value(&session.messages).unwrap();
+
+    assert_eq!(
+        close_recoverable(&mut session, Some(&uuid::Uuid::new_v4().to_string())),
+        Err(super::conversation_interrupted_tail::CloseInterruptedTailError::Capacity)
+    );
+    assert_eq!(serde_json::to_value(&session.messages).unwrap(), before);
+    cleanup(&session.id).await;
 }
 
 #[tokio::test]
@@ -136,7 +201,7 @@ async fn copies_only_a_valid_stream_run_as_final() {
     result.stream_run_id = Some(run_id.clone());
     result.stream_part = Some("checkpoint".into());
 
-    close_recoverable(&mut session).unwrap();
+    close_recoverable(&mut session, None).unwrap();
 
     let marker = session.messages.last().unwrap();
     assert_eq!(marker.stream_run_id.as_deref(), Some(run_id.as_str()));
@@ -149,7 +214,7 @@ async fn invalid_history_stays_closed() {
     let mut session = recoverable_tail().await;
     session.messages.last_mut().unwrap().role = "unknown".into();
 
-    assert!(close_recoverable(&mut session).is_err());
+    assert!(close_recoverable(&mut session, None).is_err());
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
 }

@@ -34,6 +34,7 @@ pub(crate) mod conversation_history_validation;
 mod conversation_interrupted_tail;
 #[cfg(test)]
 mod conversation_interrupted_tail_tests;
+mod conversation_interrupted_tools;
 pub mod conversation_input;
 mod conversation_input_persisted;
 #[cfg(test)]

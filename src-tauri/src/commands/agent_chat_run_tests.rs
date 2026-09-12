@@ -1,6 +1,9 @@
 use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate;
 use crate::services::agent_local::parent_message_inbox::ParentMessageInbox;
+use crate::services::agent_local::types_message::{
+    AgentMessage, ToolCallRequest, ToolCallRequestFunction,
+};
 use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, NonReplayTarget, ReasoningModeId, RouteId,
 };
@@ -164,6 +167,87 @@ async fn projectless_empty_fixture_chat_admits_before_workspace_resolution() {
 }
 
 #[tokio::test]
+async fn current_request_repairs_an_old_tool_orphan_in_manual_and_heartbeat_sessions() {
+    for automation in [false, true] {
+        assert_current_request_repairs_an_old_tool_orphan(automation).await;
+    }
+}
+
+async fn assert_current_request_repairs_an_old_tool_orphan(automation: bool) {
+    let mut session = session("Crash recovery").await;
+    session.is_heartbeat = automation;
+    let old_request = uuid::Uuid::new_v4().to_string();
+    let turn_id = uuid::Uuid::new_v4().to_string();
+    session.messages = vec![
+        message(&turn_id, "user", "inspect logs", None, None),
+        message(
+            &turn_id,
+            "assistant",
+            "checking",
+            Some(old_request),
+            Some(vec![ToolCallRequest {
+                id: "call-crashed-bash".into(),
+                extra_content: None,
+                function: ToolCallRequestFunction {
+                    name: "bash".into(),
+                    arguments: serde_json::json!({"command": "tail beaver.log"}),
+                },
+            }]),
+        ),
+    ];
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let stream = admission(&session.id, 10).await;
+    let streams = ActiveStreams(Mutex::new(HashMap::from([(
+        session.id.clone(),
+        entry(&stream),
+    )])));
+
+    let turn = prepared_turn("continue safely").await;
+    let result = if automation {
+        super::agent_chat_turn::admit_automation_current(
+            &streams,
+            &session.id,
+            stream.generation,
+            turn,
+            forbidden_target(),
+            reasoning_update(&session),
+        )
+        .await
+    } else {
+        super::agent_chat_turn::admit_current(
+            &streams,
+            &session.id,
+            stream.generation,
+            turn,
+            forbidden_target(),
+            reasoning_update(&session),
+        )
+        .await
+    };
+    result.expect("the new request closes the orphan without rerunning it");
+
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(stored.messages.len(), 5);
+    assert_eq!(stored.messages[2].role, "tool");
+    assert_eq!(
+        stored.messages[2].tool_call_id.as_deref(),
+        Some("call-crashed-bash")
+    );
+    assert!(stored.messages[2]
+        .content
+        .contains(r#""code":"tool_interrupted""#));
+    assert_eq!(stored.messages[3].role, "assistant");
+    assert_eq!(stored.messages[4].content, "continue safely");
+    crate::services::agent_local::conversation_history_validation::validate(&stored.messages)
+        .unwrap();
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn projectless_main_chat_rolls_back_the_durable_turn_when_workspace_resolution_fails() {
     let session = session("Main chat working directory rollback").await;
     let stream = admission(&session.id, 8).await;
@@ -279,6 +363,38 @@ async fn session(title: &str) -> crate::services::agent_local::types_session::Ag
     )
     .await
     .unwrap()
+}
+
+fn message(
+    turn_id: &str,
+    role: &str,
+    content: &str,
+    stream_run_id: Option<String>,
+    tool_calls: Option<Vec<ToolCallRequest>>,
+) -> AgentMessage {
+    AgentMessage {
+        id: uuid::Uuid::new_v4().to_string(),
+        turn_id: turn_id.to_string(),
+        role: role.to_string(),
+        content: content.to_string(),
+        message_kind: None,
+        thinking: None,
+        tool_calls,
+        tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
+        tool_activities: None,
+        segments: None,
+        files: Vec::new(),
+        timestamp: chrono::Utc::now(),
+        tokens: 0,
+        work_duration_ms: None,
+        skill_names: None,
+        skill_ids: None,
+        stream_part: stream_run_id.as_ref().map(|_| "checkpoint".into()),
+        stream_run_id,
+    }
 }
 
 async fn admission(

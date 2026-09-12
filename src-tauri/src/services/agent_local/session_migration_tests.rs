@@ -504,10 +504,8 @@ fn v1_incomplete_tool_chain_keeps_history_and_closes_every_missing_result() {
             result.tool_name.as_deref(),
             Some(call.function.name.as_str())
         );
-        assert_eq!(
-            result.content,
-            r#"{"status":"cancelled","error":"tool_interrupted"}"#
-        );
+        assert!(result.content.contains(r#""code":"tool_interrupted""#));
+        assert!(result.content.contains("outcome is unknown"));
     }
     assert_eq!(messages.last().unwrap().role, "assistant");
     assert!(messages.last().unwrap().tool_calls.is_none());

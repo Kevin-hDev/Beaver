@@ -1,7 +1,4 @@
-use super::types_message::AgentMessage;
 use super::types_session::AgentSession;
-
-const INTERRUPTED_TOOL_RESULT: &str = r#"{"status":"cancelled","error":"tool_interrupted"}"#;
 
 /// Une forme v1 irrégulière reste lisible : on conserve le plus long suffixe
 /// de tours valide, au lieu de livrer une session qui ne peut plus continuer.
@@ -67,82 +64,7 @@ fn merge_terminal_assistants_before_tool_calls(session: &mut AgentSession) {
 }
 
 fn close_interrupted_tool_turn(session: &mut AgentSession) {
-    let Some(call_index) = session.messages.iter().rposition(|message| {
-        message.role == "assistant"
-            && message
-                .tool_calls
-                .as_ref()
-                .is_some_and(|calls| !calls.is_empty())
-    }) else {
-        return;
-    };
-    if session.messages[call_index + 1..]
-        .iter()
-        .any(|message| message.role != "tool")
-    {
-        return;
-    }
-    let call_message = &session.messages[call_index];
-    let turn_id = call_message.turn_id.clone();
-    let timestamp = call_message.timestamp;
-    let calls = call_message.tool_calls.clone().unwrap_or_default();
-    let completed = session.messages[call_index + 1..]
-        .iter()
-        .filter_map(|message| message.tool_call_id.as_deref())
-        .collect::<std::collections::HashSet<_>>();
-    let missing = calls
-        .into_iter()
-        .filter(|call| !completed.contains(call.id.as_str()))
-        .collect::<Vec<_>>();
-    if missing.is_empty()
-        || session
-            .messages
-            .len()
-            .saturating_add(missing.len())
-            .saturating_add(1)
-            > super::session_limits::MAX_MESSAGES_PER_SESSION
-    {
-        return;
-    }
-    for call in missing {
-        session.messages.push(interrupted_tool_result(
-            &turn_id,
-            timestamp,
-            call.id,
-            call.function.name,
-        ));
-    }
-}
-
-fn interrupted_tool_result(
-    turn_id: &str,
-    timestamp: chrono::DateTime<chrono::Utc>,
-    tool_call_id: String,
-    tool_name: String,
-) -> AgentMessage {
-    AgentMessage {
-        id: uuid::Uuid::new_v4().to_string(),
-        turn_id: turn_id.to_string(),
-        role: "tool".into(),
-        content: INTERRUPTED_TOOL_RESULT.into(),
-        message_kind: None,
-        thinking: None,
-        tool_calls: None,
-        tool_name: Some(tool_name),
-        tool_call_id: Some(tool_call_id),
-        continuation: None,
-        replay_source: None,
-        tool_activities: None,
-        segments: None,
-        files: Vec::new(),
-        timestamp,
-        tokens: 0,
-        work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
-        stream_run_id: None,
-        stream_part: None,
-    }
+    let _ = super::conversation_interrupted_tools::append_missing_results(session);
 }
 
 fn close_completed_tool_turns(session: &mut AgentSession) {
@@ -168,8 +90,8 @@ fn close_completed_tool_turns(session: &mut AgentSession) {
     }
 }
 
-fn terminal_assistant(tool: &AgentMessage) -> AgentMessage {
-    AgentMessage {
+fn terminal_assistant(tool: &super::types_message::AgentMessage) -> super::types_message::AgentMessage {
+    super::types_message::AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
         turn_id: tool.turn_id.clone(),
         role: "assistant".into(),

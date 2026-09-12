@@ -99,13 +99,12 @@ pub(super) async fn admit_current_with_kind(
 ) -> Result<AdmittedCurrentTurn, String> {
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
-    let current = matches!(
-        streams.0.lock().await.get(session_id),
-        Some((_, active, _, _)) if *active == generation
-    );
-    if !current {
-        return Err("conversation_admission_failed".to_string());
-    }
+    let active_request_id = match streams.0.lock().await.get(session_id) {
+        Some((_, active, request_id, _)) if *active == generation => request_id.clone(),
+        _ => {
+            return Err("conversation_admission_failed".to_string());
+        }
+    };
     let before = crate::services::agent_local::session_store::get(session_id)
         .await
         .map_err(|_| "conversation_admission_failed".to_string())?;
@@ -113,12 +112,12 @@ pub(super) async fn admit_current_with_kind(
         PreparedTurn::New(input) => {
             if automation {
                 crate::services::agent_local::conversation_admission::new_automation_turn_with_lease_and_reasoning(
-                    &lease, input, target, &reasoning,
+                    &lease, &active_request_id, input, target, &reasoning,
                 )
                 .await
             } else {
                 crate::services::agent_local::conversation_admission::new_turn_with_lease_and_reasoning(
-                    &lease, input, target, &reasoning,
+                    &lease, &active_request_id, input, target, &reasoning,
                 )
                 .await
             }

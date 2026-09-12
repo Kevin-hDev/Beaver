@@ -675,6 +675,7 @@ async fn admit_resolved(
         crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     crate::services::agent_local::conversation_admission::new_turn_with_lease_and_reasoning(
         &lease,
+        "00000000-0000-4000-8000-000000000001",
         input,
         target.continuation.clone(),
         &target.session_reasoning,

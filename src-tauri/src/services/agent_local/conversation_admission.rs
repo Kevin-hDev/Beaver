@@ -61,24 +61,18 @@ pub async fn new_turn(
     new_turn_for_continuation(session_id, input, ContinuationTarget::Replay(target)).await
 }
 
-pub async fn new_turn_for_continuation(
+pub(crate) async fn new_turn_for_execution(
     session_id: &str,
+    current_execution_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     let lease = super::session_locks::acquire_admission_lease(session_id).await;
-    new_turn_with_lease(&lease, input, target).await
-}
-
-pub(crate) async fn new_turn_with_lease(
-    lease: &super::session_locks::AdmissionLease,
-    input: ResolvedTurnInput,
-    target: ContinuationTarget,
-) -> Result<AdmittedTurn, ConversationAdmissionError> {
     new_turn_inner(
         lease.session_id(),
         input,
         target,
+        Some(current_execution_id),
         None,
         None,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
@@ -97,6 +91,7 @@ pub(super) async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
     session_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
+    current_execution_id: Option<&str>,
     reasoning: Option<&super::conversation_reasoning_state::SessionReasoningUpdate>,
     message_kind: Option<AgentMessageKind>,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
@@ -123,8 +118,13 @@ where
     if session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION {
         return Err(capacity_error());
     }
-    super::conversation_interrupted_tail::close_recoverable(&mut session)
-        .map_err(|_| error())?;
+    super::conversation_interrupted_tail::close_recoverable(&mut session, current_execution_id)
+        .map_err(|failure| match failure {
+            super::conversation_interrupted_tail::CloseInterruptedTailError::History => error(),
+            super::conversation_interrupted_tail::CloseInterruptedTailError::Capacity => {
+                capacity_error()
+            }
+        })?;
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session, &target, key_source, None,
     )
