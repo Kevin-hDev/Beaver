@@ -148,7 +148,7 @@ impl ConversationJournal {
             return Err(error());
         }
         validate_tool_results(messages, &self.expected_tool_ids)?;
-        let artifacts = artifact_records(messages, artifacts)?;
+        let artifacts = record::artifact_records(messages, artifacts)?;
         let records = messages
             .iter()
             .zip(artifacts)
@@ -220,19 +220,4 @@ impl ConversationJournal {
         })
         .await
     }
-}
-
-fn artifact_records(
-    messages: &[ChatMessage],
-    artifacts: &[super::tool_execution_artifacts::AttributedArtifact],
-) -> Result<Vec<Vec<super::tool_artifact_record::ToolArtifactRecord>>, String> {
-    let mut grouped = vec![Vec::new(); messages.len()];
-    for attributed in artifacts {
-        let message = messages.get(attributed.tool_call_index).ok_or_else(error)?;
-        if message.tool_call_id.as_deref() != attributed.tool_call_id.as_deref() {
-            return Err(error());
-        }
-        grouped[attributed.tool_call_index].push((&attributed.artifact.metadata).into());
-    }
-    Ok(grouped)
 }
