@@ -1,4 +1,11 @@
 const MAX_DESTINATION_UNITS: usize = 1_024;
+#[cfg(any(target_os = "windows", test))]
+const DRIVE_FIXED: u32 = 3;
+
+#[cfg(any(target_os = "windows", test))]
+pub(crate) const fn fixed_drive_type(value: u32) -> bool {
+    value == DRIVE_FIXED
+}
 
 #[cfg(target_os = "windows")]
 use crate::error::InstallerError;
@@ -58,6 +65,9 @@ pub fn validate_destination(value: &str) -> Result<ValidatedDestination, Install
         return Err(InstallerError::InstallFailed);
     }
     let raw = PathBuf::from(value);
+    if !fixed_drive(&raw) {
+        return Err(InstallerError::InstallFailed);
+    }
     let (anchor, canonical_anchor) = validate_existing_chain(&raw)?;
     Ok(ValidatedDestination {
         raw,
@@ -95,11 +105,25 @@ pub fn install_nsis(
 
 #[cfg(target_os = "windows")]
 fn revalidate(destination: &ValidatedDestination) -> Result<(), InstallerError> {
+    if !fixed_drive(&destination.raw) {
+        return Err(InstallerError::InstallFailed);
+    }
     let (anchor, canonical) = validate_existing_chain(&destination.raw)?;
     if anchor != destination.anchor || canonical != destination.canonical_anchor {
         return Err(InstallerError::InstallFailed);
     }
     Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn fixed_drive(path: &Path) -> bool {
+    use windows_sys::Win32::Storage::FileSystem::GetDriveTypeW;
+
+    let Some(letter) = path.to_string_lossy().encode_utf16().next() else {
+        return false;
+    };
+    let root = [letter, b':' as u16, b'\\' as u16, 0];
+    fixed_drive_type(unsafe { GetDriveTypeW(root.as_ptr()) })
 }
 
 #[cfg(target_os = "windows")]

@@ -1,4 +1,4 @@
-use super::platform::windows::valid_destination_text;
+use super::platform::windows::{fixed_drive_type, valid_destination_text};
 use super::platform::windows_cleanup::cleanup_targets;
 use super::temp_ownership::{OwnedTempRun, OWNER_MARKER};
 use std::fs;
@@ -60,6 +60,14 @@ fn windows_destination_accepts_only_a_local_absolute_drive_path() {
         "C:\\{}",
         "a".repeat(1_024)
     )));
+}
+
+#[test]
+fn windows_destination_requires_a_fixed_drive() {
+    assert!(fixed_drive_type(3));
+    for denied in [0, 1, 2, 4, 5, 6] {
+        assert!(!fixed_drive_type(denied));
+    }
 }
 
 #[test]
