@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CaretDown, CaretRight } from "@/components/ui/icons";
 import { FileIcon } from "@/components/file-preview/file-icon";
-import { Collapsible } from "@/components/ui/collapsible";
+import { ModificationIcon } from "@/components/ui/session-summary-icons";
+import { sumFileOperations } from "@/lib/file-preview-operation-builder";
 import { shortPath } from "@/lib/file-preview-utils";
 import type { FileOperation } from "@/types/file-preview";
+import { ThreadPanel } from "./thread-panel";
 import "./file-change-bubble.css";
 
 interface FileChangeBubbleProps {
@@ -13,71 +14,55 @@ interface FileChangeBubbleProps {
   onReview?: (operation: FileOperation) => void;
 }
 
+const ROOT_CLASS = "chat-bubble chat-column-surface fcb-root";
+
 export function FileChangeBubble({ operations, baseDir, onReview }: FileChangeBubbleProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const totals = useMemo(() => sumOperations(operations), [operations]);
+  const totals = useMemo(() => sumFileOperations(operations), [operations]);
 
   if (operations.length === 0) return null;
   if (operations.length === 1) {
     return (
-      <div className="chat-bubble chat-column-surface fcb-root fcb-single">
-        <FileChangeRow operation={operations[0]} baseDir={baseDir} onReview={onReview} />
+      <div className={`${ROOT_CLASS} thp-root relief`}>
+        <FileChangeRow operation={operations[0]} baseDir={baseDir} onReview={onReview} solo />
       </div>
     );
   }
 
   return (
-    <div className="chat-bubble chat-column-surface fcb-root">
-      <button
-        className="fcb-toggle"
-        type="button"
-        aria-expanded={open}
-        aria-label={t("agentLocal.fileChanges.toggle")}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span className="fcb-caret" aria-hidden="true">
-          {open ? <CaretDown size="var(--icon-sm)" weight="bold" /> : <CaretRight size="var(--icon-sm)" weight="bold" />}
-        </span>
-        <span className="fcb-title">
-          {t("agentLocal.fileChanges.changed", { count: operations.length })}
-        </span>
-        <ChangeStats additions={totals.additions} deletions={totals.deletions} />
-      </button>
-      <Collapsible open={open} unmountWhenClosed>
-        <div className="fcb-list">
-          {operations.map((operation) => (
-            <FileChangeRow
-              key={operation.id}
-              operation={operation}
-              baseDir={baseDir}
-              onReview={onReview}
-            />
-          ))}
-        </div>
-      </Collapsible>
-    </div>
+    <ThreadPanel
+      className={ROOT_CLASS}
+      icon={<ModificationIcon size={16} />}
+      title={t("agentLocal.fileChanges.changed", { count: operations.length })}
+      headerExtra={<ChangeStats additions={totals.additions} deletions={totals.deletions} />}
+      open={open}
+      onToggle={() => setOpen((value) => !value)}
+    >
+      {operations.map((operation) => (
+        <FileChangeRow key={operation.id} operation={operation} baseDir={baseDir} onReview={onReview} />
+      ))}
+    </ThreadPanel>
   );
 }
 
-function FileChangeRow({ operation, baseDir, onReview }: {
+function FileChangeRow({ operation, baseDir, onReview, solo = false }: {
   operation: FileOperation;
   baseDir?: string;
   onReview?: (operation: FileOperation) => void;
+  solo?: boolean;
 }) {
   const { t } = useTranslation();
   const displayPath = splitDisplayPath(shortPath(operation.path, baseDir), operation.name);
 
   return (
-    <div className="fcb-row">
+    <div className={solo ? "thp-row thp-row-solo fcb-row" : "thp-row fcb-row"}>
       <FileIcon name={operation.name} size={18} />
-      <span className="fcb-main" title={displayPath.full}>
-        <span className="fcb-name">{operation.name}</span>
-        {displayPath.prefix && <span className="fcb-path">{displayPath.prefix}</span>}
-      </span>
-      <ChangeStats additions={operation.additions} deletions={operation.deletions} showZero />
+      <span className="thp-name" title={displayPath.full}>{operation.name}</span>
+      <span className="thp-muted">{displayPath.prefix}</span>
+      <ChangeStats additions={operation.additions} deletions={operation.deletions} />
       <button
-        className="fcb-review"
+        className="btn btn-sm btn-secondary"
         type="button"
         aria-label={t("agentLocal.fileChanges.reviewFile", { name: operation.name })}
         onClick={() => onReview?.(operation)}
@@ -88,30 +73,12 @@ function FileChangeRow({ operation, baseDir, onReview }: {
   );
 }
 
-function ChangeStats({
-  additions,
-  deletions,
-  showZero = false,
-}: {
-  additions: number;
-  deletions: number;
-  showZero?: boolean;
-}) {
+function ChangeStats({ additions, deletions }: { additions: number; deletions: number }) {
   return (
     <span className="fcb-stats">
-      {(showZero || additions > 0) && <span className="fcb-add">+{additions}</span>}
-      {(showZero || deletions > 0) && <span className="fcb-del">-{deletions}</span>}
+      {additions > 0 && <span className="fcb-add">+{additions}</span>}
+      {deletions > 0 && <span className="fcb-del">-{deletions}</span>}
     </span>
-  );
-}
-
-function sumOperations(operations: FileOperation[]) {
-  return operations.reduce(
-    (total, operation) => ({
-      additions: total.additions + operation.additions,
-      deletions: total.deletions + operation.deletions,
-    }),
-    { additions: 0, deletions: 0 },
   );
 }
 

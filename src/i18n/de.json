@@ -422,9 +422,8 @@
     "fileChanges": {
       "changed_one": "{{count}} Datei geändert",
       "changed_other": "{{count}} Dateien geändert",
-      "toggle": "Geänderte Dateien anzeigen",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "Prüfen",
+      "reviewFile": "{{name}} prüfen"
     },
     "tokens": "tokens",
     "contextUsage": {

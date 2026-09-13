@@ -10,15 +10,8 @@ vi.mock("@/components/file-preview/file-icon", () => ({
   FileIcon: ({ name }: { name: string }) => <span data-testid={`file-icon-${name}`} />,
 }));
 
-vi.mock("@/components/ui/icons", () => ({
-  CaretDown: () => <span data-testid="caret-down" />,
-  CaretRight: () => <span data-testid="caret-right" />,
-}));
-
 vi.mock("../assistant-message", () => ({
-  AssistantMessage: ({ content }: { content: string }) => (
-    <div data-testid="assistant-message">{content}</div>
-  ),
+  AssistantMessage: ({ content }: { content: string }) => <div data-testid="assistant-message">{content}</div>,
 }));
 
 vi.mock("../message-tool-timeline", () => ({
@@ -42,7 +35,6 @@ vi.mock("react-i18next", () => ({
       const count = typeof opts?.count === "number" || typeof opts?.count === "string" ? String(opts.count) : "";
       const name = typeof opts?.name === "string" ? opts.name : "";
       if (key === "agentLocal.fileChanges.changed") return `${count} files changed`;
-      if (key === "agentLocal.fileChanges.toggle") return "Show changed files";
       if (key === "agentLocal.fileChanges.review") return "Review";
       if (key === "agentLocal.fileChanges.reviewFile") return `Review ${name}`;
       return key;
@@ -51,7 +43,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 describe("FileChangeBubble", () => {
-  it("affiche les fichiers modifiés sous une réponse assistant", () => {
+  it("replie plusieurs fichiers sous un en-tête du panneau commun", () => {
     render(
       <StreamEndArtifacts
         messages={[assistant([
@@ -63,62 +55,62 @@ describe("FileChangeBubble", () => {
       />,
     );
 
-    expect(screen.getByText("2 files changed")).toBeTruthy();
-    expect(screen.queryByText("a.ts")).toBeNull();
+    const toggle = screen.getByRole("button", { name: /2 files changed/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(document.querySelector(".fcb-root")).toHaveClass("thp-root", "relief", "chat-column-surface");
+    expect(screen.getByText("a.ts").closest("[inert]")).not.toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show changed files" }));
+    fireEvent.click(toggle);
 
-    expect(screen.getByText("a.ts")).toBeTruthy();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("a.ts").closest("[inert]")).toBeNull();
     expect(screen.getByText("b.ts")).toBeTruthy();
     expect(screen.getAllByText("Review")).toHaveLength(2);
   });
 
   it("n'affiche rien si la réponse ne modifie aucun fichier", () => {
     const { container } = render(
-      <StreamEndArtifacts
-        messages={[assistant([{ name: "read_file", summary: "/repo/src/a.ts", result: "ok" }])]}
-        projectPath="/repo"
-        knownSubagents={[]}
-      />,
+      <StreamEndArtifacts messages={[assistant([{ name: "read_file", summary: "/repo/src/a.ts", result: "ok" }])]} projectPath="/repo" knownSubagents={[]} />,
     );
-
     expect(container.querySelector(".fcb-root")).toBeNull();
   });
 
-  it("affiche directement le fichier s'il est seul", () => {
+  it("affiche directement le fichier s'il est seul, sur une ligne sans en-tête", () => {
     render(
-      <StreamEndArtifacts
-        messages={[assistant([{ name: "write_file", summary: "/repo/src/a.ts", content: "one" }])]}
-        projectPath="/repo"
-        knownSubagents={[]}
-      />,
+      <StreamEndArtifacts messages={[assistant([{ name: "write_file", summary: "/repo/src/a.ts", content: "one" }])]} projectPath="/repo" knownSubagents={[]} />,
     );
-
     expect(screen.getByText("a.ts")).toBeTruthy();
     expect(screen.getByText("+1")).toBeTruthy();
-    expect(document.querySelector(".fcb-root")).toHaveClass("chat-column-surface");
-    expect(screen.getByRole("button", { name: "Review a.ts" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Show changed files" })).toBeNull();
+    expect(document.querySelector(".fcb-root")).toHaveClass("thp-root", "relief", "chat-column-surface");
+    expect(document.querySelector(".thp-row-solo")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Review a.ts" })).toHaveClass("btn", "btn-sm", "btn-secondary");
+    expect(screen.queryByRole("button", { name: /files changed/ })).toBeNull();
+  });
+
+  it("n'affiche pas un chiffre qui vaut zéro", () => {
+    render(
+      <StreamEndArtifacts messages={[assistant([{ name: "write_file", summary: "/repo/src/a.ts", content: "one\ntwo" }])]} projectPath="/repo" knownSubagents={[]} />,
+    );
+    expect(screen.getByText("+2")).toBeTruthy();
+    expect(screen.queryByText("-0")).toBeNull();
+  });
+
+  it("compte les lignes d'un fichier créé comme Git", () => {
+    render(
+      <StreamEndArtifacts messages={[assistant([{ name: "write_file", summary: "/repo/src/a.ts", content: "one\ntwo\n" }])]} projectPath="/repo" knownSubagents={[]} />,
+    );
+    expect(screen.getByText("+2")).toBeTruthy();
+    expect(screen.queryByText("+3")).toBeNull();
   });
 
   it("ouvre le review avec l'opération du fichier concerné", () => {
     const onReview = vi.fn<(operation: FileOperation) => void>();
     render(
-      <StreamEndArtifacts
-        messages={[assistant([{ name: "edit_file", summary: "/repo/src/b.ts", old_text: "old", new_text: "new" }])]}
-        projectPath="/repo"
-        onFileReview={onReview}
-        knownSubagents={[]}
-      />,
+      <StreamEndArtifacts messages={[assistant([{ name: "edit_file", summary: "/repo/src/b.ts", old_text: "old", new_text: "new" }])]} projectPath="/repo" onFileReview={onReview} knownSubagents={[]} />,
     );
-
     fireEvent.click(screen.getByRole("button", { name: "Review b.ts" }));
-
     expect(onReview).toHaveBeenCalledWith(expect.objectContaining({
-      path: "/repo/src/b.ts",
-      type: "edit",
-      oldText: "old",
-      newText: "new",
+      path: "/repo/src/b.ts", type: "edit", oldText: "old", newText: "new",
     }));
   });
 });

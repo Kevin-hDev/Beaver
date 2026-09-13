@@ -422,9 +422,8 @@
     "fileChanges": {
       "changed_one": "已修改 {{count}} 个文件",
       "changed_other": "已修改 {{count}} 个文件",
-      "toggle": "显示已修改文件",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "检查",
+      "reviewFile": "检查 {{name}}"
     },
     "tokens": "tokens",
     "contextUsage": {

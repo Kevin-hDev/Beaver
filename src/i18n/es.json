@@ -422,9 +422,8 @@
     "fileChanges": {
       "changed_one": "{{count}} archivo modificado",
       "changed_other": "{{count}} archivos modificados",
-      "toggle": "Mostrar archivos modificados",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "Revisar",
+      "reviewFile": "Revisar {{name}}"
     },
     "tokens": "tokens",
     "contextUsage": {
