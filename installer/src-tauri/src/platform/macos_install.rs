@@ -1,4 +1,6 @@
-use super::macos::{validate_destination, validate_staged_bundle, ValidatedDestination};
+use super::macos::{
+    bundle_version, validate_destination, validate_staged_bundle, ValidatedDestination,
+};
 use super::macos_authorization::{AuthorizationSession, ProtectedTool};
 use crate::error::InstallerError;
 use std::fs;
@@ -9,9 +11,11 @@ const MAX_NAME_ATTEMPTS: usize = 8;
 pub fn swap_unprivileged(
     stage: &Path,
     destination: &ValidatedDestination,
+    expected_version: &str,
     before_swap: impl FnOnce() -> Result<(), InstallerError>,
 ) -> Result<(), InstallerError> {
     revalidate(stage, destination)?;
+    verify_expected_bundle(stage, destination, expected_version)?;
     let target = destination.root().join("Beaver.app");
     let backup = existing_backup(&target, destination)?;
     before_swap()?;
@@ -24,7 +28,7 @@ pub fn swap_unprivileged(
         }
         return Err(InstallerError::InstallFailed);
     }
-    if validate_staged_bundle(&target, destination).is_err() {
+    if verify_expected_bundle(&target, destination, expected_version).is_err() {
         rollback_unprivileged(&target, backup.as_deref(), destination)?;
         return Err(InstallerError::InstallFailed);
     }
@@ -38,14 +42,18 @@ pub fn swap_authorized(
     stage: &Path,
     destination: &ValidatedDestination,
     session: &mut AuthorizationSession,
+    expected_version: &str,
     before_swap: impl FnOnce() -> Result<(), InstallerError>,
 ) -> Result<(), InstallerError> {
     revalidate(stage, destination)?;
+    verify_expected_bundle(stage, destination, expected_version)?;
     let target = destination.root().join("Beaver.app");
     let backup = existing_backup(&target, destination)?;
     before_swap()?;
     if let Some(backup) = &backup {
         session.execute(ProtectedTool::Move, &[target.clone(), backup.clone()])?;
+        ensure_absent(&target)?;
+        validate_staged_bundle(backup, destination)?;
     }
     if session
         .execute(ProtectedTool::Move, &[stage.to_path_buf(), target.clone()])
@@ -56,12 +64,15 @@ pub fn swap_authorized(
         }
         return Err(InstallerError::InstallFailed);
     }
-    if validate_staged_bundle(&target, destination).is_err() {
+    if ensure_absent(stage).is_err()
+        || verify_expected_bundle(&target, destination, expected_version).is_err()
+    {
         rollback_authorized(&target, backup.as_deref(), session)?;
         return Err(InstallerError::InstallFailed);
     }
     if let Some(backup) = backup {
-        session.execute(ProtectedTool::Remove, &[backup])?;
+        session.execute(ProtectedTool::Remove, std::slice::from_ref(&backup))?;
+        ensure_absent(&backup)?;
     }
     Ok(())
 }
@@ -75,6 +86,24 @@ fn revalidate(stage: &Path, destination: &ValidatedDestination) -> Result<(), In
     }
     validate_staged_bundle(stage, destination)?;
     Ok(())
+}
+
+fn verify_expected_bundle(
+    path: &Path,
+    destination: &ValidatedDestination,
+    expected_version: &str,
+) -> Result<(), InstallerError> {
+    let bundle = validate_staged_bundle(path, destination)?;
+    (bundle_version(&bundle)? == expected_version)
+        .then_some(())
+        .ok_or(InstallerError::InstallFailed)
+}
+
+fn ensure_absent(path: &Path) -> Result<(), InstallerError> {
+    match fs::symlink_metadata(path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        _ => Err(InstallerError::InstallFailed),
+    }
 }
 
 fn existing_backup(
@@ -115,13 +144,18 @@ fn rollback_authorized(
     let root = target.parent().ok_or(InstallerError::InstallFailed)?;
     let failed = unique_sibling(root, ".Beaver.app.failed-")?;
     session.execute(ProtectedTool::Move, &[target.to_path_buf(), failed.clone()])?;
+    ensure_absent(target)?;
+    validate_staged_bundle(&failed, &validate_destination(root)?)?;
     if let Some(backup) = backup {
         session.execute(
             ProtectedTool::Move,
             &[backup.to_path_buf(), target.to_path_buf()],
         )?;
+        ensure_absent(backup)?;
+        validate_staged_bundle(target, &validate_destination(root)?)?;
     }
-    session.execute(ProtectedTool::Remove, &[failed])
+    session.execute(ProtectedTool::Remove, std::slice::from_ref(&failed))?;
+    ensure_absent(&failed)
 }
 
 pub fn unique_sibling(root: &Path, prefix: &str) -> Result<PathBuf, InstallerError> {

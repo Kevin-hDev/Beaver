@@ -20,6 +20,7 @@ pub fn install_dmg(
     work_dir: &Path,
     destination: &ValidatedDestination,
     cancellation: &CancellationToken,
+    expected_version: &str,
     before_swap: impl FnOnce() -> Result<(), InstallerError>,
 ) -> Result<MacInstallResult, InstallerError> {
     validate_asset(asset, work_dir)?;
@@ -42,11 +43,20 @@ pub fn install_dmg(
             &[source.root().to_path_buf(), stage.clone()],
         )?;
         if cancellation.is_cancelled() {
-            authorization.execute(ProtectedTool::Remove, &[stage])?;
+            authorization.execute(ProtectedTool::Remove, std::slice::from_ref(&stage))?;
+            if fs::symlink_metadata(&stage).is_ok() {
+                return Err(InstallerError::InstallFailed);
+            }
             return Ok(MacInstallResult::Cancelled);
         }
         validate_staged_bundle(&stage, destination)?;
-        swap_authorized(&stage, destination, &mut authorization, before_swap)?;
+        swap_authorized(
+            &stage,
+            destination,
+            &mut authorization,
+            expected_version,
+            before_swap,
+        )?;
     } else {
         let copied = run_cancellable(
             "/usr/bin/ditto",
@@ -62,7 +72,7 @@ pub fn install_dmg(
             remove_bundle(&stage)?;
             return Ok(MacInstallResult::Cancelled);
         }
-        swap_unprivileged(&stage, destination, before_swap)?;
+        swap_unprivileged(&stage, destination, expected_version, before_swap)?;
     }
 
     Ok(if reinstalled {

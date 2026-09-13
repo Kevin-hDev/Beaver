@@ -69,6 +69,7 @@ pub fn install_asset(
     asset: &Path,
     run: &Path,
     destination: &Path,
+    expected_version: &str,
     operation: &CancellationToken,
     runtime: &InstallerRuntime,
     channel: &Channel<InstallerEvent>,
@@ -78,11 +79,18 @@ pub fn install_asset(
         use crate::platform::macos_dmg::{install_dmg, MacInstallResult};
         let destination = crate::platform::macos::validate_destination(destination)?;
         let _ = channel.send(runtime.installing(true)?);
-        let result = install_dmg(asset, run, &destination, operation, || {
-            channel
-                .send(runtime.begin_swap()?)
-                .map_err(|_| InstallerError::InstallFailed)
-        })?;
+        let result = install_dmg(
+            asset,
+            run,
+            &destination,
+            operation,
+            expected_version,
+            || {
+                channel
+                    .send(runtime.begin_swap()?)
+                    .map_err(|_| InstallerError::InstallFailed)
+            },
+        )?;
         let outcome = match result {
             MacInstallResult::Installed => Some(InstallerOutcome::Installed),
             MacInstallResult::Reinstalled => Some(InstallerOutcome::Reinstalled),
@@ -96,6 +104,7 @@ pub fn install_asset(
 
     #[cfg(target_os = "windows")]
     {
+        let _ = expected_version;
         let destination_text = destination.to_string_lossy();
         let validated = crate::platform::windows::validate_destination(&destination_text)?;
         let reinstalled = platform::installed_executable(destination).is_ok();

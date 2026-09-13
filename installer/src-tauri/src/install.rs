@@ -131,6 +131,7 @@ impl InstallerService {
                 &asset,
                 self.run.path(),
                 &destination,
+                &self.launch.release.version,
                 &operation,
                 runtime,
                 &channel,

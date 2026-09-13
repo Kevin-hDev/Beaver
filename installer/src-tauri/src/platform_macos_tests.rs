@@ -137,7 +137,7 @@ fn swaps_complete_bundles_and_removes_the_backup() {
     let validated = validate_destination(&destination.0).unwrap();
     let mut non_return_published = false;
 
-    swap_unprivileged(&stage, &validated, || {
+    swap_unprivileged(&stage, &validated, "1.2.2", || {
         non_return_published = true;
         Ok(())
     })
@@ -149,6 +149,25 @@ fn swaps_complete_bundles_and_removes_the_backup() {
         b"new"
     );
     assert_eq!(fs::read_dir(&destination.0).unwrap().count(), 1);
+}
+
+#[test]
+fn refuses_to_publish_a_bundle_with_the_wrong_version() {
+    let destination = Fixture::new();
+    let old = destination.bundle();
+    fs::write(old.join("Contents/MacOS/cl-go-dash"), "old").unwrap();
+    let staged_root = Fixture::new();
+    let stage = destination
+        .0
+        .join(".Beaver.app.stage-0123456789abcdef0123456789abcdef");
+    fs::rename(staged_root.bundle(), &stage).unwrap();
+    let validated = validate_destination(&destination.0).unwrap();
+
+    assert!(swap_unprivileged(&stage, &validated, "9.9.9", || Ok(())).is_err());
+    assert_eq!(
+        fs::read(destination.0.join("Beaver.app/Contents/MacOS/cl-go-dash")).unwrap(),
+        b"old"
+    );
 }
 
 #[test]
@@ -186,6 +205,7 @@ fn installs_a_complete_bundle_from_a_local_dmg() {
         &work.0,
         &validated,
         &tokio_util::sync::CancellationToken::new(),
+        "1.2.2",
         || {
             began_swap = true;
             Ok(())
