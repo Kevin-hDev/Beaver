@@ -9,3 +9,5 @@ TDD : create-update-manifest a d’abord échoué sur les deux nouveaux assets ;
 Preuves : npm run test:install ; npm run test:update-manifest ; npm run test:release-workflow (53/53) ; package-installer 4/4 ; bash -n ; node --check ; git diff --check. Le vrai bundle Beaver Installer.app a été construit localement puis empaqueté et relu : Beaver_1.2.2_installer-aarch64.tar.gz, 6896972 octets, SHA-256 6ea010924604484d431389ba35378606b6110ad905ff9e0f3c7736c946adf232. Graphify mis à jour.
 
 Limite vérifiée honnêtement : aucun moteur PowerShell n’est installé sur ce Mac. La syntaxe/les contrats statiques sont verts localement ; le test fonctionnel de purge avec jonction est câblé dans scripts/test-install-ps1.ps1 pour PowerShell 7 et 5.1 en CI Windows.
+
+Correction après revue : install_linux est resté byte-for-byte identique ; la branche de sélection a été restructurée mais conserve le même comportement. La preuve locale ne couvre pas PowerShell natif.
