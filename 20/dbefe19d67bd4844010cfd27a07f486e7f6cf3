@@ -1,0 +1,3 @@
+Review correction: update operation dismissal now respects the backend boolean result, so a refused dismissal remains visible. Button action rejections are handled without exposing internal errors.
+
+Proof: npx vitest run src/components/updates/window/use-update-operations.test.tsx src/components/updates/window/update-window-actions.test.ts src/components/updates/window/update-progress-window.test.tsx (12 passed); npx tsc --noEmit (exit 0).
