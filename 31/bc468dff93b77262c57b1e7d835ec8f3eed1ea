@@ -1,0 +1,5 @@
+Correction M7 — contrat manifeste réel
+
+Décision : le test shell génère les cinq assets, appelle l'écrivain Node réel puis fait lire sa sortie par manifest_values. Aucun nouveau parseur.
+
+Preuve : le croisement écrivain vers lecteur passe dès son ajout, confirmant la compatibilité actuelle et protégeant les futures dérives.
