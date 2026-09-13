@@ -132,6 +132,35 @@ describe("Collapsible", () => {
     }
   });
 
+  it("sort le contenu fermé du parcours au clavier, et l'y remet ouvert", () => {
+    const { container, getByRole } = render(<Harness />);
+    const region = container.querySelector(".cps-region");
+
+    expect(region).toHaveAttribute("inert");
+    fireEvent.click(getByRole("button", { name: "toggle" }));
+    expect(region).not.toHaveAttribute("inert");
+  });
+
+  it("replié pendant qu'un de ses boutons a le focus, ne bloque rien", () => {
+    function Focusable({ open }: { open: boolean }) {
+      return (
+        <Collapsible open={open}>
+          <button type="button">dedans</button>
+        </Collapsible>
+      );
+    }
+    const { getByText, rerender } = render(<Focusable open />);
+    const inside = getByText("dedans");
+    inside.focus();
+
+    rerender(<Focusable open={false} />);
+    expect(inside.closest(".cps-region")).toHaveAttribute("inert");
+
+    rerender(<Focusable open />);
+    inside.focus();
+    expect(document.activeElement).toBe(inside);
+  });
+
   it("ignore une fin de transition remontée par un enfant", () => {
     const { container, getByRole, queryByText } = render(<Harness unmountWhenClosed />);
     fireEvent.click(getByRole("button"));

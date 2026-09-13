@@ -7,6 +7,7 @@ import type { FileOperation, FilePreviewActiveTab, FilePreviewListMode } from "@
 import { shouldWrapFile } from "@/lib/code-language";
 import { FilePreviewBreadcrumb } from "./file-preview-breadcrumb";
 import { FilePreviewContent } from "./file-preview-content";
+import { FilePreviewChanges } from "./file-preview-changes";
 import { FilePreviewPlan } from "./file-preview-plan";
 import { FilePreviewSummary } from "./file-preview-summary";
 import { FilePreviewTabs } from "./file-preview-tabs";
@@ -105,7 +106,11 @@ export function FilePreviewPanel(props: FilePreviewPanelProps) {
                   baseDir={props.baseDir}
                 />
                 <div className={`fp-code-scroll ${shouldWrapFile(activeOperation.path) ? "" : "fp-nowrap"}`}>
-                  <FilePreviewContent key={activeOperation.id} operation={activeOperation} baseDir={props.baseDir} />
+                  {activeOperation.changes ? (
+                    <FilePreviewChanges key={activeOperation.id} operation={activeOperation} baseDir={props.baseDir} />
+                  ) : (
+                    <FilePreviewContent key={activeOperation.id} operation={activeOperation} baseDir={props.baseDir} />
+                  )}
                 </div>
               </>
             )}

@@ -121,7 +121,65 @@ describe("useSessionFiles", () => {
       expect(result.current.all.map((operation) => operation.path)).toEqual(["/repo/live.ts", "/repo/old.ts"]);
     });
   });
+
+  it("reconstruit les fichiers des conversations enregistrées sous forme d'appels d'outils", async () => {
+    vi.mocked(checkPreviewFilesExist).mockImplementation((paths) => Promise.resolve(
+      paths.map((path) => ({ path, exists: true })),
+    ));
+    const messages = [
+      ...savedWriteTurn("first", "/repo/first.ts", "first"),
+      ...savedWriteTurn("second", "/repo/second.ts", "second"),
+    ];
+
+    const { result } = renderHook(() => useSessionFileGroups(messages, [], [], "/repo"));
+
+    await waitFor(() => {
+      expect(result.current.all.map((operation) => operation.path)).toEqual([
+        "/repo/second.ts",
+        "/repo/first.ts",
+      ]);
+      expect(result.current.latest.map((operation) => operation.path)).toEqual([
+        "/repo/second.ts",
+      ]);
+    });
+  });
 });
+
+function savedWriteTurn(id: string, path: string, content: string): AgentMessage[] {
+  return [
+    {
+      id: `${id}-user`,
+      role: "user",
+      content: "Crée ce fichier.",
+      files: [],
+      timestamp: "2026-09-11T09:59:59Z",
+    },
+    {
+      id: `${id}-assistant-tool`,
+      role: "assistant",
+      content: "",
+      files: [],
+      timestamp: "2026-09-11T10:00:00Z",
+      tool_calls: [{ id, function: { name: "write_file", arguments: { path, content } } }],
+    },
+    {
+      id: `${id}-tool-result`,
+      role: "tool",
+      content: `Écrit: ${path}`,
+      files: [],
+      timestamp: "2026-09-11T10:00:01Z",
+      tool_name: "write_file",
+      tool_call_id: id,
+    },
+    {
+      id: `${id}-assistant-final`,
+      role: "assistant",
+      content: "Terminé.",
+      files: [],
+      timestamp: "2026-09-11T10:00:02Z",
+    },
+  ];
+}
 
 function message(id: string, tools: ToolActivityRecord[]): AgentMessage {
   return {

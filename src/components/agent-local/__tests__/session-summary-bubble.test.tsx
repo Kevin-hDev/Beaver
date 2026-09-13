@@ -109,7 +109,7 @@ describe("SessionSummaryBubble", () => {
   });
 
   it("affiche un fallback sans dépôt Git", () => {
-    const { getByRole, getByText } = render(
+    const { getByRole, getByText, queryByText } = render(
       <SessionSummaryBubble
         summary={summary({ additions: 0, deletions: 0 })}
         git={{ ...git, isGitRepo: false, currentBranch: "" }}
@@ -118,20 +118,33 @@ describe("SessionSummaryBubble", () => {
 
     fireEvent.click(getByRole("button", { name: "Toggle summary" }));
 
-    expect(getByText("+0")).toBeTruthy();
-    expect(getByText("-0")).toBeTruthy();
+    expect(queryByText("+0")).toBeNull();
+    expect(queryByText("-0")).toBeNull();
     expect(getByText("No Git repository")).toBeTruthy();
   });
 
+  it("n'affiche aucun + ni − quand aucun chiffre n'est connu", () => {
+    const { container, getByRole } = render(
+      <SessionSummaryBubble
+        summary={{ ...summary(), changes: { additions: 0, deletions: 0, files: 1 } }}
+        git={{ ...git, isGitRepo: false, currentBranch: "" }}
+      />,
+    );
+
+    fireEvent.click(getByRole("button", { name: "Toggle summary" }));
+
+    expect(container.querySelector(".ssb-change-stats")?.textContent).toBe("");
+  });
+
   it("ignore l'historique de session quand le worktree Git est propre", () => {
-    const { getByRole, getByText, queryByText } = render(
+    const { getByRole, queryByText } = render(
       <SessionSummaryBubble summary={summary({ additions: 9, deletions: 4 })} git={git} />,
     );
 
     fireEvent.click(getByRole("button", { name: "Toggle summary" }));
 
-    expect(getByText("+0")).toBeTruthy();
-    expect(getByText("-0")).toBeTruthy();
+    expect(queryByText("+0")).toBeNull();
+    expect(queryByText("-0")).toBeNull();
     expect(queryByText("+9")).toBeNull();
     expect(queryByText("-4")).toBeNull();
   });

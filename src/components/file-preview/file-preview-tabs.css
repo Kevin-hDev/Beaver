@@ -51,7 +51,9 @@
 
 .fp-tab-close {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   opacity: 0;
   color: var(--ink);
   background: var(--surface-hover);
@@ -123,4 +125,5 @@
   justify-content: space-between;
   gap: 12px;
   font-size: var(--text-sm);
+  white-space: nowrap;
 }

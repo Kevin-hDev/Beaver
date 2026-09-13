@@ -1,10 +1,10 @@
-import type { FileOperation } from "@/types/file-preview";
+import type { FileChangeTotals } from "@/types/file-preview";
 
 export function FilePreviewStats({
   operation,
   showZero = false,
 }: {
-  operation: FileOperation;
+  operation: FileChangeTotals;
   showZero?: boolean;
 }) {
   return (

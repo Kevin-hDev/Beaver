@@ -1,5 +1,5 @@
 import type { ToolActivityRecord } from "@/types/agent";
-import type { FileOperation } from "@/types/file-preview";
+import type { FileChangeTotals, FileOperation } from "@/types/file-preview";
 
 const FILE_SEPARATOR = /[/\\]/;
 const OFFICE_WRITE = ["write_spreadsheet", "write_document"];
@@ -9,9 +9,10 @@ export function fileNameFromPath(path: string): string {
   return path.split(FILE_SEPARATOR).filter(Boolean).pop() ?? path;
 }
 
+/** Compte comme Git : le retour final ne crée pas une ligne supplémentaire. */
 export function countLines(text?: string): number {
   if (!text) return 0;
-  return text.split(/\r?\n/).length;
+  return text.replace(/\r?\n$/, "").split(/\r?\n/).length;
 }
 
 export function toolToFileOperations(
@@ -38,7 +39,10 @@ export function toolToFileOperations(
       }));
   }
   if (tool.is_error) return [];
-  if ((tool.name === "bash" || tool.name === "bash_control") && tool.affected_paths?.length) {
+  if (
+    (tool.name === "bash" || tool.name === "bash_control") &&
+    tool.affected_paths?.length
+  ) {
     return tool.affected_paths
       .filter((path) => path.trim())
       .map((path, pathIndex) => ({
@@ -55,32 +59,65 @@ export function toolToFileOperations(
   const path = tool.resolved_path?.trim() || tool.summary.trim();
   if (!path) return [];
   if (tool.name === "write_file" && tool.content != null) {
-    return [baseOperation(messageId, index, timestamp, path, {
-      type: "write",
-      content: tool.content,
-      additions: countLines(tool.content),
-      deletions: 0,
-    })];
+    return [
+      baseOperation(messageId, index, timestamp, path, {
+        type: "write",
+        content: tool.content,
+        additions: countLines(tool.content),
+        deletions: 0,
+      }),
+    ];
   }
-  if (tool.name === "edit_file" && tool.old_text != null && tool.new_text != null) {
-    return [baseOperation(messageId, index, timestamp, path, {
-      type: "edit",
-      oldText: tool.old_text,
-      newText: tool.new_text,
-      startLine: tool.start_line,
-      additions: countLines(tool.new_text),
-      deletions: countLines(tool.old_text),
-    })];
+  if (
+    tool.name === "edit_file" &&
+    tool.old_text != null &&
+    tool.new_text != null
+  ) {
+    return [
+      baseOperation(messageId, index, timestamp, path, {
+        type: "edit",
+        oldText: tool.old_text,
+        newText: tool.new_text,
+        startLine: tool.start_line,
+        additions: countLines(tool.new_text),
+        deletions: countLines(tool.old_text),
+      }),
+    ];
   }
   if (OFFICE_WRITE.includes(tool.name)) {
-    return [baseOperation(messageId, index, timestamp, path, {
-      type: "write",
-      content: tool.content,
-      additions: 0,
-      deletions: 0,
-    })];
+    return [
+      baseOperation(messageId, index, timestamp, path, {
+        type: "write",
+        content: tool.content,
+        additions: 0,
+        deletions: 0,
+      }),
+    ];
   }
   return [];
+}
+
+export function sumFileOperations(operations: FileChangeTotals[]): FileChangeTotals {
+  return operations.reduce(
+    (total, operation) => ({
+      additions: total.additions + operation.additions,
+      deletions: total.deletions + operation.deletions,
+    }),
+    { additions: 0, deletions: 0 },
+  );
+}
+
+/** Autorité des chiffres affichés sur la ligne d'un outil d'écriture. */
+export function toolLineStats(
+  tool: ToolActivityRecord,
+): { additions: number; deletions: number } | null {
+  const operations = toolToFileOperations(
+    { ...tool, domain: undefined },
+    "",
+    0,
+    "",
+  );
+  return operations.length > 0 ? sumFileOperations(operations) : null;
 }
 
 function baseOperation(
@@ -88,7 +125,8 @@ function baseOperation(
   index: number,
   timestamp: string,
   path: string,
-  details: Partial<FileOperation> & Pick<FileOperation, "type" | "additions" | "deletions">,
+  details: Partial<FileOperation> &
+    Pick<FileOperation, "type" | "additions" | "deletions">,
 ): FileOperation {
   return {
     id: `${messageId}-${index}`,

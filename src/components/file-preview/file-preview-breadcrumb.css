@@ -3,7 +3,7 @@
   align-items: center;
   gap: 10px;
   min-height: 46px;
-  padding: 0 16px 0 20px;
+  padding: 0 var(--chrome-4) 0 var(--chrome-3);
   border-bottom: 1px solid var(--edge);
   flex-shrink: 0;
 }
@@ -14,10 +14,20 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  overflow: hidden;
+  overflow-x: auto;
+  scrollbar-width: none;
   white-space: nowrap;
   color: var(--ink-muted);
   font-size: var(--text-sm);
+}
+
+.fp-breadcrumb-path::-webkit-scrollbar {
+  display: none;
+}
+
+.fp-breadcrumb > .tooltip-wrapper,
+.fp-breadcrumb > .fp-stats {
+  flex: none;
 }
 
 .fp-crumb {

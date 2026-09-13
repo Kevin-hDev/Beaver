@@ -51,7 +51,7 @@ export const AssistantMessage = memo(function AssistantMessage({
         <SavedToolBubble tools={toolActivities} projectPath={projectPath} />
       )}
       <div className="msg-assistant-content chat-md">
-        {content && <ChatMarkdown content={content} />}
+        {content && <ChatMarkdown content={content} linkPreviews={variant !== "trace"} />}
       </div>
       {showActions && !isStreaming && content.trim() && (
         <MessageActions messageRole="assistant" content={content} onReload={onReload} onClone={onClone}>

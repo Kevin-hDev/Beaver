@@ -11,8 +11,8 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
   // Les guides et les tests de fichiers surveillés citent les noms persistés.
   "cl-go-dash": 490,
-  // Les thèmes d'extension, leurs parcours et les guides Réglages et Dépannage rejouent ces clés.
-  clgo: 147,
+  // Les thèmes d'extension, leurs parcours, les tests d'aperçus de liens et les guides rejouent ces clés.
+  clgo: 155,
   // Les guides et leurs pages générées citent le nom exact de l'ancien paquet Linux.
   "cl-go": 127,
   // Les deux branches main et la CLI appellent explicitement la bibliothèque Rust.

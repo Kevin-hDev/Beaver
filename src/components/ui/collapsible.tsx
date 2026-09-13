@@ -34,9 +34,8 @@ function settle(region: HTMLElement, open: boolean): void {
  * Zone repliable animée, primitive unique de l'application.
  *
  * L'animation porte sur `height` en pixels réels et non sur une piste de grille
- * en `fr` : WebKit — le moteur de rendu de l'app sur macOS — interpole les
- * unités `fr` par paliers, ce qui hachait le début du dépliement et la fin du
- * repliement, là où la courbe est la plus lente.
+ * en `fr` : les moteurs de navigateur peuvent interpoler ces unités par
+ * paliers, ce qui hache les extrémités de l'animation.
  */
 export function Collapsible({
   open,
@@ -109,6 +108,8 @@ export function Collapsible({
        * une région encore haute de zéro. Les styles écrits pendant
        * l'animation restent prioritaires, ils sont en ligne. */
       data-open={open ? "true" : "false"}
+      /* Le contenu fermé reste monté mais sort du parcours au clavier. */
+      inert={!open}
       onTransitionEnd={handleTransitionEnd}
     >
       {(mounted || !unmountWhenClosed) && (

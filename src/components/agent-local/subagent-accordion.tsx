@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/components/ui/tooltip";
-import { ChevronDown, Settings, Square } from "@/components/ui/icons";
+import { Square } from "@/components/ui/icons";
+import { SubagentSummaryIcon } from "@/components/ui/session-summary-icons";
 import { subagentDisplayName, subagentSecondaryText } from "@/lib/subagent-display";
 import type { SubagentInfo } from "@/types/agent";
-import { Collapsible } from "@/components/ui/collapsible";
 import { SubagentIcon } from "./subagent-icon";
+import { ThreadPanel } from "./thread-panel";
 import "./subagent-accordion.css";
-import "./subagent-accordion-controls.css";
 
 interface SubagentAccordionProps {
   subagents: SubagentInfo[];
@@ -19,17 +19,14 @@ function formatElapsed(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
-  return min > 0
-    ? `${min}m${String(sec).padStart(2, "0")}s`
-    : `${sec}s`;
+  return min > 0 ? `${min}m${String(sec).padStart(2, "0")}s` : `${sec}s`;
 }
 
 export function SubagentAccordion({ subagents, onCancel, onOpen }: SubagentAccordionProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [now, setNow] = useState(0);
-
-  const hasRunning = subagents.some((s) => s.status === "running");
+  const hasRunning = subagents.some((subagent) => subagent.status === "running");
 
   useEffect(() => {
     if (!hasRunning) return;
@@ -40,78 +37,55 @@ export function SubagentAccordion({ subagents, onCancel, onOpen }: SubagentAccor
   if (subagents.length === 0) return null;
 
   return (
-    <div className="sa-accordion">
-      <div className="sa-accordion-header" role="group">
-        <button
-          className="sa-accordion-toggle"
-          onClick={() => setExpanded((v) => !v)}
-          type="button"
-        >
-          <Settings className="sa-accordion-icon" aria-hidden="true" />
-          <span className="sa-accordion-title">
-            {t("subagents.backgroundCount", { count: subagents.length })}
-          </span>
-        </button>
+    <ThreadPanel
+      className="sa-panel"
+      icon={<SubagentSummaryIcon size={16} />}
+      title={t("subagents.backgroundCount", { count: subagents.length })}
+      headerAction={
         <Tooltip label={t("subagents.stopAll")}>
           <button
-            className="icon-btn sa-stop-all"
-            onClick={() => subagents.forEach((s) => onCancel(s.sessionId))}
+            aria-label={t("subagents.stopAll")}
+            className="icon-btn sa-stop"
+            onClick={() => subagents.forEach((subagent) => onCancel(subagent.sessionId))}
             type="button"
           >
             <Square aria-hidden="true" />
           </button>
         </Tooltip>
-        <button
-          className="icon-btn sa-chevron-btn"
-          onClick={() => setExpanded((v) => !v)}
-          type="button"
-        >
-          <ChevronDown className={`sa-chevron ${expanded ? "sa-chevron-up" : ""}`} aria-hidden="true" />
-        </button>
-      </div>
-      <Collapsible open={expanded}>
-        <div className="sa-accordion-body-inner">
-        {subagents.map((agent) => (
-          <div key={agent.sessionId} className="sa-agent-row">
-            <SubagentIcon agent={agent} className="sa-agent-icon" />
-            <span className="sa-agent-main">
-              <span className="sa-agent-heading">
-                <span className="sa-agent-name">{subagentDisplayName(agent)}</span>
-                <span className="sa-agent-status">
-                  {t(`subagents.${agent.status}`, { defaultValue: agent.status })}
-                </span>
-              </span>
-              <span className="sa-agent-description">{subagentSecondaryText(agent)}</span>
-            </span>
-            <div className="sa-agent-actions">
-              {agent.status === "running" && (
-                <>
-                  {agent.spawnedAt && (
-                    <span className="sa-agent-timer">{formatElapsed(now - agent.spawnedAt)}</span>
-                  )}
-                  <Tooltip label={t("subagents.stop")}>
-                    <button
-                      className="icon-btn sa-btn-stop"
-                      onClick={() => onCancel(agent.sessionId)}
-                      type="button"
-                    >
-                      <Square aria-hidden="true" />
-                    </button>
-                  </Tooltip>
-                </>
+      }
+      open={expanded}
+      onToggle={() => setExpanded((value) => !value)}
+    >
+      {subagents.map((agent) => (
+        <div key={agent.sessionId} className="sa-row">
+          <Tooltip label={t("subagents.open")}>
+            <button
+              className="thp-row thp-row-clickable sa-row-open"
+              onClick={() => onOpen(agent.sessionId)}
+              type="button"
+            >
+              <SubagentIcon agent={agent} size={18} />
+              <span className="thp-name">{subagentDisplayName(agent)}</span>
+              <span className="thp-muted">{subagentSecondaryText(agent)}</span>
+              {agent.status === "running" && agent.spawnedAt !== undefined && (
+                <span className="sa-row-timer">{formatElapsed(now - agent.spawnedAt)}</span>
               )}
+            </button>
+          </Tooltip>
+          {agent.status === "running" && (
+            <Tooltip label={t("subagents.stop")}>
               <button
-                className="btn btn-sm btn-ghost sa-btn-open"
-                onClick={() => onOpen(agent.sessionId)}
+                aria-label={t("subagents.stop")}
+                className="icon-btn sa-stop"
+                onClick={() => onCancel(agent.sessionId)}
                 type="button"
               >
-                {t("subagents.open")}
+                <Square aria-hidden="true" />
               </button>
-            </div>
-          </div>
-        ))}
+            </Tooltip>
+          )}
         </div>
-      </Collapsible>
-    </div>
+      ))}
+    </ThreadPanel>
   );
 }

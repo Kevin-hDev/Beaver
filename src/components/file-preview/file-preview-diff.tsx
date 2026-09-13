@@ -18,7 +18,7 @@ function DiffLine({ html, lineNum, mode }: { html: string; lineNum: number; mode
     <div className={`tp-line tp-line-${mode}`}>
       <span className="tp-num">{lineNum}</span>
       <span className={`tp-prefix tp-prefix-${mode}`}>{prefix}</span>
-      <span className={`tp-code tp-code-${mode}`} dangerouslySetInnerHTML={{ __html: html || " " }} />
+      <span className="tp-code" dangerouslySetInnerHTML={{ __html: html || " " }} />
     </div>
   );
 }

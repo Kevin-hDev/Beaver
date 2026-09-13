@@ -422,9 +422,8 @@
     "fileChanges": {
       "changed_one": "{{count}} 件のファイルを変更",
       "changed_other": "{{count}} 件のファイルを変更",
-      "toggle": "変更ファイルを表示",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "確認",
+      "reviewFile": "{{name}} を確認"
     },
     "tokens": "tokens",
     "contextUsage": {
@@ -1231,6 +1230,9 @@
     "fileNotFound": "ファイルを読み取れませんでした。削除または移動された可能性があります。",
     "diffUnavailable": "このファイルの変更を表示できません。",
     "diffTruncated": "プレビューは制限されています。このファイルにはさらに変更があります。",
+    "changeOf": "{{count}} 件中 {{index}} 件目の変更",
+    "olderChanges_one": "以前の変更 {{count}} 件",
+    "olderChanges_other": "以前の変更 {{count}} 件",
     "gitStatus": {
       "added": "作成",
       "modified": "変更",
@@ -1498,8 +1500,7 @@
     "error": "インストールに失敗しました。詳細は以下を確認してください。"
   },
   "linkPreview": {
-    "noTitle": "タイトルなし",
-    "openSite": "ウェブサイトを開く"
+    "noTitle": "タイトルなし"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} 件のアクティブなサブエージェント",

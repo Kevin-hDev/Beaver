@@ -20,6 +20,7 @@ const PdfPreview = lazy(() =>
 );
 
 const SPREADSHEET_EXTS = new Set(["xlsx", "xls", "csv", "ods", "xlsm", "tsv"]);
+const PREVIEW_FILLER_LINES = 200;
 
 function fileExt(path: string): string {
   return path.split(".").pop()?.toLowerCase() ?? "";
@@ -121,6 +122,10 @@ function TextPreviewContent({ operation, baseDir }: FilePreviewContentProps) {
     () => state.content ? highlightLines(state.content, operation.path) : [],
     [state.content, operation.path],
   );
+  const fillerNumbers = Array.from(
+    { length: PREVIEW_FILLER_LINES },
+    (_, index) => highlighted.length + index + 1,
+  ).join("\n");
 
   if (state.loading) {
     return <div className="fp-empty">{t("filePreview.loading")}</div>;
@@ -133,14 +138,19 @@ function TextPreviewContent({ operation, baseDir }: FilePreviewContentProps) {
   }
 
   return (
-    <div className="tp-wrapper" style={{ margin: 0, border: "none", borderRadius: 0 }}>
+    <div className="tp-wrapper fp-text-code" style={{ margin: 0, border: "none", borderRadius: 0 }}>
       {highlighted.map((html, i) => (
         <div key={i} className="tp-line tp-line-context">
           <span className="tp-num">{i + 1}</span>
           <span className="tp-prefix tp-prefix-context"> </span>
-          <span className="tp-code tp-code-context" dangerouslySetInnerHTML={{ __html: html || " " }} />
+          <span className="tp-code" dangerouslySetInnerHTML={{ __html: html || " " }} />
         </div>
       ))}
+      {/* Le remplissage prolonge la gouttière sans ajouter de lignes au fichier
+          ni agrandir sa zone de défilement. */}
+      <div className="fp-code-filler" aria-hidden="true">
+        <span className="tp-num">{fillerNumbers}</span>
+      </div>
     </div>
   );
 }

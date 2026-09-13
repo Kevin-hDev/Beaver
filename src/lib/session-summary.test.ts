@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { collectFileOperations } from "./file-preview-utils";
 import {
-  addChangeSummaries,
   childSubagents,
-  summarizeToolChange,
   summarizeLastRequestChanges,
   visibleTodoRuns,
 } from "./session-summary";
-import type { AgentMessage, AgentSession, AgentSessionMeta } from "@/types/agent";
+import type { AgentMessage, AgentSession, AgentSessionMeta, ToolFileChangeRecord } from "@/types/agent";
+
+const RUN_ID = "123e4567-e89b-42d3-a456-426614174000";
+
+function change(path: string, additions: number, deletions: number): ToolFileChangeRecord {
+  return { path, status: "modified", additions, deletions };
+}
 
 function message(id: string, tools: AgentMessage["tool_activities"]): AgentMessage {
   return {
@@ -49,11 +54,60 @@ describe("session-summary", () => {
     expect(summary).toEqual({ additions: 4, deletions: 2, files: 2 });
   });
 
-  it("permet d'additionner les changements live sans remettre l'ancien total à zéro", () => {
-    const first = summarizeToolChange({ name: "write_file", summary: "a.ts", content: "a" });
-    const second = summarizeToolChange({ name: "edit_file", summary: "b.ts", old_text: "x\ny", new_text: "z" });
+  it("compte les fichiers modifiés par le terminal et donne le total de la bulle", () => {
+    const messages = [message("run", [
+      {
+        name: "edit_file",
+        summary: "/repo/a.ts",
+        old_text: "x",
+        new_text: "y",
+        file_changes: [change("/repo/a.ts", 1, 1)],
+      },
+      {
+        name: "bash",
+        summary: "sed -i s/y/z/ a.ts && cp a.ts b.ts",
+        file_changes: [change("/repo/a.ts", 2, 0), change("/repo/b.ts", 4, 0)],
+      },
+    ])];
+    const bubble = collectFileOperations(messages);
 
-    expect(addChangeSummaries(first, second)).toEqual({ additions: 2, deletions: 2, files: 2 });
+    expect(summarizeLastRequestChanges(messages)).toEqual({
+      additions: bubble.reduce((total, operation) => total + operation.additions, 0),
+      deletions: bubble.reduce((total, operation) => total + operation.deletions, 0),
+      files: bubble.length,
+    });
+    expect(summarizeLastRequestChanges(messages)).toEqual({ additions: 7, deletions: 1, files: 2 });
+  });
+
+  it("additionne les changements d'un même fichier, dans la bulle comme dans le résumé", () => {
+    const messages = [message("run", [
+      { name: "edit_file", summary: "/repo/a.ts", file_changes: [change("/repo/a.ts", 1, 1)] },
+      { name: "bash", summary: "echo >> a.ts", file_changes: [change("/repo/a.ts", 2, 0)] },
+    ])];
+
+    expect(collectFileOperations(messages).map((operation) => [operation.additions, operation.deletions]))
+      .toEqual([[3, 1]]);
+    expect(summarizeLastRequestChanges(messages)).toEqual({ additions: 3, deletions: 1, files: 1 });
+  });
+
+  it("compte une seule fois un fichier écrit en relatif puis en absolu dans une ancienne conversation", () => {
+    const messages = [message("old", [
+      { name: "write_file", summary: "src/a.ts", content: "a\nb" },
+      { name: "edit_file", summary: "/repo/src/a.ts", file_changes: [change("/repo/src/a.ts", 1, 1)] },
+    ])];
+    const bubble = collectFileOperations(messages, { baseDir: "/repo" });
+
+    expect(bubble).toHaveLength(1);
+    expect(summarizeLastRequestChanges(messages, "/repo")).toEqual({ additions: 3, deletions: 1, files: 1 });
+  });
+
+  it("fait le total de toute la réponse, comme la bulle, quand elle tient en plusieurs messages", () => {
+    const summary = summarizeLastRequestChanges([
+      { ...message("step-1", [{ name: "write_file", summary: "/repo/a.ts", content: "a\nb" }]), stream_run_id: RUN_ID, stream_part: "final" },
+      { ...message("step-2", [{ name: "write_file", summary: "/repo/b.ts", content: "c" }]), stream_run_id: RUN_ID, stream_part: "final" },
+    ]);
+
+    expect(summary).toEqual({ additions: 3, deletions: 0, files: 2 });
   });
 
   it("compte write_file comme additions sans suppressions", () => {

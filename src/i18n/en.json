@@ -429,7 +429,6 @@
     "fileChanges": {
       "changed_one": "{{count}} file changed",
       "changed_other": "{{count}} files changed",
-      "toggle": "Show changed files",
       "review": "Review",
       "reviewFile": "Review {{name}}"
     },
@@ -1288,6 +1287,9 @@
     "fileNotFound": "The file could not be read. It may have been deleted or moved.",
     "diffUnavailable": "The changes for this file cannot be displayed.",
     "diffTruncated": "Limited preview: this file contains more changes.",
+    "changeOf": "Change {{index}} of {{count}}",
+    "olderChanges_one": "{{count}} older change",
+    "olderChanges_other": "{{count}} older changes",
     "gitStatus": {
       "added": "Created",
       "modified": "Modified",
@@ -1625,8 +1627,7 @@
     }
   },
   "linkPreview": {
-    "noTitle": "No title",
-    "openSite": "Open website"
+    "noTitle": "No title"
   },
   "extensions": {
     "title": "Extensions",

@@ -1,7 +1,7 @@
 import type { AgentMessage, ToolActivityRecord } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
 import { inferSavedToolPaths } from "./tool-file-path";
-import { toolToFileOperations } from "./file-preview-operation-builder";
+import { sumFileOperations, toolToFileOperations } from "./file-preview-operation-builder";
 
 export { countLines, fileNameFromPath } from "./file-preview-operation-builder";
 
@@ -15,6 +15,8 @@ export function shortPath(path: string, baseDir?: string): string {
 }
 
 const MAX_FILE_OPERATIONS = 500;
+// Affichage par fichier ; distinct de la collecte Rust plafonnée à 500 fichiers.
+const MAX_PREVIEW_FILE_CHANGES = 10;
 
 interface CollectFileOperationsOptions {
   liveTools?: ToolActivityRecord[];
@@ -25,7 +27,7 @@ export function normalizeFileOperationPath(path: string): string {
   return path.replaceAll("\\", "/").replace(/\/+$/, "");
 }
 
-function fileOperationKey(path: string, baseDir?: string): string {
+export function fullFileOperationPath(path: string, baseDir?: string): string {
   const normalizedPath = normalizeFileOperationPath(path);
   if (!baseDir || isAbsolutePath(normalizedPath)) return normalizedPath;
   const normalizedBase = normalizeFileOperationPath(baseDir);
@@ -57,7 +59,7 @@ export function collectFileOperationGroups(
 ): FileOperationGroups {
   const byPath = new Map<string, FileOperation>();
   if (options.liveTools?.length) {
-    appendLatestToolOperations(
+    appendToolOperations(
       byPath,
       options.liveTools,
       "live",
@@ -83,7 +85,7 @@ export function collectFileOperationGroups(
         options.baseDir,
       );
     }
-    appendLatestToolOperations(
+    appendToolOperations(
       byPath,
       toolsFromMessage(messages[i]),
       messages[i].id,
@@ -102,7 +104,8 @@ function toolsFromMessage(message: AgentMessage): ToolActivityRecord[] {
   return segmentTools.length > 0 ? segmentTools : message.tool_activities ?? [];
 }
 
-function appendLatestToolOperations(
+/** Une ligne par fichier : dernier contenu, total et détail borné des changements. */
+function appendToolOperations(
   byPath: Map<string, FileOperation>,
   tools: ToolActivityRecord[],
   messageId: string,
@@ -116,11 +119,22 @@ function appendLatestToolOperations(
     const operations = toolToFileOperations(tool, messageId, index, timestamp);
     for (const operation of operations) {
       if (byPath.size >= MAX_FILE_OPERATIONS) return;
-      const key = fileOperationKey(operation.path, baseDir);
-      if (!key || byPath.has(key)) continue;
-      byPath.set(key, { ...operation, id: `file:${messageId}:${key}` });
+      const key = fullFileOperationPath(operation.path, baseDir);
+      if (!key) continue;
+      const newer = byPath.get(key);
+      byPath.set(key, newer
+        ? addOlderChange(newer, operation)
+        : { ...operation, id: `file:${messageId}:${key}` });
     }
   }
+}
+
+function addOlderChange(file: FileOperation, older: FileOperation): FileOperation {
+  const changes = file.changes ?? [file];
+  const total = { ...file, ...sumFileOperations([file, older]) };
+  if (changes.length < MAX_PREVIEW_FILE_CHANGES) return { ...total, changes: [...changes, older] };
+  const hidden = file.olderChanges ?? { count: 0, additions: 0, deletions: 0 };
+  return { ...total, olderChanges: { count: hidden.count + 1, ...sumFileOperations([hidden, older]) } };
 }
 
 function collectLatestToolOperations(
@@ -130,7 +144,7 @@ function collectLatestToolOperations(
   baseDir: string | undefined,
 ): FileOperation[] {
   const byPath = new Map<string, FileOperation>();
-  appendLatestToolOperations(byPath, tools, messageId, timestamp, baseDir);
+  appendToolOperations(byPath, tools, messageId, timestamp, baseDir);
   return Array.from(byPath.values());
 }
 

@@ -429,9 +429,8 @@
     "fileChanges": {
       "changed_one": "{{count}} fichier modifié",
       "changed_other": "{{count}} fichiers modifiés",
-      "toggle": "Afficher les fichiers modifiés",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "Examiner",
+      "reviewFile": "Examiner {{name}}"
     },
     "tokens": "tokens",
     "contextUsage": {
@@ -1340,6 +1339,9 @@
     "fileNotFound": "Le fichier n'a pas pu être lu. Il a peut-être été supprimé ou déplacé.",
     "diffUnavailable": "Les différences de ce fichier ne peuvent pas être affichées.",
     "diffTruncated": "Aperçu limité : le fichier contient davantage de modifications.",
+    "changeOf": "Changement {{index}} sur {{count}}",
+    "olderChanges_one": "{{count}} changement plus ancien",
+    "olderChanges_other": "{{count}} changements plus anciens",
     "gitStatus": {
       "added": "Créé",
       "modified": "Modifié",
@@ -1677,8 +1679,7 @@
     }
   },
   "linkPreview": {
-    "noTitle": "Sans titre",
-    "openSite": "Ouvrir le site"
+    "noTitle": "Sans titre"
   },
   "extensions": {
     "title": "Extensions",

@@ -20,8 +20,8 @@ function CodeLines({ lines, mode, path, startLine = 1 }: {
         <div key={`${mode}-${i}`} className={`tp-line tp-line-${mode}`}>
           <span className="tp-num">{startLine + i}</span>
           {path
-            ? <span className={`tp-code tp-code-${mode}`} dangerouslySetInnerHTML={{ __html: line || " " }} />
-            : <span className={`tp-code tp-code-${mode}`}>{line}</span>
+            ? <span className="tp-code" dangerouslySetInnerHTML={{ __html: line || " " }} />
+            : <span className="tp-code">{line}</span>
           }
         </div>
       ))}
@@ -63,7 +63,7 @@ export function ContentPreview({ content, path }: { content: string; path?: stri
   if (wrap) {
     return (
       <div className="chat-column-surface tp-wrapper">
-        <CodeLines lines={lines} mode="ok" path={path} />
+        <CodeLines lines={lines} mode="context" path={path} />
       </div>
     );
   }
@@ -71,7 +71,7 @@ export function ContentPreview({ content, path }: { content: string; path?: stri
   return (
     <div className="chat-column-surface tp-wrapper tp-nowrap">
       <div className="tp-inner">
-        <CodeLines lines={lines} mode="ok" path={path} />
+        <CodeLines lines={lines} mode="context" path={path} />
       </div>
     </div>
   );

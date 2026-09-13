@@ -422,9 +422,8 @@
     "fileChanges": {
       "changed_one": "已修改 {{count}} 个文件",
       "changed_other": "已修改 {{count}} 个文件",
-      "toggle": "显示已修改文件",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "检查",
+      "reviewFile": "检查 {{name}}"
     },
     "tokens": "tokens",
     "contextUsage": {
@@ -1231,6 +1230,9 @@
     "fileNotFound": "无法读取该文件，它可能已被删除或移动。",
     "diffUnavailable": "无法显示此文件的更改。",
     "diffTruncated": "预览受限：此文件还包含更多更改。",
+    "changeOf": "第 {{index}} 次更改，共 {{count}} 次",
+    "olderChanges_one": "另有 {{count}} 次较早的更改",
+    "olderChanges_other": "另有 {{count}} 次较早的更改",
     "gitStatus": {
       "added": "已创建",
       "modified": "已修改",
@@ -1498,8 +1500,7 @@
     "error": "安装失败，详情如下。"
   },
   "linkPreview": {
-    "noTitle": "无标题",
-    "openSite": "打开网站"
+    "noTitle": "无标题"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} 个活跃子代理",

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, ChevronDown, Circle, Clock3, ListChecks } from "@/components/ui/icons";
+import { CheckCircle2, Circle, Clock3, ListChecks } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useTodos } from "@/hooks/use-todos";
 import type { AgentTodoItem } from "@/types/agent";
+import { ThreadPanel } from "./thread-panel";
 import "./todo-progress-panel.css";
 
 interface TodoProgressPanelProps {
@@ -18,31 +19,23 @@ export function TodoProgressPanel({ sessionId }: TodoProgressPanelProps) {
   if (todos.length === 0) return null;
 
   return (
-    <div className="tdp-panel">
-      <button
-        className="tdp-toggle"
-        type="button"
-        aria-expanded={expanded}
-        onClick={() => setExpanded((value) => !value)}
-      >
-        <ListChecks className="tdp-main-icon" aria-hidden="true" />
-        <span className="tdp-count">
-          {t("todos.progress", { done: summary.done, total: summary.total })}
-        </span>
-        <span className="tdp-current">{summary.current ?? t("todos.noActive")}</span>
-        <span className="tdp-percent">{summary.percent}%</span>
-        <ChevronDown className={`tdp-chevron${expanded ? " tdp-chevron-open" : ""}`} aria-hidden="true" />
-      </button>
-      <div className={`tdp-accordion${expanded ? " tdp-open" : ""}`}>
-        <div className="tdp-accordion-inner">
-          <div className="tdp-list">
-            {todos.map((todo, index) => (
-              <TodoRow key={`${todo.status}-${index}-${todo.content}`} todo={todo} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    <ThreadPanel
+      className="tdp-panel"
+      icon={<ListChecks aria-hidden="true" />}
+      title={t("todos.progress", { done: summary.done, total: summary.total })}
+      headerExtra={
+        <>
+          <span className="tdp-current">{summary.current ?? t("todos.noActive")}</span>
+          <span className="tdp-percent">{summary.percent}%</span>
+        </>
+      }
+      open={expanded}
+      onToggle={() => setExpanded((value) => !value)}
+    >
+      {todos.map((todo, index) => (
+        <TodoRow key={`${todo.status}-${index}-${todo.content}`} todo={todo} />
+      ))}
+    </ThreadPanel>
   );
 }
 
@@ -56,7 +49,7 @@ function TodoRow({ todo }: { todo: AgentTodoItem }) {
     : todo.content;
 
   return (
-    <div className={`tdp-row tdp-row-${todo.status}`}>
+    <div className={`thp-row tdp-row-${todo.status}`}>
       <Icon className="tdp-status-icon" aria-hidden="true" />
       <span className="tdp-row-text">{text}</span>
       <span className="tdp-status">{t(`todos.status.${todo.status}`)}</span>

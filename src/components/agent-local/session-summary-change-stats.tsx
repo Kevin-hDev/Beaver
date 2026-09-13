@@ -33,10 +33,12 @@ export function SessionSummaryChangeStats({
         ? t("agentLocal.sessionSummary.modificationsPartial", { count: changes.partialFiles })
         : undefined;
 
+  /* « +0 −0 » dirait à tort que rien n'a changé pour un document Office dont
+     les chiffres sont inconnus (décision du 11 sept. 2026). */
   return (
     <span className="ssb-change-stats" title={title} aria-label={title}>
-      <span className="ssb-change-add">+{changes.additions ?? "…"}</span>
-      <span className="ssb-change-del">-{changes.deletions ?? "…"}</span>
+      {changes.additions !== 0 && <span className="ssb-change-add">+{changes.additions ?? "…"}</span>}
+      {changes.deletions !== 0 && <span className="ssb-change-del">-{changes.deletions ?? "…"}</span>}
     </span>
   );
 }

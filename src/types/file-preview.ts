@@ -58,7 +58,11 @@ export interface FileOperation {
   gitDiff?: GitDiffPreviewSource;
   recordedStatus?: "added" | "modified" | "deleted";
   recordedDiff?: GitDiffPreview;
+  changes?: FileOperation[];
+  olderChanges?: FileChangeTotals & { count: number };
 }
+
+export type FileChangeTotals = Pick<FileOperation, "additions" | "deletions">;
 
 export interface FileOperationGroups {
   all: FileOperation[];

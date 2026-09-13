@@ -422,9 +422,8 @@
     "fileChanges": {
       "changed_one": "{{count}} archivo modificado",
       "changed_other": "{{count}} archivos modificados",
-      "toggle": "Mostrar archivos modificados",
-      "review": "Review",
-      "reviewFile": "Review {{name}}"
+      "review": "Revisar",
+      "reviewFile": "Revisar {{name}}"
     },
     "tokens": "tokens",
     "contextUsage": {
@@ -1236,6 +1235,9 @@
     "fileNotFound": "No se pudo leer el archivo. Es posible que haya sido eliminado o movido.",
     "diffUnavailable": "No se pueden mostrar los cambios de este archivo.",
     "diffTruncated": "Vista previa limitada: este archivo contiene más cambios.",
+    "changeOf": "Cambio {{index}} de {{count}}",
+    "olderChanges_one": "{{count}} cambio anterior",
+    "olderChanges_other": "{{count}} cambios anteriores",
     "gitStatus": {
       "added": "Creado",
       "modified": "Modificado",
@@ -1503,8 +1505,7 @@
     "error": "La instalación falló. Detalles a continuación."
   },
   "linkPreview": {
-    "noTitle": "Sin título",
-    "openSite": "Abrir sitio web"
+    "noTitle": "Sin título"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} subagente activo",

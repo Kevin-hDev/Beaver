@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TodoProgressPanel } from "../todo-progress-panel";
 import { useTodos } from "@/hooks/use-todos";
@@ -62,5 +63,33 @@ describe("TodoProgressPanel", () => {
     expect(getByText("Lire")).toBeTruthy();
     expect(getAllByText("Tester")).toHaveLength(2);
     expect(getByText("completed")).toBeTruthy();
+  });
+
+  it("prend le panneau commun et replie par Collapsible", () => {
+    vi.mocked(useTodos).mockReturnValue([
+      { content: "Lire", status: "completed" },
+      { content: "Tester", status: "pending" },
+    ]);
+
+    const { container, getByRole } = render(<TodoProgressPanel sessionId="s1" />);
+    const toggle = getByRole("button");
+
+    expect(container.firstElementChild).toHaveClass("thp-root", "relief", "tdp-panel");
+    expect(container.querySelector(".tdp-accordion")).toBeNull();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(container.querySelector(".cps-region")).toHaveAttribute("data-open", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(container.querySelector(".cps-region")).toHaveAttribute("data-open", "true");
+    expect(container.querySelectorAll(".thp-list .thp-row")).toHaveLength(2);
+  });
+
+  it("n'a plus ni contour, ni fond par thème, ni piste de grille en fr", () => {
+    const css = readFileSync("src/components/agent-local/todo-progress-panel.css", "utf8");
+
+    expect(css).not.toMatch(/border\s*:/);
+    expect(css).not.toContain("[data-theme");
+    expect(css).not.toMatch(/\dfr\b/);
+    expect(css).not.toContain("tdp-accordion");
   });
 });

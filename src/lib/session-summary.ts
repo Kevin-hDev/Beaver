@@ -1,13 +1,15 @@
-import { countLines } from "./file-preview-utils";
-import { toolsFromMessage } from "./message-tools";
+import { sumFileOperations } from "./file-preview-operation-builder";
+import { collectFileOperations } from "./file-preview-utils";
+import { normalizeSavedToolHistory } from "./saved-tool-history";
+import { planStreamEndArtifacts } from "./stream-end-artifacts";
 import type {
   AgentMessage,
   AgentSession,
   AgentSessionMeta,
   AgentTodoRun,
   SubagentInfo,
-  ToolActivityRecord,
 } from "@/types/agent";
+import type { FileOperation } from "@/types/file-preview";
 
 export interface SessionChangeSummary {
   additions: number;
@@ -15,52 +17,27 @@ export interface SessionChangeSummary {
   files: number;
 }
 
-export const EMPTY_CHANGE_SUMMARY: SessionChangeSummary = {
+const EMPTY_CHANGE_SUMMARY: SessionChangeSummary = {
   additions: 0,
   deletions: 0,
   files: 0,
 };
 
-export function summarizeLastRequestChanges(messages: AgentMessage[]): SessionChangeSummary {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    if (messages[index].role !== "assistant") continue;
-    const summary = summarizeToolChanges(toolsFromMessage(messages[index]));
+export function summarizeLastRequestChanges(messages: AgentMessage[], baseDir?: string): SessionChangeSummary {
+  const displayed = normalizeSavedToolHistory(messages);
+  // Le résumé live reste l'autorité pendant le stream ; ici on reconstruit les groupes enregistrés.
+  const bubbles = planStreamEndArtifacts(displayed, false, "");
+  for (let index = displayed.length - 1; index >= 0; index -= 1) {
+    const bubble = bubbles.get(displayed[index].id);
+    if (!bubble) continue;
+    const summary = summarizeFileOperations(collectFileOperations(bubble.messages, { baseDir }));
     if (hasChangeSummary(summary)) return summary;
   }
   return EMPTY_CHANGE_SUMMARY;
 }
 
-function summarizeToolChanges(tools: ToolActivityRecord[]): SessionChangeSummary {
-  return tools.reduce<SessionChangeSummary>((summary, tool) => {
-    const next = summarizeToolChange(tool);
-    return addChangeSummaries(summary, next);
-  }, EMPTY_CHANGE_SUMMARY);
-}
-
-export function summarizeToolChange(tool: ToolActivityRecord): SessionChangeSummary {
-  if (tool.is_error || tool.domain === "memory") return EMPTY_CHANGE_SUMMARY;
-  if (tool.name === "write_file" && tool.content != null) {
-    return { additions: countLines(tool.content), deletions: 0, files: 1 };
-  }
-  if (tool.name === "edit_file" && tool.old_text != null && tool.new_text != null) {
-    return {
-      additions: countLines(tool.new_text),
-      deletions: countLines(tool.old_text),
-      files: 1,
-    };
-  }
-  return EMPTY_CHANGE_SUMMARY;
-}
-
-export function addChangeSummaries(
-  left: SessionChangeSummary,
-  right: SessionChangeSummary,
-): SessionChangeSummary {
-  return {
-    additions: left.additions + right.additions,
-    deletions: left.deletions + right.deletions,
-    files: left.files + right.files,
-  };
+export function summarizeFileOperations(operations: FileOperation[]): SessionChangeSummary {
+  return { ...sumFileOperations(operations), files: operations.length };
 }
 
 export function hasChangeSummary(summary: SessionChangeSummary): boolean {

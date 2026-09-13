@@ -69,6 +69,19 @@ describe("countLines", () => {
     expect(countLines(undefined)).toBe(0);
     expect(countLines("")).toBe(0);
   });
+
+  it("ne compte pas le retour à la ligne final, comme Git", () => {
+    expect(countLines("a\nb\n")).toBe(2);
+  });
+
+  it("ne compte pas le retour à la ligne final Windows (\\r\\n)", () => {
+    expect(countLines("a\r\nb\r\n")).toBe(2);
+  });
+
+  it("compte une ligne vide terminée comme une ligne", () => {
+    expect(countLines("\n")).toBe(1);
+    expect(countLines("a\n\n")).toBe(2);
+  });
 });
 
 describe("fileNameFromPath — cas limites supplémentaires", () => {
@@ -119,7 +132,7 @@ describe("collectFileOperations", () => {
     }));
   });
 
-  it("ne garde qu'une ligne par fichier et remonte le dernier fichier touché", () => {
+  it("ne garde qu'une ligne par fichier, au total de ses changements, et remonte le dernier fichier touché", () => {
     const messages = [
       message("m1", [tool({ name: "write_file", summary: "/repo/a.ts", content: "a" })]),
       message("m2", [tool({ name: "write_file", summary: "/repo/b.ts", content: "b" })]),
@@ -136,9 +149,36 @@ describe("collectFileOperations", () => {
     expect(operations.map((operation) => operation.path)).toEqual(["/repo/a.ts", "/repo/b.ts"]);
     expect(operations[0]).toEqual(expect.objectContaining({
       type: "edit",
-      additions: 1,
+      additions: 2,
       deletions: 2,
     }));
+  });
+
+  it("garde chaque changement d'un fichier, le plus récent en premier, avec ses propres chiffres", () => {
+    const operations = collectFileOperations([
+      message("m1", [recorded("/repo/a.ts", 1, 1), recorded("/repo/a.ts", 2, 0)]),
+    ]);
+
+    expect(operations).toHaveLength(1);
+    expect(operations[0]).toEqual(expect.objectContaining({ additions: 3, deletions: 1 }));
+    expect(operations[0].changes?.map((change) => [change.additions, change.deletions]))
+      .toEqual([[2, 0], [1, 1]]);
+    expect(operations[0].olderChanges).toBeUndefined();
+  });
+
+  it("ne donne pas de liste de changements à un fichier changé une seule fois", () => {
+    const operations = collectFileOperations([message("m1", [recorded("/repo/a.ts", 1, 1)])]);
+    expect(operations[0].changes).toBeUndefined();
+  });
+
+  it("garde les dix changements les plus récents et résume les plus anciens", () => {
+    const tools = Array.from({ length: 12 }, (_, index) => recorded("/repo/a.ts", index + 1, 1));
+    const [operation] = collectFileOperations([message("m1", tools)]);
+
+    expect(operation.changes?.map((change) => change.additions))
+      .toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3]);
+    expect(operation.olderChanges).toEqual({ count: 2, additions: 3, deletions: 2 });
+    expect(operation).toEqual(expect.objectContaining({ additions: 78, deletions: 12 }));
   });
 
   it("utilise le diff figé d'un remplacement complet", () => {
@@ -220,8 +260,8 @@ describe("collectFileOperations", () => {
     expect(operations).toHaveLength(1);
     expect(operations[0]).toEqual(expect.objectContaining({
       path: "/repo/src/test_ui_card.tsx",
-      additions: 9,
-      deletions: 5,
+      additions: 10,
+      deletions: 8,
     }));
   });
 });
@@ -257,6 +297,20 @@ function message(id: string, tools: ToolActivityRecord[]): AgentMessage {
     timestamp: "2026-07-02T10:00:00Z",
     tool_activities: tools,
   };
+}
+
+function recorded(path: string, additions: number, deletions: number): ToolActivityRecord {
+  return tool({
+    name: "edit_file",
+    summary: path,
+    file_changes: [{
+      path,
+      status: "modified",
+      additions,
+      deletions,
+      diff: { binary: false, truncated: false, hunks: [] },
+    }],
+  });
 }
 
 function tool(overrides: Partial<ToolActivityRecord>): ToolActivityRecord {

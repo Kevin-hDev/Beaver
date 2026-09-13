@@ -18,6 +18,15 @@
 
 - **Agent-managed wakeups** — the Agent can now create, inspect, update, enable, disable, and delete scheduled wakeups, review their execution history and errors, and schedule work either in the current conversation or in a separate session.
 
+### Interface and previews
+
+- **Accurate code and diff previews** — syntax colors now survive multi-line tokens, fenced Markdown blocks are highlighted, changed lines keep readable text colors, and created files use the normal file presentation while additions and deletions retain their own diff colors.
+- **Assistant link previews** — links in Agent replies can display responsive thumbnail cards with themed favicon chips, while user messages and trace output remain unchanged; failed cards disappear without removing the original link, and long tooltips stay inside the window.
+- **Unified thread panels** — subagent activity, task lists, changed-file summaries, and end-of-response summaries now share the same accessible panel structure, keyboard behavior, left-aligned parent-chat action, reduced-motion handling, and animated status icons.
+- **Complete file-change accounting** — line totals follow Git semantics, use the complete diff instead of its bounded preview, combine repeated edits per file, omit unfinished or zero-value noise, and stay consistent across tool rows, conversation summaries, Git lists, and final response bubbles.
+- **Reliable file history** — Last run and All files restore committed changes from saved sessions, expose each recorded change as a smoothly collapsible diff, and retain the complete per-file total.
+- **More usable file previews** — the full path can be copied, long breadcrumbs scroll without moving the copy control or diff total, short files keep a continuous numbered gutter, file-tab close controls stay centered, and preview mode labels remain on one line.
+
 ### Documentation
 
 - **Official documentation site** — the full Beaver documentation is now online at [kevin-hdev.github.io/Beaver](https://kevin-hdev.github.io/Beaver/): 95 pages covering getting started, the interface, the agent and its tools, models, integrations, automation, Forecast, settings, troubleshooting, and reference — in English and French, with automatic language detection.

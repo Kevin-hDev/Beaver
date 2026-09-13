@@ -19,6 +19,10 @@ interface ChatMarkdownProps {
   content: string;
   skillNames?: string[];
   builtInNames?: string[];
+  /* Aperçus sous le texte de la réponse finale de l'agent seulement : ailleurs,
+     ils répéteraient le lien saisi ou couperaient le fil du travail en cours.
+     Décision : docs/design/apercus-de-liens.md, 11 sept. 2026. */
+  linkPreviews?: boolean;
 }
 
 function extractUrls(text: string): string[] {
@@ -53,11 +57,12 @@ export function ChatMarkdown({
   content,
   skillNames = EMPTY_NAMES,
   builtInNames = EMPTY_NAMES,
+  linkPreviews = false,
 }: ChatMarkdownProps) {
   const prepared = useMemo(() => closeUnclosedCodeBlocks(content), [content]);
   const urls = useMemo(
-    () => isPreviewEnabled() ? extractUrls(content) : [],
-    [content],
+    () => linkPreviews && isPreviewEnabled() ? extractUrls(content) : [],
+    [content, linkPreviews],
   );
   const components = useMemo(
     () => createChatMarkdownComponents(skillNames, builtInNames),
