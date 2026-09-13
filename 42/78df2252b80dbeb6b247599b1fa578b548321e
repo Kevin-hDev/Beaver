@@ -1,0 +1,3 @@
+Review correction: macOS reinstall now accepts an existing Beaver.app that is a regular non-symlink directory even when its bundle metadata is corrupt. The new staged bundle still receives full identity/version validation; rollback and crash recovery may restore the previous corrupt directory without trusting or executing it.
+
+Proof: the new regression test failed with InstallFailed before the change and now passes; platform_macos_tests: 9 passed, 1 real-DMG test ignored; cargo clippy --all-targets -- -D warnings passed. Touched source files are 195 and 145 lines.
