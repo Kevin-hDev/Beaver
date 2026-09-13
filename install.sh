@@ -46,7 +46,7 @@ download_bounded() {
 }
 release_version() {
   local file="$1" version=""
-  # create-update-manifest.mjs produit volontairement ce JSON canonique, lu sans parseur externe.
+  # L'API GitHub est validée sur les seuls champs attendus, sans exécuter son contenu.
   version=$(/usr/bin/sed -n \
     's/^[[:space:]]*"tag_name":[[:space:]]*"v\([^"]*\)",[[:space:]]*$/\1/p' "$file")
   valid_version "$version" || return 1
@@ -57,6 +57,7 @@ release_version() {
 }
 release_has_url() { [ "$(/usr/bin/grep -F -c "\"browser_download_url\": \"$1\"" "$2")" -eq 1 ]; }
 manifest_values() {
+  # create-update-manifest.mjs produit volontairement ce JSON canonique, lu sans parseur externe.
   LC_ALL=C /usr/bin/awk -v version="$1" -v expected="$2" '
     NR == 1 { if ($0 != "{") exit 2; next }
     NR == 2 { if ($0 != "  \"version\": \"" version "\",") exit 2; next }
