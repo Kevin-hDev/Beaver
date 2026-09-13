@@ -12,7 +12,7 @@
     "installer:build-ui": "vite build --config installer/vite.config.ts",
     "installer:build": "cd installer && npx --no-install tauri build",
     "contracts:generate:installer": "cd installer/src-tauri && cargo test contract_tests::export_typescript_installer_contract -- --ignored --exact",
-    "test:installer": "npm run installer:build-ui && npx vitest run installer/src --passWithNoTests && cd installer/src-tauri && cargo test && cd ../.. && node --test scripts/release/installer-project-boundary.test.mjs",
+    "test:installer": "npm run installer:build-ui && npx vitest run installer/src && cd installer/src-tauri && cargo test && cd ../.. && node --test scripts/release/installer-project-boundary.test.mjs && node --test scripts/release/installer-frontend-security.test.mjs",
     "check": "node scripts/ci/run-local-checks.mjs",
     "tauri": "node scripts/cef/run-tauri.mjs",
     "tauri:build:nsis": "node scripts/cef/run-tauri.mjs build --bundles nsis",

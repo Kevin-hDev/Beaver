@@ -9,7 +9,30 @@ mod install_platform;
 mod install_trace;
 
 fn configure<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
-    builder.plugin(tauri_plugin_dialog::init())
+    let locale = normalized_locale(sys_locale::get_locale().as_deref());
+    let script = format!("window.__BEAVER_INSTALLER_LOCALE__={locale:?};");
+    builder
+        .append_invoke_initialization_script(script)
+        .plugin(tauri_plugin_dialog::init())
+}
+
+fn normalized_locale(locale: Option<&str>) -> &'static str {
+    match locale
+        .unwrap_or_default()
+        .split(['-', '_'])
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "de" => "de",
+        "es" => "es",
+        "fr" => "fr",
+        "it" => "it",
+        "ja" => "ja",
+        "zh" => "zh",
+        _ => "en",
+    }
 }
 
 pub mod launch_args;
@@ -93,6 +116,12 @@ mod platform_macos_tests;
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn installer_locale_is_bounded_and_normalized() {
+        assert_eq!(super::normalized_locale(Some("fr-FR")), "fr");
+        assert_eq!(super::normalized_locale(Some("pt_BR")), "en");
+    }
+
     #[test]
     fn minimal_application_builds() {
         super::configure(tauri::test::mock_builder())
