@@ -6,7 +6,7 @@ import { dismissUpdateOperation, retryUpdateOperation } from "./update-window-ac
 
 const TERMINAL_DISPLAY_MS = 4_000;
 
-export function mergeOperations(
+function mergeOperations(
   current: UpdateOperationSnapshot[],
   incoming: UpdateOperationSnapshot[],
 ): UpdateOperationSnapshot[] {

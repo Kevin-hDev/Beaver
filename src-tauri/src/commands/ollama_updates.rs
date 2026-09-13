@@ -8,7 +8,6 @@ use std::collections::HashSet;
 pub struct OllamaModelUpdate {
     pub full_name: String,
     pub family: String,
-    pub tag: String,
     pub latest_digest: String,
 }
 
@@ -56,7 +55,6 @@ pub async fn check_ollama_updates(
                     updates.push(OllamaModelUpdate {
                         full_name: model.name.clone(),
                         family: family.clone(),
-                        tag: tag_name.to_string(),
                         latest_digest: rtag.digest_short.clone(),
                     });
                 }

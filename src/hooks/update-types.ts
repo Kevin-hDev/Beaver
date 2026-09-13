@@ -9,7 +9,6 @@ export interface AppUpdate {
 export interface OllamaModelUpdate {
   fullName: string;
   family: string;
-  tag: string;
   latestDigest: string;
 }
 
@@ -27,5 +26,4 @@ export interface DismissedUpdate {
 export interface PullingState {
   fullName: string;
   percent: number;
-  status: string;
 }

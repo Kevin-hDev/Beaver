@@ -25,7 +25,7 @@ fn beaver_launch_inherits_the_user_environment() {
 
     super::platform::launch(&script).unwrap();
     for _ in 0..20 {
-        if output.is_file() {
+        if matches!(fs::read_to_string(&output).as_deref(), Ok("inherited")) {
             break;
         }
         std::thread::sleep(Duration::from_millis(25));

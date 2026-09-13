@@ -76,7 +76,7 @@ describe("UpdateNotifications", () => {
     render(
       <UpdateNotifications
         {...baseProps}
-        ollamaUpdates={[{ fullName: "llama3:latest", family: "llama3", tag: "latest", latestDigest: "abc123" }]}
+        ollamaUpdates={[{ fullName: "llama3:latest", family: "llama3", latestDigest: "abc123" }]}
       />,
     );
 

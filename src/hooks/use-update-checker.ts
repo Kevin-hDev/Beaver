@@ -194,7 +194,7 @@ export function useUpdateChecker() {
   const visibleOllamaUpdates = dismissals.filter(ollamaUpdates, (update) => ({ kind: "ollama_model", subject: update.fullName, version: update.latestDigest }));
   const pulling = useMemo<PullingState | null>(() => {
     if (!activeDownload || activeDownload.kind !== "ollama" || !ollamaUpdates.some((update) => update.fullName === activeDownload.modelId)) return null;
-    return { fullName: activeDownload.modelId, percent: activeDownload.percent, status: i18n.t(`modelDownloads.phases.${activeDownload.phase}`) };
+    return { fullName: activeDownload.modelId, percent: activeDownload.percent };
   }, [activeDownload, ollamaUpdates]);
 
   return {

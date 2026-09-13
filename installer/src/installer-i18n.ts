@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-export function normalizeLocale(locale: string | undefined): Locale {
+function normalizeLocale(locale: string | undefined): Locale {
   const base = locale?.toLowerCase().split("-")[0];
   return base && base in resources ? (base as Locale) : "en";
 }

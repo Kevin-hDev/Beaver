@@ -15,7 +15,6 @@ tauri-build = { version = "=2.6.3", features = [] }
 beaver-data-path = { path = "../../crates/beaver-data-path" }
 futures-util = "0.3"
 hex = "0.4"
-log = "0.4"
 rand = "0.10.2"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "stream"] }
 serde = { version = "1", features = ["derive"] }

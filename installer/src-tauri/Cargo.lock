@@ -138,7 +138,6 @@ dependencies = [
  "futures-util",
  "hex",
  "libc",
- "log",
  "rand",
  "reqwest",
  "serde",
