@@ -68,6 +68,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--chrome-2);
+  min-height: var(--space-md);
 }
 
 .upw-measure .opa-track {

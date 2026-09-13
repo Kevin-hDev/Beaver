@@ -6,7 +6,9 @@ use tauri::{
 
 pub const WINDOW_LABEL: &str = "update-progress";
 const WINDOW_ENTRY: &str = "update-window.html";
-pub const WIDTH: f64 = 380.0;
+// 440 px de contenu (+ 12 px de gouttière d'ombre de chaque côté) : la fenêtre
+// reste compacte tout en donnant 15 % de largeur utile de plus que le mokup initial.
+pub const WIDTH: f64 = 464.0;
 pub const MIN_HEIGHT: u16 = 96;
 pub const MAX_HEIGHT: u16 = 640;
 const MIN_VISIBLE_PIXELS: i64 = 24;
@@ -27,6 +29,7 @@ pub fn show(app: &AppHandle, runtime: &UpdateProgressRuntime) -> Result<(), Stri
         .inner_size(WIDTH, f64::from(MIN_HEIGHT))
         .decorations(false)
         .transparent(true)
+        .shadow(false)
         .resizable(false)
         .maximizable(false)
         .minimizable(false)

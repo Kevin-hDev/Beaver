@@ -1,5 +1,10 @@
+.upw-frame {
+  width: 100vw;
+  padding: var(--chrome-1) var(--chrome-3) var(--chrome-5);
+}
+
 .upw-window {
-  width: 380px;
+  width: 100%;
   overflow: hidden;
   border-radius: var(--radius-window);
   background: var(--shell-opaque);

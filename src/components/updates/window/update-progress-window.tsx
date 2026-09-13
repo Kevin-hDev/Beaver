@@ -15,7 +15,7 @@ const THEMES = new Set<ResolvedTheme>(RESOLVED_THEME_OPTIONS.map(({ id }) => id)
 export function UpdateProgressWindow() {
   const { t } = useTranslation();
   const { operations, dismiss, retry } = useUpdateOperations();
-  const contentRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   useUpdateWindowTheme();
   useWindowHeight(contentRef, operations.length);
   if (operations.length === 0) return null;
@@ -23,29 +23,31 @@ export function UpdateProgressWindow() {
     kind === "app-release" && phase === "restarting" && status === "running");
 
   return (
-    <main ref={contentRef} className="upw-window relief elev-above" aria-label={t("updates.window.title")}>
-      <header className="upw-title" data-tauri-drag-region>
-        <span className="upw-title-text" data-tauri-drag-region>
-          {operations.length === 1 ? t("updates.window.title") : t("updates.window.count", { count: operations.length })}
-        </span>
-        {!restarting && (
-          <button type="button" className="icon-btn" aria-label={t("updates.window.close")}
-            onClick={() => void getCurrentWindow().close()}>
-            <X size="var(--icon-sm)" />
-          </button>
-        )}
-      </header>
-      <ul className="upw-lines">
-        {operations.map((operation) => (
-          <UpdateOperationRow
-            key={operation.id}
-            operation={operation}
-            onDismiss={dismiss}
-            onRetry={retry}
-          />
-        ))}
-      </ul>
-    </main>
+    <div ref={contentRef} className="upw-frame">
+      <main className="upw-window relief elev-above" aria-label={t("updates.window.title")}>
+        <header className="upw-title" data-tauri-drag-region>
+          <span className="upw-title-text" data-tauri-drag-region>
+            {operations.length === 1 ? t("updates.window.title") : t("updates.window.count", { count: operations.length })}
+          </span>
+          {!restarting && (
+            <button type="button" className="icon-btn" aria-label={t("updates.window.close")}
+              onClick={() => void getCurrentWindow().close()}>
+              <X size="var(--icon-sm)" />
+            </button>
+          )}
+        </header>
+        <ul className="upw-lines">
+          {operations.map((operation) => (
+            <UpdateOperationRow
+              key={operation.id}
+              operation={operation}
+              onDismiss={dismiss}
+              onRetry={retry}
+            />
+          ))}
+        </ul>
+      </main>
+    </div>
   );
 }
 
