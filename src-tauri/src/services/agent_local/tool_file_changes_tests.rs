@@ -73,3 +73,17 @@ fn stored_change_sample_has_a_strict_serialized_size_limit() {
     assert!(sample.len() <= MAX_STORED_FILE_CHANGES);
     assert!(serialized.len() <= MAX_STORED_FILE_CHANGES_BYTES);
 }
+
+#[test]
+fn counts_every_line_of_a_file_larger_than_the_diff_preview() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("large.txt");
+    let content: String = (0..3_000).map(|index| format!("line {index}\n")).collect();
+    std::fs::write(&path, content).expect("file");
+    let after = capture_path(&path);
+
+    let change = build_change(&path, None, after.as_ref()).expect("change");
+
+    assert_eq!((change.additions, change.deletions), (3_000, 0));
+    assert!(change.diff.expect("diff").truncated);
+}

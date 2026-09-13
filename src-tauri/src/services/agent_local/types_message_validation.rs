@@ -66,8 +66,8 @@ pub(super) fn validate(message: &AgentMessage) -> Result<(), String> {
             if change.path.is_empty()
                 || change.path.len() > 4_096
                 || change.path.contains('\0')
-                || change.additions > 2_000
-                || change.deletions > 2_000
+                || change.additions > super::tool_file_changes::MAX_FILE_CHANGE_LINES
+                || change.deletions > super::tool_file_changes::MAX_FILE_CHANGE_LINES
                 || total_diff_bytes > super::tool_file_changes::MAX_FILE_CHANGE_DIFF_BYTES
                 || change.diff.as_ref().is_some_and(|diff| {
                     !crate::services::git::diff_preview::is_bounded_preview(diff)

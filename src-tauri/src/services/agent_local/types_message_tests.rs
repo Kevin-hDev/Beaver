@@ -251,3 +251,21 @@ fn agent_message_rejects_excess_or_malformed_artifact_metadata() {
         assert!(malformed.validate_stream_metadata().is_err(), "{pointer}");
     }
 }
+
+#[test]
+fn agent_message_accepts_a_file_change_larger_than_the_diff_preview() {
+    let message: AgentMessage = serde_json::from_value(serde_json::json!({
+        "id": "m1", "role": "assistant", "content": "ok",
+        "files": [], "timestamp": "2026-07-01T12:00:00Z",
+        "tool_activities": [{
+            "name": "write_file", "summary": "/repo/large.txt",
+            "file_changes": [{
+                "path": "/repo/large.txt", "status": "added",
+                "additions": 3_000, "deletions": 0
+            }]
+        }]
+    }))
+    .unwrap();
+
+    assert!(message.validate_stream_metadata().is_ok());
+}

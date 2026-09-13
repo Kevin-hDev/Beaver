@@ -12,7 +12,7 @@ pub fn preview_buffers(
     old_buffer: &[u8],
     new_buffer: &[u8],
     path: &Path,
-) -> Result<GitDiffPreview, String> {
+) -> Result<(GitDiffPreview, (usize, usize)), String> {
     let mut options = base_options();
     let patch = Patch::from_buffers(
         old_buffer,
@@ -22,7 +22,8 @@ pub fn preview_buffers(
         Some(&mut options),
     )
     .map_err(|_| unavailable())?;
-    Ok(serialize_patch(&patch))
+    let (_, additions, deletions) = patch.line_stats().map_err(|_| unavailable())?;
+    Ok((serialize_patch(&patch), (additions, deletions)))
 }
 
 pub fn is_bounded_preview(preview: &GitDiffPreview) -> bool {

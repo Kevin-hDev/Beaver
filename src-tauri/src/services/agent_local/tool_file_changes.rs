@@ -8,6 +8,8 @@ pub const MAX_DIFF_FILE_BYTES: u64 = 1024 * 1024;
 pub const MAX_FILE_CHANGE_DIFF_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_STORED_FILE_CHANGES: usize = 128;
 pub const MAX_STORED_FILE_CHANGES_BYTES: usize = 512 * 1024;
+/// Un fichier comparé fait au plus MAX_DIFF_FILE_BYTES et une ligne au moins un octet.
+pub const MAX_FILE_CHANGE_LINES: usize = MAX_DIFF_FILE_BYTES as usize;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct FileSignature {
@@ -146,8 +148,10 @@ pub fn build_change(
         (Some(_), Some(_)) => ToolFileChangeStatus::Modified,
         (None, None) => return None,
     };
-    let diff = build_diff(path, before, after);
-    let (additions, deletions) = diff.as_ref().map_or((0, 0), diff_stats);
+    let (diff, (additions, deletions)) = match build_diff(path, before, after) {
+        Some((diff, stats)) => (Some(diff), stats),
+        None => (None, (0, 0)),
+    };
     Some(ToolFileChange {
         path: path.to_string_lossy().to_string(),
         status,
@@ -188,7 +192,10 @@ fn build_diff(
     path: &Path,
     before: Option<&FileState>,
     after: Option<&FileState>,
-) -> Option<crate::services::git::diff_preview::GitDiffPreview> {
+) -> Option<(
+    crate::services::git::diff_preview::GitDiffPreview,
+    (usize, usize),
+)> {
     let old = state_content(before)?;
     let new = state_content(after)?;
     let old = redact_if_text(old);
@@ -207,17 +214,6 @@ fn redact_if_text(content: Vec<u8>) -> Vec<u8> {
     String::from_utf8(content.clone())
         .map(|text| super::sensitive_data::redact_text(&text).into_bytes())
         .unwrap_or(content)
-}
-
-fn diff_stats(diff: &crate::services::git::diff_preview::GitDiffPreview) -> (usize, usize) {
-    diff.hunks
-        .iter()
-        .flat_map(|hunk| &hunk.lines)
-        .fold((0, 0), |(added, deleted), line| match line.kind.as_str() {
-            "added" => (added + 1, deleted),
-            "deleted" => (added, deleted + 1),
-            _ => (added, deleted),
-        })
 }
 
 #[cfg(test)]
