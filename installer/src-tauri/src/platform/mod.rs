@@ -27,7 +27,6 @@ pub fn installed_executable(destination: &Path) -> Result<PathBuf, InstallerErro
 
 pub fn launch(executable: &Path) -> Result<(), InstallerError> {
     Command::new(executable)
-        .env_clear()
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

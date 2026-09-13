@@ -3,6 +3,40 @@ use super::platform::windows_cleanup::cleanup_targets;
 use super::temp_ownership::{OwnedTempRun, OWNER_MARKER};
 use std::fs;
 
+#[cfg(unix)]
+#[test]
+fn beaver_launch_inherits_the_user_environment() {
+    use std::os::unix::fs::PermissionsExt;
+    use std::time::Duration;
+
+    let root = std::env::temp_dir().join(format!("beaver-launch-test-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&root);
+    fs::create_dir(&root).unwrap();
+    let output = root.join("environment.txt");
+    let script = root.join("beaver");
+    fs::write(
+        &script,
+        "#!/bin/sh\nprintf '%s' \"$BEAVER_INSTALLER_LAUNCH_TEST\" > \"$BEAVER_INSTALLER_LAUNCH_OUTPUT\"\n",
+    )
+    .unwrap();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
+    std::env::set_var("BEAVER_INSTALLER_LAUNCH_TEST", "inherited");
+    std::env::set_var("BEAVER_INSTALLER_LAUNCH_OUTPUT", &output);
+
+    super::platform::launch(&script).unwrap();
+    for _ in 0..20 {
+        if output.is_file() {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+
+    std::env::remove_var("BEAVER_INSTALLER_LAUNCH_TEST");
+    std::env::remove_var("BEAVER_INSTALLER_LAUNCH_OUTPUT");
+    assert_eq!(fs::read_to_string(&output).unwrap(), "inherited");
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn windows_destination_accepts_only_a_local_absolute_drive_path() {
     assert!(valid_destination_text(r"C:\Program Files\Beaver"));
