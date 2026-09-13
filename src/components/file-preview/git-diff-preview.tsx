@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { highlightLines } from "@/lib/highlight";
 import { shouldWrapFile } from "@/lib/code-language";
 import { readGitDiffPreview } from "@/services/file-preview";
-import type { GitDiffHunk, GitDiffPreview as GitDiffData, GitDiffPreviewSource } from "@/types/file-preview";
+import type { GitDiffHunk, GitDiffLine, GitDiffPreview as GitDiffData, GitDiffPreviewSource } from "@/types/file-preview";
 import "./git-diff-preview.css";
 
 interface GitDiffPreviewProps {
@@ -80,7 +80,7 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
   const hunks = useMemo<HighlightedHunk[]>(() => (
     data?.hunks.map((hunk) => ({
       ...hunk,
-      highlighted: highlightLines(hunk.lines.map((line) => line.content).join("\n"), path),
+      highlighted: highlightHunk(hunk.lines, path),
     })) ?? []
   ), [data, path]);
 
@@ -108,8 +108,8 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
           {hunkIndex > 0 && <div className="gdp-hunk-separator" aria-hidden="true">…</div>}
           <div className="gdp-hunk">
             {hunk.lines.map((line, lineIndex) => {
-              const mode = line.kind === "added" ? "ok" : line.kind === "deleted" ? "error" : "context";
-              const prefix = line.kind === "added" ? "+" : line.kind === "deleted" ? "-" : " ";
+              const mode = lineMode(line.kind, status);
+              const prefix = mode === "ok" ? "+" : mode === "error" ? "-" : " ";
               const lineNumber = line.kind === "deleted" ? line.old_line : line.new_line;
               return (
                 <div className={`tp-line tp-line-${mode}`} key={lineIndex}>
@@ -134,4 +134,31 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
       {wrap ? content : <div className="tp-inner">{content}</div>}
     </div>
   );
+}
+
+/* Un fichier créé n'a rien à comparer : son libellé suffit. */
+function lineMode(
+  kind: GitDiffLine["kind"],
+  status: GitDiffPreviewSource["status"],
+): "ok" | "error" | "context" {
+  if (status === "added") return "context";
+  return kind === "added" ? "ok" : kind === "deleted" ? "error" : "context";
+}
+
+/* Les deux côtés sont coloriés séparément pour qu'un token retiré ne colore
+   jamais la ligne qui le remplace. */
+function highlightHunk(lines: GitDiffLine[], path: string): string[] {
+  const side = (skipped: GitDiffLine["kind"]) => highlightLines(
+    lines.filter((line) => line.kind !== skipped).map((line) => line.content).join("\n"),
+    path,
+  );
+  const before = side("added");
+  const after = side("deleted");
+  let beforeIndex = 0;
+  let afterIndex = 0;
+  return lines.map((line) => {
+    if (line.kind === "deleted") return before[beforeIndex++];
+    if (line.kind === "context") beforeIndex++;
+    return after[afterIndex++];
+  });
 }

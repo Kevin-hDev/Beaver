@@ -38,6 +38,65 @@ describe("GitDiffPreview", () => {
     expect(readGitDiffPreview).not.toHaveBeenCalled();
   });
 
+  it("affiche un fichier créé comme un fichier normal", () => {
+    const { container } = render(
+      <RecordedDiffPreview
+        path="plan.md"
+        status="added"
+        data={{
+          binary: false,
+          truncated: false,
+          hunks: [{
+            old_start: 0,
+            old_lines: 0,
+            new_start: 1,
+            new_lines: 2,
+            lines: [
+              { kind: "added", content: "# Plan", old_line: null, new_line: 1 },
+              { kind: "added", content: "texte", old_line: null, new_line: 2 },
+            ],
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("filePreview.gitStatus.added")).toBeInTheDocument();
+    expect(container.querySelector(".tp-line-ok")).toBeNull();
+    expect(container.querySelectorAll(".tp-line-context")).toHaveLength(2);
+    expect(
+      Array.from(container.querySelectorAll(".tp-prefix"), (element) => element.textContent),
+    ).toEqual([" ", " "]);
+  });
+
+  it("colorie la ligne ajoutée sans le commentaire ouvert par la ligne retirée", () => {
+    const { container } = render(
+      <RecordedDiffPreview
+        path="src/example.ts"
+        status="modified"
+        data={{
+          binary: false,
+          truncated: false,
+          hunks: [{
+            old_start: 1,
+            old_lines: 2,
+            new_start: 1,
+            new_lines: 2,
+            lines: [
+              { kind: "context", content: "const a = 1;", old_line: 1, new_line: 1 },
+              { kind: "deleted", content: "/* ancien", old_line: 2, new_line: null },
+              { kind: "added", content: "const neuf = 2;", old_line: null, new_line: 2 },
+            ],
+          }],
+        }}
+      />,
+    );
+
+    const added = container.querySelector(".tp-line-ok .tp-code")?.innerHTML ?? "";
+    expect(added).not.toContain("hljs-comment");
+    expect(added).toContain("hljs-keyword");
+    expect(container.querySelector(".tp-line-error .tp-code")?.innerHTML).toContain("hljs-comment");
+  });
+
   it("affiche les anciens et nouveaux numéros dans une seule colonne", async () => {
     readGitDiffPreview.mockResolvedValue({
       binary: false,
@@ -79,6 +138,8 @@ describe("GitDiffPreview", () => {
     expect(container.querySelector(".gdp-hunk-header")).toBeNull();
     expect(container).not.toHaveTextContent("@@");
     expect(screen.getByText("filePreview.diffTruncated")).toBeInTheDocument();
+    expect(container.querySelector(".tp-line-ok")).not.toBeNull();
+    expect(container.querySelector(".tp-line-error")).not.toBeNull();
   });
 
   it("affiche un renommage sans changement de contenu", async () => {

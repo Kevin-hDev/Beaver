@@ -63,7 +63,7 @@ export function ContentPreview({ content, path }: { content: string; path?: stri
   if (wrap) {
     return (
       <div className="chat-column-surface tp-wrapper">
-        <CodeLines lines={lines} mode="ok" path={path} />
+        <CodeLines lines={lines} mode="context" path={path} />
       </div>
     );
   }
@@ -71,7 +71,7 @@ export function ContentPreview({ content, path }: { content: string; path?: stri
   return (
     <div className="chat-column-surface tp-wrapper tp-nowrap">
       <div className="tp-inner">
-        <CodeLines lines={lines} mode="ok" path={path} />
+        <CodeLines lines={lines} mode="context" path={path} />
       </div>
     </div>
   );

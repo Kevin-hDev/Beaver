@@ -17,4 +17,11 @@ describe("tool preview layout", () => {
     expect(lines).toHaveLength(24);
     expect(container.querySelector(".tp-prefix")).toBeNull();
   });
+
+  it("affiche un fichier écrit comme un fichier normal", () => {
+    const { container } = render(<ContentPreview content={"a\nb"} path="notes.md" />);
+
+    expect(container.querySelector(".tp-line-ok")).toBeNull();
+    expect(container.querySelectorAll(".tp-line-context")).toHaveLength(2);
+  });
 });
