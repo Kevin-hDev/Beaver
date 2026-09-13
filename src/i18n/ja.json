@@ -1231,6 +1231,9 @@
     "fileNotFound": "ファイルを読み取れませんでした。削除または移動された可能性があります。",
     "diffUnavailable": "このファイルの変更を表示できません。",
     "diffTruncated": "プレビューは制限されています。このファイルにはさらに変更があります。",
+    "changeOf": "{{count}} 件中 {{index}} 件目の変更",
+    "olderChanges_one": "以前の変更 {{count}} 件",
+    "olderChanges_other": "以前の変更 {{count}} 件",
     "gitStatus": {
       "added": "作成",
       "modified": "変更",

@@ -1231,6 +1231,9 @@
     "fileNotFound": "无法读取该文件，它可能已被删除或移动。",
     "diffUnavailable": "无法显示此文件的更改。",
     "diffTruncated": "预览受限：此文件还包含更多更改。",
+    "changeOf": "第 {{index}} 次更改，共 {{count}} 次",
+    "olderChanges_one": "另有 {{count}} 次较早的更改",
+    "olderChanges_other": "另有 {{count}} 次较早的更改",
     "gitStatus": {
       "added": "已创建",
       "modified": "已修改",

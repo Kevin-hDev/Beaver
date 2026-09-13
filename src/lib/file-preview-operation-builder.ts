@@ -1,5 +1,5 @@
 import type { ToolActivityRecord } from "@/types/agent";
-import type { FileOperation } from "@/types/file-preview";
+import type { FileChangeTotals, FileOperation } from "@/types/file-preview";
 
 const FILE_SEPARATOR = /[/\\]/;
 const OFFICE_WRITE = ["write_spreadsheet", "write_document"];
@@ -97,10 +97,7 @@ export function toolToFileOperations(
   return [];
 }
 
-export function sumFileOperations(operations: FileOperation[]): {
-  additions: number;
-  deletions: number;
-} {
+export function sumFileOperations(operations: FileChangeTotals[]): FileChangeTotals {
   return operations.reduce(
     (total, operation) => ({
       additions: total.additions + operation.additions,

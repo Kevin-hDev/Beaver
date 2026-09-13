@@ -1232,6 +1232,9 @@
     "fileNotFound": "Die Datei konnte nicht gelesen werden. Sie wurde möglicherweise gelöscht oder verschoben.",
     "diffUnavailable": "Die Änderungen dieser Datei können nicht angezeigt werden.",
     "diffTruncated": "Begrenzte Vorschau: Diese Datei enthält weitere Änderungen.",
+    "changeOf": "Änderung {{index}} von {{count}}",
+    "olderChanges_one": "{{count}} ältere Änderung",
+    "olderChanges_other": "{{count}} ältere Änderungen",
     "gitStatus": {
       "added": "Erstellt",
       "modified": "Geändert",

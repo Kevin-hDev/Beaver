@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { highlightLines } from "@/lib/highlight";
 import { shouldWrapFile } from "@/lib/code-language";
@@ -53,9 +53,10 @@ interface RecordedDiffPreviewProps {
   data?: GitDiffData;
   path: string;
   status: "added" | "modified" | "deleted";
+  heading?: ReactNode;
 }
 
-export function RecordedDiffPreview({ data, path, status }: RecordedDiffPreviewProps) {
+export function RecordedDiffPreview({ data, path, status, heading }: RecordedDiffPreviewProps) {
   return (
     <DiffPreviewView
       data={data}
@@ -63,17 +64,19 @@ export function RecordedDiffPreview({ data, path, status }: RecordedDiffPreviewP
       loading={false}
       path={path}
       status={status}
+      heading={heading}
     />
   );
 }
 
-function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
+function DiffPreviewView({ data, error, loading, path, previousPath, status, heading }: {
   data?: GitDiffData;
   error: boolean;
   loading: boolean;
   path: string;
   previousPath?: string;
   status: GitDiffPreviewSource["status"];
+  heading?: ReactNode;
 }) {
   const { t } = useTranslation();
 
@@ -87,22 +90,31 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
   if (loading) return <div className="fp-empty">{t("filePreview.loading")}</div>;
   const isRename = Boolean(previousPath);
   const wrap = shouldWrapFile(path);
+  const statusBar = (
+    <div className={`gdp-status gdp-status-${status}`}>
+      <span className="gdp-status-label">{t(`filePreview.gitStatus.${status}`)}</span>
+      {previousPath && (
+        <span className="gdp-status-paths">
+          <span>{previousPath}</span>
+          <span className="gdp-status-arrow" aria-hidden="true">→</span>
+          <span>{path}</span>
+        </span>
+      )}
+      {heading}
+    </div>
+  );
   if (error || data?.binary || (hunks.length === 0 && !isRename)) {
-    return <div className="fp-empty">{t("filePreview.diffUnavailable")}</div>;
+    return heading ? (
+      <>
+        {statusBar}
+        <div className="fp-empty">{t("filePreview.diffUnavailable")}</div>
+      </>
+    ) : <div className="fp-empty">{t("filePreview.diffUnavailable")}</div>;
   }
 
   const content = (
     <>
-      <div className={`gdp-status gdp-status-${status}`}>
-        <span className="gdp-status-label">{t(`filePreview.gitStatus.${status}`)}</span>
-        {previousPath && (
-          <span className="gdp-status-paths">
-            <span>{previousPath}</span>
-            <span className="gdp-status-arrow" aria-hidden="true">→</span>
-            <span>{path}</span>
-          </span>
-        )}
-      </div>
+      {statusBar}
       {hunks.map((hunk, hunkIndex) => (
         <Fragment key={`${hunk.old_start}:${hunk.new_start}:${hunkIndex}`}>
           {hunkIndex > 0 && <div className="gdp-hunk-separator" aria-hidden="true">…</div>}

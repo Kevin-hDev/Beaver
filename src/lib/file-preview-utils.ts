@@ -15,6 +15,8 @@ export function shortPath(path: string, baseDir?: string): string {
 }
 
 const MAX_FILE_OPERATIONS = 500;
+// Affichage par fichier ; distinct de la collecte Rust plafonnée à 500 fichiers.
+const MAX_PREVIEW_FILE_CHANGES = 10;
 
 interface CollectFileOperationsOptions {
   liveTools?: ToolActivityRecord[];
@@ -102,7 +104,7 @@ function toolsFromMessage(message: AgentMessage): ToolActivityRecord[] {
   return segmentTools.length > 0 ? segmentTools : message.tool_activities ?? [];
 }
 
-/** Une ligne par fichier : le dernier contenu visible et le total de ses changements. */
+/** Une ligne par fichier : dernier contenu, total et détail borné des changements. */
 function appendToolOperations(
   byPath: Map<string, FileOperation>,
   tools: ToolActivityRecord[],
@@ -121,10 +123,18 @@ function appendToolOperations(
       if (!key) continue;
       const newer = byPath.get(key);
       byPath.set(key, newer
-        ? { ...newer, ...sumFileOperations([newer, operation]) }
+        ? addOlderChange(newer, operation)
         : { ...operation, id: `file:${messageId}:${key}` });
     }
   }
+}
+
+function addOlderChange(file: FileOperation, older: FileOperation): FileOperation {
+  const changes = file.changes ?? [file];
+  const total = { ...file, ...sumFileOperations([file, older]) };
+  if (changes.length < MAX_PREVIEW_FILE_CHANGES) return { ...total, changes: [...changes, older] };
+  const hidden = file.olderChanges ?? { count: 0, additions: 0, deletions: 0 };
+  return { ...total, olderChanges: { count: hidden.count + 1, ...sumFileOperations([hidden, older]) } };
 }
 
 function collectLatestToolOperations(

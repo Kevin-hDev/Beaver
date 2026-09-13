@@ -154,6 +154,33 @@ describe("collectFileOperations", () => {
     }));
   });
 
+  it("garde chaque changement d'un fichier, le plus récent en premier, avec ses propres chiffres", () => {
+    const operations = collectFileOperations([
+      message("m1", [recorded("/repo/a.ts", 1, 1), recorded("/repo/a.ts", 2, 0)]),
+    ]);
+
+    expect(operations).toHaveLength(1);
+    expect(operations[0]).toEqual(expect.objectContaining({ additions: 3, deletions: 1 }));
+    expect(operations[0].changes?.map((change) => [change.additions, change.deletions]))
+      .toEqual([[2, 0], [1, 1]]);
+    expect(operations[0].olderChanges).toBeUndefined();
+  });
+
+  it("ne donne pas de liste de changements à un fichier changé une seule fois", () => {
+    const operations = collectFileOperations([message("m1", [recorded("/repo/a.ts", 1, 1)])]);
+    expect(operations[0].changes).toBeUndefined();
+  });
+
+  it("garde les dix changements les plus récents et résume les plus anciens", () => {
+    const tools = Array.from({ length: 12 }, (_, index) => recorded("/repo/a.ts", index + 1, 1));
+    const [operation] = collectFileOperations([message("m1", tools)]);
+
+    expect(operation.changes?.map((change) => change.additions))
+      .toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3]);
+    expect(operation.olderChanges).toEqual({ count: 2, additions: 3, deletions: 2 });
+    expect(operation).toEqual(expect.objectContaining({ additions: 78, deletions: 12 }));
+  });
+
   it("utilise le diff figé d'un remplacement complet", () => {
     const diff = {
       binary: false,
@@ -270,6 +297,20 @@ function message(id: string, tools: ToolActivityRecord[]): AgentMessage {
     timestamp: "2026-07-02T10:00:00Z",
     tool_activities: tools,
   };
+}
+
+function recorded(path: string, additions: number, deletions: number): ToolActivityRecord {
+  return tool({
+    name: "edit_file",
+    summary: path,
+    file_changes: [{
+      path,
+      status: "modified",
+      additions,
+      deletions,
+      diff: { binary: false, truncated: false, hunks: [] },
+    }],
+  });
 }
 
 function tool(overrides: Partial<ToolActivityRecord>): ToolActivityRecord {
