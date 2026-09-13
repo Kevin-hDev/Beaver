@@ -1376,7 +1376,10 @@
     "releaseNotesTitle": "Notas de la versión {{version}}",
     "showDetails": "Mostrar detalles",
     "hideDetails": "Ocultar detalles", "dismiss": "Ocultar esta notificación", "dismissFailed": "No se pudo ocultar la notificación.", "checkFailed": "La búsqueda de actualizaciones ha fallado. Inténtalo de nuevo en unos instantes.", "cancelling": "Cancelando…", "cancelled": "Descarga cancelada y archivos temporales eliminados.",
-    "window": { "title": "Actualización", "count": "{{count}} actualizaciones", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…" }
+    "window": {
+      "title": "Actualización", "count": "{{count}} actualizaciones", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "cancelledResult": "Cancelado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…",
+      "phases": { "waiting": "En espera", "preparing": "Preparando", "downloading": "Descargando", "verifying": "Verificando la integridad", "extracting": "Extrayendo", "installing": "Instalando", "restarting": "Reiniciando", "recovering": "Recuperando", "rolling-back": "Restaurando", "cleaning": "Limpiando", "completed": "Completado" }
+    }
   },
   "units": {
     "gb": "GB"

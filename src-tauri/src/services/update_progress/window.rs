@@ -39,6 +39,10 @@ pub fn show(app: &AppHandle, runtime: &UpdateProgressRuntime) -> Result<(), Stri
     let state = runtime.clone();
     let positioned_window = window.clone();
     window.on_window_event(move |event| {
+        if let WindowEvent::Moved(position) = event {
+            state.save_position(*position);
+            return;
+        }
         if matches!(
             event,
             WindowEvent::CloseRequested { .. } | WindowEvent::Destroyed

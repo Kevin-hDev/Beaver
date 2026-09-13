@@ -12,21 +12,36 @@ export interface OperationProgressActionProps {
   compact?: boolean;
 }
 
-export function OperationProgressAction({
-  percent, phaseLabel, cancelling, canCancel, cancelLabel, cancellingLabel,
-  onCancel, compact = false,
-}: OperationProgressActionProps) {
+type OperationProgressBarProps = Pick<
+  OperationProgressActionProps,
+  "percent" | "phaseLabel" | "cancelling"
+>;
+
+export function OperationProgressBar({
+  percent, phaseLabel, cancelling,
+}: OperationProgressBarProps) {
   const safePercent = percent !== null && Number.isFinite(percent)
     ? Math.max(0, Math.min(100, percent)) : null;
   return (
-    <div className={cn("opa-root", compact && "opa-compact")}>
+    <>
       <div className="opa-track" role="progressbar" aria-label={phaseLabel}
         aria-valuemin={0} aria-valuemax={100} aria-valuenow={safePercent ?? undefined}>
         <div className={cn("opa-fill", safePercent === null && "operation-progress-indeterminate",
           cancelling && "opa-stopped")}
           style={safePercent === null ? undefined : { width: `${safePercent}%` }} />
       </div>
-      <span className="opa-percent">{safePercent === null ? phaseLabel : `${safePercent}%`}</span>
+      <span className="opa-percent">{safePercent === null ? null : `${safePercent}\u202f%`}</span>
+    </>
+  );
+}
+
+export function OperationProgressAction({
+  percent, phaseLabel, cancelling, canCancel, cancelLabel, cancellingLabel,
+  onCancel, compact = false,
+}: OperationProgressActionProps) {
+  return (
+    <div className={cn("opa-root", compact && "opa-compact")}>
+      <OperationProgressBar percent={percent} phaseLabel={phaseLabel} cancelling={cancelling} />
       {(canCancel || cancelling) && (
         <button type="button" className="btn btn-sm btn-destructive opa-cancel"
           disabled={cancelling} onClick={onCancel}>

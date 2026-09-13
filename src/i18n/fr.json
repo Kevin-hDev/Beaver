@@ -1495,8 +1495,15 @@
       "queued": "En attente · position {{position}}",
       "cancelling": "Annulation en cours…",
       "completed": "Mis à jour",
+      "cancelledResult": "Annulé",
       "failed": "La mise à jour a échoué. Vérifie ta connexion, puis réessaie.",
-      "restarting": "Redémarrage de Beaver…"
+      "restarting": "Redémarrage de Beaver…",
+      "phases": {
+        "waiting": "En attente", "preparing": "Préparation", "downloading": "Téléchargement",
+        "verifying": "Vérification d’intégrité", "extracting": "Extraction", "installing": "Installation",
+        "restarting": "Redémarrage", "recovering": "Récupération", "rolling-back": "Restauration",
+        "cleaning": "Nettoyage", "completed": "Terminé"
+      }
     }
   },
   "units": {

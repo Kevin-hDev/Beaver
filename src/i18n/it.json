@@ -1372,7 +1372,10 @@
     "releaseNotesTitle": "Note della versione {{version}}",
     "showDetails": "Mostra dettagli",
     "hideDetails": "Nascondi dettagli", "dismiss": "Nascondi questa notifica", "dismissFailed": "Non è stato possibile nascondere la notifica.", "checkFailed": "La ricerca degli aggiornamenti non è riuscita. Riprova tra poco.", "cancelling": "Annullamento…", "cancelled": "Download annullato e file temporanei eliminati.",
-    "window": { "title": "Aggiornamento", "count": "{{count}} aggiornamenti", "close": "Chiudi la finestra", "remove": "Rimuovi questa riga", "retry": "Riprova", "cancel": "Annulla", "queued": "In attesa · posizione {{position}}", "cancelling": "Annullamento…", "completed": "Aggiornato", "failed": "L’aggiornamento non è riuscito. Controlla la connessione e riprova.", "restarting": "Riavvio di Beaver…" }
+    "window": {
+      "title": "Aggiornamento", "count": "{{count}} aggiornamenti", "close": "Chiudi la finestra", "remove": "Rimuovi questa riga", "retry": "Riprova", "cancel": "Annulla", "queued": "In attesa · posizione {{position}}", "cancelling": "Annullamento…", "completed": "Aggiornato", "cancelledResult": "Annullato", "failed": "L’aggiornamento non è riuscito. Controlla la connessione e riprova.", "restarting": "Riavvio di Beaver…",
+      "phases": { "waiting": "In attesa", "preparing": "Preparazione", "downloading": "Download", "verifying": "Verifica dell’integrità", "extracting": "Estrazione", "installing": "Installazione", "restarting": "Riavvio", "recovering": "Ripristino", "rolling-back": "Ripristino precedente", "cleaning": "Pulizia", "completed": "Completato" }
+    }
   },
   "units": {
     "gb": "GB"

@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   getVersion: vi.fn(),
   listen: vi.fn(),
   showToast: vi.fn(),
+  startDownload: vi.fn(),
+  downloads: [] as Array<{
+    id: string; kind: "ollama" | "forecast"; modelId: string; isUpdate: boolean;
+  }>,
+  retryListener: undefined as ((event: { payload: string }) => void) | undefined,
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -18,7 +23,8 @@ vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
 vi.mock("@/hooks/use-model-downloads", () => ({
   useModelDownloads: () => ({
     activeDownload: null,
-    startDownload: vi.fn(),
+    downloads: mocks.downloads,
+    startDownload: mocks.startDownload,
     cancelDownload: vi.fn(),
   }),
 }));
@@ -48,8 +54,14 @@ describe("useUpdateChecker", () => {
   beforeEach(() => {
     mocks.invoke.mockReset();
     mocks.getVersion.mockReset().mockResolvedValue("1.1.7");
-    mocks.listen.mockReset().mockResolvedValue(() => {});
+    mocks.retryListener = undefined;
+    mocks.downloads = [];
+    mocks.listen.mockReset().mockImplementation((name: string, callback: (event: { payload: string }) => void) => {
+      if (name === "update-operation-retry-requested") mocks.retryListener = callback;
+      return Promise.resolve(() => {});
+    });
     mocks.showToast.mockReset();
+    mocks.startDownload.mockReset();
   });
 
   it("coalesces overlapping update checks", async () => {
@@ -177,5 +189,36 @@ describe("useUpdateChecker", () => {
     download.reject("update-download-cancelled");
     await act(async () => { await downloadTask; });
     expect(view.result.current.appCancelling).toBe(false);
+  });
+
+  it("réessaie un modèle avec les paramètres de l'opération d'origine", async () => {
+    mocks.downloads = [{
+      id: "failed-model",
+      kind: "forecast",
+      modelId: "chronos-tiny",
+      isUpdate: true,
+    }];
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "check_app_update") return Promise.resolve(null);
+      if (command === "check_ollama_updates") return Promise.resolve([]);
+      if (command === "check_ollama_binary_update") return Promise.resolve(null);
+      if (command === "get_ollama_installed_version") return Promise.resolve(null);
+      if (command === "list_update_operations") return Promise.resolve([{
+        id: "failed-model", sequence: 3, kind: "forecast-model", label: "chronos-tiny",
+        status: "failed", phase: "installing", progressMode: "indeterminate", percent: null,
+        queuePosition: null, canCancel: false, canRetry: true, errorKey: "model-download-failed",
+      }]);
+      return Promise.resolve(undefined);
+    });
+    renderHook(() => useUpdateChecker());
+    await waitFor(() => expect(mocks.retryListener).toBeTypeOf("function"));
+
+    act(() => mocks.retryListener?.({ payload: "failed-model" }));
+
+    await waitFor(() => expect(mocks.startDownload).toHaveBeenCalledWith({
+      kind: "forecast",
+      modelId: "chronos-tiny",
+      isUpdate: true,
+    }));
   });
 });

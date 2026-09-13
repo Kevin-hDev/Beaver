@@ -33,10 +33,12 @@ test("update progress entry points keep a closed local content surface", () => {
     : [];
   const source = [readFileSync(htmlPath, "utf8"), readFileSync(mainPath, "utf8"), ...components]
     .join("\n");
+  const sourceWithoutLocalIpc = source.replaceAll("http://ipc.localhost", "");
   for (const forbidden of [
     "innerHTML", "dangerouslySetInnerHTML", "eval(", "new Function", "http://", "https://",
     "window.location", "location.href",
-  ]) assert.equal(source.includes(forbidden), false, forbidden);
+  ]) assert.equal(sourceWithoutLocalIpc.includes(forbidden), false, forbidden);
   assert.match(source, /Content-Security-Policy/);
+  assert.match(source, /connect-src ipc: http:\/\/ipc\.localhost/);
   assert.match(source, /script-src 'self'/);
 });

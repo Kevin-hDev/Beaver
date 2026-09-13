@@ -1443,8 +1443,15 @@
       "queued": "Queued · position {{position}}",
       "cancelling": "Cancelling…",
       "completed": "Updated",
+      "cancelledResult": "Cancelled",
       "failed": "The update failed. Check your connection, then retry.",
-      "restarting": "Restarting Beaver…"
+      "restarting": "Restarting Beaver…",
+      "phases": {
+        "waiting": "Waiting", "preparing": "Preparing", "downloading": "Downloading",
+        "verifying": "Verifying integrity", "extracting": "Extracting", "installing": "Installing",
+        "restarting": "Restarting", "recovering": "Recovering", "rolling-back": "Rolling back",
+        "cleaning": "Cleaning", "completed": "Completed"
+      }
     }
   },
   "units": {

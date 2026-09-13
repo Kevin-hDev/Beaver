@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { emit } from "@tauri-apps/api/event";
 import { useToast } from "@/components/ui/toast";
 import {
   THEME_OPTIONS,
@@ -101,6 +102,7 @@ export function useTheme() {
         ? catalog.byChoice.get(applied as ExtensionThemeChoice)!.colorScheme
         : getThemeColorScheme(applied as ResolvedTheme);
       persistTheme(choice, base);
+      broadcastTheme(applied, base);
       return;
     }
     if (unavailableChoice.current !== choice) {
@@ -117,7 +119,9 @@ export function useTheme() {
       const applied = applyThemeChoice(document.documentElement, "system", catalog, media.matches);
       if (!applied) return;
       setThemeState(applied);
-      persistTheme("system", getThemeColorScheme(applied as ResolvedTheme));
+      const base = getThemeColorScheme(applied as ResolvedTheme);
+      persistTheme("system", base);
+      broadcastTheme(applied, base);
     };
     media.addEventListener("change", handleChange);
     return () => media.removeEventListener("change", handleChange);
@@ -142,4 +146,9 @@ export function useTheme() {
   }, [catalog.entries]);
 
   return { theme, choice, setTheme, setThemeCatalog, toggle } as const;
+}
+
+function broadcastTheme(applied: AppliedTheme, colorScheme: "light" | "dark"): void {
+  const palette = applied.startsWith("extension:") ? colorScheme : applied;
+  void emit("beaver-theme-changed", { palette, colorScheme }).catch(() => {});
 }

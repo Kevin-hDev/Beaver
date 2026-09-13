@@ -5,44 +5,27 @@ import { listen } from "@tauri-apps/api/event";
 import { useForecastDevUpdates } from "@/hooks/use-forecast-dev-updates";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { useUpdateDismissals } from "@/hooks/use-update-dismissals";
+import { useUpdateRetry } from "@/hooks/use-update-retry";
 import { updateErrorKey } from "@/hooks/update-error";
 import i18n from "@/i18n";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { showToast } from "@/lib/toast-emitter";
+import type {
+  AppUpdate,
+  OllamaBinaryUpdate,
+  OllamaModelUpdate,
+  PullingState,
+} from "./update-types";
+
+export type {
+  AppUpdate,
+  DismissedUpdate,
+  OllamaBinaryUpdate,
+  OllamaModelUpdate,
+  PullingState,
+} from "./update-types";
 
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
-
-export interface AppUpdate {
-  version: string;
-  assetUrl: string;
-  title?: string | null;
-  publishedAt?: string | null;
-  notesByLocale?: Record<string, string[]> | null;
-}
-
-export interface OllamaModelUpdate {
-  fullName: string;
-  family: string;
-  tag: string;
-  latestDigest: string;
-}
-
-export interface OllamaBinaryUpdate {
-  currentVersion: string;
-  latestVersion: string;
-}
-
-export interface DismissedUpdate {
-  kind: "app" | "ollama_binary" | "ollama_model";
-  subject: string;
-  version: string;
-}
-
-export interface PullingState {
-  fullName: string;
-  percent: number;
-  status: string;
-}
 
 interface DownloadProgress {
   completed: number;
@@ -51,7 +34,7 @@ interface DownloadProgress {
 }
 
 export function useUpdateChecker() {
-  const { activeDownload, startDownload, cancelDownload } = useModelDownloads();
+  const { downloads, activeDownload, startDownload, cancelDownload } = useModelDownloads();
   const { forecastDevUpdates } = useForecastDevUpdates();
   const dismissals = useUpdateDismissals();
   const [appUpdate, setAppUpdate] = useState<AppUpdate | null>(null);
@@ -197,6 +180,14 @@ export function useUpdateChecker() {
     setModelCancellingId(activeDownload.id);
     await cancelDownload(activeDownload.id).catch(() => setModelCancellingId(null));
   }, [activeDownload, cancelDownload]);
+
+  useUpdateRetry({
+    appAssetUrl: appUpdate?.assetUrl ?? null,
+    downloads,
+    downloadAppUpdate,
+    updateOllamaBinary,
+    startDownload,
+  });
 
   const visibleAppUpdate = dismissals.visible(appUpdate, (update) => ({ kind: "app", subject: "beaver", version: update.version }));
   const visibleOllamaBinaryUpdate = dismissals.visible(ollamaBinaryUpdate, (update) => ({ kind: "ollama_binary", subject: "ollama", version: update.latestVersion }));

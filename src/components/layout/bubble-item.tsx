@@ -7,6 +7,7 @@ import type { DismissedUpdate, PullingState } from "@/hooks/use-update-checker";
 import { selectReleaseNotes, type ReleaseNotesByLocale } from "./update-release-notes";
 import logoIcon from "@/assets/logo.png";
 import { openForecastDevSource } from "./forecast-dev-source";
+import { IS_LINUX } from "@/lib/platform";
 
 export interface ItemData {
   id: string;
@@ -142,7 +143,8 @@ export function BubbleItem({
           <span className="update-bubble-sub">{item.sub}</span>
         </div>
 
-        {showProgress ? (
+        {/* Linux conserve la progression intégrée : la nouvelle fenêtre est volontairement absente sur cet OS. */}
+        {showProgress && IS_LINUX ? (
           <UpdateProgressAction
             compact
             percent={percent}
@@ -151,7 +153,7 @@ export function BubbleItem({
             cancellingLabel={t("updates.cancelling")}
             onCancel={handleCancel}
           />
-        ) : (
+        ) : !showProgress ? (
           <div className="update-bubble-actions">
             <button className="btn btn-sm btn-primary update-bubble-btn" onClick={handleClick}>
               {buttonLabel}
@@ -168,7 +170,7 @@ export function BubbleItem({
               </button>
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {canExpand && (
