@@ -116,7 +116,7 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
                   <span className="gdp-line-number">{lineNumber ?? ""}</span>
                   <span className={`tp-prefix tp-prefix-${mode}`}>{prefix}</span>
                   <span
-                    className={`tp-code tp-code-${mode}`}
+                    className="tp-code"
                     dangerouslySetInnerHTML={{ __html: hunk.highlighted[lineIndex] || " " }}
                   />
                 </div>

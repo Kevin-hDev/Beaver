@@ -138,7 +138,7 @@ function TextPreviewContent({ operation, baseDir }: FilePreviewContentProps) {
         <div key={i} className="tp-line tp-line-context">
           <span className="tp-num">{i + 1}</span>
           <span className="tp-prefix tp-prefix-context"> </span>
-          <span className="tp-code tp-code-context" dangerouslySetInnerHTML={{ __html: html || " " }} />
+          <span className="tp-code" dangerouslySetInnerHTML={{ __html: html || " " }} />
         </div>
       ))}
     </div>

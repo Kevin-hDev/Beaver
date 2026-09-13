@@ -20,8 +20,8 @@ function CodeLines({ lines, mode, path, startLine = 1 }: {
         <div key={`${mode}-${i}`} className={`tp-line tp-line-${mode}`}>
           <span className="tp-num">{startLine + i}</span>
           {path
-            ? <span className={`tp-code tp-code-${mode}`} dangerouslySetInnerHTML={{ __html: line || " " }} />
-            : <span className={`tp-code tp-code-${mode}`}>{line}</span>
+            ? <span className="tp-code" dangerouslySetInnerHTML={{ __html: line || " " }} />
+            : <span className="tp-code">{line}</span>
           }
         </div>
       ))}

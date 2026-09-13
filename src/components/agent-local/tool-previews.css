@@ -51,24 +51,22 @@
   background: var(--diff-del-gutter);
 }
 
+/* Le fond et le signe indiquent le changement ; le code garde sa couleur normale. */
 .tp-code {
   flex: 1;
   white-space: pre-wrap;
   word-break: break-all;
   padding-left: 14px;
   padding-right: 8px;
+  color: var(--ink);
 }
 
-.tp-code-ok {
+.tp-prefix-ok {
   color: var(--diff-new);
 }
 
-.tp-code-error {
+.tp-prefix-error {
   color: var(--diff-old);
-}
-
-.tp-code-context {
-  color: var(--ink-muted);
 }
 
 .tp-wrapper.tp-nowrap {
