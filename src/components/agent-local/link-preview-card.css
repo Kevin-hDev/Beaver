@@ -26,6 +26,8 @@
   flex: none;
   width: 100%;
   aspect-ratio: 1.91 / 1;
+  /* Empêche une image plus haute que 1,91:1 d'agrandir la rangée sous
+     Chromium (CEF sur macOS, WebView2 sous Windows). */
   overflow: hidden;
   background: var(--field-bg);
 }
@@ -35,6 +37,8 @@
   place-items: center;
 }
 
+/* Passe devant `.chat-md img`, qui ajoute marge et arrondi aux images du
+   message : les images de la carte doivent garder leur propre cadre. */
 .lpc-card .lpc-media img,
 .lpc-card .lpc-chip img {
   display: block;
@@ -51,6 +55,8 @@
 }
 
 .lpc-body {
+  /* Deux lignes de titre et la provenance gardent toutes les cartes d'une
+     rangée à la même hauteur ; le calcul suit la taille de texte réglable. */
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -109,6 +115,8 @@
   height: 22px;
 }
 
+/* En dernier : le fond d'attente doit l'emporter sur `.lpc-media`, de même
+   spécificité. */
 .lpc-wait,
 .lpc-bar {
   background: var(--ink-faint);

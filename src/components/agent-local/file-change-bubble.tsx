@@ -73,6 +73,8 @@ function FileChangeRow({ operation, baseDir, onReview, solo = false }: {
   );
 }
 
+/* Un zéro ne s'affiche pas : « −0 » en rouge attirait l'œil pour ne rien dire
+   (décision du 11 sept. 2026). */
 function ChangeStats({ additions, deletions }: { additions: number; deletions: number }) {
   return (
     <span className="fcb-stats">

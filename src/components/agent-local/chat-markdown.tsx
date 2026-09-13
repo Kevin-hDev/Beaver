@@ -19,6 +19,9 @@ interface ChatMarkdownProps {
   content: string;
   skillNames?: string[];
   builtInNames?: string[];
+  /* Aperçus sous le texte de la réponse finale de l'agent seulement : ailleurs,
+     ils répéteraient le lien saisi ou couperaient le fil du travail en cours.
+     Décision : docs/design/apercus-de-liens.md, 11 sept. 2026. */
   linkPreviews?: boolean;
 }
 

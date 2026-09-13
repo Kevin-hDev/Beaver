@@ -176,6 +176,7 @@
   color: var(--pulse-hover);
 }
 
+/* auto-fill garde un lien seul à la largeur d'une colonne. */
 .chat-previews-block {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

@@ -202,6 +202,8 @@ function basename(path: string): string {
   return parts.length > 0 ? parts[parts.length - 1] : path;
 }
 
+/* Aucun chiffre pendant le travail : le vrai changement n'arrive qu'avec le
+   résultat (décision de Kevin du 11 sept. 2026). */
 function changeStats(
   tool: RenderableTool,
 ): Pick<ToolDisplayInfo, "additions" | "deletions"> {
