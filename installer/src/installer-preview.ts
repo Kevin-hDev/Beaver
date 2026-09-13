@@ -32,7 +32,12 @@ export function installerPreviewApi(): InstallerApi | undefined {
     snapshot: () => Promise.resolve(snapshot),
     chooseDirectory: () => Promise.resolve(null),
     start: () => Promise.resolve(),
-    cancel: () => Promise.resolve(snapshot),
+    cancel: () => Promise.resolve({
+      sequence: 1,
+      snapshot,
+      completedStepDurationsMs: [],
+      logKey: null,
+    }),
     launch: () => Promise.resolve(),
     close: () => Promise.resolve(),
   };

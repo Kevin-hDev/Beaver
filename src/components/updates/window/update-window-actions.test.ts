@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";
-import { cancelUpdateOperation, dismissUpdateOperation, retryUpdateOperation } from "./update-window-actions";
+import { cancelUpdateOperation, retryUpdateOperation } from "./update-window-actions";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(() => Promise.resolve()) }));
 
@@ -24,9 +24,8 @@ describe("update window actions", () => {
     expect(invoke).toHaveBeenCalledWith(command, ...(args ? [args] : []));
   });
 
-  it("réessaie et retire seulement par les commandes fermées", async () => {
+  it("réessaie puis retire l'ancienne opération par les commandes fermées", async () => {
     await retryUpdateOperation("operation-1");
-    await dismissUpdateOperation("operation-1");
     expect(invoke).toHaveBeenNthCalledWith(1, "request_update_operation_retry", { id: "operation-1" });
     expect(invoke).toHaveBeenNthCalledWith(2, "dismiss_update_operation", { id: "operation-1" });
   });

@@ -7,8 +7,9 @@ export function cancelUpdateOperation(operation: UpdateOperationSnapshot): Promi
   return invoke("cancel_model_download", { id: operation.id });
 }
 
-export function retryUpdateOperation(id: string): Promise<unknown> {
-  return invoke("request_update_operation_retry", { id });
+export async function retryUpdateOperation(id: string): Promise<void> {
+  await invoke("request_update_operation_retry", { id });
+  await dismissUpdateOperation(id);
 }
 
 export function dismissUpdateOperation(id: string): Promise<boolean> {
