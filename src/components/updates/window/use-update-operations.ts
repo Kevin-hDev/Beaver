@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";
-import { dismissUpdateOperation } from "./update-window-actions";
+import { dismissUpdateOperation, retryUpdateOperation } from "./update-window-actions";
 
 const TERMINAL_DISPLAY_MS = 4_000;
 
@@ -26,6 +26,10 @@ export function useUpdateOperations() {
     if (await dismissUpdateOperation(id)) {
       setOperations((current) => current.filter((operation) => operation.id !== id));
     }
+  }, []);
+  const retry = useCallback(async (id: string) => {
+    await retryUpdateOperation(id);
+    setOperations((current) => current.filter((operation) => operation.id !== id));
   }, []);
 
   useEffect(() => {
@@ -75,5 +79,5 @@ export function useUpdateOperations() {
     };
   }, []);
 
-  return { operations, dismiss };
+  return { operations, dismiss, retry };
 }

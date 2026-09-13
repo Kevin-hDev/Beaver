@@ -83,4 +83,18 @@ describe("useUpdateOperations", () => {
 
     expect(view.result.current.operations).toHaveLength(1);
   });
+
+  it("retire localement l'ancienne ligne après un réessai accepté", async () => {
+    const failed = { ...operation(2), status: "failed" as const, canCancel: false, canRetry: true };
+    mocks.listen.mockResolvedValue(() => {});
+    mocks.invoke.mockImplementation((command: string) => Promise.resolve(
+      command === "list_update_operations" ? [failed] : command !== "dismiss_update_operation",
+    ));
+    const view = renderHook(() => useUpdateOperations());
+    await waitFor(() => expect(view.result.current.operations).toHaveLength(1));
+
+    await act(async () => { await view.result.current.retry("operation-1"); });
+
+    expect(view.result.current.operations).toHaveLength(0);
+  });
 });

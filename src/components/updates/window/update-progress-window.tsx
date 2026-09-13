@@ -14,7 +14,7 @@ const THEMES = new Set<ResolvedTheme>(RESOLVED_THEME_OPTIONS.map(({ id }) => id)
 
 export function UpdateProgressWindow() {
   const { t } = useTranslation();
-  const { operations, dismiss } = useUpdateOperations();
+  const { operations, dismiss, retry } = useUpdateOperations();
   const contentRef = useRef<HTMLElement>(null);
   useUpdateWindowTheme();
   useWindowHeight(contentRef, operations.length);
@@ -37,7 +37,12 @@ export function UpdateProgressWindow() {
       </header>
       <ul className="upw-lines">
         {operations.map((operation) => (
-          <UpdateOperationRow key={operation.id} operation={operation} onDismiss={dismiss} />
+          <UpdateOperationRow
+            key={operation.id}
+            operation={operation}
+            onDismiss={dismiss}
+            onRetry={retry}
+          />
         ))}
       </ul>
     </main>

@@ -20,6 +20,10 @@ vi.mock("./use-update-operations", () => ({
       mocks.invoke("dismiss_update_operation", { id });
       return Promise.resolve();
     },
+    retry: async (id: string): Promise<void> => {
+      await mocks.invoke("request_update_operation_retry", { id });
+      await mocks.invoke("dismiss_update_operation", { id });
+    },
   }),
 }));
 vi.mock("react-i18next", () => ({

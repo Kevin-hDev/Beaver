@@ -4,12 +4,13 @@ import { OperationProgressBar } from "@/components/ui/operation-progress-action"
 import { CheckCircle2, Clock3, Warning, X } from "@/components/ui/icons";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";
 import { cn } from "@/lib/utils";
-import { cancelUpdateOperation, retryUpdateOperation } from "./update-window-actions";
+import { cancelUpdateOperation } from "./update-window-actions";
 import "./update-operation-row.css";
 
-export function UpdateOperationRow({ operation, onDismiss }: {
+export function UpdateOperationRow({ operation, onDismiss, onRetry }: {
   operation: UpdateOperationSnapshot;
   onDismiss: (id: string) => Promise<void>;
+  onRetry: (id: string) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const terminal = operation.status === "completed" || operation.status === "failed"
@@ -36,7 +37,7 @@ export function UpdateOperationRow({ operation, onDismiss }: {
         )}
         {operation.canRetry && (
           <button type="button" className="btn btn-sm btn-secondary"
-            onClick={() => void retryUpdateOperation(operation.id).catch(() => {})}>
+            onClick={() => void onRetry(operation.id).catch(() => {})}>
             {t("updates.window.retry")}
           </button>
         )}
