@@ -1,0 +1,3 @@
+Counter-review N1: inactive exit requests attempt cleanup once and never prevent process exit when cleanup fails. The owned orphan remains eligible for the bounded purge on the next installer launch. Active installation still prevents closing.
+
+TDD: cleanup_failure_is_attempted_only_once failed before the change and now passes. Runtime tests 7/7 and installer Clippy strict passed. Windows native behavior remains CI/machine validation.
