@@ -1,0 +1,5 @@
+Decision: compile parse_guarded_command and its test import only on macOS.
+
+Reason: the parser exists solely for macos_parent_guard. Compiling it on Linux created an unused function and unused test import under strict Clippy, while keeping it platform-scoped matches its only production caller and preserves the generic shell helper on every OS.
+
+Validation: rustfmt 1.98.1 changed-file check passed; cargo +1.98.1 clippy --all-targets -- -D warnings passed on macOS; all seven shell sandbox helper tests passed; graphify update . completed. The Linux CI run is the cross-platform proof for the original failure.
