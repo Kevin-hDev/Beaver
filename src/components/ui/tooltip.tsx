@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTooltipPosition } from "./use-tooltip-position";
 import "./tooltip.css";
@@ -20,6 +20,8 @@ export function Tooltip({
   const wrapper = useRef<HTMLSpanElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const { position, bubbleRef } = useTooltipPosition(visible, wrapper, align);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const show = () => {
     timer.current = setTimeout(() => setVisible(true), delay);

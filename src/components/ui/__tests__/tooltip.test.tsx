@@ -86,6 +86,21 @@ describe("Tooltip", () => {
     expect(getByText("Mon aide")).toBeTruthy();
   });
 
+  it("annule le délai si le composant disparaît avant l'ouverture", () => {
+    const { container, unmount } = render(
+      <Tooltip label="Mon aide">
+        <button>action</button>
+      </Tooltip>,
+    );
+
+    fireEvent.mouseEnter(container.querySelector(".tooltip-wrapper")!);
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("cache la bulle au départ de la souris", () => {
     const { container, queryByText } = render(
       <Tooltip label="Mon aide">
