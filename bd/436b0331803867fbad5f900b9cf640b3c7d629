@@ -1,0 +1,15 @@
+Resolves the two failures reported on PR #72.
+
+- Refreshes the brand-boundary count and visible-reference fingerprint to match the reviewed branch inventory.
+- Opens the Windows installer before metadata validation and verifies that the path still identifies the opened regular single-link file, removing the CodeQL TOCTOU pattern.
+
+Validation:
+- npm run test:brand-boundaries (pass: 15/15)
+- npm run test:release-workflow (pass: 53/53)
+- node --test scripts/release/package-installer.test.mjs (pass: 4/4)
+- npm run lint (pass)
+- npx tsc --noEmit (pass)
+- git diff --check (pass)
+- graphify update . (pass)
+
+Reason: preserve the existing closed brand contract and validate the exact file handle before trusting filesystem metadata.
