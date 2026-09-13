@@ -25,7 +25,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--radius-window);
+  /* Fenêtre décorée : le système dessine le coin. Un arrondi interne
+     laisserait des coins pleins entre la coque et le cadre natif. */
   background: var(--shell-opaque);
   color: var(--ink);
 }

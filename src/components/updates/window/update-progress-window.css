@@ -6,7 +6,12 @@
 .upw-window {
   width: 100%;
   overflow: hidden;
-  border-radius: var(--radius-window);
+  /* Fenêtre sans décorations : elle dessine son propre coin, à l'arrondi
+     Beaver — pas au coin système (--radius-window), réservé aux coques
+     plein écran qui épousent le cadre macOS. Décidé avec Kevin le
+     14 sept. 2026 : à 16px, les coins des lignes touchaient ceux de la
+     fenêtre. */
+  border-radius: var(--radius);
   background: var(--shell-opaque);
   color: var(--ink);
   font-size: var(--text-sm);
