@@ -92,13 +92,17 @@ pub async fn download_app_update(
         .await;
     if let Err(error) = &result {
         let (status, error_key) = terminal_status(Some(error));
-        finish_progress(
+        if finish_progress(
             &finish_app,
             &finish_progress_runtime,
             &finish_id,
             status,
             error_key,
-        )?;
+        )
+        .is_err()
+        {
+            log::warn!("update_progress_finalization_failed");
+        }
     }
     result
 }

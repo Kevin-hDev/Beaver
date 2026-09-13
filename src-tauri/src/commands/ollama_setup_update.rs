@@ -58,7 +58,7 @@ pub async fn update_ollama_binary(
         .as_ref()
         .err()
         .is_some_and(|error| error == OllamaErrorCode::OllamaOperationCancelled.as_str());
-    finish_progress(
+    if finish_progress(
         &app,
         &progress,
         &id,
@@ -72,6 +72,10 @@ pub async fn update_ollama_binary(
             .err()
             .filter(|_| !cancelled)
             .map(String::as_str),
-    )?;
+    )
+    .is_err()
+    {
+        log::warn!("update_progress_finalization_failed");
+    }
     result
 }

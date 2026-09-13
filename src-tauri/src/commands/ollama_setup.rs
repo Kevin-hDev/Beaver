@@ -56,7 +56,7 @@ pub async fn download_ollama(
     manager.set_operation_cancellation(cancel.clone());
     let result = run_download_ollama(manager.inner(), &reporter, &cancel).await;
     manager.clear_operation_cancellation();
-    finish_progress(
+    if finish_progress(
         &app,
         &progress,
         &id,
@@ -64,7 +64,11 @@ pub async fn download_ollama(
         result.as_ref().err().and_then(|error| {
             (error != OllamaErrorCode::OllamaOperationCancelled.as_str()).then_some(error.as_str())
         }),
-    )?;
+    )
+    .is_err()
+    {
+        log::warn!("update_progress_finalization_failed");
+    }
     result
 }
 

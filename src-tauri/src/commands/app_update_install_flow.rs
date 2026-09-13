@@ -52,7 +52,9 @@ pub(super) async fn run(
             .await?;
     helper.commit(updates.handoff(), &cancellation)?;
     let _ = tmp.persist();
-    finish_progress(&app, &progress, &id, UpdateOperationStatus::Completed, None)?;
+    if finish_progress(&app, &progress, &id, UpdateOperationStatus::Completed, None).is_err() {
+        log::warn!("update_progress_finalization_failed");
+    }
     crate::app_exit::request(&app, 0);
     Ok(())
 }
