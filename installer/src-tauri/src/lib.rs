@@ -39,6 +39,7 @@ pub mod launch_args;
 pub mod platform;
 pub mod process;
 pub mod runtime;
+mod temp_activity;
 pub mod temp_ownership;
 pub mod trace;
 
@@ -48,12 +49,15 @@ pub fn run() {
         Err(error) => exit_with(error),
     };
     let temp_root = std::env::temp_dir();
-    temp_ownership::purge_orphans(&temp_root, &launch.run_id);
     let run =
         match temp_ownership::OwnedTempRun::adopt(&temp_root, &launch.work_dir, &launch.run_id) {
             Ok(run) => run,
             Err(error) => exit_with(error),
         };
+    if run.mark_active().is_err() {
+        exit_with(error::InstallerError::CleanupFailed);
+    }
+    temp_ownership::purge_orphans(&temp_root, &launch.run_id);
     let service = match install::InstallerService::new(launch, run) {
         Ok(service) => service,
         Err(error) => exit_with(error),

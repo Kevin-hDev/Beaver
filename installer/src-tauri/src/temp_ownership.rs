@@ -1,6 +1,6 @@
 use crate::error::InstallerError;
 use serde::Deserialize;
-use std::fs::{self, File, OpenOptions};
+use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use subtle::ConstantTimeEq;
@@ -49,6 +49,10 @@ impl OwnedTempRun {
         fs::remove_dir_all(&self.path).map_err(|_| InstallerError::CleanupFailed)
     }
 
+    pub fn mark_active(&self) -> Result<(), InstallerError> {
+        crate::temp_activity::mark(&self.path)
+    }
+
     fn run_id(&self) -> &str {
         run_id_from_name(&self.path).expect("validated owned run")
     }
@@ -74,6 +78,9 @@ pub fn purge_orphans(temp_root: &Path, current_run_id: &str) {
         }
         if validate_run(temp_root, &path, run_id).is_err() || validate_tree(&path).is_err() {
             eprintln!("installer-orphan-validation-failed");
+            continue;
+        }
+        if crate::temp_activity::is_active(&path) {
             continue;
         }
         if fs::remove_dir_all(path).is_err() {
@@ -112,7 +119,8 @@ fn validate_marker(path: &Path, run_id: &str) -> Result<(), InstallerError> {
         return Err(InstallerError::CleanupFailed);
     }
     let mut contents = String::new();
-    open_without_follow(path)?
+    crate::temp_activity::open_without_follow(path)
+        .map_err(|_| InstallerError::CleanupFailed)?
         .take(MAX_MARKER_BYTES + 1)
         .read_to_string(&mut contents)
         .map_err(|_| InstallerError::CleanupFailed)?;
@@ -168,26 +176,6 @@ fn constant_time_eq(left: &str, right: &str) -> bool {
             ^ right.as_bytes().get(index).copied().unwrap_or_default();
     }
     bool::from(lengths & difference.ct_eq(&0))
-}
-
-#[cfg(unix)]
-fn open_without_follow(path: &Path) -> Result<File, InstallerError> {
-    use std::os::unix::fs::OpenOptionsExt;
-    OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-        .open(path)
-        .map_err(|_| InstallerError::CleanupFailed)
-}
-
-#[cfg(windows)]
-fn open_without_follow(path: &Path) -> Result<File, InstallerError> {
-    use std::os::windows::fs::OpenOptionsExt;
-    OpenOptions::new()
-        .read(true)
-        .custom_flags(0x0020_0000)
-        .open(path)
-        .map_err(|_| InstallerError::CleanupFailed)
 }
 
 #[cfg(unix)]

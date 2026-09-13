@@ -29,17 +29,26 @@ export function useUpdateOperations() {
   }, []);
   const retry = useCallback(async (id: string) => {
     await retryUpdateOperation(id);
-    setOperations((current) => current.filter((operation) => operation.id !== id));
   }, []);
 
   useEffect(() => {
     let disposed = false;
     let stop: (() => void) | undefined;
-    void listen<UpdateOperationSnapshot>("update-operation-changed", ({ payload }) => {
+    const changed = listen<UpdateOperationSnapshot>("update-operation-changed", ({ payload }) => {
       if (!disposed) setOperations((current) => mergeOperations(current, [payload]));
-    }).then((unlisten) => {
-      if (disposed) return unlisten();
-      stop = unlisten;
+    });
+    const dismissed = listen<string>("update-operation-dismissed", ({ payload }) => {
+      if (!disposed) setOperations((current) => current.filter(({ id }) => id !== payload));
+    });
+    void Promise.all([changed, dismissed]).then(([stopChanged, stopDismissed]) => {
+      if (disposed) {
+        stopChanged();
+        return stopDismissed();
+      }
+      stop = () => {
+        stopChanged();
+        stopDismissed();
+      };
       return invoke<UpdateOperationSnapshot[]>("list_update_operations")
         .then((snapshot) => {
           if (!disposed) setOperations((current) => mergeOperations(current, snapshot));

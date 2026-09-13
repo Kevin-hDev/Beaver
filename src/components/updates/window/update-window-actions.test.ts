@@ -24,9 +24,9 @@ describe("update window actions", () => {
     expect(invoke).toHaveBeenCalledWith(command, ...(args ? [args] : []));
   });
 
-  it("réessaie puis retire l'ancienne opération par les commandes fermées", async () => {
+  it("demande le réessai sans retirer l'opération avant son acceptation", async () => {
     await retryUpdateOperation("operation-1");
-    expect(invoke).toHaveBeenNthCalledWith(1, "request_update_operation_retry", { id: "operation-1" });
-    expect(invoke).toHaveBeenNthCalledWith(2, "dismiss_update_operation", { id: "operation-1" });
+    expect(invoke).toHaveBeenCalledOnce();
+    expect(invoke).toHaveBeenCalledWith("request_update_operation_retry", { id: "operation-1" });
   });
 });

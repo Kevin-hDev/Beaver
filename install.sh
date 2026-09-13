@@ -106,13 +106,6 @@ owned_run_valid() {
   [ "$(/usr/bin/find -P "$candidate" -print | /usr/bin/awk 'NR > 4097 { exit 1 } END { print NR }')" -le 4097 ] || return 1
   ! /usr/bin/find -P "$candidate" \( -type l -o \( ! -type d ! -type f \) -o ! -user "$owner" \) -print -quit | /usr/bin/grep -q .
 }
-purge_orphans() {
-  local root="$1" current="$2" candidate="" run=""
-  while IFS= read -r candidate; do
-    run=${candidate##*/beaver-install-}; [ "$run" = "$current" ] && continue
-    if owned_run_valid "$root" "$candidate" "$run"; then /bin/rm -rf "$candidate"; fi
-  done < <(/usr/bin/find -E "$root" -maxdepth 1 -type d -regex '.*/beaver-install-[0-9a-f]{32}' | /usr/bin/head -n 128)
-}
 archive_names_valid() {
   LC_ALL=C /usr/bin/awk '
     { sub(/\/$/, ""); if (++count > 4096 || length($0) > 1024 || $0 ~ /[[:cntrl:]]/ || substr($0,1,1) == "/" || seen[$0]++) exit 1
@@ -181,7 +174,6 @@ main() {
   if [ "$platform" = "macos" ]; then
     RUN_ID=$(/usr/bin/od -An -N16 -tx1 /dev/urandom | /usr/bin/tr -d '[:space:]')
     [[ "$RUN_ID" =~ ^[0-9a-f]{32}$ ]] || fail "Installation impossible."
-    purge_orphans /tmp "$RUN_ID"
     TMP_DIR="/tmp/beaver-install-$RUN_ID"; /bin/mkdir "$TMP_DIR" || fail "Installation impossible."
     printf '{"schema":1,"runId":"%s"}' "$RUN_ID" > "$TMP_DIR/.beaver-installer-owner.json"
   else

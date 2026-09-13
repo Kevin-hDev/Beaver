@@ -72,6 +72,7 @@ pub async fn update_ollama_binary(
             .err()
             .filter(|_| !cancelled)
             .map(String::as_str),
+        true,
     )
     .is_err()
     {

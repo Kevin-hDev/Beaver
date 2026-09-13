@@ -160,16 +160,6 @@ function Test-OwnedRun([string]$Root, [string]$Path, [string]$RunId) {
         return $true
     } catch { return $false }
 }
-function Remove-OrphanRuns([string]$Root, [string]$CurrentRunId) {
-    $count = 0
-    foreach ($candidate in [IO.Directory]::EnumerateDirectories($Root, "beaver-install-*", [IO.SearchOption]::TopDirectoryOnly)) {
-        if ((++$count) -gt 128) { break }
-        $runId = [IO.Path]::GetFileName($candidate).Substring(15)
-        if ($runId -cmatch "^[0-9a-f]{32}$" -and $runId -cne $CurrentRunId -and (Test-OwnedRun $Root $candidate $runId)) {
-            [IO.Directory]::Delete($candidate, $true)
-        }
-    }
-}
 function Invoke-Main {
     if ($env:PROCESSOR_ARCHITECTURE -cne "AMD64") { Stop-Install }
     Add-Type -AssemblyName System.Net.Http
@@ -183,7 +173,6 @@ function Invoke-Main {
     $root = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd("\")
     $runId = New-RunId
     if ($runId -cnotmatch "^[0-9a-f]{32}$") { Stop-Install }
-    Remove-OrphanRuns $root $runId
     $script:TempDirectory = [IO.Path]::Combine($root, "beaver-install-$runId")
     [void][IO.Directory]::CreateDirectory($TempDirectory)
     [IO.File]::WriteAllText([IO.Path]::Combine($TempDirectory, ".beaver-installer-owner.json"),

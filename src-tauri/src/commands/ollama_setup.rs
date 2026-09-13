@@ -64,6 +64,7 @@ pub async fn download_ollama(
         result.as_ref().err().and_then(|error| {
             (error != OllamaErrorCode::OllamaOperationCancelled.as_str()).then_some(error.as_str())
         }),
+        false,
     )
     .is_err()
     {

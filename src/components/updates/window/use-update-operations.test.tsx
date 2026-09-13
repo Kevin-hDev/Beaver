@@ -29,9 +29,9 @@ describe("useUpdateOperations", () => {
     let event: ((payload: { payload: UpdateOperationSnapshot }) => void) | undefined;
     let resolveSnapshot!: (value: UpdateOperationSnapshot[]) => void;
     const order: string[] = [];
-    mocks.listen.mockImplementation((_name: string, callback: (payload: { payload: UpdateOperationSnapshot }) => void) => {
+    mocks.listen.mockImplementation((name: string, callback: (payload: { payload: UpdateOperationSnapshot }) => void) => {
       order.push("listen");
-      event = callback;
+      if (name === "update-operation-changed") event = callback;
       return Promise.resolve(() => {});
     });
     mocks.invoke.mockImplementation((command: string) => {
@@ -41,7 +41,7 @@ describe("useUpdateOperations", () => {
     });
     const view = renderHook(() => useUpdateOperations());
 
-    await waitFor(() => expect(order).toEqual(["listen", "list"]));
+    await waitFor(() => expect(order).toEqual(["listen", "listen", "list"]));
     act(() => event?.({ payload: operation(2) }));
     act(() => resolveSnapshot([operation(1)]));
     await waitFor(() => expect(view.result.current.operations[0]?.sequence).toBe(2));
@@ -84,9 +84,13 @@ describe("useUpdateOperations", () => {
     expect(view.result.current.operations).toHaveLength(1);
   });
 
-  it("retire localement l'ancienne ligne après un réessai accepté", async () => {
+  it("conserve l'ancienne ligne jusqu'à la confirmation du backend", async () => {
     const failed = { ...operation(2), status: "failed" as const, canCancel: false, canRetry: true };
-    mocks.listen.mockResolvedValue(() => {});
+    let dismissed: ((event: { payload: string }) => void) | undefined;
+    mocks.listen.mockImplementation((name: string, callback: (event: { payload: string }) => void) => {
+      if (name === "update-operation-dismissed") dismissed = callback;
+      return Promise.resolve(() => {});
+    });
     mocks.invoke.mockImplementation((command: string) => Promise.resolve(
       command === "list_update_operations" ? [failed] : command !== "dismiss_update_operation",
     ));
@@ -95,6 +99,8 @@ describe("useUpdateOperations", () => {
 
     await act(async () => { await view.result.current.retry("operation-1"); });
 
+    expect(view.result.current.operations).toHaveLength(1);
+    act(() => dismissed?.({ payload: "operation-1" }));
     expect(view.result.current.operations).toHaveLength(0);
   });
 });

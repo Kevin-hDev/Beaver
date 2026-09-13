@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 
 const CHANGED_EVENT: &str = "update-operation-changed";
+const DISMISSED_EVENT: &str = "update-operation-dismissed";
 
 #[derive(Clone, Default)]
 pub struct UpdateProgressRuntime {
@@ -65,9 +66,13 @@ impl UpdateProgressRuntime {
             .map_err(|_| public_error())?
             .dismiss(id)
             .map_err(str::to_string)?;
-        if removed && self.snapshot()?.is_empty() {
-            if let Some(window) = app.get_webview_window(window::WINDOW_LABEL) {
-                window.close().map_err(|_| public_error())?;
+        if removed {
+            app.emit_to(window::WINDOW_LABEL, DISMISSED_EVENT, id)
+                .map_err(|_| public_error())?;
+            if self.snapshot()?.is_empty() {
+                if let Some(window) = app.get_webview_window(window::WINDOW_LABEL) {
+                    window.close().map_err(|_| public_error())?;
+                }
             }
         }
         Ok(removed)

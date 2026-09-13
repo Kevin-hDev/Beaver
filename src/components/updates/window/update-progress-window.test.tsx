@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";
 import { UpdateProgressWindow } from "./update-progress-window";
@@ -22,7 +22,6 @@ vi.mock("./use-update-operations", () => ({
     },
     retry: async (id: string): Promise<void> => {
       await mocks.invoke("request_update_operation_retry", { id });
-      await mocks.invoke("dismiss_update_operation", { id });
     },
   }),
 }));
@@ -73,15 +72,13 @@ describe("UpdateProgressWindow", () => {
     expect(screen.getAllByRole("button", { name: "updates.window.cancel" })).toHaveLength(2);
   });
 
-  it("offre réessai et retire l'ancienne ligne après un échec générique", async () => {
+  it("offre le réessai après un échec générique", () => {
     mocks.operations = [{ ...base, status: "failed", canCancel: false, canRetry: true, errorKey: "private-path" }];
     render(<UpdateProgressWindow />);
 
     expect(screen.getByText("updates.window.failed")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "updates.window.retry" }));
     expect(mocks.invoke).toHaveBeenCalledWith("request_update_operation_retry", { id: "one" });
-    await waitFor(() => expect(mocks.invoke)
-      .toHaveBeenCalledWith("dismiss_update_operation", { id: "one" }));
   });
 
   it("valide le thème initial et les changements du canal fermé", () => {

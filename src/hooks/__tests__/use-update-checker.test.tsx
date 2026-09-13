@@ -198,6 +198,7 @@ describe("useUpdateChecker", () => {
       modelId: "chronos-tiny",
       isUpdate: true,
     }];
+    mocks.startDownload.mockResolvedValue({ id: "failed-model" });
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "check_app_update") return Promise.resolve(null);
       if (command === "check_ollama_updates") return Promise.resolve([]);
@@ -220,5 +221,7 @@ describe("useUpdateChecker", () => {
       modelId: "chronos-tiny",
       isUpdate: true,
     }));
+    await waitFor(() => expect(mocks.invoke)
+      .toHaveBeenCalledWith("dismiss_update_operation", { id: "failed-model" }));
   });
 });

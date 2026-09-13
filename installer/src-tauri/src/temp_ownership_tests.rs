@@ -127,3 +127,15 @@ fn five_crashed_runs_are_purged_without_touching_the_current_run() {
         .collect();
     assert_eq!(remaining, vec![current]);
 }
+
+#[test]
+fn active_run_is_not_purged() {
+    let fixture = Fixture::new();
+    let path = fixture.run(CURRENT);
+    let active = OwnedTempRun::adopt(&fixture.0, &path, CURRENT).unwrap();
+    active.mark_active().unwrap();
+
+    purge_orphans(&fixture.0, "ffffffffffffffffffffffffffffffff");
+
+    assert!(path.exists());
+}

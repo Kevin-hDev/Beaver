@@ -9,7 +9,6 @@ export function cancelUpdateOperation(operation: UpdateOperationSnapshot): Promi
 
 export async function retryUpdateOperation(id: string): Promise<void> {
   await invoke("request_update_operation_retry", { id });
-  await dismissUpdateOperation(id);
 }
 
 export function dismissUpdateOperation(id: string): Promise<boolean> {

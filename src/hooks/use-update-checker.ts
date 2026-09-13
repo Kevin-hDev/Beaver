@@ -183,6 +183,8 @@ export function useUpdateChecker() {
 
   useUpdateRetry({
     appAssetUrl: appUpdate?.assetUrl ?? null,
+    binaryBusy,
+    ollamaBinaryAvailable: ollamaBinaryUpdate !== null,
     downloads,
     downloadAppUpdate,
     updateOllamaBinary,

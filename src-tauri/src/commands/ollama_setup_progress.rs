@@ -74,6 +74,7 @@ pub(super) fn finish(
     id: &str,
     status: UpdateOperationStatus,
     error_key: Option<&str>,
+    can_retry: bool,
 ) -> Result<bool, String> {
     let mut operation = progress
         .snapshot()?
@@ -82,7 +83,7 @@ pub(super) fn finish(
         .ok_or_else(|| "update-progress-not-found".to_string())?;
     operation.status = status;
     operation.can_cancel = false;
-    operation.can_retry = status == UpdateOperationStatus::Failed;
+    operation.can_retry = can_retry && status == UpdateOperationStatus::Failed;
     operation.error_key = error_key.map(str::to_string);
     if status == UpdateOperationStatus::Completed {
         operation.phase = UpdateOperationPhase::Completed;
