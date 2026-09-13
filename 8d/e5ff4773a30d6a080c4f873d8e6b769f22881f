@@ -1,0 +1,7 @@
+Tache 7 - Projection des quatre flux existants
+
+Decisions: UpdateProgressRuntime attribue sequence atomiquement et ignore les doublons. Les Channels historiques restent inchanges. Le store modele reste borne a 16 entrees avec un verrou global standard afin de ne jamais perdre le point Forecast Installing. Les annulations app, Ollama binaire et Forecast sont refusees cote backend apres leur point de non-retour.
+
+Preuves: filtres app_update 54/54, ollama_setup 10/10, model_downloads 14/14, update_progress 8 passes + 1 test generateur ignore attendu. cargo check vert. cargo clippy --all-targets -- -D warnings vert. handoff_preserves_exactly_one_validated_helper execute exactement: 1 passed, 0 failed. graphify update . termine.
+
+Deviation documentee: un premier nouveau passage du test handoff a manque d'espace avant execution. cargo clean a supprime uniquement 123.3 Gio d'artefacts target regenerables; le meme test a ensuite ete reconstruit et execute avec succes. review-dark.png est reste hors commit.
