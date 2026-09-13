@@ -10,6 +10,12 @@
 
 - **Linux status** — Beaver 1.2.3 is the last release bringing new features to Linux. Linux keeps receiving security, stability, and dependency updates, everything that exists today keeps working, and new features now target macOS and Windows. The full statement is in [CROSS-PLATFORM.md](CROSS-PLATFORM.md).
 
+### Installation and updates
+
+- **Graphical Beaver installer** — the macOS and Windows installation scripts now open a dedicated installer with destination selection, clear five-step progress, bounded user-facing logs, cancellation and retry, interrupted-installation recovery, pinned SHA-256 verification, safe replacement, and a final Beaver launch action. The existing Linux installation path is unchanged.
+- **Unified update progress** — Beaver, Ollama, Ollama-model, and Forecast-model updates on macOS and Windows now share a dedicated progress window with queued, active, cancelling, completed, failed, and cancelled states. Closing the window leaves work running, while completed operations disappear automatically and failed operations can be retried.
+- **Verified installer delivery** — releases now build and publish separate macOS and Windows installer assets alongside the three application packages, include all five artifacts in the bounded update manifest, verify their fingerprints independently, and attest them before publication.
+
 ### Command-line interface
 
 - **Terminal commands** — the new `beaver` command provides `--version`, `paths`, `status`, `doctor`, `logs`, `cleanup`, and `update` for inspecting and maintaining Beaver from a terminal.
