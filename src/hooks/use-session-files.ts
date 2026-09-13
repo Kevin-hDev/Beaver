@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { collectFileOperationGroups, normalizeFileOperationPath } from "@/lib/file-preview-utils";
 import { checkPreviewFilesExist } from "@/services/file-preview";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { normalizeSavedToolHistory } from "@/lib/saved-tool-history";
 import { toolsToRecords, type StreamSegment, type ToolActivity } from "./agent-chat-utils";
 import type { AgentMessage } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
@@ -30,9 +31,12 @@ export function useSessionFileGroups(
     ].filter(isCompletedTool)),
     [completedSegments, currentTools],
   );
+  // Les anciennes conversations gardent les appels et résultats séparés ; le panneau
+  // doit les reconstruire comme le fil avant d'en extraire les fichiers.
+  const savedMessages = useMemo(() => normalizeSavedToolHistory(messages), [messages]);
   const groups = useMemo(
-    () => collectFileOperationGroups(messages, { liveTools, baseDir }),
-    [messages, liveTools, baseDir],
+    () => collectFileOperationGroups(savedMessages, { liveTools, baseDir }),
+    [savedMessages, liveTools, baseDir],
   );
   const existing = useExistingFileOperationGroups(
     groups,
