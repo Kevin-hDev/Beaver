@@ -42,7 +42,9 @@ export function FilePreviewSummarySelector({
     if (!surfaceActive || !open || !anchor || !menu) return;
 
     const rect = anchor.getBoundingClientRect();
-    const width = Math.max(190, rect.width);
+    // Le menu suit son libellé traduit le plus long pour ne jamais le couper.
+    const availableWidth = Math.max(0, window.innerWidth - (VIEWPORT_PADDING * 2));
+    const width = Math.min(availableWidth, Math.max(190, rect.width, menu.scrollWidth));
     const height = menu.offsetHeight;
     const maxLeft = Math.max(VIEWPORT_PADDING, window.innerWidth - width - VIEWPORT_PADDING);
     const left = Math.min(Math.max(rect.left, VIEWPORT_PADDING), maxLeft);
