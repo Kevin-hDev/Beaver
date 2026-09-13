@@ -50,7 +50,11 @@ function toHighlightNodes(node: RootContent): HighlightNode[] {
 }
 
 export function highlightCodeNodes(code: string, language: string): HighlightNode[] {
-  const resolved = LANG_ALIASES[language] ?? language;
+  /* La langue peut venir du contenu d'un markdown : les propriétés héritées
+     comme "constructor" ne sont pas des alias valides. */
+  const resolved = Object.prototype.hasOwnProperty.call(LANG_ALIASES, language)
+    ? LANG_ALIASES[language]
+    : language;
   if (!resolved || !lowlight.registered(resolved)) return [code];
   const tree = lowlight.highlight(resolved, code);
   return tree.children.flatMap(toHighlightNodes);
@@ -59,8 +63,53 @@ export function highlightCodeNodes(code: string, language: string): HighlightNod
 /* Les lignes sont injectées séparément : chaque couleur ouverte doit donc
    être refermée puis reprise sur la ligne suivante. */
 export function highlightLines(code: string, path: string): string[] {
-  const lines = codeLines(code, languageFromPath(path));
+  const language = languageFromPath(path);
+  const lines = language === "markdown" ? markdownLines(code) : codeLines(code, language);
   if (code.endsWith("\n") && lines.length > 1) lines.pop();
+  return lines;
+}
+
+/* Les clôtures suivent CommonMark. Un bloc indenté de plus de trois espaces
+   reste du markdown ; on l'étendra lorsqu'un vrai fichier le nécessitera. */
+const FENCE = /^ {0,3}(`{3,}(?=[^`]*$)|~{3,})(.*)$/;
+
+function markdownLines(text: string): string[] {
+  const lines: string[] = [];
+  let buffer: string[] = [];
+  let fence: { marker: string; language: string } | null = null;
+  const flush = () => {
+    if (buffer.length === 0) return;
+    for (const line of codeLines(buffer.join("\n"), fence ? fence.language : "markdown")) {
+      lines.push(line);
+    }
+    buffer = [];
+  };
+
+  for (const line of text.split("\n")) {
+    const match = FENCE.exec(line);
+    if (!match) {
+      buffer.push(line);
+      continue;
+    }
+    const [, marker, rest] = match;
+    if (fence) {
+      const closes = marker[0] === fence.marker[0]
+        && marker.length >= fence.marker.length
+        && rest.trim() === "";
+      if (!closes) {
+        buffer.push(line);
+        continue;
+      }
+      flush();
+      lines.push(wrapInClasses(escapeHtml(line), ["hljs-code"]));
+      fence = null;
+    } else {
+      flush();
+      lines.push(wrapInClasses(escapeHtml(line), ["hljs-code"]));
+      fence = { marker, language: rest.trim().split(/\s+/)[0].toLowerCase() };
+    }
+  }
+  flush();
   return lines;
 }
 

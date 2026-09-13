@@ -99,4 +99,63 @@ describe("highlightLines", () => {
   it("échappe l'apostrophe comme les autres caractères du HTML", () => {
     expect(highlightLines("it's", "notes.txt")).toEqual(["it&#39;s"]);
   });
+
+  it("colorie un bloc de code d'un markdown dans sa langue", () => {
+    expect(highlightLines("# Titre\n```ts\nconst a = 1;\n```\n", "plan.md")).toEqual([
+      '<span class="hljs-section"># Titre</span>',
+      '<span class="hljs-code">```ts</span>',
+      '<span class="hljs-keyword">const</span> a = <span class="hljs-number">1</span>;',
+      '<span class="hljs-code">```</span>',
+    ]);
+  });
+
+  it("laisse en texte normal un bloc sans langue connue", () => {
+    expect(highlightLines("```text\n<b>x</b>\n```\n", "plan.md")).toEqual([
+      '<span class="hljs-code">```text</span>',
+      "&lt;b&gt;x&lt;/b&gt;",
+      '<span class="hljs-code">```</span>',
+    ]);
+  });
+
+  it("ne ferme un bloc que par une clôture du même signe, au moins aussi longue, sans texte après", () => {
+    const code = (text: string) => `<span class="hljs-code">${text}</span>`;
+    expect(highlightLines("````text\n```\nx\n````\nfin\n", "plan.md")).toEqual([
+      code("````text"), "```", "x", code("````"), "fin",
+    ]);
+    expect(highlightLines("```text\n``` x\ny\n```\n", "plan.md")).toEqual([
+      code("```text"), "``` x", "y", code("```"),
+    ]);
+    expect(highlightLines("```text\n~~~\ny\n```\n", "plan.md")).toEqual([
+      code("```text"), "~~~", "y", code("```"),
+    ]);
+  });
+
+  it("ignore une langue de clôture qui porte le nom d'une propriété d'objet", () => {
+    for (const language of ["constructor", "__proto__"]) {
+      expect(highlightLines("```" + language + "\nx\n```\n", "plan.md")).toEqual([
+        `<span class="hljs-code">\`\`\`${language}</span>`,
+        "x",
+        '<span class="hljs-code">```</span>',
+      ]);
+    }
+  });
+
+  it("échappe une balise script dans un bloc html d'un markdown", () => {
+    const lines = highlightLines("```html\n<script>alert(1)</script>\n```", "notes.md");
+
+    for (const html of lines) {
+      expect(html).not.toContain("<script");
+      expect(html).not.toContain("</script");
+    }
+  });
+
+  it("ne prend pas du code en ligne en début de ligne pour une clôture", () => {
+    expect(highlightLines("Du ```x``` texte\n```y``` suite\n# Titre\n", "plan.md")[2])
+      .toBe('<span class="hljs-section"># Titre</span>');
+  });
+
+  it("tient un très gros markdown", () => {
+    const text = Array.from({ length: 150_000 }, () => "-").join("\n");
+    expect(highlightLines(text, "gros.md")).toHaveLength(150_000);
+  });
 });
