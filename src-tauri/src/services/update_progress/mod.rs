@@ -20,6 +20,7 @@ impl UpdateProgressRuntime {
         mut operation: UpdateOperationSnapshot,
     ) -> Result<bool, String> {
         let mut store = self.store.lock().map_err(|_| public_error())?;
+        let should_show = should_show_window(store.get(&operation.id), &operation);
         operation.sequence = match store.get(&operation.id) {
             Some(current) => {
                 let mut previous = current.clone();
@@ -39,7 +40,7 @@ impl UpdateProgressRuntime {
         if changed {
             app.emit_to(window::WINDOW_LABEL, CHANGED_EVENT, &operation)
                 .map_err(|_| public_error())?;
-            if !operation.status.is_terminal() {
+            if should_show {
                 self.show_window(app)?;
             }
         }
@@ -105,6 +106,13 @@ impl UpdateProgressRuntime {
             *saved = Some(position);
         }
     }
+}
+
+fn should_show_window(
+    previous: Option<&UpdateOperationSnapshot>,
+    operation: &UpdateOperationSnapshot,
+) -> bool {
+    !operation.status.is_terminal() && previous.is_none_or(|current| current.status.is_terminal())
 }
 
 fn public_error() -> String {

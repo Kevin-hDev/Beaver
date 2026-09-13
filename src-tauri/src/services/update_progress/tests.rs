@@ -145,6 +145,17 @@ fn retry_requires_a_known_retryable_terminal_operation() {
 }
 
 #[test]
+fn only_a_new_living_operation_opens_the_window() {
+    let running = operation("same", 1, UpdateOperationStatus::Running);
+    let failed = operation("same", 1, UpdateOperationStatus::Failed);
+
+    assert!(super::should_show_window(None, &running));
+    assert!(!super::should_show_window(Some(&running), &running));
+    assert!(super::should_show_window(Some(&failed), &running));
+    assert!(!super::should_show_window(None, &failed));
+}
+
+#[test]
 fn checked_in_typescript_matches_the_rust_update_progress_contract() {
     let checked_in =
         include_str!("../../../../src/types/update-progress.generated.ts").replace("\r\n", "\n");
