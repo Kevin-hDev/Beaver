@@ -4,10 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const SOURCE = new URL("../../installer/src/", import.meta.url);
-const SVG = new URL(
-  "../../docs/fonctionnalites/install-&-update/assets/QPXAq01-anime.svg",
-  import.meta.url,
-);
+const SVG = new URL("../../src/assets/QPXAq01-anime.svg", import.meta.url);
 
 async function installerSources() {
   const names = (await readdir(SOURCE)).filter((name) => /\.(?:ts|tsx|css)$/u.test(name));
