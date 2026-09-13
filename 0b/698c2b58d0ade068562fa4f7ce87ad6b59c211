@@ -1,0 +1,9 @@
+Tâche 4 — Interface exacte de l’installateur.
+
+Décisions : reprise directe du mokup autoritaire, de ses six palettes et des tokens CSS existants ; préfixe binst- vérifié absent avant ajout. Locale injectée par le backend dans le script d’initialisation pour conserver exactement les cinq commandes Tauri. Aperçu des états disponible uniquement en développement et éliminé du bundle de production.
+
+TDD : le premier lancement Vitest a échoué avec ‘No test files found’ car installer/ était exclu ; après ajout du harnais, trois assertions DOM ont d’abord échoué. Le dernier défaut détecté était une requête ambiguë après l’ajout volontaire du titre terminal ; le test cible désormais le heading.
+
+Preuves : npm run test:installer (build UI ; 5 tests Vitest ; 36 tests Rust passés, 2 ignorés ; 2 tests frontière ; 2 tests sécurité SVG) ; test i18n 2/2 ; npx tsc --noEmit ; ESLint ciblé ; cargo fmt --check ; git diff --check. Vérification visuelle réelle dans le navigateur sur 640×460 : ready/dark, downloading/astral-mist, installing/cobalt-frost, failed/crimson-eclipse, cancelled/emerald-night, completed/light. Graphify mis à jour.
+
+Écart : aucun. Avertissement Vite de chunk >500 kB accepté : il provient des sept catalogues i18n exigés et aucun découpage supplémentaire n’est requis par le plan.
