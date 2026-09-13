@@ -1,0 +1,3 @@
+Review correction: installer packaging now reads installer suffixes from ASSET_SUFFIXES, the shared release authority. install.sh propagates an atomic move failure and documents its intentional canonical JSON coupling.
+
+Proof: node --test scripts/release/package-installer.test.mjs (4 passed); bash scripts/test-install-sh.sh (OK); npm run lint -- --quiet (exit 0).
