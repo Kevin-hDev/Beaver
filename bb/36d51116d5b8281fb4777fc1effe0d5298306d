@@ -1,0 +1,3 @@
+Review correction: a retry request now removes its failed source operation after the backend accepts the retry event, preventing duplicate old/new rows. The installer preview follows the sequenced cancel contract introduced by the prior corrective commit.
+
+Proof: 15 targeted Vitest tests passed; npx tsc --noEmit exited 0.
