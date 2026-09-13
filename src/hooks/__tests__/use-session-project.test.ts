@@ -33,6 +33,7 @@ function session(projectId: string | undefined, workingDir: string): AgentSessio
     thinking_enabled: false,
     fast_mode_enabled: false,
     accumulated_tokens: 0,
+    context_usage: { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null },
     messages: [],
     created_at: "2026-07-12T00:00:00Z",
     project_id: projectId,

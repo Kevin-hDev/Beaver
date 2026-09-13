@@ -61,17 +61,18 @@ pub async fn generate(
     snapshot: &super::snapshot::CompressionSnapshot,
     collector: &dyn SummaryCollector,
 ) -> Result<Option<ValidatedSummary>, super::checkpoint_transaction::CompressionError> {
+    super::checkpoint_candidate_validation::validate_snapshot(snapshot)?;
     let band_kind = snapshot
         .profile
         .band(snapshot.context_window)
         .unwrap_or(super::profile_types::CompressionWindowBand::Compact);
     let band = snapshot.profile.profile.band_settings(band_kind);
     let target = super::checkpoint_target::checkpoint_target(
-        snapshot.before_tokens,
-        snapshot.system_head_tokens,
+        snapshot.before_tokens(),
+        snapshot.system_head_tokens(),
         band_kind,
     );
-    let available = target.saturating_sub(snapshot.system_head_tokens);
+    let available = target.saturating_sub(snapshot.system_head_tokens());
     let output_limit =
         super::checkpoint_target::effective_summary_limit(band.summary_max_tokens, available)
             .map_err(|_| super::checkpoint_transaction::CompressionError::CapacityExceeded)?;
@@ -87,16 +88,18 @@ pub async fn generate(
         1,
         output_limit,
     );
-    let fixed_input = super::token_estimate::estimate_textual_request_tokens_for_provider(
+    let fixed_input = super::prepared_request::count(
         &snapshot.provider_id,
+        &snapshot.source_session.model,
         &empty_call.messages,
         &[],
     )
-    .min(u32::MAX as usize) as u32;
+    .capacity_tokens
+    .ok_or(super::checkpoint_transaction::CompressionError::CapacityUnverified)?;
     let input_window = if snapshot.context_window > 0 {
         snapshot.context_window.min(u64::from(u32::MAX)) as u32
     } else {
-        snapshot.before_tokens
+        snapshot.before_tokens()
     };
     let input_safety = summary_input_safety_tokens(input_window);
     if input_window

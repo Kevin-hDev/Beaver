@@ -19,6 +19,7 @@ const CATEGORY_KEYS: Record<ToolErrorCategory, string> = {
 };
 
 const ERROR_CODE_KEYS: Readonly<Record<string, string>> = {
+  tool_interrupted: "agentLocal.toolActivity.interruptedUnknown",
   web_search_runtime_unavailable: "agentLocal.toolActivity.webSearchRuntimeUnavailable",
 };
 

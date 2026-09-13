@@ -1,7 +1,6 @@
 use super::agent_loop_request_types::ApiRequestOutput;
 pub(super) use super::agent_loop_request_types::ApiRequestParams;
 use crate::services::agent_local::context_usage_buckets::RequestContextUsage;
-use crate::services::agent_local::generation_metrics::GenerationAggregate;
 use crate::services::compress::realtime_budget::RealtimeBudget;
 
 pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput, String> {
@@ -41,19 +40,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.tools,
         params.context_usage_seed,
     );
-    let mut textual_input_tokens = breakdown.total_tokens();
-    let mut input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
-        params.on_event,
-        textual_input_tokens,
-        params.configured_context,
-        breakdown,
-    );
-    let realtime_budget = RealtimeBudget::for_session(
-        params.session_id,
-        params.configured_context,
-        textual_input_tokens,
-    )
-    .await;
+    let realtime_budget =
+        RealtimeBudget::pending_for_session(params.session_id, params.configured_context).await;
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
         params.session_id,
         params.plan_mode_active,
@@ -89,6 +77,9 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     .await;
     let mut next_attempt = 1_u32;
     let turn = super::agent_loop_turn::metric_turn(params.turn);
+    let first_preparation =
+        super::agent_loop_request_context::prepared_attempt(&params, 1, breakdown)
+            .with_realtime_budget(realtime_budget.clone());
     let first_attempt = super::retry::retry_stream(
         params.on_event,
         params.session_id,
@@ -108,10 +99,11 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         plan_active,
         realtime_budget,
         params.continuation_target.as_ref(),
+        Some(&first_preparation),
     )
     .await;
-    let outcome = match first_attempt {
-        Ok(outcome) => outcome,
+    let (outcome, completed_attempt) = match first_attempt {
+        Ok(outcome) => (outcome, 1),
         Err(error) if error == "provider_payload_too_large" => {
             let changed =
                 crate::services::agent_local::context_budget::reduce_after_payload_too_large(
@@ -136,26 +128,19 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.tools,
                 params.context_usage_seed,
             );
-            textual_input_tokens = breakdown.total_tokens();
-            input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
-                params.on_event,
-                textual_input_tokens,
-                params.configured_context,
-                breakdown,
-            );
+            let reduced_budget =
+                RealtimeBudget::pending_for_session(params.session_id, params.configured_context)
+                    .await;
+            let reduced_preparation =
+                super::agent_loop_request_context::prepared_attempt(&params, 2, breakdown)
+                    .with_realtime_budget(reduced_budget.clone());
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,
                 params.request_id,
                 "Requête provider réduite après un rejet de taille.",
             )
             .await;
-            let reduced_budget = RealtimeBudget::for_session(
-                params.session_id,
-                params.configured_context,
-                textual_input_tokens,
-            )
-            .await;
-            super::retry::retry_stream(
+            let outcome = super::retry::retry_stream(
                 params.on_event,
                 params.session_id,
                 params.request_id,
@@ -174,45 +159,28 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 plan_active,
                 reduced_budget,
                 params.continuation_target.as_ref(),
+                Some(&reduced_preparation),
             )
-            .await?
+            .await?;
+            return super::agent_loop_request_finish::finish(
+                params,
+                outcome,
+                2,
+                plan_active,
+                completion_cancel,
+            )
+            .await;
         }
         Err(error) => return Err(error),
     };
-    let interrupted = outcome.is_interrupted();
-    let result = outcome.into_result();
-    let mut generation = GenerationAggregate::default();
-    generation.add_result(&result);
-    crate::services::provider_usage::record_for_session(
-        params.provider_id,
-        params.model,
-        params.session_id,
-        crate::services::provider_usage::UsageWorkload::Primary,
-        result.usage.as_ref(),
-    )
-    .await;
-    crate::services::agent_local::stream_diagnostics_model::record_model_result(
-        params.session_id,
-        params.request_id,
-        params.turn,
-        &result,
-    )
-    .await;
-    params
-        .subagents
-        .complete_model_request(
-            !interrupted && result.completion_error.is_none(),
-            &completion_cancel,
-            params.messages,
-        )
-        .await?;
-    Ok(ApiRequestOutput {
-        result,
+    super::agent_loop_request_finish::finish(
+        params,
+        outcome,
+        completed_attempt,
         plan_active,
-        interrupted,
-        input_tokens,
-        generation,
-    })
+        completion_cancel,
+    )
+    .await
 }
 
 #[cfg(test)]

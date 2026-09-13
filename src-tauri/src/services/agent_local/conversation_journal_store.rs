@@ -22,6 +22,10 @@ impl ConversationJournal {
         {
             return Err(error());
         }
+        self.verify_recovery()?;
+        if let Some(log) = &self.recovery_log {
+            log.stage_turn_ready().await?;
+        }
         let run_id = self.request_id.clone();
         self.update_with_writer(
             move |session| {
@@ -38,6 +42,11 @@ impl ConversationJournal {
         )
         .await?;
         self.committed = true;
+        if let Some(log) = &self.recovery_log {
+            if log.seal_and_remove().await.is_err() {
+                log::warn!("stream_recovery_cleanup_failed");
+            }
+        }
         Ok(())
     }
 
@@ -62,6 +71,7 @@ impl ConversationJournal {
         F: FnOnce(&mut super::super::types_session::AgentSession) -> Result<(), String>,
         W: for<'a> FnOnce(&'a super::super::types_session::AgentSession) -> SaveFuture<'a>,
     {
+        self.verify_recovery()?;
         self.verify_subagent_owner().await?;
         let lock = super::super::session_store::lock_session(&self.session_id).await;
         let _guard = lock.lock().await;

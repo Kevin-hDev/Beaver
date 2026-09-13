@@ -1,5 +1,9 @@
+#[path = "conversation_journal_context.rs"]
+mod context;
 #[path = "conversation_journal_record.rs"]
 mod record;
+#[path = "conversation_journal_recovery.rs"]
+mod recovery;
 #[path = "conversation_journal_store.rs"]
 mod store;
 #[path = "conversation_journal_validation.rs"]
@@ -23,6 +27,8 @@ pub(crate) struct ConversationJournal {
     subagent_owner: Option<SubagentOwner>,
     partial: bool,
     committed: bool,
+    recovery_log: Option<super::stream_recovery_log::StreamRecoveryLog>,
+    recovery_owner: Option<super::stream_recovery_owners::OwnerLease>,
 }
 
 struct SubagentOwner {
@@ -31,14 +37,6 @@ struct SubagentOwner {
 }
 
 impl ConversationJournal {
-    pub(crate) fn turn_ids(&self) -> (&str, &str, &str) {
-        (
-            &self.turn_id,
-            &self.user_message_id,
-            &self.assistant_message_id,
-        )
-    }
-
     pub(crate) fn new(
         session_id: String,
         turn_id: String,
@@ -109,6 +107,8 @@ impl ConversationJournal {
             subagent_owner,
             partial: false,
             committed: false,
+            recovery_log: None,
+            recovery_owner: None,
         })
     }
 
@@ -125,7 +125,7 @@ impl ConversationJournal {
         } else {
             uuid::Uuid::new_v4().to_string()
         };
-        self.append(vec![record::from_message(
+        self.append_staged(vec![record::from_message(
             message,
             message_id,
             &self.turn_id,
@@ -146,7 +146,7 @@ impl ConversationJournal {
             return Err(error());
         }
         validate_tool_results(messages, &self.expected_tool_ids)?;
-        let artifacts = artifact_records(messages, artifacts)?;
+        let artifacts = record::artifact_records(messages, artifacts)?;
         let records = messages
             .iter()
             .zip(artifacts)
@@ -169,7 +169,7 @@ impl ConversationJournal {
                 Ok::<_, String>(record)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        self.append(records).await?;
+        self.append_staged(records).await?;
         self.expected_tool_ids.clear();
         Ok(())
     }
@@ -182,7 +182,7 @@ impl ConversationJournal {
             envelope.completion =
                 crate::services::reasoning_continuity::envelope::CompletionState::Partial;
         }
-        self.append(vec![record::from_message(
+        self.append_staged(vec![record::from_message(
             &message,
             uuid::Uuid::new_v4().to_string(),
             &self.turn_id,
@@ -197,11 +197,21 @@ impl ConversationJournal {
         if records.is_empty() {
             return Err(error());
         }
+        let turn_id = self.turn_id.clone();
+        let fence_turn = self.subagent_owner.is_none();
         self.update(move |session| {
             if session.messages.len().saturating_add(records.len())
                 > super::session_limits::MAX_MESSAGES_PER_SESSION
             {
                 return Err(capacity_error());
+            }
+            if fence_turn
+                && session
+                    .messages
+                    .last()
+                    .is_some_and(|message| message.turn_id != turn_id)
+            {
+                return Err(error());
             }
             session.messages.extend(records);
             session.updated_at = Some(Utc::now());
@@ -210,19 +220,4 @@ impl ConversationJournal {
         })
         .await
     }
-}
-
-fn artifact_records(
-    messages: &[ChatMessage],
-    artifacts: &[super::tool_execution_artifacts::AttributedArtifact],
-) -> Result<Vec<Vec<super::tool_artifact_record::ToolArtifactRecord>>, String> {
-    let mut grouped = vec![Vec::new(); messages.len()];
-    for attributed in artifacts {
-        let message = messages.get(attributed.tool_call_index).ok_or_else(error)?;
-        if message.tool_call_id.as_deref() != attributed.tool_call_id.as_deref() {
-            return Err(error());
-        }
-        grouped[attributed.tool_call_index].push((&attributed.artifact.metadata).into());
-    }
-    Ok(grouped)
 }

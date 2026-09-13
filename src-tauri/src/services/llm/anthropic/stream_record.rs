@@ -41,6 +41,7 @@ pub(super) fn tool(
         tool_call_index: index,
         tool_call_id: Some(id.clone()),
         domain: crate::services::agent_local::memory_tool::event_domain(&name, arguments),
+        extra_content: None,
     });
     result.tool_calls.push((name, arguments.clone()));
     result.tool_call_ids.push(id);

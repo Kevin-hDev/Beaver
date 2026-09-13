@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ResolvedCompressionProfileView } from "@/types/compression-profile.generated";
+import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
+import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
 import { ContextProgress } from "../context-progress";
 
 vi.mock("react-i18next", () => ({
@@ -26,10 +28,15 @@ const unavailable: ResolvedCompressionProfileView = {
   available: false,
 };
 
+const summary: ResolvedContextUsage = {
+  used: 1_000, max: 32_000, output: null,
+};
+const breakdown: ContextUsageBreakdown = { used: 1_000, items: [] };
+
 describe("ContextCompressionHelpPopover", () => {
   it("empile l'explication puis ferme un seul niveau par Échap", async () => {
     const user = userEvent.setup();
-    render(<ContextProgress used={1_000} max={32_000} compression={unavailable} />);
+    render(<ContextProgress summary={summary} breakdown={breakdown} compression={unavailable} />);
     const ring = screen.getByRole("button", { name: "Contexte" });
     await user.click(ring);
     expect(screen.getByRole("dialog", { name: "Contexte" })).toBeInTheDocument();
@@ -61,7 +68,7 @@ describe("ContextCompressionHelpPopover", () => {
     const { rerender } = render(
       <>
         <button type="button" onClick={destructive}>Détruire</button>
-        <ContextProgress used={1_000} max={32_000} compression={unavailable} />
+        <ContextProgress summary={summary} breakdown={breakdown} compression={unavailable} />
       </>,
     );
     await user.click(screen.getByRole("button", { name: "Contexte" }));
@@ -77,7 +84,7 @@ describe("ContextCompressionHelpPopover", () => {
 
     rerender(<>
       <button type="button" onClick={destructive}>Détruire</button>
-      <ContextProgress used={1_000} max={32_000} compression={malicious} />
+      <ContextProgress summary={summary} breakdown={breakdown} compression={malicious} />
     </>);
     await user.click(screen.getByRole("button", { name: "Contexte" }));
     expect(screen.getByText("<img src=x>")).toBeInTheDocument();

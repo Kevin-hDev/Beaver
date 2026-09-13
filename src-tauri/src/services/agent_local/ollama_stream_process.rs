@@ -123,6 +123,7 @@ pub fn process_chunk(
                 tool_call_index: idx,
                 tool_call_id: Some(tool_call_id),
                 domain: super::memory_tool::event_domain(&name, &args),
+                extra_content: None,
             });
             if let Some(tx) = tool_tx {
                 let _ = tx.send((idx, name, args));

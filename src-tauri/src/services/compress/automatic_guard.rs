@@ -22,7 +22,7 @@ pub async fn prepare(
     let mut current = crate::services::agent_local::session_store::get(&expected.id)
         .await
         .map_err(|_| CompressionError::SaveFailed)?;
-    if !super::checkpoint_candidate::same_messages(&current.messages, &expected.messages)
+    if !super::checkpoint_candidate_validation::same_messages(&current.messages, &expected.messages)
         || current.model != expected.model
         || current.provider != expected.provider
     {

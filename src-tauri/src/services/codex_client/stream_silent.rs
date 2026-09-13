@@ -142,8 +142,9 @@ async fn consume_sse_silent(
                             ),
                         );
                     if let Some(usage) = &result.usage {
-                        result.prompt_tokens =
-                            usage.input_tokens.and_then(|value| value.try_into().ok());
+                        result.prompt_tokens = usage.context_input_tokens(
+                            crate::services::provider_usage::UsageApiFormat::Responses,
+                        );
                         result.eval_count =
                             usage.output_tokens.and_then(|value| value.try_into().ok());
                     }

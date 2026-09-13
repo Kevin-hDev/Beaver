@@ -20,6 +20,7 @@ pub(in crate::services::llm) enum BuildError {
 pub(in crate::services::llm) struct PreparedPayload {
     pub payload: Value,
     pub replayed: Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+    pub context_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
 }
 
 pub(in crate::services::llm) fn build_payload(
@@ -60,7 +61,12 @@ pub(in crate::services::llm) fn build_payload(
     let cache = crate::services::llm::route_profile::cache_policy(cfg.provider_id, cfg.model)
         .ok_or(BuildError::InvalidMessage)?;
     crate::services::llm::prompt_cache_policy::apply_payload(&mut payload, cache, cfg.session_id);
-    Ok(PreparedPayload { payload, replayed })
+    let context_count = crate::services::agent_local::prepared_context_count::anthropic(&payload);
+    Ok(PreparedPayload {
+        payload,
+        replayed,
+        context_count,
+    })
 }
 
 fn apply_thinking(

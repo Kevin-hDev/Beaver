@@ -36,6 +36,12 @@ pub(crate) async fn handle_compress_command(
     let context = crate::services::compress::context_resolve::resolve(provider, model)
         .await
         .configured;
+    let prepared_count = crate::services::compress::prepared_request::count(
+        provider,
+        model,
+        &runtime,
+        provider_tools,
+    );
     match crate::services::compress::orchestrator::run_compression(
         crate::services::compress::orchestrator::CompressionRunRequest {
             on_event,
@@ -46,7 +52,7 @@ pub(crate) async fn handle_compress_command(
             provider_id: provider,
             fast_mode,
             context_window: context,
-            last_context_tokens: None,
+            prepared_count,
             provider_tools,
             chatbot,
             plan_mode_active,

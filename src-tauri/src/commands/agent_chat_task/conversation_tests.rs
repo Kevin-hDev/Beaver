@@ -48,6 +48,44 @@ fn canonical_adapter_fails_closed_on_legacy_reasoning() {
     assert!(convert(message(None, Some("forged legacy".into()))).is_err());
 }
 
+#[test]
+fn explicit_compression_command_does_not_create_a_recovery_journal() {
+    let turn_id = uuid::Uuid::new_v4().to_string();
+    let user_message_id = uuid::Uuid::new_v4().to_string();
+    let admitted = AdmittedTurn {
+        turn_id: turn_id.clone(),
+        user_message_id: user_message_id.clone(),
+        assistant_message_id: uuid::Uuid::new_v4().to_string(),
+        history: crate::services::agent_local::conversation_history::ConversationHistory {
+            messages: vec![ProviderMessage {
+                message_id: Some(user_message_id),
+                turn_id,
+                role: ProviderRole::User,
+                content: "  /compress\n".into(),
+                images: Vec::new(),
+                tool_calls: None,
+                tool_name: None,
+                tool_call_id: None,
+                display_thinking: None,
+                continuation: None,
+                tool_loop_reasoning: None,
+                continuity_barrier_before: false,
+            }],
+            compatible_suffix_start: 0,
+        },
+    };
+
+    let (messages, journal) = StreamConversation::canonical(admitted)
+        .into_messages_and_journal(
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        )
+        .unwrap();
+
+    assert_eq!(messages.len(), 1);
+    assert!(journal.is_none());
+}
+
 fn message(continuation: Option<ReasoningEnvelope>, legacy: Option<String>) -> ProviderMessage {
     ProviderMessage {
         message_id: Some("message-1".into()),

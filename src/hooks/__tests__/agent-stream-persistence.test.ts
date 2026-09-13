@@ -54,10 +54,12 @@ describe("autorité de persistance Rust", () => {
     emit("gateway", {
       event: "contextUsage",
       data: {
-        inputTokens: 1,
-        outputTokens: 0,
-        contextLimit: 372_000,
-        estimated: true,
+        record: {
+          activeRequestId: null,
+          currentPreparation: null,
+          lastMeasurement: null,
+          lastOutput: null,
+        },
       },
     });
     emit("gateway", tokenEvent("frontend"));
@@ -74,6 +76,24 @@ describe("autorité de persistance Rust", () => {
     const snapshot = agentStreamManager.getSnapshot("ui");
     const messages = snapshot?.messages ?? [];
     expect(messages[messages.length - 1]?.content).toBe("réponse partielle");
+    expect(mocks.invoke).not.toHaveBeenCalled();
+  });
+
+  it("ne rouvre pas un stream clos par un marqueur assistant vide", () => {
+    const runId = "550e8400-e29b-41d4-a716-446655440000";
+    agentStreamManager.subscribe("reloaded", () => {});
+    emit("reloaded", snapshotEvent([
+      { ...message("checkpoint", "assistant", "travail sauvegardé"), stream_run_id: runId, stream_part: "checkpoint" },
+      { ...message("result", "tool", "résultat"), stream_run_id: runId, stream_part: "checkpoint" },
+      { ...message("terminal", "assistant", ""), stream_run_id: runId, stream_part: "final" },
+    ]));
+
+    const snapshot = agentStreamManager.getSnapshot("reloaded");
+    expect(snapshot?.streamRunId).toBe("");
+    expect(snapshot?.currentContent).toBe("");
+    expect(snapshot?.currentThinking).toBe("");
+    const savedMessages = snapshot?.messages ?? [];
+    expect(savedMessages[savedMessages.length - 1]?.content).toBe("");
     expect(mocks.invoke).not.toHaveBeenCalled();
   });
 });

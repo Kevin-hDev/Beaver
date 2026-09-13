@@ -308,7 +308,20 @@ describe("agentStreamManager", () => {
       metaContext: 1_300,
       systemPrompt: 2_900,
     };
-    record.state.hasContextUsageSnapshot = true;
+    record.state.contextUsageRecord = {
+      activeRequestId: null,
+      currentPreparation: {
+        identity: { requestId: "request-1", turnId: "turn-1", turn: 0, attempt: 1, providerId: "openai", model: "gpt-5" },
+        contextLimit: 200_000,
+        input: { tokens: 24_044, capacityTokens: 24_044, source: "heuristic", coverage: "complete" },
+        state: "completed",
+        breakdown: null,
+        transientOverheadTokens: 0,
+        updatedAt: "2026-09-11T00:00:00Z",
+      },
+      lastMeasurement: null,
+      lastOutput: null,
+    };
 
     await agentStreamManager.startSession(
       "compression-context", [], 96_000, "compression",
@@ -316,7 +329,7 @@ describe("agentStreamManager", () => {
 
     const during = agentStreamManager.getSnapshot("compression-context");
     expect(during?.contextUsageBuckets?.messages).toBe(10_600);
-    expect(during?.hasContextUsageSnapshot).toBe(true);
+    expect(during?.contextUsageRecord.currentPreparation?.input.tokens).toBe(24_044);
   });
 
   it("met en file une intention pendant l'attente de la génération Rust", async () => {

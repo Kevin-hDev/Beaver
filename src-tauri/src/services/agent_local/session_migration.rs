@@ -15,6 +15,7 @@ pub enum LoadedVersion {
     V3,
     V4,
     V5,
+    V6,
     Future(u16),
 }
 
@@ -68,6 +69,10 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
             super::session_migration_wire::parse_v5(bytes)?,
             LoadedVersion::V5,
         ),
+        WireVersion::V6 => (
+            super::session_migration_wire::parse_v6(bytes)?,
+            LoadedVersion::V6,
+        ),
         WireVersion::Future(value) => (
             super::session_migration_wire::parse_future(bytes, value)?,
             LoadedVersion::Future(value),
@@ -80,7 +85,11 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
         version,
         original: matches!(
             version,
-            LoadedVersion::V1 | LoadedVersion::V2 | LoadedVersion::V3 | LoadedVersion::V4
+            LoadedVersion::V1
+                | LoadedVersion::V2
+                | LoadedVersion::V3
+                | LoadedVersion::V4
+                | LoadedVersion::V5
         )
         .then(|| Zeroizing::new(bytes.to_vec())),
     })
@@ -104,7 +113,8 @@ pub(super) async fn commit_migrated_bytes(
         LoadedVersion::V2 => super::session_migration_backup::v2_backup_path(&loaded.path)?,
         LoadedVersion::V3 => super::session_migration_backup::v3_backup_path(&loaded.path)?,
         LoadedVersion::V4 => super::session_migration_backup::v4_backup_path(&loaded.path)?,
-        LoadedVersion::V5 | LoadedVersion::Future(_) => {
+        LoadedVersion::V5 => super::session_migration_backup::v5_backup_path(&loaded.path)?,
+        LoadedVersion::V6 | LoadedVersion::Future(_) => {
             return Err(session_limits::save_failed());
         }
     };
@@ -125,7 +135,8 @@ pub(super) async fn commit_current_fail_before_rename(
         LoadedVersion::V2 => super::session_migration_backup::v2_backup_path(&loaded.path)?,
         LoadedVersion::V3 => super::session_migration_backup::v3_backup_path(&loaded.path)?,
         LoadedVersion::V4 => super::session_migration_backup::v4_backup_path(&loaded.path)?,
-        LoadedVersion::V5 | LoadedVersion::Future(_) => {
+        LoadedVersion::V5 => super::session_migration_backup::v5_backup_path(&loaded.path)?,
+        LoadedVersion::V6 | LoadedVersion::Future(_) => {
             return Err(session_limits::save_failed());
         }
     };
@@ -144,12 +155,13 @@ pub(super) async fn commit_current_fail_before_rename(
 }
 
 pub(super) async fn acknowledge_current(loaded: &LoadedSession) -> Result<(), String> {
-    if loaded.version == LoadedVersion::V5 {
+    if loaded.version == LoadedVersion::V6 {
         for backup in [
             super::session_migration_backup::backup_path(&loaded.path)?,
             super::session_migration_backup::v2_backup_path(&loaded.path)?,
             super::session_migration_backup::v3_backup_path(&loaded.path)?,
             super::session_migration_backup::v4_backup_path(&loaded.path)?,
+            super::session_migration_backup::v5_backup_path(&loaded.path)?,
         ] {
             if super::session_migration_backup::acknowledge_path(
                 backup,
@@ -178,6 +190,11 @@ pub(super) fn v2_backup_path(path: &Path) -> Result<PathBuf, String> {
 #[cfg(test)]
 pub(super) fn v3_backup_path(path: &Path) -> Result<PathBuf, String> {
     super::session_migration_backup::v3_backup_path(path)
+}
+
+#[cfg(test)]
+pub(super) fn v5_backup_path(path: &Path) -> Result<PathBuf, String> {
+    super::session_migration_backup::v5_backup_path(path)
 }
 
 #[allow(

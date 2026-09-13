@@ -31,6 +31,9 @@ pub async fn stream_chat_no_done(
     continuation_target: Option<
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<StreamOutcome, String> {
     #[cfg(debug_assertions)]
     let transport = if continuation_target.is_some_and(|target| target.is_fixture_candidate()) {
@@ -99,6 +102,7 @@ pub async fn stream_chat_no_done(
                 reasoning_capture,
                 request_id,
                 measurement.as_mut(),
+                preparation,
             )
             .await
         }
@@ -118,6 +122,7 @@ pub async fn stream_chat_no_done(
                 reasoning_capture,
                 continuation_target,
                 measurement.as_mut(),
+                preparation,
             )
             .await
         }
@@ -133,6 +138,7 @@ pub async fn stream_chat_no_done(
                     realtime_budget,
                     reasoning_capture,
                     request_id,
+                    preparation,
                 },
                 measurement.as_mut(),
             )
@@ -155,6 +161,7 @@ pub async fn stream_chat_no_done(
                 },
                 catalog_model,
                 measurement.as_mut(),
+                preparation,
             )
             .await
         }
@@ -164,6 +171,7 @@ pub async fn stream_chat_no_done(
                 &cfg,
                 measurement.as_mut(),
                 Some(request_id),
+                preparation,
             )
             .await
             {

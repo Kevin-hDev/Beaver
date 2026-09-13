@@ -23,6 +23,7 @@ pub enum CompressionMetricError {
     Cancelled,
     InvalidCandidate,
     CapacityExceeded,
+    CapacityUnverified,
     InsufficientReduction,
     PrepareFailed,
     SessionChanged,
@@ -41,6 +42,7 @@ impl CompressionMetricError {
             Self::Cancelled => "cancelled",
             Self::InvalidCandidate => "invalid_candidate",
             Self::CapacityExceeded => "capacity_exceeded",
+            Self::CapacityUnverified => "capacity_unverified",
             Self::InsufficientReduction => "insufficient_reduction",
             Self::PrepareFailed => "prepare_failed",
             Self::SessionChanged => "session_changed",
@@ -59,6 +61,7 @@ impl CompressionMetricError {
             Self::OpenTurn
             | Self::InvalidCandidate
             | Self::CapacityExceeded
+            | Self::CapacityUnverified
             | Self::InsufficientReduction => CompressionMetricPhase::Candidate,
             Self::PrepareFailed | Self::SessionChanged | Self::SaveFailed => {
                 CompressionMetricPhase::Commit
@@ -81,6 +84,7 @@ impl From<CompressionError> for CompressionMetricError {
             CompressionError::Cancelled => Self::Cancelled,
             CompressionError::CandidateInvalid => Self::InvalidCandidate,
             CompressionError::CapacityExceeded => Self::CapacityExceeded,
+            CompressionError::CapacityUnverified => Self::CapacityUnverified,
             CompressionError::InsufficientReduction => Self::InsufficientReduction,
             CompressionError::PrepareFailed => Self::PrepareFailed,
             CompressionError::SessionChanged => Self::SessionChanged,

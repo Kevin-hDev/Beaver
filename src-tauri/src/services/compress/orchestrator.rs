@@ -17,7 +17,7 @@ pub struct CompressionRunRequest<'a> {
     pub provider_id: &'a str,
     pub fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     pub context_window: u64,
-    pub last_context_tokens: Option<u32>,
+    pub prepared_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
     pub provider_tools: &'a [serde_json::Value],
     pub chatbot: bool,
     pub plan_mode_active: bool,
@@ -26,25 +26,38 @@ pub struct CompressionRunRequest<'a> {
 }
 
 pub async fn run_compression(
-    request: CompressionRunRequest<'_>,
+    mut request: CompressionRunRequest<'_>,
 ) -> Result<Option<CompressionCommitReport>, CompressionError> {
     let session = crate::services::agent_local::session_store::get(request.session_id)
         .await
         .map_err(|_| CompressionError::SnapshotInvalid)?;
+    request.prepared_count = prepared_count_with_overhead(
+        request.prepared_count,
+        &session.context_usage,
+        request.request_id,
+        request.provider_id,
+        &session.model,
+    );
     let profile = super::profile_resolve::resolve_for_session(&session)
         .map_err(|_| CompressionError::Unavailable)?;
-    let estimated = super::token_estimate::estimate_textual_request_tokens_for_provider(
+    let Some(used) = request
+        .prepared_count
+        .capacity_tokens
+        .map(|value| value as usize)
+    else {
+        return match request.trigger {
+            CompressionTrigger::Automatic => Ok(None),
+            CompressionTrigger::Explicit => Err(CompressionError::CapacityUnverified),
+        };
+    };
+    let system_head_tokens = super::prepared_request::system_head(
         request.provider_id,
+        &session.model,
         request.runtime_messages,
         request.provider_tools,
-    );
-    let _provider_usage = request.last_context_tokens;
-    let used = estimated;
-    let system_head_tokens = super::orchestrator_support::system_head_tokens(
-        request.provider_id,
-        request.runtime_messages,
-        request.provider_tools,
-    );
+    )
+    .capacity_tokens
+    .ok_or(CompressionError::CapacityUnverified)?;
     if !profile.available(request.context_window) {
         return match request.trigger {
             CompressionTrigger::Automatic => Ok(None),
@@ -131,6 +144,26 @@ pub async fn run_compression(
         let _ = on_event.send(StreamEvent::CompressionComplete {});
     }
     result.map(|value| Some(value.report))
+}
+
+pub(super) fn prepared_count_with_overhead(
+    count: crate::services::agent_local::context_usage_record::ContextTokenCount,
+    record: &crate::services::agent_local::context_usage_record::ContextUsageRecord,
+    request_id: &str,
+    provider_id: &str,
+    model: &str,
+) -> crate::services::agent_local::context_usage_record::ContextTokenCount {
+    let overhead = record
+        .current_preparation
+        .as_ref()
+        .filter(|value| {
+            record.active_request_id.as_deref() == Some(request_id)
+                && value.identity.request_id == request_id
+                && value.identity.provider_id == provider_id
+                && value.identity.model == model
+        })
+        .map_or(0, |value| value.transient_overhead_tokens);
+    super::prepared_request::add_overhead(count, overhead)
 }
 
 pub(super) fn should_record_failure(trigger: CompressionTrigger, error: CompressionError) -> bool {

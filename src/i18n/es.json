@@ -453,6 +453,7 @@
       "resultCancelled": "Cancelado.",
       "resultTruncated": "Resultado truncado.",
       "resultMissing": "Falta el resultado de la herramienta tras finalizar el flujo.",
+      "interruptedUnknown": "Beaver se detuvo antes de guardar el resultado de la herramienta. El resultado es desconocido. Comprueba el estado externo antes de volver a intentarlo.",
       "webSearchRuntimeUnavailable": "La búsqueda web local no está disponible temporalmente. Comprueba que Python 3.14 esté instalado y vuelve a intentarlo.",
       "verifyBeforeRetry": "Comprueba el estado resultante antes de reintentar, ya que la acción podría haberse ejecutado.",
       "errorCategories": {
@@ -1356,6 +1357,7 @@
     "compressionProfilesUnavailable": "Los ajustes de compresión no están disponibles en este momento.",
     "compressionDisabledUnder64": "La compresión está desactivada para ventanas de contexto de menos de 64K. Puedes permitirla en el perfil de compresión avanzado.",
     "compressionFailed": "No se pudo comprimir el contexto. La conversación no se modificó.",
+    "contextCapacityUnverified": "No se puede verificar la capacidad de este contexto. Reduce los medios o los bloques opacos y vuelve a intentarlo.",
     "compressionAutomaticSuspended": "La compresión automática está en pausa para esta sesión tras varios fallos. Puedes reintentarlo con /compress.",
     "toolFailed": "La herramienta falló",
     "webToolFailed": "La herramienta web falló: {{message}}"

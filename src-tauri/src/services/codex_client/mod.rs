@@ -18,6 +18,7 @@ mod stream_tool;
 pub mod types;
 mod websocket;
 mod websocket_connect;
+mod websocket_state;
 mod websocket_url;
 
 #[cfg(test)]

@@ -28,6 +28,7 @@ async fn websocket_capture_never_retains_secret_marker_from_input() {
             false,
             None,
             &mut measurement,
+            None,
         ))
         .await
         .expect("loopback WebSocket succeeds");
@@ -75,6 +76,7 @@ async fn request_keeps_payload_and_handshake_aligned_for_every_mode() {
                 false,
                 None,
                 &mut measurement,
+                None,
             ))
             .await
             .expect("loopback WebSocket succeeds");
@@ -115,6 +117,7 @@ async fn fallback_to_http_keeps_the_original_fast_capture() {
             FastModeRequest::Fast,
             CancellationToken::new(),
             false,
+            None,
             None,
             None,
             None,
@@ -174,6 +177,7 @@ async fn structured_service_tier_rejection_never_reconnects_or_falls_back() {
             FastModeRequest::Fast,
             CancellationToken::new(),
             false,
+            None,
             None,
             None,
             None,

@@ -9,6 +9,7 @@ import {
 const translations: Record<string, string> = {
   "agentLocal.toolActivity.errorCategories.conflict": "L’état actuel empêche cette opération.",
   "agentLocal.toolActivity.errorCategories.unavailable": "L’outil est temporairement indisponible.",
+  "agentLocal.toolActivity.interruptedUnknown": "Résultat interrompu",
   "agentLocal.toolActivity.webSearchRuntimeUnavailable": "La recherche locale est indisponible.",
   "extensions.errors.codes.extensions_listing_unavailable": "La liste des extensions est indisponible.",
   "extensions.errors.codes.extensions_inspection_invalid": "L’inspection des extensions est invalide.",
@@ -69,6 +70,18 @@ describe("toolErrorMessage", () => {
     expect(toolErrorHasLocalizedMessage(error)).toBe(true);
     expect(toolErrorResultIsMachineCode("searxng_runtime_unavailable")).toBe(true);
     expect(toolErrorResultIsMachineCode("SearXNG: runtime unavailable")).toBe(false);
+  });
+
+  it("traduit le résultat inconnu d'un outil interrompu", () => {
+    const error = {
+      code: "tool_interrupted",
+      category: "cancelled" as const,
+      retryable: false,
+    };
+
+    expect(toolErrorMessage("bash", "model-facing result", error, t))
+      .toBe("Résultat interrompu");
+    expect(toolErrorHasLocalizedMessage(error)).toBe(true);
   });
 
   it("se replie sur l'erreur réelle nettoyée sans métadonnée", () => {

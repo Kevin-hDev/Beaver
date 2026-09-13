@@ -21,6 +21,29 @@ fn inactive_replacements_fall_back_to_core_but_other_plugins_fail_closed() {
     );
 }
 
+#[test]
+fn common_dispatch_boundary_keeps_the_child_future_off_parent_state() {
+    let args = json!({ "command": "printf stack-proof" });
+    let future = dispatch_with_progress(
+        "bash",
+        &args,
+        std::path::Path::new("."),
+        DispatchTrace {
+            session_id: "test-session",
+            request_id: Some("test-request"),
+        },
+        CancellationToken::new(),
+        false,
+        None,
+    );
+
+    assert!(
+        std::mem::size_of_val(&future) <= 8 * 1024,
+        "dispatcher future remains inline: {} bytes",
+        std::mem::size_of_val(&future),
+    );
+}
+
 #[tokio::test]
 async fn chat_rejects_an_agentic_call_before_dispatch() {
     let result = dispatch_for_mode(

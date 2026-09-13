@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use super::tool_result_contract::{ToolErrorCategory, ToolErrorInfo, ToolResultStatus};
 use super::types_tool_result_details::ToolResultDetails;
 
+#[path = "types_tool_result_recovery.rs"]
+mod recovery;
+
 const MAX_TOOL_WARNINGS: usize = 16;
 const MAX_TOOL_WARNING_CHARS: usize = 1_000;
 
@@ -11,6 +14,7 @@ pub(super) struct ToolResultArtifacts {
     pub(super) ephemeral: Vec<super::tool_artifact::EphemeralArtifact>,
     pub(super) pending: Vec<super::tool_artifact::PendingArtifact>,
     pub(super) pending_resource: Option<super::tool_artifact::PendingExtensionResource>,
+    pub(super) source_path: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

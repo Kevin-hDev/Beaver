@@ -1,6 +1,5 @@
 use serde_json::Value;
 use std::path::Path;
-use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
 use super::subagent_tool_profile::SubagentToolProfile;
@@ -44,11 +43,7 @@ async fn execute_command(
     profile: Option<SubagentToolProfile>,
     progress: Option<ShellProgress>,
 ) -> Result<ShellOutput, String> {
-    let app = super::app_handle_global::get()
-        .ok_or_else(|| "application-context-unavailable".to_string())?;
-    let work = app
-        .state::<super::agent_work_supervision::AgentWorkServices>()
-        .shells();
+    let work = super::tool_dispatcher_shell_runtime::shell_work()?;
     execute_command_with_work(
         args,
         working_dir,
@@ -61,7 +56,7 @@ async fn execute_command(
     .await
 }
 
-pub(super) async fn execute_command_with_work(
+pub(crate) async fn execute_command_with_work(
     args: &Value,
     working_dir: &Path,
     session_id: &str,

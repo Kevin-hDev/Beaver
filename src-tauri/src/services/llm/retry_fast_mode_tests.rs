@@ -46,6 +46,7 @@ async fn retryable_provider_failure_is_sent_once_without_idempotency() {
         false,
         None,
         None,
+        None,
     );
     let release_failure = async {
         scenario.wait_for_payloads(1).await;
@@ -106,6 +107,7 @@ async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
         &previews,
         CancellationToken::new(),
         false,
+        None,
         None,
         None,
     )

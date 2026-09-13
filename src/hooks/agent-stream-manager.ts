@@ -42,6 +42,7 @@ import { webToolErrorToastMessage } from "./web-tool-error-toast";
 import { queueUserMessage, removeQueuedUserMessage } from "./agent-stream-user-queue";
 import { failSession } from "./agent-stream-failure";
 import type { StreamKind } from "./agent-chat-stream-types";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import {
   reconcileTurnAdmission,
   reconcileTurnCommitted,
@@ -100,10 +101,12 @@ async function startSession(
   streamKind: StreamKind = "chat",
   awaitingAdmission = false,
   run?: StreamRun,
+  contextUsageRecord?: ContextUsageRecord,
 ) {
   await ensureListener();
   const record = startStreamRecord(
     sessionId, messages, sessionTokenCount, streamKind, awaitingAdmission, run,
+    contextUsageRecord,
   );
   flushFrameNotify(record, notify);
   notifyActivity(sessionId, record);

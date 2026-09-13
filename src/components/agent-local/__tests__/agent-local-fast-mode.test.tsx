@@ -110,8 +110,9 @@ vi.mock("@/hooks/use-agent-chat", () => ({
     setPlanModeEnabled: vi.fn(), stop: vi.fn(),
   }),
 }));
-vi.mock("@/hooks/use-context-progress", () => ({ useContextProgress: () => ({ max: 8_000 }) }));
-vi.mock("@/hooks/use-context-usage", () => ({ useContextUsage: () => ({ used: 0 }) }));
+vi.mock("@/hooks/use-chat-context", () => ({
+  useChatContext: () => ({ summary: { used: 0, max: 8_000 }, max: 8_000, breakdown: {} }),
+}));
 vi.mock("@/hooks/use-file-drop", () => ({
   useFileDrop: () => ({ dragging: false, setDragging: vi.fn(), addByPaths: vi.fn(), files: [], removeFile: vi.fn(), clearFiles: vi.fn() }),
 }));

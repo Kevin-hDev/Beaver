@@ -153,7 +153,9 @@ export function ToolDetailRow({
     ...(tool.warnings ?? []),
     ...(tool.truncated ? [t("agentLocal.toolActivity.resultTruncated")] : []),
   ].map(sanitizeToolErrorDetails);
-  const resultDetails = tool.is_error
+  const resultDetails = tool.error?.code === "tool_interrupted"
+    ? errorMessage
+    : tool.is_error
     && (isAdmissionError(tool.result)
       || toolErrorHasLocalizedMessage(tool.error)
       || toolErrorResultIsMachineCode(tool.result))

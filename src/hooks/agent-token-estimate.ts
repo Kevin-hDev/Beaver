@@ -1,8 +1,24 @@
 import type { AgentMessage, AgentSession } from "@/types/agent";
+import type {
+  ContextUsageRecord,
+} from "@/types/agent-session.generated";
 import { restoredToolArguments } from "./agent-chat-utils";
 import { toolsFromMessage } from "@/lib/message-tools";
 
 const CHARS_PER_TOKEN = 4;
+
+export const EMPTY_CONTEXT_USAGE_RECORD: ContextUsageRecord = {
+  activeRequestId: null,
+  currentPreparation: null,
+  lastMeasurement: null,
+  lastOutput: null,
+};
+
+export interface ResolvedContextUsage {
+  used: number | null;
+  max: number | null;
+  output: number | null;
+}
 
 export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
   return messages.reduce((sum, message) => sum + estimateMessage(message), 0);
@@ -10,16 +26,48 @@ export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
 
 export function resolveSessionContext(session: AgentSession): {
   sessionTokenCount: number;
-  hasContextUsageSnapshot: boolean;
+  contextUsageRecord: ContextUsageRecord;
   contextUsageVisible: boolean;
 } {
-  const contextTokens = session.context_tokens ?? 0;
   return {
-    sessionTokenCount: contextTokens || session.accumulated_tokens
-      || estimateAgentMessagesTokens(session.messages),
-    hasContextUsageSnapshot: contextTokens > 0,
+    sessionTokenCount: session.accumulated_tokens || estimateAgentMessagesTokens(session.messages),
+    contextUsageRecord: session.context_usage ?? EMPTY_CONTEXT_USAGE_RECORD,
     contextUsageVisible: session.messages.some((message) => message.role === "assistant"),
   };
+}
+
+export function resolveContextUsage(
+  record: ContextUsageRecord,
+  reconstructedTokens = 0,
+  reconstructedLimit = 0,
+): ResolvedContextUsage {
+  const preparation = record.currentPreparation;
+  const active = preparation?.state === "ready" || preparation?.state === "in_flight"
+    ? preparation
+    : null;
+  const primary = active ?? record.lastMeasurement
+    ?? (preparation?.state === "completed" ? preparation : null);
+  const input = primary?.input;
+  const used = validCount(input?.tokens);
+  const reconstructed = used === null ? validPositiveCount(reconstructedTokens) : null;
+  return {
+    used: used ?? reconstructed,
+    max: primary
+      ? validPositiveCount(primary.contextLimit)
+      : reconstructed !== null ? validPositiveCount(reconstructedLimit) : null,
+    output: validCount(record.lastOutput?.output.tokens),
+  };
+}
+
+function validCount(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : null;
+}
+
+function validPositiveCount(value: number | null | undefined): number | null {
+  const count = validCount(value);
+  return count !== null && count > 0 ? count : null;
 }
 
 function estimateMessage(message: AgentMessage): number {

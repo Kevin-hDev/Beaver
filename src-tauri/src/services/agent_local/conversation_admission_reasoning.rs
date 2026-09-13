@@ -5,21 +5,24 @@ use crate::services::reasoning_continuity::contract::ContinuationTarget;
 
 pub(crate) async fn new_turn_with_lease_and_reasoning(
     lease: &AdmissionLease,
+    current_execution_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
     reasoning: &SessionReasoningUpdate,
 ) -> Result<super::AdmittedTurn, super::ConversationAdmissionError> {
-    admitted(lease, input, target, reasoning, None).await
+    admitted(lease, current_execution_id, input, target, reasoning, None).await
 }
 
 pub(crate) async fn new_automation_turn_with_lease_and_reasoning(
     lease: &AdmissionLease,
+    current_execution_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
     reasoning: &SessionReasoningUpdate,
 ) -> Result<super::AdmittedTurn, super::ConversationAdmissionError> {
     admitted(
         lease,
+        current_execution_id,
         input,
         target,
         reasoning,
@@ -30,6 +33,7 @@ pub(crate) async fn new_automation_turn_with_lease_and_reasoning(
 
 async fn admitted(
     lease: &AdmissionLease,
+    current_execution_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
     reasoning: &SessionReasoningUpdate,
@@ -39,6 +43,7 @@ async fn admitted(
         lease.session_id(),
         input,
         target,
+        Some(current_execution_id),
         Some(reasoning),
         kind,
         crate::services::agent_local::conversation_history_resolve::AttachmentKeySource::Vault,

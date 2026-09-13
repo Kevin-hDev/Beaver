@@ -63,6 +63,10 @@ fn payload_uses_native_system_tools_required_limit_and_cache() {
     })];
 
     let prepared = super::build_payload(&config(&messages, &tools, "off"), 4_096).unwrap();
+    assert_eq!(
+        prepared.context_count,
+        crate::services::agent_local::prepared_context_count::anthropic(&prepared.payload)
+    );
     let payload = prepared.payload;
 
     assert_eq!(payload["max_tokens"], 4_096);
@@ -120,6 +124,30 @@ fn tool_results_are_grouped_and_errors_are_marked() {
     ordinary.tool_call_id = Some("call-a".into());
     let ordinary = super::messages::convert(&[ordinary], &[], None).unwrap();
     assert_eq!(ordinary.messages[0]["content"][0]["is_error"], false);
+}
+
+#[test]
+fn interrupted_turn_marker_is_not_sent_to_anthropic() {
+    let messages = vec![message("assistant", ""), message("user", "Continue")];
+
+    let converted = super::messages::convert(&messages, &[], None).unwrap();
+
+    assert_eq!(converted.messages.len(), 1);
+    assert_eq!(converted.messages[0]["role"], "user");
+    assert_eq!(converted.messages[0]["content"][0]["text"], "Continue");
+}
+
+#[test]
+fn recovered_display_thinking_is_not_sent_to_anthropic() {
+    let mut recovered = message("assistant", "visible checkpoint");
+    recovered.display_thinking = Some("partial private thinking".into());
+
+    let converted = super::messages::convert(&[recovered], &[], None).unwrap();
+    let serialized = serde_json::to_string(&converted.messages).unwrap();
+
+    assert!(serialized.contains("visible checkpoint"));
+    assert!(!serialized.contains("partial private thinking"));
+    assert!(!serialized.contains("thinking"));
 }
 
 #[test]

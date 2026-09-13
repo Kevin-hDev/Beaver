@@ -120,6 +120,7 @@
         "agent-sessions/550e8400-e29b-41d4-a716-446655440000.json",
         "session-order.json",
         "extension-session-state/550e8400-e29b-41d4-a716-446655440000.json",
+        "agent-stream-recovery/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440001.jsonl",
         "plans/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440001.md",
         "session-workspaces/550e8400-e29b-41d4-a716-446655440000",
         "tool-results/550e8400-e29b-41d4-a716-446655440000/result.txt"
@@ -145,6 +146,11 @@
         {
           "file": "src-tauri/src/services/agent_local/tool_result_budget.rs",
           "snippets": [".join(\"tool-results\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/stream_recovery_store.rs",
+          "snippets": [".join(\"agent-stream-recovery\")"]
         },
         {
           "scope": "migration",

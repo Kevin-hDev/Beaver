@@ -6,9 +6,8 @@ use super::agent_loop_compression::{LastCounts, LoopCompression};
 use super::{agent_loop_request::ApiRequestParams, agent_loop_tools};
 use crate::services::agent_local::{
     agent_loop_finish, agent_loop_plan, circuit_breaker, context_usage_buckets::ContextUsageSeed,
-    context_usage_runtime, generation_metrics::GenerationAggregate,
-    stream_events::AgentEventEmitter, subagent_orchestration, types_ollama::ChatMessage,
-    write_guard_registry,
+    generation_metrics::GenerationAggregate, stream_events::AgentEventEmitter,
+    subagent_orchestration, types_ollama::ChatMessage, write_guard_registry,
 };
 use crate::services::token_counting;
 use std::path::PathBuf;
@@ -73,7 +72,6 @@ pub async fn run_agent_loop(
         request_id: &request_id,
         native_context,
         configured_context,
-        provider_tools: tools.active().to_vec(),
         chatbot: permission_mode == "chat",
         plan_mode_active,
         working_dir: &working_dir,
@@ -101,6 +99,7 @@ pub async fn run_agent_loop(
             context_usage_seed,
             tool_result_previews: &tool_result_previews,
             continuation_target: continuation_target.clone(),
+            journal: journal.as_deref(),
         })
         .await?;
         // A projection belongs to exactly one provider continuation; retries
@@ -109,15 +108,12 @@ pub async fn run_agent_loop(
         generation.merge(request_output.generation);
         let interrupted = request_output.interrupted;
         let plan_active = request_output.plan_active;
-        let input_tokens = request_output.input_tokens;
         let result = request_output.result;
         super::stream_completion::reject_if_failed(
             on_event,
             &result,
             plan_active,
             journal.as_deref_mut(),
-            input_tokens,
-            configured_context,
         )
         .await?;
         if interrupted {
@@ -131,10 +127,10 @@ pub async fn run_agent_loop(
                 &result,
                 plan_active,
             );
-            context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
             compression
                 .handle_interrupted(
                     messages,
+                    tools.active(),
                     &result,
                     LastCounts::new(&mut last_prompt, &mut last_eval),
                     cancel.clone(),
@@ -166,14 +162,19 @@ pub async fn run_agent_loop(
         subagents
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
-        context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
         let assistant = super::agent_loop_message::build_for_plan(&result, plan_active);
         if let Some(journal) = journal.as_deref_mut() {
             journal.persist_assistant_step(&assistant).await?;
         }
         messages.push(assistant);
         compression
-            .try_run_and_reset(messages, &mut last_prompt, &mut last_eval, cancel.clone())
+            .try_run_and_reset(
+                messages,
+                tools.active(),
+                &mut last_prompt,
+                &mut last_eval,
+                cancel.clone(),
+            )
             .await;
         if result.tool_calls.is_empty() {
             if subagents

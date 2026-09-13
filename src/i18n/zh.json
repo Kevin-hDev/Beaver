@@ -453,6 +453,7 @@
       "resultCancelled": "已取消。",
       "resultTruncated": "结果已截断。",
       "resultMissing": "数据流结束后缺少工具结果。",
+      "interruptedUnknown": "Beaver 在工具结果保存前停止。结果未知；重试前请检查外部状态。",
       "webSearchRuntimeUnavailable": "本地网页搜索暂时不可用。请确认已安装 Python 3.14，然后重试。",
       "verifyBeforeRetry": "重试前请检查当前状态，因为操作可能已经执行。",
       "errorCategories": {
@@ -1351,6 +1352,7 @@
     "compressionProfilesUnavailable": "压缩设置目前不可用。",
     "compressionDisabledUnder64": "小于 64K 的上下文窗口已停用压缩。你可以在高级压缩配置中允许它。",
     "compressionFailed": "无法压缩上下文。你的对话未被修改。",
+    "contextCapacityUnverified": "无法验证此上下文的容量。请减少媒体或不透明块，然后重试。",
     "compressionAutomaticSuspended": "此会话的自动压缩在多次失败后已暂停。你可以使用 /compress 重试。",
     "toolFailed": "工具执行失败",
     "webToolFailed": "网页工具执行失败：{{message}}"

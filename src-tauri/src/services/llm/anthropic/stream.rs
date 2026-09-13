@@ -110,8 +110,11 @@ pub(in crate::services::llm) async fn consume_stream(
             capture.observe_done(&serde_json::json!({"type": "message_stop"}));
         }
     }
-    result.prompt_tokens =
-        super::stream_state_support::context_input_tokens(consumed.usage.as_ref());
+    result.prompt_tokens = consumed.usage.as_ref().and_then(|usage| {
+        usage.context_input_tokens(
+            crate::services::provider_usage::UsageApiFormat::AnthropicMessages,
+        )
+    });
     result.eval_count = consumed
         .usage
         .as_ref()
@@ -174,7 +177,11 @@ pub(super) async fn consume_silent(
     Ok(crate::services::agent_local::types_ollama::StreamResult {
         content: consumed.content,
         thinking: consumed.thinking,
-        prompt_tokens: super::stream_state_support::context_input_tokens(consumed.usage.as_ref()),
+        prompt_tokens: consumed.usage.as_ref().and_then(|usage| {
+            usage.context_input_tokens(
+                crate::services::provider_usage::UsageApiFormat::AnthropicMessages,
+            )
+        }),
         eval_count: consumed
             .usage
             .as_ref()

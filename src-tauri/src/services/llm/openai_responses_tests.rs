@@ -52,6 +52,27 @@ fn request<'a>(
     }
 }
 
+#[test]
+fn prepared_responses_count_is_attached_to_the_exact_body() {
+    let messages = [ChatMessage::user("hello".into())];
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {"name": "lookup", "parameters": {"type": "object"}}
+    })];
+    let prepared = try_build_request_with_evidence(&request(
+        &messages,
+        &tools,
+        Some("medium"),
+        FastModeRequest::Standard,
+    ))
+    .unwrap();
+
+    assert_eq!(
+        prepared.context_count,
+        crate::services::agent_local::prepared_context_count::responses(&prepared.body)
+    );
+}
+
 fn xai_request<'a>(
     messages: &'a [ChatMessage],
     tools: &'a [serde_json::Value],
@@ -591,6 +612,7 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
         None,
         None,
         None,
+        None,
     )
     .await
     .expect("Responses stream completes");
@@ -601,6 +623,92 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     assert_eq!(payloads[0]["service_tier"], "fast");
     assert!(payloads[0].get("reasoning_effort").is_none());
     assert!(payloads[0].get("messages").is_none());
+}
+
+#[tokio::test]
+async fn runtime_persists_the_count_of_the_captured_responses_payload() {
+    let session = crate::services::agent_local::session_store::create_full(
+        "prepared payload",
+        "gpt-5.6-luna",
+        "openai",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let journal = crate::services::agent_local::conversation_journal::ConversationJournal::new(
+        session.id.clone(),
+        request_id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .unwrap();
+    journal.activate_context_request().await.unwrap();
+    let emitter =
+        crate::services::agent_local::stream_events::AgentEventEmitter::test(session.id.clone());
+    let preparation =
+        crate::services::agent_local::context_usage_runtime::PreparedContextAttempt::new(
+            crate::services::agent_local::context_usage_runtime::ContextAttempt {
+                on_event: &emitter,
+                journal: Some(&journal),
+                provider_id: "openai",
+                model: "gpt-5.6-luna",
+                turn: 0,
+                attempt: 1,
+                context_limit: 258_400,
+                measured_input_source:
+                    crate::services::agent_local::context_usage_record::ContextCountSource::Provider,
+            },
+            Default::default(),
+        );
+    let scenario = crate::services::llm::stream_test_transport::StreamScenario::start(
+        &session.id,
+        [crate::services::llm::stream_test_transport::ScriptedResponse::Success],
+    )
+    .await;
+    let messages = [ChatMessage::user("bonjour".into())];
+    let previews =
+        crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
+
+    crate::services::llm::stream::stream_chat_no_done(
+        &emitter,
+        &session.id,
+        &request_id,
+        0,
+        1,
+        "openai",
+        FastModeRequest::Standard,
+        RequestPurpose::ManualChat,
+        "gpt-5.6-luna",
+        &messages,
+        &[],
+        false,
+        None,
+        &previews,
+        tokio_util::sync::CancellationToken::new(),
+        false,
+        None,
+        None,
+        None,
+        Some(&preparation),
+    )
+    .await
+    .unwrap();
+
+    let payload = &scenario.payloads()[0];
+    let expected = crate::services::agent_local::prepared_context_count::responses(payload);
+    let saved = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(
+        saved.context_usage.current_preparation.unwrap().input,
+        expected
+    );
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -635,6 +743,7 @@ async fn xai_runtime_dispatch_cannot_fall_back_to_chat_completions() {
         &previews,
         tokio_util::sync::CancellationToken::new(),
         false,
+        None,
         None,
         None,
         None,

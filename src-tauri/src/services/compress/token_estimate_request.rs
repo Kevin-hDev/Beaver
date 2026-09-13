@@ -21,6 +21,7 @@ pub fn estimate_request_tokens_for_provider(
         .saturating_add(estimate_tool_tokens(tools))
 }
 
+#[cfg(test)]
 pub fn estimate_textual_request_tokens_for_provider(
     provider_id: &str,
     messages: &[ChatMessage],

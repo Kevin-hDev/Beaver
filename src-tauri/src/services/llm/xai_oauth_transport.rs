@@ -6,7 +6,9 @@ use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_E
 use tokio_util::sync::CancellationToken;
 
 pub(super) use super::xai_oauth_chat::prepare as prepare_chat_request;
-pub(super) use super::xai_oauth_transport_status::classify_status;
+pub(super) use super::xai_oauth_transport_status::{
+    backend_path, catalog_reasoning_mode, classify_status,
+};
 
 pub(super) struct StreamContext<'a> {
     pub on_event: &'a AgentEventEmitter,
@@ -22,6 +24,9 @@ pub(super) async fn stream_chat(
     context: StreamContext<'_>,
     catalog_model: &XaiCatalogModel,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<StreamOutcome, String> {
     let StreamContext {
         on_event,
@@ -36,9 +41,13 @@ pub(super) async fn stream_chat(
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
             let request = prepare_chat_request(request, catalog_model);
-            let response =
-                super::xai_oauth_chat::post(&request, measurement.as_deref_mut(), Some(request_id))
-                    .await;
+            let response = super::xai_oauth_chat::post(
+                &request,
+                measurement.as_deref_mut(),
+                Some(request_id),
+                preparation,
+            )
+            .await;
             let response = response.map_err(|error| error.to_string())?;
             super::stream_consume::consume_stream(
                 on_event,
@@ -57,6 +66,15 @@ pub(super) async fn stream_chat(
         }
         XaiBackend::Responses => {
             let prepared = prepare_responses_request(catalog_model, &request)?;
+            if let Some(preparation) = preparation {
+                preparation
+                    .persist_payload(
+                        crate::services::agent_local::prepared_context_count::responses(
+                            &prepared.payload,
+                        ),
+                    )
+                    .await?;
+            }
             crate::services::llm::reasoning_wire::replay::record_evidence(
                 request.session_id,
                 Some(request_id),
@@ -128,27 +146,6 @@ pub(super) fn validate_backend(
     Ok(())
 }
 
-pub(super) fn catalog_reasoning_mode<'a>(
-    model: &'a XaiCatalogModel,
-    requested_mode: Option<&'a str>,
-) -> Option<&'a str> {
-    requested_mode
-        .filter(|mode| {
-            model
-                .reasoning_modes
-                .iter()
-                .any(|candidate| candidate == mode)
-        })
-        .or_else(|| {
-            model.default_reasoning_mode.as_deref().filter(|mode| {
-                model
-                    .reasoning_modes
-                    .iter()
-                    .any(|candidate| candidate == mode)
-            })
-        })
-}
-
 async fn post_responses(
     model: &XaiCatalogModel,
     payload: &serde_json::Value,
@@ -210,11 +207,4 @@ async fn post_responses(
         diagnostic_context,
     );
     Err(classify_status(route.error_policy, status, &body, has_retry_after).to_string())
-}
-
-pub(super) const fn backend_path(backend: XaiBackend) -> &'static str {
-    match backend {
-        XaiBackend::ChatCompletions => "/chat/completions",
-        XaiBackend::Responses => "/responses",
-    }
 }

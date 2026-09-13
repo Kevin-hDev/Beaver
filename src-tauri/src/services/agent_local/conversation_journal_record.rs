@@ -53,3 +53,20 @@ pub(super) fn from_message(
         stream_part: Some("checkpoint".to_string()),
     })
 }
+
+pub(super) fn artifact_records(
+    messages: &[ChatMessage],
+    artifacts: &[super::super::tool_execution_artifacts::AttributedArtifact],
+) -> Result<Vec<Vec<super::super::tool_artifact_record::ToolArtifactRecord>>, String> {
+    let mut grouped = vec![Vec::new(); messages.len()];
+    for attributed in artifacts {
+        let message = messages
+            .get(attributed.tool_call_index)
+            .ok_or_else(super::validation::error)?;
+        if message.tool_call_id.as_deref() != attributed.tool_call_id.as_deref() {
+            return Err(super::validation::error());
+        }
+        grouped[attributed.tool_call_index].push((&attributed.artifact.metadata).into());
+    }
+    Ok(grouped)
+}

@@ -74,6 +74,7 @@ fn index_meta_drifted(meta: &AgentSessionMeta, session: &AgentSession) -> bool {
         || meta.clone_mode != session.clone_mode
         || meta.clone_root_session_id != session.clone_root_session_id
         || meta.git_branch != session.git_branch
+        || meta.has_active_context_request != expected.has_active_context_request
 }
 
 pub async fn rebuild_index() -> Result<Vec<AgentSessionMeta>, String> {
@@ -179,6 +180,7 @@ pub fn meta_from_session(session: &AgentSession) -> AgentSessionMeta {
         message_count: session.messages.len(),
         is_heartbeat: session.is_heartbeat,
         is_gateway: session.is_gateway,
+        has_active_context_request: session.context_usage.active_request_id.is_some(),
         gateway_channel_key: session_security::redacted_optional(&session.gateway_channel_key),
         project_id: session.project_id.clone(),
         parent_session_id: session.parent_session_id.clone(),

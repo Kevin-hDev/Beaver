@@ -15,6 +15,7 @@ pub(super) fn try_build_request(
 pub(super) struct PreparedResponseRequest {
     pub body: serde_json::Value,
     pub replayed: Vec<super::super::reasoning_wire::replay::ReplayEvidence>,
+    pub context_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
 }
 
 pub(super) fn try_build_request_with_evidence(
@@ -77,8 +78,10 @@ pub(super) fn try_build_request_with_evidence(
             serde_json::json!({"effort": effort, "summary": "auto"})
         };
     }
+    let context_count = crate::services::agent_local::prepared_context_count::responses(&body);
     Ok(PreparedResponseRequest {
         body,
         replayed: converted.replayed,
+        context_count,
     })
 }

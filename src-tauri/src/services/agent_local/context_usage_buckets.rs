@@ -1,6 +1,6 @@
 use super::types_ollama::ChatMessage;
 use crate::services::token_counting;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const MESSAGES: usize = 0;
 const SYSTEM_TOOLS: usize = 1;
@@ -14,8 +14,10 @@ pub struct ContextUsageSeed {
     pub memory_context_tokens: usize,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, ts(rename_all = "camelCase"))]
 pub struct RequestContextUsage {
     pub messages: u32,
     pub system_tools: u32,
@@ -73,16 +75,6 @@ impl RequestContextUsage {
             reasoning_included,
         }
     }
-
-    pub fn total_tokens(self) -> usize {
-        (self.messages as usize)
-            .saturating_add(self.system_tools as usize)
-            .saturating_add(self.mcp_connectors as usize)
-            .saturating_add(self.skills as usize)
-            .saturating_add(self.memory as usize)
-            .saturating_add(self.meta_context as usize)
-            .saturating_add(self.system_prompt as usize)
-    }
 }
 
 fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning: bool) {
@@ -115,6 +107,9 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
     for index in 0..target.len() {
         target[index] = target[index].saturating_add(allocated[index]);
     }
+    target[MESSAGES] = target[MESSAGES].saturating_add(token_counting::estimate_image_tokens(
+        message.images.as_ref().map(Vec::len).unwrap_or(0),
+    ));
 }
 
 fn allocate_text_tokens(units: [usize; 4]) -> [usize; 4] {
@@ -166,7 +161,9 @@ fn message_tokens(message: &ChatMessage, include_reasoning: bool) -> usize {
                 &call.function.arguments.to_string(),
             ));
     }
-    token_counting::token_count_from_units(units)
+    token_counting::token_count_from_units(units).saturating_add(
+        token_counting::estimate_image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0)),
+    )
 }
 
 fn split_system_tokens(total: usize, seed: ContextUsageSeed) -> (usize, usize, usize, usize) {

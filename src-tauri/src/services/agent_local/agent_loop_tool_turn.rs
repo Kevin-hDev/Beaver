@@ -107,6 +107,7 @@ async fn finish_prepared(
         .compression
         .finish_tools(
             context.messages,
+            context.tools.active(),
             compressed,
             LastCounts::new(context.last_prompt, context.last_eval),
             context.cancel,

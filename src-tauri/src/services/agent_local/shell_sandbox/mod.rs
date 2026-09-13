@@ -1,6 +1,6 @@
+mod environment;
 mod helper;
 mod launch;
-mod environment;
 mod policy_transport;
 mod scope;
 mod tool_cache_env;
@@ -18,14 +18,18 @@ mod linux;
 mod linux_namespace;
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "macos")]
+mod macos_parent_guard;
+#[cfg(target_os = "macos")]
+mod macos_parent_watchdog;
 #[cfg(windows)]
 mod windows;
 
+pub(crate) use environment::is_process_injection_env;
 pub use launch::prepare_command;
 #[cfg(unix)]
 pub(crate) use launch::prepare_profile_capture;
 pub use launch::{cleanup_stale, cleanup_temp};
-pub(crate) use environment::is_process_injection_env;
 
 pub fn run_helper_if_requested() -> Option<i32> {
     helper::run_if_requested()

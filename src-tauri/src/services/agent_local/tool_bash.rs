@@ -36,7 +36,7 @@ pub async fn execute_shell_managed(
     context: ShellExecutionContext<'_>,
 ) -> Result<ShellOutput, String> {
     validate_command(command)?;
-    if let Err(reason) = super::security::check_destructive_command(command) {
+    if let Some(reason) = super::tool_bash_security::blocked_reason(command).await? {
         return Ok(super::tool_bash_result::blocked(reason));
     }
     if context.hard_timeout_secs == Some(0) {
@@ -91,7 +91,7 @@ pub async fn control_shell_session(
     let (session, command) = super::tool_bash_registry::get(process_id, owner_session_id)?;
     if !stop {
         if let Some(input) = input.filter(|value| !value.is_empty()) {
-            if let Err(reason) = super::security::check_destructive_command(input) {
+            if let Some(reason) = super::tool_bash_security::blocked_reason(input).await? {
                 return Ok((super::tool_bash_result::blocked(reason), command));
             }
         }

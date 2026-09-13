@@ -102,3 +102,76 @@ async fn panic_persists_generic_failure_and_leaves_no_registry_ghost() {
         .await
         .expect("delete parent");
 }
+
+#[tokio::test]
+async fn panic_capture_failure_keeps_worktree_but_releases_registry() {
+    let repo = super::subagent_worktree_ownership_tests::init_repo_with_commit().await;
+    let parent = session("Coder panic parent").await;
+    let mut child = session_store::create_full(
+        "Coder panic",
+        "model",
+        "provider",
+        false,
+        Some("project".into()),
+    )
+    .await
+    .expect("coder");
+    child.parent_session_id = Some(parent.id.clone());
+    child.subagent_type = Some("coder".into());
+    child.subagent_status = Some(subagent_status::RUNNING.into());
+    child.working_dir = repo.path().to_string_lossy().into_owned();
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register coder");
+    child.subagent_run_id = Some(registered.run_id.clone());
+    session_store::save(&child).await.expect("save coder");
+    let worktree = super::subagent_worktree::create_for_execution(
+        repo.path(),
+        &child.id,
+        &registered.execution_id,
+    )
+    .await
+    .expect("worktree");
+    child.subagent_worktree = Some(worktree.to_string_lossy().into_owned());
+    session_store::save(&child).await.expect("save worktree");
+    tokio::fs::write(worktree.join("unfinished.txt"), "keep\n")
+        .await
+        .expect("unfinished change");
+    super::subagent_task_change::fail_next_capture_for_child(&child.id).await;
+
+    let recovered = subagent_panic_supervisor::recover_panicked_completion(
+        &parent.id,
+        &child.id,
+        "coder",
+        &registered.run_id,
+        &registered.execution_id,
+        child.subagent_worktree.as_deref(),
+        None,
+    )
+    .await;
+
+    assert!(recovered);
+    assert!(worktree.is_dir());
+    assert!(subagent_registry::active_children_for_parent(&parent.id)
+        .await
+        .is_empty());
+    let saved = session_store::get(&child.id).await.expect("saved coder");
+    assert_eq!(saved.subagent_worktree, child.subagent_worktree);
+
+    let _ = super::subagent_worktree::remove_owned(
+        &worktree.to_string_lossy(),
+        &child.id,
+        &registered.execution_id,
+    )
+    .await;
+    if let Ok(branch) = super::subagent_worktree::branch_for_execution(&registered.execution_id) {
+        let _ = super::subagent_git_command::delete_branch(repo.path(), &branch).await;
+    }
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete coder");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
+}

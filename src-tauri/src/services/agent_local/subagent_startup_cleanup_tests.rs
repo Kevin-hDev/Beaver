@@ -1,4 +1,4 @@
-use super::cleanup_orphans_in_dir;
+use super::{cleanup_orphans_in_dir, orphan_candidates};
 use crate::services::agent_local::session_index;
 use crate::services::agent_local::subagent_status;
 use crate::services::agent_local::types_session::AgentSession;
@@ -25,6 +25,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        context_usage: Default::default(),
         compression_profile_selection: None,
         compression_count: 0,
         automatic_compression_guard: Default::default(),
@@ -188,4 +189,137 @@ fn cleanup_uses_the_session_store_and_propagates_index_rebuild_failure() {
     assert!(source.contains("session_store::read_from_dir"));
     assert!(source.contains("session_store::write_to_dir"));
     assert!(!source.contains("let _ = session_index::rebuild_index_from"));
+}
+
+#[test]
+fn second_pass_is_bounded_and_excludes_non_candidates() {
+    let cutoff = Utc::now();
+    let completed = session("completed", subagent_status::COMPLETED, true, -5);
+    let mut metas = vec![session_index::meta_from_session(&completed)];
+    for index in 0..=crate::services::agent_local::session_limits::MAX_SESSION_FILES {
+        let candidate = session(
+            &format!("candidate-{index}"),
+            subagent_status::INTERRUPTED,
+            true,
+            -5,
+        );
+        metas.push(session_index::meta_from_session(&candidate));
+    }
+
+    let selected = orphan_candidates(&metas, cutoff)
+        .map(|meta| meta.id.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        selected.len(),
+        crate::services::agent_local::session_limits::MAX_SESSION_FILES
+    );
+    assert!(!selected.contains(&completed.id.as_str()));
+}
+
+#[tokio::test]
+async fn failed_capture_is_retried_and_cleared_on_next_startup() {
+    use crate::services::agent_local::{
+        session_store, subagent_change_store, subagent_git_command, subagent_task_change,
+        subagent_worktree,
+    };
+
+    let dir = TempDir::new().expect("session dir");
+    let repo = super::super::subagent_worktree_ownership_tests::init_repo_with_commit().await;
+    let parent = session_store::create_full("Recovery parent", "model", "provider", false, None)
+        .await
+        .expect("parent");
+    let mut child = session_store::create_full(
+        "Recovery coder",
+        "model",
+        "provider",
+        false,
+        Some("project".into()),
+    )
+    .await
+    .expect("child");
+    child.parent_session_id = Some(parent.id.clone());
+    child.subagent_type = Some("coder".into());
+    child.subagent_status = Some(subagent_status::RUNNING.into());
+    child.working_dir = repo.path().to_string_lossy().into_owned();
+    child.updated_at = Some(Utc::now() - Duration::seconds(5));
+    let execution = Uuid::new_v4().to_string();
+    let worktree = subagent_worktree::create_for_execution(repo.path(), &child.id, &execution)
+        .await
+        .expect("worktree");
+    child.subagent_worktree = Some(worktree.to_string_lossy().into_owned());
+    session_store::save(&child)
+        .await
+        .expect("save global child");
+    write_session(&dir, &child).await;
+    tokio::fs::write(worktree.join("recovered.txt"), "recover\n")
+        .await
+        .expect("recovered change");
+    subagent_task_change::fail_next_capture_for_child(&child.id).await;
+
+    cleanup_orphans_in_dir(dir.path(), Utc::now(), true)
+        .await
+        .expect("first cleanup");
+    let interrupted = read_session(&dir, &child.id).await;
+    assert_eq!(
+        interrupted.subagent_status.as_deref(),
+        Some(subagent_status::INTERRUPTED)
+    );
+    assert!(interrupted.subagent_worktree.is_some());
+    assert!(worktree.is_dir());
+
+    cleanup_orphans_in_dir(dir.path(), Utc::now(), true)
+        .await
+        .expect("retry cleanup");
+    let recovered = read_session(&dir, &child.id).await;
+    assert_eq!(recovered.subagent_worktree, None);
+    assert!(!worktree.exists());
+    let change = subagent_change_store::load(&child.id)
+        .await
+        .expect("durable change");
+    let commits = subagent_git_command::text(
+        repo.path(),
+        &[
+            "rev-list",
+            "--count",
+            &format!("{}..{}", change.base_commit, change.branch),
+        ],
+    )
+    .await
+    .expect("captured commits");
+    assert_eq!(commits, "1");
+
+    let _ = subagent_git_command::delete_branch(repo.path(), &change.branch).await;
+    let _ = subagent_change_store::remove(&child.id).await;
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
+}
+
+#[tokio::test]
+async fn missing_worktree_path_is_cleared_idempotently() {
+    let dir = TempDir::new().expect("session dir");
+    let mut orphan = session(
+        "55555555-5555-4555-8555-555555555555",
+        subagent_status::INTERRUPTED,
+        true,
+        -5,
+    );
+    let execution = Uuid::new_v4().to_string();
+    orphan.subagent_worktree = Some(
+        crate::services::agent_local::subagent_worktree::path_for_execution(&orphan.id, &execution)
+            .expect("managed path")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    write_session(&dir, &orphan).await;
+
+    cleanup_orphans_in_dir(dir.path(), Utc::now(), true)
+        .await
+        .expect("idempotent cleanup");
+
+    assert_eq!(read_session(&dir, &orphan.id).await.subagent_worktree, None);
 }

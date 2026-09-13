@@ -32,6 +32,7 @@ pub async fn post_codex_stream(
         cancel,
         None,
         None,
+        None,
     )
     .await
 }
@@ -48,6 +49,9 @@ pub async fn post_codex_stream_with_continuity(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, String> {
     send_request(
         model,
@@ -60,6 +64,7 @@ pub async fn post_codex_stream_with_continuity(
         cancel,
         continuation_target,
         request_id,
+        preparation,
     )
     .await
 }
@@ -85,6 +90,7 @@ pub async fn post_codex_stream_with_timeout(
         cancel,
         None,
         None,
+        None,
     )
     .await
 }
@@ -102,6 +108,9 @@ async fn send_request(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, String> {
     let prepared = build_codex_request_with_continuity_evidence(
         model,
@@ -112,14 +121,23 @@ async fn send_request(
         fast_mode,
         continuation_target,
     )?;
+    let mut body = prepared.body;
+    cancel_aware(cancel, super::model_catalog::reasoning::prepare(&mut body)).await?;
+    if let Some(preparation) = preparation {
+        let payload = serde_json::to_value(&body)
+            .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
+        preparation
+            .persist_payload(
+                crate::services::agent_local::prepared_context_count::responses(&payload),
+            )
+            .await?;
+    }
     crate::services::llm::reasoning_wire::replay::record_evidence(
         session_id,
         request_id,
         &prepared.replayed,
     )
     .await;
-    let mut body = prepared.body;
-    cancel_aware(cancel, super::model_catalog::reasoning::prepare(&mut body)).await?;
     let routing_hint = super::routing_hint::for_request(&body)?;
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;

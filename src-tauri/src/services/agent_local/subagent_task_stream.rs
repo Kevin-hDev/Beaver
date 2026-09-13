@@ -172,8 +172,11 @@ async fn admit_subagent_turn(
     })
     .await
     .map_err(|_| "conversation_admission_failed".to_string())?;
-    crate::services::agent_local::conversation_admission::new_turn_for_continuation(
-        session_id, input, target,
+    crate::services::agent_local::conversation_admission::new_turn_for_execution(
+        session_id,
+        execution_id,
+        input,
+        target,
     )
     .await
     .map_err(|_| "conversation_admission_failed".to_string())

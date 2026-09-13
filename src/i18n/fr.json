@@ -460,6 +460,7 @@
       "resultCancelled": "Annulé.",
       "resultTruncated": "Résultat tronqué.",
       "resultMissing": "Le résultat de l’outil manque après la fin du flux.",
+      "interruptedUnknown": "Beaver s’est arrêté avant l’enregistrement du résultat de l’outil. Le résultat est inconnu. Vérifiez l’état externe avant de réessayer.",
       "webSearchRuntimeUnavailable": "La recherche web locale est temporairement indisponible. Vérifiez que Python 3.14 est installé, puis réessayez.",
       "verifyBeforeRetry": "Vérifiez l’état obtenu avant de relancer : l’action a peut-être déjà été exécutée.",
       "errorCategories": {
@@ -1460,6 +1461,7 @@
     "compressionProfilesUnavailable": "Les réglages de compression sont actuellement indisponibles.",
     "compressionDisabledUnder64": "La compression est désactivée pour les fenêtres de contexte inférieures à 64K. Vous pouvez l’autoriser dans le profil de compression avancé.",
     "compressionFailed": "Le contexte n’a pas pu être compressé. Votre conversation n’a pas été modifiée.",
+    "contextCapacityUnverified": "La capacité de ce contexte ne peut pas être vérifiée. Réduis les médias ou les blocs opaques, puis réessaie.",
     "compressionAutomaticSuspended": "La compression automatique est suspendue pour cette session après plusieurs échecs. Vous pouvez réessayer avec /compress.",
     "toolFailed": "L'outil a échoué",
     "webToolFailed": "Outil web échoué : {{message}}"

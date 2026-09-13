@@ -38,6 +38,14 @@ pub fn emit_tool_result(
     artifacts: Vec<super::tool_artifact_record::ToolArtifactRecord>,
 ) {
     let domain = super::memory_tool::resolved_path_domain(resolved_path.as_deref());
+    let persistence = tr.persistence_snapshot(
+        name,
+        tool_call_index,
+        tool_call_id,
+        resolved_path.clone(),
+        domain.clone(),
+        artifacts.clone(),
+    );
     let _ = on_event.send(StreamEvent::ToolResult {
         name: name.to_string(),
         content: tr.content.clone(),
@@ -55,6 +63,7 @@ pub fn emit_tool_result(
         file_changes: tr.file_changes().to_vec(),
         start_line: tr.start_line(),
         artifacts: artifacts.iter().map(Into::into).collect(),
+        persistence: Box::new(persistence),
     });
 }
 

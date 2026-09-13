@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { finalizeContextUsage, type ContextUsageBreakdown } from "./context-usage-breakdown";
 import {
   buildContextTokenBuckets,
+  contextBucketsFromRecord,
   mergeContextTokenBuckets,
   type ContextTokenBuckets,
 } from "./context-usage-buckets";
@@ -9,6 +10,7 @@ import { buildLiveContextMessage, type LiveContextState } from "./context-usage-
 import { resolvePreparedContextBuckets } from "./context-usage-stream";
 import { useContextHiddenUsage } from "./use-context-hidden-usage";
 import type { AgentMessage } from "@/types/agent";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
 
 interface UseContextUsageArgs {
   sessionId: string;
@@ -19,6 +21,7 @@ interface UseContextUsageArgs {
     contextUsageBuckets: ContextTokenBuckets | null;
     contextUsageBaseSegments: number;
     contextUsageIncludesReasoning: boolean;
+    contextUsageRecord: ContextUsageRecord;
   };
   workingDir?: string;
   permissionMode?: string;
@@ -39,8 +42,12 @@ export function useContextUsage({
   supportsTools,
   contextUsageIncludesReasoning: modelIncludesReasoning,
 }: UseContextUsageArgs): ContextUsageBreakdown {
+  const preparation = stream.contextUsageRecord.currentPreparation;
+  const activeBreakdown = preparation?.state === "ready" || preparation?.state === "in_flight"
+    ? preparation.breakdown
+    : null;
   const hiddenUsage = useContextHiddenUsage({
-    enabled: !stream.contextUsageBuckets,
+    enabled: !(activeBreakdown ?? stream.contextUsageBuckets),
     sessionId,
     model,
     provider,
@@ -60,6 +67,9 @@ export function useContextUsage({
     contextUsageIncludesReasoning,
   } = stream;
   const includeThinking = modelIncludesReasoning ?? contextUsageIncludesReasoning;
+  const recordBuckets = activeBreakdown
+    ? contextBucketsFromRecord(activeBreakdown)
+    : null;
   const preparedBuckets = useMemo(
     () => resolvePreparedContextBuckets({
       completedSegments,
@@ -67,12 +77,13 @@ export function useContextUsage({
       currentContentPhase,
       currentThinking,
       currentTools,
-      contextUsageBuckets,
+      contextUsageBuckets: recordBuckets ?? contextUsageBuckets,
       contextUsageBaseSegments,
       contextUsageIncludesReasoning,
     }),
     [
       contextUsageBuckets,
+      recordBuckets,
       contextUsageBaseSegments,
       contextUsageIncludesReasoning,
       completedSegments,

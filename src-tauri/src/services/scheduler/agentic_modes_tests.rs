@@ -45,6 +45,7 @@ async fn automation_turn_is_appended_to_the_existing_session_and_marked() {
         crate::services::agent_local::session_locks::acquire_admission_lease(&session.id).await;
     let admitted = conversation_admission::new_automation_turn_with_lease_and_reasoning(
         &lease,
+        "00000000-0000-4000-8000-000000000001",
         input,
         target(),
         &reasoning,
@@ -140,6 +141,7 @@ async fn an_error_before_the_first_durable_message_removes_only_an_empty_new_ses
         crate::services::agent_local::session_locks::acquire_admission_lease(&retained.id).await;
     conversation_admission::new_automation_turn_with_lease_and_reasoning(
         &lease,
+        "00000000-0000-4000-8000-000000000001",
         input,
         target(),
         &reasoning_update(&retained),
@@ -175,6 +177,7 @@ async fn assert_tool_trace_survives_missing_text(is_new_session: bool) {
         crate::services::agent_local::session_locks::acquire_admission_lease(&session.id).await;
     let admitted = conversation_admission::new_automation_turn_with_lease_and_reasoning(
         &lease,
+        "00000000-0000-4000-8000-000000000001",
         input,
         target(),
         &reasoning_update(&session),

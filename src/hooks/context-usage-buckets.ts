@@ -2,9 +2,12 @@ import type { AgentMessage, ToolActivityRecord, ToolCallRequest } from "@/types/
 import { restoredToolArguments } from "./agent-chat-utils";
 import { textUnits } from "./agent-token-estimate";
 import { toolsFromMessage } from "@/lib/message-tools";
+import {
+  IMAGE_TOKEN_ESTIMATE,
+  type RequestContextUsage,
+} from "@/types/agent-session.generated";
 
 const CHARS_PER_TOKEN = 4;
-const IMAGE_TOKEN_ESTIMATE = 1_100;
 
 export const CONTEXT_USAGE_KEYS = [
   "messages",
@@ -47,6 +50,18 @@ export function mergeContextTokenBuckets(
     for (const key of CONTEXT_USAGE_KEYS) merged[key] += source[key];
   }
   return merged;
+}
+
+export function contextBucketsFromRecord(source: RequestContextUsage): ContextTokenBuckets {
+  return {
+    messages: source.messages,
+    systemTools: source.systemTools,
+    mcpConnectors: source.mcpConnectors,
+    skills: source.skills,
+    memory: source.memory,
+    metaContext: source.metaContext,
+    systemPrompt: source.systemPrompt,
+  };
 }
 
 function emptyBuckets(options: ContextBucketOptions = {}): ContextTokenBuckets {

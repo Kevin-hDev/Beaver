@@ -58,8 +58,37 @@ describe("normalizeSavedToolHistory", () => {
 
     expect(normalized[1].segments?.[0].tools[0].artifacts?.[0]).toMatchObject({
       name: "report.txt",
-      verification: "intact",
+            verification: "intact",
     });
+  });
+
+  it("conserve le diagnostic structuré d'un outil interrompu", () => {
+    const assistant: AgentMessage = {
+      ...message("assistant", ""),
+      tool_calls: [{ id: "call-a", function: { name: "bash", arguments: {} } }],
+    };
+    const result: AgentMessage = {
+      ...message("tool", "model-facing result"),
+      tool_name: "bash",
+      tool_call_id: "call-a",
+      tool_activities: [{
+        name: "bash",
+        summary: "",
+        is_error: true,
+        result_meta: {
+          status: "cancelled",
+          error: { code: "tool_interrupted", category: "cancelled", retryable: false },
+        },
+      }],
+    };
+
+    const normalized = normalizeSavedToolHistory([
+      message("user", "Run"), assistant, result, message("assistant", "Recovered"),
+    ]);
+    const tool = normalized[1].segments?.[0].tools[0];
+
+    expect(tool?.is_error).toBe(true);
+    expect(tool?.result_meta?.error?.code).toBe("tool_interrupted");
   });
 });
 

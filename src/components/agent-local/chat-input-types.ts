@@ -5,6 +5,7 @@ import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { AgentInteractiveChoiceRequest, RetryIndicatorState } from "@/types/agent";
 import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-directory";
 import type { SkillReference } from "@/types/agent-turn.generated";
+import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
 
 export interface ChatInputProps {
   draftKey: string;
@@ -16,9 +17,8 @@ export interface ChatInputProps {
   fastModeEnabled: boolean;
   fastModePending: boolean;
   files?: DroppedFile[];
-  contextUsed: number;
-  contextMax: number;
   contextBreakdown?: ContextUsageBreakdown;
+  contextSummary?: ResolvedContextUsage;
   retryIndicator?: RetryIndicatorState | null;
   interactiveRequest?: AgentInteractiveChoiceRequest | null;
   onInteractiveResolved?: () => void;

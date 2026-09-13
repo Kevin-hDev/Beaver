@@ -94,6 +94,87 @@ async fn commits_document_before_replacing_runtime() {
 }
 
 #[tokio::test]
+async fn unverified_capacity_refuses_candidate_before_any_mutation() {
+    let session = stored_session().await;
+    let mut captured = snapshot(&session);
+    captured.prepared_count.capacity_tokens = None;
+    let before = serde_json::to_vec(&session).unwrap();
+
+    assert!(matches!(
+        checkpoint_candidate::build(&captured, Some(&summary()), &[]).await,
+        Err(CompressionError::CapacityUnverified)
+    ));
+    let saved = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(serde_json::to_vec(&saved).unwrap(), before);
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn commit_replaces_preparation_and_preserves_last_measurement_atomically() {
+    use crate::services::agent_local::context_usage_record::*;
+    let mut session = stored_session().await;
+    let identity = ContextRequestIdentity {
+        request_id: uuid::Uuid::new_v4().to_string(),
+        turn_id: uuid::Uuid::new_v4().to_string(),
+        turn: 1,
+        attempt: 1,
+        provider_id: session.provider.clone(),
+        model: session.model.clone(),
+    };
+    let old = ContextTokenCount {
+        tokens: Some(77),
+        capacity_tokens: Some(77),
+        source: Some(ContextCountSource::Provider),
+        coverage: ContextCountCoverage::Complete,
+    };
+    session.context_usage.current_preparation = Some(ContextPreparationSnapshot {
+        identity: identity.clone(),
+        context_limit: Some(100_000),
+        input: old.clone(),
+        state: ContextPreparationState::Completed,
+        breakdown: None,
+        transient_overhead_tokens: 0,
+        updated_at: chrono::Utc::now(),
+    });
+    session.context_usage.last_measurement = Some(ContextMeasurementSnapshot {
+        identity,
+        context_limit: Some(100_000),
+        input: old.clone(),
+        updated_at: chrono::Utc::now(),
+    });
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let candidate = checkpoint_candidate::build(&snapshot(&session), Some(&summary()), &[])
+        .await
+        .unwrap();
+    let expected = candidate.prepared_count.clone();
+    let mut active = runtime();
+    commit_candidate(&session.id, &mut active, candidate)
+        .await
+        .unwrap();
+    let saved = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+
+    assert_eq!(saved.context_usage.last_measurement.unwrap().input, old);
+    let preparation = saved.context_usage.current_preparation.unwrap();
+    assert_eq!(preparation.input, expected);
+    assert_eq!(preparation.state, ContextPreparationState::Ready);
+    assert_eq!(
+        super::prepared_request::count(&session.provider, &session.model, &active, &[]),
+        preparation.input
+    );
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn session_change_rejects_without_mutating_any_active_state() {
     let session = stored_session().await;
     let candidate = checkpoint_candidate::build(&snapshot(&session), Some(&summary()), &[])
@@ -392,7 +473,7 @@ async fn durable_checkpoint_metadata_is_not_projected_to_the_provider() {
 
     assert_eq!(metadata["profile_id"], "beaver");
     assert_eq!(metadata["profile_revision"], 1);
-    assert_eq!(metadata["before_tokens"], captured.before_tokens);
+    assert_eq!(metadata["before_tokens"], captured.before_tokens());
     assert_eq!(metadata["after_tokens"], candidate.after_tokens);
     assert_eq!(metadata["trigger"], "explicit");
     assert!(candidate

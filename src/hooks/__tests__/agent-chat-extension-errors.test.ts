@@ -18,7 +18,8 @@ function failedSession(code: string): AgentSession {
     model: "fixture", provider: "fixture", thinking_enabled: false, fast_mode_enabled: false,
     plan_mode_enabled: false, plan_workflow_status: "needs_context",
     is_heartbeat: false, is_gateway: false, working_dir: "", working_dir_managed: false,
-    automatic_compression_suspended: false, accumulated_tokens: 0, messages: [],
+    automatic_compression_suspended: false, accumulated_tokens: 0,
+    context_usage: emptyContextUsage(), messages: [],
     diagnostic_runs: [{
       request_id: "request-1", generation: 1, status: "failed", severity: "error",
       started_at: "2026-09-06T12:00:00Z", updated_at: "2026-09-06T12:00:01Z",
@@ -27,6 +28,10 @@ function failedSession(code: string): AgentSession {
     }],
     stream_failures: [{ code, occurred_at: "2026-09-06T12:00:01Z", is_connection: false }],
   };
+}
+
+function emptyContextUsage() {
+  return { activeRequestId: null, currentPreparation: null, lastMeasurement: null, lastOutput: null };
 }
 
 describe("erreurs d'extensions", () => {

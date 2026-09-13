@@ -89,6 +89,7 @@ pub(super) fn apply_to_session(
     session.messages[index].content = input.new_content;
     session.context_tokens = None;
     super::session_store_messages::recompute_accumulated_tokens(session);
+    session.context_usage.invalidate_preparation();
     Ok(())
 }
 

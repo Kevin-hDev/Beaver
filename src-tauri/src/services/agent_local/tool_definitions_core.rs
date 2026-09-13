@@ -44,6 +44,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
              Binary/non-UTF-8 files (images, PDFs, .docx, executables) cannot be read — use a dedicated document, image, or spreadsheet extension tool when available. \
              Non-existent files return a generic error. \
              Use offset/limit to page through large files. Default limit 2000 lines; max 50000 lines. \
+             Results above 200000 characters are truncated for the model; the complete result remains available through the returned file reference. \
              Output format: each line is prefixed with `<line_number>\\t<content>`. If more lines remain, a hint with the next offset is appended. \
              Read paths must be inside the working directory or an explicitly allowed read root (data dir, temp, advanced.allowed_paths).",
             serde_json::json!({

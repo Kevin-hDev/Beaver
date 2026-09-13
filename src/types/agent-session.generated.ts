@@ -7,9 +7,31 @@ import type { PersistedToolResultMeta } from "./agent-tool-result";
 import type { AgentTodoItem, AgentTodoRun } from "./agent-todo";
 import type { GitDiffPreview } from "./file-preview";
 
+export const IMAGE_TOKEN_ESTIMATE = 1100;
+
 export type PreserveReasoningSetting = "off" | "local" | "remote";
 
 export type AgentMessageKind = "compression_checkpoint" | "compression_boundary" | "automation";
+
+export type ContextCountSource = "provider" | "native_counter" | "model_tokenizer" | "heuristic" | "reconstructed";
+
+export type ContextCountCoverage = "complete" | "partial" | "unknown";
+
+export type ContextPreparationState = "ready" | "in_flight" | "completed" | "stale" | "interrupted" | "failed";
+
+export type ContextRequestIdentity = { requestId: string, turnId: string, turn: number, attempt: number, providerId: string, model: string, };
+
+export type ContextTokenCount = { tokens: number | null, capacityTokens: number | null, source: ContextCountSource | null, coverage: ContextCountCoverage, };
+
+export type RequestContextUsage = { messages: number, systemTools: number, mcpConnectors: number, skills: number, memory: number, metaContext: number, systemPrompt: number, reasoningIncluded: boolean, };
+
+export type ContextPreparationSnapshot = { identity: ContextRequestIdentity, contextLimit: number | null, input: ContextTokenCount, state: ContextPreparationState, breakdown: RequestContextUsage | null, transientOverheadTokens: number, updatedAt: string, };
+
+export type ContextMeasurementSnapshot = { identity: ContextRequestIdentity, contextLimit: number | null, input: ContextTokenCount, updatedAt: string, };
+
+export type ContextOutputSnapshot = { identity: ContextRequestIdentity, output: ContextTokenCount, updatedAt: string, };
+
+export type ContextUsageRecord = { activeRequestId: string | null, currentPreparation: ContextPreparationSnapshot | null, lastMeasurement: ContextMeasurementSnapshot | null, lastOutput: ContextOutputSnapshot | null, };
 
 export type ReasoningReplayStatus = "unavailable" | "partial" | "preserved" | "compacted";
 
@@ -47,7 +69,7 @@ export type ContinuityCapability = { requirement: ContinuityRequirement, local_a
 
 export type WorkspaceScope = { "kind": "project", "id": string } | { "kind": "session", "id": string } | { "kind": "legacy" };
 
-export type AgentSessionView = { id: string, name: string, created_at: string, updated_at?: string, archived_at?: string, pinned_at?: string, model: string, provider: string, thinking_enabled: boolean, fast_mode_enabled: boolean, reasoning_mode?: string, preserve_reasoning: PreserveReasoningSetting, continuity_capability?: ContinuityCapability, accumulated_tokens: number, context_tokens?: number, automatic_compression_suspended: boolean, messages: Array<AgentMessageView>, todos?: AgentTodoItem[], todo_runs?: AgentTodoRun[], active_todo_run_id?: string, stream_failures?: Array<AgentStreamFailureView>, diagnostic_runs?: AgentDiagnosticRun[], plan_mode_enabled: boolean, plan_runs?: AgentPlanRun[], active_plan_id?: string, plan_workflow_status: AgentPlanWorkflowStatus, is_heartbeat: boolean, is_gateway: boolean, gateway_channel_key?: string, project_id?: string, working_dir: string, working_dir_managed: boolean, parent_session_id?: string, subagent_type?: "explorer" | "coder", subagent_worktree?: string, subagent_status?: string, subagent_run_id?: string, subagent_description?: string, subagent_color_key?: string, subagent_summary?: string, subagent_last_activity?: SubagentLastActivityView, clone_parent_session_id?: string, clone_parent_message_id?: string, clone_mode?: "cut" | "summary", clone_root_session_id?: string, git_branch?: string, };
+export type AgentSessionView = { id: string, name: string, created_at: string, updated_at?: string, archived_at?: string, pinned_at?: string, model: string, provider: string, thinking_enabled: boolean, fast_mode_enabled: boolean, reasoning_mode?: string, preserve_reasoning: PreserveReasoningSetting, continuity_capability?: ContinuityCapability, accumulated_tokens: number, context_usage: ContextUsageRecord, automatic_compression_suspended: boolean, messages: Array<AgentMessageView>, todos?: AgentTodoItem[], todo_runs?: AgentTodoRun[], active_todo_run_id?: string, stream_failures?: Array<AgentStreamFailureView>, diagnostic_runs?: AgentDiagnosticRun[], plan_mode_enabled: boolean, plan_runs?: AgentPlanRun[], active_plan_id?: string, plan_workflow_status: AgentPlanWorkflowStatus, is_heartbeat: boolean, is_gateway: boolean, gateway_channel_key?: string, project_id?: string, working_dir: string, working_dir_managed: boolean, parent_session_id?: string, subagent_type?: "explorer" | "coder", subagent_worktree?: string, subagent_status?: string, subagent_run_id?: string, subagent_description?: string, subagent_color_key?: string, subagent_summary?: string, subagent_last_activity?: SubagentLastActivityView, clone_parent_session_id?: string, clone_parent_message_id?: string, clone_mode?: "cut" | "summary", clone_root_session_id?: string, git_branch?: string, };
 
 export type SessionMetadataPatch = { name?: string, model?: string, provider?: string, reasoning_mode?: string, fast_mode_enabled?: boolean, project_id?: string, };
 

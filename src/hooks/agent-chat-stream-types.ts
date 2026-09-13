@@ -9,6 +9,8 @@ import type {
 import type { AgentPermissionRequest } from "@/types/agent-stream";
 import type { ActiveStreamItem } from "./active-stream-item";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
+import { EMPTY_CONTEXT_USAGE_RECORD } from "./agent-token-estimate";
 
 export interface VisibleTurnIdentity {
   turnId: string;
@@ -38,15 +40,14 @@ export interface ChatState {
   tps: number;
   tpsEstimated: boolean;
   sessionTokenCount: number;
-  contextInputTokens: number;
-  contextOutputTokens: number;
+  contextUsageRecord: ContextUsageRecord;
   contextLimitTokens: number;
-  hasContextUsageSnapshot: boolean;
   contextUsageBuckets: ContextTokenBuckets | null;
   contextUsageBaseSegments: number;
   contextUsageIncludesReasoning: boolean;
   contextUsageVisible: boolean;
   liveTokenCount: number;
+  requestOutputTokens: number;
   streamStartedAt: number | null;
   segmentStartedAt: number | null;
   totalElapsedMs: number;
@@ -73,11 +74,11 @@ export const EMPTY_CHAT_STATE: ChatState = {
   currentContentPhase: undefined, currentThinking: "", currentTools: [],
   activeStreamItem: null, isStreaming: false, isWorking: false, isCompressing: false,
   tps: 0, tpsEstimated: false, sessionTokenCount: 0,
-  contextInputTokens: 0, contextOutputTokens: 0, contextLimitTokens: 0,
-  hasContextUsageSnapshot: false,
+  contextUsageRecord: EMPTY_CONTEXT_USAGE_RECORD, contextLimitTokens: 0,
   contextUsageBuckets: null, contextUsageBaseSegments: 0,
   contextUsageIncludesReasoning: true, contextUsageVisible: false,
-  liveTokenCount: 0, streamStartedAt: null, segmentStartedAt: null,
+  liveTokenCount: 0, requestOutputTokens: 0,
+  streamStartedAt: null, segmentStartedAt: null,
   totalElapsedMs: 0,
   streamRunId: "",
 };
@@ -92,10 +93,11 @@ export function createManagedStreamState(
   messages: AgentMessage[],
   sessionTokenCount: number,
   streamKind: StreamKind = "chat",
+  contextUsageRecord: ContextUsageRecord = EMPTY_CONTEXT_USAGE_RECORD,
 ): ManagedStreamState {
   const now = Date.now();
   return {
-    ...EMPTY_CHAT_STATE, messages, sessionTokenCount, contextInputTokens: sessionTokenCount,
+    ...EMPTY_CHAT_STATE, messages, sessionTokenCount, contextUsageRecord,
     contextUsageVisible: messages.some((message) => message.role === "assistant"),
     isStreaming: true,
     isWorking: true,
@@ -119,15 +121,14 @@ export function toChatState(state: ManagedStreamState): ChatState {
     isCompressing: state.isCompressing,
     tps: state.tps, tpsEstimated: state.tpsEstimated,
     sessionTokenCount: state.sessionTokenCount,
-    contextInputTokens: state.contextInputTokens,
-    contextOutputTokens: state.contextOutputTokens,
+    contextUsageRecord: state.contextUsageRecord,
     contextLimitTokens: state.contextLimitTokens,
-    hasContextUsageSnapshot: state.hasContextUsageSnapshot,
     contextUsageBuckets: state.contextUsageBuckets,
     contextUsageBaseSegments: state.contextUsageBaseSegments,
     contextUsageIncludesReasoning: state.contextUsageIncludesReasoning,
     contextUsageVisible: state.contextUsageVisible,
     liveTokenCount: state.liveTokenCount,
+    requestOutputTokens: state.requestOutputTokens,
     streamStartedAt: state.streamStartedAt,
     segmentStartedAt: state.segmentStartedAt,
     totalElapsedMs: state.totalElapsedMs,

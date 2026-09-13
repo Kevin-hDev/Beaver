@@ -1,9 +1,9 @@
 //! Cleanup au démarrage des sous-agents orphelins.
 //!
 //! Au démarrage, le registry des sous-agents actifs est vide (LazyLock).
-//! Toute session sur disque avec `subagent_status == "running"` est donc
-//! forcément le résultat d'un crash ou d'une fermeture brutale précédente.
-//! On la reclasser en "interrupted" et on nettoie son worktree git associé.
+//! Toute session `running` antérieure au démarrage est reclassée `interrupted`.
+//! Les captures de worktrees ayant échoué sont retentées pour les statuts
+//! `running`, `interrupted` et `failed` sans effacer le travail récupérable.
 
 use std::path::Path;
 use std::time::Duration;
@@ -48,10 +48,7 @@ pub(crate) async fn cleanup_orphans_in_dir(
     let metas = session_index::rebuild_index_from(sessions_dir).await?;
     let mut cleaned = 0usize;
 
-    for meta in metas
-        .iter()
-        .filter(|m| is_orphan_candidate(m, startup_cutoff))
-    {
+    for meta in orphan_candidates(&metas, startup_cutoff) {
         let mut session = match session_store::read_from_dir(sessions_dir, &meta.id).await {
             Ok(session) => session,
             Err(_) => {
@@ -59,24 +56,36 @@ pub(crate) async fn cleanup_orphans_in_dir(
                 continue;
             }
         };
-        session.subagent_status = Some(subagent_status::INTERRUPTED.to_string());
-
-        if session_store::write_to_dir(sessions_dir, &session)
-            .await
-            .is_err()
-        {
-            ::log::warn!("[startup-cleanup] mise à jour de session impossible");
-            continue;
-        }
-        cleaned += 1;
-
-        if remove_worktrees
-            && super::subagent_task_change::recover_and_remove_orphan(&session)
+        let mut changed = false;
+        if session.subagent_status.as_deref() == Some(subagent_status::RUNNING) {
+            session.subagent_status = Some(subagent_status::INTERRUPTED.to_string());
+            if session_store::write_to_dir(sessions_dir, &session)
                 .await
                 .is_err()
-        {
-            ::log::warn!("[startup-cleanup] récupération worktree impossible");
+            {
+                ::log::warn!("[startup-cleanup] mise à jour de session impossible");
+                continue;
+            }
+            changed = true;
         }
+
+        if remove_worktrees && session.subagent_worktree.is_some() {
+            match super::subagent_task_change::recover_and_remove_orphan(&session).await {
+                Ok(()) => {
+                    session.subagent_worktree = None;
+                    if session_store::write_to_dir(sessions_dir, &session)
+                        .await
+                        .is_err()
+                    {
+                        ::log::warn!("[startup-cleanup] finalisation worktree impossible");
+                    } else {
+                        changed = true;
+                    }
+                }
+                Err(_) => ::log::warn!("[startup-cleanup] récupération worktree impossible"),
+            }
+        }
+        cleaned += usize::from(changed);
     }
 
     if cleaned > 0 {
@@ -86,10 +95,27 @@ pub(crate) async fn cleanup_orphans_in_dir(
     Ok(cleaned)
 }
 
+fn orphan_candidates(
+    metas: &[AgentSessionMeta],
+    startup_cutoff: DateTime<Utc>,
+) -> impl Iterator<Item = &AgentSessionMeta> {
+    metas
+        .iter()
+        .filter(move |meta| is_orphan_candidate(meta, startup_cutoff))
+        .take(super::session_limits::MAX_SESSION_FILES)
+}
+
 fn is_orphan_candidate(meta: &AgentSessionMeta, startup_cutoff: DateTime<Utc>) -> bool {
-    meta.parent_session_id.is_some()
-        && meta.subagent_status.as_deref() == Some(subagent_status::RUNNING)
-        && meta.updated_at.unwrap_or(meta.created_at) <= startup_cutoff
+    if meta.parent_session_id.is_none() {
+        return false;
+    }
+    match meta.subagent_status.as_deref() {
+        Some(subagent_status::RUNNING) => {
+            meta.updated_at.unwrap_or(meta.created_at) <= startup_cutoff
+        }
+        Some(subagent_status::INTERRUPTED | subagent_status::FAILED) => true,
+        _ => false,
+    }
 }
 
 /// Lance `git worktree prune` sur chaque projet connu, en parallèle et avec timeout.

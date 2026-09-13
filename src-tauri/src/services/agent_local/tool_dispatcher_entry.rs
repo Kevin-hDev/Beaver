@@ -178,7 +178,7 @@ pub async fn dispatch_with_progress(
         {
             Some(result) => result,
             None => {
-                super::tool_dispatcher::dispatch_inner(
+                Box::pin(super::tool_dispatcher::dispatch_inner(
                     tool_name,
                     &args,
                     working_dir,
@@ -186,7 +186,7 @@ pub async fn dispatch_with_progress(
                     cancel,
                     profile,
                     progress,
-                )
+                ))
                 .await
             }
         }

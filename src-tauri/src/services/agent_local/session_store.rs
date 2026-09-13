@@ -25,6 +25,13 @@ pub async fn get(id: &str) -> Result<AgentSession, String> {
         })
 }
 
+pub(crate) async fn document_exists(id: &str) -> bool {
+    validate_session_id(id).is_ok()
+        && crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
+            .await
+            .is_ok()
+}
+
 pub async fn list() -> Result<Vec<AgentSessionMeta>, String> {
     let mut metas = crate::services::agent_local::session_index::read_index().await?;
     metas.retain(super::session_archive::is_active);
@@ -119,6 +126,9 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
+    super::stream_recovery_store_discovery::remove_session(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
     // Les projections et magasins secondaires partent d'abord. Le document principal,
     // seule autorité permettant une reprise, est supprimé en dernier.
     crate::services::agent_local::session_index::remove_entry(id)

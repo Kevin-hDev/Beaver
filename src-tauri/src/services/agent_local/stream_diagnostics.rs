@@ -156,18 +156,46 @@ pub async fn record_completed(session_id: &str, request_id: &str) {
 
 pub async fn record_cancelled(session_id: &str, request_id: &str) {
     let _ = support::update_run(session_id, request_id, |_session, run| {
-        if run.ended_at.is_some() {
-            return;
-        }
-        run.status = "cancelled".to_string();
-        run.phase = "failed".to_string();
-        run.severity = "warning".to_string();
-        run.error_type = Some("cancelled".to_string());
-        run.ended_at = Some(Utc::now());
-        run.safe_summary = Some("Requête annulée.".to_string());
-        support::push_event(run, "failed", "Requête annulée.", None, Some("cancelled"));
+        apply_cancelled_run(run);
     })
     .await;
+}
+
+pub(crate) fn apply_cancelled(session: &mut AgentSession, request_id: &str) -> bool {
+    if let Some(index) = support::find_run(session, request_id) {
+        return apply_cancelled_run(&mut session.diagnostic_runs[index]);
+    }
+    false
+}
+
+fn apply_cancelled_run(run: &mut AgentDiagnosticRun) -> bool {
+    if run.ended_at.is_some() {
+        return false;
+    }
+    run.status = "cancelled".to_string();
+    run.phase = "failed".to_string();
+    run.severity = "warning".to_string();
+    run.error_type = Some("cancelled".to_string());
+    run.ended_at = Some(Utc::now());
+    run.safe_summary = Some("Requête annulée.".to_string());
+    support::push_event(run, "failed", "Requête annulée.", None, Some("cancelled"));
+    true
+}
+
+pub(crate) fn apply_recovered_failure(
+    session: &mut AgentSession,
+    request_id: &str,
+    code: &str,
+) -> bool {
+    let Some(index) = support::find_run(session, request_id) else {
+        return false;
+    };
+    if session.diagnostic_runs[index].ended_at.is_some() {
+        return false;
+    }
+    push_failure(session, code, false);
+    failure::apply_failure(session, index, code, false);
+    true
 }
 
 pub async fn record_failure(

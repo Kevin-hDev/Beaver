@@ -50,6 +50,7 @@ async fn fixture_scope_native_sender_refuses_an_extra_attempt() {
                 ReplayDiagnosticContext {
                     session_id: "fixture-native-budget",
                     request_id: "fixture-native-budget",
+                    preparation: None,
                 },
             )
             .await;

@@ -19,6 +19,8 @@ pub(super) struct ResponseStreamOptions<'a> {
     pub realtime_budget: Option<RealtimeBudget>,
     pub reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     pub request_id: &'a str,
+    pub preparation:
+        Option<&'a crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'a>>,
 }
 
 pub(super) async fn stream_chat(
@@ -28,9 +30,14 @@ pub(super) async fn stream_chat(
     options: ResponseStreamOptions<'_>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
-    let response = post(config, measurement.as_deref_mut(), Some(options.request_id))
-        .await
-        .map_err(request_error)?;
+    let response = post(
+        config,
+        measurement.as_deref_mut(),
+        Some(options.request_id),
+        options.preparation,
+    )
+    .await
+    .map_err(request_error)?;
     crate::services::codex_client::stream::consume_external_responses_sse(
         on_event,
         response,
@@ -51,7 +58,7 @@ pub(super) async fn collect_silent(
     cancel: CancellationToken,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
-    let response = post(config, measurement.as_deref_mut(), None)
+    let response = post(config, measurement.as_deref_mut(), None, None)
         .await
         .map_err(request_error)?;
     crate::services::codex_client::stream_silent::consume_external_responses_sse_silent(
@@ -69,11 +76,21 @@ pub(super) async fn post(
     config: &RequestConfig<'_>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, RequestError> {
     let route =
         super::route::resolve(config.provider_id).ok_or(RequestError::InvalidConfiguration)?;
     let prepared = try_build_request_with_evidence(config)?;
+    let context_count = prepared.context_count;
     let body = prepared.body;
+    if let Some(preparation) = preparation {
+        preparation
+            .persist_payload(context_count)
+            .await
+            .map_err(RequestError::Fatal)?;
+    }
     super::reasoning_wire::replay::record_evidence(
         config.session_id,
         request_id,

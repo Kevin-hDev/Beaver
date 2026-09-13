@@ -32,6 +32,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub fixture_candidate:
         Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
     pub enable_eager_tools: bool,
+    pub journal: Option<&'a super::conversation_journal::ConversationJournal>,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -39,7 +40,6 @@ pub(super) struct OllamaRequestOutput {
     pub eager_handle: EagerHandle,
     pub plan_active: bool,
     pub interrupted: bool,
-    pub input_tokens: u32,
     pub generation: GenerationAggregate,
 }
 
@@ -70,25 +70,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         "ollama",
     )?;
     super::context_budget::record_repairs(&report, params.session_id, params.request_id).await;
-    let breakdown = RequestContextUsage::from_request(
-        "ollama",
-        params.messages,
-        params.tools,
-        params.context_usage_seed,
-    );
-    let textual_input_tokens = breakdown.total_tokens();
-    let input_tokens = super::context_usage_runtime::emit_input(
-        params.on_event,
-        textual_input_tokens,
-        params.configured_context,
-        breakdown,
-    );
-    let realtime_budget = RealtimeBudget::for_session(
-        params.session_id,
-        params.configured_context,
-        textual_input_tokens,
-    )
-    .await;
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let mut request = super::agent_loop_support::build_request(
@@ -115,6 +96,16 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     {
         request.fixture_candidate = params.fixture_candidate.cloned();
     }
+    let breakdown = RequestContextUsage::from_request(
+        "ollama",
+        &request.messages,
+        request.tools.as_deref().unwrap_or_default(),
+        params.context_usage_seed,
+    );
+    let realtime_budget =
+        RealtimeBudget::pending_for_session(params.session_id, params.configured_context).await;
+    let preparation = super::agent_loop_ollama_context::prepared_attempt(&params, 1, breakdown)
+        .with_realtime_budget(realtime_budget.clone());
     if !request.capture_reasoning {
         crate::services::reasoning_continuity::diagnostics::record_blocked(
             params.session_id,
@@ -164,6 +155,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         super::ollama_stream_request::ReplayDiagnosticContext {
             session_id: params.session_id,
             request_id: params.request_id,
+            preparation: Some(&preparation),
         },
     )
     .await?;
@@ -192,14 +184,19 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             chat_mode: params.chat_mode,
             realtime_budget,
             enable_eager_tools: params.enable_eager_tools,
+            journal: params.journal,
+            context_limit: params.configured_context,
+            breakdown,
         })
         .await?;
         result = retry.result;
         eager_handle = EagerHandleGuard::new(retry.eager_handle);
         interrupted = retry.interrupted;
         generation = retry.generation;
+        super::agent_loop_ollama_context::persist_result(&params, retry.attempt, &result).await?;
     } else {
         generation.add_result(&result);
+        super::agent_loop_ollama_context::persist_result(&params, 1, &result).await?;
     }
     params
         .subagents
@@ -210,7 +207,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         eager_handle: eager_handle.take(),
         plan_active,
         interrupted,
-        input_tokens,
         generation,
     })
 }

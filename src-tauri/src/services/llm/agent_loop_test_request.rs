@@ -26,7 +26,6 @@ pub(super) async fn run(
         result,
         plan_active: false,
         interrupted: false,
-        input_tokens: 0,
         generation,
     }))
 }

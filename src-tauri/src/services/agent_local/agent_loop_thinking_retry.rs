@@ -53,6 +53,9 @@ pub struct ThinkingRetryParams<'a> {
     pub chat_mode: bool,
     pub realtime_budget: Option<RealtimeBudget>,
     pub enable_eager_tools: bool,
+    pub journal: Option<&'a super::conversation_journal::ConversationJournal>,
+    pub context_limit: u64,
+    pub breakdown: super::context_usage_buckets::RequestContextUsage,
 }
 
 pub struct ThinkingRetryOutput {
@@ -60,6 +63,7 @@ pub struct ThinkingRetryOutput {
     pub eager_handle: EagerHandle,
     pub interrupted: bool,
     pub generation: GenerationAggregate,
+    pub attempt: u32,
 }
 
 pub async fn retry_if_needed(
@@ -74,6 +78,7 @@ pub async fn retry_if_needed(
             eager_handle: params.eager_handle,
             interrupted: false,
             generation,
+            attempt: 1,
         });
     };
 
@@ -91,6 +96,27 @@ pub async fn retry_if_needed(
     if !params.plan_active {
         send_retry_indicator(params.on_event, REASON_THINKING_ONLY, 1, 1);
     }
+
+    let preparation = super::context_usage_runtime::PreparedContextAttempt::new(
+        super::context_usage_runtime::ContextAttempt {
+            on_event: params.on_event,
+            journal: params.journal,
+            provider_id: "ollama",
+            model: &params.request.model,
+            turn: params.turn,
+            attempt: 2,
+            context_limit: params.context_limit,
+            measured_input_source: super::context_usage_record::ContextCountSource::NativeCounter,
+        },
+        params.breakdown,
+    )
+    .with_baseline_count(crate::services::compress::prepared_request::count(
+        "ollama",
+        &params.request.model,
+        &retry_req.messages,
+        retry_req.tools.as_deref().unwrap_or_default(),
+    ))
+    .with_realtime_budget(params.realtime_budget.clone());
 
     params.eager_handle.abort();
     let (retry_tx, retry_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -113,6 +139,7 @@ pub async fn retry_if_needed(
         super::ollama_stream_request::ReplayDiagnosticContext {
             session_id: &params.session_id,
             request_id: &params.request_id,
+            preparation: Some(&preparation),
         },
     )
     .await?;
@@ -126,6 +153,7 @@ pub async fn retry_if_needed(
         eager_handle: eager_handle.take(),
         interrupted,
         generation,
+        attempt: 2,
     })
 }
 

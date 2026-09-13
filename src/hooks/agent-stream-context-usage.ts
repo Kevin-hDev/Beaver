@@ -1,6 +1,8 @@
 import type { ManagedStreamState } from "./agent-chat-stream-types";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 import type { StreamEvent } from "@/types/agent";
+import type { RequestContextUsage } from "@/types/agent-session.generated";
+import { resolveContextUsage } from "./agent-token-estimate";
 
 type ContextUsageData = Extract<
   StreamEvent,
@@ -13,24 +15,27 @@ export function applyContextUsage(
   state: ManagedStreamState,
   usage: ContextUsageData,
 ) {
-  const inputTokens = boundedTokens(usage.inputTokens);
-  const outputTokens = boundedTokens(usage.outputTokens);
-  const startsRequest = usage.estimated && outputTokens === 0;
-  if (!startsRequest) {
+  const preparation = usage.record.currentPreparation;
+  const resolved = resolveContextUsage(usage.record);
+  const inputTokens = boundedTokens(resolved.used ?? 0);
+  const outputTokens = boundedTokens(resolved.output ?? 0);
+  const startsRequest = preparation?.state === "ready" || preparation?.state === "in_flight";
+  if (startsRequest) {
+    state.requestOutputTokens = 0;
+  } else {
     state.liveTokenCount = adjustedTokens(
       state.liveTokenCount,
-      outputTokens - state.contextOutputTokens,
+      outputTokens - state.requestOutputTokens,
     );
+    state.requestOutputTokens = outputTokens;
   }
-  state.contextInputTokens = inputTokens;
-  state.contextOutputTokens = outputTokens;
-  state.contextLimitTokens = boundedTokens(usage.contextLimit);
-  state.hasContextUsageSnapshot = true;
+  state.contextUsageRecord = usage.record;
+  state.contextLimitTokens = boundedTokens(resolved.max ?? 0);
   state.sessionTokenCount = boundedSum(inputTokens, outputTokens);
-  if (usage.breakdown) {
-    state.contextUsageBuckets = boundedBuckets(usage.breakdown);
+  if (preparation?.breakdown) {
+    state.contextUsageBuckets = boundedBuckets(preparation.breakdown);
     state.contextUsageBaseSegments = state.completedSegments.length;
-    state.contextUsageIncludesReasoning = usage.breakdown.reasoningIncluded === true;
+    state.contextUsageIncludesReasoning = preparation.breakdown.reasoningIncluded === true;
   }
 }
 
@@ -38,17 +43,16 @@ export function applyGeneratedTokenCount(
   state: ManagedStreamState,
   reportedTokens: number | undefined,
 ) {
-  const previousTokens = boundedTokens(state.contextOutputTokens);
+  const previousTokens = boundedTokens(state.requestOutputTokens);
   const reported = reportedTokens === undefined ? 0 : boundedTokens(reportedTokens);
   const nextRequestTokens = reported > 0
     ? Math.max(previousTokens, reported)
     : boundedSum(previousTokens, 1);
-  const delta = nextRequestTokens - previousTokens;
-
-  state.contextOutputTokens = nextRequestTokens;
-  state.liveTokenCount = boundedSum(state.liveTokenCount, delta);
+  state.requestOutputTokens = nextRequestTokens;
+  state.liveTokenCount = boundedSum(state.liveTokenCount, nextRequestTokens - previousTokens);
+  const inputTokens = boundedTokens(resolveContextUsage(state.contextUsageRecord).used ?? 0);
   state.sessionTokenCount = boundedSum(
-    state.contextInputTokens,
+    inputTokens,
     nextRequestTokens,
   );
 }
@@ -68,7 +72,7 @@ function adjustedTokens(value: number, delta: number): number {
 }
 
 function boundedBuckets(
-  source: NonNullable<ContextUsageData["breakdown"]>,
+  source: RequestContextUsage,
 ): ContextTokenBuckets {
   return {
     messages: boundedTokens(source.messages),

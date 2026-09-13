@@ -10,12 +10,12 @@ use tokio_util::sync::CancellationToken;
 pub async fn try_auto_compress(
     on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,
-    _model: &str,
+    model: &str,
     session_id: &str,
     request_id: &str,
     native_context: u64,
     configured_context: u64,
-    last_context_tokens: Option<u32>,
+    _last_context_tokens: Option<u32>,
     provider_tools: &[serde_json::Value],
     chatbot: bool,
     plan_mode_active: bool,
@@ -23,6 +23,12 @@ pub async fn try_auto_compress(
     cancel: CancellationToken,
 ) -> Option<u32> {
     let _ = native_context;
+    let prepared_count = crate::services::compress::prepared_request::count(
+        "ollama",
+        model,
+        messages,
+        provider_tools,
+    );
     match crate::services::compress::orchestrator::run_compression(
         crate::services::compress::orchestrator::CompressionRunRequest {
             on_event,
@@ -33,7 +39,7 @@ pub async fn try_auto_compress(
             provider_id: "ollama",
             fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
             context_window: configured_context,
-            last_context_tokens,
+            prepared_count,
             provider_tools,
             chatbot,
             plan_mode_active,

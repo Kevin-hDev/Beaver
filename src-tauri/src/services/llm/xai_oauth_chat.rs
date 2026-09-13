@@ -14,6 +14,9 @@ pub(super) async fn post(
     request: &CatalogChatRequest<'_>,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, super::stream_http::RequestError> {
     // Ce type fermé empêche le chemin OAuth d'envoyer une requête chat non restreinte.
     let policy = super::route_profile::xai_oauth_chat_payload_policy(request.model)
@@ -23,6 +26,7 @@ pub(super) async fn post(
         policy,
         measurement,
         request_id,
+        preparation,
     )
     .await
 }

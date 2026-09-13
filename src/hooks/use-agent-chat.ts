@@ -129,7 +129,11 @@ export function useAgentChat(
       provider,
       turn,
       reasoningModeRef.current !== "off" && !!reasoningModeRef.current,
-      { displayMessages: displayMsgs, baseTokenCount: baseTokenCountOverride ?? state.sessionTokenCount },
+      {
+        displayMessages: displayMsgs,
+        baseTokenCount: baseTokenCountOverride ?? state.sessionTokenCount,
+        contextUsageRecord: state.contextUsageRecord,
+      },
       workingDir,
       supportsTools,
       supportsThinking,
@@ -140,7 +144,7 @@ export function useAgentChat(
       optimisticUserMessageId,
     );
     await onStreamStarted?.();
-  }, [model, onStreamStarted, planModeEnabled, provider, startStream, state.sessionTokenCount, supportsTools, supportsThinking, supportsVision]);
+  }, [model, onStreamStarted, planModeEnabled, provider, startStream, state.contextUsageRecord, state.sessionTokenCount, supportsTools, supportsThinking, supportsVision]);
   const sendMessage = useAgentMessageSend({
     sessionId,
     messages: state.messages,

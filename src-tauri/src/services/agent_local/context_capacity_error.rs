@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 pub const CODE: &str = "context_capacity_exceeded";
+pub const UNVERIFIED_CODE: &str = "context_capacity_unverified";
 const SEPARATOR: char = ',';
 const MAX_SAFE_TOKENS: u64 = 16_777_216;
 
@@ -122,9 +123,8 @@ mod tests {
 
     #[test]
     fn public_error_hides_malformed_capacity_counters() {
-        let (message, details) = public_error(
-            "context_capacity_exceeded:8000,0,5000,13000,12000,invalid",
-        );
+        let (message, details) =
+            public_error("context_capacity_exceeded:8000,0,5000,13000,12000,invalid");
 
         assert_eq!(message, CODE);
         assert_eq!(details, None);

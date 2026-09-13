@@ -149,3 +149,37 @@ fn error_result_refuses_pending_artifacts() {
         .is_err());
     assert!(result.pending_artifacts().is_empty());
 }
+
+#[test]
+fn recovery_snapshot_keeps_durable_fields_without_pending_artifacts() {
+    let mut result = ToolResult::partial("preview", ["bounded warning"])
+        .with_display_summary("summary")
+        .with_affected_paths(vec!["src/lib.rs".into()])
+        .with_user_message("continue");
+    result
+        .set_pending_artifacts(vec![PendingArtifact::from_validated(
+            "pending.txt".into(),
+            None,
+            ArtifactPurpose::Artifact,
+        )])
+        .unwrap();
+
+    let snapshot = result.persistence_snapshot(
+        "read_file",
+        3,
+        Some("call-3"),
+        Some("src/lib.rs".into()),
+        Some("project".into()),
+        Vec::new(),
+    );
+
+    assert_eq!(snapshot.status, ToolResultStatus::Partial);
+    assert_eq!(snapshot.warnings, ["bounded warning"]);
+    assert_eq!(snapshot.tool_call_id.as_deref(), Some("call-3"));
+    assert!(matches!(
+        snapshot.follow_up,
+        crate::services::agent_local::stream_recovery_record::RecoverableToolFollowUp::UserMessage(ref value)
+            if value == "continue"
+    ));
+    assert!(result.pending_artifacts().len() == 1);
+}

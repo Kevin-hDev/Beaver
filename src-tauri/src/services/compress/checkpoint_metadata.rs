@@ -25,7 +25,7 @@ pub(super) fn set(
     let metadata = CheckpointMetadata {
         profile_id: &snapshot.profile.profile.id,
         profile_revision: snapshot.profile.profile_revision,
-        before_tokens: snapshot.before_tokens,
+        before_tokens: snapshot.before_tokens(),
         after_tokens,
         trigger: snapshot.trigger,
         retained_message_ids,

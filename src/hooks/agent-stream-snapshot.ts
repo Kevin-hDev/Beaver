@@ -8,18 +8,18 @@ export function applySessionSnapshot(
   tokenCount: number,
 ) {
   const resolvedTokenCount = tokenCount || estimateAgentMessagesTokens(messages);
+  const openStreamRunId = latestOpenStreamRunId(messages);
   record.state = {
     ...record.state,
     messages,
-    streamRunId: latestOpenStreamRunId(messages) ?? record.state.streamRunId,
+    streamRunId: openStreamRunId
+      ?? (messages.some((message) => message.stream_run_id) ? "" : record.state.streamRunId),
     sessionTokenCount: resolvedTokenCount,
-    contextInputTokens: resolvedTokenCount,
-    contextOutputTokens: 0,
     contextLimitTokens: 0,
-    hasContextUsageSnapshot: false,
     contextUsageBuckets: null,
     contextUsageBaseSegments: 0,
     contextUsageIncludesReasoning: true,
+    requestOutputTokens: 0,
     contextUsageVisible: record.state.contextUsageVisible
       || messages.some((message) => message.role === "assistant"),
     isStreaming: true,

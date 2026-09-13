@@ -26,14 +26,8 @@ pub enum StreamEvent {
         content: String,
         token_count: u32,
     },
-    #[serde(rename_all = "camelCase")]
     ContextUsage {
-        input_tokens: u32,
-        output_tokens: u32,
-        context_limit: u32,
-        estimated: bool,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        breakdown: Option<super::context_usage_buckets::RequestContextUsage>,
+        record: super::context_usage_record::ContextUsageRecord,
     },
     GenerationStarted {},
     #[serde(rename_all = "camelCase")]
@@ -57,6 +51,8 @@ pub enum StreamEvent {
         tool_call_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         domain: Option<String>,
+        #[serde(skip_serializing)]
+        extra_content: Option<serde_json::Value>,
     },
     #[serde(rename_all = "camelCase")]
     ToolOutput {
@@ -93,6 +89,8 @@ pub enum StreamEvent {
         start_line: Option<usize>,
         #[serde(skip_serializing_if = "Vec::is_empty", default)]
         artifacts: Vec<crate::models::agent_session_contract::ToolArtifactRecordView>,
+        #[serde(skip_serializing)]
+        persistence: Box<super::stream_recovery_record::RecoverableToolResult>,
     },
     TurnEnd {},
     PermissionRequest(super::permission_request::PermissionRequest),

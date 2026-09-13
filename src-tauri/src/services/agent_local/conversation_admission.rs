@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::fmt;
 
 use chrono::Utc;
 use uuid::Uuid;
@@ -10,6 +9,9 @@ use crate::services::reasoning_continuity::contract::ContinuationTarget;
 #[cfg(test)]
 use crate::services::reasoning_continuity::contract::ReplayTarget;
 
+use super::conversation_admission_error::capacity_error;
+pub(super) use super::conversation_admission_error::error;
+pub use super::conversation_admission_error::ConversationAdmissionError;
 use super::conversation_admission_ids::allocate_ids;
 pub(super) use super::conversation_admission_ids::unique_uuid;
 use super::conversation_history::{ConversationHistory, ProviderRole};
@@ -32,17 +34,6 @@ pub(crate) use super::conversation_edit::{
 };
 #[cfg(test)]
 pub(crate) use super::conversation_resume::resume_with_key;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ConversationAdmissionError(&'static str);
-
-impl fmt::Display for ConversationAdmissionError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.0)
-    }
-}
-
-impl std::error::Error for ConversationAdmissionError {}
 
 #[derive(Debug)]
 pub struct AdmittedTurn {
@@ -70,24 +61,27 @@ pub async fn new_turn(
     new_turn_for_continuation(session_id, input, ContinuationTarget::Replay(target)).await
 }
 
-pub async fn new_turn_for_continuation(
+pub(crate) async fn new_turn_for_execution(
     session_id: &str,
+    current_execution_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     let lease = super::session_locks::acquire_admission_lease(session_id).await;
-    new_turn_with_lease(&lease, input, target).await
-}
-
-pub(crate) async fn new_turn_with_lease(
-    lease: &super::session_locks::AdmissionLease,
-    input: ResolvedTurnInput,
-    target: ContinuationTarget,
-) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    super::stream_recovery_apply::recover_session_with_lease(
+        &lease,
+        super::stream_recovery_apply::StreamRecoveryMode::Admission {
+            current_execution_id,
+            resume_message_id: None,
+        },
+    )
+    .await
+    .map_err(|code| super::conversation_admission_error::recovery_error(&code))?;
     new_turn_inner(
         lease.session_id(),
         input,
         target,
+        Some(current_execution_id),
         None,
         None,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
@@ -106,6 +100,7 @@ pub(super) async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
     session_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
+    current_execution_id: Option<&str>,
     reasoning: Option<&super::conversation_reasoning_state::SessionReasoningUpdate>,
     message_kind: Option<AgentMessageKind>,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
@@ -129,6 +124,20 @@ where
         update.apply(&mut session).map_err(|_| error())?;
     }
     after_load().await;
+    if session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION {
+        return Err(capacity_error());
+    }
+    #[cfg(test)]
+    super::stream_recovery_apply::close_admission_fallback(&mut session, current_execution_id)
+        .map_err(|failure| {
+            if failure == "session_capacity_reached" {
+                capacity_error()
+            } else {
+                error()
+            }
+        })?;
+    #[cfg(not(test))]
+    let _ = current_execution_id;
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session, &target, key_source, None,
     )
@@ -191,6 +200,7 @@ where
     session.messages.push(message);
     session.updated_at = Some(Utc::now());
     super::session_store_messages::recompute_accumulated_tokens(&mut session);
+    session.context_usage.invalidate_preparation();
     writer(session).await.map_err(|_| error())?;
 
     let history = super::conversation_history::load_for_admission_continuation(
@@ -212,14 +222,6 @@ where
         assistant_message_id,
         history,
     })
-}
-
-pub(super) const fn error() -> ConversationAdmissionError {
-    ConversationAdmissionError(PUBLIC_ERROR_CODE)
-}
-
-const fn capacity_error() -> ConversationAdmissionError {
-    ConversationAdmissionError(super::session_limits::SESSION_CAPACITY_REACHED)
 }
 
 #[cfg(test)]

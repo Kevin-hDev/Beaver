@@ -115,6 +115,30 @@ fn request_keeps_the_official_empty_tools_contract() {
 }
 
 #[test]
+fn codex_count_uses_its_converted_responses_body() {
+    let messages = [
+        crate::services::agent_local::types_ollama::ChatMessage::system("rules".into()),
+        crate::services::agent_local::types_ollama::ChatMessage::user("hello".into()),
+    ];
+    let request = build_codex_request(
+        "gpt-5.6-sol",
+        &messages,
+        &[],
+        Some("medium"),
+        None,
+        FastModeRequest::Standard,
+    );
+    let body = serde_json::to_value(request).unwrap();
+    let count = crate::services::agent_local::prepared_context_count::responses(&body);
+
+    assert!(count.tokens.unwrap() > 0);
+    assert_eq!(
+        count.coverage,
+        crate::services::agent_local::context_usage_record::ContextCountCoverage::Complete
+    );
+}
+
+#[test]
 fn codex_request_and_routing_hint_share_the_captured_fast_mode() {
     let fast = build_codex_request("gpt-5.6-sol", &[], &[], None, None, FastModeRequest::Fast);
     let standard = build_codex_request(

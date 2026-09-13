@@ -11,6 +11,7 @@ pub fn chat_request(
 pub(crate) struct PreparedOllamaPayload {
     pub payload: Value,
     pub replayed: Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+    pub context_count: super::context_usage_record::ContextTokenCount,
 }
 
 pub(crate) fn chat_request_with_evidence(
@@ -47,9 +48,12 @@ pub(crate) fn chat_request_with_evidence(
     insert_optional(&mut body, "options", request.options.as_ref());
     insert_optional(&mut body, "keep_alive", request.keep_alive.as_ref());
     insert_optional(&mut body, "think", request.think.as_ref());
+    let payload = Value::Object(body);
+    let context_count = super::prepared_context_count::ollama(&payload);
     Ok(PreparedOllamaPayload {
-        payload: Value::Object(body),
+        payload,
         replayed,
+        context_count,
     })
 }
 

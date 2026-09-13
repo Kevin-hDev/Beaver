@@ -1,3 +1,32 @@
+pub async fn new_turn_for_continuation(
+    session_id: &str,
+    input: ResolvedTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    let lease = super::session_locks::acquire_admission_lease(session_id).await;
+    new_turn_with_lease(&lease, input, target).await
+}
+
+async fn new_turn_with_lease(
+    lease: &super::session_locks::AdmissionLease,
+    input: ResolvedTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    new_turn_inner(
+        lease.session_id(),
+        input,
+        target,
+        None,
+        None,
+        None,
+        super::conversation_history_resolve::AttachmentKeySource::Vault,
+        || async {},
+        |session| async move { super::session_store::save(&session).await },
+        || async {},
+    )
+    .await
+}
+
 pub(crate) async fn new_turn_with_writer<W, Fut>(
     session_id: &str,
     input: ResolvedTurnInput,
@@ -13,6 +42,7 @@ where
         session_id,
         input,
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
+        None,
         None,
         None,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
@@ -40,6 +70,7 @@ where
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
         None,
         None,
+        None,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -65,6 +96,7 @@ where
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
         None,
         None,
+        None,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         after_load,
         |session| async move { super::session_store::save(&session).await },
@@ -84,6 +116,7 @@ pub(crate) async fn new_turn_with_key(
         session_id,
         input,
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
+        None,
         None,
         None,
         super::conversation_history_resolve::AttachmentKeySource::Fixed(

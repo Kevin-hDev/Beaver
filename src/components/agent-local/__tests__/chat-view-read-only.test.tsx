@@ -64,8 +64,9 @@ vi.mock("../chat-overlays", () => ({
   },
 }));
 vi.mock("@/hooks/use-agent-chat", () => ({ useAgentChat: () => state.chat }));
-vi.mock("@/hooks/use-context-progress", () => ({ useContextProgress: () => ({ max: 0 }) }));
-vi.mock("@/hooks/use-context-usage", () => ({ useContextUsage: () => ({ used: 0 }) }));
+vi.mock("@/hooks/use-chat-context", () => ({
+  useChatContext: () => ({ summary: { used: 0, max: 0 }, max: 0, breakdown: {} }),
+}));
 vi.mock("@/hooks/use-file-drop", () => ({ useFileDrop: () => ({ dragging: false, setDragging: vi.fn(), addByPaths: vi.fn(), files: [] }) }));
 vi.mock("@/hooks/use-permission-mode", () => ({
   usePermissionMode: (_sessionId: string, enabled: boolean) => {

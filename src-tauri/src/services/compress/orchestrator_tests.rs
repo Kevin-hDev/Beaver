@@ -3,6 +3,57 @@ use super::profile_resolve::resolve_from_document;
 use super::profile_store_document::CompressionProfileDocument;
 use super::profile_types::CompressionTrigger;
 
+#[test]
+fn matching_preparation_adds_its_real_provider_overhead() {
+    use crate::services::agent_local::context_usage_record::*;
+
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let count = ContextTokenCount {
+        tokens: Some(100),
+        capacity_tokens: Some(100),
+        source: Some(ContextCountSource::Heuristic),
+        coverage: ContextCountCoverage::Complete,
+    };
+    let record = ContextUsageRecord {
+        active_request_id: Some(request_id.clone()),
+        current_preparation: Some(ContextPreparationSnapshot {
+            identity: ContextRequestIdentity {
+                request_id: request_id.clone(),
+                turn_id: uuid::Uuid::new_v4().to_string(),
+                turn: 0,
+                attempt: 1,
+                provider_id: "openai".into(),
+                model: "gpt-5".into(),
+            },
+            context_limit: Some(200_000),
+            input: count.clone(),
+            state: ContextPreparationState::Completed,
+            breakdown: None,
+            transient_overhead_tokens: 37,
+            updated_at: chrono::Utc::now(),
+        }),
+        ..Default::default()
+    };
+
+    let adjusted = super::orchestrator::prepared_count_with_overhead(
+        count.clone(),
+        &record,
+        &request_id,
+        "openai",
+        "gpt-5",
+    );
+    let stale = super::orchestrator::prepared_count_with_overhead(
+        count,
+        &record,
+        &uuid::Uuid::new_v4().to_string(),
+        "openai",
+        "gpt-5",
+    );
+
+    assert_eq!(adjusted.capacity_tokens, Some(137));
+    assert_eq!(stale.capacity_tokens, Some(100));
+}
+
 fn profile() -> super::profile_resolve::ResolvedCompressionProfile {
     resolve_from_document(None, &CompressionProfileDocument::default()).unwrap()
 }
@@ -28,6 +79,36 @@ fn automatic_uses_the_profile_threshold_and_known_window() {
         CompressionTrigger::Automatic,
         0,
         100_000
+    ));
+}
+
+#[test]
+fn inline_image_transport_does_not_trigger_automatic_compression() {
+    let image = |encoded_len: usize| {
+        serde_json::json!({
+            "type": "input_image",
+            "image_url": format!("data:image/png;base64,{}", "A".repeat(encoded_len))
+        })
+    };
+    let payload = serde_json::json!({
+        "instructions": "x".repeat(214_000),
+        "input": [{"role": "user", "content": [
+            image(228_282),
+            image(109_966),
+            image(200_934),
+            image(297_758)
+        ]}]
+    });
+    let count = crate::services::agent_local::prepared_context_count::responses(&payload);
+    let used = count.capacity_tokens.expect("bounded inline media") as usize;
+
+    assert_eq!(count.tokens, count.capacity_tokens);
+    assert!((55_000..60_000).contains(&used));
+    assert!(!eligible(
+        &profile(),
+        CompressionTrigger::Automatic,
+        258_400,
+        used,
     ));
 }
 

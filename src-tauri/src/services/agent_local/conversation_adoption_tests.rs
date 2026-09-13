@@ -119,13 +119,16 @@ fn production_session_message_writes_stay_behind_canonical_owners() {
         }
     }
     writers.sort();
-    // Admission and the atomic checkpoint transaction own live writes. Migration
-    // repairs legacy data, while session_ops owns the explicit retry/clone boundary.
+    // Admission and the two interrupted-turn helpers own live turn writes. The
+    // atomic checkpoint transaction owns compression writes, migration repairs
+    // legacy data, and session_ops owns the explicit retry/clone boundary.
     assert_eq!(
         writers,
         [
             "checkpoint_transaction.rs",
             "conversation_admission.rs",
+            "conversation_interrupted_tail.rs",
+            "conversation_interrupted_tools.rs",
             "session_migration_legacy_history.rs",
             "session_ops.rs",
         ]

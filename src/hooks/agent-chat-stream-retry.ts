@@ -1,7 +1,6 @@
 import type { ManagedStreamState } from "./agent-chat-stream-types";
 import type { RetryIndicatorState } from "@/types/agent";
-
-const PROVIDER_RETRY_REASON = "agentLocal.retry.provider";
+import { resolveContextUsage } from "./agent-token-estimate";
 
 export function applyRetryIndicator(
   state: ManagedStreamState,
@@ -9,10 +8,9 @@ export function applyRetryIndicator(
   now: number,
 ) {
   state.retryIndicator = indicator;
-  if (indicator.reasonKey !== PROVIDER_RETRY_REASON) return;
-
-  const discardedTokens = safeTokenCount(state.contextOutputTokens);
-  if (state.hasContextUsageSnapshot) {
+  const resolved = resolveContextUsage(state.contextUsageRecord);
+  const discardedTokens = safeTokenCount(state.requestOutputTokens);
+  if (resolved.used !== null) {
     const completedBeforeRequest = Math.min(
       safeTokenCount(state.contextUsageBaseSegments),
       state.completedSegments.length,
@@ -26,12 +24,12 @@ export function applyRetryIndicator(
   state.activeStreamItem = null;
   state.tps = 0;
   state.tpsEstimated = false;
-  state.contextOutputTokens = 0;
   state.liveTokenCount = Math.max(
     0,
     safeTokenCount(state.liveTokenCount) - discardedTokens,
   );
-  state.sessionTokenCount = safeTokenCount(state.contextInputTokens);
+  state.requestOutputTokens = 0;
+  state.sessionTokenCount = safeTokenCount(resolved.used ?? 0);
   state.segmentStartedAt = now;
 }
 

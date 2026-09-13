@@ -104,7 +104,7 @@ fn process_chunk(
             }
             ParsedChunk::Usage(usage) => {
                 result.eval_count = usage.output_tokens.and_then(|value| value.try_into().ok());
-                result.prompt_tokens = usage.input_tokens.and_then(|value| value.try_into().ok());
+                result.prompt_tokens = usage.context_input_tokens(usage_context.api_format);
                 result.usage = Some(usage);
             }
             ParsedChunk::GenerationDuration(_) => {}

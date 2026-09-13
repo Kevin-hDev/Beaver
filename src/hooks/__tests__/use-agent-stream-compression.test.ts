@@ -82,6 +82,7 @@ describe("useAgentStream compression", () => {
       "compression",
       true,
       expect.anything(),
+      undefined,
     );
   });
 
@@ -107,6 +108,7 @@ describe("useAgentStream compression", () => {
       "chat",
       true,
       expect.anything(),
+      undefined,
     );
   });
 });

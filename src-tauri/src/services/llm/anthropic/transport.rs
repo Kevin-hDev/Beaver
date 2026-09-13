@@ -1,6 +1,6 @@
 use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use crate::services::llm::stream_http::{RequestConfig, RequestError};
-use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
+use crate::services::secure_http::AuthenticatedClient;
 use tokio_util::sync::CancellationToken;
 
 #[allow(
@@ -16,10 +16,18 @@ pub(in crate::services::llm) async fn stream_chat(
     reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
     request_id: &str,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<StreamOutcome, String> {
-    let response = post(config, measurement.as_deref_mut(), Some(request_id))
-        .await
-        .map_err(|error| error.to_string())?;
+    let response = post(
+        config,
+        measurement.as_deref_mut(),
+        Some(request_id),
+        preparation,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
     super::stream::consume_stream(
         on_event,
         response,
@@ -43,7 +51,7 @@ pub(in crate::services::llm) async fn collect_silent(
     cancel: CancellationToken,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
-    let response = post(config, measurement.as_deref_mut(), None)
+    let response = post(config, measurement.as_deref_mut(), None, None)
         .await
         .map_err(|error| error.to_string())?;
     super::stream::consume_silent(
@@ -63,6 +71,9 @@ async fn post(
     config: &RequestConfig<'_>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<reqwest::Response, RequestError> {
     let route = crate::services::llm::route::resolve(config.provider_id)
         .ok_or(RequestError::InvalidConfiguration)?;
@@ -101,6 +112,13 @@ async fn post(
     .ok_or(RequestError::InvalidConfiguration)?;
     let prepared =
         super::build_payload(config, max_tokens).map_err(|_| RequestError::InvalidConfiguration)?;
+    let context_count = prepared.context_count;
+    if let Some(preparation) = preparation {
+        preparation
+            .persist_payload(context_count)
+            .await
+            .map_err(RequestError::Fatal)?;
+    }
     let request_bytes = serde_json::to_vec(&prepared.payload)
         .map(zeroize::Zeroizing::new)
         .map_err(|_| RequestError::InvalidConfiguration)?
@@ -143,7 +161,7 @@ async fn post(
             },
         )
         .await
-        .map_err(map_route_error)?;
+        .map_err(super::transport_error::map_route_error)?;
     if let Some(measurement) = measurement.as_mut() {
         measurement.mark_headers();
     }
@@ -156,7 +174,7 @@ async fn post(
     if response.status().is_success() {
         return Ok(response);
     }
-    classify_response(
+    super::transport_error::classify_response(
         response,
         &route,
         config,
@@ -165,66 +183,4 @@ async fn post(
         &prepared.payload,
     )
     .await
-}
-
-async fn classify_response(
-    response: reqwest::Response,
-    route: &crate::services::llm::route::LlmRoute,
-    config: &RequestConfig<'_>,
-    request_bytes: usize,
-    request_id: Option<&str>,
-    payload: &serde_json::Value,
-) -> Result<reqwest::Response, RequestError> {
-    let status = response.status();
-    let has_retry_after = response.headers().contains_key("retry-after");
-    let diagnostic_context =
-        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_payload(
-            request_id, payload,
-        )
-        .with_retry_after(response.headers());
-    let body = read_bounded(response, PROVIDER_ERROR_LIMIT)
-        .await
-        .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
-        .unwrap_or_default();
-    let code = crate::services::llm::provider_error::safe_log_code(
-        route.error_policy,
-        status.as_u16(),
-        &body,
-    );
-    crate::services::llm::provider_diagnostics::record_http_failure(
-        config.provider_id,
-        config.model,
-        status.as_u16(),
-        crate::services::llm::provider_error::safe_details(&body),
-        request_bytes,
-        config.tools.len(),
-        diagnostic_context,
-    );
-    ::log::warn!("[anthropic messages] HTTP {status} code={code}");
-    Err(crate::services::llm::stream_http::classify_error(
-        status.as_u16(),
-        &body,
-        route.display_name,
-        route.error_policy,
-        false,
-        has_retry_after,
-    ))
-}
-
-fn map_route_error(error: crate::services::llm::route::RouteError) -> RequestError {
-    match error {
-        crate::services::llm::route::RouteError::Unauthorized => {
-            RequestError::Fatal("auth_failed".into())
-        }
-        crate::services::llm::route::RouteError::Forbidden => {
-            RequestError::Fatal("provider_access_unavailable".into())
-        }
-        crate::services::llm::route::RouteError::Network => {
-            RequestError::Fatal("provider_connection_failed".into())
-        }
-        #[cfg(debug_assertions)]
-        crate::services::llm::route::RouteError::FixtureBudget(message) => {
-            RequestError::Fatal(message)
-        }
-    }
 }

@@ -7,6 +7,7 @@ import { PlanModeBadge } from "./plan-mode-badge";
 import { RetryIndicator } from "./retry-indicator";
 import { SendStopButton } from "./send-stop-button";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
+import type { ResolvedContextUsage } from "@/hooks/agent-token-estimate";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { RetryIndicatorState } from "@/types/agent";
@@ -30,9 +31,8 @@ interface ChatInputActionsRowProps {
   reasoningMode?: string | null;
   fastModeEnabled: boolean;
   fastModePending: boolean;
-  contextUsed: number;
-  contextMax: number;
   contextBreakdown?: ContextUsageBreakdown;
+  contextSummary?: ResolvedContextUsage;
   permissionMode: PermissionMode;
   availablePermissionModes?: PermissionMode[];
   missingDirectory?: MissingSessionDirectory | null;
@@ -59,9 +59,8 @@ export function ChatInputActionsRow({
   reasoningMode,
   fastModeEnabled,
   fastModePending,
-  contextUsed,
-  contextMax,
   contextBreakdown,
+  contextSummary,
   permissionMode,
   availablePermissionModes,
   missingDirectory,
@@ -108,12 +107,13 @@ export function ChatInputActionsRow({
           <AdvancedMountAnchor placement="agent.composer.leading" />
         </>
       )}
-      <ContextProgress
-        used={contextUsed}
-        max={contextMax}
-        breakdown={contextBreakdown}
-        compression={compression.effective}
-      />
+      {contextBreakdown && (
+        <ContextProgress
+          breakdown={contextBreakdown}
+          compression={compression.effective}
+          summary={contextSummary}
+        />
+      )}
       <div className="mdp-anchor">
         <PermissionModeSelector
           mode={permissionMode}

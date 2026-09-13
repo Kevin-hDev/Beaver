@@ -11,7 +11,6 @@ pub(super) struct ApiRequestOutput {
     pub result: StreamResult,
     pub plan_active: bool,
     pub interrupted: bool,
-    pub input_tokens: u32,
     pub generation: GenerationAggregate,
 }
 
@@ -36,4 +35,6 @@ pub(super) struct ApiRequestParams<'a> {
         &'a crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch,
     pub continuation_target:
         Option<crate::services::reasoning_continuity::contract::ContinuationTarget>,
+    pub journal:
+        Option<&'a crate::services::agent_local::conversation_journal::ConversationJournal>,
 }

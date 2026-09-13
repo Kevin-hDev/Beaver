@@ -141,6 +141,7 @@ pub(super) async fn run_tool_turn(
         .compression
         .finish_tools(
             context.messages,
+            context.tools.active(),
             compressed,
             super::agent_loop_compression::LastCounts::new(context.last_prompt, context.last_eval),
             context.cancel,

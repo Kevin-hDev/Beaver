@@ -13,6 +13,7 @@ pub(crate) fn build_chat_payload(
 pub(super) struct PreparedChatPayload {
     pub payload: serde_json::Value,
     pub replayed: Vec<super::reasoning_wire::replay::ReplayEvidence>,
+    pub context_count: crate::services::agent_local::context_usage_record::ContextTokenCount,
 }
 
 pub(super) fn build_chat_payload_with_evidence(
@@ -100,7 +101,13 @@ pub(super) fn build_chat_payload_with_policy(
         cfg.continuation_target,
         &mut payload,
     )?;
-    Ok(PreparedChatPayload { payload, replayed })
+    let context_count =
+        crate::services::agent_local::prepared_context_count::chat_completions(&payload);
+    Ok(PreparedChatPayload {
+        payload,
+        replayed,
+        context_count,
+    })
 }
 
 fn apply_tools(

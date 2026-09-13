@@ -52,6 +52,7 @@ export interface AgentSessionMeta {
   clone_root_session_id?: string;
   git_branch?: string;
   is_gateway?: boolean;
+  has_active_context_request?: boolean;
   gateway_channel_key?: string;
 }
 

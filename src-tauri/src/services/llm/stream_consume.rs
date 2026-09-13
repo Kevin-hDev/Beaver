@@ -120,6 +120,7 @@ pub(super) async fn consume_stream(
             tool_call_index: index,
             tool_call_id: ids.get(index).cloned(),
             domain: crate::services::agent_local::memory_tool::event_domain(&name, arguments),
+            extra_content: extra_content.get(index).cloned().flatten(),
         });
         result.tool_calls.push((name, arguments.clone()));
         if let Some(id) = ids.get(index) {
@@ -206,7 +207,7 @@ fn process_chunk(
             }
             ParsedChunk::Usage(usage) => {
                 result.eval_count = usage.output_tokens.and_then(|value| value.try_into().ok());
-                result.prompt_tokens = usage.input_tokens.and_then(|value| value.try_into().ok());
+                result.prompt_tokens = usage.context_input_tokens(usage_context.api_format);
                 result.usage = Some(usage);
             }
             ParsedChunk::GenerationDuration(duration_ns) => {

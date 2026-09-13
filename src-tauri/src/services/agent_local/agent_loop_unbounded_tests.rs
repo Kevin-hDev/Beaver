@@ -7,6 +7,9 @@ use crate::services::reasoning_fixture_run::FixtureRunContext;
 use serde_json::json;
 use tokio_util::sync::CancellationToken;
 
+const NATIVE_CHILD_MARKER: &str = "BEAVER_OLLAMA_TOOL_STACK_CHILD";
+const NATIVE_TEST_NAME: &str = "services::agent_local::agent_loop_unbounded_tests::ollama_native_tool_dispatch_fits_the_production_worker_stack";
+
 #[tokio::test]
 async fn ollama_loop_continues_past_200_turns() {
     let mut fixture = FixtureRunContext::start().await.expect("fixture");
@@ -76,4 +79,100 @@ fn tool_turns(count: usize) -> Vec<StreamResult> {
             ..Default::default()
         })
         .collect()
+}
+
+#[test]
+fn ollama_native_tool_dispatch_fits_the_production_worker_stack() {
+    if std::env::var_os(NATIVE_CHILD_MARKER).is_none() {
+        let status = std::process::Command::new(std::env::current_exe().expect("test binary"))
+            .args(["--exact", NATIVE_TEST_NAME, "--nocapture"])
+            .env(NATIVE_CHILD_MARKER, "1")
+            .status()
+            .expect("spawn cold test process");
+        assert!(status.success(), "cold child failed with {status}");
+        return;
+    }
+
+    std::thread::Builder::new()
+        .name("ollama-agent-stack-regression".into())
+        .stack_size(2 * 1024 * 1024)
+        .spawn(run_native_tool)
+        .expect("spawn bounded worker")
+        .join()
+        .expect("native tool dispatch must not overflow");
+}
+
+fn run_native_tool() {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime");
+    let exit = crate::app_exit::AppExitCoordinator::initialize().expect("exit coordinator");
+    let work = crate::runtime_state::agent_work(&exit).shells();
+    super::tool_dispatcher_shell_runtime::test_support::with(work, || {
+        runtime.block_on(async {
+            let root = tempfile::tempdir().expect("temporary project");
+            let session = super::session_store::create_full(
+                "Ollama native tool stack",
+                "fixture",
+                "ollama",
+                false,
+                None,
+            )
+            .await
+            .expect("session");
+            let request_id = uuid::Uuid::new_v4().to_string();
+            let _script = agent_loop_test_provider::install(
+                &request_id,
+                vec![
+                    StreamResult {
+                        tool_calls: vec![(
+                            "bash".into(),
+                            json!({ "command": "printf stack-proof-shell" }),
+                        )],
+                        tool_call_ids: vec!["call-bash".into()],
+                        ..Default::default()
+                    },
+                    StreamResult::default(),
+                ],
+            );
+            let mut messages = vec![ChatMessage::user("run native tool".into())];
+
+            super::agent_loop::run_agent_loop(
+                &AgentEventEmitter::test(session.id.clone()),
+                &mut messages,
+                "fixture",
+                ExtensionToolSet::passthrough(Vec::new()),
+                OllamaThink::Bool(false),
+                root.path().to_path_buf(),
+                session.id.clone(),
+                request_id,
+                None,
+                CancellationToken::new(),
+                1_000_000,
+                1_000_000,
+                "auto",
+                false,
+                ContextUsageSeed::default(),
+                false,
+                None,
+                None,
+                None,
+                None,
+            )
+            .await
+            .expect("agent loop");
+
+            let tool_outputs: Vec<_> = messages
+                .iter()
+                .filter(|message| message.role == "tool")
+                .map(|message| message.content.as_str())
+                .collect();
+            assert_eq!(tool_outputs.len(), 1);
+            assert_eq!(tool_outputs[0], "stack-proof-shell");
+            super::session_store::delete_one(&session.id)
+                .await
+                .expect("delete session");
+        })
+    });
 }

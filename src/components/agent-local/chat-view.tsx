@@ -10,8 +10,7 @@ import { ChatInputFooter } from "./chat-input-footer";
 import { ChatTerminalDock } from "./chat-terminal-dock";
 import { CloneSummaryRunButton } from "./clone-summary-run-button";
 import { useAgentChat } from "@/hooks/use-agent-chat";
-import { useContextProgress } from "@/hooks/use-context-progress";
-import { useContextUsage } from "@/hooks/use-context-usage";
+import { useChatContext } from "@/hooks/use-chat-context";
 import { useFileDrop, type DroppedFile } from "@/hooks/use-file-drop";
 import { usePermissionMode } from "@/hooks/use-permission-mode";
 import { usePermissionRequests } from "@/hooks/use-permission-requests";
@@ -59,16 +58,12 @@ export function ChatView({
   );
   const subagents = useSubagents(isSubagent ? undefined : sessionId);
   const fileDrop = useFileDrop();
-  const context = useContextProgress(model, chat.sessionTokenCount, provider);
-  const contextMax = chat.contextLimitTokens || context.max;
   const [preview, setPreview] = useState<DroppedFile | null>(null);
   const proj = useSessionProject(sessionId, projects, onAddProject, chat.messages.length > 0);
-  const contextUsage = useContextUsage({
-    sessionId, model, provider, messages: chat.messages,
-    stream: chat,
-    workingDir: proj.selectedProject?.path, permissionMode: permMode.mode,
-    planMode: chat.planModeEnabled, supportsTools: selectedModelCaps?.supports_tools,
-    contextUsageIncludesReasoning: selectedModelCaps?.context_usage_includes_reasoning,
+  const context = useChatContext({
+    sessionId, model, provider, chat, workingDir: proj.selectedProject?.path,
+    permissionMode: permMode.mode, supportsTools: selectedModelCaps?.supports_tools,
+    includesReasoning: selectedModelCaps?.context_usage_includes_reasoning,
   });
   useSessionFileGroups(
     chat.messages,
@@ -174,8 +169,8 @@ export function ChatView({
                   draftKey={sessionComposerDraftKey(sessionId)}
                   sessionId={sessionId}
                   modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode} fastModeEnabled={fastModeEnabled} fastModePending={fastModePending}
-                  files={fileDrop.files} contextUsed={contextUsage.used}
-                  contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
+                  files={fileDrop.files} contextBreakdown={context.breakdown}
+                  contextSummary={chat.contextUsageVisible ? context.summary : undefined}
                   retryIndicator={runtime.retryIndicator}
                   interactiveRequest={chat.interactiveChoice}
                   onInteractiveResolved={chat.clearInteractiveChoice}

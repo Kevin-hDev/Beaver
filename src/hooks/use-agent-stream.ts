@@ -8,6 +8,7 @@ import type {
   TurnStart,
 } from "@/types/agent-turn.generated";
 import type { StreamKind } from "./agent-chat-stream-types";
+import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import i18n from "@/i18n";
 import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
@@ -20,6 +21,7 @@ import type {
 interface StreamStartState {
   displayMessages: AgentMessage[];
   baseTokenCount: number;
+  contextUsageRecord?: ContextUsageRecord;
 }
 
 export type StopStreamResult = "ignored" | "stopping" | "stopped";
@@ -62,6 +64,7 @@ export function useAgentStream() {
       resolveStreamKind(turn),
       true,
       run,
+      startState.contextUsageRecord,
     );
 
     try {

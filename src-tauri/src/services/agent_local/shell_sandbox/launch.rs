@@ -40,12 +40,17 @@ pub fn prepare_command(
     let roots = super::super::directory_access::workspace_roots(working_dir)?;
     let shell_path = super::super::shell_environment::value();
     if super::super::directory_access::roots_allow_full_disk(&configured) {
-        let mut command = Command::new(shell);
-        command.args(arguments).env("PATH", &shell_path);
-        return Ok(PreparedShellCommand {
-            command,
-            cleanup_dir: None,
-        });
+        #[cfg(target_os = "macos")]
+        return super::macos_parent_guard::prepare(shell, arguments, &shell_path);
+        #[cfg(not(target_os = "macos"))]
+        {
+            let mut command = Command::new(shell);
+            command.args(arguments).env("PATH", &shell_path);
+            return Ok(PreparedShellCommand {
+                command,
+                cleanup_dir: None,
+            });
+        }
     }
 
     let temp_dir = create_sandbox_temp()?;
@@ -123,11 +128,14 @@ pub(crate) fn prepare_profile_capture(
     })
 }
 
-fn helper_executable() -> Result<PathBuf, String> {
+pub(super) fn helper_executable() -> Result<PathBuf, String> {
     let executable = std::env::current_exe()
         .map_err(|_| sandbox_error())
         .and_then(|path| dunce::canonicalize(path).map_err(|_| sandbox_error()))?;
-    executable.is_file().then_some(executable).ok_or_else(sandbox_error)
+    executable
+        .is_file()
+        .then_some(executable)
+        .ok_or_else(sandbox_error)
 }
 
 fn create_sandbox_temp() -> Result<PathBuf, String> {
@@ -161,16 +169,24 @@ pub async fn cleanup_temp(path: Option<PathBuf>) {
 
 pub fn cleanup_stale() {
     let root = sandbox_temp_root();
-    let Ok(entries) = std::fs::read_dir(&root) else { return };
+    let Ok(entries) = std::fs::read_dir(&root) else {
+        return;
+    };
     let mut entries = entries.flatten();
     for _ in 0..256 {
         let Some(entry) = entries.next() else { return };
         let path = entry.path();
-        if entry.file_type().is_ok_and(|kind| kind.is_dir() && !kind.is_symlink()) {
+        if entry
+            .file_type()
+            .is_ok_and(|kind| kind.is_dir() && !kind.is_symlink())
+        {
             cleanup_one(&path);
         }
         #[cfg(windows)]
-        if entry.file_type().is_ok_and(|kind| kind.is_file() && !kind.is_symlink()) {
+        if entry
+            .file_type()
+            .is_ok_and(|kind| kind.is_file() && !kind.is_symlink())
+        {
             super::windows::cleanup_record_file(&path);
         }
     }

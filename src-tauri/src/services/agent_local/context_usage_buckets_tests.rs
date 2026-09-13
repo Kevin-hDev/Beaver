@@ -60,7 +60,7 @@ fn partitions_the_prepared_request_without_changing_its_total() {
 }
 
 #[test]
-fn images_do_not_inflate_the_textual_ring_total() {
+fn images_use_the_shared_context_estimate_in_the_messages_bucket() {
     let mut with_image = message("user", "hello");
     with_image.images = Some(vec!["iVBORw0KGgo=".into()]);
 
@@ -71,13 +71,10 @@ fn images_do_not_inflate_the_textual_ring_total() {
         ContextUsageSeed::default(),
     );
 
+    assert_eq!(usage.messages, 1_102);
     assert_eq!(
         total(usage),
-        crate::services::compress::token_estimate::estimate_textual_request_tokens_for_provider(
-            "ollama",
-            &[with_image],
-            &[],
-        ) as u32,
+        crate::services::token_counting::estimate_chat_tokens(&[with_image]) as u32,
     );
 }
 

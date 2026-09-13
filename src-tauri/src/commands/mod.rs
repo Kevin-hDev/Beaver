@@ -4,6 +4,7 @@ pub mod agent_chat_cancel;
 #[cfg(debug_assertions)]
 pub(crate) mod agent_chat_fixture_candidate;
 pub mod agent_chat_queue;
+pub(crate) mod agent_chat_recovery;
 #[cfg(test)]
 mod agent_chat_request_runtime_tests;
 pub(crate) mod agent_chat_rollback;

@@ -19,7 +19,6 @@ pub(super) struct LoopCompression<'a> {
     pub request_id: &'a str,
     pub native_context: u64,
     pub configured_context: u64,
-    pub provider_tools: Vec<serde_json::Value>,
     pub chatbot: bool,
     pub plan_mode_active: bool,
     pub working_dir: &'a Path,
@@ -40,12 +39,14 @@ impl LoopCompression<'_> {
     pub async fn try_run(
         &self,
         messages: &mut Vec<ChatMessage>,
+        provider_tools: &[serde_json::Value],
         last_prompt: Option<u32>,
         last_eval: Option<u32>,
         cancel: CancellationToken,
     ) -> Option<u32> {
         self.try_run_context(
             messages,
+            provider_tools,
             token_counting::sum_real_counts(last_prompt, last_eval),
             cancel,
         )
@@ -55,6 +56,7 @@ impl LoopCompression<'_> {
     async fn try_run_context(
         &self,
         messages: &mut Vec<ChatMessage>,
+        provider_tools: &[serde_json::Value],
         last_context_tokens: Option<u32>,
         cancel: CancellationToken,
     ) -> Option<u32> {
@@ -69,7 +71,7 @@ impl LoopCompression<'_> {
             self.native_context,
             self.configured_context,
             last_context_tokens,
-            &self.provider_tools,
+            provider_tools,
             self.chatbot,
             self.plan_mode_active,
             self.working_dir,
@@ -81,6 +83,7 @@ impl LoopCompression<'_> {
     pub async fn handle_interrupted(
         &self,
         messages: &mut Vec<ChatMessage>,
+        provider_tools: &[serde_json::Value],
         result: &StreamResult,
         counts: LastCounts<'_>,
         cancel: CancellationToken,
@@ -90,7 +93,7 @@ impl LoopCompression<'_> {
             .saturating_add(result.content_chunks.len())
             .min(u32::MAX as usize) as u32;
         if self
-            .try_run_context(messages, Some(context), cancel)
+            .try_run_context(messages, provider_tools, Some(context), cancel)
             .await
             .is_none()
         {
@@ -103,12 +106,13 @@ impl LoopCompression<'_> {
     pub async fn try_run_and_reset(
         &self,
         messages: &mut Vec<ChatMessage>,
+        provider_tools: &[serde_json::Value],
         last_prompt: &mut Option<u32>,
         last_eval: &mut Option<u32>,
         cancel: CancellationToken,
     ) -> bool {
         let compressed = self
-            .try_run(messages, *last_prompt, *last_eval, cancel)
+            .try_run(messages, provider_tools, *last_prompt, *last_eval, cancel)
             .await
             .is_some();
         if compressed {
@@ -120,6 +124,7 @@ impl LoopCompression<'_> {
     pub async fn after_tools(
         &self,
         messages: &mut Vec<ChatMessage>,
+        provider_tools: &[serde_json::Value],
         compressed_during_tools: bool,
         last_prompt: &mut Option<u32>,
         last_eval: &mut Option<u32>,
@@ -129,13 +134,14 @@ impl LoopCompression<'_> {
             Self::reset_counts(last_prompt, last_eval);
             return true;
         }
-        self.try_run_and_reset(messages, last_prompt, last_eval, cancel)
+        self.try_run_and_reset(messages, provider_tools, last_prompt, last_eval, cancel)
             .await
     }
 
     pub async fn finish_tools(
         &self,
         messages: &mut Vec<ChatMessage>,
+        provider_tools: &[serde_json::Value],
         compressed_during_tools: bool,
         counts: LastCounts<'_>,
         cancel: CancellationToken,
@@ -143,6 +149,7 @@ impl LoopCompression<'_> {
         let compressed = self
             .after_tools(
                 messages,
+                provider_tools,
                 compressed_during_tools,
                 counts.prompt,
                 counts.eval,
@@ -164,6 +171,7 @@ impl LoopCompression<'_> {
     pub fn tool_compression<'a>(
         &'a self,
         last_context_tokens: Option<u32>,
+        provider_tools: &'a [serde_json::Value],
         cancel: CancellationToken,
     ) -> ToolCompression<'a> {
         ToolCompression {
@@ -178,7 +186,7 @@ impl LoopCompression<'_> {
             native_context: self.native_context,
             configured_context: self.configured_context,
             last_context_tokens,
-            provider_tools: &self.provider_tools,
+            provider_tools,
             chatbot: self.chatbot,
             plan_mode_active: self.plan_mode_active,
             working_dir: self.working_dir,

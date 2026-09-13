@@ -192,6 +192,7 @@ async fn degraded_turn_reaches_transport_returns_text_and_persists_its_cause() {
             None,
             None,
             None,
+            None,
         ),
     )
     .await;

@@ -140,6 +140,34 @@ fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
     assert!(payload.get("reasoning").is_none());
 }
 
+#[test]
+fn chat_count_is_attached_after_final_payload_projection() {
+    let messages = [ChatMessage::user("hello".into())];
+    let cfg = RequestConfig {
+        provider_id: "openai",
+        model: "gpt-5.6-luna",
+        messages: &messages,
+        tools: &[],
+        think: false,
+        reasoning_mode: None,
+        max_tokens: None,
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
+        fast_mode: FastModeRequest::Standard,
+        tool_result_previews: None,
+        continuation_target: None,
+    };
+    let route = route::resolve("openai").unwrap();
+    let prepared =
+        super::super::stream_http_payload::build_chat_payload_with_evidence(&cfg, &route, None)
+            .unwrap();
+
+    assert_eq!(
+        prepared.context_count,
+        crate::services::agent_local::prepared_context_count::chat_completions(&prepared.payload)
+    );
+}
+
 #[tokio::test]
 async fn openrouter_uses_published_max_completion_tokens() {
     let _guard = super::super::runtime_models::test_mutation_lock().await;

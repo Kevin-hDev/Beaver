@@ -16,6 +16,7 @@ mod macos_app_menu;
 #[cfg(target_os = "macos")]
 mod macos_termination;
 mod models;
+mod runtime_async;
 mod runtime_startup;
 mod runtime_state;
 mod services;
@@ -57,6 +58,10 @@ pub fn run_live_reasoning_fixtures() -> bool {
         Ok(value) => value,
         Err(_) => return false,
     };
+    if runtime_async::configure().is_err() {
+        eprintln!("[runtime] initialization failed");
+        return false;
+    }
     let runtime = runtime_state::services(&coordinator);
     let app = match app_build::build_live_fixture(coordinator, runtime) {
         Ok(value) => value,
@@ -85,6 +90,10 @@ pub(crate) fn run_inner(
             return false;
         }
     };
+    if runtime_async::configure().is_err() {
+        eprintln!("[runtime] initialization failed");
+        return false;
+    }
     if services::mcp_bridge::process_manager::init(exit_coordinator.work_supervisor()).is_err() {
         eprintln!("[mcp] shutdown supervision unavailable");
         return false;

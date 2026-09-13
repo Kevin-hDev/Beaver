@@ -36,6 +36,7 @@ async fn interactive_transport_posts_native_messages_and_consumes_native_sse() {
         None,
         "request-1",
         None,
+        None,
     )
     .await
     .unwrap();

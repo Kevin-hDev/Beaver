@@ -1,10 +1,17 @@
+mod agent_loop_ollama_context;
 pub mod context_budget;
 mod context_budget_history;
 mod context_budget_prune;
 pub mod context_capacity_error;
+mod context_prepared_attempt;
 pub mod context_usage_buckets;
+pub mod context_usage_record;
+#[cfg(test)]
+mod context_usage_record_tests;
 pub mod context_usage_runtime;
+pub mod context_usage_startup;
 pub mod conversation_admission;
+mod conversation_admission_error;
 mod conversation_admission_ids;
 mod conversation_admission_replay;
 #[cfg(test)]
@@ -25,6 +32,10 @@ pub mod conversation_input;
 mod conversation_input_persisted;
 #[cfg(test)]
 mod conversation_input_tests;
+mod conversation_interrupted_tail;
+#[cfg(test)]
+mod conversation_interrupted_tail_tests;
+mod conversation_interrupted_tools;
 pub(crate) mod conversation_journal;
 #[cfg(test)]
 mod conversation_journal_tests;
@@ -37,6 +48,9 @@ mod conversation_transition_tests;
 mod extension_tool_correlation;
 mod extension_tool_diagnostic;
 pub mod generation_metrics;
+pub mod prepared_context_count;
+#[cfg(test)]
+mod prepared_context_count_tests;
 pub mod session_archive;
 pub(crate) mod session_artifact_verification;
 #[cfg(test)]
@@ -55,11 +69,13 @@ pub mod session_migration;
 mod session_migration_backup;
 mod session_migration_compression;
 mod session_migration_compression_guard;
+mod session_migration_context_usage;
 mod session_migration_ids;
 mod session_migration_legacy_history;
 #[cfg(test)]
 mod session_migration_tests;
 mod session_migration_v5;
+mod session_migration_v6;
 mod session_migration_version;
 mod session_migration_wire;
 mod session_mutations;
@@ -113,7 +129,35 @@ pub mod stream_diagnostics_tests;
 mod stream_diagnostics_tool_record;
 pub mod stream_events;
 #[cfg(test)]
+mod stream_events_recovery_tests;
+pub(crate) mod stream_recovery_apply;
+#[cfg(test)]
+mod stream_recovery_apply_tests;
+mod stream_recovery_apply_validation;
+pub(crate) mod stream_recovery_log;
+mod stream_recovery_log_sync;
+#[cfg(test)]
+mod stream_recovery_log_tests;
+pub(crate) mod stream_recovery_owners;
+#[cfg(test)]
+mod stream_recovery_owners_tests;
+#[cfg(test)]
+mod stream_recovery_process_tests;
+pub(crate) mod stream_recovery_projection;
+mod stream_recovery_projection_messages;
+#[cfg(test)]
+mod stream_recovery_projection_tests;
+pub(crate) mod stream_recovery_record;
+#[cfg(test)]
+mod stream_recovery_record_tests;
+pub(crate) mod stream_recovery_startup;
+pub(crate) mod stream_recovery_store;
+mod stream_recovery_store_discovery;
+#[cfg(test)]
+mod stream_recovery_store_tests;
+#[cfg(test)]
 mod types_diagnostics_contract_tests;
 mod types_message_continuation;
 mod types_message_ids;
 mod types_message_source;
+mod types_session_meta;

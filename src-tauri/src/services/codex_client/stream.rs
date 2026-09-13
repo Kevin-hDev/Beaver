@@ -35,6 +35,9 @@ pub async fn stream_chat_with_budget(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    preparation: Option<
+        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
+    >,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = StreamMeasurement::new(measurement);
     // Le WebSocket ne fournit pas encore les items opaques nécessaires au rejeu.
@@ -56,6 +59,7 @@ pub async fn stream_chat_with_budget(
             buffer_content,
             realtime_budget.clone(),
             &mut measurement,
+            preparation,
         )
         .await
         {
@@ -96,6 +100,7 @@ pub async fn stream_chat_with_budget(
         &cancel,
         continuation_target,
         Some(request_id),
+        preparation,
     )
     .await?;
     measurement.mark_headers();
