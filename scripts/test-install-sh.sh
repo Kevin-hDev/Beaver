@@ -59,6 +59,23 @@ if manifest_values 1.1.1 Beaver_1.1.0_aarch64.dmg "${MANIFEST}" >/dev/null 2>&1 
   exit 1
 fi
 
+GENERATED_MANIFEST_DIR="${TMP_DIR}/generated-manifest"
+/bin/mkdir "${GENERATED_MANIFEST_DIR}"
+for suffix in \
+  "_aarch64.dmg" \
+  "_amd64.deb" \
+  "_x64-setup.exe" \
+  "_installer-aarch64.tar.gz" \
+  "_installer-x64.exe"; do
+  printf 'asset' > "${GENERATED_MANIFEST_DIR}/Beaver_1.1.0${suffix}"
+done
+node "${ROOT_DIR}/scripts/release/create-update-manifest.mjs" \
+  1.1.0 "${GENERATED_MANIFEST_DIR}" >/dev/null
+assert_eq \
+  "d59386e0ae435e292fbe0ebcdb954b75ed5fb3922091277cb19f798fc5d50718 5" \
+  "$(manifest_values 1.1.0 Beaver_1.1.0_aarch64.dmg "${GENERATED_MANIFEST_DIR}/update-manifest.json")" \
+  "generated manifest compatibility"
+
 printf '%s\n' "Beaver Installer.app/" "Beaver Installer.app/Contents/" | archive_names_valid
 if printf '%s\n' "../Beaver Installer.app" | archive_names_valid ||
   printf '%s\n' "Beaver Installer.app" "Beaver Installer.app/" | archive_names_valid; then
