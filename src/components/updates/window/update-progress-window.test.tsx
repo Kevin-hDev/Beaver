@@ -63,9 +63,9 @@ describe("UpdateProgressWindow", () => {
 
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByText("4 mises à jour")).toBeTruthy();
-    expect(screen.getByText(/43\s%/)).toBeTruthy();
+    expect(screen.getByText("43%")).toBeTruthy();
     expect(screen.getByText("position 2")).toBeTruthy();
-    expect(screen.queryByText(/0\s%/)).toBeNull();
+    expect(screen.queryByText("0%")).toBeNull();
     expect(screen.getAllByRole("button", { name: "updates.window.cancel" })).toHaveLength(2);
   });
 

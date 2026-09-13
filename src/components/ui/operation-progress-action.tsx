@@ -30,7 +30,7 @@ export function OperationProgressBar({
           cancelling && "opa-stopped")}
           style={safePercent === null ? undefined : { width: `${safePercent}%` }} />
       </div>
-      <span className="opa-percent">{safePercent === null ? null : `${safePercent}\u202f%`}</span>
+      <span className="opa-percent">{safePercent === null ? null : `${safePercent}%`}</span>
     </>
   );
 }
