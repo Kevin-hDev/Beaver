@@ -72,8 +72,11 @@ pub fn purge_orphans(temp_root: &Path, current_run_id: &str) {
         if constant_time_eq(run_id, current_run_id) {
             continue;
         }
-        if validate_run(temp_root, &path, run_id).is_ok() && validate_tree(&path).is_ok() {
-            let _ = fs::remove_dir_all(path);
+        if validate_run(temp_root, &path, run_id).is_ok()
+            && validate_tree(&path).is_ok()
+            && fs::remove_dir_all(path).is_err()
+        {
+            eprintln!("installer-orphan-cleanup-failed");
         }
     }
 }
@@ -156,6 +159,7 @@ fn run_id_from_name(path: &Path) -> Option<&str> {
 }
 
 fn constant_time_eq(left: &str, right: &str) -> bool {
+    // Un identifiant de run valide fait 32 octets ; les longueurs invalides restent comparées sans sortie précoce.
     let lengths = (left.len() as u64).ct_eq(&(right.len() as u64));
     let mut difference = 0_u8;
     for index in 0..32 {

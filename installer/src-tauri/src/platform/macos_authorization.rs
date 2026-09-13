@@ -7,7 +7,6 @@ pub use ffi::AuthorizationSession;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ProtectedTool {
-    Mkdir,
     Ditto,
     Move,
     Remove,
@@ -16,7 +15,6 @@ pub enum ProtectedTool {
 impl ProtectedTool {
     pub fn path(self) -> &'static Path {
         Path::new(match self {
-            Self::Mkdir => "/bin/mkdir",
             Self::Ditto => "/usr/bin/ditto",
             Self::Move => "/bin/mv",
             Self::Remove => "/bin/rm",
@@ -54,9 +52,7 @@ pub fn validate_call(
         return Err(InstallerError::InstallFailed);
     }
     let valid = match tool {
-        ProtectedTool::Mkdir | ProtectedTool::Remove => {
-            arguments.len() == 1 && allowed_sibling(&arguments[0], scope)
-        }
+        ProtectedTool::Remove => arguments.len() == 1 && allowed_sibling(&arguments[0], scope),
         ProtectedTool::Move => {
             arguments.len() == 2
                 && allowed_sibling(&arguments[0], scope)
