@@ -64,6 +64,8 @@
   --surface-overlay: rgba(255, 255, 255, 0.86);
   --card-on-glass: rgba(255, 255, 255, 0.84);
   --chip-bg: rgba(16, 40, 82, 0.10);
+  /* Fond clair derrière les icônes de site, prévu par la maquette. */
+  --link-favicon-bg: #ececef;
   /* Thème clair : le blanc est le sommet — l'élévation est portée par l'ombre */
   --surface-raised: var(--surface);
   --tooltip-bg: #ffffff;

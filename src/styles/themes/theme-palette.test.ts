@@ -143,3 +143,11 @@ describe("Barre de sous-onglets des Réglages", () => {
     expect(settingsTokensCss).toContain("--settings-tabbar-item-height: var(--btn-height);");
   });
 });
+
+describe("Pastille des icônes de site", () => {
+  it("garde la même couleur claire dans les six thèmes", () => {
+    for (const [id, css] of themeCss) {
+      expect(css, id).toContain("--link-favicon-bg: #ececef;");
+    }
+  });
+});
