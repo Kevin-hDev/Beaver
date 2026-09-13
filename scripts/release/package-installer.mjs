@@ -96,10 +96,18 @@ async function validateMacApp(app) {
 }
 
 async function validateWindowsExe(path) {
-  const info = await lstat(path);
-  if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1) throw invalid();
   const handle = await open(path, "r");
   try {
+    const info = await handle.stat();
+    const current = await lstat(path);
+    if (
+      !info.isFile() ||
+      info.nlink !== 1 ||
+      !current.isFile() ||
+      current.isSymbolicLink() ||
+      current.dev !== info.dev ||
+      current.ino !== info.ino
+    ) throw invalid();
     const header = Buffer.alloc(2);
     const { bytesRead } = await handle.read(header, 0, 2, 0);
     if (bytesRead !== 2 || header[0] !== 0x4d || header[1] !== 0x5a) throw invalid();
