@@ -1,0 +1,5 @@
+Decision: format every Rust source changed by this branch with rustfmt 1.98.1, the exact CI toolchain, and advance the existing internal brand-reference snapshot from 488 to 490 for the two new CARGO_BIN_EXE_cl-go-dash test references.
+
+Reason: macOS stable was 1.98.0 and passed locally, while CI uses 1.98.1 and rejected module ordering and wrapping. The brand scanner classified both new executable references as approved technical compatibility names and reported zero unknown blocking references.
+
+Validation: the CI-equivalent changed-file rustfmt check passed with RUSTFMT_BASE_SHA=0edab36d and rustfmt 1.98.1; npm run test:brand-boundaries passed 15/15; cargo +1.98.1 test passed 5,606 library tests, 51 CLI tests, and macOS integration tests; cargo +1.98.1 clippy --all-targets -- -D warnings passed; graphify update . completed.
