@@ -9,14 +9,14 @@ use crate::temp_ownership::OwnedTempRun;
 use crate::trace::Outcome;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::ipc::Channel;
 
 pub struct InstallerService {
     launch: LaunchContext,
     run: OwnedTempRun,
     destination: Mutex<PathBuf>,
-    runtime: InstallerRuntime,
+    runtime: Arc<InstallerRuntime>,
     trace: TraceSession,
     cleanup_done: AtomicBool,
 }
@@ -27,13 +27,13 @@ impl InstallerService {
         let installed = platform::installed_version(&destination);
         let running = platform::beaver_running(&destination)?;
         Ok(Self {
-            runtime: InstallerRuntime::new(
+            runtime: Arc::new(InstallerRuntime::new(
                 &launch.release.version,
                 &destination.to_string_lossy(),
                 installed,
                 running,
                 platform::platform_kind(),
-            ),
+            )),
             launch,
             run,
             destination: Mutex::new(destination),
@@ -116,7 +116,7 @@ impl InstallerService {
             }
         };
 
-        let runtime = &self.runtime;
+        let runtime = Arc::clone(&self.runtime);
         let result = async {
             platform::validate_destination(&destination)?;
             let asset =
@@ -129,34 +129,42 @@ impl InstallerService {
                 })
                 .await?;
             let _ = channel.send(runtime.verifying()?);
-            platform::install_asset(
-                &asset,
-                self.run.path(),
-                &destination,
-                &self.launch.release.version,
-                &operation,
-                runtime,
-                &channel,
-            )
+            let work_dir = self.run.path().to_path_buf();
+            let version = self.launch.release.version.clone();
+            let blocking_operation = operation.clone();
+            let blocking_channel = channel.clone();
+            tokio::task::spawn_blocking(move || {
+                platform::install_asset(
+                    &asset,
+                    &work_dir,
+                    &destination,
+                    &version,
+                    &blocking_operation,
+                    &runtime,
+                    &blocking_channel,
+                )
+            })
+            .await
+            .map_err(|_| InstallerError::InstallFailed)?
         }
         .await;
 
         let event = match result {
             Ok(Some(outcome)) => {
                 self.trace.finish(started, Outcome::Succeeded, None);
-                runtime.succeed(operation, outcome)?
+                self.runtime.succeed(operation, outcome)?
             }
             Ok(None) => {
                 self.trace.finish(started, Outcome::Cancelled, None);
-                runtime.cancelled(operation)?
+                self.runtime.cancelled(operation)?
             }
             Err(_error) if operation.is_cancelled() => {
                 self.trace.finish(started, Outcome::Cancelled, None);
-                runtime.cancelled(operation)?
+                self.runtime.cancelled(operation)?
             }
             Err(error) => {
                 self.trace.finish(started, Outcome::Failed, Some(error));
-                let event = runtime.fail(operation, error.code())?;
+                let event = self.runtime.fail(operation, error.code())?;
                 if let Some(trace) = self.trace.take() {
                     let _ = self.run.preserve_failure_trace(trace);
                 }
