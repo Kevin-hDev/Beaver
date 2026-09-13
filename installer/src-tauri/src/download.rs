@@ -68,12 +68,17 @@ async fn download_attempts(
     if cancellation.is_cancelled() {
         return Err(InstallerError::DownloadFailed);
     }
-    if let Some(path) = file::reuse_verified(release, run, cancellation).await? {
-        progress(DownloadProgress {
-            completed: release.app_asset_size,
-            total: release.app_asset_size,
-        });
-        return Ok(path);
+    match file::reuse_verified(release, run, cancellation).await {
+        Ok(Some(path)) => {
+            progress(DownloadProgress {
+                completed: release.app_asset_size,
+                total: release.app_asset_size,
+            });
+            return Ok(path);
+        }
+        Ok(None) => {}
+        Err(InstallerError::IntegrityFailed) => file::discard_invalid(release, run)?,
+        Err(error) => return Err(error),
     }
     for attempt in 0..MAX_ATTEMPTS {
         match attempt_download(

@@ -166,6 +166,26 @@ async fn retry_reuses_the_verified_asset_without_a_second_download() {
 }
 
 #[tokio::test]
+async fn retry_replaces_a_corrupt_owned_asset() {
+    let (fixture, release) = Fixture::new(b"test");
+    let expected = fixture.run().path().join(&release.app_asset_name);
+    fs::write(&expected, b"bad!").unwrap();
+    let url = server(response("200 OK", "Content-Length: 4\r\n", b"test"));
+
+    let path = download_with_retries(
+        reqwest::Client::new(),
+        reqwest::Url::parse(&url).unwrap(),
+        &release,
+        fixture.run(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(path, expected);
+    assert_eq!(fs::read(path).unwrap(), b"test");
+}
+
+#[tokio::test]
 async fn rejects_status_length_truncation_overflow_and_hash_mismatch() {
     let cases = [
         response("404 Not Found", "Content-Length: 4\r\n", b"test"),

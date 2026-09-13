@@ -60,6 +60,14 @@ pub(super) async fn reuse_verified(
     Ok(Some(path))
 }
 
+pub(super) fn discard_invalid(
+    release: &PinnedRelease,
+    run: &OwnedTempRun,
+) -> Result<(), crate::error::InstallerError> {
+    fs::remove_file(run.path().join(&release.app_asset_name))
+        .map_err(|_| crate::error::InstallerError::IntegrityFailed)
+}
+
 fn safe_regular_file(metadata: &fs::Metadata) -> bool {
     if !metadata.is_file() || metadata.file_type().is_symlink() {
         return false;
