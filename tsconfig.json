@@ -20,5 +20,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "tests/e2e", "wdio.conf.ts"]
+  "include": ["src", "installer/src", "installer/vite.config.ts", "tests/e2e", "wdio.conf.ts"]
 }

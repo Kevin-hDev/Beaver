@@ -12,6 +12,7 @@ __pycache__/
 .env.*
 app-icon.png
 src-tauri/gen/
+installer/src-tauri/gen/
 src-tauri/resources/ollama-bundle/
 src-tauri/resources/searxng-sidecar/wheels/
 src-tauri/resources/searxng-sidecar/wheels.tmp/

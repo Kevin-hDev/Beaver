@@ -7,6 +7,11 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build/frontend-build.mjs",
+    "installer:dev": "cd installer && npx --no-install tauri dev",
+    "installer:dev-ui": "vite --config installer/vite.config.ts",
+    "installer:build-ui": "vite build --config installer/vite.config.ts",
+    "installer:build": "cd installer && npx --no-install tauri build",
+    "test:installer": "npm run installer:build-ui && npx vitest run installer/src --passWithNoTests && cd installer/src-tauri && cargo test && cd ../.. && node --test scripts/release/installer-project-boundary.test.mjs",
     "check": "node scripts/ci/run-local-checks.mjs",
     "tauri": "node scripts/cef/run-tauri.mjs",
     "tauri:build:nsis": "node scripts/cef/run-tauri.mjs build --bundles nsis",
