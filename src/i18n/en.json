@@ -1625,8 +1625,7 @@
     }
   },
   "linkPreview": {
-    "noTitle": "No title",
-    "openSite": "Open website"
+    "noTitle": "No title"
   },
   "extensions": {
     "title": "Extensions",

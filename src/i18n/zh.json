@@ -1498,8 +1498,7 @@
     "error": "安装失败，详情如下。"
   },
   "linkPreview": {
-    "noTitle": "无标题",
-    "openSite": "打开网站"
+    "noTitle": "无标题"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} 个活跃子代理",

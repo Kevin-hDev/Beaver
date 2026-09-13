@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
+import { Tooltip } from "@/components/ui/tooltip";
 import "./link-preview-card.css";
 
 interface LinkPreviewData {
@@ -24,16 +25,18 @@ function evictIfFull() {
   }
 }
 
+/* Le domaine est fiable et suffit ; l'adresse complète reste dans l'infobulle. */
 export function LinkPreviewCard({ url }: { url: string }) {
   const { t } = useTranslation();
   const [data, setData] = useState<LinkPreviewData | null | undefined>(
     cache.has(url) ? cache.get(url) : undefined,
   );
   const [imgError, setImgError] = useState(false);
+  const [faviconError, setFaviconError] = useState(false);
 
   useEffect(() => {
     if (cache.has(url)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- cache hit, synchronous setState is intentional
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture synchrone du cache existant
       setData(cache.get(url));
       return;
     }
@@ -52,57 +55,48 @@ export function LinkPreviewCard({ url }: { url: string }) {
     return () => { cancelled = true; };
   }, [url]);
 
-  if (data === undefined) {
-    return (
-      <div className="lpc-card lpc-loading">
-        <div className="lpc-skeleton-img" />
-        <div className="lpc-body">
-          <div className="lpc-skeleton-line lpc-skeleton-short" />
-          <div className="lpc-skeleton-line" />
-        </div>
-      </div>
-    );
-  }
-
+  if (data === undefined) return <LinkPreviewLoading />;
   if (!data) return null;
 
   const title = data.title || t("linkPreview.noTitle");
-  const siteName = data.site_name || data.domain;
-  const showImage = data.image && !imgError;
+  const favicon = data.favicon && !faviconError ? data.favicon : null;
+  const chip = (className: string) => favicon && (
+    <span className={className}>
+      <img src={favicon} alt="" onError={() => setFaviconError(true)} />
+    </span>
+  );
 
   return (
-    <button
-      className="lpc-card"
-      onClick={() => void open(url)}
-      title={t("linkPreview.openSite")}
-      type="button"
-    >
-      {showImage && (
-        <img
-          className="lpc-image"
-          src={data.image!}
-          alt=""
-          onError={() => setImgError(true)}
-        />
-      )}
-      <div className="lpc-body">
-        <div className="lpc-header">
-          {data.favicon && (
-            <img
-              className="lpc-favicon"
-              src={data.favicon}
-              alt=""
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          )}
-          <span className="lpc-site-name">{siteName}</span>
-        </div>
-        <div className="lpc-title">{title}</div>
-        {data.description && (
-          <div className="lpc-description">{data.description}</div>
+    <Tooltip label={url}>
+      <button className="lpc-card relief elev-rest" onClick={() => void open(url)} type="button">
+        {data.image && !imgError ? (
+          <span className="lpc-media">
+            <img src={data.image} alt="" onError={() => setImgError(true)} />
+          </span>
+        ) : (
+          <span className="lpc-media lpc-no-image">{chip("lpc-chip lpc-chip-large")}</span>
         )}
-        <div className="lpc-url">{url}</div>
-      </div>
-    </button>
+        <span className="lpc-body">
+          <span className="lpc-title">{title}</span>
+          <span className="lpc-source">
+            {chip("lpc-chip")}
+            <span className="lpc-domain">{data.domain}</span>
+          </span>
+        </span>
+      </button>
+    </Tooltip>
+  );
+}
+
+function LinkPreviewLoading() {
+  return (
+    <div className="lpc-card lpc-loading relief elev-rest" aria-busy="true">
+      <span className="lpc-media lpc-wait" />
+      <span className="lpc-body">
+        <span className="lpc-bar" />
+        <span className="lpc-bar" />
+        <span className="lpc-bar lpc-bar-short" />
+      </span>
+    </div>
   );
 }

@@ -1499,8 +1499,7 @@
     "error": "Installation fehlgeschlagen. Details unten."
   },
   "linkPreview": {
-    "noTitle": "Kein Titel",
-    "openSite": "Website öffnen"
+    "noTitle": "Kein Titel"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} aktiver Subagent",

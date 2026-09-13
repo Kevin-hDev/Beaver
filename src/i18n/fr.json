@@ -1677,8 +1677,7 @@
     }
   },
   "linkPreview": {
-    "noTitle": "Sans titre",
-    "openSite": "Ouvrir le site"
+    "noTitle": "Sans titre"
   },
   "extensions": {
     "title": "Extensions",

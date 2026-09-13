@@ -1503,8 +1503,7 @@
     "error": "La instalación falló. Detalles a continuación."
   },
   "linkPreview": {
-    "noTitle": "Sin título",
-    "openSite": "Abrir sitio web"
+    "noTitle": "Sin título"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} subagente activo",

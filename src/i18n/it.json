@@ -1499,8 +1499,7 @@
     "error": "Installazione fallita. Dettagli di seguito."
   },
   "linkPreview": {
-    "noTitle": "Nessun titolo",
-    "openSite": "Apri sito web"
+    "noTitle": "Nessun titolo"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} sotto-agente attivo",

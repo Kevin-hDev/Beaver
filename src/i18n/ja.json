@@ -1498,8 +1498,7 @@
     "error": "インストールに失敗しました。詳細は以下を確認してください。"
   },
   "linkPreview": {
-    "noTitle": "タイトルなし",
-    "openSite": "ウェブサイトを開く"
+    "noTitle": "タイトルなし"
   },
   "subagents": {
     "backgroundCount_one": "{{count}} 件のアクティブなサブエージェント",
