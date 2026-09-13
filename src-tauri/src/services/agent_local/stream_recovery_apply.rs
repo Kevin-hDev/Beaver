@@ -135,8 +135,7 @@ pub(crate) async fn recover_session_with_lease(
         super::session_store_messages::recompute_accumulated_tokens(&mut session);
         session.context_usage.invalidate_preparation();
         session.updated_at = Some(chrono::Utc::now());
-        super::conversation_history_validation::validate(&session.messages)
-            .map_err(|_| error())?;
+        super::conversation_history_validation::validate(&session.messages).map_err(|_| error())?;
         super::session_store::save(&session)
             .await
             .map_err(|_| error())?;
@@ -173,7 +172,7 @@ pub(crate) fn close_admission_fallback(
         },
     );
     super::conversation_interrupted_tail::close_recoverable(session, proof)
-    .map_err(super::stream_recovery_apply_validation::map_tail_error)
+        .map_err(super::stream_recovery_apply_validation::map_tail_error)
 }
 
 fn error() -> String {

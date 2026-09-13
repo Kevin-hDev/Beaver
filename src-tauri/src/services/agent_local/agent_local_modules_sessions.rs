@@ -10,9 +10,6 @@ pub mod context_usage_record;
 mod context_usage_record_tests;
 pub mod context_usage_runtime;
 pub mod context_usage_startup;
-pub mod prepared_context_count;
-#[cfg(test)]
-mod prepared_context_count_tests;
 pub mod conversation_admission;
 mod conversation_admission_error;
 mod conversation_admission_ids;
@@ -31,14 +28,14 @@ mod conversation_history_resolve;
 #[cfg(test)]
 mod conversation_history_tests;
 pub(crate) mod conversation_history_validation;
-mod conversation_interrupted_tail;
-#[cfg(test)]
-mod conversation_interrupted_tail_tests;
-mod conversation_interrupted_tools;
 pub mod conversation_input;
 mod conversation_input_persisted;
 #[cfg(test)]
 mod conversation_input_tests;
+mod conversation_interrupted_tail;
+#[cfg(test)]
+mod conversation_interrupted_tail_tests;
+mod conversation_interrupted_tools;
 pub(crate) mod conversation_journal;
 #[cfg(test)]
 mod conversation_journal_tests;
@@ -51,6 +48,9 @@ mod conversation_transition_tests;
 mod extension_tool_correlation;
 mod extension_tool_diagnostic;
 pub mod generation_metrics;
+pub mod prepared_context_count;
+#[cfg(test)]
+mod prepared_context_count_tests;
 pub mod session_archive;
 pub(crate) mod session_artifact_verification;
 #[cfg(test)]
@@ -130,29 +130,29 @@ mod stream_diagnostics_tool_record;
 pub mod stream_events;
 #[cfg(test)]
 mod stream_events_recovery_tests;
-pub(crate) mod stream_recovery_log;
-mod stream_recovery_log_sync;
 pub(crate) mod stream_recovery_apply;
 #[cfg(test)]
 mod stream_recovery_apply_tests;
 mod stream_recovery_apply_validation;
-pub(crate) mod stream_recovery_projection;
-#[cfg(test)]
-mod stream_recovery_projection_tests;
-#[cfg(test)]
-mod stream_recovery_process_tests;
-mod stream_recovery_projection_messages;
+pub(crate) mod stream_recovery_log;
+mod stream_recovery_log_sync;
 #[cfg(test)]
 mod stream_recovery_log_tests;
 pub(crate) mod stream_recovery_owners;
 #[cfg(test)]
 mod stream_recovery_owners_tests;
+#[cfg(test)]
+mod stream_recovery_process_tests;
+pub(crate) mod stream_recovery_projection;
+mod stream_recovery_projection_messages;
+#[cfg(test)]
+mod stream_recovery_projection_tests;
 pub(crate) mod stream_recovery_record;
 #[cfg(test)]
 mod stream_recovery_record_tests;
+pub(crate) mod stream_recovery_startup;
 pub(crate) mod stream_recovery_store;
 mod stream_recovery_store_discovery;
-pub(crate) mod stream_recovery_startup;
 #[cfg(test)]
 mod stream_recovery_store_tests;
 #[cfg(test)]

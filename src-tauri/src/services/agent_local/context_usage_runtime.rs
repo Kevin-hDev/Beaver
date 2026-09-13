@@ -1,16 +1,15 @@
 use chrono::Utc;
 
+pub use super::context_prepared_attempt::PreparedContextAttempt;
 use super::context_usage_buckets::RequestContextUsage;
 use super::context_usage_record::{
-    ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot,
-    ContextOutputSnapshot, ContextPreparationSnapshot, ContextPreparationState,
-    ContextTokenCount,
+    ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot, ContextOutputSnapshot,
+    ContextPreparationSnapshot, ContextPreparationState, ContextTokenCount,
 };
 use super::conversation_journal::ConversationJournal;
 use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult};
 use crate::services::token_counting;
-pub use super::context_prepared_attempt::PreparedContextAttempt;
 
 pub struct ContextAttempt<'a> {
     pub on_event: &'a AgentEventEmitter,
@@ -138,10 +137,7 @@ fn resolved_result_counts(
     let input = result
         .prompt_tokens
         .map(|tokens| (tokens, measured_input_source));
-    let provider_output = result
-        .usage
-        .as_ref()
-        .and_then(|usage| usage.output_tokens);
+    let provider_output = result.usage.as_ref().and_then(|usage| usage.output_tokens);
     let output = if let Some(tokens) = provider_output {
         tokens
             .try_into()

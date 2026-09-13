@@ -60,9 +60,15 @@ async fn stream_recovery_projection_keeps_only_the_last_retry_attempt_and_phase_
     let projection = from_path(&log.path()).unwrap();
     let assistant = &projection.messages[0];
     assert_eq!(assistant.content, "workanswer");
-    assert!(!assistant.thinking.as_deref().unwrap_or("").contains("discarded"));
+    assert!(!assistant
+        .thinking
+        .as_deref()
+        .unwrap_or("")
+        .contains("discarded"));
     assert_eq!(assistant.segments.as_ref().unwrap().len(), 2);
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
 }
 
@@ -105,7 +111,9 @@ async fn stream_recovery_projection_restores_private_tool_data() {
         }))
     );
     assert!(projection.messages[1].content.contains("follow-up"));
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
 }
 
@@ -132,7 +140,9 @@ async fn stream_recovery_projection_rejects_an_incomplete_pending_batch() {
         from_path(&log.path()),
         Err(error) if error == "stream_recovery_invalid"
     ));
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
 }
 
@@ -161,6 +171,8 @@ async fn stream_recovery_projection_prefers_a_complete_pending_batch_and_turn_re
     assert_eq!(projection.messages[0].content, "exact checkpoint");
     assert_eq!(projection.messages[0].stream_part.as_deref(), Some("final"));
     assert!(projection.turn_ready);
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
 }

@@ -19,8 +19,8 @@ pub(crate) async fn create(header: &StreamRecoveryHeader) -> Result<(PathBuf, Fi
     let _gate = lock_mutations().await;
     let path = path_for(&header.session_id, &header.request_id)?;
     ensure_capacity(&header.session_id).await?;
-    let mut bytes = serde_json::to_vec(&StreamRecoveryRecord::Header(header.clone()))
-        .map_err(|_| error())?;
+    let mut bytes =
+        serde_json::to_vec(&StreamRecoveryRecord::Header(header.clone())).map_err(|_| error())?;
     bytes.push(b'\n');
     crate::services::private_store::write_new_async(path.clone(), bytes).await?;
     let file = open_append(&path)?;
@@ -66,8 +66,7 @@ pub(crate) fn visit_records(
     path: &Path,
     mut visit: impl FnMut(StreamRecoveryRecord) -> Result<(), String>,
 ) -> Result<(), String> {
-    let file = crate::services::private_store::open_regular_single_link(path)?
-        .ok_or_else(error)?;
+    let file = crate::services::private_store::open_regular_single_link(path)?.ok_or_else(error)?;
     if file.metadata().map_err(|_| error())?.len() > MAX_LOG_BYTES {
         return Err(error());
     }

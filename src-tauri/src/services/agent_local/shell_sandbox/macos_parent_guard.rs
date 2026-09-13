@@ -64,8 +64,8 @@ pub(super) fn run_guarded(arguments: Vec<OsString>) -> Result<i32, String> {
 
 pub(super) fn install() -> Result<(), String> {
     let parent_pid = u32::try_from(unsafe { libc::getppid() }).map_err(|_| error())?;
-    let parent = crate::services::owned_process::OwnedProcess::identity(parent_pid)
-        .map_err(|_| error())?;
+    let parent =
+        crate::services::owned_process::OwnedProcess::identity(parent_pid).map_err(|_| error())?;
     let root = crate::services::owned_process::OwnedProcess::identity(std::process::id())
         .map_err(|_| error())?;
     if root.native_scope != u64::from(root.pid) {
@@ -111,8 +111,8 @@ pub(super) fn run_watchdog(arguments: Vec<OsString>) -> Result<i32, String> {
     if crate::services::owned_process::OwnedProcess::identity(parent.pid).ok() != Some(parent) {
         return Err(error());
     }
-    let root = super::macos_parent_watchdog::inspect_root(root_pid, root_start)?
-        .ok_or_else(error)?;
+    let root =
+        super::macos_parent_watchdog::inspect_root(root_pid, root_start)?.ok_or_else(error)?;
     if root.native_scope != u64::from(root.pid) {
         return Err(error());
     }
@@ -143,9 +143,7 @@ fn wait_ready_with_timeout(
     (byte == [READY]).then_some(()).ok_or_else(error)
 }
 
-fn identity_args(
-    identity: crate::services::owned_process::OwnedProcessIdentity,
-) -> [String; 4] {
+fn identity_args(identity: crate::services::owned_process::OwnedProcessIdentity) -> [String; 4] {
     [
         identity.pid.to_string(),
         identity.native_scope.to_string(),
@@ -156,7 +154,14 @@ fn identity_args(
 
 fn parse_watchdog(
     arguments: Vec<OsString>,
-) -> Result<(crate::services::owned_process::OwnedProcessIdentity, u32, u64), String> {
+) -> Result<
+    (
+        crate::services::owned_process::OwnedProcessIdentity,
+        u32,
+        u64,
+    ),
+    String,
+> {
     if arguments.len() != 6 {
         return Err(error());
     }

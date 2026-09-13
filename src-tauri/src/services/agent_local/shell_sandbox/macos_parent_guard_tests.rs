@@ -1,5 +1,5 @@
-use super::{parse_watchdog, wait_ready_with_timeout, READY};
 use super::super::macos_parent_watchdog::{watchdog_action, WatchdogAction};
+use super::{parse_watchdog, wait_ready_with_timeout, READY};
 use std::ffi::OsString;
 use std::process::{Command, Stdio};
 

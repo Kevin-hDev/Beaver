@@ -121,8 +121,8 @@ fn append_configured_outputs_root(roots: &mut Vec<PathBuf>, output_root: Option<
 pub fn validate_read_path(path: &Path, working_dir: &Path) -> Result<PathBuf, String> {
     let canonical = canonicalize_candidate(path, working_dir)?;
 
-    let working_canonical = dunce::canonicalize(working_dir)
-        .unwrap_or_else(|_| working_dir.to_path_buf());
+    let working_canonical =
+        dunce::canonicalize(working_dir).unwrap_or_else(|_| working_dir.to_path_buf());
     if super::directory_access::ensure_allowed(&working_canonical).is_ok()
         && canonical.starts_with(&working_canonical)
     {
@@ -132,9 +132,7 @@ pub fn validate_read_path(path: &Path, working_dir: &Path) -> Result<PathBuf, St
     let private = super::private_data_access::current();
     let private_root = private.root.clone();
     let roots = allowed_read_roots_with_private(private);
-    if private_root.as_ref() == Some(&canonical)
-        || roots.iter().any(|r| canonical.starts_with(r))
-    {
+    if private_root.as_ref() == Some(&canonical) || roots.iter().any(|r| canonical.starts_with(r)) {
         Ok(canonical)
     } else {
         Err("Lecture interdite hors des zones autorisées".into())

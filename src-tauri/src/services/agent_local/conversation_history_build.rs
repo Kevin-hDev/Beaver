@@ -68,7 +68,10 @@ fn recovered_thinking_only_checkpoint(message: &AgentMessage) -> bool {
     message.role == "assistant"
         && message.content.is_empty()
         && message.tool_calls.is_none()
-        && message.thinking.as_ref().is_some_and(|thinking| !thinking.is_empty())
+        && message
+            .thinking
+            .as_ref()
+            .is_some_and(|thinking| !thinking.is_empty())
         && message.continuation.is_none()
         && message.stream_part.as_deref() == Some("checkpoint")
 }

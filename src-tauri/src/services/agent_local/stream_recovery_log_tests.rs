@@ -105,7 +105,9 @@ async fn oversized_record_is_sticky_and_cancels_the_owner() {
     assert!(result.is_err());
     assert!(cancel.is_cancelled());
     assert!(log.sticky_error().is_some());
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
 }
 
@@ -126,7 +128,9 @@ async fn total_log_limit_is_sticky_and_cancels_the_owner() {
     assert!(result.is_err());
     assert!(cancel.is_cancelled());
     assert!(log.sticky_error().is_some());
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
 }
 

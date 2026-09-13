@@ -36,7 +36,11 @@ async fn large_errors_are_bounded_and_the_full_result_is_retained() {
 async fn truncation_is_utf8_safe() {
     let session_id = uuid::Uuid::new_v4().to_string();
     let result = truncate_result(
-        ToolResult::ok(format!("{}🎉{}", "a".repeat(PREVIEW_SIZE - 1), "b".repeat(MAX_CHARS_GLOB))),
+        ToolResult::ok(format!(
+            "{}🎉{}",
+            "a".repeat(PREVIEW_SIZE - 1),
+            "b".repeat(MAX_CHARS_GLOB)
+        )),
         "glob",
         &session_id,
     )
@@ -68,12 +72,7 @@ async fn oversized_log_read_uses_the_full_read_file_envelope() {
         .collect::<String>();
     assert!(full.chars().count() > 700_000);
 
-    let result = truncate_result(
-        ToolResult::ok(full.clone()),
-        "read_file",
-        &session_id,
-    )
-    .await;
+    let result = truncate_result(ToolResult::ok(full.clone()), "read_file", &session_id).await;
 
     assert!(result.truncated);
     assert!(result.content.chars().count() > 198_000);
@@ -92,12 +91,7 @@ async fn oversized_log_read_uses_the_full_read_file_envelope() {
 async fn read_file_over_the_limit_is_truncated_without_splitting_utf8() {
     let session_id = uuid::Uuid::new_v4().to_string();
     let full = format!("{}🎉", "r".repeat(200_000));
-    let result = truncate_result(
-        ToolResult::ok(full.clone()),
-        "read_file",
-        &session_id,
-    )
-    .await;
+    let result = truncate_result(ToolResult::ok(full.clone()), "read_file", &session_id).await;
 
     assert!(result.truncated);
     assert!(result.content.chars().count() > 198_000);
@@ -129,9 +123,7 @@ fn persistence_failure_is_explicit_and_does_not_change_an_error_to_success() {
 
 #[tokio::test]
 async fn result_storage_rejects_an_invalid_session_path() {
-    assert!(persist_result("secret", "../outside")
-        .await
-        .is_none());
+    assert!(persist_result("secret", "../outside").await.is_none());
 }
 
 #[tokio::test]

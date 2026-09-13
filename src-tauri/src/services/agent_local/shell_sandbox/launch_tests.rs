@@ -55,8 +55,14 @@ fn unrestricted_macos_parent_guard_routes_through_helper() {
         .map(|arg| arg.to_string_lossy().into_owned())
         .collect::<Vec<_>>();
 
-    assert_eq!(command.get_program(), std::env::current_exe().expect("test executable"));
-    assert_eq!(args.first().map(String::as_str), Some("--beaver-shell-guard"));
+    assert_eq!(
+        command.get_program(),
+        std::env::current_exe().expect("test executable")
+    );
+    assert_eq!(
+        args.first().map(String::as_str),
+        Some("--beaver-shell-guard")
+    );
     assert_eq!(args.get(1).map(String::as_str), Some("--"));
     assert_eq!(args.get(2).map(String::as_str), Some("/bin/sh"));
 }

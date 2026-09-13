@@ -48,13 +48,16 @@ impl ConversationJournal {
             return Err(super::error());
         }
         let request_id = self.request_id.clone();
-        self.update_if_active(move |record| {
-            if validation::is_older_than_current(record, &preparation.identity) {
-                return false;
-            }
-            record.current_preparation = Some(preparation);
-            true
-        }, &request_id)
+        self.update_if_active(
+            move |record| {
+                if validation::is_older_than_current(record, &preparation.identity) {
+                    return false;
+                }
+                record.current_preparation = Some(preparation);
+                true
+            },
+            &request_id,
+        )
         .await
     }
 
@@ -67,13 +70,16 @@ impl ConversationJournal {
             return Err(super::error());
         }
         let request_id = self.request_id.clone();
-        self.update_if_active(move |record| {
-            if !validation::matches_current(record, &measurement.identity) {
-                return false;
-            }
-            record.last_measurement = Some(measurement);
-            true
-        }, &request_id)
+        self.update_if_active(
+            move |record| {
+                if !validation::matches_current(record, &measurement.identity) {
+                    return false;
+                }
+                record.last_measurement = Some(measurement);
+                true
+            },
+            &request_id,
+        )
         .await
     }
 
@@ -86,13 +92,16 @@ impl ConversationJournal {
             return Err(super::error());
         }
         let request_id = self.request_id.clone();
-        self.update_if_active(move |record| {
-            if !validation::matches_current(record, &output.identity) {
-                return false;
-            }
-            record.last_output = Some(output);
-            true
-        }, &request_id)
+        self.update_if_active(
+            move |record| {
+                if !validation::matches_current(record, &output.identity) {
+                    return false;
+                }
+                record.last_output = Some(output);
+                true
+            },
+            &request_id,
+        )
         .await
     }
 

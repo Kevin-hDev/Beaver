@@ -90,7 +90,9 @@ fn close_completed_tool_turns(session: &mut AgentSession) {
     }
 }
 
-fn terminal_assistant(tool: &super::types_message::AgentMessage) -> super::types_message::AgentMessage {
+fn terminal_assistant(
+    tool: &super::types_message::AgentMessage,
+) -> super::types_message::AgentMessage {
     super::types_message::AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
         turn_id: tool.turn_id.clone(),

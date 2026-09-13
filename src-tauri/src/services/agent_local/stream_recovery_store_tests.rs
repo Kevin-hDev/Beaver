@@ -21,12 +21,21 @@ async fn private_log_round_trips_and_tolerates_a_cut_final_line() {
     let header = header();
     let (path, mut file) = create(&header).await.unwrap();
     use std::io::Write;
-    writeln!(file, "{}", serde_json::to_string(&StreamRecoveryRecord::TurnReady { sequence: 1 }).unwrap()).unwrap();
+    writeln!(
+        file,
+        "{}",
+        serde_json::to_string(&StreamRecoveryRecord::TurnReady { sequence: 1 }).unwrap()
+    )
+    .unwrap();
     write!(file, "{{\"kind\":").unwrap();
     drop(file);
 
     let mut count = 0;
-    visit_records(&path, |_| { count += 1; Ok(()) }).unwrap();
+    visit_records(&path, |_| {
+        count += 1;
+        Ok(())
+    })
+    .unwrap();
     assert_eq!(count, 2);
     remove(path).await.unwrap();
 }
@@ -96,9 +105,11 @@ async fn removal_waits_for_the_store_mutation_gate() {
     let gate = lock_mutations().await;
     let mut removal = tokio::spawn(remove(path));
 
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(100), &mut removal)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(100), &mut removal)
+            .await
+            .is_err()
+    );
     drop(gate);
     removal.await.unwrap().unwrap();
 }

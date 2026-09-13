@@ -38,7 +38,11 @@ pub(super) fn append_missing_results(
         .into_iter()
         .filter(|call| !completed.contains(call.id.as_str()))
         .collect::<Vec<_>>();
-    if session.messages.len().saturating_add(missing.len()).saturating_add(1)
+    if session
+        .messages
+        .len()
+        .saturating_add(missing.len())
+        .saturating_add(1)
         > super::session_limits::MAX_MESSAGES_PER_SESSION
     {
         return Err(InterruptedToolError::Capacity);

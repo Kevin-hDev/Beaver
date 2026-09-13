@@ -14,9 +14,7 @@ pub(crate) fn validate(
     Ok(turns)
 }
 
-pub(super) fn tail_state(
-    messages: &[AgentMessage],
-) -> Result<TailState, ConversationHistoryError> {
+pub(super) fn tail_state(messages: &[AgentMessage]) -> Result<TailState, ConversationHistoryError> {
     analyze(messages).map(|(_, tail)| tail)
 }
 

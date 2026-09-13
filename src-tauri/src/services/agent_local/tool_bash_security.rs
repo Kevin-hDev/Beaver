@@ -30,9 +30,7 @@ where
                 let _ = send.send(());
             }))
             .map_err(|_| INITIALIZATION_ERROR.to_string())?;
-            receive
-                .await
-                .map_err(|_| INITIALIZATION_ERROR.to_string())
+            receive.await.map_err(|_| INITIALIZATION_ERROR.to_string())
         })
         .await
         .map(|_| ())

@@ -467,12 +467,7 @@ async fn recovered_thinking_only_checkpoint_is_visible_but_absent_from_provider_
         "user",
         "question",
     );
-    let mut checkpoint = message(
-        &uuid::Uuid::new_v4().to_string(),
-        &turn_id,
-        "assistant",
-        "",
-    );
+    let mut checkpoint = message(&uuid::Uuid::new_v4().to_string(), &turn_id, "assistant", "");
     checkpoint.thinking = Some("visible recovered work".into());
     checkpoint.stream_run_id = Some(uuid::Uuid::new_v4().to_string());
     checkpoint.stream_part = Some("checkpoint".into());
@@ -486,7 +481,13 @@ async fn recovered_thinking_only_checkpoint_is_visible_but_absent_from_provider_
     .unwrap();
 
     assert_eq!(history.messages.len(), 1);
-    assert_eq!(history.messages[0].role, conversation_history::ProviderRole::User);
-    assert_eq!(session.messages[1].thinking.as_deref(), Some("visible recovered work"));
+    assert_eq!(
+        history.messages[0].role,
+        conversation_history::ProviderRole::User
+    );
+    assert_eq!(
+        session.messages[1].thinking.as_deref(),
+        Some("visible recovered work")
+    );
     cleanup(&session.id).await;
 }

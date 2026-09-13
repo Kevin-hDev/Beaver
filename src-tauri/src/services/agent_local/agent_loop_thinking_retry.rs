@@ -99,15 +99,14 @@ pub async fn retry_if_needed(
 
     let preparation = super::context_usage_runtime::PreparedContextAttempt::new(
         super::context_usage_runtime::ContextAttempt {
-        on_event: params.on_event,
-        journal: params.journal,
-        provider_id: "ollama",
-        model: &params.request.model,
-        turn: params.turn,
-        attempt: 2,
-        context_limit: params.context_limit,
-        measured_input_source:
-            super::context_usage_record::ContextCountSource::NativeCounter,
+            on_event: params.on_event,
+            journal: params.journal,
+            provider_id: "ollama",
+            model: &params.request.model,
+            turn: params.turn,
+            attempt: 2,
+            context_limit: params.context_limit,
+            measured_input_source: super::context_usage_record::ContextCountSource::NativeCounter,
         },
         params.breakdown,
     )

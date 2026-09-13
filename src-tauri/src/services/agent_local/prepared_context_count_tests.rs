@@ -87,7 +87,10 @@ fn bounded_media_has_capacity_but_remote_and_opaque_blocks_do_not() {
     let inline_count = chat_completions(&inline);
     assert_eq!(inline_count.coverage, ContextCountCoverage::Partial);
     assert!(inline_count.capacity_tokens.unwrap() >= inline_count.tokens.unwrap());
-    assert_eq!(anthropic(&anthropic_image).coverage, ContextCountCoverage::Partial);
+    assert_eq!(
+        anthropic(&anthropic_image).coverage,
+        ContextCountCoverage::Partial
+    );
 
     for count in [
         chat_completions(&remote),

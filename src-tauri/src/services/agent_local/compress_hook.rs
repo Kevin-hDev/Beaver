@@ -23,8 +23,12 @@ pub async fn try_auto_compress(
     cancel: CancellationToken,
 ) -> Option<u32> {
     let _ = native_context;
-    let prepared_count =
-        crate::services::compress::prepared_request::count("ollama", model, messages, provider_tools);
+    let prepared_count = crate::services::compress::prepared_request::count(
+        "ollama",
+        model,
+        messages,
+        provider_tools,
+    );
     match crate::services::compress::orchestrator::run_compression(
         crate::services::compress::orchestrator::CompressionRunRequest {
             on_event,

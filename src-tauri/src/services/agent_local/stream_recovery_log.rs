@@ -63,7 +63,10 @@ impl StreamRecoveryLog {
     }
 
     pub(crate) fn record_event(&self, event: RecoverableStreamEvent) -> Result<(), String> {
-        self.append_with(|sequence| StreamRecoveryRecord::Event { sequence, event }, false)
+        self.append_with(
+            |sequence| StreamRecoveryRecord::Event { sequence, event },
+            false,
+        )
     }
 
     pub(crate) fn sticky_error(&self) -> Option<String> {

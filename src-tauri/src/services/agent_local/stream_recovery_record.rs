@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::types_message::AgentMessage;
-use super::types_stream::TokenPhase;
 use super::types_stream::StreamEvent;
+use super::types_stream::TokenPhase;
 
 pub(crate) const STREAM_RECOVERY_VERSION: u8 = 1;
 
@@ -29,7 +29,12 @@ pub(crate) struct StreamRecoveryOwner {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "kind", content = "data", rename_all = "snake_case", deny_unknown_fields)]
+#[serde(
+    tag = "kind",
+    content = "data",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
 #[expect(
     clippy::large_enum_variant,
     reason = "recovery reads one bounded record at a time; boxing would add allocation to every journal write"
@@ -53,16 +58,31 @@ pub(crate) enum StreamRecoveryRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "event", content = "data", rename_all = "snake_case", deny_unknown_fields)]
+#[serde(
+    tag = "event",
+    content = "data",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
 #[expect(
     clippy::large_enum_variant,
     reason = "recovery reads one bounded event at a time; boxing would add allocation to every journal write"
 )]
 pub(crate) enum RecoverableStreamEvent {
-    Token { content: String, phase: Option<TokenPhase> },
-    Thinking { content: String },
-    ContentPhase { phase: TokenPhase },
-    AttemptRestarted { reason_key: String, attempt: u32 },
+    Token {
+        content: String,
+        phase: Option<TokenPhase>,
+    },
+    Thinking {
+        content: String,
+    },
+    ContentPhase {
+        phase: TokenPhase,
+    },
+    AttemptRestarted {
+        reason_key: String,
+        attempt: u32,
+    },
     ToolCall(RecoverableToolCall),
     ToolResult(RecoverableToolResult),
 }
@@ -102,7 +122,12 @@ pub(crate) struct RecoverableToolResult {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(tag = "kind", content = "content", rename_all = "snake_case", deny_unknown_fields)]
+#[serde(
+    tag = "kind",
+    content = "content",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
 pub(crate) enum RecoverableToolFollowUp {
     #[default]
     None,
@@ -121,11 +146,13 @@ impl RecoverableStreamEvent {
             StreamEvent::Thinking { content, .. } => Some(Self::Thinking {
                 content: content.clone(),
             }),
-            StreamEvent::ContentPhase { phase } => {
-                Some(Self::ContentPhase { phase: phase.clone() })
-            }
+            StreamEvent::ContentPhase { phase } => Some(Self::ContentPhase {
+                phase: phase.clone(),
+            }),
             StreamEvent::RetryIndicator {
-                reason_key, attempt, ..
+                reason_key,
+                attempt,
+                ..
             } => Some(Self::AttemptRestarted {
                 reason_key: reason_key.clone(),
                 attempt: *attempt,

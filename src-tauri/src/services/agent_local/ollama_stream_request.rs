@@ -1,7 +1,7 @@
 use super::ollama_client::OllamaClient;
 use super::ollama_retry_indicator::{
-    max_server_retries, send_retry_indicator, should_retry_server_status,
-    REASON_FEATURE_DROPPED, REASON_PARSER_CRASH, REASON_SERVER,
+    max_server_retries, send_retry_indicator, should_retry_server_status, REASON_FEATURE_DROPPED,
+    REASON_PARSER_CRASH, REASON_SERVER,
 };
 use super::ollama_stream_retry::build_retry_request;
 use super::ollama_tool_parse_retry::{is_tool_parse_crash, MAX_PARSER_RETRIES};

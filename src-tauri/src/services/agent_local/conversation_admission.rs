@@ -9,11 +9,11 @@ use crate::services::reasoning_continuity::contract::ContinuationTarget;
 #[cfg(test)]
 use crate::services::reasoning_continuity::contract::ReplayTarget;
 
-use super::conversation_admission_ids::allocate_ids;
-pub(super) use super::conversation_admission_ids::unique_uuid;
 use super::conversation_admission_error::capacity_error;
 pub(super) use super::conversation_admission_error::error;
 pub use super::conversation_admission_error::ConversationAdmissionError;
+use super::conversation_admission_ids::allocate_ids;
+pub(super) use super::conversation_admission_ids::unique_uuid;
 use super::conversation_history::{ConversationHistory, ProviderRole};
 use super::conversation_input::ResolvedTurnInput;
 use super::types_message::AgentMessage;

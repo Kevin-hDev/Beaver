@@ -1,7 +1,7 @@
 use super::conversation_history_validation::TailState;
+use super::stream_recovery_projection::RecoveryProjection;
 use super::types_message::AgentMessage;
 use super::types_session::AgentSession;
-use super::stream_recovery_projection::RecoveryProjection;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum CloseInterruptedTailError {
@@ -11,8 +11,12 @@ pub(crate) enum CloseInterruptedTailError {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum RecoveryProof<'a> {
-    RecoveredJournal { request_id: &'a str },
-    AdmissionFallback { current_execution_id: &'a str },
+    RecoveredJournal {
+        request_id: &'a str,
+    },
+    AdmissionFallback {
+        current_execution_id: &'a str,
+    },
     #[cfg(test)]
     LegacyWithoutExecution,
 }
@@ -22,7 +26,10 @@ pub(crate) fn close_recoverable(
     proof: RecoveryProof<'_>,
 ) -> Result<bool, CloseInterruptedTailError> {
     let original_len = session.messages.len();
-    let user_only_tail = session.messages.last().is_some_and(|message| message.role == "user");
+    let user_only_tail = session
+        .messages
+        .last()
+        .is_some_and(|message| message.role == "user");
     match super::conversation_history_validation::tail_state(&session.messages)
         .map_err(|_| CloseInterruptedTailError::History)?
     {
@@ -91,7 +98,11 @@ pub(crate) fn apply_recovered_projection(
 ) -> Result<bool, CloseInterruptedTailError> {
     let mut changed = false;
     for message in &projection.messages {
-        if let Some(existing) = session.messages.iter().find(|existing| existing.id == message.id) {
+        if let Some(existing) = session
+            .messages
+            .iter()
+            .find(|existing| existing.id == message.id)
+        {
             if serde_json::to_value(existing).ok() != serde_json::to_value(message).ok() {
                 return Err(CloseInterruptedTailError::History);
             }

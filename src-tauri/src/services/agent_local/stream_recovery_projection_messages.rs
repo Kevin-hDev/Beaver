@@ -166,6 +166,8 @@ pub(super) fn apply_result(activity: &mut ToolActivityRecord, result: &Recoverab
     activity.domain.clone_from(&result.domain);
     activity.affected_paths.clone_from(&result.affected_paths);
     activity.file_changes.clone_from(&result.file_changes);
-    activity.start_line = result.start_line.and_then(|value| u32::try_from(value).ok());
+    activity.start_line = result
+        .start_line
+        .and_then(|value| u32::try_from(value).ok());
     activity.artifacts.clone_from(&result.artifacts);
 }

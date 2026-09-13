@@ -46,10 +46,9 @@ fn run(arguments: Vec<OsString>) -> Result<i32, String> {
     let (mode, temp_dir, executable, command_arguments) = parse(arguments)?;
     validate_temp_dir(&temp_dir)?;
     let roots = super::policy_transport::take(&temp_dir)?;
-    let working_dir = dunce::canonicalize(
-        std::env::current_dir().map_err(|_| super::launch::sandbox_error())?,
-    )
-    .map_err(|_| super::launch::sandbox_error())?;
+    let working_dir =
+        dunce::canonicalize(std::env::current_dir().map_err(|_| super::launch::sandbox_error())?)
+            .map_err(|_| super::launch::sandbox_error())?;
     let scope = match mode {
         super::scope::Mode::Workspace => {
             super::super::directory_access::ensure_allowed_in_roots(&working_dir, &roots)?;

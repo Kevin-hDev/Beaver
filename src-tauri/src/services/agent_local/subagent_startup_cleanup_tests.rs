@@ -248,7 +248,9 @@ async fn failed_capture_is_retried_and_cleared_on_next_startup() {
         .await
         .expect("worktree");
     child.subagent_worktree = Some(worktree.to_string_lossy().into_owned());
-    session_store::save(&child).await.expect("save global child");
+    session_store::save(&child)
+        .await
+        .expect("save global child");
     write_session(&dir, &child).await;
     tokio::fs::write(worktree.join("recovered.txt"), "recover\n")
         .await
@@ -277,7 +279,11 @@ async fn failed_capture_is_retried_and_cleared_on_next_startup() {
         .expect("durable change");
     let commits = subagent_git_command::text(
         repo.path(),
-        &["rev-list", "--count", &format!("{}..{}", change.base_commit, change.branch)],
+        &[
+            "rev-list",
+            "--count",
+            &format!("{}..{}", change.base_commit, change.branch),
+        ],
     )
     .await
     .expect("captured commits");
@@ -285,8 +291,12 @@ async fn failed_capture_is_retried_and_cleared_on_next_startup() {
 
     let _ = subagent_git_command::delete_branch(repo.path(), &change.branch).await;
     let _ = subagent_change_store::remove(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }
 
 #[tokio::test]
@@ -300,13 +310,10 @@ async fn missing_worktree_path_is_cleared_idempotently() {
     );
     let execution = Uuid::new_v4().to_string();
     orphan.subagent_worktree = Some(
-        crate::services::agent_local::subagent_worktree::path_for_execution(
-            &orphan.id,
-            &execution,
-        )
-        .expect("managed path")
-        .to_string_lossy()
-        .into_owned(),
+        crate::services::agent_local::subagent_worktree::path_for_execution(&orphan.id, &execution)
+            .expect("managed path")
+            .to_string_lossy()
+            .into_owned(),
     );
     write_session(&dir, &orphan).await;
 

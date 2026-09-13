@@ -63,15 +63,10 @@ mod tests {
 
     #[tokio::test]
     async fn document_existence_uses_the_session_store_authority() {
-        let session = super::super::create_full(
-            "document existence",
-            "model",
-            "provider",
-            false,
-            None,
-        )
-        .await
-        .unwrap();
+        let session =
+            super::super::create_full("document existence", "model", "provider", false, None)
+                .await
+                .unwrap();
         assert!(super::super::document_exists(&session.id).await);
 
         super::super::delete_one(&session.id).await.unwrap();

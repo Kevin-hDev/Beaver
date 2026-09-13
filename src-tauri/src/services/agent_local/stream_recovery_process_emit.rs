@@ -23,7 +23,11 @@ async fn emit_stream() {
     let root = tempfile::tempdir().expect("project");
     std::fs::write(root.path().join("proof.txt"), "completed read proof").expect("proof file");
     let session = super::super::session_store::create_full(
-        "Killed stream", "qwen3.5:4b", "ollama", false, None,
+        "Killed stream",
+        "qwen3.5:4b",
+        "ollama",
+        false,
+        None,
     )
     .await
     .expect("session");

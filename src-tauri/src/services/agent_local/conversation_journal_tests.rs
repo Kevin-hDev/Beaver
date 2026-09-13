@@ -1,9 +1,12 @@
-use super::conversation_journal::{validate_tool_results, ConversationJournal};
+use super::context_usage_record::{
+    ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot, ContextOutputSnapshot,
+    ContextPreparationSnapshot, ContextPreparationState, ContextRequestIdentity, ContextTokenCount,
+};
 use super::conversation_history_tests::support::message;
+use super::conversation_journal::{validate_tool_results, ConversationJournal};
 use super::session_store;
-use super::types_ollama::ChatMessage;
 use super::stream_recovery_log::StreamRecoveryLog;
-use tokio_util::sync::CancellationToken;
+use super::types_ollama::ChatMessage;
 use crate::services::agent_local::tool_artifact::{
     ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
 };
@@ -14,11 +17,7 @@ use crate::services::reasoning_continuity::contract::{
 use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
 };
-use super::context_usage_record::{
-    ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot,
-    ContextOutputSnapshot, ContextPreparationSnapshot, ContextPreparationState,
-    ContextRequestIdentity, ContextTokenCount,
-};
+use tokio_util::sync::CancellationToken;
 
 #[test]
 fn journal_rejects_missing_duplicate_and_reordered_tool_results() {
@@ -201,12 +200,10 @@ async fn conversation_journal_stages_exact_messages_and_turn_before_session_writ
         uuid::Uuid::new_v4().to_string(),
     )
     .expect("create journal");
-    let (log, owner) = StreamRecoveryLog::create(
-        journal.recovery_header(),
-        CancellationToken::new(),
-    )
-    .await
-    .expect("create recovery log");
+    let (log, owner) =
+        StreamRecoveryLog::create(journal.recovery_header(), CancellationToken::new())
+            .await
+            .expect("create recovery log");
     let path = log.path();
     journal.attach_recovery(log.clone(), owner);
 
@@ -233,7 +230,10 @@ async fn conversation_journal_stages_exact_messages_and_turn_before_session_writ
     ));
 
     journal.commit_turn().await.expect("retry commit");
-    assert!(!path.exists(), "journal is removed only after durable commit");
+    assert!(
+        !path.exists(),
+        "journal is removed only after durable commit"
+    );
     session_store::delete_one(&session.id)
         .await
         .expect("delete session");
@@ -257,21 +257,20 @@ fn tool(id: &str) -> ChatMessage {
 
 #[tokio::test]
 async fn superseded_run_cannot_append_a_late_tool_result() {
-    let mut session = session_store::create_full(
-        "Superseded journal",
-        "model",
-        "openai",
-        false,
-        None,
-    )
-    .await
-    .expect("create session");
+    let mut session =
+        session_store::create_full("Superseded journal", "model", "openai", false, None)
+            .await
+            .expect("create session");
     let old_turn = uuid::Uuid::new_v4().to_string();
     let old_user = uuid::Uuid::new_v4().to_string();
     let old_assistant = uuid::Uuid::new_v4().to_string();
     let old_request = uuid::Uuid::new_v4().to_string();
-    session.messages.push(message(&old_user, &old_turn, "user", "run tool"));
-    session_store::save(&session).await.expect("persist old user");
+    session
+        .messages
+        .push(message(&old_user, &old_turn, "user", "run tool"));
+    session_store::save(&session)
+        .await
+        .expect("persist old user");
     let mut journal = ConversationJournal::new(
         session.id.clone(),
         old_turn.clone(),
@@ -314,7 +313,9 @@ async fn superseded_run_cannot_append_a_late_tool_result() {
         "user",
         "continue",
     ));
-    session_store::save(&recovered).await.expect("persist recovery");
+    session_store::save(&recovered)
+        .await
+        .expect("persist recovery");
 
     assert!(journal
         .persist_tool_results(&[tool("call-late")], &[])
@@ -323,11 +324,17 @@ async fn superseded_run_cannot_append_a_late_tool_result() {
     let saved = session_store::get(&session.id).await.expect("reload final");
     assert_eq!(saved.messages.last().unwrap().turn_id, new_turn);
     assert_eq!(
-        saved.messages.iter().filter(|item| item.tool_call_id.as_deref() == Some("call-late")).count(),
+        saved
+            .messages
+            .iter()
+            .filter(|item| item.tool_call_id.as_deref() == Some("call-late"))
+            .count(),
         1,
     );
     super::conversation_history_validation::validate(&saved.messages).expect("history stays valid");
-    session_store::delete_one(&session.id).await.expect("delete session");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
 }
 
 #[tokio::test]
@@ -349,7 +356,9 @@ async fn live_subagent_instruction_does_not_supersede_its_owned_journal() {
     child.subagent_run_id = Some(execution.run_id.clone());
     let turn_id = uuid::Uuid::new_v4().to_string();
     let user_id = uuid::Uuid::new_v4().to_string();
-    child.messages.push(message(&user_id, &turn_id, "user", "initial mission"));
+    child
+        .messages
+        .push(message(&user_id, &turn_id, "user", "initial mission"));
     session_store::save(&child).await.expect("save child");
     let mut journal = ConversationJournal::new_for_subagent(
         child.id.clone(),
@@ -395,11 +404,19 @@ async fn live_subagent_instruction_does_not_supersede_its_owned_journal() {
     assert_eq!(saved.messages.last().unwrap().content, "continued step");
 
     super::subagent_registry::unregister(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }
 
-fn context_identity(journal: &ConversationJournal, turn: u32, attempt: u32) -> ContextRequestIdentity {
+fn context_identity(
+    journal: &ConversationJournal,
+    turn: u32,
+    attempt: u32,
+) -> ContextRequestIdentity {
     journal.context_identity(turn, attempt, "openai", "gpt-5")
 }
 
@@ -482,7 +499,12 @@ async fn newer_request_rejects_every_late_context_update() {
         Some(context_identity(&second, 0, 1).request_id.as_str())
     );
     assert_eq!(
-        saved.context_usage.current_preparation.unwrap().input.tokens,
+        saved
+            .context_usage
+            .current_preparation
+            .unwrap()
+            .input
+            .tokens,
         Some(80)
     );
     assert!(saved.context_usage.last_measurement.is_none());
@@ -539,8 +561,14 @@ async fn context_attempts_measurements_and_output_keep_distinct_lifetimes() {
         saved.context_usage.current_preparation.unwrap().state,
         ContextPreparationState::Completed
     );
-    assert_eq!(saved.context_usage.last_measurement.unwrap().input.tokens, Some(100));
-    assert_eq!(saved.context_usage.last_output.unwrap().output.tokens, Some(50));
+    assert_eq!(
+        saved.context_usage.last_measurement.unwrap().input.tokens,
+        Some(100)
+    );
+    assert_eq!(
+        saved.context_usage.last_output.unwrap().output.tokens,
+        Some(50)
+    );
     session_store::delete_one(&session.id).await.unwrap();
 }
 

@@ -13,8 +13,8 @@ pub(crate) async fn session_paths(session_id: &str) -> Result<Vec<PathBuf>, Stri
 pub(crate) async fn all_session_ids() -> Result<Vec<String>, String> {
     let root = super::stream_recovery_store::root();
     tokio::task::spawn_blocking(move || list_session_ids(&root))
-    .await
-    .map_err(|_| error())?
+        .await
+        .map_err(|_| error())?
 }
 
 pub(super) fn list_session_ids(root: &Path) -> Result<Vec<String>, String> {
@@ -27,8 +27,7 @@ pub(super) fn list_session_ids(root: &Path) -> Result<Vec<String>, String> {
             return Err(error());
         }
         let entry = entry.map_err(|_| error())?;
-        if !entry.file_type().map_err(|_| error())?.is_dir()
-            || entry.file_name() == QUARANTINE_DIR
+        if !entry.file_type().map_err(|_| error())?.is_dir() || entry.file_name() == QUARANTINE_DIR
         {
             continue;
         }
@@ -43,7 +42,10 @@ pub(super) fn list_session_ids(root: &Path) -> Result<Vec<String>, String> {
 pub(crate) async fn claim(path: PathBuf) -> Result<PathBuf, String> {
     let _gate = super::stream_recovery_store::lock_mutations().await;
     tokio::task::spawn_blocking(move || {
-        let name = path.file_name().and_then(|name| name.to_str()).ok_or_else(error)?;
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(error)?;
         if name.ends_with(".recovering") {
             return Ok(path);
         }
@@ -92,7 +94,10 @@ pub(crate) async fn remove_session(session_id: &str) -> Result<(), String> {
     super::session_store::validate_session_id(session_id)?;
     let _gate = super::stream_recovery_store::lock_mutations().await;
     let root = super::stream_recovery_store::root();
-    let directories = [root.join(session_id), root.join(QUARANTINE_DIR).join(session_id)];
+    let directories = [
+        root.join(session_id),
+        root.join(QUARANTINE_DIR).join(session_id),
+    ];
     tokio::task::spawn_blocking(move || {
         for directory in directories {
             match std::fs::remove_dir_all(directory) {

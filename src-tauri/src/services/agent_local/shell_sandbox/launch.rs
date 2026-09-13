@@ -132,7 +132,10 @@ pub(super) fn helper_executable() -> Result<PathBuf, String> {
     let executable = std::env::current_exe()
         .map_err(|_| sandbox_error())
         .and_then(|path| dunce::canonicalize(path).map_err(|_| sandbox_error()))?;
-    executable.is_file().then_some(executable).ok_or_else(sandbox_error)
+    executable
+        .is_file()
+        .then_some(executable)
+        .ok_or_else(sandbox_error)
 }
 
 fn create_sandbox_temp() -> Result<PathBuf, String> {
@@ -166,16 +169,24 @@ pub async fn cleanup_temp(path: Option<PathBuf>) {
 
 pub fn cleanup_stale() {
     let root = sandbox_temp_root();
-    let Ok(entries) = std::fs::read_dir(&root) else { return };
+    let Ok(entries) = std::fs::read_dir(&root) else {
+        return;
+    };
     let mut entries = entries.flatten();
     for _ in 0..256 {
         let Some(entry) = entries.next() else { return };
         let path = entry.path();
-        if entry.file_type().is_ok_and(|kind| kind.is_dir() && !kind.is_symlink()) {
+        if entry
+            .file_type()
+            .is_ok_and(|kind| kind.is_dir() && !kind.is_symlink())
+        {
             cleanup_one(&path);
         }
         #[cfg(windows)]
-        if entry.file_type().is_ok_and(|kind| kind.is_file() && !kind.is_symlink()) {
+        if entry
+            .file_type()
+            .is_ok_and(|kind| kind.is_file() && !kind.is_symlink())
+        {
             super::windows::cleanup_record_file(&path);
         }
     }

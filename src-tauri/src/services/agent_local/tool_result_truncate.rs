@@ -72,9 +72,8 @@ fn read_file_preview_size(max: usize, total: usize, persist_path: Option<&str>) 
     let file_hint = persist_path
         .map(|path| format!("\n{FULL_RESULT_PREFIX}{path}]"))
         .unwrap_or_default();
-    let prefix = format!(
-        "[Résultat tronqué — {total_kb} Ko total, preview ci-dessous]{file_hint}\n"
-    );
+    let prefix =
+        format!("[Résultat tronqué — {total_kb} Ko total, preview ci-dessous]{file_hint}\n");
     const U64_DECIMAL_CHARS: usize = 20;
     let suffix_chars = "\n[ chars omis]".chars().count() + U64_DECIMAL_CHARS;
     max.saturating_sub(prefix.chars().count() + suffix_chars)

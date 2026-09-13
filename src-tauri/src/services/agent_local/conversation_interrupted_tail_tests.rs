@@ -1,8 +1,8 @@
-use super::conversation_history_validation;
-use super::conversation_interrupted_tail::{close_recoverable, RecoveryProof};
 use super::conversation_history_tests::support::{
     cleanup, complete_turn, message, resolved, tool_result,
 };
+use super::conversation_history_validation;
+use super::conversation_interrupted_tail::{close_recoverable, RecoveryProof};
 use super::types_message::{ToolCallRequest, ToolCallRequestFunction};
 use super::types_session::AgentSession;
 use crate::services::reasoning_continuity::contract::{
@@ -112,7 +112,12 @@ async fn closes_only_a_tail_with_all_tool_results() {
     assert!(terminal.content.is_empty());
     assert!(terminal.tool_calls.is_none());
     assert!(terminal.continuation.is_none());
-    assert_eq!(uuid::Uuid::parse_str(&terminal.id).unwrap().get_version_num(), 4);
+    assert_eq!(
+        uuid::Uuid::parse_str(&terminal.id)
+            .unwrap()
+            .get_version_num(),
+        4
+    );
     conversation_history_validation::validate(&session.messages).expect("strictly closed");
 
     super::conversation_history_tests::support::cleanup(&session.id).await;
@@ -220,14 +225,18 @@ async fn missing_results_and_terminal_marker_respect_session_capacity() {
     let mut session = recoverable_tail().await;
     session.messages.pop();
     let assistant = session.messages.last_mut().unwrap();
-    assistant.tool_calls.as_mut().unwrap().push(ToolCallRequest {
-        id: "call-second".into(),
-        extra_content: None,
-        function: ToolCallRequestFunction {
-            name: "grep".into(),
-            arguments: serde_json::json!({"pattern": "error"}),
-        },
-    });
+    assistant
+        .tool_calls
+        .as_mut()
+        .unwrap()
+        .push(ToolCallRequest {
+            id: "call-second".into(),
+            extra_content: None,
+            function: ToolCallRequestFunction {
+                name: "grep".into(),
+                arguments: serde_json::json!({"pattern": "error"}),
+            },
+        });
     assistant.stream_run_id = Some(uuid::Uuid::new_v4().to_string());
     assistant.stream_part = Some("checkpoint".into());
     let tail = std::mem::take(&mut session.messages);
@@ -299,7 +308,10 @@ async fn conversation_admission_closes_the_real_interrupted_shape_atomically() {
     );
     assert_eq!(loaded.messages[previous_len].role, "assistant");
     assert!(loaded.messages[previous_len].content.is_empty());
-    assert_eq!(loaded.messages[previous_len + 1].id, admitted.user_message_id);
+    assert_eq!(
+        loaded.messages[previous_len + 1].id,
+        admitted.user_message_id
+    );
     conversation_history_validation::validate(&loaded.messages).unwrap();
     cleanup(&session.id).await;
 }

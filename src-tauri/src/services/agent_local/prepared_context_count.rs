@@ -1,8 +1,6 @@
 use serde_json::Value;
 
-use super::context_usage_record::{
-    ContextCountCoverage, ContextCountSource, ContextTokenCount,
-};
+use super::context_usage_record::{ContextCountCoverage, ContextCountSource, ContextTokenCount};
 use crate::services::token_counting;
 
 pub fn chat_completions(payload: &Value) -> ContextTokenCount {
@@ -130,7 +128,8 @@ impl SemanticCount {
 
     fn image(&mut self, value: Option<&str>) {
         self.partial = true;
-        let image_units = token_counting::max_text_units(crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE);
+        let image_units =
+            token_counting::max_text_units(crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE);
         self.units = self.units.saturating_add(image_units);
         match value {
             Some(value) if value.starts_with("data:") || !value.contains("://") => {

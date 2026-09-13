@@ -8,10 +8,10 @@ pub use super::types_message::{
     ToolCallRequestFunction,
 };
 use super::types_plan::{AgentPlanRun, AgentPlanWorkflowStatus};
-pub use super::types_session_meta::AgentSessionMeta;
 pub use super::types_session_compression::{
     AutomaticCompressionAttempt, AutomaticCompressionGuard, SessionCompressionProfileSelection,
 };
+pub use super::types_session_meta::AgentSessionMeta;
 use super::types_todo::{AgentTodoItem, AgentTodoRun};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

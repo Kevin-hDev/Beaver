@@ -15,8 +15,7 @@ pub(super) async fn persist_result(
         turn: params.turn,
         attempt,
         context_limit: params.configured_context,
-        measured_input_source:
-            super::context_usage_record::ContextCountSource::NativeCounter,
+        measured_input_source: super::context_usage_record::ContextCountSource::NativeCounter,
     }
     .persist_result(result)
     .await
@@ -42,8 +41,7 @@ pub(super) fn prepared_attempt<'a>(
             turn: params.turn,
             attempt,
             context_limit: params.configured_context,
-            measured_input_source:
-                super::context_usage_record::ContextCountSource::NativeCounter,
+            measured_input_source: super::context_usage_record::ContextCountSource::NativeCounter,
         },
         breakdown,
     )

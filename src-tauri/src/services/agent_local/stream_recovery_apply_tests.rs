@@ -5,15 +5,10 @@ use super::types_message::AgentMessage;
 use tokio_util::sync::CancellationToken;
 
 async fn session_and_header() -> (super::types_session::AgentSession, StreamRecoveryHeader) {
-    let mut session = super::session_store::create_full(
-        "Recovery apply",
-        "model",
-        "openai",
-        false,
-        None,
-    )
-    .await
-    .unwrap();
+    let mut session =
+        super::session_store::create_full("Recovery apply", "model", "openai", false, None)
+            .await
+            .unwrap();
     let header = StreamRecoveryHeader {
         version: STREAM_RECOVERY_VERSION,
         process_instance_id: process_instance_id().into(),
@@ -120,7 +115,14 @@ async fn stream_recovery_apply_is_idempotent_and_closes_pending_tools() {
     recover_session(&session.id, StreamRecoveryMode::StaleOnly)
         .await
         .unwrap();
-    assert_eq!(super::session_store::get(&session.id).await.unwrap().messages.len(), count);
+    assert_eq!(
+        super::session_store::get(&session.id)
+            .await
+            .unwrap()
+            .messages
+            .len(),
+        count
+    );
     super::session_store::delete_one(&session.id).await.unwrap();
 }
 
@@ -192,8 +194,17 @@ async fn stream_recovery_apply_ignores_a_live_non_owner_log() {
     recover_session(&session.id, StreamRecoveryMode::StaleOnly)
         .await
         .unwrap();
-    assert_eq!(super::session_store::get(&session.id).await.unwrap().messages.len(), 1);
-    super::stream_recovery_store::remove(log.path()).await.unwrap();
+    assert_eq!(
+        super::session_store::get(&session.id)
+            .await
+            .unwrap()
+            .messages
+            .len(),
+        1
+    );
+    super::stream_recovery_store::remove(log.path())
+        .await
+        .unwrap();
     drop(lease);
     super::session_store::delete_one(&session.id).await.unwrap();
 }
@@ -210,14 +221,18 @@ async fn stream_recovery_apply_discards_run_a_after_durable_turn_b() {
         phase: None,
     })
     .unwrap();
-    session.messages.push(terminal_assistant(&header.turn_id, "A complete"));
+    session
+        .messages
+        .push(terminal_assistant(&header.turn_id, "A complete"));
     let turn_b = uuid::Uuid::new_v4().to_string();
     let mut user_b = user_message(&header);
     user_b.id = uuid::Uuid::new_v4().to_string();
     user_b.turn_id = turn_b.clone();
     user_b.content = "B".into();
     session.messages.push(user_b);
-    session.messages.push(terminal_assistant(&turn_b, "B complete"));
+    session
+        .messages
+        .push(terminal_assistant(&turn_b, "B complete"));
     super::session_store::save(&session).await.unwrap();
     drop(log);
     drop(lease);
@@ -226,11 +241,16 @@ async fn stream_recovery_apply_discards_run_a_after_durable_turn_b() {
         .await
         .unwrap();
     let recovered = super::session_store::get(&session.id).await.unwrap();
-    assert!(!recovered.messages.iter().any(|message| message.content == "late A"));
-    assert!(super::stream_recovery_store_discovery::session_paths(&session.id)
-        .await
-        .unwrap()
-        .is_empty());
+    assert!(!recovered
+        .messages
+        .iter()
+        .any(|message| message.content == "late A"));
+    assert!(
+        super::stream_recovery_store_discovery::session_paths(&session.id)
+            .await
+            .unwrap()
+            .is_empty()
+    );
     super::session_store::delete_one(&session.id).await.unwrap();
 }
 
@@ -245,7 +265,10 @@ async fn stream_recovery_apply_quarantines_corruption_without_blocking_the_sessi
     })
     .unwrap();
     std::io::Write::write_all(
-        &mut std::fs::OpenOptions::new().append(true).open(log.path()).unwrap(),
+        &mut std::fs::OpenOptions::new()
+            .append(true)
+            .open(log.path())
+            .unwrap(),
         b"{broken}\n",
     )
     .unwrap();
@@ -255,7 +278,14 @@ async fn stream_recovery_apply_quarantines_corruption_without_blocking_the_sessi
     recover_session(&session.id, StreamRecoveryMode::StaleOnly)
         .await
         .unwrap();
-    assert_eq!(super::session_store::get(&session.id).await.unwrap().messages.len(), 1);
+    assert_eq!(
+        super::session_store::get(&session.id)
+            .await
+            .unwrap()
+            .messages
+            .len(),
+        1
+    );
     let quarantine = super::stream_recovery_store::root()
         .join("quarantine")
         .join(&session.id);
@@ -274,7 +304,10 @@ async fn claimed_journal_corruption_is_quarantined() {
         .await
         .unwrap();
     std::io::Write::write_all(
-        &mut std::fs::OpenOptions::new().append(true).open(&claimed).unwrap(),
+        &mut std::fs::OpenOptions::new()
+            .append(true)
+            .open(&claimed)
+            .unwrap(),
         b"{broken}\n",
     )
     .unwrap();
@@ -318,7 +351,10 @@ async fn stream_recovery_apply_rejects_a_replaced_subagent_owner() {
         .await
         .unwrap();
     let recovered = super::session_store::get(&session.id).await.unwrap();
-    assert!(!recovered.messages.iter().any(|message| message.content == "stale child"));
+    assert!(!recovered
+        .messages
+        .iter()
+        .any(|message| message.content == "stale child"));
     super::session_store::delete_one(&session.id).await.unwrap();
 }
 
@@ -333,7 +369,10 @@ async fn stream_recovery_apply_keeps_the_journal_when_session_capacity_is_full()
         append_tool_step(&mut session.messages, &header.turn_id, &call_id, index);
         append_tool_result(&mut session.messages, &header.turn_id, &call_id, index);
     }
-    assert_eq!(session.messages.len(), super::session_limits::MAX_MESSAGES_PER_SESSION);
+    assert_eq!(
+        session.messages.len(),
+        super::session_limits::MAX_MESSAGES_PER_SESSION
+    );
     super::session_store::save(&session).await.unwrap();
     let (log, lease) = StreamRecoveryLog::create(header, CancellationToken::new())
         .await
@@ -395,7 +434,10 @@ async fn stream_recovery_apply_attaches_a_result_to_its_durable_tool_call() {
             .count(),
         1
     );
-    assert!(recovered.messages.iter().any(|message| message.content == "durable result"));
+    assert!(recovered
+        .messages
+        .iter()
+        .any(|message| message.content == "durable result"));
     super::session_store::delete_one(&session.id).await.unwrap();
 }
 
@@ -420,7 +462,12 @@ fn tool_call(call_id: &str, index: usize) -> super::types_message::ToolCallReque
     }
 }
 
-fn append_tool_result(messages: &mut Vec<AgentMessage>, turn_id: &str, call_id: &str, index: usize) {
+fn append_tool_result(
+    messages: &mut Vec<AgentMessage>,
+    turn_id: &str,
+    call_id: &str,
+    index: usize,
+) {
     let mut result = terminal_assistant(turn_id, "ok");
     result.role = "tool".into();
     result.tool_name = Some(format!("tool-{index}"));

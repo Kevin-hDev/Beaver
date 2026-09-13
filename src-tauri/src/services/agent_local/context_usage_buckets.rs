@@ -75,7 +75,6 @@ impl RequestContextUsage {
             reasoning_included,
         }
     }
-
 }
 
 fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning: bool) {
@@ -108,9 +107,9 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
     for index in 0..target.len() {
         target[index] = target[index].saturating_add(allocated[index]);
     }
-    target[MESSAGES] = target[MESSAGES].saturating_add(
-        token_counting::estimate_image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0)),
-    );
+    target[MESSAGES] = target[MESSAGES].saturating_add(token_counting::estimate_image_tokens(
+        message.images.as_ref().map(Vec::len).unwrap_or(0),
+    ));
 }
 
 fn allocate_text_tokens(units: [usize; 4]) -> [usize; 4] {

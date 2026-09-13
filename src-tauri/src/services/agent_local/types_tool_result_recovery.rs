@@ -23,10 +23,7 @@ impl ToolResult {
             warnings: snapshot.warnings.clone(),
             truncated: snapshot.truncated,
             details: Box::new(ToolResultDetails {
-                display_summary: snapshot
-                    .display_summary
-                    .clone()
-                    .map(String::into_boxed_str),
+                display_summary: snapshot.display_summary.clone().map(String::into_boxed_str),
                 affected_paths: snapshot.affected_paths.clone(),
                 file_changes: snapshot.file_changes.clone(),
                 start_line: snapshot.start_line,

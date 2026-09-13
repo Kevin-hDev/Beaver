@@ -8,7 +8,10 @@ pub(super) fn shell_work() -> Result<ShellWork, String> {
     }
 
     super::app_handle_global::get()
-        .map(|app| app.state::<super::agent_work_supervision::AgentWorkServices>().shells())
+        .map(|app| {
+            app.state::<super::agent_work_supervision::AgentWorkServices>()
+                .shells()
+        })
         .ok_or_else(|| "application-context-unavailable".to_string())
 }
 

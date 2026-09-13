@@ -13,7 +13,10 @@ pub(super) fn run(parent: Identity, root_pid: u32, root_start: u64) -> Result<i3
     loop {
         let parent_alive = inspect_parent(parent).map_err(|_| ());
         let root = inspect_root(root_pid, root_start).map_err(|_| ());
-        match watchdog_action(parent_alive, root.as_ref().map(Option::is_some).map_err(|_| ())) {
+        match watchdog_action(
+            parent_alive,
+            root.as_ref().map(Option::is_some).map_err(|_| ()),
+        ) {
             WatchdogAction::Exit => return Ok(0),
             WatchdogAction::Kill => {
                 if let Ok(Some(current_root)) = root {

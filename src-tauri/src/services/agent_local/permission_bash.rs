@@ -40,7 +40,9 @@ pub fn is_safe(command: &str) -> bool {
     {
         return false;
     }
-    SAFE_PATTERNS.iter().any(|pattern| pattern.is_match(trimmed))
+    SAFE_PATTERNS
+        .iter()
+        .any(|pattern| pattern.is_match(trimmed))
 }
 
 fn has_control_operator(command: &str) -> bool {

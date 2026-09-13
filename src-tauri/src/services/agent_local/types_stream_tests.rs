@@ -97,9 +97,16 @@ fn tool_call_serializes_stable_identity_for_the_frontend() {
     assert!(serialized["data"].get("extraContent").is_none());
 }
 
-fn test_persistence() -> crate::services::agent_local::stream_recovery_record::RecoverableToolResult {
-    crate::services::agent_local::types_tools::ToolResult::ok("ok")
-        .persistence_snapshot("tool", 0, None, None, None, Vec::new())
+fn test_persistence() -> crate::services::agent_local::stream_recovery_record::RecoverableToolResult
+{
+    crate::services::agent_local::types_tools::ToolResult::ok("ok").persistence_snapshot(
+        "tool",
+        0,
+        None,
+        None,
+        None,
+        Vec::new(),
+    )
 }
 
 #[test]

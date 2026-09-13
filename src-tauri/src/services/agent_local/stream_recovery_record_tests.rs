@@ -43,5 +43,8 @@ fn header_validates_every_identifier_and_version() {
     assert!(validate_header(&valid).is_ok());
     let mut invalid = valid;
     invalid.request_id = "../bad".into();
-    assert_eq!(validate_header(&invalid), Err("stream_recovery_invalid".into()));
+    assert_eq!(
+        validate_header(&invalid),
+        Err("stream_recovery_invalid".into())
+    );
 }

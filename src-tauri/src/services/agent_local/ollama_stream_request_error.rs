@@ -23,10 +23,7 @@ pub(super) fn connection(
     Err(msg)
 }
 
-pub(super) async fn wait_retry(
-    cancel: &CancellationToken,
-    attempt: u32,
-) -> Result<(), String> {
+pub(super) async fn wait_retry(cancel: &CancellationToken, attempt: u32) -> Result<(), String> {
     tokio::select! {
         _ = cancel.cancelled() => Err("Annulé".to_string()),
         _ = tokio::time::sleep(server_retry_delay(attempt)) => Ok(()),

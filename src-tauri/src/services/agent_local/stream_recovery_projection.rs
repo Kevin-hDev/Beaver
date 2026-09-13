@@ -137,10 +137,11 @@ impl EventProjection {
                     || self.results.len()
                         >= crate::services::reasoning_continuity::limits::MAX_TOOL_CALLS
                     || self.results.iter().any(|existing| {
-                    existing.tool_call_index == result.tool_call_index
-                        || (existing.tool_call_id.is_some()
-                            && existing.tool_call_id == result.tool_call_id)
-                }) {
+                        existing.tool_call_index == result.tool_call_index
+                            || (existing.tool_call_id.is_some()
+                                && existing.tool_call_id == result.tool_call_id)
+                    })
+                {
                     return Err(error());
                 }
                 let matches = self.calls.get(result.tool_call_index).is_some_and(|call| {

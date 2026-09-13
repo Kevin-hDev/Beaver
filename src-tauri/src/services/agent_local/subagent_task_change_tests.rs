@@ -170,8 +170,12 @@ impl CoderFixture {
             .await;
         }
         let _ = crate::services::agent_local::subagent_change_store::remove(&self.child.id).await;
-        session_store::delete_one(&self.child.id).await.expect("delete child");
-        session_store::delete_one(&self.parent.id).await.expect("delete parent");
+        session_store::delete_one(&self.child.id)
+            .await
+            .expect("delete child");
+        session_store::delete_one(&self.parent.id)
+            .await
+            .expect("delete parent");
     }
 }
 

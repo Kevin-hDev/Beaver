@@ -20,8 +20,7 @@ async fn recover() {
         .await
         .expect("recovered session");
     assert!(recovered.messages.iter().any(|message| {
-        message.content == "visible work"
-            && message.thinking.as_deref() == Some("visible thinking")
+        message.content == "visible work" && message.thinking.as_deref() == Some("visible thinking")
     }));
     assert!(recovered.messages.iter().any(|message| {
         message.role == "tool" && message.content.contains("completed read proof")

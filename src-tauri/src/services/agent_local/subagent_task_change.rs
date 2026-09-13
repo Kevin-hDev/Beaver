@@ -26,13 +26,8 @@ pub async fn capture(
             return Err("injected capture failure".to_string());
         }
     }
-    let Some(meta) = super::subagent_git_run::capture(
-        project_path,
-        child_id,
-        execution_id,
-        worktree,
-    )
-    .await?
+    let Some(meta) =
+        super::subagent_git_run::capture(project_path, child_id, execution_id, worktree).await?
     else {
         return Ok(None);
     };
@@ -60,7 +55,8 @@ pub async fn delete_empty_workspace(project_path: &Path, child_id: &str, executi
         };
         let _ = super::subagent_git_command::delete_branch(project_path, &branch).await;
     } else {
-        let _ = super::subagent_directory_workspace::remove_repository(child_id, execution_id).await;
+        let _ =
+            super::subagent_directory_workspace::remove_repository(child_id, execution_id).await;
     }
 }
 

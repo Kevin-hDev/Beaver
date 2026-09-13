@@ -12,7 +12,10 @@ async fn transient_spawn_failure_is_retried_and_success_is_reused() {
         Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
     })
     .await;
-    assert_eq!(failed, Err("Contrôle de commande indisponible.".to_string()));
+    assert_eq!(
+        failed,
+        Err("Contrôle de commande indisponible.".to_string())
+    );
 
     let success_attempts = attempts.clone();
     initialize_for_test(&ready, move |task| {
@@ -22,9 +25,11 @@ async fn transient_spawn_failure_is_retried_and_success_is_reused() {
     .await
     .expect("retry succeeds");
 
-    initialize_for_test(&ready, |_| panic!("successful initialization must be reused"))
-        .await
-        .expect("reuse succeeds");
+    initialize_for_test(&ready, |_| {
+        panic!("successful initialization must be reused")
+    })
+    .await
+    .expect("reuse succeeds");
     assert_eq!(attempts.load(Ordering::SeqCst), 2);
 }
 

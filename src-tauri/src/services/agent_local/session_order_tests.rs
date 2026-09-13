@@ -77,8 +77,8 @@ fn une_conversation_jamais_placee_passe_devant_la_liste_rangee() {
 }
 
 /* Deux listes numérotent leurs rangs à partir de zéro chacune. Le tri est
-   global, mais l'affichage filtre par projet : ce qui compte est que l'ordre
-   relatif tienne à l'intérieur de chaque liste une fois filtrée. */
+global, mais l'affichage filtre par projet : ce qui compte est que l'ordre
+relatif tienne à l'intérieur de chaque liste une fois filtrée. */
 #[test]
 fn deux_listes_gardent_leur_ordre_apres_filtrage() {
     let mut metas = vec![
@@ -118,7 +118,7 @@ fn un_identifiant_invalide_est_refuse() {
 }
 
 /* Le dossier de données des tests est unique pour tout le processus : deux
-   tests qui écrivent session-order.json en même temps se marcheraient dessus. */
+tests qui écrivent session-order.json en même temps se marcheraient dessus. */
 async fn guard() -> tokio::sync::MutexGuard<'static, ()> {
     test_lock().lock().await
 }
@@ -157,7 +157,7 @@ async fn oublier_un_rang_absent_ne_fait_rien() {
 }
 
 /* Le nettoyage des listes de projets supprimés ne connaît que les projets
-   vivants : sans exception explicite, il effacerait la liste des épinglées. */
+vivants : sans exception explicite, il effacerait la liste des épinglées. */
 #[tokio::test]
 async fn le_nettoyage_epargne_la_liste_epinglee() {
     let _g = guard().await;

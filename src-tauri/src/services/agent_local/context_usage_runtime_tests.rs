@@ -60,15 +60,10 @@ fn absent_provider_input_keeps_it_absent_but_can_keep_native_output() {
 
 #[tokio::test]
 async fn provider_measurement_and_output_follow_the_active_request_identity() {
-    let session = super::super::session_store::create_full(
-        "Context runtime",
-        "gpt-5",
-        "openai",
-        false,
-        None,
-    )
-    .await
-    .unwrap();
+    let session =
+        super::super::session_store::create_full("Context runtime", "gpt-5", "openai", false, None)
+            .await
+            .unwrap();
     let make_journal = || {
         super::super::conversation_journal::ConversationJournal::new(
             session.id.clone(),
@@ -106,14 +101,14 @@ async fn provider_measurement_and_output_follow_the_active_request_identity() {
         measured_input_source: ContextCountSource::Provider,
     }
     .persist_result(&StreamResult {
-            prompt_tokens: Some(100),
-            usage: Some(crate::services::provider_usage::RequestUsage {
-                input_tokens: Some(100),
-                output_tokens: Some(50),
-                ..Default::default()
-            }),
+        prompt_tokens: Some(100),
+        usage: Some(crate::services::provider_usage::RequestUsage {
+            input_tokens: Some(100),
+            output_tokens: Some(50),
             ..Default::default()
-        })
+        }),
+        ..Default::default()
+    })
     .await
     .unwrap();
 
@@ -143,12 +138,12 @@ async fn provider_measurement_and_output_follow_the_active_request_identity() {
         measured_input_source: ContextCountSource::Provider,
     }
     .persist_result(&StreamResult {
-            usage: Some(crate::services::provider_usage::RequestUsage {
-                output_tokens: Some(20),
-                ..Default::default()
-            }),
+        usage: Some(crate::services::provider_usage::RequestUsage {
+            output_tokens: Some(20),
             ..Default::default()
-        })
+        }),
+        ..Default::default()
+    })
     .await
     .unwrap();
 
@@ -159,7 +154,10 @@ async fn provider_measurement_and_output_follow_the_active_request_identity() {
     let measurement = saved.context_usage.last_measurement.unwrap();
     assert_eq!(measurement.input.tokens, Some(100));
     assert_eq!(measurement.context_limit, Some(200_000));
-    assert_eq!(saved.context_usage.last_output.unwrap().output.tokens, Some(20));
+    assert_eq!(
+        saved.context_usage.last_output.unwrap().output.tokens,
+        Some(20)
+    );
     super::super::session_store::delete_one(&session.id)
         .await
         .unwrap();

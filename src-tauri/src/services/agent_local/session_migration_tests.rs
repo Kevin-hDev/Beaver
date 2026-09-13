@@ -71,12 +71,15 @@ async fn v5_context_fixture_migrates_to_v6_with_an_exact_backup() {
     let current = std::fs::read(&path).unwrap();
     let current_value: serde_json::Value = serde_json::from_slice(&current).unwrap();
     assert!(current_value.get("context_tokens").is_none());
-    assert_eq!(current_value["context_usage"], json!({
-        "activeRequestId": null,
-        "currentPreparation": null,
-        "lastMeasurement": null,
-        "lastOutput": null
-    }));
+    assert_eq!(
+        current_value["context_usage"],
+        json!({
+            "activeRequestId": null,
+            "currentPreparation": null,
+            "lastMeasurement": null,
+            "lastOutput": null
+        })
+    );
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
@@ -117,7 +120,10 @@ fn current_v6_context_record_is_not_remigrated() {
 
     let loaded = super::session_migration::read(&bytes, PathBuf::from("current-v6.json")).unwrap();
 
-    assert_eq!(loaded.version(), super::session_migration::LoadedVersion::V6);
+    assert_eq!(
+        loaded.version(),
+        super::session_migration::LoadedVersion::V6
+    );
     assert_eq!(loaded.session().context_usage, session.context_usage);
 }
 

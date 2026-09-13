@@ -138,6 +138,8 @@ mod tests {
 
         assert!(mark_interrupted(&mut session, None));
         assert!(!mark_interrupted(&mut session, None));
-        super::super::session_store::delete_one(&session.id).await.unwrap();
+        super::super::session_store::delete_one(&session.id)
+            .await
+            .unwrap();
     }
 }

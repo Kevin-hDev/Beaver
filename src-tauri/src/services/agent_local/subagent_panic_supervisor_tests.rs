@@ -168,6 +168,10 @@ async fn panic_capture_failure_keeps_worktree_but_releases_registry() {
     if let Ok(branch) = super::subagent_worktree::branch_for_execution(&registered.execution_id) {
         let _ = super::subagent_git_command::delete_branch(repo.path(), &branch).await;
     }
-    session_store::delete_one(&child.id).await.expect("delete coder");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete coder");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }

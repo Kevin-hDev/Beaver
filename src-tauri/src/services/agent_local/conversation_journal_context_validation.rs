@@ -9,8 +9,7 @@ pub(super) fn is_older_than_current(
 ) -> bool {
     record.current_preparation.as_ref().is_some_and(|current| {
         current.identity.request_id == identity.request_id
-            && (identity.turn, identity.attempt)
-                < (current.identity.turn, current.identity.attempt)
+            && (identity.turn, identity.attempt) < (current.identity.turn, current.identity.attempt)
     })
 }
 
