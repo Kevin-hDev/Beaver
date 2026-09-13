@@ -182,7 +182,10 @@ function CommitFiles({ commit, files, error, onBack, onOpen }: {
           <button key={`${file.status}:${file.path}`} className="ssbc-file" type="button" onClick={() => onOpen(file)}>
             <FileIcon name={file.path} size="var(--icon-md)" />
             <span>{file.path}</span>
-            <span className="ssbc-stats"><b>+{file.additions}</b><i>-{file.deletions}</i></span>
+            <span className="ssbc-stats">
+              {file.additions > 0 && <b>+{file.additions}</b>}
+              {file.deletions > 0 && <i>-{file.deletions}</i>}
+            </span>
           </button>
         ))}
       </div>

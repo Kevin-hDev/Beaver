@@ -12,8 +12,9 @@ export function GitDirtyFileList({ files, fallback }: GitDirtyFileListProps) {
         <div key={file.path} className="bcd-file">
           <span>{file.path}</span>
           <span className="bcd-file-stat">
-            <span className="bcd-file-stat-add">+{file.additions}</span>{" "}
-            <span className="bcd-file-stat-del">-{file.deletions}</span>
+            {file.additions > 0 && <span className="bcd-file-stat-add">+{file.additions}</span>}
+            {file.additions > 0 && file.deletions > 0 && " "}
+            {file.deletions > 0 && <span className="bcd-file-stat-del">-{file.deletions}</span>}
           </span>
         </div>
       ))}

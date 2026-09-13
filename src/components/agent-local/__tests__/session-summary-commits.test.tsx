@@ -58,6 +58,25 @@ describe("SessionSummaryCommits", () => {
     expect(onOpenFile).toHaveBeenCalledWith(commit, file);
   });
 
+  it("n'écrit jamais +0 ni -0 à côté d'un fichier", async () => {
+    const git = gitState({
+      listCommits: vi.fn().mockResolvedValue({ commits: [commit("a", "Premier commit")] }),
+      listCommitFiles: vi.fn().mockResolvedValue([
+        { ...file("src/added.ts"), additions: 3, deletions: 0 },
+        { ...file("src/removed.ts"), additions: 0, deletions: 2 },
+      ]),
+    });
+    const view = render(<SessionSummaryCommits git={git} />);
+
+    fireEvent.click(view.getByRole("button", { name: "Afficher les commits" }));
+    await waitFor(() => expect(view.getByText("Premier commit")).toBeTruthy());
+    fireEvent.click(view.getByRole("button", { name: /Premier commit/ }));
+    await waitFor(() => expect(view.getByText("src/added.ts")).toBeTruthy());
+
+    const stats = [...view.container.querySelectorAll(".ssbc-stats")].map((stat) => stat.textContent);
+    expect(stats).toEqual(["+3", "-2"]);
+  });
+
   it("ignore les fichiers d'un ancien commit après une nouvelle sélection", async () => {
     const first = commit("a", "Premier commit");
     const second = commit("b", "Deuxième commit");
