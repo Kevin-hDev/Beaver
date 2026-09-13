@@ -1,0 +1,7 @@
+Correction B2 — fin de vie explicite
+
+Décision : l'installateur utilise App::run_return et traite CloseRequested/ExitRequested. Une opération active bloque la fermeture ; une sortie inactive nettoie explicitement le run. Windows programme la suppression différée avant la fin du processus. Drop reste seulement un filet d'unwinding.
+
+TDD :
+- Rouge : operation_active et cleanup explicite n'existaient pas.
+- Vert : 38 tests Rust passés, 2 ignorés attendus ; fmt et clippy strict verts.
