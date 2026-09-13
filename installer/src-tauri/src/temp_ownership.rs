@@ -72,10 +72,11 @@ pub fn purge_orphans(temp_root: &Path, current_run_id: &str) {
         if constant_time_eq(run_id, current_run_id) {
             continue;
         }
-        if validate_run(temp_root, &path, run_id).is_ok()
-            && validate_tree(&path).is_ok()
-            && fs::remove_dir_all(path).is_err()
-        {
+        if validate_run(temp_root, &path, run_id).is_err() || validate_tree(&path).is_err() {
+            eprintln!("installer-orphan-validation-failed");
+            continue;
+        }
+        if fs::remove_dir_all(path).is_err() {
             eprintln!("installer-orphan-cleanup-failed");
         }
     }
