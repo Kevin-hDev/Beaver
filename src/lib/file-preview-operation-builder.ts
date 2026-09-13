@@ -9,9 +9,10 @@ export function fileNameFromPath(path: string): string {
   return path.split(FILE_SEPARATOR).filter(Boolean).pop() ?? path;
 }
 
+/** Compte comme Git : le retour final ne crée pas une ligne supplémentaire. */
 export function countLines(text?: string): number {
   if (!text) return 0;
-  return text.split(/\r?\n/).length;
+  return text.replace(/\r?\n$/, "").split(/\r?\n/).length;
 }
 
 export function toolToFileOperations(

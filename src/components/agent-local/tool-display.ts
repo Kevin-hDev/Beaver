@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { countLines } from "@/lib/file-preview-utils";
 import type { RenderableTool } from "./tool-detail-row";
 import { isShellStopAction } from "./tool-shell-display";
 
@@ -182,11 +183,6 @@ function changeStats(tool: RenderableTool): Pick<ToolDisplayInfo, "additions" | 
     return { additions: countLines(tool.new_text), deletions: countLines(tool.old_text) };
   }
   return {};
-}
-
-function countLines(text: string): number {
-  if (text.length === 0) return 0;
-  return text.replace(/\n$/, "").split("\n").length;
 }
 
 function compactCommand(command: string): string {

@@ -69,6 +69,19 @@ describe("countLines", () => {
     expect(countLines(undefined)).toBe(0);
     expect(countLines("")).toBe(0);
   });
+
+  it("ne compte pas le retour à la ligne final, comme Git", () => {
+    expect(countLines("a\nb\n")).toBe(2);
+  });
+
+  it("ne compte pas le retour à la ligne final Windows (\\r\\n)", () => {
+    expect(countLines("a\r\nb\r\n")).toBe(2);
+  });
+
+  it("compte une ligne vide terminée comme une ligne", () => {
+    expect(countLines("\n")).toBe(1);
+    expect(countLines("a\n\n")).toBe(2);
+  });
 });
 
 describe("fileNameFromPath — cas limites supplémentaires", () => {
