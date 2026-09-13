@@ -28,7 +28,7 @@ export function InstallerApp({ api = installerApi }: { api?: InstallerApi }) {
     sequence.current = -1;
     void api.snapshot().then((value) => {
       if (current) setSnapshot(value);
-    });
+    }).catch(() => {});
     return () => {
       current = false;
     };
@@ -36,8 +36,24 @@ export function InstallerApp({ api = installerApi }: { api?: InstallerApi }) {
 
   useEffect(() => {
     if (!snapshot?.beaverRunning) return;
-    const timer = window.setInterval(() => void api.snapshot().then(setSnapshot), 1000);
-    return () => window.clearInterval(timer);
+    let current = true;
+    let timer = 0;
+    const poll = () => {
+      void api.snapshot()
+        .then((value) => {
+          if (!current) return;
+          setSnapshot(value);
+          timer = window.setTimeout(poll, 1000);
+        })
+        .catch(() => {
+          if (current) timer = window.setTimeout(poll, 1000);
+        });
+    };
+    timer = window.setTimeout(poll, 1000);
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
   }, [api, snapshot?.beaverRunning]);
 
   const receive = useCallback((event: InstallerEvent) => {
