@@ -33,7 +33,7 @@ download_bounded() {
     [ "$(file_size "$headers")" -le 65536 ] || return 1
     if [ "$code" = "200" ]; then
       [ "$(file_size "$part")" -ge 1 ] && [ "$(file_size "$part")" -le "$limit" ] || return 1
-      /bin/mv -f "$part" "$destination" 2>/dev/null
+      /bin/mv -f "$part" "$destination" 2>/dev/null || return 1
       return 0
     fi
     case "$code" in 301|302|303|307|308) ;; *) return 1 ;; esac
@@ -46,6 +46,7 @@ download_bounded() {
 }
 release_version() {
   local file="$1" version=""
+  # create-update-manifest.mjs produit volontairement ce JSON canonique, lu sans parseur externe.
   version=$(/usr/bin/sed -n \
     's/^[[:space:]]*"tag_name":[[:space:]]*"v\([^"]*\)",[[:space:]]*$/\1/p' "$file")
   valid_version "$version" || return 1

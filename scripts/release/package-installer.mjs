@@ -19,15 +19,20 @@ import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 
-import { expectedAssetName, normalizeVersion, resolveInputPath } from "./brand-artifact-common.mjs";
+import {
+  ASSET_SUFFIXES,
+  expectedAssetName,
+  normalizeVersion,
+  resolveInputPath,
+} from "./brand-artifact-common.mjs";
 
 const execFile = promisify(execFileCallback);
 const MAX_ENTRIES = 4_096;
 const MAX_PATH_LENGTH = 1_024;
 const FIXED_TIME = new Date("2000-01-01T00:00:00Z");
 const CONFIG = Object.freeze({
-  macOS: { kind: "macos_installer", suffix: "_installer-aarch64.tar.gz" },
-  Windows: { kind: "windows_installer", suffix: "_installer-x64.exe" },
+  macOS: { kind: "macos_installer" },
+  Windows: { kind: "windows_installer" },
 });
 
 function invalid(cause) {
@@ -153,7 +158,7 @@ async function packageMac(source, destination, temporary) {
 
 export async function packageInstaller({ tag, os, source, suffix, outputDirectory = "." } = {}) {
   const config = CONFIG[os];
-  if (!config || suffix !== config.suffix) throw invalid();
+  if (!config || suffix !== ASSET_SUFFIXES[config.kind]) throw invalid();
   const version = normalizeVersion(tag);
   const sourcePath = resolveInputPath(source);
   const output = resolveInputPath(outputDirectory);
