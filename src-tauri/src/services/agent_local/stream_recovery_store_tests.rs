@@ -90,8 +90,13 @@ async fn fifth_log_for_one_session_is_refused() {
 async fn oversized_log_is_refused_before_record_parsing() {
     let value = header();
     let (path, file) = create(&value).await.unwrap();
-    file.set_len(MAX_LOG_BYTES + 1).unwrap();
     drop(file);
+    std::fs::File::options()
+        .write(true)
+        .open(&path)
+        .unwrap()
+        .set_len(MAX_LOG_BYTES + 1)
+        .unwrap();
 
     assert!(visit_records(&path, |_| Ok(())).is_err());
     remove(path).await.unwrap();
