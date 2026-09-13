@@ -1,1 +1,13 @@
-Documents the v1.2.3 graphical installer and unified update progress redesign for macOS and Windows.\n\nValidation:\n- npm test (pass)\n- npm run test:installer (pass: 8 frontend, 47 Rust with 2 ignored, 5 boundary/security)\n- npm run lint (pass)\n- npx tsc --noEmit (pass)\n- cd src-tauri && cargo test (pass: 5626 lib + 51 CLI + auxiliary suites; expected ignored tests only)\n- git diff --check (pass)\n\nGraphify semantic documentation update attempted with graphify . --update, but unavailable because no supported LLM API key is configured.\n\nReason: keep the release changelog as the user-facing authority for the installer and updater work shipped by this branch.
+Documents the v1.2.3 graphical installer and unified update progress redesign for macOS and Windows.
+
+Validation:
+- npm test (pass)
+- npm run test:installer (pass: 8 frontend, 47 Rust with 2 ignored, 5 boundary/security)
+- npm run lint (pass)
+- npx tsc --noEmit (pass)
+- cd src-tauri && cargo test (pass: 5626 lib + 51 CLI + auxiliary suites; expected ignored tests only)
+- git diff --check (pass)
+
+Graphify semantic documentation update attempted with graphify . --update, but unavailable because no supported LLM API key is configured.
+
+Reason: keep the release changelog as the user-facing authority for the installer and updater work shipped by this branch.
