@@ -39,6 +39,7 @@
 - **CodeQL cleanup** — redundant assignments, fragile parsing, ambiguous promise identity checks, and analyzer-only test patterns were replaced with direct, typed behavior without changing user-facing flows.
 - **Verified static-analysis results** — genuine findings were corrected, while reported cleartext-logging cases that only modified bounded in-memory buffers were individually reviewed and documented as false positives.
 - **Reliable Windows error classification** — native file errors preserve the correct not-found, already-exists, sharing, permission, and invalid-input categories across the Ollama lifecycle.
+- **Honest multimodal context accounting** — inline image transport data no longer masquerades as text tokens, preventing false automatic compression while keeping image estimates aligned between capacity decisions and the context panel.
 - **Stable message layout tests** — `jsdom` 30 typography fixtures now declare their expected font metrics instead of depending on the simulator's browser defaults.
 - **Consistent compatibility checks** — brand, persistence, installer, release, and generated-document contracts recognize only their exact approved legacy references and continue to reject unclassified historical names.
 

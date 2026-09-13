@@ -102,6 +102,25 @@ fn bounded_media_has_capacity_but_remote_and_opaque_blocks_do_not() {
 }
 
 #[test]
+fn inline_image_transport_size_does_not_change_context_capacity() {
+    let image = |encoded_len: usize| {
+        json!({
+            "type": "input_image",
+            "image_url": format!("data:image/png;base64,{}", "A".repeat(encoded_len))
+        })
+    };
+    let small = json!({"input": [{"role": "user", "content": [image(16)]}]});
+    let large = json!({"input": [{"role": "user", "content": [image(297_758)]}]});
+
+    let small_count = responses(&small);
+    let large_count = responses(&large);
+
+    assert_eq!(small_count, large_count);
+    assert_eq!(large_count.tokens, large_count.capacity_tokens);
+    assert_eq!(large_count.coverage, ContextCountCoverage::Partial);
+}
+
+#[test]
 fn tool_schema_and_arguments_may_use_opaque_field_names_as_plain_data() {
     let chat = json!({
         "messages": [{"role": "user", "content": "sign it"}],

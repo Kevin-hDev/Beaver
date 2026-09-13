@@ -60,7 +60,7 @@ fn estimate_chat_message_tokens_with_reasoning(
     include_reasoning: bool,
 ) -> usize {
     estimate_textual_chat_message_tokens_with_reasoning(message, include_reasoning)
-        + image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0))
+        + estimate_image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0))
 }
 
 fn estimate_textual_chat_message_tokens_with_reasoning(
@@ -142,7 +142,7 @@ pub fn max_text_units(tokens: usize) -> usize {
     tokens.saturating_mul(UNITS_PER_TOKEN)
 }
 
-fn image_tokens(count: usize) -> usize {
+pub fn estimate_image_tokens(count: usize) -> usize {
     count * crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE
 }
 

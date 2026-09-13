@@ -103,7 +103,9 @@ pub(crate) fn typescript_bindings() -> String {
          import type {{ PersistedToolResultMeta }} from \"./agent-tool-result\";\n\
          import type {{ AgentTodoItem, AgentTodoRun }} from \"./agent-todo\";\n\
          import type {{ GitDiffPreview }} from \"./file-preview\";\n\n\
+         export const IMAGE_TOKEN_ESTIMATE = {};\n\n\
          export {}\n",
+        crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE,
         declarations.join("\n\nexport ")
     )
 }

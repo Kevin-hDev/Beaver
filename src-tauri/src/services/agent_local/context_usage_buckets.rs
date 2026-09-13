@@ -108,6 +108,9 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
     for index in 0..target.len() {
         target[index] = target[index].saturating_add(allocated[index]);
     }
+    target[MESSAGES] = target[MESSAGES].saturating_add(
+        token_counting::estimate_image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0)),
+    );
 }
 
 fn allocate_text_tokens(units: [usize; 4]) -> [usize; 4] {
@@ -159,7 +162,9 @@ fn message_tokens(message: &ChatMessage, include_reasoning: bool) -> usize {
                 &call.function.arguments.to_string(),
             ));
     }
-    token_counting::token_count_from_units(units)
+    token_counting::token_count_from_units(units).saturating_add(
+        token_counting::estimate_image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0)),
+    )
 }
 
 fn split_system_tokens(total: usize, seed: ContextUsageSeed) -> (usize, usize, usize, usize) {

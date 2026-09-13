@@ -7,6 +7,8 @@ import type { PersistedToolResultMeta } from "./agent-tool-result";
 import type { AgentTodoItem, AgentTodoRun } from "./agent-todo";
 import type { GitDiffPreview } from "./file-preview";
 
+export const IMAGE_TOKEN_ESTIMATE = 1100;
+
 export type PreserveReasoningSetting = "off" | "local" | "remote";
 
 export type AgentMessageKind = "compression_checkpoint" | "compression_boundary" | "automation";

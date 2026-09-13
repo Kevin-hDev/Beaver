@@ -134,9 +134,7 @@ impl SemanticCount {
         self.units = self.units.saturating_add(image_units);
         match value {
             Some(value) if value.starts_with("data:") || !value.contains("://") => {
-                self.capacity_units = self.capacity_units.saturating_add(
-                    image_units.max(token_counting::text_units(value)),
-                );
+                self.capacity_units = self.capacity_units.saturating_add(image_units);
             }
             _ => self.unbounded = true,
         }

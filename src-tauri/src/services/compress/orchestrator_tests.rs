@@ -83,6 +83,36 @@ fn automatic_uses_the_profile_threshold_and_known_window() {
 }
 
 #[test]
+fn inline_image_transport_does_not_trigger_automatic_compression() {
+    let image = |encoded_len: usize| {
+        serde_json::json!({
+            "type": "input_image",
+            "image_url": format!("data:image/png;base64,{}", "A".repeat(encoded_len))
+        })
+    };
+    let payload = serde_json::json!({
+        "instructions": "x".repeat(214_000),
+        "input": [{"role": "user", "content": [
+            image(228_282),
+            image(109_966),
+            image(200_934),
+            image(297_758)
+        ]}]
+    });
+    let count = crate::services::agent_local::prepared_context_count::responses(&payload);
+    let used = count.capacity_tokens.expect("bounded inline media") as usize;
+
+    assert_eq!(count.tokens, count.capacity_tokens);
+    assert!((55_000..60_000).contains(&used));
+    assert!(!eligible(
+        &profile(),
+        CompressionTrigger::Automatic,
+        258_400,
+        used,
+    ));
+}
+
+#[test]
 fn under_64k_is_disabled_by_default_for_both_triggers() {
     let profile = profile();
 
