@@ -50,6 +50,26 @@
   overflow: visible;
 }
 
+.fp-text-code {
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-code-filler {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  font-family: var(--font-mono, monospace);
+  font-size: inherit;
+  line-height: 1.7;
+}
+
+.fp-code-filler .tp-num {
+  display: block;
+  min-height: 100%;
+  white-space: pre;
+}
+
 .fp-code-scroll::-webkit-scrollbar {
   width: 7px;
   height: 7px;
