@@ -65,4 +65,38 @@ describe("highlightLines", () => {
       expect(html).not.toContain("</iframe");
     }
   });
+
+  it("reprend la couleur d'un commentaire sur chaque ligne qu'il couvre", () => {
+    expect(highlightLines("/* un\ndeux */\nconst a = 1;\n", "exemple.ts")).toEqual([
+      '<span class="hljs-comment">/* un</span>',
+      '<span class="hljs-comment">deux */</span>',
+      '<span class="hljs-keyword">const</span> a = <span class="hljs-number">1</span>;',
+    ]);
+  });
+
+  it("reprend la couleur d'un texte entre accents graves sur plusieurs lignes", () => {
+    expect(highlightLines("const s = `a\nb`;\n", "exemple.ts")).toEqual([
+      '<span class="hljs-keyword">const</span> s = <span class="hljs-string">`a</span>',
+      '<span class="hljs-string">b`</span>;',
+    ]);
+  });
+
+  it("ferme sur chaque ligne toutes les couleurs qu'elle ouvre", () => {
+    const samples: Array<[string, string]> = [
+      ["/* un\ndeux\ntrois */\n", "exemple.ts"],
+      ["const s = `a\nb\nc`;\n", "exemple.ts"],
+      ["/* bloc\n   commentaire */\nfn main() {}\n", "main.rs"],
+    ];
+    for (const [code, path] of samples) {
+      for (const line of highlightLines(code, path)) {
+        const opened = line.match(/<span\b/g)?.length ?? 0;
+        const closed = line.match(/<\/span>/g)?.length ?? 0;
+        expect(opened, `${path} : ${line}`).toBe(closed);
+      }
+    }
+  });
+
+  it("échappe l'apostrophe comme les autres caractères du HTML", () => {
+    expect(highlightLines("it's", "notes.txt")).toEqual(["it&#39;s"]);
+  });
 });

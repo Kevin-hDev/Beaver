@@ -1,5 +1,4 @@
 import { createLowlight, common } from "lowlight";
-import { toHtml } from "hast-util-to-html";
 import type { RootContent } from "hast";
 import { languageFromPath } from "./code-language";
 
@@ -28,7 +27,8 @@ function escapeHtml(s: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function classNameFrom(value: unknown): string | undefined {
@@ -56,21 +56,38 @@ export function highlightCodeNodes(code: string, language: string): HighlightNod
   return tree.children.flatMap(toHighlightNodes);
 }
 
+/* Les lignes sont injectées séparément : chaque couleur ouverte doit donc
+   être refermée puis reprise sur la ligne suivante. */
 export function highlightLines(code: string, path: string): string[] {
-  const lang = languageFromPath(path);
-  const resolved = LANG_ALIASES[lang] ?? lang;
-  const registered = lowlight.registered(resolved);
-
-  const lines = splitDisplayLines(code);
-  if (!registered) return lines.map(escapeHtml);
-
-  const tree = lowlight.highlight(resolved, code);
-  const html = toHtml(tree);
-  return splitDisplayLines(html);
+  const lines = codeLines(code, languageFromPath(path));
+  if (code.endsWith("\n") && lines.length > 1) lines.pop();
+  return lines;
 }
 
-function splitDisplayLines(value: string): string[] {
-  const lines = value.split("\n");
-  if (value.endsWith("\n") && lines.length > 1) lines.pop();
+function codeLines(code: string, language: string): string[] {
+  return nodesToLines(highlightCodeNodes(code, language));
+}
+
+function nodesToLines(nodes: HighlightNode[]): string[] {
+  const lines = [""];
+  const walk = (node: HighlightNode, open: string[]) => {
+    if (typeof node === "string") {
+      node.split("\n").forEach((piece, index) => {
+        if (index > 0) lines.push("");
+        if (piece) lines[lines.length - 1] += wrapInClasses(escapeHtml(piece), open);
+      });
+      return;
+    }
+    const classes = node.className ? [...open, node.className] : open;
+    node.children.forEach((child) => walk(child, classes));
+  };
+  nodes.forEach((node) => walk(node, []));
   return lines;
+}
+
+function wrapInClasses(html: string, classes: string[]): string {
+  return classes.reduceRight(
+    (inner, className) => `<span class="${escapeHtml(className)}">${inner}</span>`,
+    html,
+  );
 }
