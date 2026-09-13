@@ -24,11 +24,14 @@
 
 /* Les objets nommés ici portent le trait sans avoir à écrire la classe :
    le CSS ne sait pas hériter d'une règle, et une couronne par composant
-   finirait par diverger. Les deux listes sont identiques. */
+   finirait par diverger. Les trois listes sont identiques. */
+:where(.relief, .btn:not(.btn-ghost), .icon-btn-secondary) {
+  position: relative;
+}
+
 .relief,
 .btn:not(.btn-ghost),
 .icon-btn-secondary {
-  position: relative;
   border: 0;
 }
 

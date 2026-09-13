@@ -73,6 +73,13 @@ describe("Primitive de relief", () => {
     expect(reliefCss).toMatch(/\.icon-btn-secondary\s*\{[^}]*border:\s*0;/s);
   });
 
+  it("laisse chaque bouton choisir sa position", () => {
+    expect(reliefCss).toMatch(
+      /:where\(\.relief,\s*\.btn:not\(\.btn-ghost\),\s*\.icon-btn-secondary\)\s*\{\s*position:\s*relative;\s*\}/s,
+    );
+    expect(reliefCss).not.toMatch(/\.icon-btn-secondary\s*\{[^}]*position:/s);
+  });
+
   it("éteint le trait vers le bas", () => {
     expect(reliefCss).toContain("rgba(var(--relief-stroke-rgb), var(--relief-top))");
     expect(reliefCss).toContain("rgba(var(--relief-stroke-rgb), var(--relief-bottom))");
