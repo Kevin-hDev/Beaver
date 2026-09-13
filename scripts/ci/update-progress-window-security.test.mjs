@@ -42,3 +42,10 @@ test("update progress entry points keep a closed local content surface", () => {
   assert.match(source, /connect-src ipc: http:\/\/ipc\.localhost/);
   assert.match(source, /script-src 'self'/);
 });
+
+test("update progress CSP admits Vite development styles without admitting inline scripts", () => {
+  const html = readFileSync(htmlPath, "utf8");
+  const policy = html.match(/content="([^"]+)"/)?.[1] ?? "";
+  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  assert.doesNotMatch(policy, /script-src[^;]*'unsafe-inline'/);
+});
