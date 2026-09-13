@@ -7,8 +7,74 @@ use std::fs::{self, File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use subtle::ConstantTimeEq;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::sync::CancellationToken;
+
+pub(super) async fn reuse_verified(
+    release: &PinnedRelease,
+    run: &OwnedTempRun,
+    cancellation: &CancellationToken,
+) -> Result<Option<PathBuf>, crate::error::InstallerError> {
+    let path = run.path().join(&release.app_asset_name);
+    let metadata = match fs::symlink_metadata(&path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Ok(metadata) => metadata,
+        Err(_) => return Err(crate::error::InstallerError::IntegrityFailed),
+    };
+    let root = run
+        .path()
+        .canonicalize()
+        .map_err(|_| crate::error::InstallerError::IntegrityFailed)?;
+    let canonical = path
+        .canonicalize()
+        .map_err(|_| crate::error::InstallerError::IntegrityFailed)?;
+    if !safe_regular_file(&metadata)
+        || metadata.len() != release.app_asset_size
+        || canonical.parent() != Some(root.as_path())
+    {
+        return Err(crate::error::InstallerError::IntegrityFailed);
+    }
+    let mut file = tokio::fs::File::open(&canonical)
+        .await
+        .map_err(|_| crate::error::InstallerError::IntegrityFailed)?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = tokio::select! {
+            biased;
+            _ = cancellation.cancelled() => return Err(crate::error::InstallerError::DownloadFailed),
+            read = file.read(&mut buffer) => read,
+        }
+        .map_err(|_| crate::error::InstallerError::IntegrityFailed)?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
+    }
+    let actual: [u8; 32] = hasher.finalize().into();
+    let expected = decode_sha256(&release.app_asset_sha256)
+        .ok_or(crate::error::InstallerError::IntegrityFailed)?;
+    if !bool::from(actual.ct_eq(&expected)) {
+        return Err(crate::error::InstallerError::IntegrityFailed);
+    }
+    Ok(Some(path))
+}
+
+fn safe_regular_file(metadata: &fs::Metadata) -> bool {
+    if !metadata.is_file() || metadata.file_type().is_symlink() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        metadata.nlink() == 1
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        metadata.file_attributes() & 0x400 == 0
+    }
+}
 
 pub(super) async fn write_verified(
     response: reqwest::Response,

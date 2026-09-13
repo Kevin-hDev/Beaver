@@ -65,6 +65,16 @@ async fn download_attempts(
     cancellation: &CancellationToken,
     progress: impl Fn(DownloadProgress) + Copy,
 ) -> Result<PathBuf, InstallerError> {
+    if cancellation.is_cancelled() {
+        return Err(InstallerError::DownloadFailed);
+    }
+    if let Some(path) = file::reuse_verified(release, run, cancellation).await? {
+        progress(DownloadProgress {
+            completed: release.app_asset_size,
+            total: release.app_asset_size,
+        });
+        return Ok(path);
+    }
     for attempt in 0..MAX_ATTEMPTS {
         match attempt_download(
             client.clone(),
@@ -78,7 +88,13 @@ async fn download_attempts(
         .await
         {
             Ok(path) => return Ok(path),
-            Err(error) if error.retryable && attempt + 1 < MAX_ATTEMPTS => continue,
+            Err(error) if error.retryable && attempt + 1 < MAX_ATTEMPTS => {
+                tokio::select! {
+                    biased;
+                    _ = cancellation.cancelled() => return Err(InstallerError::DownloadFailed),
+                    _ = tokio::time::sleep(Duration::from_secs((attempt + 1) as u64)) => {}
+                }
+            }
             Err(error) => return Err(error.public),
         }
     }

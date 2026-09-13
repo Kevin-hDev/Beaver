@@ -12,7 +12,7 @@ use std::net::TcpListener;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
@@ -148,6 +148,24 @@ async fn downloads_valid_body_with_or_without_content_length() {
 }
 
 #[tokio::test]
+async fn retry_reuses_the_verified_asset_without_a_second_download() {
+    let (fixture, release) = Fixture::new(b"test");
+    let expected = fixture.run().path().join(&release.app_asset_name);
+    fs::write(&expected, b"test").unwrap();
+
+    let path = download_with_retries(
+        reqwest::Client::new(),
+        reqwest::Url::parse("http://127.0.0.1:1/unreachable").unwrap(),
+        &release,
+        fixture.run(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(path, expected);
+}
+
+#[tokio::test]
 async fn rejects_status_length_truncation_overflow_and_hash_mismatch() {
     let cases = [
         response("404 Not Found", "Content-Length: 4\r\n", b"test"),
@@ -268,6 +286,7 @@ async fn retries_only_server_failures_and_stops_after_three_attempts() {
         response("200 OK", "Content-Length: 4\r\n", b"test"),
     ];
     let (url, count) = sequence_server(wires);
+    let started = Instant::now();
     download_with_retries(
         reqwest::Client::new(),
         reqwest::Url::parse(&url).unwrap(),
@@ -277,6 +296,7 @@ async fn retries_only_server_failures_and_stops_after_three_attempts() {
     .await
     .unwrap();
     assert_eq!(count.load(Ordering::SeqCst), 3);
+    assert!(started.elapsed() >= Duration::from_secs(3));
 
     let (fixture, release) = Fixture::new(b"test");
     let (url, count) = sequence_server(vec![response(
