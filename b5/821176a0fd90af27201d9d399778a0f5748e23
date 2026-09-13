@@ -1,0 +1,11 @@
+Root cause: Settings still rendered the legacy inline progress action while macOS and Windows also opened the new native progress window. Both interfaces therefore appeared at once.
+
+Fix: desktop Settings now delegates active app and Ollama updates to the native window and exposes one translated Show progress button if the user closes it. Linux keeps the existing inline progress because the new feature is intentionally hidden there. Window-open failures show a generic translated error.
+
+Evidence:
+- RED before fix: updates-settings test found the legacy progressbar and no window-open control on desktop.
+- GREEN after fix: 22/22 targeted update and translation tests passed.
+- 195/195 wider Settings/update tests passed before the final error-path addition; the final targeted suite added and passed the error path.
+- npx tsc --noEmit passed.
+- npm run lint passed.
+- npm run build passed.
