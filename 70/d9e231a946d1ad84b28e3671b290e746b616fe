@@ -1,0 +1,23 @@
+Tâche 9 — Validation intégrée et preuves réelles
+
+Corrections révélées par les suites complètes :
+- Restauration du format historique sans espace pour les pourcentages, afin de préserver le contrat partagé OperationProgressBar.
+- Synchronisation du test de fenêtre avec ce contrat.
+- Ajout du nouveau scénario update-progress à la liste fermée contrôlée par le harnais E2E.
+
+Preuves vertes :
+- npm run test:installer ; npm run test:install ; npm run test:update-manifest ; npm run test:release-workflow ; npm run contracts:check.
+- npx tsc --noEmit ; npm run lint ; npm test ; npm run build.
+- cargo fmt --check ; cargo check ; cargo clippy --all-targets -- -D warnings.
+- test handoff exact : 1 passé ; cargo test complet : 5 625 principaux passés, 0 échec, 22 ignorés, suites binaires/intégration vertes.
+- npm run test:e2e-runner : 100/100.
+- npm run installer:build ; paquet macOS exact 6,6 Mo et 7 entrées sans CEF ni ressource Beaver.
+- vrai test macOS depuis DMG local temporaire : 1/1.
+- npm run test:e2e : le scénario update-progress-security passe dans la vraie webview avec quatre opérations, refus IPC, fermeture/réouverture et position conservée.
+
+Écarts ouverts :
+- npm run test:e2e global reste rouge : 4 réussites, 7 échecs Extensions/Onboarding.
+- Windows, Linux natif, installation utilisateur macOS, release GitHub réelle et matrice visuelle six thèmes non exécutés.
+- Rapport local : docs/fonctionnalites/install-&-update/VALIDATION-IMPLEMENTATION.md, volontairement non ajouté car /docs/* est ignoré par le dépôt.
+
+Graphify : graphify update . terminé sans changement de topologie.
