@@ -93,3 +93,36 @@ describe("ChatMarkdown", () => {
     expect(mocks.open).toHaveBeenCalledOnce();
   });
 });
+
+describe("ChatMarkdown — aperçus de liens", () => {
+  const texte = "Voir https://example.com/a et https://example.com/b";
+
+  it("n'affiche aucun aperçu quand l'appelant ne le demande pas", () => {
+    localStorage.setItem("clgo-link-preview", "true");
+    const { container } = render(<ChatMarkdown content={texte} />);
+
+    expect(container.querySelector(".chat-previews-block")).toBeNull();
+  });
+
+  it("affiche un aperçu par lien quand l'appelant le demande et que le réglage est actif", () => {
+    localStorage.setItem("clgo-link-preview", "true");
+    const { container } = render(<ChatMarkdown content={texte} linkPreviews />);
+
+    expect(container.querySelectorAll(".chat-previews-block .lpc-card")).toHaveLength(2);
+  });
+
+  it("respecte le réglage désactivé même quand l'appelant demande les aperçus", () => {
+    localStorage.setItem("clgo-link-preview", "false");
+    const { container } = render(<ChatMarkdown content={texte} linkPreviews />);
+
+    expect(container.querySelector(".chat-previews-block")).toBeNull();
+  });
+
+  it("garde la limite de cinq aperçus par message", () => {
+    localStorage.setItem("clgo-link-preview", "true");
+    const liens = Array.from({ length: 7 }, (_, i) => `https://example.com/${i}`).join(" ");
+    const { container } = render(<ChatMarkdown content={liens} linkPreviews />);
+
+    expect(container.querySelectorAll(".lpc-card")).toHaveLength(5);
+  });
+});

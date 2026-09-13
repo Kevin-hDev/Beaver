@@ -13,6 +13,24 @@ vi.mock("../messages.css", () => ({}));
 vi.mock("../chat-markdown.css", () => ({}));
 
 describe("AssistantMessage streaming", () => {
+  it("affiche les aperçus de liens d'une réponse quand le réglage est actif", () => {
+    localStorage.setItem("clgo-link-preview", "true");
+    const { container } = render(
+      <AssistantMessage content="Voir https://example.com" />,
+    );
+
+    expect(container.querySelector(".chat-previews-block .lpc-card")).toBeTruthy();
+  });
+
+  it("n'affiche aucun aperçu dans un texte de travail entre deux outils", () => {
+    localStorage.setItem("clgo-link-preview", "true");
+    const { container } = render(
+      <AssistantMessage content="Analyse https://example.com" variant="trace" />,
+    );
+
+    expect(container.querySelector(".chat-previews-block")).toBeNull();
+  });
+
   it("ne rend plus le curseur de stream isolé", () => {
     const { queryByText } = render(<AssistantMessage content="" isStreaming />);
 

@@ -27,6 +27,15 @@ beforeEach(() => {
 });
 
 describe("UserMessage", () => {
+  it("n'affiche jamais d'aperçu de lien dans un message de l'utilisateur", () => {
+    localStorage.setItem("clgo-link-preview", "true");
+    const { container } = render(
+      <UserMessage content="Regarde https://github.com/Kevin-hDev/Beaver" />,
+    );
+
+    expect(container.querySelector(".chat-previews-block")).toBeNull();
+  });
+
   it("garde les messages courts sans bouton de dépliage", () => {
     measuredHeight = 100;
 

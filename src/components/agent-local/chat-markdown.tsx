@@ -19,6 +19,7 @@ interface ChatMarkdownProps {
   content: string;
   skillNames?: string[];
   builtInNames?: string[];
+  linkPreviews?: boolean;
 }
 
 function extractUrls(text: string): string[] {
@@ -53,11 +54,12 @@ export function ChatMarkdown({
   content,
   skillNames = EMPTY_NAMES,
   builtInNames = EMPTY_NAMES,
+  linkPreviews = false,
 }: ChatMarkdownProps) {
   const prepared = useMemo(() => closeUnclosedCodeBlocks(content), [content]);
   const urls = useMemo(
-    () => isPreviewEnabled() ? extractUrls(content) : [],
-    [content],
+    () => linkPreviews && isPreviewEnabled() ? extractUrls(content) : [],
+    [content, linkPreviews],
   );
   const components = useMemo(
     () => createChatMarkdownComponents(skillNames, builtInNames),
