@@ -23,8 +23,9 @@ export function useUpdateOperations() {
   const [operations, setOperations] = useState<UpdateOperationSnapshot[]>([]);
   const terminalTimers = useRef(new Map<string, number>());
   const dismiss = useCallback(async (id: string) => {
-    await dismissUpdateOperation(id);
-    setOperations((current) => current.filter((operation) => operation.id !== id));
+    if (await dismissUpdateOperation(id)) {
+      setOperations((current) => current.filter((operation) => operation.id !== id));
+    }
   }, []);
 
   useEffect(() => {

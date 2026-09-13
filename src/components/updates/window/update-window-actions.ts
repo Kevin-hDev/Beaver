@@ -11,6 +11,6 @@ export function retryUpdateOperation(id: string): Promise<unknown> {
   return invoke("request_update_operation_retry", { id });
 }
 
-export function dismissUpdateOperation(id: string): Promise<unknown> {
-  return invoke("dismiss_update_operation", { id });
+export function dismissUpdateOperation(id: string): Promise<boolean> {
+  return invoke<boolean>("dismiss_update_operation", { id });
 }

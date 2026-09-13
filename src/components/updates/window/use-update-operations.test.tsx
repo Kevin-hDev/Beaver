@@ -57,7 +57,7 @@ describe("useUpdateOperations", () => {
       mocks.invoke.mockImplementation((command: string) => Promise.resolve(
         command === "list_update_operations"
           ? [{ ...operation(2), status: "completed", canCancel: false }]
-          : undefined,
+          : true,
       ));
       const view = renderHook(() => useUpdateOperations());
       await act(async () => { await Promise.resolve(); await Promise.resolve(); });
@@ -69,5 +69,18 @@ describe("useUpdateOperations", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("conserve l'opération lorsque le backend refuse son retrait", async () => {
+    mocks.listen.mockResolvedValue(() => {});
+    mocks.invoke.mockImplementation((command: string) => Promise.resolve(
+      command === "list_update_operations" ? [operation(2)] : false,
+    ));
+    const view = renderHook(() => useUpdateOperations());
+    await waitFor(() => expect(view.result.current.operations).toHaveLength(1));
+
+    await act(async () => { await view.result.current.dismiss("operation-1"); });
+
+    expect(view.result.current.operations).toHaveLength(1);
   });
 });

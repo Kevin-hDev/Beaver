@@ -30,19 +30,19 @@ export function UpdateOperationRow({ operation, onDismiss }: {
       <div className="upw-actions">
         {operation.canCancel && (
           <button type="button" className="btn btn-sm btn-secondary"
-            onClick={() => void cancelUpdateOperation(operation)}>
+            onClick={() => void cancelUpdateOperation(operation).catch(() => {})}>
             {t("updates.window.cancel")}
           </button>
         )}
         {operation.canRetry && (
           <button type="button" className="btn btn-sm btn-secondary"
-            onClick={() => void retryUpdateOperation(operation.id)}>
+            onClick={() => void retryUpdateOperation(operation.id).catch(() => {})}>
             {t("updates.window.retry")}
           </button>
         )}
         {terminal && (
           <button type="button" className="icon-btn" aria-label={t("updates.window.remove")}
-            onClick={() => void onDismiss(operation.id)}>
+            onClick={() => void onDismiss(operation.id).catch(() => {})}>
             <X size="var(--icon-sm)" />
           </button>
         )}
