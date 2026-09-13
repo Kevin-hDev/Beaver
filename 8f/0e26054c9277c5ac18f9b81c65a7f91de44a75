@@ -1,0 +1,9 @@
+Root cause: the update window CSP rejected Vite dev CSS injected through style elements, so React rendered completely unstyled.
+
+Fix: allow inline styles for this local entry point while keeping inline scripts forbidden. This matches the existing Tauri style policy and preserves the closed script surface.
+
+Evidence:
+- RED before fix: node --test scripts/ci/update-progress-window-security.test.mjs failed because style-src lacked unsafe-inline.
+- GREEN after fix: 3/3 security tests passed.
+- Browser preview at http://127.0.0.1:5173/update-window.html reported 4 stylesheets, Geist Sans, and .upw-window rules loaded.
+- npm run build passed and emitted the update-window stylesheet.
