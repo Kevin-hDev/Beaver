@@ -43,6 +43,7 @@ pub mod mascot;
 pub mod mcp_bridge;
 pub mod mcp_oauth;
 pub mod model_downloads;
+mod model_downloads_projection;
 pub mod model_downloads_store;
 mod model_downloads_store_queue;
 #[cfg(test)]

@@ -47,7 +47,10 @@ fn every_typed_progress_stage_has_one_stable_channel_status() {
         (OllamaProgressStage::Cleaning, "cleaning"),
     ];
     for (stage, expected) in cases {
-        assert_eq!(super::ollama_setup::progress_status(stage), expected);
+        assert_eq!(
+            super::ollama_setup_progress::progress_status(stage),
+            expected
+        );
     }
 }
 

@@ -7,37 +7,46 @@ impl ModelDownloadManager {
     pub async fn complete_and_activate_next(
         &self,
     ) -> Option<(ModelDownloadState, CancellationToken)> {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         let next = activate_next_locked(&mut store);
         set_worker_state(&mut store, next.is_some());
         next
     }
 
     pub async fn cancel(&self, id: &str) -> Result<Vec<ModelDownloadState>, String> {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         let entry = store
             .entries
             .get_mut(id)
             .ok_or_else(|| "model-download-not-found".to_string())?;
+        if entry.state.kind == super::model_downloads_types::ModelDownloadKind::Forecast
+            && entry.state.phase == super::model_downloads_types::ModelDownloadPhase::Installing
+        {
+            return Ok(list_locked(&store));
+        }
         entry.cancel.cancel();
         if entry.state.status == ModelDownloadStatus::Queued {
             entry.state.status = ModelDownloadStatus::Cancelled;
+        } else if entry.state.status == ModelDownloadStatus::Running {
+            entry.state.status = ModelDownloadStatus::Cancelling;
         }
         Ok(list_locked(&store))
     }
 
     pub async fn cancel_all(&self) {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         for entry in store.entries.values_mut() {
             entry.cancel.cancel();
             if entry.state.status == ModelDownloadStatus::Queued {
                 entry.state.status = ModelDownloadStatus::Cancelled;
+            } else if entry.state.status == ModelDownloadStatus::Running {
+                entry.state.status = ModelDownloadStatus::Cancelling;
             }
         }
     }
 
     pub async fn worker_start_failed(&self, id: &str) {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(entry) = store.entries.get_mut(id) {
             entry.cancel.cancel();
             entry.state.status = ModelDownloadStatus::Cancelled;

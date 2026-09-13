@@ -14,21 +14,28 @@ pub struct UpdateProgressRuntime {
 }
 
 impl UpdateProgressRuntime {
-    #[allow(
-        dead_code,
-        reason = "called by the four producer projections added next"
-    )]
     pub fn upsert(
         &self,
         app: &AppHandle,
-        operation: UpdateOperationSnapshot,
+        mut operation: UpdateOperationSnapshot,
     ) -> Result<bool, String> {
-        let changed = self
-            .store
-            .lock()
-            .map_err(|_| public_error())?
-            .upsert(operation.clone())
-            .map_err(str::to_string)?;
+        let mut store = self.store.lock().map_err(|_| public_error())?;
+        operation.sequence = match store.get(&operation.id) {
+            Some(current) => {
+                let mut previous = current.clone();
+                previous.sequence = operation.sequence;
+                if previous == operation {
+                    return Ok(false);
+                }
+                current
+                    .sequence
+                    .checked_add(1)
+                    .ok_or_else(|| "update-progress-invalid".to_string())?
+            }
+            None => 1,
+        };
+        let changed = store.upsert(operation.clone()).map_err(str::to_string)?;
+        drop(store);
         if changed {
             app.emit_to(window::WINDOW_LABEL, CHANGED_EVENT, &operation)
                 .map_err(|_| public_error())?;
@@ -39,10 +46,6 @@ impl UpdateProgressRuntime {
         Ok(changed)
     }
 
-    #[allow(
-        dead_code,
-        reason = "called by the four producer projections added next"
-    )]
     pub fn finish(
         &self,
         app: &AppHandle,

@@ -1,8 +1,13 @@
+use super::ollama_setup_progress::{
+    begin as begin_progress, composite_reporter, finish as finish_progress, mark_cancelling,
+    send_stage,
+};
 use crate::services::ollama_manager::{
     BundleState, InstallOutcome, InstallRequest, OllamaErrorCode, OllamaManager,
-    OllamaProgressReporter, OllamaProgressStage, OllamaProgressUpdate, OllamaRuntimeStatus,
-    OllamaStartOutcome, OllamaVersion, OperationState,
+    OllamaProgressReporter, OllamaProgressStage, OllamaRuntimeStatus, OllamaStartOutcome,
+    OllamaVersion, OperationState,
 };
+use crate::services::update_progress::{UpdateOperationStatus, UpdateProgressRuntime};
 use serde::Serialize;
 use std::ffi::OsString;
 use std::time::{Duration, Instant};
@@ -38,23 +43,38 @@ pub fn retry_ollama_recovery(manager: tauri::State<'_, OllamaManager>) -> Result
 
 #[tauri::command]
 pub async fn download_ollama(
+    app: tauri::AppHandle,
     on_progress: Channel<OllamaSetupProgress>,
     manager: tauri::State<'_, OllamaManager>,
+    progress: tauri::State<'_, UpdateProgressRuntime>,
 ) -> Result<(), String> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let label = "Ollama";
+    begin_progress(&app, &progress, &id, label)?;
+    let reporter = composite_reporter(&on_progress, &app, &progress, &id, label);
     let cancel = CancellationToken::new();
     manager.set_operation_cancellation(cancel.clone());
-    let result = run_download_ollama(manager.inner(), &on_progress, &cancel).await;
+    let result = run_download_ollama(manager.inner(), &reporter, &cancel).await;
     manager.clear_operation_cancellation();
+    finish_progress(
+        &app,
+        &progress,
+        &id,
+        terminal_status(&result),
+        result.as_ref().err().and_then(|error| {
+            (error != OllamaErrorCode::OllamaOperationCancelled.as_str()).then_some(error.as_str())
+        }),
+    )?;
     result
 }
 
 pub(crate) async fn run_download_ollama(
     manager: &OllamaManager,
-    on_progress: &Channel<OllamaSetupProgress>,
+    reporter: &OllamaProgressReporter,
     cancel: &CancellationToken,
 ) -> Result<(), String> {
     if matches!(manager.status().await.bundle, BundleState::Ready) {
-        return start_manager_and_wait(manager, on_progress, cancel).await;
+        return start_manager_and_wait(manager, reporter, cancel).await;
     }
     let paths = crate::services::paths::ollama_paths(&crate::services::paths::data_dir());
     let version = resolve_install_version().await;
@@ -78,7 +98,7 @@ pub(crate) async fn run_download_ollama(
             .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable.as_str())?,
         cancellation: cancel.clone(),
         deadline: None,
-        progress: Some(channel_progress_reporter(on_progress)),
+        progress: Some(reporter.clone()),
         #[cfg(test)]
         local_archives: None,
     };
@@ -89,45 +109,31 @@ pub(crate) async fn run_download_ollama(
     {
         InstallOutcome::Installed { .. } => {}
     }
-    start_manager_and_wait(manager, on_progress, cancel).await
-}
-
-pub(super) fn channel_progress_reporter(
-    on_progress: &Channel<OllamaSetupProgress>,
-) -> OllamaProgressReporter {
-    let channel = on_progress.clone();
-    std::sync::Arc::new(move |update: OllamaProgressUpdate| {
-        let _ = channel.send(OllamaSetupProgress {
-            completed: update.completed,
-            total: update.total,
-            status: progress_status(update.stage).into(),
-        });
-    })
-}
-
-pub(super) fn progress_status(stage: OllamaProgressStage) -> &'static str {
-    match stage {
-        OllamaProgressStage::Preparing => "preparing",
-        OllamaProgressStage::Downloading => "downloading",
-        OllamaProgressStage::Verifying => "verifying",
-        OllamaProgressStage::Extracting => "extracting",
-        OllamaProgressStage::Validating => "validating",
-        OllamaProgressStage::Committing => "committing",
-        OllamaProgressStage::Starting => "starting",
-        OllamaProgressStage::Recovering => "recovering",
-        OllamaProgressStage::RollingBack => "rolling_back",
-        OllamaProgressStage::Cleaning => "cleaning",
-    }
+    start_manager_and_wait(manager, reporter, cancel).await
 }
 
 #[tauri::command]
-pub async fn cancel_ollama_setup(manager: tauri::State<'_, OllamaManager>) -> Result<(), String> {
+pub async fn cancel_ollama_setup(
+    app: tauri::AppHandle,
+    manager: tauri::State<'_, OllamaManager>,
+    progress: tauri::State<'_, UpdateProgressRuntime>,
+) -> Result<(), String> {
+    let cancellable = progress.snapshot()?.into_iter().any(|operation| {
+        operation.kind == crate::services::update_progress::UpdateOperationKind::OllamaBinary
+            && !operation.status.is_terminal()
+            && operation.can_cancel
+    });
+    if !cancellable {
+        return Ok(());
+    }
     match manager.cancel_operation().await {
         crate::services::ollama_manager::CancelOutcome::RejectedDuringShutdown => {
             Err(OllamaErrorCode::OllamaClosing.as_str().into())
         }
-        crate::services::ollama_manager::CancelOutcome::Cancelled
-        | crate::services::ollama_manager::CancelOutcome::AlreadyIdle => Ok(()),
+        crate::services::ollama_manager::CancelOutcome::Cancelled => {
+            mark_cancelling(&app, &progress)
+        }
+        crate::services::ollama_manager::CancelOutcome::AlreadyIdle => Ok(()),
     }
 }
 
@@ -140,14 +146,10 @@ pub async fn restart_ollama_sidecar(
 
 pub(crate) async fn start_manager_and_wait(
     manager: &OllamaManager,
-    on_progress: &Channel<OllamaSetupProgress>,
+    reporter: &OllamaProgressReporter,
     cancel: &CancellationToken,
 ) -> Result<(), String> {
-    let _ = on_progress.send(OllamaSetupProgress {
-        completed: 0,
-        total: 0,
-        status: "starting".into(),
-    });
+    send_stage(reporter, OllamaProgressStage::Starting);
     match manager.start().await {
         OllamaStartOutcome::OwnedStarted { .. }
         | OllamaStartOutcome::OwnedAlreadyRunning { .. }
@@ -184,6 +186,16 @@ pub(crate) async fn start_manager_and_wait(
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
     Err(OllamaErrorCode::OllamaSetupTimeout.as_str().into())
+}
+
+fn terminal_status(result: &Result<(), String>) -> UpdateOperationStatus {
+    match result {
+        Ok(()) => UpdateOperationStatus::Completed,
+        Err(error) if error == OllamaErrorCode::OllamaOperationCancelled.as_str() => {
+            UpdateOperationStatus::Cancelled
+        }
+        Err(_) => UpdateOperationStatus::Failed,
+    }
 }
 
 async fn resolve_install_version() -> OllamaVersion {
