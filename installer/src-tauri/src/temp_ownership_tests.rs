@@ -48,6 +48,17 @@ fn adopts_and_cleans_only_a_proven_owned_run() {
 }
 
 #[test]
+fn explicit_cleanup_removes_a_proven_owned_run_before_process_exit() {
+    let fixture = Fixture::new();
+    let path = fixture.run(CURRENT);
+    let owned = OwnedTempRun::adopt(&fixture.0, &path, CURRENT).unwrap();
+
+    owned.cleanup().unwrap();
+
+    assert!(!path.exists());
+}
+
+#[test]
 fn rejects_absent_forged_and_divergent_markers() {
     let fixture = Fixture::new();
     let absent = fixture.0.join(format!("beaver-install-{CURRENT}"));

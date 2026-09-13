@@ -42,6 +42,13 @@ impl OwnedTempRun {
         trace.preserve(self.run_id())
     }
 
+    pub fn cleanup(&self) -> Result<(), InstallerError> {
+        let root = self.path.parent().ok_or(InstallerError::CleanupFailed)?;
+        validate_run(root, &self.path, self.run_id())?;
+        validate_tree(&self.path)?;
+        fs::remove_dir_all(&self.path).map_err(|_| InstallerError::CleanupFailed)
+    }
+
     fn run_id(&self) -> &str {
         run_id_from_name(&self.path).expect("validated owned run")
     }
@@ -49,14 +56,7 @@ impl OwnedTempRun {
 
 impl Drop for OwnedTempRun {
     fn drop(&mut self) {
-        let Some(root) = self.path.parent() else {
-            return;
-        };
-        if validate_run(root, &self.path, run_id_from_name(&self.path).unwrap_or("")).is_ok()
-            && validate_tree(&self.path).is_ok()
-        {
-            let _ = fs::remove_dir_all(&self.path);
-        }
+        let _ = self.cleanup();
     }
 }
 

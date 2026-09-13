@@ -1,4 +1,4 @@
-use tauri::Runtime;
+use tauri::{Manager, Runtime};
 
 pub mod commands;
 pub mod contract;
@@ -58,7 +58,7 @@ pub fn run() {
         Ok(service) => service,
         Err(error) => exit_with(error),
     };
-    if configure(tauri::Builder::default().manage(service))
+    let app = configure(tauri::Builder::default().manage(service))
         .invoke_handler(tauri::generate_handler![
             commands::installer_snapshot,
             commands::choose_install_directory,
@@ -66,11 +66,31 @@ pub fn run() {
             commands::cancel_install,
             commands::launch_beaver,
         ])
-        .run(tauri::generate_context!())
-        .is_err()
-    {
-        eprintln!("installer-runtime-failed");
-    }
+        .build(tauri::generate_context!());
+    let app = match app {
+        Ok(app) => app,
+        Err(_) => {
+            eprintln!("installer-runtime-failed");
+            std::process::exit(1);
+        }
+    };
+    let exit_code = app.run_return(|app, event| {
+        let service = app.state::<install::InstallerService>();
+        match event {
+            tauri::RunEvent::WindowEvent {
+                label,
+                event: tauri::WindowEvent::CloseRequested { api, .. },
+                ..
+            } if label == "main" && service.operation_active() => api.prevent_close(),
+            tauri::RunEvent::ExitRequested { api, .. }
+                if service.operation_active() || service.shutdown().is_err() =>
+            {
+                api.prevent_exit();
+            }
+            _ => {}
+        }
+    });
+    std::process::exit(exit_code);
 }
 
 fn exit_with(error: error::InstallerError) -> ! {

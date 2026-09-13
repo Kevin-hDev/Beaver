@@ -43,6 +43,13 @@ impl InstallerRuntime {
         self.state.lock().expect("installer state").event(None)
     }
 
+    pub fn operation_active(&self) -> bool {
+        self.state
+            .lock()
+            .map(|state| state.cancel.is_some())
+            .unwrap_or(true)
+    }
+
     pub fn begin(&self) -> Result<CancellationToken, InstallerError> {
         let mut state = self
             .state

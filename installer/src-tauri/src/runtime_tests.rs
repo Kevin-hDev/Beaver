@@ -45,6 +45,16 @@ fn allows_only_one_active_operation() {
 }
 
 #[test]
+fn active_operation_blocks_application_shutdown() {
+    let runtime = new_runtime(PlatformKind::Macos);
+    assert!(!runtime.operation_active());
+    let operation = runtime.begin().unwrap();
+    assert!(runtime.operation_active());
+    runtime.fail(operation, "installer.errors.install").unwrap();
+    assert!(!runtime.operation_active());
+}
+
+#[test]
 fn macos_can_cancel_staging_but_not_after_begin_swap() {
     let runtime = new_runtime(PlatformKind::Macos);
     let operation = runtime.begin().unwrap();

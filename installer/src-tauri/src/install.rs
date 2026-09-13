@@ -8,6 +8,7 @@ use crate::runtime::InstallerRuntime;
 use crate::temp_ownership::OwnedTempRun;
 use crate::trace::Outcome;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::ipc::Channel;
 
@@ -17,6 +18,7 @@ pub struct InstallerService {
     destination: Mutex<PathBuf>,
     runtime: InstallerRuntime,
     trace: TraceSession,
+    cleanup_done: AtomicBool,
 }
 
 impl InstallerService {
@@ -36,6 +38,7 @@ impl InstallerService {
             run,
             destination: Mutex::new(destination),
             trace: TraceSession::new(),
+            cleanup_done: AtomicBool::new(false),
         })
     }
 
@@ -61,6 +64,31 @@ impl InstallerService {
     pub fn cancel(&self) -> InstallerSnapshot {
         self.runtime.cancel();
         self.runtime.snapshot().snapshot
+    }
+
+    pub fn operation_active(&self) -> bool {
+        self.runtime.operation_active()
+    }
+
+    pub fn shutdown(&self) -> Result<(), InstallerError> {
+        if self.operation_active() {
+            return Err(InstallerError::CleanupFailed);
+        }
+        if self.cleanup_done.swap(true, Ordering::AcqRel) {
+            return Ok(());
+        }
+        #[cfg(target_os = "windows")]
+        let result = std::env::current_exe()
+            .map_err(|_| InstallerError::CleanupFailed)
+            .and_then(|executable| {
+                crate::platform::windows_cleanup::schedule_self_cleanup(&self.run, &executable)
+            });
+        #[cfg(not(target_os = "windows"))]
+        let result = self.run.cleanup();
+        if result.is_err() {
+            self.cleanup_done.store(false, Ordering::Release);
+        }
+        result
     }
 
     pub fn launch_beaver(&self) -> Result<(), InstallerError> {
@@ -145,11 +173,8 @@ impl InstallerService {
     }
 }
 
-#[cfg(target_os = "windows")]
 impl Drop for InstallerService {
     fn drop(&mut self) {
-        if let Ok(executable) = std::env::current_exe() {
-            let _ = crate::platform::windows_cleanup::schedule_self_cleanup(&self.run, &executable);
-        }
+        let _ = self.shutdown();
     }
 }
