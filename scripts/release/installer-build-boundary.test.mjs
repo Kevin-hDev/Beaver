@@ -5,7 +5,7 @@ import test from "node:test";
 
 const SHARED_BEAVER_ASSET = "src/assets/QPXAq01-anime.svg";
 
-test("l'installateur reste une application Tauri minimale", async () => {
+test("le backend de l'installateur reste une application Tauri minimale", async () => {
   const cargo = await readFile("installer/src-tauri/Cargo.toml", "utf8");
 
   assert.match(cargo, /^name = "beaver-installer"$/mu);
