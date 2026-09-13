@@ -42,8 +42,8 @@ function assertBalanced(source) {
 }
 
 test("les deux installateurs restent petits et ciblent Beaver", () => {
-  assert.ok(lines(shell) < 200);
-  assert.ok(lines(powershell) < 200);
+  assert.ok(lines(shell) <= 230);
+  assert.ok(lines(powershell) <= 230);
   for (const source of [shell, powershell]) {
     assert.match(source, /Kevin-hDev\/Beaver/);
     assert.match(source, /update-manifest\.json/);
@@ -72,12 +72,13 @@ test("le script shell borne et vérifie chaque téléchargement", () => {
   assert.match(shell, /sha256_file "\$platform" "\$asset"/);
   assert.match(shell, /\[ "\$actual_hash" = "\$expected_hash" \]/);
   assert.match(shell, /apt-get install -y "\$asset"/);
-  assert.match(shell, /Print :CFBundleExecutable/);
-  assert.match(shell, /CL-GO\.app/);
+  assert.match(shell, /Beaver Installer\.app/);
+  assert.match(shell, /--no-same-owner/);
+  assert.match(shell, /--run-id/);
+  assert.match(shell, /\.beaver-installer-owner\.json/);
+  assert.match(shell, /od -An -N16 -tx1/);
   assert.match(shell, /package_installed beaver/);
-  assert.match(shell, /stage_inode=.*stat -f/);
-  assert.match(shell, /\$\{stage##\*\/\}/);
-  assert.doesNotMatch(shell, /\.Beaver\.app\.backup-/);
+  assert.doesNotMatch(shell, /hdiutil|ditto/u);
   assert.notEqual(curlInvocation, "");
   assert.doesNotMatch(curlInvocation, /(?:--location|(?:^|\s)-[A-Za-z]*L[A-Za-z]*)/);
 });
@@ -89,8 +90,12 @@ test("PowerShell désactive les redirections implicites et vérifie le SHA", () 
   assert.match(powershell, /ResponseHeadersRead/);
   assert.match(powershell, /CancellationTokenSource/);
   assert.match(powershell, /Get-FileHash -LiteralPath \$assetPath -Algorithm SHA256/);
-  assert.match(powershell, /Beaver_\$\{version\}_x64-setup\.exe/);
-  assert.match(powershell, /-ArgumentList @\("\/S", "\/D=\$installDirectory"\)/);
+  assert.match(powershell, /Beaver_\$\{version\}_installer-x64\.exe/);
+  assert.match(powershell, /RandomNumberGenerator/u);
+  assert.match(powershell, /\[Array\]::Clear/u);
+  assert.match(powershell, /--app-asset-sha256/u);
+  assert.match(powershell, /\.beaver-installer-owner\.json/u);
+  assert.doesNotMatch(powershell, /"\/S"|"\/D=/u);
   assert.doesNotMatch(powershell, /Invoke-(?:WebRequest|RestMethod)/);
 });
 

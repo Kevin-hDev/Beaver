@@ -9,28 +9,14 @@ import {
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { ASSET_SUFFIXES, normalizeVersion } from "./brand-artifact-common.mjs";
 import { hashRegularFile } from "../file-system/regular-file.mjs";
 
 export const MAX_UPDATE_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_DIRECTORY_ENTRIES = 16;
-const MAX_U64 = 18_446_744_073_709_551_615n;
 const MANIFEST_NAME = "update-manifest.json";
-const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
-const ASSET_SUFFIXES = [
-  "_aarch64.dmg",
-  "_amd64.deb",
-  "_x64-setup.exe",
-];
 
-export function normalizeVersion(value) {
-  if (typeof value !== "string" || value.length > 32) throw invalidManifest();
-  const normalized = value.startsWith("v") ? value.slice(1) : value;
-  if (!VERSION_PATTERN.test(normalized)) throw invalidManifest();
-  if (normalized.split(".").some((part) => BigInt(part) > MAX_U64)) {
-    throw invalidManifest();
-  }
-  return normalized;
-}
+export { normalizeVersion };
 
 export function isValidAssetSize(value) {
   return (
@@ -41,7 +27,9 @@ export function isValidAssetSize(value) {
 }
 
 function expectedNames(version) {
-  return new Set(ASSET_SUFFIXES.map((suffix) => `Beaver_${version}${suffix}`));
+  return new Set(
+    Object.keys(ASSET_SUFFIXES).map((platform) => `Beaver_${version}${ASSET_SUFFIXES[platform]}`),
+  );
 }
 
 async function listExactAssets(directory, version) {

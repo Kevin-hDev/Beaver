@@ -17,6 +17,8 @@ const VERSION = "1.1.0";
 const NAMES = [
   "Beaver_1.1.0_aarch64.dmg",
   "Beaver_1.1.0_amd64.deb",
+  "Beaver_1.1.0_installer-aarch64.tar.gz",
+  "Beaver_1.1.0_installer-x64.exe",
   "Beaver_1.1.0_x64-setup.exe",
 ];
 
@@ -38,7 +40,7 @@ test("normalise uniquement une version stricte", () => {
   assert.equal(isValidAssetSize(MAX_UPDATE_ASSET_BYTES + 1), false);
 });
 
-test("génère trois empreintes triées et déterministes", async () => {
+test("génère cinq empreintes triées et déterministes", async () => {
   const directory = await fixture();
   try {
     const first = await createUpdateManifest(VERSION, directory);

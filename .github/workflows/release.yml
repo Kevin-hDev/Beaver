@@ -142,6 +142,8 @@ jobs:
             bundles: app,dmg
             bundle_dir: dmg
             asset_suffix: _aarch64.dmg
+            installer_suffix: _installer-aarch64.tar.gz
+            installer_path: installer/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Beaver Installer.app
             searxng_test_features: ""
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
@@ -149,6 +151,8 @@ jobs:
             bundles: deb
             bundle_dir: deb
             asset_suffix: _amd64.deb
+            installer_suffix: ""
+            installer_path: ""
             searxng_test_features: ""
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -156,6 +160,8 @@ jobs:
             bundles: nsis
             bundle_dir: nsis
             asset_suffix: _x64-setup.exe
+            installer_suffix: _installer-x64.exe
+            installer_path: target/x86_64-pc-windows-msvc/release/beaver-installer.exe
             # Rust test executables must not load the CEF DLLs staged by the
             # release build; this is the same isolated profile used by Windows CI.
             searxng_test_features: --features windows-tests
@@ -205,6 +211,15 @@ jobs:
         run: |
           $target = [IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "target"))
           "CARGO_TARGET_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build installer UI
+        if: runner.os != 'Linux'
+        run: npm run installer:build-ui
+
+      - name: Build installer application
+        if: runner.os != 'Linux'
+        working-directory: installer
+        run: npx --no-install tauri build --target "${{ matrix.target }}" ${{ runner.os == 'macOS' && '--bundles app' || '--no-bundle' }}
 
       - name: Build Tauri app without publishing
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
@@ -303,6 +318,25 @@ jobs:
           compression-level: 0
           retention-days: 3
 
+      - name: Package installer artifact
+        id: installer_package
+        if: runner.os != 'Linux'
+        env:
+          INSTALLER_SUFFIX: ${{ matrix.installer_suffix }}
+        run: >-
+          node scripts/release/package-installer.mjs "${{ env.RELEASE_TAG }}"
+          "${{ runner.os }}" "${{ matrix.installer_path }}"
+
+      - name: Upload verified installer artifact
+        if: runner.os != 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.label }}-installer
+          path: ${{ steps.installer_package.outputs.installer_asset }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
   manifest:
     needs: build
     runs-on: ubuntu-22.04
@@ -334,6 +368,18 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: beaver-windows-x64
+          path: release-candidate
+
+      - name: Download macOS installer artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: beaver-macos-arm64-installer
+          path: release-candidate
+
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: beaver-windows-x64-installer
           path: release-candidate
 
       - name: Create and validate update manifest
@@ -374,8 +420,28 @@ jobs:
       - name: Independently verify every SHA-256
         run: node scripts/release/check-brand-artifacts.mjs release "$RELEASE_TAG" release-candidate
 
-  publish_release:
+  attest_release:
     needs: verify_release
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+
+    steps:
+      - name: Download verified release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: beaver-release-candidate
+          path: release-candidate
+
+      - name: Attest the five assets and manifest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: release-candidate/*
+
+  publish_release:
+    needs: attest_release
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -414,6 +480,8 @@ jobs:
           DMG="release-candidate/Beaver_${VERSION}_aarch64.dmg"
           DEB="release-candidate/Beaver_${VERSION}_amd64.deb"
           EXE="release-candidate/Beaver_${VERSION}_x64-setup.exe"
+          MAC_INSTALLER="release-candidate/Beaver_${VERSION}_installer-aarch64.tar.gz"
+          WINDOWS_INSTALLER="release-candidate/Beaver_${VERSION}_installer-x64.exe"
           MANIFEST="release-candidate/update-manifest.json"
           if STATE="$(gh release view "$RELEASE_TAG" --json isDraft,isPrerelease --jq '[.isDraft, .isPrerelease] | @tsv' 2>/dev/null)"; then
             if [ "$STATE" != $'false\tfalse' ]; then
@@ -424,19 +492,42 @@ jobs:
               echo "Release validation failed." >&2
               exit 1
             fi
+            CHECK_DIR="$(mktemp -d "$RUNNER_TEMP/beaver-existing.XXXXXXXX")"
+            trap 'rm -rf "$CHECK_DIR"' EXIT
             while IFS= read -r NAME; do
               case "$NAME" in
-                ""|"Beaver_${VERSION}_aarch64.dmg"|"Beaver_${VERSION}_amd64.deb"|"Beaver_${VERSION}_x64-setup.exe"|"update-manifest.json") ;;
+                "") continue ;;
+                "Beaver_${VERSION}_aarch64.dmg") CANDIDATE="$DMG" ;;
+                "Beaver_${VERSION}_amd64.deb") CANDIDATE="$DEB" ;;
+                "Beaver_${VERSION}_x64-setup.exe") CANDIDATE="$EXE" ;;
+                "Beaver_${VERSION}_installer-aarch64.tar.gz") CANDIDATE="$MAC_INSTALLER" ;;
+                "Beaver_${VERSION}_installer-x64.exe") CANDIDATE="$WINDOWS_INSTALLER" ;;
+                "update-manifest.json") CANDIDATE="$MANIFEST" ;;
                 *)
                   echo "Release validation failed." >&2
                   exit 1
                   ;;
               esac
+              gh release download "$RELEASE_TAG" --pattern "$NAME" --dir "$CHECK_DIR"
+              EXISTING="$CHECK_DIR/$NAME"
+              [ -f "$EXISTING" ] && [ ! -L "$EXISTING" ] &&
+                [ "$(find "$CHECK_DIR" -maxdepth 1 -type f | wc -l | tr -d '[:space:]')" = "1" ] || {
+                  echo "Release validation failed." >&2
+                  exit 1
+                }
+              EXISTING_HASH="$(sha256sum "$EXISTING" | awk '{print $1}')"
+              CANDIDATE_HASH="$(sha256sum "$CANDIDATE" | awk '{print $1}')"
+              if [ "$EXISTING_HASH" = "$CANDIDATE_HASH" ]; then
+                echo "A release asset already exists; publish a new version." >&2
+              else
+                echo "A different release asset already exists; manual review required." >&2
+              fi
+              exit 1
             done <<< "$EXISTING_ASSETS"
             gh release edit "$RELEASE_TAG" --draft=false --prerelease=false --latest --title "Beaver $RELEASE_TAG" --notes-file "$NOTES_FILE"
-            gh release upload "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MANIFEST" --clobber
+            gh release upload "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MAC_INSTALLER" "$WINDOWS_INSTALLER" "$MANIFEST"
           else
-            gh release create "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MANIFEST" \
+            gh release create "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MAC_INSTALLER" "$WINDOWS_INSTALLER" "$MANIFEST" \
               --verify-tag \
               --latest \
               --title "Beaver $RELEASE_TAG" \
