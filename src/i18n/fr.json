@@ -1489,6 +1489,8 @@
       "title": "Mise à jour",
       "count": "{{count}} mises à jour",
       "close": "Fermer la fenêtre",
+      "open": "Afficher la progression",
+      "openFailed": "La fenêtre de progression ne peut pas être affichée.",
       "remove": "Retirer cette ligne",
       "retry": "Réessayer",
       "cancel": "Annuler",

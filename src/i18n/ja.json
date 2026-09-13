@@ -1372,6 +1372,8 @@
     "showDetails": "詳細を表示",
     "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "checkFailed": "更新の確認に失敗しました。しばらくしてからもう一度お試しください。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。",
     "window": {
+      "open": "進行状況を表示",
+      "openFailed": "進行状況ウィンドウを表示できませんでした。",
       "title": "アップデート", "count": "{{count}} 件のアップデート", "close": "ウィンドウを閉じる", "remove": "この行を削除", "retry": "再試行", "cancel": "キャンセル", "queued": "待機中 · {{position}} 番目", "cancelling": "キャンセル中…", "completed": "更新済み", "cancelledResult": "キャンセル済み", "failed": "アップデートに失敗しました。接続を確認して再試行してください。", "restarting": "Beaver を再起動中…",
       "phases": { "waiting": "待機中", "preparing": "準備中", "downloading": "ダウンロード中", "verifying": "整合性を確認中", "extracting": "展開中", "installing": "インストール中", "restarting": "再起動中", "recovering": "復旧中", "rolling-back": "ロールバック中", "cleaning": "クリーンアップ中", "completed": "完了" }
     }

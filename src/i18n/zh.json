@@ -1372,6 +1372,8 @@
     "showDetails": "显示详情",
     "hideDetails": "隐藏详情", "dismiss": "隐藏此通知", "dismissFailed": "无法隐藏通知。", "checkFailed": "检查更新失败。请稍后重试。", "cancelling": "正在取消…", "cancelled": "下载已取消，临时文件已删除。",
     "window": {
+      "open": "显示进度",
+      "openFailed": "无法显示进度窗口。",
       "title": "更新", "count": "{{count}} 个更新", "close": "关闭窗口", "remove": "移除此行", "retry": "重试", "cancel": "取消", "queued": "等待中 · 第 {{position}} 位", "cancelling": "正在取消…", "completed": "已更新", "cancelledResult": "已取消", "failed": "更新失败。请检查网络连接后重试。", "restarting": "正在重启 Beaver…",
       "phases": { "waiting": "等待中", "preparing": "准备中", "downloading": "下载中", "verifying": "正在验证完整性", "extracting": "解压中", "installing": "安装中", "restarting": "重启中", "recovering": "恢复中", "rolling-back": "正在回滚", "cleaning": "清理中", "completed": "已完成" }
     }

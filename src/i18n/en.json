@@ -1437,6 +1437,8 @@
       "title": "Update",
       "count": "{{count}} updates",
       "close": "Close window",
+      "open": "Show progress",
+      "openFailed": "The progress window could not be shown.",
       "remove": "Remove this row",
       "retry": "Retry",
       "cancel": "Cancel",

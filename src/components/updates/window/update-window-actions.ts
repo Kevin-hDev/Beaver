@@ -15,3 +15,7 @@ export async function retryUpdateOperation(id: string): Promise<void> {
 export function dismissUpdateOperation(id: string): Promise<boolean> {
   return invoke<boolean>("dismiss_update_operation", { id });
 }
+
+export function showUpdateProgressWindow(): Promise<unknown> {
+  return invoke("show_update_progress_window");
+}

@@ -1373,6 +1373,8 @@
     "showDetails": "Details anzeigen",
     "hideDetails": "Details ausblenden", "dismiss": "Diese Benachrichtigung ausblenden", "dismissFailed": "Die Benachrichtigung konnte nicht ausgeblendet werden.", "checkFailed": "Die Suche nach Updates ist fehlgeschlagen. Versuche es gleich noch einmal.", "cancelling": "Wird abgebrochen…", "cancelled": "Download abgebrochen und temporäre Dateien gelöscht.",
     "window": {
+      "open": "Fortschritt anzeigen",
+      "openFailed": "Das Fortschrittsfenster konnte nicht angezeigt werden.",
       "title": "Update", "count": "{{count}} Updates", "close": "Fenster schließen", "remove": "Diese Zeile entfernen", "retry": "Erneut versuchen", "cancel": "Abbrechen", "queued": "Wartet · Position {{position}}", "cancelling": "Wird abgebrochen…", "completed": "Aktualisiert", "cancelledResult": "Abgebrochen", "failed": "Das Update ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.", "restarting": "Beaver wird neu gestartet…",
       "phases": { "waiting": "Wartet", "preparing": "Vorbereitung", "downloading": "Herunterladen", "verifying": "Integrität wird geprüft", "extracting": "Entpacken", "installing": "Installation", "restarting": "Neustart", "recovering": "Wiederherstellung", "rolling-back": "Zurücksetzen", "cleaning": "Bereinigung", "completed": "Abgeschlossen" }
     }
