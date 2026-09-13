@@ -1,4 +1,6 @@
-use super::{parse, parse_guarded_command};
+use super::parse;
+#[cfg(target_os = "macos")]
+use super::parse_guarded_command;
 use std::ffi::OsString;
 
 #[test]

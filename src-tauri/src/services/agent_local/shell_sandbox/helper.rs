@@ -108,6 +108,7 @@ fn parse(
     Ok((mode, temp_dir, executable, command_arguments))
 }
 
+#[cfg(target_os = "macos")]
 pub(super) fn parse_guarded_command(
     arguments: Vec<OsString>,
 ) -> Result<(PathBuf, Vec<OsString>), String> {
