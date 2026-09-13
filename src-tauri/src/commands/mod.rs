@@ -139,6 +139,7 @@ pub mod system_prompts;
 pub mod terminal;
 pub(crate) mod terminal_blocking;
 pub mod update_notifications;
+pub mod update_progress;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
@@ -208,3 +209,4 @@ pub use subagents::*;
 pub use system_prompts::*;
 pub use terminal::*;
 pub use update_notifications::*;
+pub use update_progress::*;

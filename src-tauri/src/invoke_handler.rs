@@ -145,6 +145,11 @@ macro_rules! generate {
             crate::commands::test_api_key_with_value,
             crate::commands::register_attachment_paths,
             crate::commands::restore_attachment_access,
+            crate::commands::list_update_operations,
+            crate::commands::dismiss_update_operation,
+            crate::commands::request_update_operation_retry,
+            crate::commands::resize_update_progress_window,
+            crate::commands::show_update_progress_window,
             crate::commands::start_mcp_oauth,
             crate::commands::cancel_mcp_oauth,
             crate::commands::has_mcp_oauth_token,
@@ -164,6 +169,7 @@ macro_rules! for_build {
                 crate::commands::e2e_browser_session_key_fixture,
                 crate::commands::e2e_request_exit,
                 crate::commands::e2e_native_webviews,
+                crate::commands::e2e_seed_update_operation,
                 crate::commands::e2e_verify_child_chat_stream_read_only,
                 crate::commands::export_reasoning_fixture_report,
                 crate::commands::run_reasoning_fixture_tools,
@@ -178,6 +184,7 @@ macro_rules! for_build {
                 crate::commands::e2e_browser_session_key_fixture,
                 crate::commands::e2e_request_exit,
                 crate::commands::e2e_native_webviews,
+                crate::commands::e2e_seed_update_operation,
                 crate::commands::e2e_verify_child_chat_stream_read_only
             ]
         }

@@ -25,6 +25,7 @@ export default defineConfig({
       input: {
         main: path.resolve(import.meta.dirname, "index.html"),
         mascot: path.resolve(import.meta.dirname, "mascot.html"),
+        updateProgress: path.resolve(import.meta.dirname, "update-window.html"),
       },
     },
   },

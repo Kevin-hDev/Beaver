@@ -41,6 +41,36 @@ pub fn e2e_native_webviews() -> crate::services::browser::process_role::NativeWe
     crate::services::browser::observe_native_webviews()
 }
 
+#[tauri::command]
+pub fn e2e_seed_update_operation(
+    app: tauri::AppHandle,
+    runtime: tauri::State<'_, crate::services::update_progress::UpdateProgressRuntime>,
+) -> Result<(), String> {
+    use crate::services::update_progress::{
+        UpdateOperationKind, UpdateOperationPhase, UpdateOperationSnapshot, UpdateOperationStatus,
+        UpdateProgressMode,
+    };
+
+    runtime.upsert(
+        &app,
+        UpdateOperationSnapshot {
+            id: "e2e-update".into(),
+            sequence: 1,
+            kind: UpdateOperationKind::AppRelease,
+            label: "Beaver E2E".into(),
+            status: UpdateOperationStatus::Running,
+            phase: UpdateOperationPhase::Downloading,
+            progress_mode: UpdateProgressMode::Determinate,
+            percent: Some(25),
+            queue_position: None,
+            can_cancel: true,
+            can_retry: false,
+            error_key: None,
+        },
+    )?;
+    Ok(())
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct E2eChildReadOnlyOutcome {

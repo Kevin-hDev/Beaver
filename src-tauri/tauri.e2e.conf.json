@@ -12,6 +12,7 @@
         "forecast-workbench",
         "forecast-docs",
         "mascot",
+        "update-progress",
         {
           "identifier": "e2e-wdio",
           "description": "WebDriver bridge reserved for the isolated E2E build",

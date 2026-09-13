@@ -27,7 +27,14 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' beaver-extension: http://beaver-extension.localhost; script-src 'self' beaver-extension: http://beaver-extension.localhost; img-src 'self' data: https: beaver-extension: http://beaver-extension.localhost; font-src 'self' data: beaver-extension: http://beaver-extension.localhost"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline' beaver-extension: http://beaver-extension.localhost; script-src 'self' beaver-extension: http://beaver-extension.localhost; img-src 'self' data: https: beaver-extension: http://beaver-extension.localhost; font-src 'self' data: beaver-extension: http://beaver-extension.localhost",
+      "capabilities": [
+        "default",
+        "forecast-workbench",
+        "forecast-docs",
+        "mascot",
+        "update-progress"
+      ]
     }
   },
   "bundle": {
