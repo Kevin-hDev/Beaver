@@ -192,6 +192,7 @@ impl InstallerRuntime {
         if state.cancel.is_none() || !allowed_transition(state.snapshot.phase, phase) {
             return Err(InstallerError::InstallFailed);
         }
+        let phase_changed = state.snapshot.phase != phase;
         set_phase(
             &mut state,
             phase,
@@ -200,7 +201,7 @@ impl InstallerRuntime {
             percent,
             can_cancel,
         );
-        Ok(state.event(log_key))
+        Ok(state.event(log_key.filter(|_| phase_changed)))
     }
 
     fn finish(

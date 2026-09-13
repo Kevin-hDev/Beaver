@@ -114,4 +114,6 @@ fn download_progress_is_bounded() {
     let event = runtime.downloading(200).unwrap();
     assert_eq!(event.snapshot.progress_mode, ProgressMode::Determinate);
     assert_eq!(event.snapshot.percent, Some(100));
+    assert_eq!(event.log_key.as_deref(), Some("installer.log.downloading"));
+    assert_eq!(runtime.downloading(99).unwrap().log_key, None);
 }
