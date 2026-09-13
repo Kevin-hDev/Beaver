@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { FilePreviewChanges } from "../file-preview-changes";
 import type { FileOperation } from "@/types/file-preview";
@@ -19,6 +19,22 @@ describe("FilePreviewChanges", () => {
     expect(headings(container)).toEqual(["filePreview.changeOf 2/2+2", "filePreview.changeOf 1/2+1-1"]);
     expect(screen.getByText("dernier")).toBeInTheDocument();
     expect(screen.getByText("premier")).toBeInTheDocument();
+  });
+
+  it("replie chaque changement indépendamment depuis son en-tête", () => {
+    const { container } = render(
+      <FilePreviewChanges operation={file(3, 1, [change("dernier", 2, 0), change("premier", 1, 1)])} />,
+    );
+
+    const toggles = screen.getAllByRole("button", { name: /filePreview.changeOf/ });
+    const regions = container.querySelectorAll(".cps-region");
+    expect(toggles[0]).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(toggles[0]);
+
+    expect(toggles[0]).toHaveAttribute("aria-expanded", "false");
+    expect(regions[0]).toHaveAttribute("data-open", "false");
+    expect(regions[1]).toHaveAttribute("data-open", "true");
   });
 
   it.each(["absent", "binaire", "vide"])("garde l’en-tête et les chiffres avec un diff %s", (kind) => {

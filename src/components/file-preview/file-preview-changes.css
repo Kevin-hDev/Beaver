@@ -9,8 +9,25 @@
 }
 
 .fpc-heading {
-  display: inline-flex;
+  width: 100%;
+  display: flex;
   align-items: center;
   gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border: 0;
+  background: transparent;
   color: var(--ink-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fpc-change .gdp-status {
+  padding: 0;
+}
+
+.fpc-heading-caret {
+  display: inline-flex;
+  margin-left: auto;
+  flex: none;
 }

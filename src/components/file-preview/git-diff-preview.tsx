@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Collapsible } from "@/components/ui/collapsible";
 import { highlightLines } from "@/lib/highlight";
 import { shouldWrapFile } from "@/lib/code-language";
 import { readGitDiffPreview } from "@/services/file-preview";
@@ -54,9 +55,10 @@ interface RecordedDiffPreviewProps {
   path: string;
   status: "added" | "modified" | "deleted";
   heading?: ReactNode;
+  open?: boolean;
 }
 
-export function RecordedDiffPreview({ data, path, status, heading }: RecordedDiffPreviewProps) {
+export function RecordedDiffPreview({ data, path, status, heading, open }: RecordedDiffPreviewProps) {
   return (
     <DiffPreviewView
       data={data}
@@ -65,11 +67,12 @@ export function RecordedDiffPreview({ data, path, status, heading }: RecordedDif
       path={path}
       status={status}
       heading={heading}
+      open={open}
     />
   );
 }
 
-function DiffPreviewView({ data, error, loading, path, previousPath, status, heading }: {
+function DiffPreviewView({ data, error, loading, path, previousPath, status, heading, open }: {
   data?: GitDiffData;
   error: boolean;
   loading: boolean;
@@ -77,6 +80,7 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status, hea
   previousPath?: string;
   status: GitDiffPreviewSource["status"];
   heading?: ReactNode;
+  open?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -92,7 +96,7 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status, hea
   const wrap = shouldWrapFile(path);
   const statusBar = (
     <div className={`gdp-status gdp-status-${status}`}>
-      <span className="gdp-status-label">{t(`filePreview.gitStatus.${status}`)}</span>
+      {!heading && <span className="gdp-status-label">{t(`filePreview.gitStatus.${status}`)}</span>}
       {previousPath && (
         <span className="gdp-status-paths">
           <span>{previousPath}</span>
@@ -103,11 +107,14 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status, hea
       {heading}
     </div>
   );
+  const collapsible = (body: ReactNode) => open === undefined
+    ? body
+    : <Collapsible open={open}>{body}</Collapsible>;
   if (error || data?.binary || (hunks.length === 0 && !isRename)) {
     return heading ? (
       <>
         {statusBar}
-        <div className="fp-empty">{t("filePreview.diffUnavailable")}</div>
+        {collapsible(<div className="fp-empty">{t("filePreview.diffUnavailable")}</div>)}
       </>
     ) : <div className="fp-empty">{t("filePreview.diffUnavailable")}</div>;
   }
@@ -115,29 +122,31 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status, hea
   const content = (
     <>
       {statusBar}
-      {hunks.map((hunk, hunkIndex) => (
-        <Fragment key={`${hunk.old_start}:${hunk.new_start}:${hunkIndex}`}>
-          {hunkIndex > 0 && <div className="gdp-hunk-separator" aria-hidden="true">…</div>}
-          <div className="gdp-hunk">
-            {hunk.lines.map((line, lineIndex) => {
-              const mode = lineMode(line.kind, status);
-              const prefix = mode === "ok" ? "+" : mode === "error" ? "-" : " ";
-              const lineNumber = line.kind === "deleted" ? line.old_line : line.new_line;
-              return (
-                <div className={`tp-line tp-line-${mode}`} key={lineIndex}>
-                  <span className="gdp-line-number">{lineNumber ?? ""}</span>
-                  <span className={`tp-prefix tp-prefix-${mode}`}>{prefix}</span>
-                  <span
-                    className="tp-code"
-                    dangerouslySetInnerHTML={{ __html: hunk.highlighted[lineIndex] || " " }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </Fragment>
-      ))}
-      {data?.truncated && <div className="gdp-note">{t("filePreview.diffTruncated")}</div>}
+      {collapsible(<>
+        {hunks.map((hunk, hunkIndex) => (
+          <Fragment key={`${hunk.old_start}:${hunk.new_start}:${hunkIndex}`}>
+            {hunkIndex > 0 && <div className="gdp-hunk-separator" aria-hidden="true">…</div>}
+            <div className="gdp-hunk">
+              {hunk.lines.map((line, lineIndex) => {
+                const mode = lineMode(line.kind, status);
+                const prefix = mode === "ok" ? "+" : mode === "error" ? "-" : " ";
+                const lineNumber = line.kind === "deleted" ? line.old_line : line.new_line;
+                return (
+                  <div className={`tp-line tp-line-${mode}`} key={lineIndex}>
+                    <span className="gdp-line-number">{lineNumber ?? ""}</span>
+                    <span className={`tp-prefix tp-prefix-${mode}`}>{prefix}</span>
+                    <span
+                      className="tp-code"
+                      dangerouslySetInnerHTML={{ __html: hunk.highlighted[lineIndex] || " " }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </Fragment>
+        ))}
+        {data?.truncated && <div className="gdp-note">{t("filePreview.diffTruncated")}</div>}
+      </>)}
     </>
   );
 
