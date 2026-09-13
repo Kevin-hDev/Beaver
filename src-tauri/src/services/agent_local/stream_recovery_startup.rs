@@ -11,7 +11,7 @@ pub(crate) async fn recover_all() {
         .await
         .is_err()
         {
-            log::warn!("stream_recovery_session_unavailable session_id={session_id}");
+            log::warn!("stream_recovery_session_unavailable");
         }
     }
 }

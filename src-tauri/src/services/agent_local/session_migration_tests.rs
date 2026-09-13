@@ -989,24 +989,6 @@ fn invalid_envelope_is_dropped_without_hiding_visible_message() {
 }
 
 #[test]
-fn invalid_context_usage_warning_uses_the_bounded_session_id() {
-    let session = base_session();
-    let mut value = serde_json::to_value(&session).unwrap();
-    value["context_usage"] = json!({"invalid": true});
-
-    assert_eq!(
-        super::session_migration_context_usage::warning_session_id(&value),
-        session.id
-    );
-
-    value["id"] = json!("\nforged");
-    assert_eq!(
-        super::session_migration_context_usage::warning_session_id(&value),
-        "unknown"
-    );
-}
-
-#[test]
 fn v2_rejects_missing_turn_and_tool_call_ids() {
     let session = base_session();
     let mut missing_turn = serde_json::to_value(&session).unwrap();

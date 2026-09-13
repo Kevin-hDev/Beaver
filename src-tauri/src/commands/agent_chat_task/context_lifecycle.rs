@@ -72,5 +72,7 @@ fn response_language(params: &super::StreamTaskParams) -> String {
     if params.fixture_run.is_some() {
         return String::new();
     }
+    #[cfg(not(debug_assertions))]
+    let _ = params;
     common::response_language()
 }
