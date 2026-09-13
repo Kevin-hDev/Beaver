@@ -3,6 +3,13 @@ use crate::contract::InstallerSnapshot;
 use crate::error::InstallerError;
 
 impl InstallerRuntime {
+    pub fn operation_active(&self) -> bool {
+        self.state
+            .lock()
+            .map(|state| state.cancel.is_some())
+            .unwrap_or(true)
+    }
+
     pub fn update_environment(
         &self,
         destination: &str,
