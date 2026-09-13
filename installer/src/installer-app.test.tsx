@@ -33,7 +33,12 @@ function fixture(initial = snapshot()) {
       publish = onEvent;
       return Promise.resolve();
     }),
-    cancel: vi.fn().mockResolvedValue(initial),
+    cancel: vi.fn().mockResolvedValue({
+      sequence: 1,
+      snapshot: initial,
+      completedStepDurationsMs: [],
+      logKey: null,
+    }),
     launch: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
   };
@@ -132,6 +137,23 @@ describe("Beaver Installer", () => {
     fireEvent.click(screen.getByRole("button", { name: /afficher les détails/i }));
     expect(screen.getAllByTestId("installer-log-entry")).toHaveLength(64);
     expect(screen.getByText(/étape 2 sur 5/i)).toBeVisible();
+  });
+
+  it("applique l'annulation avec la même séquence autoritaire que les événements", async () => {
+    const current = snapshot({ phase: "downloading", stepIndex: 2, canCancel: true });
+    const setup = fixture(current);
+    vi.mocked(setup.api.cancel).mockResolvedValue({
+      sequence: 8,
+      snapshot: snapshot({ phase: "cancelling", stepIndex: 2 }),
+      completedStepDurationsMs: [10],
+      logKey: null,
+    });
+    render(<InstallerApp api={setup.api} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /annuler/i }));
+
+    await waitFor(() => expect(document.querySelector(".binst-window"))
+      .toHaveAttribute("data-screen", "cancelling"));
   });
 
   it("affiche les fins annulée, échouée et réussie avec leurs actions", async () => {

@@ -61,9 +61,9 @@ impl InstallerService {
         Ok(text)
     }
 
-    pub fn cancel(&self) -> InstallerSnapshot {
+    pub fn cancel(&self) -> InstallerEvent {
         self.runtime.cancel();
-        self.runtime.snapshot().snapshot
+        self.runtime.snapshot()
     }
 
     pub fn operation_active(&self) -> bool {
@@ -104,7 +104,9 @@ impl InstallerService {
             platform::beaver_running(&destination)?,
         )?;
         let operation = self.runtime.begin()?;
-        let _ = channel.send(self.runtime.snapshot());
+        let mut checking = self.runtime.snapshot();
+        checking.log_key = Some("installer.log.checking".into());
+        let _ = channel.send(checking);
         let started = match self.trace.start(self.run.path()) {
             Ok(started) => started,
             Err(error) => {

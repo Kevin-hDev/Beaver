@@ -78,7 +78,7 @@ export function InstallerApp({ api = installerApi }: { api?: InstallerApi }) {
           snapshot={snapshot}
           durations={durations}
           logs={logs}
-          onCancel={() => void api.cancel().then(setSnapshot)}
+          onCancel={() => void api.cancel().then(receive).catch(() => {})}
         />
       )}
       {["failed", "cancelled", "completed"].includes(snapshot.phase) && (

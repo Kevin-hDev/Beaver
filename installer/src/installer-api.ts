@@ -7,7 +7,7 @@ export interface InstallerApi {
   snapshot: () => Promise<InstallerSnapshot>;
   chooseDirectory: () => Promise<string | null>;
   start: (onEvent: (event: InstallerEvent) => void) => Promise<void>;
-  cancel: () => Promise<InstallerSnapshot>;
+  cancel: () => Promise<InstallerEvent>;
   launch: () => Promise<void>;
   close: () => Promise<void>;
 }

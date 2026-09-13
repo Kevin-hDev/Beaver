@@ -38,7 +38,7 @@ pub async fn start_install(
 }
 
 #[tauri::command]
-pub fn cancel_install(service: State<'_, InstallerService>) -> InstallerSnapshot {
+pub fn cancel_install(service: State<'_, InstallerService>) -> InstallerEvent {
     service.cancel()
 }
 
