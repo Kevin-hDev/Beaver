@@ -1,6 +1,7 @@
 use super::macos::{validate_bundle, validate_staged_bundle, ValidatedDestination};
 use super::macos_authorization::{AuthorizationScope, AuthorizationSession, ProtectedTool};
 use super::macos_install::{remove_bundle, swap_authorized, swap_unprivileged, unique_sibling};
+use super::macos_recovery::{recover_authorized, recover_unprivileged, remove_authorized};
 use crate::error::InstallerError;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -29,50 +30,71 @@ pub fn install_dmg(
         None => return Ok(MacInstallResult::Cancelled),
     };
     let source = validate_bundle(&mount.root.join("Beaver.app"), &mount.root)?;
-    let stage = unique_sibling(destination.root(), ".Beaver.app.stage-")?;
-    let reinstalled = fs::symlink_metadata(destination.root().join("Beaver.app")).is_ok();
+    let target = destination.root().join("Beaver.app");
+    let reinstalled;
 
     if destination.needs_authorization() {
         let scope = AuthorizationScope::new(destination.root(), &mount.root)?;
         let mut authorization = AuthorizationSession::new(scope)?;
+        recover_authorized(destination, &mut authorization)?;
+        reinstalled = fs::symlink_metadata(&target).is_ok();
         if cancellation.is_cancelled() {
             return Ok(MacInstallResult::Cancelled);
         }
-        authorization.execute(
-            ProtectedTool::Ditto,
-            &[source.root().to_path_buf(), stage.clone()],
-        )?;
-        if cancellation.is_cancelled() {
-            authorization.execute(ProtectedTool::Remove, std::slice::from_ref(&stage))?;
-            if fs::symlink_metadata(&stage).is_ok() {
-                return Err(InstallerError::InstallFailed);
+        let stage = unique_sibling(destination.root(), ".Beaver.app.stage-")?;
+        let result = (|| {
+            authorization.execute(
+                ProtectedTool::Ditto,
+                &[source.root().to_path_buf(), stage.clone()],
+            )?;
+            if cancellation.is_cancelled() {
+                remove_authorized(&stage, &mut authorization)?;
+                return Ok(true);
             }
+            validate_staged_bundle(&stage, destination)?;
+            swap_authorized(
+                &stage,
+                destination,
+                &mut authorization,
+                expected_version,
+                before_swap,
+            )?;
+            Ok(false)
+        })();
+        if result.is_err() {
+            remove_authorized(&stage, &mut authorization)?;
+        }
+        if result? {
             return Ok(MacInstallResult::Cancelled);
         }
-        validate_staged_bundle(&stage, destination)?;
-        swap_authorized(
-            &stage,
-            destination,
-            &mut authorization,
-            expected_version,
-            before_swap,
-        )?;
     } else {
-        let copied = run_cancellable(
-            "/usr/bin/ditto",
-            &[source.root().to_path_buf(), stage.clone()],
-            cancellation,
-        )?;
-        if copied == CommandResult::Cancelled {
+        recover_unprivileged(destination)?;
+        reinstalled = fs::symlink_metadata(&target).is_ok();
+        let stage = unique_sibling(destination.root(), ".Beaver.app.stage-")?;
+        let result = (|| {
+            let copied = run_cancellable(
+                "/usr/bin/ditto",
+                &[source.root().to_path_buf(), stage.clone()],
+                cancellation,
+            )?;
+            if copied == CommandResult::Cancelled {
+                remove_bundle(&stage)?;
+                return Ok(true);
+            }
+            validate_staged_bundle(&stage, destination)?;
+            if cancellation.is_cancelled() {
+                remove_bundle(&stage)?;
+                return Ok(true);
+            }
+            swap_unprivileged(&stage, destination, expected_version, before_swap)?;
+            Ok(false)
+        })();
+        if result.is_err() {
             remove_bundle(&stage)?;
+        }
+        if result? {
             return Ok(MacInstallResult::Cancelled);
         }
-        validate_staged_bundle(&stage, destination)?;
-        if cancellation.is_cancelled() {
-            remove_bundle(&stage)?;
-            return Ok(MacInstallResult::Cancelled);
-        }
-        swap_unprivileged(&stage, destination, expected_version, before_swap)?;
     }
 
     Ok(if reinstalled {

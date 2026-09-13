@@ -1,3 +1,4 @@
+use super::macos_recovery::managed_sibling_kind;
 use crate::error::InstallerError;
 use std::ffi::{CString, OsStr};
 use std::fs::{self, OpenOptions};
@@ -118,20 +119,7 @@ fn valid_destination_bundle_name(name: Option<&str>) -> bool {
     if name == "Beaver.app" {
         return true;
     }
-    [
-        ".Beaver.app.stage-",
-        ".Beaver.app.backup-",
-        ".Beaver.app.failed-",
-    ]
-    .iter()
-    .any(|prefix| {
-        name.strip_prefix(prefix).is_some_and(|suffix| {
-            suffix.len() == 32
-                && suffix
-                    .bytes()
-                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        })
-    })
+    managed_sibling_kind(name).is_some()
 }
 
 pub fn installed_bundle(destination: &Path) -> Result<ValidatedBundle, InstallerError> {

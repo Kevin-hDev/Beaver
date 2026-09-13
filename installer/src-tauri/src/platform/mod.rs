@@ -6,6 +6,8 @@ pub mod macos_authorization;
 pub mod macos_dmg;
 #[cfg(target_os = "macos")]
 pub mod macos_install;
+#[cfg(target_os = "macos")]
+pub mod macos_recovery;
 pub mod windows;
 pub mod windows_cleanup;
 

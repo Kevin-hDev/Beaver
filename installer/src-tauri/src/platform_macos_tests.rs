@@ -4,6 +4,7 @@ use super::platform::macos::{
 use super::platform::macos_authorization::{validate_call, AuthorizationScope, ProtectedTool};
 use super::platform::macos_dmg::{install_dmg, MacInstallResult};
 use super::platform::macos_install::swap_unprivileged;
+use super::platform::macos_recovery::recover_unprivileged;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
@@ -178,6 +179,48 @@ fn refuses_an_unowned_staging_sibling_name() {
     fs::rename(source.bundle(), &arbitrary).unwrap();
     let validated = validate_destination(&destination.0).unwrap();
     assert!(validate_staged_bundle(&arbitrary, &validated).is_err());
+}
+
+#[test]
+fn removes_recognized_orphans_when_the_installed_bundle_is_valid() {
+    let destination = Fixture::new();
+    destination.bundle();
+    for prefix in [
+        ".Beaver.app.stage-",
+        ".Beaver.app.backup-",
+        ".Beaver.app.failed-",
+    ] {
+        let source = Fixture::new();
+        fs::rename(
+            source.bundle(),
+            destination
+                .0
+                .join(format!("{prefix}0123456789abcdef0123456789abcdef")),
+        )
+        .unwrap();
+    }
+    let validated = validate_destination(&destination.0).unwrap();
+
+    recover_unprivileged(&validated).unwrap();
+
+    assert_eq!(fs::read_dir(&destination.0).unwrap().count(), 1);
+    assert!(destination.0.join("Beaver.app").is_dir());
+}
+
+#[test]
+fn restores_the_only_valid_backup_when_the_target_is_missing() {
+    let destination = Fixture::new();
+    let source = Fixture::new();
+    let backup = destination
+        .0
+        .join(".Beaver.app.backup-0123456789abcdef0123456789abcdef");
+    fs::rename(source.bundle(), &backup).unwrap();
+    let validated = validate_destination(&destination.0).unwrap();
+
+    recover_unprivileged(&validated).unwrap();
+
+    assert!(!backup.exists());
+    assert!(destination.0.join("Beaver.app").is_dir());
 }
 
 #[test]

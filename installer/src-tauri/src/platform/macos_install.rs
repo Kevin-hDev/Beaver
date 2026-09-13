@@ -99,7 +99,7 @@ fn verify_expected_bundle(
         .ok_or(InstallerError::InstallFailed)
 }
 
-fn ensure_absent(path: &Path) -> Result<(), InstallerError> {
+pub(super) fn ensure_absent(path: &Path) -> Result<(), InstallerError> {
     match fs::symlink_metadata(path) {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         _ => Err(InstallerError::InstallFailed),
