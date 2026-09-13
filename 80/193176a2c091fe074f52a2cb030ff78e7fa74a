@@ -1,0 +1,20 @@
+User-reported UI correction after real Ollama update test.
+
+Root causes:
+- the empty indeterminate percentage occupied less height than the determinate percentage, so preparation -> download changed the measured window height;
+- CSS elevation extended beyond a webview sized exactly to the card and was clipped at the window bounds;
+- the 380 px card was too compact in real use.
+
+Fix:
+- reserve a stable 16 px measurement row from preparation onward;
+- give the 440 px content card transparent shadow gutters (464 px native width total), measure the outer frame, and disable the rectangular native shadow;
+- preserve the shared relief and radius tokens.
+
+Evidence:
+- RED: update-window-layout.test.ts failed against the 380 px window without shadow gutters.
+- GREEN: 23/23 targeted frontend tests passed; layout regression 5/5 passed after the final test edit.
+- npx tsc --noEmit passed.
+- npm run lint passed.
+- npm run build passed.
+- cargo fmt --check passed.
+- cargo test invoke_gate passed: 3/3, 0 failed.
