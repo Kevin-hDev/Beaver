@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import { countLines } from "@/lib/file-preview-utils";
+import { toolLineStats } from "@/lib/file-preview-operation-builder";
 import type { RenderableTool } from "./tool-detail-row";
 import { isShellStopAction } from "./tool-shell-display";
 
@@ -16,8 +16,14 @@ export interface ToolDisplayInfo {
 }
 
 const FILE_TOOLS = new Set([
-  "read_file", "write_file", "edit_file", "read_spreadsheet", "read_document",
-  "write_spreadsheet", "write_document", "transform_image",
+  "read_file",
+  "write_file",
+  "edit_file",
+  "read_spreadsheet",
+  "read_document",
+  "write_spreadsheet",
+  "write_document",
+  "transform_image",
 ]);
 
 /** Nombre maximum de dossiers parents affichés avant le nom du fichier. */
@@ -40,7 +46,10 @@ function trimToParentDirs(path: string, maxDirs: number): string {
  * du fichier (fixe, toujours visible). Sert au layout flex qui tronque uniquement
  * la partie gauche (dossiers).
  */
-export function filePathSegments(path: string, projectPath?: string): {
+export function filePathSegments(
+  path: string,
+  projectPath?: string,
+): {
   dirs: string;
   fileName: string;
 } {
@@ -98,18 +107,25 @@ export function toolDisplayInfo(
     };
   }
   if (tool.name === "bash" || tool.name === "bash_control") {
-    const summary = tool.name === "bash" ? compactCommand(tool.summary) : tool.summary;
+    const summary =
+      tool.name === "bash" ? compactCommand(tool.summary) : tool.summary;
     return { label: "bash", summary, icon: iconFor(tool.name) };
   }
   if (tool.name === "web_search" || tool.name === "web_fetch") {
-    return { label: tool.name, summary: tool.summary, icon: iconFor(tool.name) };
+    return {
+      label: tool.name,
+      summary: tool.summary,
+      icon: iconFor(tool.name),
+    };
   }
   const labelKey = actionKey(tool.name);
   const summary = displaySummary(tool, projectPath);
   const isFilePath = FILE_TOOLS.has(tool.name);
   // Priorité au chemin résolu côté backend (toujours absolu), sinon fallback sur le summary.
   const pathForDisplay = tool.resolved_path || tool.summary;
-  const segments = isFilePath ? filePathSegments(pathForDisplay, projectPath) : null;
+  const segments = isFilePath
+    ? filePathSegments(pathForDisplay, projectPath)
+    : null;
   return {
     label: t(`agentLocal.toolActivity.actions.${labelKey}`),
     summary,
@@ -123,8 +139,14 @@ export function toolDisplayInfo(
 function actionKey(name: string): string {
   if (name === "load_skill") return "skill";
   if (name === "delegate_task") return "agent";
-  if (name === "forecast_run" || name === "forecast_models" || name === "forecast_read") return "read";
-  if (name === "forecast_data_audit" || name === "forecast_analyze") return "forecast";
+  if (
+    name === "forecast_run" ||
+    name === "forecast_models" ||
+    name === "forecast_read"
+  )
+    return "read";
+  if (name === "forecast_data_audit" || name === "forecast_analyze")
+    return "forecast";
   if (name === "search_mcp_tools") return "mcp";
   if (name === "list_dir") return "list";
   if (name === "grep" || name === "glob") return "search";
@@ -137,7 +159,8 @@ function actionKey(name: string): string {
 }
 
 function displaySummary(tool: RenderableTool, projectPath?: string): string {
-  if (!FILE_TOOLS.has(tool.name) && tool.name !== "list_dir") return tool.summary;
+  if (!FILE_TOOLS.has(tool.name) && tool.name !== "list_dir")
+    return tool.summary;
   return shortenPath(tool.summary, projectPath);
 }
 
@@ -148,11 +171,15 @@ function displaySummary(tool: RenderableTool, projectPath?: string): string {
  */
 export function shortenPath(path: string, projectPath?: string): string {
   const normalized = path.replace(/\\/g, "/");
-  const normalizedProject = projectPath?.replace(/\\/g, "/").replace(/\/+$/, "");
+  const normalizedProject = projectPath
+    ?.replace(/\\/g, "/")
+    .replace(/\/+$/, "");
   let displayPath: string;
   if (normalizedProject && isInsideProject(normalized, normalizedProject)) {
     const rootName = basename(normalizedProject);
-    const relative = normalized.slice(normalizedProject.length).replace(/^\/+/, "");
+    const relative = normalized
+      .slice(normalizedProject.length)
+      .replace(/^\/+/, "");
     displayPath = relative ? `${rootName}/${relative}` : rootName;
   } else {
     const projectsMarker = "/Projects/";
@@ -175,20 +202,20 @@ function basename(path: string): string {
   return parts.length > 0 ? parts[parts.length - 1] : path;
 }
 
-function changeStats(tool: RenderableTool): Pick<ToolDisplayInfo, "additions" | "deletions"> {
-  if (tool.name === "write_file" && tool.content != null) {
-    return { additions: countLines(tool.content), deletions: 0 };
-  }
-  if (tool.name === "edit_file" && tool.old_text != null && tool.new_text != null) {
-    return { additions: countLines(tool.new_text), deletions: countLines(tool.old_text) };
-  }
-  return {};
+function changeStats(
+  tool: RenderableTool,
+): Pick<ToolDisplayInfo, "additions" | "deletions"> {
+  if (tool.pending) return {};
+  if (tool.name !== "write_file" && tool.name !== "edit_file") return {};
+  return toolLineStats(tool) ?? {};
 }
 
 function compactCommand(command: string): string {
   const firstLine = command.split(/\r?\n/, 1)[0] ?? "";
   const maxLength = 96;
-  if (command.includes("\n") || command.includes("\r")) return `${firstLine.slice(0, maxLength)}...`;
-  if (firstLine.length > maxLength) return `${firstLine.slice(0, maxLength)}...`;
+  if (command.includes("\n") || command.includes("\r"))
+    return `${firstLine.slice(0, maxLength)}...`;
+  if (firstLine.length > maxLength)
+    return `${firstLine.slice(0, maxLength)}...`;
   return firstLine;
 }
