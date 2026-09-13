@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentChatDetail } from "../agent-chat-detail";
 
@@ -28,6 +29,15 @@ describe("AgentChatDetail parent navigation", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     harness.instantLayout = false;
+  });
+
+  it("pose le bouton en haut à gauche de la conversation", () => {
+    const css = readFileSync("src/components/agent-local/agent-local-tab.css", "utf8");
+    const rule = css.match(/\.sa-parent-btn\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(rule).toMatch(/position:\s*absolute;/);
+    expect(rule).toMatch(/left:\s*var\(--chrome-3\);/);
+    expect(rule).not.toMatch(/right:/);
   });
 
   it("utilise la traduction du retour au chat parent", () => {

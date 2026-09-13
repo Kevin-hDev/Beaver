@@ -61,11 +61,11 @@ body.al-panel-resizing .agent-detail-chat {
   transition: none !important;
 }
 
-/* Retour au parent — posé en surimpression du fil de la session. */
+/* À gauche, le retour au parent ne recouvre pas le panneau latéral ouvert. */
 .sa-parent-btn {
   position: absolute;
-  top: 8px;
-  right: 12px;
+  top: var(--chrome-2);
+  left: var(--chrome-3);
   z-index: var(--z-sticky);
 }
 
