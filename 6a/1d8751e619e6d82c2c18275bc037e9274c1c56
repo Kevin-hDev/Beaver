@@ -1,0 +1,3 @@
+Counter-review N2: an invalid final asset inside the validated owned run is unlinked before a fresh download. Valid cached assets are still reused; cancellation and unrelated validation failures remain fail-closed.
+
+TDD: retry_replaces_a_corrupt_owned_asset failed with IntegrityFailed before the change and now passes. Download suite 9/9 and installer Clippy strict passed.
