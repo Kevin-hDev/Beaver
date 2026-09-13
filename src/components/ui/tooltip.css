@@ -13,7 +13,10 @@
   box-shadow: var(--tooltip-shadow);
   font-size: 11px;
   color: var(--tooltip-text);
-  white-space: nowrap;
+  /* Les adresses longues passent à la ligne avant de sortir de la fenêtre. */
+  width: max-content;
+  max-width: calc(100vw - 16px);
+  overflow-wrap: anywhere;
   pointer-events: none;
   z-index: var(--z-tooltip);
 }
