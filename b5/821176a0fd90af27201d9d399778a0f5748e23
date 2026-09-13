@@ -4,8 +4,7 @@ Fix: desktop Settings now delegates active app and Ollama updates to the native 
 
 Evidence:
 - RED before fix: updates-settings test found the legacy progressbar and no window-open control on desktop.
-- GREEN after fix: 22/22 targeted update and translation tests passed.
-- 195/195 wider Settings/update tests passed before the final error-path addition; the final targeted suite added and passed the error path.
+- GREEN after fix: 43 files / 196 tests passed across Settings, updates, notifications and translations.
 - npx tsc --noEmit passed.
 - npm run lint passed.
 - npm run build passed.
