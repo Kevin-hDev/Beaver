@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import beaverUrl from "../../../../docs/fonctionnalites/install-&-update/assets/QPXAq01-anime.svg";
+import beaverUrl from "../../../assets/QPXAq01-anime.svg";
 import { OperationProgressBar } from "@/components/ui/operation-progress-action";
 import { CheckCircle2, Clock3, Warning, X } from "@/components/ui/icons";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";

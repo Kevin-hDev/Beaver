@@ -21,7 +21,7 @@ export default defineConfig({
       allow: [
         installerRoot,
         path.resolve(installerRoot, "../src/styles"),
-        path.resolve(installerRoot, "../docs/fonctionnalites/install-&-update/assets"),
+        path.resolve(installerRoot, "../src/assets"),
       ],
     },
   },

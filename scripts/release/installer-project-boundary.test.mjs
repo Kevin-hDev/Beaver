@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
+
+const SHARED_BEAVER_ASSET = "src/assets/QPXAq01-anime.svg";
 
 test("l'installateur reste une application Tauri minimale", async () => {
   const cargo = await readFile("installer/src-tauri/Cargo.toml", "utf8");
@@ -29,4 +32,11 @@ test("la configuration active uniquement la capability minimale", async () => {
   assert.equal(capability.identifier, "default");
   assert.deepEqual(capability.windows, ["main"]);
   assert.deepEqual(capability.permissions, ["core:window:allow-close"]);
+});
+
+test("le dessin partagé du castor appartient au dépôt", async () => {
+  await access(SHARED_BEAVER_ASSET);
+  const ignored = spawnSync("git", ["check-ignore", "-q", SHARED_BEAVER_ASSET]);
+
+  assert.equal(ignored.status, 1);
 });

@@ -1,4 +1,4 @@
-import beaverSvg from "../../docs/fonctionnalites/install-&-update/assets/QPXAq01-anime.svg?raw";
+import beaverSvg from "../../src/assets/QPXAq01-anime.svg?raw";
 
 interface Props {
   size: "large" | "small";
