@@ -132,7 +132,7 @@ describe("collectFileOperations", () => {
     }));
   });
 
-  it("ne garde qu'une ligne par fichier et remonte le dernier fichier touché", () => {
+  it("ne garde qu'une ligne par fichier, au total de ses changements, et remonte le dernier fichier touché", () => {
     const messages = [
       message("m1", [tool({ name: "write_file", summary: "/repo/a.ts", content: "a" })]),
       message("m2", [tool({ name: "write_file", summary: "/repo/b.ts", content: "b" })]),
@@ -149,7 +149,7 @@ describe("collectFileOperations", () => {
     expect(operations.map((operation) => operation.path)).toEqual(["/repo/a.ts", "/repo/b.ts"]);
     expect(operations[0]).toEqual(expect.objectContaining({
       type: "edit",
-      additions: 1,
+      additions: 2,
       deletions: 2,
     }));
   });
@@ -233,8 +233,8 @@ describe("collectFileOperations", () => {
     expect(operations).toHaveLength(1);
     expect(operations[0]).toEqual(expect.objectContaining({
       path: "/repo/src/test_ui_card.tsx",
-      additions: 9,
-      deletions: 5,
+      additions: 10,
+      deletions: 8,
     }));
   });
 });

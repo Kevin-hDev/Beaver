@@ -76,7 +76,29 @@ describe("session-summary", () => {
       deletions: bubble.reduce((total, operation) => total + operation.deletions, 0),
       files: bubble.length,
     });
-    expect(summarizeLastRequestChanges(messages)).toEqual({ additions: 6, deletions: 0, files: 2 });
+    expect(summarizeLastRequestChanges(messages)).toEqual({ additions: 7, deletions: 1, files: 2 });
+  });
+
+  it("additionne les changements d'un même fichier, dans la bulle comme dans le résumé", () => {
+    const messages = [message("run", [
+      { name: "edit_file", summary: "/repo/a.ts", file_changes: [change("/repo/a.ts", 1, 1)] },
+      { name: "bash", summary: "echo >> a.ts", file_changes: [change("/repo/a.ts", 2, 0)] },
+    ])];
+
+    expect(collectFileOperations(messages).map((operation) => [operation.additions, operation.deletions]))
+      .toEqual([[3, 1]]);
+    expect(summarizeLastRequestChanges(messages)).toEqual({ additions: 3, deletions: 1, files: 1 });
+  });
+
+  it("compte une seule fois un fichier écrit en relatif puis en absolu dans une ancienne conversation", () => {
+    const messages = [message("old", [
+      { name: "write_file", summary: "src/a.ts", content: "a\nb" },
+      { name: "edit_file", summary: "/repo/src/a.ts", file_changes: [change("/repo/src/a.ts", 1, 1)] },
+    ])];
+    const bubble = collectFileOperations(messages, { baseDir: "/repo" });
+
+    expect(bubble).toHaveLength(1);
+    expect(summarizeLastRequestChanges(messages, "/repo")).toEqual({ additions: 3, deletions: 1, files: 1 });
   });
 
   it("fait le total de toute la réponse, comme la bulle, quand elle tient en plusieurs messages", () => {

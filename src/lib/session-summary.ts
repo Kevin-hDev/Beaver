@@ -23,14 +23,14 @@ const EMPTY_CHANGE_SUMMARY: SessionChangeSummary = {
   files: 0,
 };
 
-export function summarizeLastRequestChanges(messages: AgentMessage[]): SessionChangeSummary {
+export function summarizeLastRequestChanges(messages: AgentMessage[], baseDir?: string): SessionChangeSummary {
   const displayed = normalizeSavedToolHistory(messages);
   // Le résumé live reste l'autorité pendant le stream ; ici on reconstruit les groupes enregistrés.
   const bubbles = planStreamEndArtifacts(displayed, false, "");
   for (let index = displayed.length - 1; index >= 0; index -= 1) {
     const bubble = bubbles.get(displayed[index].id);
     if (!bubble) continue;
-    const summary = summarizeFileOperations(collectFileOperations(bubble.messages));
+    const summary = summarizeFileOperations(collectFileOperations(bubble.messages, { baseDir }));
     if (hasChangeSummary(summary)) return summary;
   }
   return EMPTY_CHANGE_SUMMARY;

@@ -1,7 +1,7 @@
 import type { AgentMessage, ToolActivityRecord } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
 import { inferSavedToolPaths } from "./tool-file-path";
-import { toolToFileOperations } from "./file-preview-operation-builder";
+import { sumFileOperations, toolToFileOperations } from "./file-preview-operation-builder";
 
 export { countLines, fileNameFromPath } from "./file-preview-operation-builder";
 
@@ -57,7 +57,7 @@ export function collectFileOperationGroups(
 ): FileOperationGroups {
   const byPath = new Map<string, FileOperation>();
   if (options.liveTools?.length) {
-    appendLatestToolOperations(
+    appendToolOperations(
       byPath,
       options.liveTools,
       "live",
@@ -83,7 +83,7 @@ export function collectFileOperationGroups(
         options.baseDir,
       );
     }
-    appendLatestToolOperations(
+    appendToolOperations(
       byPath,
       toolsFromMessage(messages[i]),
       messages[i].id,
@@ -102,7 +102,8 @@ function toolsFromMessage(message: AgentMessage): ToolActivityRecord[] {
   return segmentTools.length > 0 ? segmentTools : message.tool_activities ?? [];
 }
 
-function appendLatestToolOperations(
+/** Une ligne par fichier : le dernier contenu visible et le total de ses changements. */
+function appendToolOperations(
   byPath: Map<string, FileOperation>,
   tools: ToolActivityRecord[],
   messageId: string,
@@ -117,8 +118,11 @@ function appendLatestToolOperations(
     for (const operation of operations) {
       if (byPath.size >= MAX_FILE_OPERATIONS) return;
       const key = fileOperationKey(operation.path, baseDir);
-      if (!key || byPath.has(key)) continue;
-      byPath.set(key, { ...operation, id: `file:${messageId}:${key}` });
+      if (!key) continue;
+      const newer = byPath.get(key);
+      byPath.set(key, newer
+        ? { ...newer, ...sumFileOperations([newer, operation]) }
+        : { ...operation, id: `file:${messageId}:${key}` });
     }
   }
 }
@@ -130,7 +134,7 @@ function collectLatestToolOperations(
   baseDir: string | undefined,
 ): FileOperation[] {
   const byPath = new Map<string, FileOperation>();
-  appendLatestToolOperations(byPath, tools, messageId, timestamp, baseDir);
+  appendToolOperations(byPath, tools, messageId, timestamp, baseDir);
   return Array.from(byPath.values());
 }
 

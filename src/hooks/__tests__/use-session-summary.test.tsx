@@ -188,6 +188,19 @@ describe("useSessionSummary", () => {
 
     expect(result.current.changes).toEqual({ additions: 6, deletions: 0, files: 2 });
   });
+
+  it("résout les chemins relatifs depuis le dossier du projet, comme la bulle", async () => {
+    invokeMock.mockImplementation((command: string) => command === "list_subagents"
+      ? Promise.resolve([])
+      : Promise.resolve(session([assistant("old", [
+        { name: "write_file", summary: "src/a.ts", content: "a\nb" },
+        { name: "write_file", summary: "/repo/src/a.ts", content: "c" },
+      ])])));
+
+    const { result } = renderHook(() => useSessionSummary("s1", "/repo"));
+
+    await waitFor(() => expect(result.current.changes).toEqual({ additions: 3, deletions: 0, files: 1 }));
+  });
 });
 
 function emit(sessionId: string, event: StreamEvent) {

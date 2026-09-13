@@ -35,8 +35,8 @@ export function SessionSummaryChangeStats({
 
   return (
     <span className="ssb-change-stats" title={title} aria-label={title}>
-      <span className="ssb-change-add">+{changes.additions ?? "…"}</span>
-      <span className="ssb-change-del">-{changes.deletions ?? "…"}</span>
+      {changes.additions !== 0 && <span className="ssb-change-add">+{changes.additions ?? "…"}</span>}
+      {changes.deletions !== 0 && <span className="ssb-change-del">-{changes.deletions ?? "…"}</span>}
     </span>
   );
 }

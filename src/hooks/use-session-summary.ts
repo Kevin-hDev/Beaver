@@ -35,7 +35,7 @@ const REFRESH_EVENTS = new Set<StreamEvent["event"]>([
 
 const SUMMARY_REFRESH_TOOLS = new Set(["archive_subagent"]);
 
-export function useSessionSummary(sessionId: string | null) {
+export function useSessionSummary(sessionId: string | null, baseDir?: string) {
   const [session, setSession] = useState<AgentSession | null>(null);
   const [subagentSessions, setSubagentSessions] = useState<AgentSessionMeta[]>([]);
   const [liveChanges, setLiveChanges] = useState<{ sessionId: string; summary: SessionChangeSummary } | null>(null);
@@ -124,7 +124,7 @@ export function useSessionSummary(sessionId: string | null) {
         });
         liveToolsRef.current = next.tools;
         const finished = toolsToRecords(next.tools.filter((tool) => !isPendingTool(tool)));
-        const summary = summarizeFileOperations(collectFileOperations([], { liveTools: finished }));
+        const summary = summarizeFileOperations(collectFileOperations([], { liveTools: finished, baseDir }));
         if (hasChangeSummary(summary)) setLiveChanges({ sessionId, summary });
         if (!payload.event.data.isError && SUMMARY_REFRESH_TOOLS.has(payload.event.data.name)) {
           scheduleRefresh(80);
@@ -145,9 +145,12 @@ export function useSessionSummary(sessionId: string | null) {
       cleanupTauriListener(sessionUnlisten);
       window.removeEventListener(AGENT_SESSIONS_CHANGED, refreshFromWindow);
     };
-  }, [scheduleRefresh, sessionId]);
+  }, [baseDir, scheduleRefresh, sessionId]);
 
-  const savedChanges = useMemo(() => summarizeLastRequestChanges(session?.messages ?? []), [session?.messages]);
+  const savedChanges = useMemo(
+    () => summarizeLastRequestChanges(session?.messages ?? [], baseDir),
+    [baseDir, session?.messages],
+  );
   const changes = liveChanges?.sessionId === sessionId && hasChangeSummary(liveChanges.summary)
     ? liveChanges.summary
     : savedChanges;
