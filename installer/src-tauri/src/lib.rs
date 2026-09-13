@@ -82,10 +82,11 @@ pub fn run() {
                 event: tauri::WindowEvent::CloseRequested { api, .. },
                 ..
             } if label == "main" && service.operation_active() => api.prevent_close(),
-            tauri::RunEvent::ExitRequested { api, .. }
-                if service.operation_active() || service.shutdown().is_err() =>
-            {
+            tauri::RunEvent::ExitRequested { api, .. } if service.operation_active() => {
                 api.prevent_exit();
+            }
+            tauri::RunEvent::ExitRequested { .. } if service.shutdown().is_err() => {
+                eprintln!("installer-cleanup-failed");
             }
             _ => {}
         }

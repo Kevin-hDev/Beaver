@@ -85,9 +85,6 @@ impl InstallerService {
             });
         #[cfg(not(target_os = "windows"))]
         let result = self.run.cleanup();
-        if result.is_err() {
-            self.cleanup_done.store(false, Ordering::Release);
-        }
         result
     }
 
@@ -189,3 +186,7 @@ impl Drop for InstallerService {
         let _ = self.shutdown();
     }
 }
+
+#[cfg(test)]
+#[path = "install_tests.rs"]
+mod tests;
