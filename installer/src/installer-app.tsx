@@ -19,20 +19,30 @@ const allowedLogKeys = new Set([
 
 export function InstallerApp({ api = installerApi }: { api?: InstallerApi }) {
   const [snapshot, setSnapshot] = useState<InstallerSnapshot | null>(null);
+  const [snapshotFailed, setSnapshotFailed] = useState(false);
   const [durations, setDurations] = useState<number[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
   const sequence = useRef(-1);
+  const snapshotRequest = useRef(0);
+
+  const loadSnapshot = useCallback(() => {
+    const request = ++snapshotRequest.current;
+    void api.snapshot()
+      .then((value) => {
+        if (request === snapshotRequest.current) setSnapshot(value);
+      })
+      .catch(() => {
+        if (request === snapshotRequest.current) setSnapshotFailed(true);
+      });
+  }, [api]);
 
   useEffect(() => {
-    let current = true;
     sequence.current = -1;
-    void api.snapshot().then((value) => {
-      if (current) setSnapshot(value);
-    }).catch(() => {});
+    loadSnapshot();
     return () => {
-      current = false;
+      snapshotRequest.current += 1;
     };
-  }, [api]);
+  }, [loadSnapshot]);
 
   useEffect(() => {
     if (!snapshot?.beaverRunning) return;
@@ -69,8 +79,34 @@ export function InstallerApp({ api = installerApi }: { api?: InstallerApi }) {
 
   const start = useCallback(() => {
     setLogs([]);
-    void api.start(receive).catch(() => undefined);
+    void api.start(receive).catch(() => {
+      setSnapshot((value) => value && !["failed", "cancelled", "completed"].includes(value.phase)
+        ? { ...value, phase: "failed", canCancel: false, errorKey: "installer-install-failed" }
+        : value);
+    });
   }, [api, receive]);
+
+  if (snapshotFailed && !snapshot) {
+    return (
+      <div className="binst-window relief elev-above" data-screen="failed">
+        <div className="binst-title">{t("installer.windowTitle")}</div>
+        <main className="binst-body">
+          <div className="callout binst-result-callout binst-result-error">
+            <h1 className="callout-title">{t("installer.interruptedTitle")}</h1>
+            <span>{t("installer.errors.install")}</span>
+          </div>
+        </main>
+        <footer className="binst-footer">
+          <button type="button" className="btn btn-sm btn-secondary" onClick={() => void api.close()}>
+            {t("installer.quit")}
+          </button>
+          <button type="button" className="btn btn-sm btn-primary" onClick={loadSnapshot}>
+            {t("installer.retry")}
+          </button>
+        </footer>
+      </div>
+    );
+  }
 
   if (!snapshot) return <div className="binst-window relief elev-above" aria-busy="true" />;
 

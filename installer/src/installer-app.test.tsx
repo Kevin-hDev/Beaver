@@ -56,6 +56,29 @@ beforeEach(() => {
 });
 
 describe("Beaver Installer", () => {
+  it("sort de l'attente si le snapshot initial échoue et permet de réessayer", async () => {
+    const setup = fixture();
+    vi.mocked(setup.api.snapshot)
+      .mockRejectedValueOnce(new Error("ipc unavailable"))
+      .mockResolvedValueOnce(snapshot());
+    render(<InstallerApp api={setup.api} />);
+
+    expect(await screen.findByRole("heading", { name: /installation interrompue/i })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /réessayer/i }));
+
+    expect(await screen.findByRole("button", { name: /^installer$/i })).toBeEnabled();
+  });
+
+  it("affiche un échec si le démarrage IPC échoue sans événement", async () => {
+    const setup = fixture();
+    vi.mocked(setup.api.start).mockRejectedValue(new Error("start failed"));
+    render(<InstallerApp api={setup.api} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /^installer$/i }));
+
+    expect(await screen.findByText(/installation a échoué/i)).toBeVisible();
+  });
+
   it("affiche le dossier en lecture seule et permet de le parcourir", async () => {
     const { api } = fixture();
     render(<InstallerApp api={api} />);
