@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toolToFileOperations } from "../file-preview-operation-builder";
-import { summarizeToolChange } from "../session-summary";
+import { summarizeLastRequestChanges } from "../session-summary";
 import type { ToolActivityRecord } from "@/types/agent";
 
 const memoryWrite: ToolActivityRecord = {
@@ -24,7 +24,14 @@ describe("isolation des fichiers MEMORY", () => {
   });
 
   it("ne les compte pas dans le résumé des changements du projet", () => {
-    expect(summarizeToolChange(memoryWrite)).toEqual({
+    expect(summarizeLastRequestChanges([{
+      id: "message-1",
+      role: "assistant",
+      content: "",
+      files: [],
+      timestamp: "2026-07-24T20:00:00Z",
+      tool_activities: [memoryWrite],
+    }])).toEqual({
       additions: 0,
       deletions: 0,
       files: 0,

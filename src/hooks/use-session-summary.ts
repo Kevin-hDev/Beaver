@@ -4,15 +4,15 @@ import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { AGENT_SESSIONS_CHANGED } from "@/hooks/agent-session-events";
 import { isHiddenAgentTool } from "@/lib/hidden-agent-tools";
+import { collectFileOperations } from "@/lib/file-preview-utils";
 import { toolsToRecords, type ToolActivity } from "./agent-chat-utils";
 import { applyToolResult } from "./agent-chat-tool-results";
+import { isPendingTool } from "./active-stream-item";
 import {
-  addChangeSummaries,
   childSubagents,
-  EMPTY_CHANGE_SUMMARY,
   hasChangeSummary,
+  summarizeFileOperations,
   summarizeLastRequestChanges,
-  summarizeToolChange,
   visibleTodoRuns,
 } from "@/lib/session-summary";
 import type { AgentSession, AgentSessionMeta, StreamEvent } from "@/types/agent";
@@ -42,7 +42,6 @@ export function useSessionSummary(sessionId: string | null) {
   const timerRef = useRef<number | null>(null);
   const requestSeqRef = useRef(0);
   const liveToolsRef = useRef<ToolActivity[]>([]);
-  const liveRequestChangesRef = useRef<SessionChangeSummary>(EMPTY_CHANGE_SUMMARY);
 
   const refresh = useCallback(async () => {
     const requestSeq = requestSeqRef.current + 1;
@@ -75,7 +74,6 @@ export function useSessionSummary(sessionId: string | null) {
   useEffect(() => {
     let cancelled = false;
     liveToolsRef.current = [];
-    liveRequestChangesRef.current = EMPTY_CHANGE_SUMMARY;
     queueMicrotask(() => {
       if (!cancelled) void refresh();
     });
@@ -83,7 +81,6 @@ export function useSessionSummary(sessionId: string | null) {
       cancelled = true;
       setLiveChanges(null);
       liveToolsRef.current = [];
-      liveRequestChangesRef.current = EMPTY_CHANGE_SUMMARY;
       requestSeqRef.current += 1;
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
@@ -126,14 +123,9 @@ export function useSessionSummary(sessionId: string | null) {
           artifacts: payload.event.data.artifacts,
         });
         liveToolsRef.current = next.tools;
-        const completed = next.tools[next.appliedIndex];
-        const summary = completed
-          ? summarizeToolChange(toolsToRecords([completed])[0])
-          : EMPTY_CHANGE_SUMMARY;
-        if (hasChangeSummary(summary)) {
-          liveRequestChangesRef.current = addChangeSummaries(liveRequestChangesRef.current, summary);
-          setLiveChanges({ sessionId, summary: liveRequestChangesRef.current });
-        }
+        const finished = toolsToRecords(next.tools.filter((tool) => !isPendingTool(tool)));
+        const summary = summarizeFileOperations(collectFileOperations([], { liveTools: finished }));
+        if (hasChangeSummary(summary)) setLiveChanges({ sessionId, summary });
         if (!payload.event.data.isError && SUMMARY_REFRESH_TOOLS.has(payload.event.data.name)) {
           scheduleRefresh(80);
         }
@@ -141,7 +133,6 @@ export function useSessionSummary(sessionId: string | null) {
       }
       if (payload.event.event === "done" || payload.event.event === "error") {
         liveToolsRef.current = [];
-        liveRequestChangesRef.current = EMPTY_CHANGE_SUMMARY;
       }
       if (!REFRESH_EVENTS.has(payload.event.event)) return;
       scheduleRefresh(payload.event.event === "done" ? 300 : 80);

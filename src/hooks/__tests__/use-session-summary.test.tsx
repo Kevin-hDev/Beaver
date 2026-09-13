@@ -157,6 +157,37 @@ describe("useSessionSummary", () => {
 
     expect(result.current.changes).toEqual({ additions: 1, deletions: 1, files: 1 });
   });
+
+  it("compte en direct les fichiers modifiés par le terminal, sans l'outil encore en cours", async () => {
+    invokeMock.mockImplementation((command: string) => command === "list_subagents"
+      ? Promise.resolve([])
+      : Promise.resolve(session([], "s1")));
+    const { result } = renderHook(() => useSessionSummary("s1"));
+    await waitFor(() => expect(result.current.session?.id).toBe("s1"));
+
+    act(() => {
+      emit("s1", { event: "toolCall", data: {
+        name: "edit_file",
+        arguments: { path: "/repo/c.ts", old_string: "old", new_string: "new" },
+        toolCallIndex: 0,
+      } });
+      emit("s1", { event: "toolCall", data: {
+        name: "bash", arguments: { command: "cp a.ts b.ts" }, toolCallIndex: 1,
+      } });
+      emit("s1", { event: "toolResult", data: {
+        name: "bash",
+        content: "ok",
+        isError: false,
+        toolCallIndex: 1,
+        fileChanges: [
+          { path: "/repo/a.ts", status: "modified", additions: 2, deletions: 0 },
+          { path: "/repo/b.ts", status: "added", additions: 4, deletions: 0 },
+        ],
+      } });
+    });
+
+    expect(result.current.changes).toEqual({ additions: 6, deletions: 0, files: 2 });
+  });
 });
 
 function emit(sessionId: string, event: StreamEvent) {
