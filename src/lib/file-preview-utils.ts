@@ -27,7 +27,7 @@ export function normalizeFileOperationPath(path: string): string {
   return path.replaceAll("\\", "/").replace(/\/+$/, "");
 }
 
-function fileOperationKey(path: string, baseDir?: string): string {
+export function fullFileOperationPath(path: string, baseDir?: string): string {
   const normalizedPath = normalizeFileOperationPath(path);
   if (!baseDir || isAbsolutePath(normalizedPath)) return normalizedPath;
   const normalizedBase = normalizeFileOperationPath(baseDir);
@@ -119,7 +119,7 @@ function appendToolOperations(
     const operations = toolToFileOperations(tool, messageId, index, timestamp);
     for (const operation of operations) {
       if (byPath.size >= MAX_FILE_OPERATIONS) return;
-      const key = fileOperationKey(operation.path, baseDir);
+      const key = fullFileOperationPath(operation.path, baseDir);
       if (!key) continue;
       const newer = byPath.get(key);
       byPath.set(key, newer
