@@ -1,0 +1,11 @@
+Tâche 5 — Cinq assets et démarreurs réduits.
+
+Décisions : ASSET_SUFFIXES devient l’unique autorité Node des cinq noms. Empaquetage sans dépendance ajoutée avec tar/gzip natifs, inventaire borné, mtimes normalisés et relecture complète. Les démarreurs téléchargent uniquement l’installateur graphique et lui transmettent les six paires CLI épinglées. Le chemin Linux install_linux et sa branche de sélection sont restés byte-for-byte identiques.
+
+Publication : cinq assets plus update-manifest.json ; deux artefacts installateur séparés ; attestation obligatoire après verify_release ; publication après attestation ; upload append-only sans --clobber. Si un asset existe, il est téléchargé, ré-haché localement puis la publication s’arrête, identique ou divergent.
+
+TDD : create-update-manifest a d’abord échoué sur les deux nouveaux assets ; release-workflow a ensuite échoué sur la matrice, l’attestation et l’append-only ; les contrats des démarreurs ont échoué avant leur transformation. Tous passent après implémentation.
+
+Preuves : npm run test:install ; npm run test:update-manifest ; npm run test:release-workflow (53/53) ; package-installer 4/4 ; bash -n ; node --check ; git diff --check. Le vrai bundle Beaver Installer.app a été construit localement puis empaqueté et relu : Beaver_1.2.2_installer-aarch64.tar.gz, 6896972 octets, SHA-256 6ea010924604484d431389ba35378606b6110ad905ff9e0f3c7736c946adf232. Graphify mis à jour.
+
+Limite vérifiée honnêtement : aucun moteur PowerShell n’est installé sur ce Mac. La syntaxe/les contrats statiques sont verts localement ; le test fonctionnel de purge avec jonction est câblé dans scripts/test-install-ps1.ps1 pour PowerShell 7 et 5.1 en CI Windows.
