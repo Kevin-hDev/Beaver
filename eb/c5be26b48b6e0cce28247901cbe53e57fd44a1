@@ -1,0 +1,3 @@
+Review correction: blocking DMG/NSIS process work now runs through tokio::task::spawn_blocking. Downloading remains async, while the existing runtime, cancellation token, channel, and validated owned paths are moved into the blocking closure.
+
+Proof: full installer Rust suite 45 passed, 2 ignored; cargo clippy --all-targets -- -D warnings passed; install.rs is 191 lines.
