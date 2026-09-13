@@ -1,6 +1,6 @@
-use super::macos::{validate_staged_bundle, ValidatedDestination};
+use super::macos::ValidatedDestination;
 use super::macos_authorization::{AuthorizationSession, ProtectedTool};
-use super::macos_install::{ensure_absent, remove_bundle};
+use super::macos_install::{ensure_absent, remove_bundle, validate_replaceable_bundle};
 use crate::error::InstallerError;
 use std::ffi::OsStr;
 use std::fs;
@@ -47,7 +47,7 @@ pub fn recover_unprivileged(destination: &ValidatedDestination) -> Result<(), In
     if orphans.target_missing {
         if let Some(backup) = &orphans.backup {
             fs::rename(backup, &target).map_err(|_| InstallerError::InstallFailed)?;
-            validate_staged_bundle(&target, destination)?;
+            validate_replaceable_bundle(&target, destination)?;
         }
     }
     for path in removable(&orphans) {
@@ -66,7 +66,7 @@ pub fn recover_authorized(
         if let Some(backup) = &orphans.backup {
             session.execute(ProtectedTool::Move, &[backup.to_path_buf(), target.clone()])?;
             ensure_absent(backup)?;
-            validate_staged_bundle(&target, destination)?;
+            validate_replaceable_bundle(&target, destination)?;
         }
     }
     for path in removable(&orphans) {
@@ -102,7 +102,7 @@ fn removable(orphans: &Orphans) -> impl Iterator<Item = &PathBuf> {
 
 fn inventory(destination: &ValidatedDestination) -> Result<Orphans, InstallerError> {
     let target = destination.root().join("Beaver.app");
-    let target_missing = match validate_staged_bundle(&target, destination) {
+    let target_missing = match validate_replaceable_bundle(&target, destination) {
         Ok(_) => false,
         Err(_) => match fs::symlink_metadata(&target) {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => true,
@@ -125,7 +125,7 @@ fn inventory(destination: &ValidatedDestination) -> Result<Orphans, InstallerErr
         let Some(kind) = managed_sibling_kind(name) else {
             continue;
         };
-        validate_staged_bundle(&path, destination)?;
+        validate_replaceable_bundle(&path, destination)?;
         if disposable.len() + usize::from(backup.is_some()) >= MAX_ORPHANS {
             return Err(InstallerError::InstallFailed);
         }

@@ -153,6 +153,26 @@ fn swaps_complete_bundles_and_removes_the_backup() {
 }
 
 #[test]
+fn reinstalls_over_a_corrupt_regular_bundle() {
+    let destination = Fixture::new();
+    let corrupt = destination.0.join("Beaver.app");
+    fs::create_dir(&corrupt).unwrap();
+    fs::write(corrupt.join("broken"), "old").unwrap();
+
+    let staged_root = Fixture::new();
+    let stage = destination
+        .0
+        .join(".Beaver.app.stage-0123456789abcdef0123456789abcdef");
+    fs::rename(staged_root.bundle(), &stage).unwrap();
+    let validated = validate_destination(&destination.0).unwrap();
+
+    swap_unprivileged(&stage, &validated, "1.2.2", || Ok(())).unwrap();
+
+    assert!(validate_staged_bundle(&destination.0.join("Beaver.app"), &validated).is_ok());
+    assert!(!destination.0.join("Beaver.app/broken").exists());
+}
+
+#[test]
 fn refuses_to_publish_a_bundle_with_the_wrong_version() {
     let destination = Fixture::new();
     let old = destination.bundle();

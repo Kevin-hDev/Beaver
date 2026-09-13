@@ -53,7 +53,7 @@ pub fn swap_authorized(
     if let Some(backup) = &backup {
         session.execute(ProtectedTool::Move, &[target.clone(), backup.clone()])?;
         ensure_absent(&target)?;
-        validate_staged_bundle(backup, destination)?;
+        validate_replaceable_bundle(backup, destination)?;
     }
     if session
         .execute(ProtectedTool::Move, &[stage.to_path_buf(), target.clone()])
@@ -113,7 +113,7 @@ fn existing_backup(
     match fs::symlink_metadata(target) {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Ok(_) => {
-            validate_staged_bundle(target, destination)?;
+            validate_replaceable_bundle(target, destination)?;
             Ok(Some(unique_sibling(
                 destination.root(),
                 ".Beaver.app.backup-",
@@ -121,6 +121,18 @@ fn existing_backup(
         }
         Err(_) => Err(InstallerError::InstallFailed),
     }
+}
+
+pub(super) fn validate_replaceable_bundle(
+    path: &Path,
+    destination: &ValidatedDestination,
+) -> Result<(), InstallerError> {
+    let metadata = fs::symlink_metadata(path).map_err(|_| InstallerError::InstallFailed)?;
+    (path.parent() == Some(destination.root())
+        && metadata.is_dir()
+        && !metadata.file_type().is_symlink())
+    .then_some(())
+    .ok_or(InstallerError::InstallFailed)
 }
 
 fn rollback_unprivileged(
@@ -145,14 +157,14 @@ fn rollback_authorized(
     let failed = unique_sibling(root, ".Beaver.app.failed-")?;
     session.execute(ProtectedTool::Move, &[target.to_path_buf(), failed.clone()])?;
     ensure_absent(target)?;
-    validate_staged_bundle(&failed, &validate_destination(root)?)?;
+    validate_replaceable_bundle(&failed, &validate_destination(root)?)?;
     if let Some(backup) = backup {
         session.execute(
             ProtectedTool::Move,
             &[backup.to_path_buf(), target.to_path_buf()],
         )?;
         ensure_absent(backup)?;
-        validate_staged_bundle(target, &validate_destination(root)?)?;
+        validate_replaceable_bundle(target, &validate_destination(root)?)?;
     }
     session.execute(ProtectedTool::Remove, std::slice::from_ref(&failed))?;
     ensure_absent(&failed)
