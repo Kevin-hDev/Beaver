@@ -99,6 +99,9 @@
   --dialog-compact-max-width: 27.5rem;
   --dialog-wide-max-width: 53.75rem;
   --dialog-tall-max-height: 45rem;
+  /* La fenêtre native est bornée à 640px : les opérations défilent avant que
+     son en-tête et ses coins ne sortent du cadre. */
+  --update-progress-list-max-height: 480px;
   --context-popover-width: 18.75rem;
   --chat-compression-list-max-height: 18rem;
   --onboarding-panel-max-height: 43rem;

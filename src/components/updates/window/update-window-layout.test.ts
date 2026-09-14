@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const css = readFileSync("src/components/updates/window/update-progress-window.css", "utf8");
 const rowCss = readFileSync("src/components/updates/window/update-operation-row.css", "utf8");
+const tokens = readFileSync("src/styles/tokens.css", "utf8");
 const windowSource = readFileSync("src-tauri/src/services/update_progress/window.rs", "utf8");
 
 describe("update progress window layout", () => {
@@ -12,5 +13,11 @@ describe("update progress window layout", () => {
     expect(css).toMatch(/\.upw-frame\s*\{[^}]*padding:\s*var\(--chrome-1\) var\(--chrome-3\) var\(--chrome-5\);/s);
     expect(css).toMatch(/\.upw-window\s*\{[^}]*width:\s*100%;/s);
     expect(rowCss).toMatch(/\.upw-measure\s*\{[^}]*min-height:/s);
+  });
+
+  it("garde toutes les opérations accessibles dans la hauteur bornée", () => {
+    expect(tokens).toMatch(/--update-progress-list-max-height:\s*[^;]+;/);
+    expect(css).toMatch(/\.upw-lines\s*\{[^}]*max-height:\s*var\(--update-progress-list-max-height\);/s);
+    expect(css).toMatch(/\.upw-lines\s*\{[^}]*overflow-y:\s*auto;/s);
   });
 });
