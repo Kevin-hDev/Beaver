@@ -1,0 +1,1 @@
+Review correction: prevent late non-terminal progress callbacks from replacing an operation already marked Cancelling. Root fix is centralized in UpdateProgressStore, so app, Ollama, and model projections share the guarantee. Proof: cargo test cancellation_cannot_be_revived_by_late_non_terminal_progress --lib (1 passed).
