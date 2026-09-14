@@ -15,11 +15,11 @@ pub(super) fn preserve(
     if !valid_run_id(run_id) {
         return Err(InstallerError::CleanupFailed);
     }
+    let directory = prepare_trace_directory(data_root)?;
+    rotate(&directory)?;
     let file = trace.file.take().ok_or(InstallerError::CleanupFailed)?;
     file.sync_all().map_err(|_| InstallerError::CleanupFailed)?;
     drop(file);
-    let directory = prepare_trace_directory(data_root)?;
-    rotate(&directory)?;
     let destination = directory.join(format!("installer-{run_id}.jsonl"));
     copy_without_follow(&trace.path, &destination)?;
     fs::remove_file(&trace.path).map_err(|_| InstallerError::CleanupFailed)?;

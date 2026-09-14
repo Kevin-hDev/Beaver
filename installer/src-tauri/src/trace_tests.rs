@@ -119,6 +119,23 @@ fn preserves_at_most_three_failure_traces() {
     fs::remove_dir_all(data).unwrap();
 }
 
+#[test]
+fn failed_preservation_does_not_block_the_next_trace() {
+    let missing_data = root().join("missing");
+    let run = root();
+    let mut trace = InstallerTrace::create_in(&run).unwrap();
+    let path = trace.path().to_path_buf();
+
+    assert!(trace
+        .preserve_into(&missing_data, "0123456789abcdef0123456789abcdef")
+        .is_err());
+    drop(trace);
+
+    assert!(!path.exists());
+    drop(InstallerTrace::create_in(&run).unwrap());
+    fs::remove_dir_all(run).unwrap();
+}
+
 #[cfg(unix)]
 #[test]
 fn refuses_a_symbolic_trace_directory() {

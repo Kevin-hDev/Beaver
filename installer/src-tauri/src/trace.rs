@@ -1,6 +1,6 @@
 use crate::error::InstallerError;
 use serde::Serialize;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -17,6 +17,13 @@ pub enum OperationId {
     Verify,
     Install,
     Cleanup,
+}
+
+impl Drop for InstallerTrace {
+    fn drop(&mut self) {
+        drop(self.file.take());
+        let _ = fs::remove_file(&self.path);
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
