@@ -1,0 +1,11 @@
+CI diagnosis:
+- Split the Windows owned-run validator test into distinct valid, forged-marker, linked-tree, and linked-target assertions.
+- Print the current Windows identity plus the directory and marker ACL owners before validation.
+
+Reason: the native Windows job only exposed one aggregate failure, so the exact failing boundary must be observed before changing security behavior.
+
+Validation:
+- node --test scripts/installers-security.test.mjs: 4 passed
+- git diff --check
+- graphify update . completed
+- Native behavior is intentionally re-run in Windows CI because PowerShell is not installed locally.
