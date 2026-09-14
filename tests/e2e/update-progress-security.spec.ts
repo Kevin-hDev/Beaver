@@ -47,8 +47,7 @@ describe("update progress IPC boundary", () => {
     }, PROVIDER);
     assert.equal(error, "command-not-available");
 
-    await browser.closeWindow();
-    await browser.switchToWindow(mainHandle);
+    await closeSecondaryWindowAndReturn(mainHandle);
     assert.equal(await invokeTauri<boolean>("has_api_key", { provider: PROVIDER }), false);
 
     await invokeTauri("show_update_progress_window");
@@ -67,8 +66,7 @@ describe("update progress IPC boundary", () => {
     await browser.waitUntil(async () => browser.$(".upw-finished").isExisting(), {
       timeoutMsg: "terminal update state did not reach the secondary window",
     });
-    await browser.closeWindow();
-    await browser.switchToWindow(mainHandle);
+    await closeSecondaryWindowAndReturn(mainHandle);
   });
 });
 
@@ -86,4 +84,18 @@ async function switchToUpdateWindow(): Promise<string> {
   }, { timeoutMsg: "update progress window did not open" });
   assert.ok(updateHandle);
   return updateHandle;
+}
+
+async function closeSecondaryWindowAndReturn(mainHandle: string): Promise<void> {
+  const closingHandle = await browser.getWindowHandle();
+  await browser.closeWindow();
+  await browser.waitUntil(async () => {
+    try {
+      return !(await browser.getWindowHandles()).includes(closingHandle);
+    } catch {
+      return false;
+    }
+  }, { timeoutMsg: "secondary window did not close" });
+  await browser.switchToWindow(mainHandle);
+  await waitForTauriBridge();
 }
