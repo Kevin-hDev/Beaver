@@ -2,15 +2,25 @@ use crate::error::InstallerError;
 use std::fs::{File, OpenOptions};
 use std::io::{ErrorKind, Read, Write};
 use std::path::Path;
+use std::time::Duration;
 
 const ACTIVE_MARKER: &str = ".beaver-installer-active";
-const MAX_PID_BYTES: u64 = 10;
+const LAUNCH_PREFIX: &str = "launch:";
+const MAX_PID_BYTES: u64 = 17;
+// Covers the launcher-exit/GUI-adoption gap without retaining crashed runs forever.
+const LAUNCH_HANDOFF_GRACE: Duration = Duration::from_secs(10 * 60);
 
 pub fn mark(run: &Path) -> Result<(), InstallerError> {
-    let mut marker = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(run.join(ACTIVE_MARKER))
+    let path = run.join(ACTIVE_MARKER);
+    let mut marker = match OpenOptions::new().write(true).create_new(true).open(&path) {
+        Ok(marker) => marker,
+        Err(error) if error.kind() == ErrorKind::AlreadyExists => {
+            open_existing_without_follow(&path).map_err(|_| InstallerError::CleanupFailed)?
+        }
+        Err(_) => return Err(InstallerError::CleanupFailed),
+    };
+    marker
+        .set_len(0)
         .map_err(|_| InstallerError::CleanupFailed)?;
     write!(marker, "{}", std::process::id()).map_err(|_| InstallerError::CleanupFailed)?;
     marker.sync_all().map_err(|_| InstallerError::CleanupFailed)
@@ -34,11 +44,42 @@ pub fn is_active(run: &Path) -> bool {
     if marker.read_to_string(&mut value).is_err() {
         return true;
     }
+    if let Some(value) = value.strip_prefix(LAUNCH_PREFIX) {
+        return valid_pid(value).is_none_or(|pid| {
+            process_exists(pid)
+                || metadata
+                    .modified()
+                    .and_then(|created| created.elapsed().map_err(std::io::Error::other))
+                    .map(|age| age <= LAUNCH_HANDOFF_GRACE)
+                    .unwrap_or(true)
+        });
+    }
+    valid_pid(&value).is_none_or(process_exists)
+}
+
+fn valid_pid(value: &str) -> Option<u32> {
     value
         .parse::<u32>()
         .ok()
         .filter(|pid| (2..=i32::MAX as u32).contains(pid))
-        .is_none_or(process_exists)
+}
+
+#[cfg(unix)]
+fn open_existing_without_follow(path: &Path) -> std::io::Result<File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    OpenOptions::new()
+        .write(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(path)
+}
+
+#[cfg(windows)]
+fn open_existing_without_follow(path: &Path) -> std::io::Result<File> {
+    use std::os::windows::fs::OpenOptionsExt;
+    OpenOptions::new()
+        .write(true)
+        .custom_flags(0x0020_0000)
+        .open(path)
 }
 
 #[cfg(unix)]

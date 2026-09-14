@@ -180,6 +180,7 @@ main() {
     [[ "$RUN_ID" =~ ^[0-9a-f]{32}$ ]] || fail "Installation impossible."
     TMP_DIR="$TEMP_ROOT/beaver-install-$RUN_ID"; /bin/mkdir "$TMP_DIR" || fail "Installation impossible."
     printf '{"schema":1,"runId":"%s"}' "$RUN_ID" > "$TMP_DIR/.beaver-installer-owner.json"
+    printf 'launch:%s' "$$" > "$TMP_DIR/.beaver-installer-active"
   else
     TMP_DIR=$(/usr/bin/mktemp -d /tmp/beaver-install.XXXXXXXX 2>/dev/null) || fail "Installation impossible."
   fi

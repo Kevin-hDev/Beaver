@@ -177,6 +177,7 @@ function Invoke-Main {
     [void][IO.Directory]::CreateDirectory($TempDirectory)
     [IO.File]::WriteAllText([IO.Path]::Combine($TempDirectory, ".beaver-installer-owner.json"),
         "{`"schema`":1,`"runId`":`"$runId`"}")
+    [IO.File]::WriteAllText([IO.Path]::Combine($TempDirectory, ".beaver-installer-active"), "launch:$PID")
     $releasePath = [IO.Path]::Combine($TempDirectory, "release.json")
     [void](Save-BoundedFile ([Uri]$ApiUrl) $releasePath $MaxApiBytes $false 30)
     $release = Get-Release $releasePath

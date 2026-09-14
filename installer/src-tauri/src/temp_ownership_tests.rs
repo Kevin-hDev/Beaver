@@ -165,3 +165,19 @@ fn active_run_is_not_purged() {
 
     assert!(path.exists());
 }
+
+#[test]
+fn gui_adoption_replaces_the_launcher_reservation() {
+    let fixture = Fixture::new();
+    let path = fixture.run(CURRENT);
+    let active_marker = path.join(".beaver-installer-active");
+    fs::write(&active_marker, format!("launch:{}", std::process::id())).unwrap();
+    let owned = OwnedTempRun::adopt(&fixture.0, &path, CURRENT).unwrap();
+
+    owned.mark_active().unwrap();
+
+    assert_eq!(
+        fs::read_to_string(active_marker).unwrap(),
+        std::process::id().to_string()
+    );
+}

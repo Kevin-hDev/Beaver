@@ -112,3 +112,12 @@ test("le nettoyage Windows conserve son marqueur pour la prochaine ouverture", (
   assert.doesNotMatch(windowsCleanup, /MOVEFILE_DELAY_UNTIL_REBOOT|MoveFileExW/u);
   assert.doesNotMatch(windowsCleanup, /remove_file\(root\.join\(OWNER_MARKER\)\)/u);
 });
+
+test("les lanceurs réservent leur run avant le premier téléchargement", () => {
+  const shellReservation = shell.indexOf('> "$TMP_DIR/.beaver-installer-active"');
+  const powershellReservation = powershell.indexOf('".beaver-installer-active"');
+  assert.ok(shellReservation > shell.indexOf(".beaver-installer-owner.json"));
+  assert.ok(shellReservation < shell.indexOf('release="$TMP_DIR/release.json"'));
+  assert.ok(powershellReservation > powershell.indexOf('".beaver-installer-owner.json"'));
+  assert.ok(powershellReservation < powershell.indexOf("$releasePath ="));
+});
