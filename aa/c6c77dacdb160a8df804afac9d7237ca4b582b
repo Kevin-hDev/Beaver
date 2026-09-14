@@ -1,0 +1,15 @@
+Review correction:
+- Re-clamp the update window position after applying its requested height.
+- Preserve in-bounds positions and move only the overflowing axis inside the current monitor work area.
+
+Reason: the window was centered at its initial 96 px height, then grew without moving, which could place its lower actions outside the screen.
+
+Red proof:
+- targeted Rust source-order test failed because resize had no post-size set_position call.
+
+Validation:
+- two targeted update-progress resize tests passed
+- cargo fmt --check passed
+- cargo clippy --all-targets -D warnings passed
+- git diff --check
+- graphify update . completed.
