@@ -1,0 +1,32 @@
+T02 — État unique, contrats et suivi natif validés
+
+Révision : cc23df14d71e537ebc350ecaa798c9cdd4cb67fe
+
+Contrats livrés :
+- réglages versionnés : activation, modèle, périphérique, silence, durée maximale, langue, raccourci, déchargement et explication ;
+- lecture tolérante et mutation stricte via services/config.rs ;
+- une machine à états Rust et une réservation vocale ;
+- erreurs publiques à codes fermés et paramètres bornés ;
+- contrat TypeScript généré depuis Rust et ajouté au contrôle de dérive ;
+- runtime construit une fois dans RuntimeServices, publié par app_build et arrêté par le groupe de fermeture existant.
+
+Preuve de propriété :
+- le calcul bloquant reçoit l'admission elle-même ;
+- abandonner le receiver asynchrone conserve active_work=1 ;
+- une seconde réservation est refusée ;
+- stop_and_wait rend false à l'échéance tant que le calcul réel reste bloqué ;
+- erreur et panique libèrent exactement une fois.
+
+Validations :
+- cargo test --lib services::voice:: : 8 réussis ;
+- cargo test --lib app_build::tests : 2 réussis ;
+- cargo test --lib app_exit::cleanup : 9 réussis ;
+- npm run contracts:generate:voice : réussi ;
+- npm run contracts:check : réussi ;
+- npx tsc --noEmit : réussi ;
+- cargo clippy --lib -- -D warnings : réussi ;
+- git diff --check : réussi ;
+- graphify update . : réussi.
+
+Le allow(dead_code) documenté dans le module vocal est temporaire : T02 pose les API consommées par T05 à T09. Il doit disparaître lorsque ces raccordements sont terminés.
+Le découpage AppBuildMode maintient app_build.rs sous la limite de 230 lignes après publication du runtime vocal.
