@@ -171,6 +171,31 @@ fn export_typescript_update_progress_contract() {
     std::fs::write(path, typescript_bindings()).unwrap();
 }
 
+#[test]
+fn resizing_repositions_the_window_after_applying_its_new_size() {
+    let source = include_str!("window.rs");
+    let resize = source
+        .split_once("pub fn resize")
+        .expect("resize function")
+        .1;
+    let size = resize.find("set_size").expect("window resize");
+    let position = resize.find("set_position").expect("post-resize position");
+    assert!(position > size);
+}
+
+#[test]
+fn resized_window_is_clamped_inside_its_work_area() {
+    use tauri::{PhysicalPosition, PhysicalSize};
+
+    let position = super::window::clamp_to_work_area(
+        PhysicalPosition::new(900, 700),
+        PhysicalSize::new(464, 640),
+        PhysicalPosition::new(0, 0),
+        PhysicalSize::new(1_366, 768),
+    );
+    assert_eq!(position, PhysicalPosition::new(900, 128));
+}
+
 fn typescript_bindings() -> String {
     use ts_rs::{Config, TS};
 

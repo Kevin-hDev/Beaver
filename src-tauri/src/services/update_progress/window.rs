@@ -1,9 +1,7 @@
 use super::{public_error, UpdateProgressRuntime};
-use tauri::{AppHandle, LogicalSize, WebviewWindow};
+use tauri::{AppHandle, LogicalSize, PhysicalPosition, PhysicalSize, WebviewWindow};
 #[cfg(not(target_os = "linux"))]
-use tauri::{
-    Manager, Monitor, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder, WindowEvent,
-};
+use tauri::{Manager, Monitor, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 pub const WINDOW_LABEL: &str = "update-progress";
 #[cfg(not(target_os = "linux"))]
@@ -107,17 +105,47 @@ pub fn resize(window: &WebviewWindow, height: u16) -> Result<(), String> {
     }
     let monitor = window.current_monitor().map_err(|_| public_error())?;
     let max_height = monitor
+        .as_ref()
         .map(|monitor| {
             (f64::from(monitor.work_area().size.height) / monitor.scale_factor()).floor() as u16
         })
         .unwrap_or(MAX_HEIGHT)
         .min(MAX_HEIGHT);
-    window
-        .set_size(LogicalSize::new(WIDTH, f64::from(height.min(max_height))))
-        .map_err(|_| public_error())
+    let size = LogicalSize::new(WIDTH, f64::from(height.min(max_height)));
+    window.set_size(size).map_err(|_| public_error())?;
+    if let Some(monitor) = monitor {
+        let position = window.outer_position().map_err(|_| public_error())?;
+        let area = monitor.work_area();
+        let clamped = clamp_to_work_area(
+            position,
+            size.to_physical(monitor.scale_factor()),
+            area.position,
+            area.size,
+        );
+        if clamped != position {
+            window.set_position(clamped).map_err(|_| public_error())?;
+        }
+    }
+    Ok(())
 }
 
-#[cfg(not(target_os = "linux"))]
 fn clamp(value: i64) -> i32 {
     value.clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
+}
+
+pub(super) fn clamp_to_work_area(
+    position: PhysicalPosition<i32>,
+    size: PhysicalSize<u32>,
+    area_position: PhysicalPosition<i32>,
+    area_size: PhysicalSize<u32>,
+) -> PhysicalPosition<i32> {
+    fn axis(position: i32, size: u32, area_position: i32, area_size: u32) -> i32 {
+        let start = i64::from(area_position);
+        let end = (start + i64::from(area_size) - i64::from(size)).max(start);
+        clamp(i64::from(position).clamp(start, end))
+    }
+    PhysicalPosition::new(
+        axis(position.x, size.width, area_position.x, area_size.width),
+        axis(position.y, size.height, area_position.y, area_size.height),
+    )
 }
