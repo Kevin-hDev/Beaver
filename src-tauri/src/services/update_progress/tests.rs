@@ -124,6 +124,22 @@ fn cancellation_cannot_be_revived_by_late_non_terminal_progress() {
 }
 
 #[test]
+fn an_error_finishing_after_cancellation_is_reported_as_cancelled() {
+    let mut current = operation("same", 2, UpdateOperationStatus::Cancelling);
+    current.can_cancel = false;
+    let mut failed = operation("same", 3, UpdateOperationStatus::Failed);
+    failed.can_cancel = false;
+    failed.can_retry = true;
+    failed.error_key = Some("update-download-error".into());
+
+    super::resolve_cancelling_terminal(Some(&current), &mut failed);
+
+    assert_eq!(failed.status, UpdateOperationStatus::Cancelled);
+    assert!(!failed.can_retry);
+    assert_eq!(failed.error_key, None);
+}
+
+#[test]
 fn dismisses_only_a_valid_identifier() {
     let mut store = UpdateProgressStore::default();
     store

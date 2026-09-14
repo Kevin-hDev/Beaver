@@ -22,6 +22,7 @@ impl UpdateProgressRuntime {
         mut operation: UpdateOperationSnapshot,
     ) -> Result<bool, String> {
         let mut store = self.store.lock().map_err(|_| public_error())?;
+        resolve_cancelling_terminal(store.get(&operation.id), &mut operation);
         let should_show = should_show_window(store.get(&operation.id), &operation);
         operation.sequence = match store.get(&operation.id) {
             Some(current) => {
@@ -113,6 +114,19 @@ impl UpdateProgressRuntime {
         if let Ok(mut saved) = self.position.lock() {
             *saved = Some(position);
         }
+    }
+}
+
+fn resolve_cancelling_terminal(
+    previous: Option<&UpdateOperationSnapshot>,
+    operation: &mut UpdateOperationSnapshot,
+) {
+    if previous.is_some_and(|current| current.status == UpdateOperationStatus::Cancelling)
+        && operation.status == UpdateOperationStatus::Failed
+    {
+        operation.status = UpdateOperationStatus::Cancelled;
+        operation.can_retry = false;
+        operation.error_key = None;
     }
 }
 
