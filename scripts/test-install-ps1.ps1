@@ -91,12 +91,12 @@ try {
     }
     $junction = Join-Path $runRoot "beaver-install-$junctionId\outside"
     [void](New-Item -ItemType Junction -Path $junction -Target $sentinel)
-    if (-not (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$validId") $validId) -or
-        (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$forgedId") $forgedId) -or
-        (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$junctionId") $junctionId) -or
-        [IO.File]::ReadAllText((Join-Path $sentinel "outside.txt")) -cne "outside") {
-        throw "PowerShell owned-run validation failed."
-    }
+    $validRun = Join-Path $runRoot "beaver-install-$validId"
+    Write-Host "Owned-run identity=$([Security.Principal.WindowsIdentity]::GetCurrent().Name) directory-owner=$((Get-Acl -LiteralPath $validRun).Owner) marker-owner=$((Get-Acl -LiteralPath (Join-Path $validRun '.beaver-installer-owner.json')).Owner)"
+    if (-not (Test-OwnedRun $runRoot $validRun $validId)) { throw "PowerShell valid owned-run validation failed." }
+    if (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$forgedId") $forgedId) { throw "PowerShell forged owned-run validation failed." }
+    if (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$junctionId") $junctionId) { throw "PowerShell linked owned-run validation failed." }
+    if ([IO.File]::ReadAllText((Join-Path $sentinel "outside.txt")) -cne "outside") { throw "PowerShell linked target validation failed." }
 } finally {
     if (Test-Path $junction) { [IO.Directory]::Delete($junction) }
     if (Test-Path $runRoot) { [IO.Directory]::Delete($runRoot, $true) }
