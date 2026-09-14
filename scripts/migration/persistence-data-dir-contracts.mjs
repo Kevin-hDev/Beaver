@@ -118,7 +118,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/ollama_manager/manager_startup.rs", 1],
   ["src-tauri/src/services/ollama_manager/recovery_entry.rs", 1],
   ["src-tauri/src/services/ollama_manager/release_cache.rs", 1],
-  ["src-tauri/src/services/paths.rs", 8],
+  ["src-tauri/src/services/paths.rs", 7],
   ["src-tauri/src/services/personality_injection.rs", 1],
   ["src-tauri/src/services/private_store.rs", 1],
   ["src-tauri/src/services/provider_usage/ledger.rs", 1],
