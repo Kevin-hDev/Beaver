@@ -1,0 +1,15 @@
+Windows ownership correction:
+- Compare each temporary entry ACL owner to WindowsIdentity.Owner, the token default owner that Windows actually applies, instead of WindowsIdentity.Name.
+- Keep the split native assertions while removing temporary diagnostic output.
+
+Reason: elevated Windows tokens create these files under BUILTIN\Administrators even though the user identity is runneradmin; comparing display names rejects a valid run and skips cleanup.
+
+Red proof:
+- CI job 103841135798: identity=runnervmvmocb\runneradmin, directory and marker owner=BUILTIN\Administrators, then valid owned-run validation failed.
+
+Local validation:
+- node --test scripts/installers-security.test.mjs: 4 passed
+- node --test scripts/e2e/e2e-ci-contracts.test.mjs: 26 passed
+- git diff --check
+- graphify update . completed
+- Native PowerShell 7 and 5.1 behavior is revalidated by Windows CI.
