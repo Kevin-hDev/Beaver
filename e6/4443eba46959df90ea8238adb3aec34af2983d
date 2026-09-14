@@ -1,0 +1,15 @@
+Review correction:
+- Retain the last discovered Ollama binary update as the retry target until an update completes successfully.
+- Retry routing no longer depends on the current discovery banner remaining visible.
+
+Reason: a successful binary replacement followed by a restart failure makes the next version check return no update, while the failed retryable operation still needs the pinned version.
+
+Red proof:
+- targeted hook test observed only one update attempt after discovery cleared.
+
+Validation:
+- use-update-checker tests: 7 passed
+- npx tsc --noEmit passed
+- npm run lint passed
+- git diff --check
+- graphify update . completed.
