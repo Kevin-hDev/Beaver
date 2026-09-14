@@ -9,7 +9,7 @@ describe("update progress IPC boundary", () => {
   updateProgressTest("keeps update state across a secure secondary-window reopen", async () => {
     await waitForTauriBridge();
     const mainHandle = await browser.getWindowHandle();
-    await invokeTauri("delete_api_key", { provider: PROVIDER });
+    assert.equal(await invokeTauri<boolean>("has_api_key", { provider: PROVIDER }), false);
     await invokeTauri("e2e_seed_update_operation");
 
     await switchToUpdateWindow();
