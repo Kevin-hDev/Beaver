@@ -70,9 +70,11 @@ pub(crate) fn project_state(
     } else {
         (UpdateProgressMode::Indeterminate, None)
     };
-    let can_cancel = status == UpdateOperationStatus::Running
-        && !(state.kind == ModelDownloadKind::Forecast
-            && state.phase == ModelDownloadPhase::Installing);
+    let can_cancel = matches!(
+        status,
+        UpdateOperationStatus::Queued | UpdateOperationStatus::Running
+    ) && !(state.kind == ModelDownloadKind::Forecast
+        && state.phase == ModelDownloadPhase::Installing);
     UpdateOperationSnapshot {
         id: state.id.clone(),
         sequence: 0,
@@ -88,6 +90,7 @@ pub(crate) fn project_state(
         queue_position,
         can_cancel,
         can_retry: status == UpdateOperationStatus::Failed,
+        is_update: Some(state.is_update),
         error_key: state.error_key.clone(),
     }
 }

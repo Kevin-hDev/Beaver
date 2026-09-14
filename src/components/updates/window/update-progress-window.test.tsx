@@ -33,7 +33,7 @@ vi.mock("react-i18next", () => ({
 const base: UpdateOperationSnapshot = {
   id: "one", sequence: 1, kind: "app-release", label: "Beaver 1.4.2",
   status: "running", phase: "downloading", progressMode: "determinate",
-  percent: 43, queuePosition: null, canCancel: true, canRetry: false, errorKey: null,
+  percent: 43, queuePosition: null, canCancel: true, canRetry: false, isUpdate: null, errorKey: null,
 };
 
 describe("UpdateProgressWindow", () => {

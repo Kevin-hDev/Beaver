@@ -19,6 +19,7 @@ const operation = (sequence: number): UpdateOperationSnapshot => ({
   queuePosition: null,
   canCancel: true,
   canRetry: false,
+  isUpdate: null,
   errorKey: null,
 });
 

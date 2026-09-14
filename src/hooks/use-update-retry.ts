@@ -9,7 +9,6 @@ interface UpdateRetryOptions {
   appAssetUrl: string | null;
   binaryBusy: RefObject<boolean>;
   ollamaBinaryAvailable: boolean;
-  downloads: ModelDownloadState[];
   downloadAppUpdate: (assetUrl: string) => Promise<void>;
   updateOllamaBinary: () => Promise<void>;
   startDownload: (args: {
@@ -24,7 +23,6 @@ export function useUpdateRetry(options: UpdateRetryOptions) {
     appAssetUrl,
     binaryBusy,
     ollamaBinaryAvailable,
-    downloads,
     downloadAppUpdate,
     updateOllamaBinary,
     startDownload,
@@ -41,17 +39,16 @@ export function useUpdateRetry(options: UpdateRetryOptions) {
           void updateOllamaBinary();
           void invoke("dismiss_update_operation", { id }).catch(() => {});
         } else {
-          const failed = downloads.find((download) => download.id === id);
-          if (failed) {
+          if (operation.kind === "ollama-model" || operation.kind === "forecast-model") {
             void startDownload({
-              kind: failed.kind,
-              modelId: failed.modelId,
-              isUpdate: failed.isUpdate,
+              kind: operation.kind === "ollama-model" ? "ollama" : "forecast",
+              modelId: operation.label,
+              isUpdate: operation.isUpdate ?? false,
             }).then(() => invoke("dismiss_update_operation", { id })).catch(() => {});
           }
         }
       }).catch(() => {});
     });
     return () => cleanupTauriListener(unlisten);
-  }, [appAssetUrl, binaryBusy, downloadAppUpdate, downloads, ollamaBinaryAvailable, startDownload, updateOllamaBinary]);
+  }, [appAssetUrl, binaryBusy, downloadAppUpdate, ollamaBinaryAvailable, startDownload, updateOllamaBinary]);
 }

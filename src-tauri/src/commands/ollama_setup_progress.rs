@@ -157,6 +157,7 @@ fn operation(id: &str, label: &str, update: &OllamaProgressUpdate) -> UpdateOper
                 | OllamaProgressStage::Validating
         ),
         can_retry: false,
+        is_update: None,
         error_key: None,
     }
 }

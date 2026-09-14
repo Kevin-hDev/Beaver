@@ -70,6 +70,7 @@ pub fn e2e_seed_update_operation(
                 queue_position: None,
                 can_cancel: false,
                 can_retry: false,
+                is_update: None,
                 error_key: None,
             },
         )?;
@@ -89,6 +90,7 @@ pub fn e2e_seed_update_operation(
             queue_position: None,
             can_cancel: true,
             can_retry: false,
+            is_update: None,
             error_key: None,
         },
         UpdateOperationSnapshot {
@@ -103,6 +105,7 @@ pub fn e2e_seed_update_operation(
             queue_position: None,
             can_cancel: true,
             can_retry: false,
+            is_update: None,
             error_key: None,
         },
         UpdateOperationSnapshot {
@@ -117,6 +120,7 @@ pub fn e2e_seed_update_operation(
             queue_position: Some(2),
             can_cancel: false,
             can_retry: false,
+            is_update: Some(false),
             error_key: None,
         },
         UpdateOperationSnapshot {
@@ -131,6 +135,7 @@ pub fn e2e_seed_update_operation(
             queue_position: None,
             can_cancel: false,
             can_retry: false,
+            is_update: Some(false),
             error_key: None,
         },
     ];

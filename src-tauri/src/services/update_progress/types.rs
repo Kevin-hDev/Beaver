@@ -75,5 +75,6 @@ pub struct UpdateOperationSnapshot {
     pub queue_position: Option<u8>,
     pub can_cancel: bool,
     pub can_retry: bool,
+    pub is_update: Option<bool>,
     pub error_key: Option<String>,
 }

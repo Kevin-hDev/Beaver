@@ -52,6 +52,14 @@ fn projects_every_status_without_inventing_progress() {
             projected.queue_position,
             (source == ModelDownloadStatus::Queued).then_some(1)
         );
+        assert_eq!(projected.is_update, Some(true));
+        assert_eq!(
+            projected.can_cancel,
+            matches!(
+                source,
+                ModelDownloadStatus::Queued | ModelDownloadStatus::Running
+            )
+        );
     }
 }
 

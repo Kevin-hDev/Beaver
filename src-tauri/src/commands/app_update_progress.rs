@@ -24,6 +24,7 @@ pub(super) fn running_operation(
         queue_position: None,
         can_cancel,
         can_retry: false,
+        is_update: None,
         error_key: None,
     }
 }

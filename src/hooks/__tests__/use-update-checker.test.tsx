@@ -192,12 +192,6 @@ describe("useUpdateChecker", () => {
   });
 
   it("réessaie un modèle avec les paramètres de l'opération d'origine", async () => {
-    mocks.downloads = [{
-      id: "failed-model",
-      kind: "forecast",
-      modelId: "chronos-tiny",
-      isUpdate: true,
-    }];
     mocks.startDownload.mockResolvedValue({ id: "failed-model" });
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "check_app_update") return Promise.resolve(null);
@@ -207,7 +201,8 @@ describe("useUpdateChecker", () => {
       if (command === "list_update_operations") return Promise.resolve([{
         id: "failed-model", sequence: 3, kind: "forecast-model", label: "chronos-tiny",
         status: "failed", phase: "installing", progressMode: "indeterminate", percent: null,
-        queuePosition: null, canCancel: false, canRetry: true, errorKey: "model-download-failed",
+        queuePosition: null, canCancel: false, canRetry: true, isUpdate: true,
+        errorKey: "model-download-failed",
       }]);
       return Promise.resolve(undefined);
     });

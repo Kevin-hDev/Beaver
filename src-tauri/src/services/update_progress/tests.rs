@@ -17,6 +17,7 @@ fn operation(id: &str, sequence: u64, status: UpdateOperationStatus) -> UpdateOp
         queue_position: None,
         can_cancel: !status.is_terminal(),
         can_retry: status == UpdateOperationStatus::Failed,
+        is_update: None,
         error_key: None,
     }
 }

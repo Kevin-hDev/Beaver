@@ -34,7 +34,7 @@ interface DownloadProgress {
 }
 
 export function useUpdateChecker() {
-  const { downloads, activeDownload, startDownload, cancelDownload } = useModelDownloads();
+  const { activeDownload, startDownload, cancelDownload } = useModelDownloads();
   const { forecastDevUpdates } = useForecastDevUpdates();
   const dismissals = useUpdateDismissals();
   const [appUpdate, setAppUpdate] = useState<AppUpdate | null>(null);
@@ -185,7 +185,6 @@ export function useUpdateChecker() {
     appAssetUrl: appUpdate?.assetUrl ?? null,
     binaryBusy,
     ollamaBinaryAvailable: ollamaBinaryUpdate !== null,
-    downloads,
     downloadAppUpdate,
     updateOllamaBinary,
     startDownload,
