@@ -53,6 +53,9 @@ describe("update progress IPC boundary", () => {
     await invokeTauri("show_update_progress_window");
     const reopenedHandle = await switchToUpdateWindow();
     await waitForTauriBridge();
+    await browser.waitUntil(async () => await browser.$$(".upw-line").length === 4, {
+      timeoutMsg: "reopened update progress snapshot did not render",
+    });
     assert.match(await browser.$("body").getText(), /Beaver E2E/);
     const reopenedRect = await browser.getWindowRect();
     const positionEvidence = JSON.stringify({ moved: movedRect, reopened: reopenedRect });
