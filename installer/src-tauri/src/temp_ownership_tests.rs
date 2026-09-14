@@ -181,3 +181,9 @@ fn gui_adoption_replaces_the_launcher_reservation() {
         std::process::id().to_string()
     );
 }
+
+#[test]
+fn a_missing_windows_process_is_inactive_but_other_open_failures_fail_closed() {
+    assert!(!crate::temp_activity::failed_open_is_active(87, 87));
+    assert!(crate::temp_activity::failed_open_is_active(5, 87));
+}

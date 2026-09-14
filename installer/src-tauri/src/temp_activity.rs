@@ -108,16 +108,23 @@ fn process_exists(pid: u32) -> bool {
 
 #[cfg(windows)]
 fn process_exists(pid: u32) -> bool {
-    use windows_sys::Win32::Foundation::{CloseHandle, STILL_ACTIVE};
+    use windows_sys::Win32::Foundation::{
+        CloseHandle, GetLastError, ERROR_INVALID_PARAMETER, STILL_ACTIVE,
+    };
     use windows_sys::Win32::System::Threading::{
         GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
     };
     let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
     if handle.is_null() {
-        return true;
+        return failed_open_is_active(unsafe { GetLastError() }, ERROR_INVALID_PARAMETER);
     }
     let mut exit_code = 0;
     let queried = unsafe { GetExitCodeProcess(handle, &mut exit_code) } != 0;
     unsafe { CloseHandle(handle) };
     !queried || exit_code == STILL_ACTIVE as u32
+}
+
+#[cfg(any(windows, test))]
+pub(crate) fn failed_open_is_active(error_code: u32, missing_process_error: u32) -> bool {
+    error_code != missing_process_error
 }
