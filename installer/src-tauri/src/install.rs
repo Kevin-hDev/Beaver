@@ -82,11 +82,15 @@ impl InstallerService {
             return Ok(());
         }
         #[cfg(target_os = "windows")]
-        let result = std::env::current_exe()
-            .map_err(|_| InstallerError::CleanupFailed)
-            .and_then(|executable| {
-                crate::platform::windows_cleanup::prepare_self_cleanup(&self.run, &executable)
-            });
+        let result = {
+            // Windows keeps the locked executable and its ownership marker for next-launch purge.
+            self.run.disarm_cleanup();
+            std::env::current_exe()
+                .map_err(|_| InstallerError::CleanupFailed)
+                .and_then(|executable| {
+                    crate::platform::windows_cleanup::prepare_self_cleanup(&self.run, &executable)
+                })
+        };
         #[cfg(not(target_os = "windows"))]
         let result = self.run.cleanup();
         result

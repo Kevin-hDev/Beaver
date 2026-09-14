@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use subtle::ConstantTimeEq;
 
 pub const OWNER_MARKER: &str = ".beaver-installer-owner.json";
@@ -21,6 +22,7 @@ struct OwnerMarker {
 
 pub struct OwnedTempRun {
     path: PathBuf,
+    cleanup_on_drop: AtomicBool,
 }
 
 impl OwnedTempRun {
@@ -28,6 +30,7 @@ impl OwnedTempRun {
         validate_run(temp_root, work_dir, run_id)?;
         Ok(Self {
             path: work_dir.to_path_buf(),
+            cleanup_on_drop: AtomicBool::new(true),
         })
     }
 
@@ -53,6 +56,11 @@ impl OwnedTempRun {
         crate::temp_activity::mark(&self.path)
     }
 
+    #[cfg(any(target_os = "windows", test))]
+    pub(crate) fn disarm_cleanup(&self) {
+        self.cleanup_on_drop.store(false, Ordering::Release);
+    }
+
     fn run_id(&self) -> &str {
         run_id_from_name(&self.path).expect("validated owned run")
     }
@@ -60,7 +68,9 @@ impl OwnedTempRun {
 
 impl Drop for OwnedTempRun {
     fn drop(&mut self) {
-        let _ = self.cleanup();
+        if self.cleanup_on_drop.load(Ordering::Acquire) {
+            let _ = self.cleanup();
+        }
     }
 }
 
