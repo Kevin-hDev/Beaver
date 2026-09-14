@@ -1,0 +1,5 @@
+Task: keep all update rows reachable inside the native 640px window cap.
+
+Evidence:
+- npx vitest run src/components/updates/window/update-window-layout.test.ts (2 passed)
+- tokenized 480px list cap with native CSS vertical scrolling
