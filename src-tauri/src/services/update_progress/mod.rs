@@ -11,6 +11,7 @@ const DISMISSED_EVENT: &str = "update-operation-dismissed";
 #[derive(Clone, Default)]
 pub struct UpdateProgressRuntime {
     store: Arc<Mutex<store::UpdateProgressStore>>,
+    #[cfg(not(target_os = "linux"))]
     position: Arc<Mutex<Option<tauri::PhysicalPosition<i32>>>>,
 }
 
@@ -102,10 +103,12 @@ impl UpdateProgressRuntime {
         window::show(app, self)
     }
 
+    #[cfg(not(target_os = "linux"))]
     fn saved_position(&self) -> Option<tauri::PhysicalPosition<i32>> {
         self.position.lock().ok().and_then(|position| *position)
     }
 
+    #[cfg(not(target_os = "linux"))]
     fn save_position(&self, position: tauri::PhysicalPosition<i32>) {
         if let Ok(mut saved) = self.position.lock() {
             *saved = Some(position);

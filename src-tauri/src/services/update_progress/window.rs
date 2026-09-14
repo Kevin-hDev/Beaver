@@ -1,16 +1,19 @@
 use super::{public_error, UpdateProgressRuntime};
+use tauri::{AppHandle, LogicalSize, WebviewWindow};
+#[cfg(not(target_os = "linux"))]
 use tauri::{
-    AppHandle, LogicalSize, Manager, Monitor, PhysicalPosition, PhysicalSize, WebviewUrl,
-    WebviewWindow, WebviewWindowBuilder, WindowEvent,
+    Manager, Monitor, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 
 pub const WINDOW_LABEL: &str = "update-progress";
+#[cfg(not(target_os = "linux"))]
 const WINDOW_ENTRY: &str = "update-window.html";
 // 440 px de contenu (+ 12 px de gouttière d'ombre de chaque côté) : la fenêtre
 // reste compacte tout en donnant 15 % de largeur utile de plus que le mokup initial.
 pub const WIDTH: f64 = 464.0;
 pub const MIN_HEIGHT: u16 = 96;
 pub const MAX_HEIGHT: u16 = 640;
+#[cfg(not(target_os = "linux"))]
 const MIN_VISIBLE_PIXELS: i64 = 24;
 
 #[cfg(target_os = "linux")]
@@ -58,6 +61,7 @@ pub fn show(app: &AppHandle, runtime: &UpdateProgressRuntime) -> Result<(), Stri
     window.show().map_err(|_| public_error())
 }
 
+#[cfg(not(target_os = "linux"))]
 fn position(window: &WebviewWindow, saved: Option<PhysicalPosition<i32>>) -> Result<(), String> {
     let size = window.inner_size().map_err(|_| public_error())?;
     let monitors = window.available_monitors().map_err(|_| public_error())?;
@@ -70,6 +74,7 @@ fn position(window: &WebviewWindow, saved: Option<PhysicalPosition<i32>>) -> Res
     Ok(())
 }
 
+#[cfg(not(target_os = "linux"))]
 fn centered(window: &WebviewWindow, size: PhysicalSize<u32>) -> Option<PhysicalPosition<i32>> {
     let monitor = window.primary_monitor().ok().flatten()?;
     let area = monitor.work_area();
@@ -78,6 +83,7 @@ fn centered(window: &WebviewWindow, size: PhysicalSize<u32>) -> Option<PhysicalP
     Some(PhysicalPosition::new(clamp(x), clamp(y)))
 }
 
+#[cfg(not(target_os = "linux"))]
 fn is_visible(
     position: PhysicalPosition<i32>,
     size: PhysicalSize<u32>,
@@ -111,6 +117,7 @@ pub fn resize(window: &WebviewWindow, height: u16) -> Result<(), String> {
         .map_err(|_| public_error())
 }
 
+#[cfg(not(target_os = "linux"))]
 fn clamp(value: i64) -> i32 {
     value.clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
 }
