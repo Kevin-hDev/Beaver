@@ -13,3 +13,7 @@ Validation:
 - cargo clippy --all-targets -D warnings passed
 - git diff --check
 - graphify update . completed.
+
+Full regression after all four review corrections:
+- npm run test:installer: 8 UI tests, 49 Rust tests passed with 2 ignored, 6 boundary tests passed
+- npm test: 620 frontend files and 3467 tests passed; all build, CI, filesystem, CEF, E2E runner, extension host, reasoning, and contract suites passed
