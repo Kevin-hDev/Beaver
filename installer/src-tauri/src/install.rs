@@ -116,7 +116,11 @@ impl InstallerService {
             Ok(started) => started,
             Err(error) => {
                 let event = self.runtime.fail(operation, error.code())?;
+                let cancelled = event.snapshot.phase == crate::contract::InstallerPhase::Cancelled;
                 let _ = channel.send(event);
+                if cancelled {
+                    return Ok(());
+                }
                 return Err(error);
             }
         };
@@ -163,18 +167,19 @@ impl InstallerService {
                 self.trace.finish(started, Outcome::Cancelled, None);
                 self.runtime.cancelled(operation)?
             }
-            Err(_error) if operation.is_cancelled() => {
-                self.trace.finish(started, Outcome::Cancelled, None);
-                self.runtime.cancelled(operation)?
-            }
             Err(error) => {
-                self.trace.finish(started, Outcome::Failed, Some(error));
                 let event = self.runtime.fail(operation, error.code())?;
-                if let Some(trace) = self.trace.take() {
-                    let _ = self.run.preserve_failure_trace(trace);
+                if event.snapshot.phase == crate::contract::InstallerPhase::Cancelled {
+                    self.trace.finish(started, Outcome::Cancelled, None);
+                    event
+                } else {
+                    self.trace.finish(started, Outcome::Failed, Some(error));
+                    if let Some(trace) = self.trace.take() {
+                        let _ = self.run.preserve_failure_trace(trace);
+                    }
+                    let _ = channel.send(event);
+                    return Err(error);
                 }
-                let _ = channel.send(event);
-                return Err(error);
             }
         };
         let _ = channel.send(event);

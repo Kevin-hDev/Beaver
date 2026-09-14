@@ -199,17 +199,26 @@ impl InstallerRuntime {
 
     fn finish(
         &self,
-        phase: InstallerPhase,
+        requested_phase: InstallerPhase,
         outcome: Option<InstallerOutcome>,
-        error_key: Option<&'static str>,
+        requested_error_key: Option<&'static str>,
     ) -> Result<InstallerEvent, InstallerError> {
         let mut state = self
             .state
             .lock()
             .map_err(|_| InstallerError::InstallFailed)?;
-        if state.cancel.take().is_none() || !allowed_transition(state.snapshot.phase, phase) {
+        // Cancellation and worker errors race here; the lock decides one terminal outcome.
+        let (phase, error_key) = if requested_phase == InstallerPhase::Failed
+            && state.snapshot.phase == InstallerPhase::Cancelling
+        {
+            (InstallerPhase::Cancelled, None)
+        } else {
+            (requested_phase, requested_error_key)
+        };
+        if state.cancel.is_none() || !allowed_transition(state.snapshot.phase, phase) {
             return Err(InstallerError::InstallFailed);
         }
+        state.cancel.take();
         if phase == InstallerPhase::Completed {
             complete_step(&mut state);
         }

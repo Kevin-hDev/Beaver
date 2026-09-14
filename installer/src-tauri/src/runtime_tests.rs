@@ -108,6 +108,21 @@ fn failed_and_cancelled_operations_can_retry() {
 }
 
 #[test]
+fn an_error_racing_after_cancellation_finishes_as_cancelled() {
+    let runtime = new_runtime(PlatformKind::Macos);
+    let operation = runtime.begin().unwrap();
+    assert!(runtime.cancel());
+
+    let event = runtime
+        .fail(operation, "installer.errors.download")
+        .unwrap();
+
+    assert_eq!(event.snapshot.phase, InstallerPhase::Cancelled);
+    assert_eq!(event.snapshot.error_key, None);
+    assert!(runtime.begin().is_ok());
+}
+
+#[test]
 fn download_progress_is_bounded() {
     let runtime = new_runtime(PlatformKind::Macos);
     runtime.begin().unwrap();
