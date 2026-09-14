@@ -79,4 +79,25 @@ describe("ModelInstallButton", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("errors.downloadFailed");
   });
+
+  it("garde l'annulation visible sans permettre une nouvelle action", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_model_downloads") {
+        return Promise.resolve([{ ...runningDownload, status: "cancelling" }]);
+      }
+      return Promise.resolve(undefined);
+    });
+
+    render(
+      <ModelInstallButton
+        fullName="large-model:70b"
+        isInstalled={false}
+        hasUpdate={false}
+      />,
+    );
+
+    expect(await screen.findByRole("button", { name: "modelDownloads.cancelling" }))
+      .toBeDisabled();
+    expect(screen.queryByRole("button", { name: "ollama.install" })).toBeNull();
+  });
 });

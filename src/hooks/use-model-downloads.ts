@@ -25,6 +25,12 @@ export interface ModelDownloadState {
   errorKey?: string | null;
 }
 
+export function isModelDownloadPending(download: Pick<ModelDownloadState, "status">): boolean {
+  return download.status === "queued"
+    || download.status === "running"
+    || download.status === "cancelling";
+}
+
 interface StartDownloadArgs {
   kind: ModelDownloadKind;
   modelId: string;
@@ -66,7 +72,7 @@ export function useModelDownloads() {
   }, []);
 
   const activeDownload = useMemo(
-    () => downloads.find((item) => item.status === "running" || item.status === "cancelling") ?? null,
+    () => downloads.find((item) => item.status !== "queued" && isModelDownloadPending(item)) ?? null,
     [downloads],
   );
   return { downloads, activeDownload, startDownload, cancelDownload, refresh };
