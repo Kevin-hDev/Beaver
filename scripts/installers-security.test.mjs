@@ -5,6 +5,7 @@ import test from "node:test";
 const shell = fs.readFileSync("install.sh", "utf8");
 const powershell = fs.readFileSync("install.ps1", "utf8");
 const powershellBytes = fs.readFileSync("install.ps1");
+const windowsCleanup = fs.readFileSync("installer/src-tauri/src/platform/windows_cleanup.rs", "utf8");
 
 function lines(source) {
   return source.split(/\r?\n/).length - 1;
@@ -105,4 +106,9 @@ test("PowerShell désactive les redirections implicites et vérifie le SHA", () 
 
 test("le script PowerShell reste compatible avec Windows PowerShell 5.1 et irm", () => {
   assert.ok(powershellBytes.every((byte) => byte <= 0x7f));
+});
+
+test("le nettoyage Windows conserve son marqueur pour la prochaine ouverture", () => {
+  assert.doesNotMatch(windowsCleanup, /MOVEFILE_DELAY_UNTIL_REBOOT|MoveFileExW/u);
+  assert.doesNotMatch(windowsCleanup, /remove_file\(root\.join\(OWNER_MARKER\)\)/u);
 });

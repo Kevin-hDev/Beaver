@@ -71,7 +71,7 @@ fn windows_destination_requires_a_fixed_drive() {
 }
 
 #[test]
-fn windows_cleanup_orders_the_executable_before_its_owned_directory() {
+fn windows_cleanup_identifies_the_executable_and_its_owned_directory() {
     let id = "0123456789abcdef0123456789abcdef";
     let root = std::env::temp_dir().join(format!("beaver-cleanup-order-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);

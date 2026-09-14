@@ -30,7 +30,7 @@ pub fn cleanup_targets(
 }
 
 #[cfg(target_os = "windows")]
-pub fn schedule_self_cleanup(run: &OwnedTempRun, executable: &Path) -> Result<(), InstallerError> {
+pub fn prepare_self_cleanup(run: &OwnedTempRun, executable: &Path) -> Result<(), InstallerError> {
     let [executable, root] = cleanup_targets(&run, executable)?;
     let entries = validated_children(&root, &executable)?;
     for entry in entries {
@@ -40,9 +40,6 @@ pub fn schedule_self_cleanup(run: &OwnedTempRun, executable: &Path) -> Result<()
             fs::remove_file(entry).map_err(|_| InstallerError::CleanupFailed)?;
         }
     }
-    fs::remove_file(root.join(OWNER_MARKER)).map_err(|_| InstallerError::CleanupFailed)?;
-    schedule_delete(&executable)?;
-    schedule_delete(&root)?;
     Ok(())
 }
 
@@ -83,18 +80,6 @@ fn validate_tree(root: &Path) -> Result<(), InstallerError> {
         }
     }
     Ok(())
-}
-
-#[cfg(target_os = "windows")]
-fn schedule_delete(path: &Path) -> Result<(), InstallerError> {
-    use std::os::windows::ffi::OsStrExt;
-    use windows_sys::Win32::Storage::FileSystem::{MoveFileExW, MOVEFILE_DELAY_UNTIL_REBOOT};
-
-    let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
-    wide.push(0);
-    (unsafe { MoveFileExW(wide.as_ptr(), std::ptr::null(), MOVEFILE_DELAY_UNTIL_REBOOT) } != 0)
-        .then_some(())
-        .ok_or(InstallerError::CleanupFailed)
 }
 
 #[cfg(unix)]

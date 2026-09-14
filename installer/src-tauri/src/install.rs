@@ -85,7 +85,7 @@ impl InstallerService {
         let result = std::env::current_exe()
             .map_err(|_| InstallerError::CleanupFailed)
             .and_then(|executable| {
-                crate::platform::windows_cleanup::schedule_self_cleanup(&self.run, &executable)
+                crate::platform::windows_cleanup::prepare_self_cleanup(&self.run, &executable)
             });
         #[cfg(not(target_os = "windows"))]
         let result = self.run.cleanup();
