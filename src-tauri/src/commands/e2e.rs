@@ -42,7 +42,7 @@ pub fn e2e_native_webviews() -> crate::services::browser::process_role::NativeWe
 }
 
 #[tauri::command]
-pub fn e2e_seed_update_operation(
+pub async fn e2e_seed_update_operation(
     app: tauri::AppHandle,
     runtime: tauri::State<'_, crate::services::update_progress::UpdateProgressRuntime>,
 ) -> Result<(), String> {
