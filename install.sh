@@ -4,7 +4,7 @@ readonly REPOSITORY="Kevin-hDev/Beaver" MANIFEST_NAME="update-manifest.json"
 readonly API_URL="https://api.github.com/repos/${REPOSITORY}/releases/latest"
 readonly MAX_API_BYTES=524288 MAX_MANIFEST_BYTES=65536 MAX_ASSET_BYTES=2147483648
 readonly CURL="/usr/bin/curl"
-TMP_DIR="" RUN_ID=""
+TMP_DIR="" TEMP_ROOT="" RUN_ID=""
 info() { printf "\033[1;34m→\033[0m %s\n" "$1"; }
 ok() { printf "\033[1;32m✓\033[0m %s\n" "$1"; }
 fail() { printf "\033[1;31m✗\033[0m %s\n" "$1" >&2; exit 1; }
@@ -155,9 +155,12 @@ install_linux() {
 }
 
 cleanup() {
+  if [ -n "$RUN_ID" ] && [ -n "$TEMP_ROOT" ]; then
+    if owned_run_valid "$TEMP_ROOT" "$TMP_DIR" "$RUN_ID"; then /bin/rm -rf "$TMP_DIR" 2>/dev/null; fi
+    return
+  fi
   case "$TMP_DIR" in
     /tmp/beaver-install.*) /bin/rm -rf "$TMP_DIR" 2>/dev/null ;;
-    /tmp/beaver-install-*) if owned_run_valid /tmp "$TMP_DIR" "$RUN_ID"; then /bin/rm -rf "$TMP_DIR" 2>/dev/null; fi ;;
   esac
 }
 
@@ -172,9 +175,10 @@ main() {
   esac
   umask 077
   if [ "$platform" = "macos" ]; then
+    TEMP_ROOT=$(canonical_dir "${TMPDIR:-/tmp}") || fail "Installation impossible."
     RUN_ID=$(/usr/bin/od -An -N16 -tx1 /dev/urandom | /usr/bin/tr -d '[:space:]')
     [[ "$RUN_ID" =~ ^[0-9a-f]{32}$ ]] || fail "Installation impossible."
-    TMP_DIR="/tmp/beaver-install-$RUN_ID"; /bin/mkdir "$TMP_DIR" || fail "Installation impossible."
+    TMP_DIR="$TEMP_ROOT/beaver-install-$RUN_ID"; /bin/mkdir "$TMP_DIR" || fail "Installation impossible."
     printf '{"schema":1,"runId":"%s"}' "$RUN_ID" > "$TMP_DIR/.beaver-installer-owner.json"
   else
     TMP_DIR=$(/usr/bin/mktemp -d /tmp/beaver-install.XXXXXXXX 2>/dev/null) || fail "Installation impossible."

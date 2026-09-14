@@ -118,9 +118,9 @@ export function InstallerApp({ api = installerApi }: { api?: InstallerApi }) {
         <InstallerStartScreen
           snapshot={snapshot}
           onBrowse={() => {
-            void api.chooseDirectory().then((destination) => {
-              if (destination) setSnapshot((value) => (value ? { ...value, destination } : value));
-            });
+            void api.chooseDirectory().then((value) => {
+              if (value) setSnapshot(value);
+            }).catch(() => {});
           }}
           onInstall={start}
         />

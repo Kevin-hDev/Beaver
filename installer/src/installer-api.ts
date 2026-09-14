@@ -5,7 +5,7 @@ import type { InstallerEvent, InstallerSnapshot } from "./installer-contract.gen
 
 export interface InstallerApi {
   snapshot: () => Promise<InstallerSnapshot>;
-  chooseDirectory: () => Promise<string | null>;
+  chooseDirectory: () => Promise<InstallerSnapshot | null>;
   start: (onEvent: (event: InstallerEvent) => void) => Promise<void>;
   cancel: () => Promise<InstallerEvent>;
   launch: () => Promise<void>;

@@ -193,7 +193,7 @@ function Invoke-Main {
     $hash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($hash -cne $expected.sha256) { Stop-Install }
     [void](Start-Process -FilePath $assetPath -ArgumentList @(
-        "--run-id", $runId, "--work-dir", $TempDirectory, "--version", $release.Version,
+        "--run-id", $runId, "--work-dir", "`"$TempDirectory`"", "--version", $release.Version,
         "--app-asset-name", $release.App.name, "--app-asset-size", ([string]$app.size),
         "--app-asset-sha256", $app.sha256
     ) -PassThru)

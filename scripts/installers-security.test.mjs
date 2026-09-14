@@ -77,6 +77,7 @@ test("le script shell borne et vérifie chaque téléchargement", () => {
   assert.match(shell, /--run-id/);
   assert.match(shell, /\.beaver-installer-owner\.json/);
   assert.match(shell, /od -An -N16 -tx1/);
+  assert.match(shell, /canonical_dir "\$\{TMPDIR:-\/tmp\}"/u);
   assert.match(shell, /package_installed beaver/);
   assert.doesNotMatch(shell, /purge_orphans/u);
   assert.doesNotMatch(shell, /hdiutil|ditto/u);
@@ -96,6 +97,7 @@ test("PowerShell désactive les redirections implicites et vérifie le SHA", () 
   assert.match(powershell, /\[Array\]::Clear/u);
   assert.match(powershell, /--app-asset-sha256/u);
   assert.match(powershell, /\.beaver-installer-owner\.json/u);
+  assert.match(powershell, /"`"\$TempDirectory`""/u);
   assert.doesNotMatch(powershell, /Remove-OrphanRuns/u);
   assert.doesNotMatch(powershell, /"\/S"|"\/D=/u);
   assert.doesNotMatch(powershell, /Invoke-(?:WebRequest|RestMethod)/);

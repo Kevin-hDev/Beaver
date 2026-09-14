@@ -48,17 +48,21 @@ impl InstallerService {
             .refresh_running(platform::beaver_running(&destination)?)
     }
 
-    pub fn set_destination(&self, destination: PathBuf) -> Result<String, InstallerError> {
+    pub fn set_destination(
+        &self,
+        destination: PathBuf,
+    ) -> Result<InstallerSnapshot, InstallerError> {
         platform::validate_destination(&destination)?;
         let running = platform::beaver_running(&destination)?;
         let installed = platform::installed_version(&destination);
         let text = destination.to_string_lossy().into_owned();
-        self.runtime.update_environment(&text, installed, running)?;
-        *self
+        let mut selected = self
             .destination
             .lock()
-            .map_err(|_| InstallerError::InstallFailed)? = destination;
-        Ok(text)
+            .map_err(|_| InstallerError::InstallFailed)?;
+        let snapshot = self.runtime.update_environment(&text, installed, running)?;
+        *selected = destination;
+        Ok(snapshot)
     }
 
     pub fn cancel(&self) -> InstallerEvent {

@@ -17,7 +17,7 @@ pub fn installer_snapshot(
 pub async fn choose_install_directory(
     app: AppHandle,
     service: State<'_, InstallerService>,
-) -> CommandResult<Option<String>> {
+) -> CommandResult<Option<InstallerSnapshot>> {
     let selected = app.dialog().file().blocking_pick_folder();
     let Some(path) = selected else {
         return Ok(None);

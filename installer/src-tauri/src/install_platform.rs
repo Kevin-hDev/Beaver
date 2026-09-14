@@ -122,6 +122,16 @@ pub fn install_asset(
         }));
     }
 
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let _ = (
+        asset,
+        run,
+        destination,
+        expected_version,
+        operation,
+        runtime,
+        channel,
+    );
     #[allow(unreachable_code)]
     Err(InstallerError::InstallFailed)
 }

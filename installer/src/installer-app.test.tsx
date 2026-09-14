@@ -28,7 +28,7 @@ function fixture(initial = snapshot()) {
   let publish: ((event: InstallerEvent) => void) | undefined;
   const api: InstallerApi = {
     snapshot: vi.fn().mockResolvedValue(initial),
-    chooseDirectory: vi.fn().mockResolvedValue("/Users/kevin/Apps"),
+    chooseDirectory: vi.fn().mockResolvedValue(snapshot({ destination: "/Users/kevin/Apps" })),
     start: vi.fn().mockImplementation((onEvent: (event: InstallerEvent) => void) => {
       publish = onEvent;
       return Promise.resolve();
@@ -81,12 +81,19 @@ describe("Beaver Installer", () => {
 
   it("affiche le dossier en lecture seule et permet de le parcourir", async () => {
     const { api } = fixture();
+    vi.mocked(api.chooseDirectory).mockResolvedValue(snapshot({
+      destination: "/Users/kevin/Apps",
+      installedVersion: "1.4.1",
+      beaverRunning: true,
+    }));
     render(<InstallerApp api={api} />);
     const destination = await screen.findByRole("textbox", { name: /dossier d[’']installation/i });
     expect(destination).toHaveAttribute("aria-readonly", "true");
     expect(destination).toHaveTextContent("/Applications");
     fireEvent.click(screen.getByRole("button", { name: /parcourir/i }));
     await waitFor(() => expect(destination).toHaveTextContent("/Users/kevin/Apps"));
+    expect(screen.getByRole("button", { name: /réinstaller/i })).toBeDisabled();
+    expect(screen.getByText(/ferme Beaver avant de continuer/i)).toBeVisible();
   });
 
   it("propose Installer ou Réinstaller et bloque si Beaver tourne", async () => {
