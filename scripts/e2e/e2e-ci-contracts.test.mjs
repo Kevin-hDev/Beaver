@@ -11,6 +11,7 @@ const wdioSource = readSource("../../wdio.conf.ts");
 const macObserverSource = readSource("./macos-app-observer.mjs");
 const nativeSmokeSource = readSource("../../tests/e2e/native-cef-shutdown.spec.ts");
 const nativeWebViewSource = readSource("../../tests/e2e/native-webview-shutdown.spec.ts");
+const updateProgressSource = readSource("../../tests/e2e/update-progress-security.spec.ts");
 const invokeSource = readSource("../../src-tauri/src/invoke_handler.rs");
 const commandsSource = readSource("../../src-tauri/src/commands/mod.rs");
 const e2eCommandSource = readSource("../../src-tauri/src/commands/e2e.rs");
@@ -237,6 +238,10 @@ test("the WebDriver journey executes the extension UI runtime proof", () => {
     wdioSource,
     /extensions-ui-runtime-proof\.spec\.ts[\s\S]*extensions-ui-advanced\.spec\.ts[\s\S]*extensions-ui-acceptance\.spec\.ts/u,
   );
+});
+
+test("the macOS and Windows update window journey stays disabled on Linux", () => {
+  assert.match(updateProgressSource, /process\.platform === "linux" \? it\.skip : it/u);
 });
 
 test("the packaged journey collects the API expansion acceptance fixture", () => {
