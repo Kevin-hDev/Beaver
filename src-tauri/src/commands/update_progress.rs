@@ -42,7 +42,7 @@ pub fn resize_update_progress_window(
 }
 
 #[tauri::command]
-pub fn show_update_progress_window(
+pub async fn show_update_progress_window(
     app: tauri::AppHandle,
     runtime: tauri::State<'_, UpdateProgressRuntime>,
 ) -> Result<(), String> {
