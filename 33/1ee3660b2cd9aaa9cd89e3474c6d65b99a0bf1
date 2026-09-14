@@ -1,0 +1,30 @@
+T01 — Porte A macOS validée
+
+Révision testée : 331ee3660b2cd9aaa9cd89e3474c6d65b99a0bf1
+Machine : MacBook Pro Mac16,8, Apple M4 Pro, 24 Go
+Système : macOS 27.0 (26A5425a)
+Build : CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npm run tauri build -- --features voice-probe
+Paquet : Beaver_1.2.2_aarch64.dmg
+Identité : com.clgo.dash
+SHA-256 exécutable : 24d019e8573c3042329c040c48fb5cde4a4bf770714d791832f40a4f7051b08e
+
+Preuves :
+- absence de demande avant clic ;
+- demande TCC Microphone au clic depuis le DMG monté ;
+- TCC confirme user-consent, Allowed, authorization_value=2 ;
+- entitlement signé com.apple.security.device.audio-input ;
+- 210944 échantillons, niveau non nul, arrêt automatique ;
+- 165376 échantillons, arrêt manuel immédiat ;
+- aucun processus du paquet restant après fermeture ;
+- codesign --verify --deep --strict réussi.
+
+Validations :
+- contrat paquet : 1 test réussi ;
+- frontend ciblé : 7 tests réussis ;
+- Rust ciblé : 3 tests réussis ;
+- TypeScript, ESLint ciblé, plutil, cargo check standard et Clippy voice-probe réussis ;
+- build paquet réussi.
+
+Le scénario de refus puis nouvelle tentative est reporté à T13 car il modifie le choix de confidentialité macOS.
+
+Le coffre éphémère est strictement limité à la feature temporaire voice-probe afin qu'une invite keychain étrangère au test ne précède pas l'action micro. Le chemin standard reste inchangé et ce code doit disparaître avec le panneau en T13.
