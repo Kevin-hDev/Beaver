@@ -8,7 +8,6 @@ import type { UpdateOperationSnapshot } from "@/types/update-progress.generated"
 interface UpdateRetryOptions {
   appAssetUrl: string | null;
   binaryBusy: RefObject<boolean>;
-  ollamaBinaryAvailable: boolean;
   downloadAppUpdate: (assetUrl: string) => Promise<void>;
   updateOllamaBinary: () => Promise<void>;
   startDownload: (args: {
@@ -22,7 +21,6 @@ export function useUpdateRetry(options: UpdateRetryOptions) {
   const {
     appAssetUrl,
     binaryBusy,
-    ollamaBinaryAvailable,
     downloadAppUpdate,
     updateOllamaBinary,
     startDownload,
@@ -35,7 +33,7 @@ export function useUpdateRetry(options: UpdateRetryOptions) {
         if (operation.kind === "app-release" && appAssetUrl && !binaryBusy.current) {
           void downloadAppUpdate(appAssetUrl);
           void invoke("dismiss_update_operation", { id }).catch(() => {});
-        } else if (operation.kind === "ollama-binary" && ollamaBinaryAvailable && !binaryBusy.current) {
+        } else if (operation.kind === "ollama-binary" && !binaryBusy.current) {
           void updateOllamaBinary();
           void invoke("dismiss_update_operation", { id }).catch(() => {});
         } else {
@@ -50,5 +48,5 @@ export function useUpdateRetry(options: UpdateRetryOptions) {
       }).catch(() => {});
     });
     return () => cleanupTauriListener(unlisten);
-  }, [appAssetUrl, binaryBusy, downloadAppUpdate, ollamaBinaryAvailable, startDownload, updateOllamaBinary]);
+  }, [appAssetUrl, binaryBusy, downloadAppUpdate, startDownload, updateOllamaBinary]);
 }

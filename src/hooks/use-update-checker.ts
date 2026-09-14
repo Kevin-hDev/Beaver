@@ -51,6 +51,7 @@ export function useUpdateChecker() {
   const [ollamaBinaryCancelling, setOllamaBinaryCancelling] = useState(false);
   const [modelCancellingId, setModelCancellingId] = useState<string | null>(null);
   const binaryBusy = useRef(false);
+  const ollamaBinaryTarget = useRef<OllamaBinaryUpdate | null>(null);
   const checkInFlight = useRef<Promise<void> | null>(null);
   const notifyCheckFailure = useRef(false);
 
@@ -73,6 +74,7 @@ export function useUpdateChecker() {
         if (results[1].status === "fulfilled") setOllamaUpdates(results[1].value);
         if (results[2].status === "fulfilled") {
           const discovered = results[2].value;
+          if (discovered) ollamaBinaryTarget.current = discovered;
           setOllamaBinaryUpdate((known) => binaryBusy.current ? known : discovered);
         }
         if (results[3].status === "fulfilled") setInstalledAppVersion(results[3].value);
@@ -124,7 +126,8 @@ export function useUpdateChecker() {
   }, []);
 
   const updateOllamaBinary = useCallback(async () => {
-    if (!ollamaBinaryUpdate || binaryBusy.current) return;
+    const target = ollamaBinaryTarget.current;
+    if (!target || binaryBusy.current) return;
     binaryBusy.current = true;
     setOllamaBinaryCancelling(false);
     setOllamaBinaryUpdating(true);
@@ -132,8 +135,9 @@ export function useUpdateChecker() {
     const channel = new Channel<DownloadProgress>();
     channel.onmessage = ({ completed, total, status }) => setOllamaBinaryPercent(status === "restarting" ? 100 : total > 0 ? Math.round(completed / total * 100) : 0);
     try {
-      await invoke("update_ollama_binary", { version: ollamaBinaryUpdate.latestVersion, onProgress: channel });
-      setInstalledOllamaVersion(ollamaBinaryUpdate.latestVersion);
+      await invoke("update_ollama_binary", { version: target.latestVersion, onProgress: channel });
+      setInstalledOllamaVersion(target.latestVersion);
+      ollamaBinaryTarget.current = null;
       setOllamaBinaryUpdate(null);
     } catch (error) {
       const cancelled = isError(error, "ollama-operation-cancelled");
@@ -143,7 +147,7 @@ export function useUpdateChecker() {
       setOllamaBinaryCancelling(false);
       setOllamaBinaryUpdating(false);
     }
-  }, [ollamaBinaryUpdate]);
+  }, []);
 
   const pullModel = useCallback(async (fullName: string) => {
     try {
@@ -184,7 +188,6 @@ export function useUpdateChecker() {
   useUpdateRetry({
     appAssetUrl: appUpdate?.assetUrl ?? null,
     binaryBusy,
-    ollamaBinaryAvailable: ollamaBinaryUpdate !== null,
     downloadAppUpdate,
     updateOllamaBinary,
     startDownload,

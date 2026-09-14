@@ -219,4 +219,45 @@ describe("useUpdateChecker", () => {
     await waitFor(() => expect(mocks.invoke)
       .toHaveBeenCalledWith("dismiss_update_operation", { id: "failed-model" }));
   });
+
+  it("réessaie Ollama avec la version connue après sa disparition de la recherche", async () => {
+    let binaryChecks = 0;
+    let updateAttempts = 0;
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "check_app_update") return Promise.resolve(null);
+      if (command === "check_ollama_updates") return Promise.resolve([]);
+      if (command === "check_ollama_binary_update") {
+        binaryChecks += 1;
+        return Promise.resolve(binaryChecks === 1
+          ? { currentVersion: "0.32.15", latestVersion: "0.33.1" }
+          : null);
+      }
+      if (command === "get_ollama_installed_version") return Promise.resolve("0.33.1");
+      if (command === "update_ollama_binary") {
+        updateAttempts += 1;
+        return updateAttempts === 1 ? Promise.reject(new Error("ollama-restart-failed")) : Promise.resolve();
+      }
+      if (command === "list_update_operations") return Promise.resolve([{
+        id: "failed-ollama", sequence: 3, kind: "ollama-binary", label: "Ollama 0.33.1",
+        status: "failed", phase: "restarting", progressMode: "indeterminate", percent: null,
+        queuePosition: null, canCancel: false, canRetry: true, isUpdate: null,
+        errorKey: "ollama-restart-failed",
+      }]);
+      return Promise.resolve(undefined);
+    });
+
+    const view = renderHook(() => useUpdateChecker());
+    await waitFor(() => expect(view.result.current.ollamaBinaryUpdate?.latestVersion).toBe("0.33.1"));
+    await act(async () => { await view.result.current.updateOllamaBinary(); });
+    await act(async () => { await view.result.current.checkAll(); });
+    expect(view.result.current.ollamaBinaryUpdate).toBeNull();
+
+    act(() => mocks.retryListener?.({ payload: "failed-ollama" }));
+
+    await waitFor(() => expect(updateAttempts).toBe(2));
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "update_ollama_binary")[1]?.[1])
+      .toMatchObject({ version: "0.33.1" });
+    await waitFor(() => expect(mocks.invoke)
+      .toHaveBeenCalledWith("dismiss_update_operation", { id: "failed-ollama" }));
+  });
 });
