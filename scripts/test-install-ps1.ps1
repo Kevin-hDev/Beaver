@@ -92,7 +92,6 @@ try {
     $junction = Join-Path $runRoot "beaver-install-$junctionId\outside"
     [void](New-Item -ItemType Junction -Path $junction -Target $sentinel)
     $validRun = Join-Path $runRoot "beaver-install-$validId"
-    Write-Host "Owned-run identity=$([Security.Principal.WindowsIdentity]::GetCurrent().Name) directory-owner=$((Get-Acl -LiteralPath $validRun).Owner) marker-owner=$((Get-Acl -LiteralPath (Join-Path $validRun '.beaver-installer-owner.json')).Owner)"
     if (-not (Test-OwnedRun $runRoot $validRun $validId)) { throw "PowerShell valid owned-run validation failed." }
     if (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$forgedId") $forgedId) { throw "PowerShell forged owned-run validation failed." }
     if (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$junctionId") $junctionId) { throw "PowerShell linked owned-run validation failed." }

@@ -141,8 +141,8 @@ function Test-OwnedRun([string]$Root, [string]$Path, [string]$RunId) {
         $directory = Get-Item -LiteralPath $Path -Force
         if (-not $directory.PSIsContainer -or ($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
             $directory.Parent.FullName.TrimEnd("\") -cne $Root.TrimEnd("\") -or $directory.Name -cne "beaver-install-$RunId") { return $false }
-        $owner = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-        if ((Get-Acl -LiteralPath $Path).Owner -cne $owner) { return $false }
+        $owner = [Security.Principal.WindowsIdentity]::GetCurrent().Owner
+        if (-not (Get-Acl -LiteralPath $Path).GetOwner([Security.Principal.SecurityIdentifier]).Equals($owner)) { return $false }
         $markerPath = [IO.Path]::Combine($Path, ".beaver-installer-owner.json")
         $marker = Get-Item -LiteralPath $markerPath -Force
         if ($marker.PSIsContainer -or ($marker.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $marker.Length -gt 128 -or
@@ -153,7 +153,7 @@ function Test-OwnedRun([string]$Root, [string]$Path, [string]$RunId) {
                 if ((++$count) -gt 4096) { return $false }
                 $child = Get-Item -LiteralPath $childPath -Force
                 if (($child.Attributes -band [IO.FileAttributes]::ReparsePoint)) { return $false }
-                if ((Get-Acl -LiteralPath $childPath).Owner -cne $owner) { return $false }
+                if (-not (Get-Acl -LiteralPath $childPath).GetOwner([Security.Principal.SecurityIdentifier]).Equals($owner)) { return $false }
                 if ($child.PSIsContainer) { $pending.Push($childPath) }
             }
         }
