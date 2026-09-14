@@ -8,6 +8,10 @@ const valid = {
   packageJson: JSON.stringify({ version: "1.2.3" }),
   cargoToml: '[package]\nname = "cl-go-dash"\nversion = "1.2.3"\n',
   tauriConfig: JSON.stringify({ version: "1.2.3" }),
+  installerCargoToml: '[package]\nname = "beaver-installer"\nversion = "1.2.3"\n',
+  installerCargoLock:
+    'version = 4\n\n[[package]]\nname = "beaver-installer"\nversion = "1.2.3"\n',
+  installerTauriConfig: JSON.stringify({ version: "1.2.3" }),
 };
 
 test("accepts one stable application version", () => {
@@ -20,12 +24,22 @@ test("the repository keeps all application versions aligned", () => {
       packageJson: readFileSync("package.json", "utf8"),
       cargoToml: readFileSync("src-tauri/Cargo.toml", "utf8"),
       tauriConfig: readFileSync("src-tauri/tauri.conf.json", "utf8"),
+      installerCargoToml: readFileSync("installer/src-tauri/Cargo.toml", "utf8"),
+      installerCargoLock: readFileSync("installer/src-tauri/Cargo.lock", "utf8"),
+      installerTauriConfig: readFileSync("installer/src-tauri/tauri.conf.json", "utf8"),
     }),
   );
 });
 
 test("rejects any disagreement between release manifests", () => {
-  for (const field of ["packageJson", "cargoToml", "tauriConfig"]) {
+  for (const field of [
+    "packageJson",
+    "cargoToml",
+    "tauriConfig",
+    "installerCargoToml",
+    "installerCargoLock",
+    "installerTauriConfig",
+  ]) {
     assert.throws(
       () =>
         assertAppVersionContract({
