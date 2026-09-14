@@ -78,6 +78,7 @@
       "signingIdentity": "-",
       "hardenedRuntime": true,
       "entitlements": "Entitlements.plist",
+      "infoPlist": "Info.plist",
       "frameworks": [
         "target/cef-runtime/macos/Chromium Embedded Framework.framework"
       ],

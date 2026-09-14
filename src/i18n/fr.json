@@ -2828,6 +2828,20 @@
       "recoveryUnavailable": "Le suivi enregistré ne peut pas être récupéré. Les nouvelles installations sont bloquées. Une intervention sur les données de récupération est nécessaire."
     }
   },
+  "voiceProbe": {
+    "title": "Test du microphone",
+    "start": "Démarrer le test",
+    "stop": "Arrêter",
+    "samples": "{{count}} échantillons reçus",
+    "level": "Niveau du microphone",
+    "status": {
+      "idle": "Prêt",
+      "starting": "Ouverture…",
+      "listening": "Écoute en cours",
+      "stopping": "Arrêt…",
+      "error": "Le microphone n’a pas pu démarrer. Vérifiez son autorisation, puis réessayez."
+    }
+  },
   "installer": {
     "windowTitle": "Installer Beaver",
     "version": "Version {{version}}",

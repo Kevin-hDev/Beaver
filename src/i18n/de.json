@@ -2641,6 +2641,20 @@
       "recoveryUnavailable": "Der gespeicherte Installationsstand kann nicht wiederhergestellt werden. Neue Installationen sind gesperrt. Die Wiederherstellungsdaten müssen manuell überprüft werden."
     }
   },
+  "voiceProbe": {
+    "title": "Mikrofontest",
+    "start": "Test starten",
+    "stop": "Stoppen",
+    "samples": "{{count}} Samples empfangen",
+    "level": "Mikrofonpegel",
+    "status": {
+      "idle": "Bereit",
+      "starting": "Wird geöffnet…",
+      "listening": "Aufnahme läuft",
+      "stopping": "Wird beendet…",
+      "error": "Das Mikrofon konnte nicht gestartet werden. Prüfe die Berechtigung und versuche es erneut."
+    }
+  },
   "installer": {
     "windowTitle": "Beaver installieren", "version": "Version {{version}}", "versionInstalled": "Version {{version}} — installiert: {{installed}}", "destination": "Installationsordner", "browse": "Durchsuchen", "install": "Installieren", "reinstall": "Neu installieren",
     "alreadyInstalledTitle": "Beaver ist hier bereits installiert", "alreadyInstalledBody": "Version {{installed}} wird durch {{version}} ersetzt. Unterhaltungen, Schlüssel und Einstellungen bleiben erhalten.", "runningTitle": "Schließe Beaver, bevor du fortfährst", "runningBody": "Die Anwendung ist geöffnet. Schließe sie und kehre zurück: Während der Ausführung kann sie nicht ersetzt werden.", "waiting": "Warten auf das Schließen von Beaver",

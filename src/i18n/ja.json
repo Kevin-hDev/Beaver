@@ -2640,6 +2640,20 @@
       "recoveryUnavailable": "保存済みのインストール情報を復元できません。新しいインストールは停止されています。復元データを手動で確認する必要があります。"
     }
   },
+  "voiceProbe": {
+    "title": "マイクテスト",
+    "start": "テストを開始",
+    "stop": "停止",
+    "samples": "{{count}} サンプル受信",
+    "level": "マイクレベル",
+    "status": {
+      "idle": "準備完了",
+      "starting": "起動中…",
+      "listening": "聞き取り中",
+      "stopping": "停止中…",
+      "error": "マイクを起動できませんでした。権限を確認して、もう一度お試しください。"
+    }
+  },
   "installer": {
     "windowTitle": "Beaver をインストール", "version": "バージョン {{version}}", "versionInstalled": "バージョン {{version}} — インストール済み：{{installed}}", "destination": "インストール先", "browse": "参照", "install": "インストール", "reinstall": "再インストール",
     "alreadyInstalledTitle": "ここには Beaver が既にインストールされています", "alreadyInstalledBody": "バージョン {{installed}} を {{version}} に置き換えます。会話、キー、設定は変更されません。", "runningTitle": "続行する前に Beaver を閉じてください", "runningBody": "アプリが開いています。閉じてから戻ってください。実行中のアプリは置き換えられません。", "waiting": "Beaver が閉じるのを待っています",

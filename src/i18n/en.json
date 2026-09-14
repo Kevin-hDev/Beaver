@@ -2776,6 +2776,20 @@
       "recoveryUnavailable": "Saved installation tracking cannot be recovered. New installations are blocked. The recovery data requires manual intervention."
     }
   },
+  "voiceProbe": {
+    "title": "Microphone test",
+    "start": "Start test",
+    "stop": "Stop",
+    "samples": "{{count}} samples received",
+    "level": "Microphone level",
+    "status": {
+      "idle": "Ready",
+      "starting": "Opening…",
+      "listening": "Listening",
+      "stopping": "Stopping…",
+      "error": "The microphone could not start. Check its permission, then try again."
+    }
+  },
   "installer": {
     "windowTitle": "Install Beaver",
     "version": "Version {{version}}",

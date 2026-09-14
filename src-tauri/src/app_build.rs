@@ -72,6 +72,10 @@ fn build_with_mode(
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
     let builder = crate::services::extensions::ui_protocol::register(builder, ui_startup.clone());
+    #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
+    let builder = builder.manage(crate::services::voice_probe::VoiceProbeRuntime::new(
+        exit_coordinator.work_supervisor(),
+    ));
     let ollama_manager = runtime.ollama.clone();
     builder
         .manage(OllamaClient::new(ollama_manager))

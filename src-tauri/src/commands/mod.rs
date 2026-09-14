@@ -143,6 +143,8 @@ pub mod terminal;
 pub(crate) mod terminal_blocking;
 pub mod update_notifications;
 pub mod update_progress;
+#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
+pub mod voice_probe;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
@@ -213,3 +215,5 @@ pub use system_prompts::*;
 pub use terminal::*;
 pub use update_notifications::*;
 pub use update_progress::*;
+#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
+pub use voice_probe::*;

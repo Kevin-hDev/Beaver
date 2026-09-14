@@ -2645,6 +2645,20 @@
       "recoveryUnavailable": "No se puede recuperar el seguimiento guardado. Las nuevas instalaciones están bloqueadas. Los datos de recuperación requieren una intervención manual."
     }
   },
+  "voiceProbe": {
+    "title": "Prueba del micrófono",
+    "start": "Iniciar prueba",
+    "stop": "Detener",
+    "samples": "{{count}} muestras recibidas",
+    "level": "Nivel del micrófono",
+    "status": {
+      "idle": "Listo",
+      "starting": "Abriendo…",
+      "listening": "Escuchando",
+      "stopping": "Deteniendo…",
+      "error": "No se pudo iniciar el micrófono. Comprueba el permiso e inténtalo de nuevo."
+    }
+  },
   "installer": {
     "windowTitle": "Instalar Beaver", "version": "Versión {{version}}", "versionInstalled": "Versión {{version}} — instalada: {{installed}}", "destination": "Carpeta de instalación", "browse": "Examinar", "install": "Instalar", "reinstall": "Reinstalar",
     "alreadyInstalledTitle": "Beaver ya está instalado aquí", "alreadyInstalledBody": "La versión {{installed}} será sustituida por la {{version}}. Tus conversaciones, claves y ajustes no cambiarán.", "runningTitle": "Cierra Beaver antes de continuar", "runningBody": "La aplicación está abierta. Ciérrala y vuelve aquí: no puede sustituirse mientras se ejecuta.", "waiting": "Esperando a que Beaver se cierre",
