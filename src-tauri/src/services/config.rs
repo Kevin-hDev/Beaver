@@ -85,6 +85,17 @@ pub(crate) fn read_config_from_path(path: &Path, data_dir: &Path) -> Result<Clgo
             .normalized();
     }
 
+    if let Some(voice) = obj.get("voice") {
+        config.voice =
+            serde_json::from_value::<crate::services::voice::types::VoiceSettings>(voice.clone())
+                .ok()
+                .and_then(crate::services::voice::types::VoiceSettings::normalized)
+                .unwrap_or_else(|| {
+                    ::log::warn!("[voice] invalid settings replaced with defaults");
+                    crate::services::voice::types::VoiceSettings::default()
+                });
+    }
+
     if let Some(arr) = obj.get("scheduled_wakeups").and_then(|v| v.as_array()) {
         let mut dropped = 0u32;
         for item in arr {

@@ -4,6 +4,7 @@
 #![allow(clippy::module_inception)]
 
 mod app_build;
+mod app_build_mode;
 mod app_events;
 mod app_exit;
 mod app_lifecycle;

@@ -158,6 +158,15 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             true
         }
     };
+    let voice = async {
+        match app.try_state::<services::voice::runtime::VoiceRuntime>() {
+            Some(runtime) => {
+                runtime.begin_closing();
+                runtime.stop_and_wait(deadline).await
+            }
+            None => true,
+        }
+    };
 
     let service_stops = [
         ("agent-work", agent_work.boxed()),
@@ -170,6 +179,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
         ("oauth", oauth.boxed()),
         ("scheduler", scheduler.boxed()),
         ("runtime-background", background.boxed()),
+        ("voice", voice.boxed()),
         (
             "mcp",
             services::mcp_bridge::process_manager::stop_and_wait(deadline).boxed(),

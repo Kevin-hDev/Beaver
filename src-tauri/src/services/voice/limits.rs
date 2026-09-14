@@ -1,0 +1,12 @@
+pub const SETTINGS_VERSION: u8 = 1;
+pub const MAX_VOICE_OPERATIONS: usize = 1;
+pub const RECOVERY_SPEECH_THRESHOLD_MS: u64 = 30_000;
+pub const NO_SPEECH_GUARD_MS: u64 = 120_000;
+pub const RECOVERY_TTL_MS: u64 = 600_000;
+pub const DELIVERY_TIMEOUT_MS: u64 = 600_000;
+pub const MAX_TRANSCRIPT_CHARS: usize = 100_000;
+pub const MAX_DEVICE_ID_CHARS: usize = 512;
+pub const MAX_LANGUAGE_CODE_CHARS: usize = 16;
+pub const MAX_SHORTCUT_CHARS: usize = 128;
+pub const MAX_ERROR_PARAMS: usize = 4;
+pub const MAX_ERROR_PARAM_CHARS: usize = 128;

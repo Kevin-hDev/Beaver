@@ -113,6 +113,7 @@ pub mod update_notifications;
 mod update_notifications_tests;
 pub mod update_progress;
 pub mod vault;
+pub mod voice;
 #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
 pub mod voice_probe;
 #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]

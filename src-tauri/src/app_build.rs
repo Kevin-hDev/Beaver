@@ -1,20 +1,9 @@
+use crate::app_build_mode::AppBuildMode;
 use crate::runtime_state::{ActiveStreams, RuntimeServices};
 use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::e2e_profile::{report_lifecycle, LifecycleStage};
 use crate::services::gateway::GatewayService;
 use tauri::{Emitter, Manager};
-
-#[derive(Clone, Copy)]
-enum AppBuildMode {
-    Interactive,
-    LiveFixture,
-}
-
-impl AppBuildMode {
-    fn installs_single_instance(self) -> bool {
-        matches!(self, Self::Interactive)
-    }
-}
 
 pub(super) fn build(
     exit_coordinator: crate::app_exit::AppExitCoordinator,
@@ -91,6 +80,7 @@ fn build_with_mode(
         .manage(runtime.searxng)
         .manage(runtime.terminal)
         .manage(runtime.background)
+        .manage(runtime.voice)
         .manage(crate::services::browser::BrowserRuntimeHandle::default())
         .manage(crate::services::browser::BrowserSessionService::default())
         .manage(crate::services::browser::LocalSiteScanner::default())
