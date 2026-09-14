@@ -9,7 +9,7 @@ use subtle::ConstantTimeEq;
 pub const OWNER_MARKER: &str = ".beaver-installer-owner.json";
 const RUN_PREFIX: &str = "beaver-install-";
 const MAX_MARKER_BYTES: u64 = 128;
-const MAX_TEMP_CHILDREN: usize = 128;
+const MAX_TEMP_RUNS: usize = 128;
 const MAX_RUN_ENTRIES: usize = 4_096;
 
 #[derive(Deserialize)]
@@ -78,11 +78,16 @@ pub fn purge_orphans(temp_root: &Path, current_run_id: &str) {
     let Ok(entries) = fs::read_dir(temp_root) else {
         return;
     };
-    for entry in entries.take(MAX_TEMP_CHILDREN).flatten() {
+    let mut candidates = 0;
+    for entry in entries.flatten() {
         let path = entry.path();
         let Some(run_id) = run_id_from_name(&path) else {
             continue;
         };
+        if candidates == MAX_TEMP_RUNS {
+            break;
+        }
+        candidates += 1;
         if constant_time_eq(run_id, current_run_id) {
             continue;
         }

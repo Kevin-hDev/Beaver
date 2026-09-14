@@ -142,6 +142,19 @@ fn five_crashed_runs_are_purged_without_touching_the_current_run() {
 }
 
 #[test]
+fn ordinary_temp_entries_do_not_hide_an_owned_orphan() {
+    let fixture = Fixture::new();
+    for index in 0..4_096 {
+        fs::write(fixture.0.join(format!("ordinary-{index}")), "keep").unwrap();
+    }
+    let orphan = fixture.run("ffffffffffffffffffffffffffffffff");
+
+    purge_orphans(&fixture.0, CURRENT);
+
+    assert!(!orphan.exists());
+}
+
+#[test]
 fn active_run_is_not_purged() {
     let fixture = Fixture::new();
     let path = fixture.run(CURRENT);
