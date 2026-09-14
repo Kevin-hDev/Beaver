@@ -36,3 +36,8 @@ test("l'injection SVG est unique, locale et sans navigation dynamique", async ()
   );
   assert.doesNotMatch(combined, /banc-chassis|banc-install|beaver-styles\.css/u);
 });
+
+test("le serveur de développement autorise les traductions partagées", async () => {
+  const viteConfig = await readFile(new URL("../../installer/vite.config.ts", import.meta.url), "utf8");
+  assert.match(viteConfig, /path\.resolve\(installerRoot, "\.\.\/src\/i18n"\)/u);
+});

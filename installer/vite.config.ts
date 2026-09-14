@@ -22,6 +22,7 @@ export default defineConfig({
         installerRoot,
         path.resolve(installerRoot, "../src/styles"),
         path.resolve(installerRoot, "../src/assets"),
+        path.resolve(installerRoot, "../src/i18n"),
       ],
     },
   },
