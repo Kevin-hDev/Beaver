@@ -106,6 +106,24 @@ fn ignores_stale_sequences_and_bounds_external_fields() {
 }
 
 #[test]
+fn cancellation_cannot_be_revived_by_late_non_terminal_progress() {
+    let mut store = UpdateProgressStore::default();
+    store
+        .upsert(operation("same", 1, UpdateOperationStatus::Running))
+        .unwrap();
+    let mut cancelling = operation("same", 2, UpdateOperationStatus::Cancelling);
+    cancelling.can_cancel = false;
+    store.upsert(cancelling).unwrap();
+
+    assert!(!store
+        .upsert(operation("same", 3, UpdateOperationStatus::Running))
+        .unwrap());
+    let current = store.get("same").unwrap();
+    assert_eq!(current.status, UpdateOperationStatus::Cancelling);
+    assert!(!current.can_cancel);
+}
+
+#[test]
 fn dismisses_only_a_valid_identifier() {
     let mut store = UpdateProgressStore::default();
     store

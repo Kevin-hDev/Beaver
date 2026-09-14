@@ -15,6 +15,12 @@ impl UpdateProgressStore {
     pub fn upsert(&mut self, operation: UpdateOperationSnapshot) -> Result<bool, &'static str> {
         validate(&operation)?;
         if let Some(current) = self.operations.get(&operation.id) {
+            // Cancellation is monotonic: only a terminal result may replace it.
+            if current.status == UpdateOperationStatus::Cancelling
+                && !operation.status.is_terminal()
+            {
+                return Ok(false);
+            }
             if operation.sequence <= current.sequence {
                 return Ok(false);
             }
