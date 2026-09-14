@@ -5,6 +5,7 @@ import test from "node:test";
 const shell = fs.readFileSync("install.sh", "utf8");
 const powershell = fs.readFileSync("install.ps1", "utf8");
 const powershellBytes = fs.readFileSync("install.ps1");
+const windowsCleanup = fs.readFileSync("installer/src-tauri/src/platform/windows_cleanup.rs", "utf8");
 
 function lines(source) {
   return source.split(/\r?\n/).length - 1;
@@ -42,8 +43,8 @@ function assertBalanced(source) {
 }
 
 test("les deux installateurs restent petits et ciblent Beaver", () => {
-  assert.ok(lines(shell) < 200);
-  assert.ok(lines(powershell) < 200);
+  assert.ok(lines(shell) <= 230);
+  assert.ok(lines(powershell) <= 230);
   for (const source of [shell, powershell]) {
     assert.match(source, /Kevin-hDev\/Beaver/);
     assert.match(source, /update-manifest\.json/);
@@ -72,12 +73,15 @@ test("le script shell borne et vérifie chaque téléchargement", () => {
   assert.match(shell, /sha256_file "\$platform" "\$asset"/);
   assert.match(shell, /\[ "\$actual_hash" = "\$expected_hash" \]/);
   assert.match(shell, /apt-get install -y "\$asset"/);
-  assert.match(shell, /Print :CFBundleExecutable/);
-  assert.match(shell, /CL-GO\.app/);
+  assert.match(shell, /Beaver Installer\.app/);
+  assert.match(shell, /--no-same-owner/);
+  assert.match(shell, /--run-id/);
+  assert.match(shell, /\.beaver-installer-owner\.json/);
+  assert.match(shell, /od -An -N16 -tx1/);
+  assert.match(shell, /canonical_dir "\$\{TMPDIR:-\/tmp\}"/u);
   assert.match(shell, /package_installed beaver/);
-  assert.match(shell, /stage_inode=.*stat -f/);
-  assert.match(shell, /\$\{stage##\*\/\}/);
-  assert.doesNotMatch(shell, /\.Beaver\.app\.backup-/);
+  assert.doesNotMatch(shell, /purge_orphans/u);
+  assert.doesNotMatch(shell, /hdiutil|ditto/u);
   assert.notEqual(curlInvocation, "");
   assert.doesNotMatch(curlInvocation, /(?:--location|(?:^|\s)-[A-Za-z]*L[A-Za-z]*)/);
 });
@@ -89,11 +93,31 @@ test("PowerShell désactive les redirections implicites et vérifie le SHA", () 
   assert.match(powershell, /ResponseHeadersRead/);
   assert.match(powershell, /CancellationTokenSource/);
   assert.match(powershell, /Get-FileHash -LiteralPath \$assetPath -Algorithm SHA256/);
-  assert.match(powershell, /Beaver_\$\{version\}_x64-setup\.exe/);
-  assert.match(powershell, /-ArgumentList @\("\/S", "\/D=\$installDirectory"\)/);
+  assert.match(powershell, /Beaver_\$\{version\}_installer-x64\.exe/);
+  assert.match(powershell, /RandomNumberGenerator/u);
+  assert.match(powershell, /\[Array\]::Clear/u);
+  assert.match(powershell, /--app-asset-sha256/u);
+  assert.match(powershell, /\.beaver-installer-owner\.json/u);
+  assert.match(powershell, /"`"\$TempDirectory`""/u);
+  assert.doesNotMatch(powershell, /Remove-OrphanRuns/u);
+  assert.doesNotMatch(powershell, /"\/S"|"\/D=/u);
   assert.doesNotMatch(powershell, /Invoke-(?:WebRequest|RestMethod)/);
 });
 
 test("le script PowerShell reste compatible avec Windows PowerShell 5.1 et irm", () => {
   assert.ok(powershellBytes.every((byte) => byte <= 0x7f));
+});
+
+test("le nettoyage Windows conserve son marqueur pour la prochaine ouverture", () => {
+  assert.doesNotMatch(windowsCleanup, /MOVEFILE_DELAY_UNTIL_REBOOT|MoveFileExW/u);
+  assert.doesNotMatch(windowsCleanup, /remove_file\(root\.join\(OWNER_MARKER\)\)/u);
+});
+
+test("les lanceurs réservent leur run avant le premier téléchargement", () => {
+  const shellReservation = shell.indexOf('> "$TMP_DIR/.beaver-installer-active"');
+  const powershellReservation = powershell.indexOf('".beaver-installer-active"');
+  assert.ok(shellReservation > shell.indexOf(".beaver-installer-owner.json"));
+  assert.ok(shellReservation < shell.indexOf('release="$TMP_DIR/release.json"'));
+  assert.ok(powershellReservation > powershell.indexOf('".beaver-installer-owner.json"'));
+  assert.ok(powershellReservation < powershell.indexOf("$releasePath ="));
 });

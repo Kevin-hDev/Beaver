@@ -6,9 +6,8 @@ use crate::app_exit::AppWorkSupervisor;
 use crate::services::work_registry::{ServiceWorkAdmission, ServiceWorkSupervisor};
 use std::{
     collections::{HashMap, VecDeque},
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
-use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
@@ -66,7 +65,7 @@ impl ModelDownloadManager {
         ),
         String,
     > {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         let admission = if store.worker_running {
             self.work.try_probe().map_err(public_admission_error)?;
             None
@@ -114,13 +113,13 @@ impl ModelDownloadManager {
     }
 
     pub async fn list(&self) -> Vec<ModelDownloadState> {
-        let store = self.inner.lock().await;
+        let store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         list_locked(&store)
     }
 
     #[cfg(test)]
     pub async fn progress(&self, id: &str, update: ProgressUpdate) -> Vec<ModelDownloadState> {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         apply_progress(&mut store, id, update);
         list_locked(&store)
     }
@@ -130,9 +129,8 @@ impl ModelDownloadManager {
         id: &str,
         update: ProgressUpdate,
     ) -> Option<Vec<ModelDownloadState>> {
-        // La progression est indicative : ne jamais bloquer un thread de téléchargement
-        // pour une mise à jour d'interface qui sera remplacée par la suivante.
-        let mut store = self.inner.try_lock().ok()?;
+        // ponytail: verrou global sur 16 entrées max ; segmenter seulement si la contention est mesurée.
+        let mut store = self.inner.lock().ok()?;
         apply_progress(&mut store, id, update);
         Some(list_locked(&store))
     }
@@ -143,7 +141,7 @@ impl ModelDownloadManager {
         status: ModelDownloadStatus,
         error_key: Option<&str>,
     ) -> Vec<ModelDownloadState> {
-        let mut store = self.inner.lock().await;
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(entry) = store.entries.get_mut(id) {
             entry.state.status = status;
             entry.state.error_key = error_key.map(str::to_string);
@@ -174,7 +172,9 @@ fn apply_progress(store: &mut DownloadStore, id: &str, update: ProgressUpdate) {
 fn is_pending(status: ModelDownloadStatus) -> bool {
     matches!(
         status,
-        ModelDownloadStatus::Queued | ModelDownloadStatus::Running
+        ModelDownloadStatus::Queued
+            | ModelDownloadStatus::Running
+            | ModelDownloadStatus::Cancelling
     )
 }
 

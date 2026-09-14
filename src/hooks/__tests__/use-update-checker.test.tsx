@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   getVersion: vi.fn(),
   listen: vi.fn(),
   showToast: vi.fn(),
+  startDownload: vi.fn(),
+  downloads: [] as Array<{
+    id: string; kind: "ollama" | "forecast"; modelId: string; isUpdate: boolean;
+  }>,
+  retryListener: undefined as ((event: { payload: string }) => void) | undefined,
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -18,7 +23,8 @@ vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
 vi.mock("@/hooks/use-model-downloads", () => ({
   useModelDownloads: () => ({
     activeDownload: null,
-    startDownload: vi.fn(),
+    downloads: mocks.downloads,
+    startDownload: mocks.startDownload,
     cancelDownload: vi.fn(),
   }),
 }));
@@ -48,8 +54,14 @@ describe("useUpdateChecker", () => {
   beforeEach(() => {
     mocks.invoke.mockReset();
     mocks.getVersion.mockReset().mockResolvedValue("1.1.7");
-    mocks.listen.mockReset().mockResolvedValue(() => {});
+    mocks.retryListener = undefined;
+    mocks.downloads = [];
+    mocks.listen.mockReset().mockImplementation((name: string, callback: (event: { payload: string }) => void) => {
+      if (name === "update-operation-retry-requested") mocks.retryListener = callback;
+      return Promise.resolve(() => {});
+    });
     mocks.showToast.mockReset();
+    mocks.startDownload.mockReset();
   });
 
   it("coalesces overlapping update checks", async () => {
@@ -177,5 +189,75 @@ describe("useUpdateChecker", () => {
     download.reject("update-download-cancelled");
     await act(async () => { await downloadTask; });
     expect(view.result.current.appCancelling).toBe(false);
+  });
+
+  it("réessaie un modèle avec les paramètres de l'opération d'origine", async () => {
+    mocks.startDownload.mockResolvedValue({ id: "failed-model" });
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "check_app_update") return Promise.resolve(null);
+      if (command === "check_ollama_updates") return Promise.resolve([]);
+      if (command === "check_ollama_binary_update") return Promise.resolve(null);
+      if (command === "get_ollama_installed_version") return Promise.resolve(null);
+      if (command === "list_update_operations") return Promise.resolve([{
+        id: "failed-model", sequence: 3, kind: "forecast-model", label: "chronos-tiny",
+        status: "failed", phase: "installing", progressMode: "indeterminate", percent: null,
+        queuePosition: null, canCancel: false, canRetry: true, isUpdate: true,
+        errorKey: "model-download-failed",
+      }]);
+      return Promise.resolve(undefined);
+    });
+    renderHook(() => useUpdateChecker());
+    await waitFor(() => expect(mocks.retryListener).toBeTypeOf("function"));
+
+    act(() => mocks.retryListener?.({ payload: "failed-model" }));
+
+    await waitFor(() => expect(mocks.startDownload).toHaveBeenCalledWith({
+      kind: "forecast",
+      modelId: "chronos-tiny",
+      isUpdate: true,
+    }));
+    await waitFor(() => expect(mocks.invoke)
+      .toHaveBeenCalledWith("dismiss_update_operation", { id: "failed-model" }));
+  });
+
+  it("réessaie Ollama avec la version connue après sa disparition de la recherche", async () => {
+    let binaryChecks = 0;
+    let updateAttempts = 0;
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "check_app_update") return Promise.resolve(null);
+      if (command === "check_ollama_updates") return Promise.resolve([]);
+      if (command === "check_ollama_binary_update") {
+        binaryChecks += 1;
+        return Promise.resolve(binaryChecks === 1
+          ? { currentVersion: "0.32.15", latestVersion: "0.33.1" }
+          : null);
+      }
+      if (command === "get_ollama_installed_version") return Promise.resolve("0.33.1");
+      if (command === "update_ollama_binary") {
+        updateAttempts += 1;
+        return updateAttempts === 1 ? Promise.reject(new Error("ollama-restart-failed")) : Promise.resolve();
+      }
+      if (command === "list_update_operations") return Promise.resolve([{
+        id: "failed-ollama", sequence: 3, kind: "ollama-binary", label: "Ollama 0.33.1",
+        status: "failed", phase: "restarting", progressMode: "indeterminate", percent: null,
+        queuePosition: null, canCancel: false, canRetry: true, isUpdate: null,
+        errorKey: "ollama-restart-failed",
+      }]);
+      return Promise.resolve(undefined);
+    });
+
+    const view = renderHook(() => useUpdateChecker());
+    await waitFor(() => expect(view.result.current.ollamaBinaryUpdate?.latestVersion).toBe("0.33.1"));
+    await act(async () => { await view.result.current.updateOllamaBinary(); });
+    await act(async () => { await view.result.current.checkAll(); });
+    expect(view.result.current.ollamaBinaryUpdate).toBeNull();
+
+    act(() => mocks.retryListener?.({ payload: "failed-ollama" }));
+
+    await waitFor(() => expect(updateAttempts).toBe(2));
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "update_ollama_binary")[1]?.[1])
+      .toMatchObject({ version: "0.33.1" });
+    await waitFor(() => expect(mocks.invoke)
+      .toHaveBeenCalledWith("dismiss_update_operation", { id: "failed-ollama" }));
   });
 });

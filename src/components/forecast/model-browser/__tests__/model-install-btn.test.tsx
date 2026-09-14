@@ -16,7 +16,8 @@ type InstallHookValue = {
 
 const mockedUseModelDownloads = vi.fn<() => InstallHookValue>();
 
-vi.mock("@/hooks/use-model-downloads", () => ({
+vi.mock("@/hooks/use-model-downloads", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/hooks/use-model-downloads")>(),
   useModelDownloads: () => mockedUseModelDownloads(),
 }));
 
@@ -125,6 +126,62 @@ describe("ModelInstallBtn", () => {
     expect(screen.getByText("modelDownloads.queued")).toBeTruthy();
     fireEvent.click(screen.getByText("forecast.models.cancel"));
     expect(cancelDownload).toHaveBeenCalledWith("forecast-queued");
+  });
+
+  it("garde son annulation visible et bloque toute nouvelle action", () => {
+    mockedUseModelDownloads.mockReturnValue({
+      activeDownload: null,
+      startDownload,
+      cancelDownload,
+      downloads: [{
+        id: "forecast-cancelling",
+        kind: "forecast",
+        modelId: "chronos-tiny",
+        status: "cancelling",
+        phase: "downloading",
+        percent: 42,
+      }],
+    });
+
+    render(
+      <ModelInstallBtn
+        modelId="chronos-tiny"
+        installed={false}
+        runtimeReady={false}
+        onDone={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "modelDownloads.cancelling" }))
+      .toBeDisabled();
+    expect(screen.queryByText("forecast.models.install")).toBeNull();
+  });
+
+  it("interdit la désinstallation pendant l'annulation d'un téléchargement", () => {
+    mockedUseModelDownloads.mockReturnValue({
+      activeDownload: null,
+      startDownload,
+      cancelDownload,
+      downloads: [{
+        id: "other-cancelling",
+        kind: "ollama",
+        modelId: "llama3",
+        status: "cancelling",
+      }],
+    });
+
+    render(
+      <ModelInstallBtn
+        modelId="chronos-tiny"
+        installed
+        runtimeReady
+        allowUninstall
+        onDone={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "forecast.models.uninstall" }))
+      .toBeDisabled();
   });
 
   it("demarre le telechargement global", () => {

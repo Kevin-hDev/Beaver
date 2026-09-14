@@ -59,58 +59,52 @@ if manifest_values 1.1.1 Beaver_1.1.0_aarch64.dmg "${MANIFEST}" >/dev/null 2>&1 
   exit 1
 fi
 
-valid_install_dir "/Applications"
-if valid_install_dir "relative/path" || valid_install_dir "/tmp/../Applications"; then
-  printf "FAIL invalid install directory accepted\n" >&2
-  exit 1
-fi
-
-INSTALL_ROOT="${TMP_DIR}/Applications"
-/bin/mkdir -p "${INSTALL_ROOT}"
-installation_absent "${INSTALL_ROOT}"
-/bin/mkdir "${INSTALL_ROOT}/CL-GO.app"
-if installation_absent "${INSTALL_ROOT}"; then
-  printf "FAIL legacy app was not detected\n" >&2
-  exit 1
-fi
-
-APP_BUNDLE="${TMP_DIR}/Beaver.app"
-CLI_DIR="${TMP_DIR}/bin"
-/bin/mkdir -p "${APP_BUNDLE}/Contents/MacOS" "${CLI_DIR}"
-/usr/bin/touch "${APP_BUNDLE}/Contents/MacOS/beaver"
-install_cli_link "${APP_BUNDLE}" "${CLI_DIR}"
-assert_eq "${APP_BUNDLE}/Contents/MacOS/beaver" "$(/usr/bin/readlink "${CLI_DIR}/beaver")" "CLI symlink"
-
-NEXT_APP_BUNDLE="${TMP_DIR}/Beaver-next.app"
-/bin/mkdir -p "${NEXT_APP_BUNDLE}/Contents/MacOS"
-/usr/bin/touch "${NEXT_APP_BUNDLE}/Contents/MacOS/beaver"
-install_cli_link "${NEXT_APP_BUNDLE}" "${CLI_DIR}"
+GENERATED_MANIFEST_DIR="${TMP_DIR}/generated-manifest"
+/bin/mkdir "${GENERATED_MANIFEST_DIR}"
+for suffix in \
+  "_aarch64.dmg" \
+  "_amd64.deb" \
+  "_x64-setup.exe" \
+  "_installer-aarch64.tar.gz" \
+  "_installer-x64.exe"; do
+  printf 'asset' > "${GENERATED_MANIFEST_DIR}/Beaver_1.1.0${suffix}"
+done
+node "${ROOT_DIR}/scripts/release/create-update-manifest.mjs" \
+  1.1.0 "${GENERATED_MANIFEST_DIR}" >/dev/null
 assert_eq \
-  "${NEXT_APP_BUNDLE}/Contents/MacOS/beaver" \
-  "$(/usr/bin/readlink "${CLI_DIR}/beaver")" \
-  "CLI symlink replacement"
+  "d59386e0ae435e292fbe0ebcdb954b75ed5fb3922091277cb19f798fc5d50718 5" \
+  "$(manifest_values 1.1.0 Beaver_1.1.0_aarch64.dmg "${GENERATED_MANIFEST_DIR}/update-manifest.json")" \
+  "generated manifest compatibility"
 
-THIRD_PARTY_DIR="${TMP_DIR}/third-party-bin"
-/bin/mkdir "${THIRD_PARTY_DIR}"
-printf "third-party\n" > "${THIRD_PARTY_DIR}/beaver"
-install_cli_link "${APP_BUNDLE}" "${THIRD_PARTY_DIR}" >/dev/null
-if [ -L "${THIRD_PARTY_DIR}/beaver" ] ||
-  [ "$(/bin/cat "${THIRD_PARTY_DIR}/beaver")" != "third-party" ]; then
-  printf "FAIL existing third-party CLI was replaced\n" >&2
+printf '%s\n' "Beaver Installer.app/" "Beaver Installer.app/Contents/" | archive_names_valid
+if printf '%s\n' "../Beaver Installer.app" | archive_names_valid ||
+  printf '%s\n' "Beaver Installer.app" "Beaver Installer.app/" | archive_names_valid; then
+  printf "FAIL unsafe archive names accepted\n" >&2
   exit 1
 fi
 
-CLI_HINT="$(install_cli_link "${APP_BUNDLE}" "${TMP_DIR}/missing-bin")"
-case "${CLI_HINT}" in
-  *"sudo ln -sfn"*"Contents/MacOS/beaver"*) ;;
-  *) printf "FAIL missing CLI fallback instruction\n" >&2; exit 1 ;;
-esac
-/bin/rm -rf "${INSTALL_ROOT}/CL-GO.app"
-/usr/bin/touch "${INSTALL_ROOT}/Beaver.app"
-if installation_absent "${INSTALL_ROOT}"; then
-  printf "FAIL Beaver app was not detected\n" >&2
+PURGE_ROOT="${TMP_DIR}/purge"
+VALID_ID="11111111111111111111111111111111"
+FORGED_ID="22222222222222222222222222222222"
+LINK_ID="33333333333333333333333333333333"
+/bin/mkdir -p "${PURGE_ROOT}/beaver-install-${VALID_ID}" \
+  "${PURGE_ROOT}/beaver-install-${FORGED_ID}" "${PURGE_ROOT}/beaver-install-${LINK_ID}"
+printf '{"schema":1,"runId":"%s"}' "${VALID_ID}" > "${PURGE_ROOT}/beaver-install-${VALID_ID}/.beaver-installer-owner.json"
+printf '{"schema":1,"runId":"wrong"}' > "${PURGE_ROOT}/beaver-install-${FORGED_ID}/.beaver-installer-owner.json"
+printf '{"schema":1,"runId":"%s"}' "${LINK_ID}" > "${PURGE_ROOT}/beaver-install-${LINK_ID}/.beaver-installer-owner.json"
+SENTINEL="${TMP_DIR}/sentinel"; printf "outside\n" > "${SENTINEL}"
+/bin/ln -s "${SENTINEL}" "${PURGE_ROOT}/beaver-install-${LINK_ID}/sentinel-link"
+TEMP_ROOT="${PURGE_ROOT}"; TMP_DIR="${PURGE_ROOT}/beaver-install-${VALID_ID}"; RUN_ID="${VALID_ID}"; cleanup
+TMP_DIR="${PURGE_ROOT}/beaver-install-${FORGED_ID}"; RUN_ID="${FORGED_ID}"; cleanup
+TMP_DIR="${PURGE_ROOT}/beaver-install-${LINK_ID}"; RUN_ID="${LINK_ID}"; cleanup
+if [ -e "${PURGE_ROOT}/beaver-install-${VALID_ID}" ] ||
+  [ ! -e "${PURGE_ROOT}/beaver-install-${FORGED_ID}" ] ||
+  [ ! -L "${PURGE_ROOT}/beaver-install-${LINK_ID}/sentinel-link" ] ||
+  [ "$(/bin/cat "${SENTINEL}")" != "outside" ]; then
+  printf "FAIL safe owned-run cleanup contract\n" >&2
   exit 1
 fi
+TMP_DIR="${PURGE_ROOT%/purge}"; TEMP_ROOT=""; RUN_ID=""
 
 if ! control_contract_matches "beaver" "cl-go" "cl-go" "cl-go"; then
   printf "FAIL valid Debian migration contract was rejected\n" >&2

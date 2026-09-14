@@ -1,0 +1,149 @@
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  -webkit-font-smoothing: antialiased;
+}
+
+.binst-window {
+  width: 640px;
+  height: 460px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Fenêtre décorée : le système dessine le coin. Un arrondi interne
+     laisserait des coins pleins entre la coque et le cadre natif. */
+  background: var(--shell-opaque);
+  color: var(--ink);
+}
+
+.binst-title {
+  flex: none;
+  height: var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tabbar-track);
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.binst-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--chrome-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.binst-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--chrome-2);
+  padding: var(--chrome-3) var(--chrome-5);
+  background: var(--tabbar-track);
+}
+
+.binst-footer-note {
+  margin-right: auto;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.binst-center {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-3);
+  text-align: center;
+}
+
+.binst-name,
+.binst-result-title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.binst-version {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.binst-directory {
+  flex: none;
+  margin-top: var(--chrome-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.binst-directory-label {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.binst-directory-row {
+  display: flex;
+  align-items: center;
+  gap: var(--chrome-2);
+}
+
+.binst-directory-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.binst-notice {
+  flex: none;
+  margin-top: var(--chrome-3);
+}
+
+[data-theme="dark"] {
+  --qpxa-encre: var(--void);
+  --qpxa-surface: var(--ink);
+}
+
+[data-theme="light"] {
+  --qpxa-encre: var(--ink);
+  --qpxa-surface: transparent;
+}
+
+.binst-beaver { display: block; flex: none; }
+.binst-beaver svg { display: block; width: 100%; height: 100%; }
+.binst-beaver-large { width: 88px; height: 88px; }
+.binst-beaver-small { width: var(--space-lg); height: var(--space-lg); }
+.binst-beaver-muted { opacity: 0.45; }
+
+.binst-beaver-frozen [id^="qpxa-pinceau"] path {
+  animation: none !important;
+  stroke-dashoffset: 0 !important;
+}

@@ -116,13 +116,13 @@ export async function validateReleaseSet(versionValue, directoryValue) {
       throw invalid();
     }
   }
-  if (expected.size !== 0 || entries !== 4) throw invalid();
+  if (expected.size !== 0 || entries !== 6) throw invalid();
   const manifest = await readJson(inside(directory, "update-manifest.json"), MAX_MANIFEST_BYTES);
   if (
     Object.keys(manifest).sort().join(",") !== "assets,version" ||
     manifest.version !== version ||
     !Array.isArray(manifest.assets) ||
-    manifest.assets.length !== 3
+    manifest.assets.length !== 5
   ) {
     throw invalid();
   }
@@ -146,7 +146,7 @@ export async function validateReleaseSet(versionValue, directoryValue) {
       throw invalid();
     }
   }
-  if (seen.size !== 3) throw invalid();
+  if (seen.size !== 5) throw invalid();
 }
 
 async function main([mode, version, first, second]) {

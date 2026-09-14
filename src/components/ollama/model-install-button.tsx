@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Check } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { showToast } from "@/lib/toast-emitter";
-import { useModelDownloads } from "@/hooks/use-model-downloads";
+import { isModelDownloadPending, useModelDownloads } from "@/hooks/use-model-downloads";
 import "./ollama.css";
 
 interface ModelInstallButtonProps {
@@ -27,7 +27,7 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
   const ownDownload = downloads.find(
     (item) => item.kind === "ollama"
       && item.modelId === fullName
-      && (item.status === "running" || item.status === "queued"),
+      && isModelDownloadPending(item),
   ) ?? null;
   const failedDownload = downloads.find(
     (item) => item.kind === "ollama"
@@ -67,6 +67,7 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
 
   if (ownDownload) {
     const queued = ownDownload.status === "queued";
+    const cancelling = ownDownload.status === "cancelling";
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
@@ -82,9 +83,10 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
         <button
           className="btn btn-sm btn-destructive"
           style={{ width: BTN_WIDTH }}
+          disabled={cancelling}
           onClick={() => void handleCancel()}
         >
-          {t("ollama.cancel")}
+          {t(cancelling ? "modelDownloads.cancelling" : "ollama.cancel")}
         </button>
       </div>
     );

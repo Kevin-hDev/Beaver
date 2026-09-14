@@ -1,0 +1,47 @@
+.upw-frame {
+  width: 100vw;
+  padding: var(--chrome-1) var(--chrome-3) var(--chrome-5);
+}
+
+.upw-window {
+  width: 100%;
+  overflow: hidden;
+  /* Fenêtre sans décorations : elle dessine son propre coin, à l'arrondi
+     Beaver — pas au coin système (--radius-window), réservé aux coques
+     plein écran qui épousent le cadre macOS. Décidé avec Kevin le
+     14 sept. 2026 : à 16px, les coins des lignes touchaient ceux de la
+     fenêtre. */
+  border-radius: var(--radius);
+  background: var(--shell-opaque);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.upw-title {
+  display: flex;
+  align-items: center;
+  gap: var(--chrome-2);
+  padding: var(--chrome-1) var(--chrome-1) var(--chrome-1) var(--chrome-3);
+  background: var(--tabbar-track);
+}
+
+.upw-title-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upw-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  max-height: var(--update-progress-list-max-height);
+  margin: 0;
+  overflow-y: auto;
+  padding: var(--list-gutter);
+  list-style: none;
+}

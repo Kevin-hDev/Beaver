@@ -83,6 +83,7 @@ fn build_with_mode(
         .manage(crate::services::mascot::MascotRuntime::default())
         .manage(runtime.downloads)
         .manage(runtime.app_update)
+        .manage(runtime.update_progress)
         .manage(runtime.searxng)
         .manage(runtime.terminal)
         .manage(runtime.background)
@@ -107,7 +108,9 @@ fn build_with_mode(
                 crate::services::mascot::handle_window_focus(window.app_handle(), *focused);
             }
         })
-        .invoke_handler(crate::invoke_handler::for_build!())
+        .invoke_handler(crate::invoke_gate::wrap(
+            crate::invoke_handler::for_build!(),
+        ))
         .build(tauri::generate_context!())
 }
 

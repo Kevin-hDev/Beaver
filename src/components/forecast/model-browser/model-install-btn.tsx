@@ -5,7 +5,7 @@ import { Check } from "@/components/ui/icons";
 import { ConfirmButton } from "@/components/settings/confirm-button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
-import { useModelDownloads } from "@/hooks/use-model-downloads";
+import { isModelDownloadPending, useModelDownloads } from "@/hooks/use-model-downloads";
 import { showToast } from "@/lib/toast-emitter";
 import "../../ollama/ollama.css";
 import "./model-install-btn.css";
@@ -33,11 +33,9 @@ export function ModelInstallBtn({
   const ownDownload = downloads.find(
     (item) => item.kind === "forecast"
       && item.modelId === modelId
-      && (item.status === "running" || item.status === "queued"),
+      && isModelDownloadPending(item),
   ) ?? null;
-  const hasPendingDownloads = downloads.some(
-    (item) => item.status === "running" || item.status === "queued",
-  );
+  const hasPendingDownloads = downloads.some(isModelDownloadPending);
   const finishedOwn = downloads.find(
     (item) => item.kind === "forecast" && item.modelId === modelId && item.status === "completed",
   );
@@ -85,6 +83,7 @@ export function ModelInstallBtn({
 
   if (ownDownload) {
     const queued = ownDownload.status === "queued";
+    const cancelling = ownDownload.status === "cancelling";
     return (
       <div className="fmi-progress">
         <span className="fmi-phase">
@@ -98,8 +97,9 @@ export function ModelInstallBtn({
             <span className="fmi-pct">{ownDownload.percent}%</span>
           </>
         )}
-        <button className="btn btn-sm btn-secondary fmi-cancel" onClick={() => void handleCancel()}>
-          {t("forecast.models.cancel")}
+        <button className="btn btn-sm btn-secondary fmi-cancel" disabled={cancelling}
+          onClick={() => void handleCancel()}>
+          {t(cancelling ? "modelDownloads.cancelling" : "forecast.models.cancel")}
         </button>
       </div>
     );

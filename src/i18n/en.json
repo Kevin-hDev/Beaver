@@ -1432,7 +1432,29 @@
     "dismissFailed": "The notification could not be hidden.",
     "checkFailed": "The update check failed. Try again shortly.",
     "cancelling": "Cancelling…",
-    "cancelled": "Download cancelled and temporary files removed."
+    "cancelled": "Download cancelled and temporary files removed.",
+    "window": {
+      "title": "Update",
+      "count": "{{count}} updates",
+      "close": "Close window",
+      "open": "Show progress",
+      "openFailed": "The progress window could not be shown.",
+      "remove": "Remove this row",
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "queued": "Queued · position {{position}}",
+      "cancelling": "Cancelling…",
+      "completed": "Updated",
+      "cancelledResult": "Cancelled",
+      "failed": "The update failed. Check your connection, then retry.",
+      "restarting": "Restarting Beaver…",
+      "phases": {
+        "waiting": "Waiting", "preparing": "Preparing", "downloading": "Downloading",
+        "verifying": "Verifying integrity", "extracting": "Extracting", "installing": "Installing",
+        "restarting": "Restarting", "recovering": "Recovering", "rolling-back": "Rolling back",
+        "cleaning": "Cleaning", "completed": "Completed"
+      }
+    }
   },
   "units": {
     "gb": "GB"
@@ -2752,6 +2774,58 @@
       "failed": "Installation failed. You can retry.",
       "insufficientSpace": "Not enough disk space to continue.",
       "recoveryUnavailable": "Saved installation tracking cannot be recovered. New installations are blocked. The recovery data requires manual intervention."
+    }
+  },
+  "installer": {
+    "windowTitle": "Install Beaver",
+    "version": "Version {{version}}",
+    "versionInstalled": "Version {{version}} — installed: {{installed}}",
+    "destination": "Installation folder",
+    "browse": "Browse",
+    "install": "Install",
+    "reinstall": "Reinstall",
+    "alreadyInstalledTitle": "Beaver is already installed here",
+    "alreadyInstalledBody": "Version {{installed}} will be replaced by {{version}}. Your conversations, keys and settings are untouched.",
+    "runningTitle": "Close Beaver before continuing",
+    "runningBody": "The application is open. Close it, then return here: it cannot be replaced while running.",
+    "waiting": "Waiting for Beaver to close",
+    "installingTitle": "Installing Beaver {{version}}",
+    "stepRank": "Step {{current}} of {{count}}",
+    "globalProgress": "Installation progress",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "cancel": "Cancel",
+    "notCancellable": "The installation can no longer be cancelled",
+    "interruptedTitle": "Installation interrupted",
+    "cancelledTitle": "Installation cancelled",
+    "cancelledBody": "Nothing was installed: the installation folder is unchanged.",
+    "failedMeasure": "failed",
+    "cancelledMeasure": "cancelled",
+    "quit": "Quit",
+    "retry": "Retry",
+    "readyTitle": "Beaver is ready",
+    "readyBody": "Beaver is installed. On first launch, it will ask a few questions and download what it needs.",
+    "launch": "Launch Beaver",
+    "steps": {
+      "checking": "Checking the system",
+      "downloading": "Downloading Beaver",
+      "verifying": "Verifying integrity",
+      "installing": "Installing in the chosen folder",
+      "finishing": "Finishing"
+    },
+    "log": {
+      "checking": "System check started.",
+      "downloading": "Beaver download in progress.",
+      "verifying": "Fingerprint verification completed.",
+      "installing": "Installing in the chosen folder.",
+      "finishing": "Finalizing installation."
+    },
+    "errors": {
+      "download": "The download failed. Check your connection, then retry. Nothing was installed: the installation folder is unchanged.",
+      "integrity": "The downloaded file could not be verified. Retry. Nothing was installed.",
+      "cleanup": "The installer could not prepare its temporary files. Close it and retry.",
+      "launch": "The installer did not receive a valid version. Run the installation script again.",
+      "install": "Installation failed. Retry. The previous installation remains intact."
     }
   }
 }

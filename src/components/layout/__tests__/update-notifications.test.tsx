@@ -3,6 +3,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UpdateNotifications } from "../update-notifications";
 
+const platform = vi.hoisted(() => ({ isLinux: true }));
+vi.mock("@/lib/platform", () => ({ get IS_LINUX() { return platform.isLinux; } }));
+
 vi.mock("@tauri-apps/plugin-shell", () => ({ open: vi.fn(() => Promise.resolve()) }));
 
 vi.mock("react-i18next", () => ({
@@ -64,6 +67,7 @@ describe("UpdateNotifications", () => {
     anchor.remove();
   });
   afterEach(() => {
+    platform.isLinux = true;
     cleanup();
     vi.clearAllMocks();
   });
@@ -72,7 +76,7 @@ describe("UpdateNotifications", () => {
     render(
       <UpdateNotifications
         {...baseProps}
-        ollamaUpdates={[{ fullName: "llama3:latest", family: "llama3", tag: "latest", latestDigest: "abc123" }]}
+        ollamaUpdates={[{ fullName: "llama3:latest", family: "llama3", latestDigest: "abc123" }]}
       />,
     );
 
@@ -211,5 +215,20 @@ describe("UpdateNotifications", () => {
     expect(screen.queryByLabelText("updates.dismiss")).toBeNull();
     fireEvent.click(screen.getByText("common.cancel"));
     expect(onCancelApp).toHaveBeenCalledOnce();
+  });
+
+  it("déplace la progression hors de la bulle sur macOS et Windows", () => {
+    platform.isLinux = false;
+    render(
+      <UpdateNotifications
+        {...baseProps}
+        appUpdate={{ version: "0.9.4", assetUrl: "https://example.invalid/app.dmg" }}
+        appDownloading
+        appPercent={42}
+      />,
+    );
+
+    expect(screen.queryByText("common.cancel")).toBeNull();
+    expect(screen.queryByText("updates.appUpdate")).toBeNull();
   });
 });

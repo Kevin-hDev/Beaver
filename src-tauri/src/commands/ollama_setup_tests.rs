@@ -47,7 +47,10 @@ fn every_typed_progress_stage_has_one_stable_channel_status() {
         (OllamaProgressStage::Cleaning, "cleaning"),
     ];
     for (stage, expected) in cases {
-        assert_eq!(super::ollama_setup::progress_status(stage), expected);
+        assert_eq!(
+            super::ollama_setup_progress::progress_status(stage),
+            expected
+        );
     }
 }
 
@@ -64,6 +67,27 @@ fn setup_command_returns_only_codes_owned_by_the_runtime_contract() {
             "non-contract code: {forbidden}"
         );
     }
+}
+
+#[test]
+fn update_prepares_fallible_request_state_before_publishing_progress() {
+    let source = include_str!("ollama_setup_update.rs");
+    let command = source
+        .split_once("pub async fn update_ollama_binary")
+        .expect("update command")
+        .1;
+    let cwd = command
+        .find("let inherited_cwd = std::env::current_dir()")
+        .expect("fallible working directory preparation");
+    let progress = command
+        .find("begin_progress(&app")
+        .expect("progress publication");
+
+    assert!(
+        cwd < progress,
+        "request setup must precede progress publication"
+    );
+    assert!(command.contains("inherited_cwd,"));
 }
 
 #[tokio::test]

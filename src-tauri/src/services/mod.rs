@@ -43,6 +43,7 @@ pub mod mascot;
 pub mod mcp_bridge;
 pub mod mcp_oauth;
 pub mod model_downloads;
+mod model_downloads_projection;
 pub mod model_downloads_store;
 mod model_downloads_store_queue;
 #[cfg(test)]
@@ -110,6 +111,7 @@ pub mod update_health;
 pub mod update_notifications;
 #[cfg(test)]
 mod update_notifications_tests;
+pub mod update_progress;
 pub mod vault;
 mod windows_fs_retry;
 pub mod work_registry;

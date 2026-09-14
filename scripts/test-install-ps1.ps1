@@ -69,4 +69,38 @@ foreach ($path in $paths) {
     }
 }
 
+$previousTestMode = $env:BEAVER_INSTALLER_TEST_MODE
+$env:BEAVER_INSTALLER_TEST_MODE = "1"
+. (Join-Path $repositoryRoot "install.ps1")
+$runRoot = Join-Path ([IO.Path]::GetTempPath()) "beaver-purge-test-$([Guid]::NewGuid().ToString('N'))"
+$sentinel = Join-Path ([IO.Path]::GetTempPath()) "beaver-purge-sentinel-$([Guid]::NewGuid().ToString('N'))"
+$junction = $null
+$validId = "11111111111111111111111111111111"
+$forgedId = "22222222222222222222222222222222"
+$junctionId = "33333333333333333333333333333333"
+try {
+    [void][IO.Directory]::CreateDirectory($runRoot)
+    [void][IO.Directory]::CreateDirectory($sentinel)
+    [IO.File]::WriteAllText((Join-Path $sentinel "outside.txt"), "outside")
+    foreach ($id in @($validId, $forgedId, $junctionId)) {
+        $run = Join-Path $runRoot "beaver-install-$id"
+        [void][IO.Directory]::CreateDirectory($run)
+        $markerId = if ($id -ceq $forgedId) { "wrong" } else { $id }
+        [IO.File]::WriteAllText((Join-Path $run ".beaver-installer-owner.json"),
+            "{`"schema`":1,`"runId`":`"$markerId`"}")
+    }
+    $junction = Join-Path $runRoot "beaver-install-$junctionId\outside"
+    [void](New-Item -ItemType Junction -Path $junction -Target $sentinel)
+    $validRun = Join-Path $runRoot "beaver-install-$validId"
+    if (-not (Test-OwnedRun $runRoot $validRun $validId)) { throw "PowerShell valid owned-run validation failed." }
+    if (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$forgedId") $forgedId) { throw "PowerShell forged owned-run validation failed." }
+    if (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$junctionId") $junctionId) { throw "PowerShell linked owned-run validation failed." }
+    if ([IO.File]::ReadAllText((Join-Path $sentinel "outside.txt")) -cne "outside") { throw "PowerShell linked target validation failed." }
+} finally {
+    if (Test-Path $junction) { [IO.Directory]::Delete($junction) }
+    if (Test-Path $runRoot) { [IO.Directory]::Delete($runRoot, $true) }
+    if (Test-Path $sentinel) { [IO.Directory]::Delete($sentinel, $true) }
+    $env:BEAVER_INSTALLER_TEST_MODE = $previousTestMode
+}
+
 Write-Host "PowerShell syntax OK"

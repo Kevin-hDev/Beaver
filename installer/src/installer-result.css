@@ -1,0 +1,10 @@
+.binst-result-note {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.binst-result-callout { flex: none; margin-top: var(--chrome-5); }
+.binst-result-error { --callout-accent: var(--ink-faint); }

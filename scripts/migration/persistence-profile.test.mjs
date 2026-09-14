@@ -206,8 +206,10 @@ test("aucune nouvelle identité de stockage Beaver n’est introduite", () => {
       MAX_SOURCE_BYTES,
     )?.toLowerCase();
     if (source === undefined) continue;
+    // Cet événement synchronise une webview sans créer une identité de stockage.
+    const storageSource = source.replaceAll('"beaver-theme-changed"', "");
     for (const value of forbidden) {
-      assert.equal(source.includes(value), false, `${file}: identité interdite ${value}`);
+      assert.equal(storageSource.includes(value), false, `${file}: identité interdite ${value}`);
     }
   }
 });

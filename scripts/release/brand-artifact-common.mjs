@@ -13,6 +13,8 @@ export const ASSET_SUFFIXES = Object.freeze({
   macos: "_aarch64.dmg",
   linux: "_amd64.deb",
   windows: "_x64-setup.exe",
+  macos_installer: "_installer-aarch64.tar.gz",
+  windows_installer: "_installer-x64.exe",
 });
 
 const MAX_SOURCE_BYTES = 512 * 1024;

@@ -43,8 +43,9 @@ mod tests {
             .await
             .unwrap();
 
-        manager.cancel(&state.id).await.unwrap();
+        let cancelling = manager.cancel(&state.id).await.unwrap();
         assert!(cancel.unwrap().0.is_cancelled());
+        assert_eq!(cancelling[0].status, ModelDownloadStatus::Cancelling);
 
         let states = manager
             .finish(&state.id, ModelDownloadStatus::Cancelled, None)
@@ -150,6 +151,31 @@ mod tests {
             .finish(&first.id, ModelDownloadStatus::Completed, None)
             .await;
         assert!(manager.complete_and_activate_next().await.is_none());
+    }
+
+    #[tokio::test]
+    async fn forecast_installing_cannot_be_cancelled_after_its_non_return_point() {
+        let manager = test_manager();
+        let (state, runner) = manager
+            .start(ModelDownloadKind::Forecast, "chronos-tiny".into(), false)
+            .await
+            .unwrap();
+        manager
+            .progress(
+                &state.id,
+                ProgressUpdate {
+                    phase: ModelDownloadPhase::Installing,
+                    downloaded: 10,
+                    total: 10,
+                    percent: 100,
+                },
+            )
+            .await;
+
+        let states = manager.cancel(&state.id).await.unwrap();
+
+        assert!(!runner.unwrap().0.is_cancelled());
+        assert_eq!(states[0].status, ModelDownloadStatus::Running);
     }
 
     #[tokio::test]

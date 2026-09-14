@@ -1370,7 +1370,13 @@
     "forecastDevReview": "检查",
     "releaseNotesTitle": "{{version}} 版本说明",
     "showDetails": "显示详情",
-    "hideDetails": "隐藏详情", "dismiss": "隐藏此通知", "dismissFailed": "无法隐藏通知。", "checkFailed": "检查更新失败。请稍后重试。", "cancelling": "正在取消…", "cancelled": "下载已取消，临时文件已删除。"
+    "hideDetails": "隐藏详情", "dismiss": "隐藏此通知", "dismissFailed": "无法隐藏通知。", "checkFailed": "检查更新失败。请稍后重试。", "cancelling": "正在取消…", "cancelled": "下载已取消，临时文件已删除。",
+    "window": {
+      "open": "显示进度",
+      "openFailed": "无法显示进度窗口。",
+      "title": "更新", "count": "{{count}} 个更新", "close": "关闭窗口", "remove": "移除此行", "retry": "重试", "cancel": "取消", "queued": "等待中 · 第 {{position}} 位", "cancelling": "正在取消…", "completed": "已更新", "cancelledResult": "已取消", "failed": "更新失败。请检查网络连接后重试。", "restarting": "正在重启 Beaver…",
+      "phases": { "waiting": "等待中", "preparing": "准备中", "downloading": "下载中", "verifying": "正在验证完整性", "extracting": "解压中", "installing": "安装中", "restarting": "重启中", "recovering": "恢复中", "rolling-back": "正在回滚", "cleaning": "清理中", "completed": "已完成" }
+    }
   },
   "units": {
     "gb": "GB"
@@ -2633,5 +2639,13 @@
       "insufficientSpace": "磁盘空间不足，无法继续。",
       "recoveryUnavailable": "无法恢复已保存的安装记录。新安装已被阻止。恢复数据需要手动处理。"
     }
+  },
+  "installer": {
+    "windowTitle": "安装 Beaver", "version": "版本 {{version}}", "versionInstalled": "版本 {{version}} — 已安装：{{installed}}", "destination": "安装文件夹", "browse": "浏览", "install": "安装", "reinstall": "重新安装",
+    "alreadyInstalledTitle": "此处已安装 Beaver", "alreadyInstalledBody": "版本 {{installed}} 将替换为 {{version}}。对话、密钥和设置不会受影响。", "runningTitle": "请先关闭 Beaver", "runningBody": "应用仍在运行。请关闭后返回：运行中的应用无法替换。", "waiting": "正在等待 Beaver 关闭",
+    "installingTitle": "正在安装 Beaver {{version}}", "stepRank": "第 {{current}} 步，共 {{count}} 步", "globalProgress": "安装进度", "showDetails": "显示详情", "hideDetails": "隐藏详情", "cancel": "取消", "notCancellable": "安装已无法取消", "interruptedTitle": "安装已中断", "cancelledTitle": "安装已取消", "cancelledBody": "未安装任何内容：安装文件夹保持不变。", "failedMeasure": "失败", "cancelledMeasure": "已取消", "quit": "退出", "retry": "重试", "readyTitle": "Beaver 已准备就绪", "readyBody": "Beaver 已安装。首次启动时，它会询问几个问题并下载所需内容。", "launch": "启动 Beaver",
+    "steps": { "checking": "检查系统", "downloading": "下载 Beaver", "verifying": "验证完整性", "installing": "安装到所选文件夹", "finishing": "完成安装" },
+    "log": { "checking": "已开始检查系统。", "downloading": "正在下载 Beaver。", "verifying": "已完成校验。", "installing": "正在安装到所选文件夹。", "finishing": "正在完成安装。" },
+    "errors": { "download": "下载失败。请检查网络连接后重试。未安装任何内容。", "integrity": "无法验证下载的文件。请重试。未安装任何内容。", "cleanup": "安装程序无法准备临时文件。请关闭后重试。", "launch": "安装程序未收到有效版本。请重新运行安装脚本。", "install": "安装失败。请重试。原有安装保持不变。" }
   }
 }

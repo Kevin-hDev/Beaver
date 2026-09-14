@@ -40,9 +40,11 @@ pub(crate) mod app_update_helper;
 pub(crate) mod app_update_helper_cli_paths;
 pub(crate) mod app_update_helper_process;
 pub mod app_update_install;
+mod app_update_install_flow;
 pub(crate) mod app_update_install_temp;
 pub(crate) mod app_update_manifest;
 pub(crate) mod app_update_notes;
+mod app_update_progress;
 pub(crate) mod app_update_release;
 pub(crate) mod app_update_source;
 pub mod attachments;
@@ -102,6 +104,7 @@ pub mod oauth_providers;
 #[cfg(test)]
 mod ollama_audit_tests;
 pub mod ollama_setup;
+mod ollama_setup_progress;
 #[cfg(test)]
 mod ollama_setup_tests;
 pub(crate) mod ollama_setup_update;
@@ -139,6 +142,7 @@ pub mod system_prompts;
 pub mod terminal;
 pub(crate) mod terminal_blocking;
 pub mod update_notifications;
+pub mod update_progress;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
@@ -208,3 +212,4 @@ pub use subagents::*;
 pub use system_prompts::*;
 pub use terminal::*;
 pub use update_notifications::*;
+pub use update_progress::*;

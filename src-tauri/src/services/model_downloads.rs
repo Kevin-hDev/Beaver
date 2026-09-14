@@ -8,7 +8,7 @@ use crate::services::agent_local::{
 };
 use crate::services::forecast::model_manager;
 use crate::services::work_registry::ServiceWorkCancellation;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio_util::sync::CancellationToken;
 
 pub async fn run_ollama_download(
@@ -220,5 +220,11 @@ fn progress_percent(completed: Option<u64>, total: Option<u64>) -> u8 {
 }
 
 pub fn emit_states(app: &AppHandle, states: Vec<ModelDownloadState>) {
+    super::model_downloads_projection::project_model_downloads(
+        app,
+        &states,
+        app.state::<crate::services::update_progress::UpdateProgressRuntime>()
+            .inner(),
+    );
     let _ = app.emit(EVENT_NAME, states);
 }

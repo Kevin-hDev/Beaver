@@ -1370,7 +1370,13 @@
     "forecastDevReview": "確認",
     "releaseNotesTitle": "バージョン {{version}} のリリースノート",
     "showDetails": "詳細を表示",
-    "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "checkFailed": "更新の確認に失敗しました。しばらくしてからもう一度お試しください。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。"
+    "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "checkFailed": "更新の確認に失敗しました。しばらくしてからもう一度お試しください。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。",
+    "window": {
+      "open": "進行状況を表示",
+      "openFailed": "進行状況ウィンドウを表示できませんでした。",
+      "title": "アップデート", "count": "{{count}} 件のアップデート", "close": "ウィンドウを閉じる", "remove": "この行を削除", "retry": "再試行", "cancel": "キャンセル", "queued": "待機中 · {{position}} 番目", "cancelling": "キャンセル中…", "completed": "更新済み", "cancelledResult": "キャンセル済み", "failed": "アップデートに失敗しました。接続を確認して再試行してください。", "restarting": "Beaver を再起動中…",
+      "phases": { "waiting": "待機中", "preparing": "準備中", "downloading": "ダウンロード中", "verifying": "整合性を確認中", "extracting": "展開中", "installing": "インストール中", "restarting": "再起動中", "recovering": "復旧中", "rolling-back": "ロールバック中", "cleaning": "クリーンアップ中", "completed": "完了" }
+    }
   },
   "units": {
     "gb": "GB"
@@ -2633,5 +2639,13 @@
       "insufficientSpace": "続行するためのディスク容量が不足しています。",
       "recoveryUnavailable": "保存済みのインストール情報を復元できません。新しいインストールは停止されています。復元データを手動で確認する必要があります。"
     }
+  },
+  "installer": {
+    "windowTitle": "Beaver をインストール", "version": "バージョン {{version}}", "versionInstalled": "バージョン {{version}} — インストール済み：{{installed}}", "destination": "インストール先", "browse": "参照", "install": "インストール", "reinstall": "再インストール",
+    "alreadyInstalledTitle": "ここには Beaver が既にインストールされています", "alreadyInstalledBody": "バージョン {{installed}} を {{version}} に置き換えます。会話、キー、設定は変更されません。", "runningTitle": "続行する前に Beaver を閉じてください", "runningBody": "アプリが開いています。閉じてから戻ってください。実行中のアプリは置き換えられません。", "waiting": "Beaver が閉じるのを待っています",
+    "installingTitle": "Beaver {{version}} をインストール中", "stepRank": "{{count}} ステップ中 {{current}}", "globalProgress": "インストールの進行状況", "showDetails": "詳細を表示", "hideDetails": "詳細を非表示", "cancel": "キャンセル", "notCancellable": "インストールはもうキャンセルできません", "interruptedTitle": "インストールが中断されました", "cancelledTitle": "インストールをキャンセルしました", "cancelledBody": "何もインストールされていません。インストール先は変更されていません。", "failedMeasure": "失敗", "cancelledMeasure": "キャンセル済み", "quit": "終了", "retry": "再試行", "readyTitle": "Beaver の準備ができました", "readyBody": "Beaver がインストールされました。初回起動時にいくつか質問し、必要なものをダウンロードします。", "launch": "Beaver を起動",
+    "steps": { "checking": "システムを確認", "downloading": "Beaver をダウンロード", "verifying": "整合性を確認", "installing": "選択したフォルダにインストール", "finishing": "仕上げ" },
+    "log": { "checking": "システム確認を開始しました。", "downloading": "Beaver をダウンロード中です。", "verifying": "ハッシュの確認が完了しました。", "installing": "選択したフォルダにインストール中です。", "finishing": "インストールを完了しています。" },
+    "errors": { "download": "ダウンロードに失敗しました。接続を確認して再試行してください。何もインストールされていません。", "integrity": "ダウンロードしたファイルを確認できませんでした。再試行してください。", "cleanup": "一時ファイルを準備できませんでした。インストーラーを閉じて再試行してください。", "launch": "有効なバージョンが渡されませんでした。インストールスクリプトを再実行してください。", "install": "インストールに失敗しました。再試行してください。以前のインストールは保たれています。" }
   }
 }

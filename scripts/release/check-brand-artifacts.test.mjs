@@ -19,7 +19,13 @@ import {
 } from "./check-brand-artifacts.mjs";
 
 const VERSION = "1.1.0";
-const PLATFORMS = ["macos", "linux", "windows"];
+const RELEASE_ARTIFACTS = [
+  "macos",
+  "linux",
+  "windows",
+  "macos_installer",
+  "windows_installer",
+];
 
 async function temporaryDirectory() {
   return mkdtemp(join(tmpdir(), "beaver-artifacts-"));
@@ -33,7 +39,7 @@ async function writeRegular(path, content = "beaver") {
 async function releaseFixture() {
   const directory = await temporaryDirectory();
   const assets = [];
-  for (const platform of PLATFORMS) {
+  for (const platform of RELEASE_ARTIFACTS) {
     const name = expectedAssetName(platform, VERSION);
     const body = Buffer.from(`asset:${platform}`);
     await writeFile(join(directory, name), body);
@@ -77,11 +83,19 @@ async function macFixture() {
   return { directory, app, dmg, plist: (path, key) => values.get(`${path}:${key}`) };
 }
 
-test("verrouille la version et les trois noms de fichiers Beaver", () => {
+test("verrouille la version et les cinq noms de fichiers Beaver", () => {
   assert.equal(normalizeVersion("v1.1.0"), VERSION);
   assert.equal(expectedAssetName("macos", VERSION), "Beaver_1.1.0_aarch64.dmg");
   assert.equal(expectedAssetName("linux", VERSION), "Beaver_1.1.0_amd64.deb");
   assert.equal(expectedAssetName("windows", VERSION), "Beaver_1.1.0_x64-setup.exe");
+  assert.equal(
+    expectedAssetName("macos_installer", VERSION),
+    "Beaver_1.1.0_installer-aarch64.tar.gz",
+  );
+  assert.equal(
+    expectedAssetName("windows_installer", VERSION),
+    "Beaver_1.1.0_installer-x64.exe",
+  );
   const hash = "a".repeat(64);
   assert.equal(hashesMatch(hash, hash), true);
   assert.equal(hashesMatch(hash, "b".repeat(64)), false);

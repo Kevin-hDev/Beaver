@@ -1484,7 +1484,29 @@
     "dismissFailed": "La notification n’a pas pu être masquée.",
     "checkFailed": "La recherche des mises à jour a échoué. Réessaie dans un instant.",
     "cancelling": "Annulation…",
-    "cancelled": "Téléchargement annulé et fichiers temporaires supprimés."
+    "cancelled": "Téléchargement annulé et fichiers temporaires supprimés.",
+    "window": {
+      "title": "Mise à jour",
+      "count": "{{count}} mises à jour",
+      "close": "Fermer la fenêtre",
+      "open": "Afficher la progression",
+      "openFailed": "La fenêtre de progression ne peut pas être affichée.",
+      "remove": "Retirer cette ligne",
+      "retry": "Réessayer",
+      "cancel": "Annuler",
+      "queued": "En attente · position {{position}}",
+      "cancelling": "Annulation en cours…",
+      "completed": "Mis à jour",
+      "cancelledResult": "Annulé",
+      "failed": "La mise à jour a échoué. Vérifie ta connexion, puis réessaie.",
+      "restarting": "Redémarrage de Beaver…",
+      "phases": {
+        "waiting": "En attente", "preparing": "Préparation", "downloading": "Téléchargement",
+        "verifying": "Vérification d’intégrité", "extracting": "Extraction", "installing": "Installation",
+        "restarting": "Redémarrage", "recovering": "Récupération", "rolling-back": "Restauration",
+        "cleaning": "Nettoyage", "completed": "Terminé"
+      }
+    }
   },
   "units": {
     "gb": "Go"
@@ -2804,6 +2826,58 @@
       "failed": "L’installation a échoué. Vous pouvez réessayer.",
       "insufficientSpace": "Espace disque insuffisant pour poursuivre.",
       "recoveryUnavailable": "Le suivi enregistré ne peut pas être récupéré. Les nouvelles installations sont bloquées. Une intervention sur les données de récupération est nécessaire."
+    }
+  },
+  "installer": {
+    "windowTitle": "Installer Beaver",
+    "version": "Version {{version}}",
+    "versionInstalled": "Version {{version}} — installée : {{installed}}",
+    "destination": "Dossier d’installation",
+    "browse": "Parcourir",
+    "install": "Installer",
+    "reinstall": "Réinstaller",
+    "alreadyInstalledTitle": "Beaver est déjà installé ici",
+    "alreadyInstalledBody": "La version {{installed}} sera remplacée par la {{version}}. Tes conversations, tes clés et tes réglages ne sont pas touchés.",
+    "runningTitle": "Ferme Beaver avant de continuer",
+    "runningBody": "L’application est ouverte. Ferme-la, puis reviens ici : elle ne peut pas être remplacée pendant son exécution.",
+    "waiting": "En attente de la fermeture de Beaver",
+    "installingTitle": "Installation de Beaver {{version}}",
+    "stepRank": "Étape {{current}} sur {{count}}",
+    "globalProgress": "Progression de l’installation",
+    "showDetails": "Afficher les détails",
+    "hideDetails": "Masquer les détails",
+    "cancel": "Annuler",
+    "notCancellable": "L’installation ne peut plus être annulée",
+    "interruptedTitle": "Installation interrompue",
+    "cancelledTitle": "Installation annulée",
+    "cancelledBody": "Rien n’a été installé : le dossier d’installation est intact.",
+    "failedMeasure": "échec",
+    "cancelledMeasure": "annulé",
+    "quit": "Quitter",
+    "retry": "Réessayer",
+    "readyTitle": "Beaver est prêt",
+    "readyBody": "Beaver est installé. Au premier lancement, il te posera quelques questions et téléchargera ce dont il a besoin.",
+    "launch": "Lancer Beaver",
+    "steps": {
+      "checking": "Vérification du système",
+      "downloading": "Téléchargement de Beaver",
+      "verifying": "Vérification d’intégrité",
+      "installing": "Installation dans le dossier choisi",
+      "finishing": "Finitions"
+    },
+    "log": {
+      "checking": "Vérification du système démarrée.",
+      "downloading": "Téléchargement de Beaver en cours.",
+      "verifying": "Vérification de l’empreinte terminée.",
+      "installing": "Installation dans le dossier choisi.",
+      "finishing": "Finalisation de l’installation."
+    },
+    "errors": {
+      "download": "Le téléchargement a échoué. Vérifie ta connexion, puis réessaie. Rien n’a été installé : le dossier d’installation est intact.",
+      "integrity": "Le fichier téléchargé n’a pas pu être vérifié. Réessaie. Rien n’a été installé.",
+      "cleanup": "L’installation n’a pas pu préparer ses fichiers temporaires. Ferme-la puis réessaie.",
+      "launch": "L’installateur n’a pas reçu une version valide. Relance le script d’installation.",
+      "install": "L’installation a échoué. Réessaie. L’ancienne installation reste intacte."
     }
   }
 }

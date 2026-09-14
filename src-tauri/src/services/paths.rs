@@ -7,11 +7,7 @@ pub use ollama::{bundle_receipt_path, bundle_receipt_tmp_path, ollama_paths, Oll
 const MAX_DATA_COMPONENT_CHARS: usize = 255;
 
 #[cfg(all(not(test), not(feature = "cef-test-profile")))]
-pub fn data_dir() -> PathBuf {
-    dirs::home_dir()
-        .expect("cannot resolve home directory")
-        .join(".local/share/cl-go-dash")
-}
+pub use beaver_data_path::data_dir;
 
 pub async fn data_file_for_read(directory: &str, file_name: &str) -> std::io::Result<PathBuf> {
     resolve_data_file(directory, file_name, false).await

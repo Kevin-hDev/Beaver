@@ -2,7 +2,10 @@ import { useTranslation } from "react-i18next";
 import { BeaverBrandIcon } from "@/components/ui/beaver-brand-icon";
 import { OllamaBrandIcon } from "@/components/ui/ollama-brand-icon";
 import { UpdateProgressAction } from "@/components/updates/update-progress-action";
+import { showUpdateProgressWindow } from "@/components/updates/window/update-window-actions";
 import { useUpdates } from "@/hooks/update-context";
+import { IS_LINUX } from "@/lib/platform";
+import { showToast } from "@/lib/toast-emitter";
 import { SettingsPanel } from "./shell/settings-panel";
 import { SettingsCard } from "./settings-card";
 import "./updates-settings.css";
@@ -38,7 +41,8 @@ export function UpdatesSettings() {
                 product="beaver"
                 version={updates.appUpdate.version}
                 action={updates.appDownloading ? (
-                  <UpdateProgressAction percent={updates.appPercent} cancelling={updates.appCancelling} cancelLabel={t("common.cancel")} cancellingLabel={t("updates.cancelling")} onCancel={() => void updates.cancelAppUpdate()} />
+                  <ActiveUpdateAction percent={updates.appPercent} cancelling={updates.appCancelling}
+                    onCancel={() => void updates.cancelAppUpdate()} />
                 ) : (
                   <button type="button" className="btn btn-sm btn-primary" disabled={updates.binaryBusy} onClick={() => void updates.downloadAppUpdate(updates.appUpdate!.assetUrl)}>{t("updates.appUpdate")}</button>
                 )}
@@ -49,7 +53,8 @@ export function UpdatesSettings() {
                 product="ollama"
                 version={updates.ollamaBinaryUpdate.latestVersion}
                 action={updates.ollamaBinaryUpdating ? (
-                  <UpdateProgressAction percent={updates.ollamaBinaryPercent} cancelling={updates.ollamaBinaryCancelling} cancelLabel={t("common.cancel")} cancellingLabel={t("updates.cancelling")} onCancel={() => void updates.cancelOllamaBinary()} />
+                  <ActiveUpdateAction percent={updates.ollamaBinaryPercent} cancelling={updates.ollamaBinaryCancelling}
+                    onCancel={() => void updates.cancelOllamaBinary()} />
                 ) : (
                   <button type="button" className="btn btn-sm btn-primary" disabled={updates.binaryBusy} onClick={() => void updates.updateOllamaBinary()}>{t("updates.ollamaBinaryUpdate")}</button>
                 )}
@@ -59,6 +64,32 @@ export function UpdatesSettings() {
         )}
       </SettingsCard>
     </SettingsPanel>
+  );
+}
+
+function ActiveUpdateAction({ percent, cancelling, onCancel }: {
+  percent: number;
+  cancelling: boolean;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  if (IS_LINUX) {
+    return <UpdateProgressAction percent={percent} cancelling={cancelling}
+      cancelLabel={t("common.cancel")} cancellingLabel={t("updates.cancelling")}
+      onCancel={onCancel} />;
+  }
+  const showProgress = async () => {
+    try {
+      await showUpdateProgressWindow();
+    } catch {
+      showToast(t("updates.window.openFailed"), "error");
+    }
+  };
+  return (
+    <button type="button" className="btn btn-sm btn-secondary"
+      onClick={() => void showProgress()}>
+      {t("updates.window.open")}
+    </button>
   );
 }
 

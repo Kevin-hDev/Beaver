@@ -1371,7 +1371,13 @@
     "forecastDevReview": "Prüfen",
     "releaseNotesTitle": "Versionshinweise {{version}}",
     "showDetails": "Details anzeigen",
-    "hideDetails": "Details ausblenden", "dismiss": "Diese Benachrichtigung ausblenden", "dismissFailed": "Die Benachrichtigung konnte nicht ausgeblendet werden.", "checkFailed": "Die Suche nach Updates ist fehlgeschlagen. Versuche es gleich noch einmal.", "cancelling": "Wird abgebrochen…", "cancelled": "Download abgebrochen und temporäre Dateien gelöscht."
+    "hideDetails": "Details ausblenden", "dismiss": "Diese Benachrichtigung ausblenden", "dismissFailed": "Die Benachrichtigung konnte nicht ausgeblendet werden.", "checkFailed": "Die Suche nach Updates ist fehlgeschlagen. Versuche es gleich noch einmal.", "cancelling": "Wird abgebrochen…", "cancelled": "Download abgebrochen und temporäre Dateien gelöscht.",
+    "window": {
+      "open": "Fortschritt anzeigen",
+      "openFailed": "Das Fortschrittsfenster konnte nicht angezeigt werden.",
+      "title": "Update", "count": "{{count}} Updates", "close": "Fenster schließen", "remove": "Diese Zeile entfernen", "retry": "Erneut versuchen", "cancel": "Abbrechen", "queued": "Wartet · Position {{position}}", "cancelling": "Wird abgebrochen…", "completed": "Aktualisiert", "cancelledResult": "Abgebrochen", "failed": "Das Update ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.", "restarting": "Beaver wird neu gestartet…",
+      "phases": { "waiting": "Wartet", "preparing": "Vorbereitung", "downloading": "Herunterladen", "verifying": "Integrität wird geprüft", "extracting": "Entpacken", "installing": "Installation", "restarting": "Neustart", "recovering": "Wiederherstellung", "rolling-back": "Zurücksetzen", "cleaning": "Bereinigung", "completed": "Abgeschlossen" }
+    }
   },
   "units": {
     "gb": "GB"
@@ -2634,5 +2640,13 @@
       "insufficientSpace": "Nicht genügend Speicherplatz zum Fortfahren.",
       "recoveryUnavailable": "Der gespeicherte Installationsstand kann nicht wiederhergestellt werden. Neue Installationen sind gesperrt. Die Wiederherstellungsdaten müssen manuell überprüft werden."
     }
+  },
+  "installer": {
+    "windowTitle": "Beaver installieren", "version": "Version {{version}}", "versionInstalled": "Version {{version}} — installiert: {{installed}}", "destination": "Installationsordner", "browse": "Durchsuchen", "install": "Installieren", "reinstall": "Neu installieren",
+    "alreadyInstalledTitle": "Beaver ist hier bereits installiert", "alreadyInstalledBody": "Version {{installed}} wird durch {{version}} ersetzt. Unterhaltungen, Schlüssel und Einstellungen bleiben erhalten.", "runningTitle": "Schließe Beaver, bevor du fortfährst", "runningBody": "Die Anwendung ist geöffnet. Schließe sie und kehre zurück: Während der Ausführung kann sie nicht ersetzt werden.", "waiting": "Warten auf das Schließen von Beaver",
+    "installingTitle": "Beaver {{version}} wird installiert", "stepRank": "Schritt {{current}} von {{count}}", "globalProgress": "Installationsfortschritt", "showDetails": "Details anzeigen", "hideDetails": "Details ausblenden", "cancel": "Abbrechen", "notCancellable": "Die Installation kann nicht mehr abgebrochen werden", "interruptedTitle": "Installation unterbrochen", "cancelledTitle": "Installation abgebrochen", "cancelledBody": "Es wurde nichts installiert: Der Installationsordner ist unverändert.", "failedMeasure": "Fehler", "cancelledMeasure": "abgebrochen", "quit": "Beenden", "retry": "Erneut versuchen", "readyTitle": "Beaver ist bereit", "readyBody": "Beaver ist installiert. Beim ersten Start stellt es einige Fragen und lädt die benötigten Dateien herunter.", "launch": "Beaver starten",
+    "steps": { "checking": "System wird geprüft", "downloading": "Beaver wird heruntergeladen", "verifying": "Integrität wird geprüft", "installing": "Installation im gewählten Ordner", "finishing": "Abschluss" },
+    "log": { "checking": "Systemprüfung gestartet.", "downloading": "Beaver wird heruntergeladen.", "verifying": "Prüfsumme erfolgreich geprüft.", "installing": "Installation im gewählten Ordner.", "finishing": "Installation wird abgeschlossen." },
+    "errors": { "download": "Der Download ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut. Es wurde nichts installiert.", "integrity": "Die heruntergeladene Datei konnte nicht geprüft werden. Versuche es erneut.", "cleanup": "Der Installer konnte seine temporären Dateien nicht vorbereiten. Schließe ihn und versuche es erneut.", "launch": "Der Installer hat keine gültige Version erhalten. Starte das Installationsskript erneut.", "install": "Die Installation ist fehlgeschlagen. Versuche es erneut. Die vorherige Installation bleibt erhalten." }
   }
 }

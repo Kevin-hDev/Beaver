@@ -1375,7 +1375,13 @@
     "forecastDevReview": "Revisar",
     "releaseNotesTitle": "Notas de la versión {{version}}",
     "showDetails": "Mostrar detalles",
-    "hideDetails": "Ocultar detalles", "dismiss": "Ocultar esta notificación", "dismissFailed": "No se pudo ocultar la notificación.", "checkFailed": "La búsqueda de actualizaciones ha fallado. Inténtalo de nuevo en unos instantes.", "cancelling": "Cancelando…", "cancelled": "Descarga cancelada y archivos temporales eliminados."
+    "hideDetails": "Ocultar detalles", "dismiss": "Ocultar esta notificación", "dismissFailed": "No se pudo ocultar la notificación.", "checkFailed": "La búsqueda de actualizaciones ha fallado. Inténtalo de nuevo en unos instantes.", "cancelling": "Cancelando…", "cancelled": "Descarga cancelada y archivos temporales eliminados.",
+    "window": {
+      "open": "Mostrar progreso",
+      "openFailed": "No se pudo mostrar la ventana de progreso.",
+      "title": "Actualización", "count": "{{count}} actualizaciones", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "cancelledResult": "Cancelado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…",
+      "phases": { "waiting": "En espera", "preparing": "Preparando", "downloading": "Descargando", "verifying": "Verificando la integridad", "extracting": "Extrayendo", "installing": "Instalando", "restarting": "Reiniciando", "recovering": "Recuperando", "rolling-back": "Restaurando", "cleaning": "Limpiando", "completed": "Completado" }
+    }
   },
   "units": {
     "gb": "GB"
@@ -2638,5 +2644,13 @@
       "insufficientSpace": "No hay suficiente espacio en disco para continuar.",
       "recoveryUnavailable": "No se puede recuperar el seguimiento guardado. Las nuevas instalaciones están bloqueadas. Los datos de recuperación requieren una intervención manual."
     }
+  },
+  "installer": {
+    "windowTitle": "Instalar Beaver", "version": "Versión {{version}}", "versionInstalled": "Versión {{version}} — instalada: {{installed}}", "destination": "Carpeta de instalación", "browse": "Examinar", "install": "Instalar", "reinstall": "Reinstalar",
+    "alreadyInstalledTitle": "Beaver ya está instalado aquí", "alreadyInstalledBody": "La versión {{installed}} será sustituida por la {{version}}. Tus conversaciones, claves y ajustes no cambiarán.", "runningTitle": "Cierra Beaver antes de continuar", "runningBody": "La aplicación está abierta. Ciérrala y vuelve aquí: no puede sustituirse mientras se ejecuta.", "waiting": "Esperando a que Beaver se cierre",
+    "installingTitle": "Instalación de Beaver {{version}}", "stepRank": "Paso {{current}} de {{count}}", "globalProgress": "Progreso de la instalación", "showDetails": "Mostrar detalles", "hideDetails": "Ocultar detalles", "cancel": "Cancelar", "notCancellable": "La instalación ya no se puede cancelar", "interruptedTitle": "Instalación interrumpida", "cancelledTitle": "Instalación cancelada", "cancelledBody": "No se instaló nada: la carpeta de instalación está intacta.", "failedMeasure": "fallo", "cancelledMeasure": "cancelado", "quit": "Salir", "retry": "Reintentar", "readyTitle": "Beaver está listo", "readyBody": "Beaver está instalado. En el primer inicio hará unas preguntas y descargará lo necesario.", "launch": "Iniciar Beaver",
+    "steps": { "checking": "Comprobación del sistema", "downloading": "Descarga de Beaver", "verifying": "Verificación de integridad", "installing": "Instalación en la carpeta elegida", "finishing": "Finalización" },
+    "log": { "checking": "Comprobación del sistema iniciada.", "downloading": "Descarga de Beaver en curso.", "verifying": "Verificación de la huella completada.", "installing": "Instalación en la carpeta elegida.", "finishing": "Finalizando la instalación." },
+    "errors": { "download": "La descarga ha fallado. Comprueba tu conexión y reinténtalo. No se instaló nada.", "integrity": "No se pudo verificar el archivo descargado. Reinténtalo. No se instaló nada.", "cleanup": "El instalador no pudo preparar los archivos temporales. Ciérralo y reinténtalo.", "launch": "El instalador no recibió una versión válida. Ejecuta de nuevo el script de instalación.", "install": "La instalación ha fallado. Reinténtalo. La instalación anterior sigue intacta." }
   }
 }

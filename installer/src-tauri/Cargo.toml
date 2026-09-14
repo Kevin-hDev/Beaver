@@ -1,0 +1,40 @@
+[package]
+name = "beaver-installer"
+version = "1.2.2"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[lib]
+name = "beaver_installer"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3", features = [] }
+
+[dependencies]
+beaver-data-path = { path = "../../crates/beaver-data-path" }
+futures-util = "0.3"
+hex = "0.4"
+rand = "0.10.2"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+subtle = "2"
+sys-locale = "0.3"
+sysinfo = { version = "0.35", default-features = false, features = ["system"] }
+tauri = { version = "=2.11.5", features = [] }
+tauri-plugin-dialog = "2"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Threading"] }
+
+[dev-dependencies]
+tauri = { version = "=2.11.5", features = ["test"] }
+ts-rs = "12.0.1"

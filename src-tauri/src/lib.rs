@@ -9,6 +9,9 @@ mod app_exit;
 mod app_lifecycle;
 pub mod cli_support;
 mod commands;
+mod invoke_gate;
+#[cfg(test)]
+mod invoke_gate_tests;
 mod invoke_handler;
 mod invoke_handler_tail;
 #[cfg(target_os = "macos")]

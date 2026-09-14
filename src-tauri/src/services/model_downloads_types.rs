@@ -15,6 +15,7 @@ pub enum ModelDownloadKind {
 pub enum ModelDownloadStatus {
     Queued,
     Running,
+    Cancelling,
     Completed,
     Failed,
     Cancelled,

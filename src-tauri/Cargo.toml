@@ -49,6 +49,7 @@ serde_json = "1"
 
 [dependencies]
 # Framework
+beaver-data-path = { path = "../crates/beaver-data-path" }
 tauri = { version = "=2.11.5", features = ["macos-private-api", "tray-icon", "image-png"] }
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"

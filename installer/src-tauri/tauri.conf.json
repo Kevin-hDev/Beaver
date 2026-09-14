@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Beaver Installer",
+  "version": "1.2.2",
+  "identifier": "com.clgo.dash.installer",
+  "build": {
+    "beforeDevCommand": "npm --prefix .. run installer:dev-ui",
+    "beforeBuildCommand": "npm --prefix .. run installer:build-ui",
+    "devUrl": "http://localhost:1421",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Beaver Installer",
+        "width": 640,
+        "height": 460,
+        "resizable": false,
+        "maximizable": false
+      }
+    ],
+    "security": {
+      "capabilities": ["default"],
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../../src-tauri/icons/32x32.png",
+      "../../src-tauri/icons/128x128.png",
+      "../../src-tauri/icons/128x128@2x.png",
+      "../../src-tauri/icons/icon.icns",
+      "../../src-tauri/icons/icon.ico"
+    ]
+  }
+}

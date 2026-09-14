@@ -95,6 +95,28 @@ test("les trois machines construisent sans toucher à une release", () => {
   assert.match(workflow, /--bundles=\$\{\{ matrix\.bundles \}\}/u);
 });
 
+test("construit les deux installateurs après leur interface sans toucher Linux", () => {
+  const builds = workflowDocument.jobs.build.strategy.matrix.include;
+  assert.deepEqual(
+    builds.map(({ os, installer_suffix: suffix }) => [os, suffix]),
+    [
+      ["macos-latest", "_installer-aarch64.tar.gz"],
+      ["ubuntu-22.04", ""],
+      ["windows-latest", "_installer-x64.exe"],
+    ],
+  );
+  const steps = workflowDocument.jobs.build.steps;
+  const ui = steps.findIndex(({ name }) => name === "Build installer UI");
+  const application = steps.findIndex(({ name }) => name === "Build installer application");
+  const packaging = steps.findIndex(({ name }) => name === "Package installer artifact");
+  assert.ok(ui >= 0 && ui < application && application < packaging);
+  for (const index of [ui, application, packaging]) assert.equal(steps[index].if, "runner.os != 'Linux'");
+  assert.equal(steps[packaging].env.INSTALLER_SUFFIX, "${{ matrix.installer_suffix }}");
+  assert.match(steps[packaging].run, /package-installer\.mjs/u);
+  assert.match(workflow, /Beaver_\$\{VERSION\}_installer-aarch64\.tar\.gz/u);
+  assert.match(workflow, /Beaver_\$\{VERSION\}_installer-x64\.exe/u);
+});
+
 test("construit les roues SearXNG avec la version Python contrôlée", () => {
   const steps = workflowDocument.jobs.build.steps;
   const checkoutIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/checkout@"));
@@ -259,10 +281,11 @@ test("le parcours Windows résout et valide sans Bash", () => {
   }
 });
 
-test("assemble les trois assets puis revérifie le manifeste séparément", () => {
+test("assemble les cinq assets puis revérifie le manifeste séparément", () => {
   assert.match(workflow, /\n  manifest:\n    needs: build\n/);
   assert.match(workflow, /\n  verify_release:\n    needs: manifest\n/);
-  assert.match(workflow, /\n  publish_release:\n    needs: verify_release\n/);
+  assert.match(workflow, /\n  attest_release:\n    needs: verify_release\n/);
+  assert.match(workflow, /\n  publish_release:\n    needs: attest_release\n/);
   assert.match(
     workflow,
     /create-update-manifest\.mjs "\$RELEASE_TAG" release-candidate/,
@@ -274,9 +297,18 @@ test("assemble les trois assets puis revérifie le manifeste séparément", () =
   );
   assert.match(workflow, /name: beaver-release-candidate/);
   assert.match(workflow, /Independently verify every SHA-256/);
+  const downloads = workflowDocument.jobs.manifest.steps.filter(
+    ({ uses }) => uses?.startsWith("actions/download-artifact@"),
+  );
+  assert.equal(downloads.length, 5);
+  assert.equal(workflowDocument.jobs.attest_release.permissions["id-token"], "write");
+  assert.equal(workflowDocument.jobs.attest_release.permissions.attestations, "write");
+  assert.equal(workflowDocument.jobs.attest_release.permissions.contents, "read");
+  assert.equal(workflowDocument.jobs.publish_release.permissions.contents, "write");
+  assert.equal(workflowDocument.jobs.publish_release.permissions.attestations, undefined);
 });
 
-test("publie Beaver uniquement après vérification complète et refuse un état ambigu", () => {
+test("publie Beaver une seule fois après attestation et refuse de remplacer un asset", () => {
   assert.match(workflow, /^permissions:\n  contents: read$/mu);
   assert.match(
     workflow,
@@ -290,7 +322,10 @@ test("publie Beaver uniquement après vérification complète et refuse un état
     /app-release-notes\.mjs "\$RELEASE_TAG" --stdout > "\$NOTES_FILE"/,
   );
   assert.match(workflow, /if \[ "\$STATE" != \$'false\\tfalse' \]/);
-  assert.match(workflow, /gh release upload[\s\S]*--clobber/);
+  assert.match(workflow, /gh release upload[\s\S]*"\$MAC_INSTALLER"[\s\S]*"\$WINDOWS_INSTALLER"[\s\S]*"\$MANIFEST"/);
+  assert.doesNotMatch(workflow, /--clobber|gh release delete-asset|gh api[^\n]*DELETE/u);
+  assert.match(workflow, /gh release download "\$RELEASE_TAG" --pattern "\$NAME" --dir "\$CHECK_DIR"/u);
+  assert.match(workflow, /sha256sum/u);
   assert.match(workflow, /gh release edit[\s\S]*--draft=false[\s\S]*--prerelease=false[\s\S]*--latest/);
   assert.doesNotMatch(workflow, /\n\s+--draft \\|\n  draft_release:\n/);
   assert.doesNotMatch(workflow, /CL-GO/);

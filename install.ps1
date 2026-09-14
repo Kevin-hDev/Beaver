@@ -4,8 +4,6 @@ $Repository = "Kevin-hDev/Beaver"
 $ApiUrl = "https://api.github.com/repos/$Repository/releases/latest"
 $MaxApiBytes = 524288L; $MaxManifestBytes = 65536L; $MaxAssetBytes = 2147483648L
 $TempDirectory = $null; $HttpClient = $null
-function Write-Info([string]$Message) { Write-Host "-> $Message" -ForegroundColor Blue }
-function Write-Ok([string]$Message) { Write-Host "OK $Message" -ForegroundColor Green }
 function Stop-Install { throw [InvalidOperationException]::new("installation failed") }
 function Test-Version([string]$Value) {
     return $Value.Length -le 32 -and $Value -match "^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$"
@@ -95,22 +93,25 @@ function Get-Release([string]$Path) {
     if ($release.tag_name -notmatch "^v(.+)$") { Stop-Install }
     $version = $Matches[1]
     if (-not (Test-Version $version)) { Stop-Install }
-    $assetName = "Beaver_${version}_x64-setup.exe"
+    $installerName = "Beaver_${version}_installer-x64.exe"
+    $appName = "Beaver_${version}_x64-setup.exe"
     $manifestName = "update-manifest.json"
     $baseUrl = "https://github.com/$Repository/releases/download/v$version"
     $assets = @($release.assets)
     if ($assets.Count -lt 1 -or $assets.Count -gt 64) { Stop-Install }
-    $asset = @($assets | Where-Object { $_.name -ceq $assetName -and
-        $_.browser_download_url -ceq "$baseUrl/$assetName" })
+    $installer = @($assets | Where-Object { $_.name -ceq $installerName -and
+        $_.browser_download_url -ceq "$baseUrl/$installerName" })
+    $app = @($assets | Where-Object { $_.name -ceq $appName -and
+        $_.browser_download_url -ceq "$baseUrl/$appName" })
     $manifest = @($assets | Where-Object { $_.name -ceq $manifestName -and
         $_.browser_download_url -ceq "$baseUrl/$manifestName" })
-    if ($asset.Count -ne 1 -or $manifest.Count -ne 1) { Stop-Install }
-    foreach ($item in @($asset[0], $manifest[0])) {
+    if ($installer.Count -ne 1 -or $app.Count -ne 1 -or $manifest.Count -ne 1) { Stop-Install }
+    foreach ($item in @($installer[0], $app[0], $manifest[0])) {
         if (-not ($item.size -is [int] -or $item.size -is [long]) -or
             $item.size -lt 1 -or $item.size -gt $MaxAssetBytes) { Stop-Install }
     }
     if ($manifest[0].size -gt $MaxManifestBytes) { Stop-Install }
-    return [PSCustomObject]@{ Version = $version; Asset = $asset[0]; Manifest = $manifest[0] }
+    return [PSCustomObject]@{ Version = $version; Installer = $installer[0]; App = $app[0]; Manifest = $manifest[0] }
 }
 function Get-ManifestAsset([string]$Path, [string]$Version, [string]$ExpectedName) {
     $manifest = Read-Json $Path
@@ -130,12 +131,34 @@ function Get-ManifestAsset([string]$Path, [string]$Version, [string]$ExpectedNam
     if ($selected.Count -ne 1) { Stop-Install }
     return $selected[0]
 }
-function Test-InstallPath([string]$Path) {
-    if ([string]::IsNullOrWhiteSpace($Path) -or $Path.Length -gt 1024 -or $Path -notmatch "^[A-Za-z]:\\" -or $Path -match '[*?<>|"]' -or $Path.Substring(3).Contains(":")) { return $false }
-    foreach ($character in $Path.ToCharArray()) {
-        if ([char]::IsControl($character)) { return $false }
-    }
-    return -not (@($Path.Split([IO.Path]::DirectorySeparatorChar)) -contains "..")
+function New-RunId {
+    $bytes = [byte[]]::new(16); $generator = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $generator.GetBytes($bytes); return -join ($bytes | ForEach-Object { $_.ToString("x2") }) }
+    finally { [Array]::Clear($bytes, 0, $bytes.Length); $generator.Dispose() }
+}
+function Test-OwnedRun([string]$Root, [string]$Path, [string]$RunId) {
+    try {
+        $directory = Get-Item -LiteralPath $Path -Force
+        if (-not $directory.PSIsContainer -or ($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+            $directory.Parent.FullName.TrimEnd("\") -cne $Root.TrimEnd("\") -or $directory.Name -cne "beaver-install-$RunId") { return $false }
+        $owner = [Security.Principal.WindowsIdentity]::GetCurrent().Owner
+        if (-not (Get-Acl -LiteralPath $Path).GetOwner([Security.Principal.SecurityIdentifier]).Equals($owner)) { return $false }
+        $markerPath = [IO.Path]::Combine($Path, ".beaver-installer-owner.json")
+        $marker = Get-Item -LiteralPath $markerPath -Force
+        if ($marker.PSIsContainer -or ($marker.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $marker.Length -gt 128 -or
+            [IO.File]::ReadAllText($markerPath) -cne "{`"schema`":1,`"runId`":`"$RunId`"}") { return $false }
+        $pending = [Collections.Generic.Stack[string]]::new(); $pending.Push($Path); $count = 0
+        while ($pending.Count -gt 0) {
+            foreach ($childPath in [IO.Directory]::EnumerateFileSystemEntries($pending.Pop())) {
+                if ((++$count) -gt 4096) { return $false }
+                $child = Get-Item -LiteralPath $childPath -Force
+                if (($child.Attributes -band [IO.FileAttributes]::ReparsePoint)) { return $false }
+                if (-not (Get-Acl -LiteralPath $childPath).GetOwner([Security.Principal.SecurityIdentifier]).Equals($owner)) { return $false }
+                if ($child.PSIsContainer) { $pending.Push($childPath) }
+            }
+        }
+        return $true
+    } catch { return $false }
 }
 function Invoke-Main {
     if ($env:PROCESSOR_ARCHITECTURE -cne "AMD64") { Stop-Install }
@@ -147,9 +170,14 @@ function Invoke-Main {
     $HttpClient.Timeout = [Threading.Timeout]::InfiniteTimeSpan
     [void]$HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Beaver-Installer/1")
     [void]$HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Encoding", "identity")
-    $root = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
-    $script:TempDirectory = [IO.Path]::Combine($root, "beaver-install-$([Guid]::NewGuid().ToString('N'))")
+    $root = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd("\")
+    $runId = New-RunId
+    if ($runId -cnotmatch "^[0-9a-f]{32}$") { Stop-Install }
+    $script:TempDirectory = [IO.Path]::Combine($root, "beaver-install-$runId")
     [void][IO.Directory]::CreateDirectory($TempDirectory)
+    [IO.File]::WriteAllText([IO.Path]::Combine($TempDirectory, ".beaver-installer-owner.json"),
+        "{`"schema`":1,`"runId`":`"$runId`"}")
+    [IO.File]::WriteAllText([IO.Path]::Combine($TempDirectory, ".beaver-installer-active"), "launch:$PID")
     $releasePath = [IO.Path]::Combine($TempDirectory, "release.json")
     [void](Save-BoundedFile ([Uri]$ApiUrl) $releasePath $MaxApiBytes $false 30)
     $release = Get-Release $releasePath
@@ -157,43 +185,32 @@ function Invoke-Main {
     $manifestUri = [Uri]$release.Manifest.browser_download_url
     $manifestBytes = Save-BoundedFile $manifestUri $manifestPath $MaxManifestBytes $true 30
     if ($manifestBytes -ne [long]$release.Manifest.size) { Stop-Install }
-    $expected = Get-ManifestAsset $manifestPath $release.Version $release.Asset.name
-    if ([long]$release.Asset.size -ne [long]$expected.size) { Stop-Install }
-    $assetPath = [IO.Path]::Combine($TempDirectory, $release.Asset.name)
-    $assetBytes = Save-BoundedFile ([Uri]$release.Asset.browser_download_url) $assetPath ([long]$expected.size) $true 1800
+    $expected = Get-ManifestAsset $manifestPath $release.Version $release.Installer.name
+    $app = Get-ManifestAsset $manifestPath $release.Version $release.App.name
+    if ([long]$release.Installer.size -ne [long]$expected.size -or [long]$release.App.size -ne [long]$app.size) { Stop-Install }
+    $assetPath = [IO.Path]::Combine($TempDirectory, $release.Installer.name)
+    $assetBytes = Save-BoundedFile ([Uri]$release.Installer.browser_download_url) $assetPath ([long]$expected.size) $true 1800
     if ($assetBytes -ne [long]$expected.size) { Stop-Install }
     $hash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($hash -cne $expected.sha256) { Stop-Install }
-    $defaultDirectory = [Environment]::GetFolderPath("LocalApplicationData")
-    $defaultDirectory = [IO.Path]::Combine($defaultDirectory, "Beaver")
-    Write-Host ""
-    Write-Host "Repertoire d'installation : $defaultDirectory" -ForegroundColor Yellow
-    $customDirectory = Read-Host "   Appuie sur Entree pour accepter, ou tape un autre chemin"
-    $installDirectory = $customDirectory
-    if ([string]::IsNullOrWhiteSpace($installDirectory)) { $installDirectory = $defaultDirectory }
-    if (-not (Test-InstallPath $installDirectory)) { Stop-Install }
-    Write-Info "Installation de Beaver v$($release.Version)..."
-    $process = Start-Process -FilePath $assetPath -ArgumentList @("/S", "/D=$installDirectory") -Wait -PassThru -WindowStyle Hidden
-    if ($process.ExitCode -ne 0) { Stop-Install }
-    $binary = [IO.Path]::Combine($installDirectory, "cl-go-dash.exe")
-    if (-not [IO.File]::Exists($binary) -or ([IO.File]::GetAttributes($binary) -band [IO.FileAttributes]::ReparsePoint)) { Stop-Install }
-    Write-Ok "Beaver v$($release.Version) est installe."
+    [void](Start-Process -FilePath $assetPath -ArgumentList @(
+        "--run-id", $runId, "--work-dir", "`"$TempDirectory`"", "--version", $release.Version,
+        "--app-asset-name", $release.App.name, "--app-asset-size", ([string]$app.size),
+        "--app-asset-sha256", $app.sha256
+    ) -PassThru)
+    $script:TempDirectory = $null
+    Write-Host "L'installateur Beaver s'est ouvert."
 }
-try {
-    Invoke-Main
-} catch {
-    Write-Host "ERREUR Installation impossible." -ForegroundColor Red
-    exit 1
-} finally {
-    if ($null -ne $HttpClient) { $HttpClient.Dispose() }
-    if ($null -ne $TempDirectory) {
-        try {
-            $full = [IO.Path]::GetFullPath($TempDirectory)
-            $parent = [IO.Directory]::GetParent($full).FullName
-            $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd("\")
-            if ($parent.TrimEnd("\") -ceq $tempRoot -and [IO.Path]::GetFileName($full) -match "^beaver-install-[0-9a-f]{32}$") {
-                [IO.Directory]::Delete($full, $true)
+if ($env:BEAVER_INSTALLER_TEST_MODE -ne "1") {
+    try { Invoke-Main }
+    catch { Write-Host "ERREUR Installation impossible." -ForegroundColor Red; exit 1 }
+    finally {
+        if ($null -ne $HttpClient) { $HttpClient.Dispose() }
+        if ($null -ne $TempDirectory) {
+            $runId = [IO.Path]::GetFileName($TempDirectory).Substring(15)
+            if (Test-OwnedRun ([IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd("\")) $TempDirectory $runId) {
+                [IO.Directory]::Delete($TempDirectory, $true)
             }
-        } catch {}
+        }
     }
 }

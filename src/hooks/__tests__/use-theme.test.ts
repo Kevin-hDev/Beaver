@@ -6,10 +6,12 @@ import type {
   ExtensionThemeEntry,
 } from "@/features/extension-ui/themes/theme-catalog";
 
-const showToast = vi.hoisted(() => vi.fn());
+const mocks = vi.hoisted(() => ({ showToast: vi.fn(), emit: vi.fn(() => Promise.resolve()) }));
+
+vi.mock("@tauri-apps/api/event", () => ({ emit: mocks.emit }));
 
 vi.mock("@/components/ui/toast", () => ({
-  useToast: () => ({ show: showToast }),
+  useToast: () => ({ show: mocks.showToast }),
 }));
 
 const mediaListeners = new Set<() => void>();
@@ -17,7 +19,8 @@ let prefersDark = false;
 
 beforeEach(() => {
   localStorage.clear();
-  showToast.mockClear();
+  mocks.showToast.mockClear();
+  mocks.emit.mockClear();
   prefersDark = false;
   mediaListeners.clear();
   document.documentElement.removeAttribute("data-theme");
@@ -152,7 +155,11 @@ describe("useTheme", () => {
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     expect(document.documentElement).toHaveAttribute("data-palette", themeEntry.paletteId);
     expect(document.documentElement.style.getPropertyValue("--void")).toBe("#010203");
-    expect(showToast).not.toHaveBeenCalled();
+    expect(mocks.showToast).not.toHaveBeenCalled();
+    expect(mocks.emit).toHaveBeenCalledWith("beaver-theme-changed", {
+      palette: "dark",
+      colorScheme: "dark",
+    });
   });
 
   it("revient au système et avertit si le thème actif disparaît", async () => {
@@ -169,6 +176,6 @@ describe("useTheme", () => {
     expect(result.current.theme).toBe("light");
     expect(localStorage.getItem("clgo-theme")).toBe("system");
     expect(document.documentElement.style.getPropertyValue("--void")).toBe("");
-    expect(showToast).toHaveBeenCalledWith(expect.any(String), "warning");
+    expect(mocks.showToast).toHaveBeenCalledWith(expect.any(String), "warning");
   });
 });

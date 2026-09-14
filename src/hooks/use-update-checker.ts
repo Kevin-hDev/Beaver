@@ -5,44 +5,27 @@ import { listen } from "@tauri-apps/api/event";
 import { useForecastDevUpdates } from "@/hooks/use-forecast-dev-updates";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { useUpdateDismissals } from "@/hooks/use-update-dismissals";
+import { useUpdateRetry } from "@/hooks/use-update-retry";
 import { updateErrorKey } from "@/hooks/update-error";
 import i18n from "@/i18n";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { showToast } from "@/lib/toast-emitter";
+import type {
+  AppUpdate,
+  OllamaBinaryUpdate,
+  OllamaModelUpdate,
+  PullingState,
+} from "./update-types";
+
+export type {
+  AppUpdate,
+  DismissedUpdate,
+  OllamaBinaryUpdate,
+  OllamaModelUpdate,
+  PullingState,
+} from "./update-types";
 
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
-
-export interface AppUpdate {
-  version: string;
-  assetUrl: string;
-  title?: string | null;
-  publishedAt?: string | null;
-  notesByLocale?: Record<string, string[]> | null;
-}
-
-export interface OllamaModelUpdate {
-  fullName: string;
-  family: string;
-  tag: string;
-  latestDigest: string;
-}
-
-export interface OllamaBinaryUpdate {
-  currentVersion: string;
-  latestVersion: string;
-}
-
-export interface DismissedUpdate {
-  kind: "app" | "ollama_binary" | "ollama_model";
-  subject: string;
-  version: string;
-}
-
-export interface PullingState {
-  fullName: string;
-  percent: number;
-  status: string;
-}
 
 interface DownloadProgress {
   completed: number;
@@ -68,6 +51,7 @@ export function useUpdateChecker() {
   const [ollamaBinaryCancelling, setOllamaBinaryCancelling] = useState(false);
   const [modelCancellingId, setModelCancellingId] = useState<string | null>(null);
   const binaryBusy = useRef(false);
+  const ollamaBinaryTarget = useRef<OllamaBinaryUpdate | null>(null);
   const checkInFlight = useRef<Promise<void> | null>(null);
   const notifyCheckFailure = useRef(false);
 
@@ -90,6 +74,7 @@ export function useUpdateChecker() {
         if (results[1].status === "fulfilled") setOllamaUpdates(results[1].value);
         if (results[2].status === "fulfilled") {
           const discovered = results[2].value;
+          if (discovered) ollamaBinaryTarget.current = discovered;
           setOllamaBinaryUpdate((known) => binaryBusy.current ? known : discovered);
         }
         if (results[3].status === "fulfilled") setInstalledAppVersion(results[3].value);
@@ -141,7 +126,8 @@ export function useUpdateChecker() {
   }, []);
 
   const updateOllamaBinary = useCallback(async () => {
-    if (!ollamaBinaryUpdate || binaryBusy.current) return;
+    const target = ollamaBinaryTarget.current;
+    if (!target || binaryBusy.current) return;
     binaryBusy.current = true;
     setOllamaBinaryCancelling(false);
     setOllamaBinaryUpdating(true);
@@ -149,8 +135,9 @@ export function useUpdateChecker() {
     const channel = new Channel<DownloadProgress>();
     channel.onmessage = ({ completed, total, status }) => setOllamaBinaryPercent(status === "restarting" ? 100 : total > 0 ? Math.round(completed / total * 100) : 0);
     try {
-      await invoke("update_ollama_binary", { version: ollamaBinaryUpdate.latestVersion, onProgress: channel });
-      setInstalledOllamaVersion(ollamaBinaryUpdate.latestVersion);
+      await invoke("update_ollama_binary", { version: target.latestVersion, onProgress: channel });
+      setInstalledOllamaVersion(target.latestVersion);
+      ollamaBinaryTarget.current = null;
       setOllamaBinaryUpdate(null);
     } catch (error) {
       const cancelled = isError(error, "ollama-operation-cancelled");
@@ -160,7 +147,7 @@ export function useUpdateChecker() {
       setOllamaBinaryCancelling(false);
       setOllamaBinaryUpdating(false);
     }
-  }, [ollamaBinaryUpdate]);
+  }, []);
 
   const pullModel = useCallback(async (fullName: string) => {
     try {
@@ -198,12 +185,20 @@ export function useUpdateChecker() {
     await cancelDownload(activeDownload.id).catch(() => setModelCancellingId(null));
   }, [activeDownload, cancelDownload]);
 
+  useUpdateRetry({
+    appAssetUrl: appUpdate?.assetUrl ?? null,
+    binaryBusy,
+    downloadAppUpdate,
+    updateOllamaBinary,
+    startDownload,
+  });
+
   const visibleAppUpdate = dismissals.visible(appUpdate, (update) => ({ kind: "app", subject: "beaver", version: update.version }));
   const visibleOllamaBinaryUpdate = dismissals.visible(ollamaBinaryUpdate, (update) => ({ kind: "ollama_binary", subject: "ollama", version: update.latestVersion }));
   const visibleOllamaUpdates = dismissals.filter(ollamaUpdates, (update) => ({ kind: "ollama_model", subject: update.fullName, version: update.latestDigest }));
   const pulling = useMemo<PullingState | null>(() => {
     if (!activeDownload || activeDownload.kind !== "ollama" || !ollamaUpdates.some((update) => update.fullName === activeDownload.modelId)) return null;
-    return { fullName: activeDownload.modelId, percent: activeDownload.percent, status: i18n.t(`modelDownloads.phases.${activeDownload.phase}`) };
+    return { fullName: activeDownload.modelId, percent: activeDownload.percent };
   }, [activeDownload, ollamaUpdates]);
 
   return {

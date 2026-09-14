@@ -36,12 +36,31 @@ function cargoPackageVersion(source) {
   return versions[0][1];
 }
 
-export function assertAppVersionContract({ packageJson, cargoToml, tauriConfig } = {}) {
+function cargoLockedPackageVersion(source, name) {
+  const matches = boundedText(source)
+    .split(/^\[\[package\]\]\s*$/mu)
+    .slice(1)
+    .filter((section) => new RegExp(`^name\\s*=\\s*"${name}"\\s*$`, "mu").test(section));
+  if (matches.length !== 1) fail();
+  return cargoPackageVersion(`[package]${matches[0]}`);
+}
+
+export function assertAppVersionContract({
+  packageJson,
+  cargoToml,
+  tauriConfig,
+  installerCargoToml,
+  installerCargoLock,
+  installerTauriConfig,
+} = {}) {
   try {
     const versions = [
       jsonVersion(packageJson),
       cargoPackageVersion(cargoToml),
       jsonVersion(tauriConfig),
+      cargoPackageVersion(installerCargoToml),
+      cargoLockedPackageVersion(installerCargoLock, "beaver-installer"),
+      jsonVersion(installerTauriConfig),
     ];
     if (
       versions.some(
