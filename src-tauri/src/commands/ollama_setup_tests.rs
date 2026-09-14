@@ -69,6 +69,27 @@ fn setup_command_returns_only_codes_owned_by_the_runtime_contract() {
     }
 }
 
+#[test]
+fn update_prepares_fallible_request_state_before_publishing_progress() {
+    let source = include_str!("ollama_setup_update.rs");
+    let command = source
+        .split_once("pub async fn update_ollama_binary")
+        .expect("update command")
+        .1;
+    let cwd = command
+        .find("let inherited_cwd = std::env::current_dir()")
+        .expect("fallible working directory preparation");
+    let progress = command
+        .find("begin_progress(&app")
+        .expect("progress publication");
+
+    assert!(
+        cwd < progress,
+        "request setup must precede progress publication"
+    );
+    assert!(command.contains("inherited_cwd,"));
+}
+
 #[tokio::test]
 async fn cancel_active_setup_cancels_manager_token() {
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");

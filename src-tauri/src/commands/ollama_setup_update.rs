@@ -20,6 +20,7 @@ pub async fn update_ollama_binary(
 ) -> Result<(), String> {
     let version = OllamaVersion::parse(version.trim_start_matches('v'))
         .map_err(|_| "ollama-version-invalid")?;
+    let inherited_cwd = std::env::current_dir().map_err(|_| "ollama-storage-unavailable")?;
     let id = uuid::Uuid::new_v4().to_string();
     let label = format!("Ollama {version}");
     begin_progress(&app, &progress, &id, &label)?;
@@ -30,7 +31,7 @@ pub async fn update_ollama_binary(
         version,
         manifest: None,
         inherited_environment: std::env::vars_os().collect::<Vec<(OsString, OsString)>>(),
-        inherited_cwd: std::env::current_dir().map_err(|_| "ollama-storage-unavailable")?,
+        inherited_cwd,
         cancellation: cancellation.clone(),
         deadline: None,
         sidecar: UpdateSidecar::Absent,
