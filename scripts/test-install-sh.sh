@@ -94,14 +94,17 @@ printf '{"schema":1,"runId":"wrong"}' > "${PURGE_ROOT}/beaver-install-${FORGED_I
 printf '{"schema":1,"runId":"%s"}' "${LINK_ID}" > "${PURGE_ROOT}/beaver-install-${LINK_ID}/.beaver-installer-owner.json"
 SENTINEL="${TMP_DIR}/sentinel"; printf "outside\n" > "${SENTINEL}"
 /bin/ln -s "${SENTINEL}" "${PURGE_ROOT}/beaver-install-${LINK_ID}/sentinel-link"
-purge_orphans "${PURGE_ROOT}" "ffffffffffffffffffffffffffffffff"
+TEMP_ROOT="${PURGE_ROOT}"; TMP_DIR="${PURGE_ROOT}/beaver-install-${VALID_ID}"; RUN_ID="${VALID_ID}"; cleanup
+TMP_DIR="${PURGE_ROOT}/beaver-install-${FORGED_ID}"; RUN_ID="${FORGED_ID}"; cleanup
+TMP_DIR="${PURGE_ROOT}/beaver-install-${LINK_ID}"; RUN_ID="${LINK_ID}"; cleanup
 if [ -e "${PURGE_ROOT}/beaver-install-${VALID_ID}" ] ||
   [ ! -e "${PURGE_ROOT}/beaver-install-${FORGED_ID}" ] ||
   [ ! -L "${PURGE_ROOT}/beaver-install-${LINK_ID}/sentinel-link" ] ||
   [ "$(/bin/cat "${SENTINEL}")" != "outside" ]; then
-  printf "FAIL safe orphan purge contract\n" >&2
+  printf "FAIL safe owned-run cleanup contract\n" >&2
   exit 1
 fi
+TMP_DIR="${PURGE_ROOT%/purge}"; TEMP_ROOT=""; RUN_ID=""
 
 if ! control_contract_matches "beaver" "cl-go" "cl-go" "cl-go"; then
   printf "FAIL valid Debian migration contract was rejected\n" >&2

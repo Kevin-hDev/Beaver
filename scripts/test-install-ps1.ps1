@@ -91,11 +91,11 @@ try {
     }
     $junction = Join-Path $runRoot "beaver-install-$junctionId\outside"
     [void](New-Item -ItemType Junction -Path $junction -Target $sentinel)
-    Remove-OrphanRuns $runRoot "ffffffffffffffffffffffffffffffff"
-    if ((Test-Path (Join-Path $runRoot "beaver-install-$validId")) -or
-        -not (Test-Path (Join-Path $runRoot "beaver-install-$forgedId")) -or
-        -not (Test-Path $junction) -or [IO.File]::ReadAllText((Join-Path $sentinel "outside.txt")) -cne "outside") {
-        throw "PowerShell orphan purge failed."
+    if (-not (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$validId") $validId) -or
+        (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$forgedId") $forgedId) -or
+        (Test-OwnedRun $runRoot (Join-Path $runRoot "beaver-install-$junctionId") $junctionId) -or
+        [IO.File]::ReadAllText((Join-Path $sentinel "outside.txt")) -cne "outside") {
+        throw "PowerShell owned-run validation failed."
     }
 } finally {
     if (Test-Path $junction) { [IO.Directory]::Delete($junction) }
