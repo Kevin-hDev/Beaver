@@ -1,0 +1,1 @@
+Review correction: extend the single application-version contract to installer Cargo.toml, Cargo.lock, and tauri.conf.json. Any installer/main version divergence now fails before release builds. Proof: node --test scripts/release/app-version-contract.test.mjs (6 passed); npm run test:release-workflow (53 passed); npm run lint -- --quiet (passed).
