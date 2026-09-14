@@ -58,6 +58,7 @@
       "resources/extension-host/**/*",
       "resources/extension-ui/**/*",
       "resources/searxng-sidecar/**/*",
+      "resources/voice-catalog.json",
       "../LICENSE",
       "target/updater-helper/*"
     ],

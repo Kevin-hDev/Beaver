@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "parakeet-tdt-v3-int8",
+      "role": "asr",
+      "engine": "nemo-transducer",
+      "revision": "2bda32ec70b097a55adaa07d9a7173915b43cc78",
+      "archive": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+        "bytes": 487170055,
+        "sha256": "5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf"
+      },
+      "manifest_url": "https://huggingface.co/api/models/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/revision/2bda32ec70b097a55adaa07d9a7173915b43cc78",
+      "installed_bytes": 670478772,
+      "files": [
+        { "path": "decoder.int8.onnx", "bytes": 11845275, "sha256": "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e" },
+        { "path": "encoder.int8.onnx", "bytes": 652184281, "sha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247" },
+        { "path": "joiner.int8.onnx", "bytes": 6355277, "sha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3" },
+        { "path": "tokens.txt", "bytes": 93939, "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d" }
+      ],
+      "languages": ["en", "es", "fr", "de", "bg", "hr", "cs", "da", "nl", "et", "fi", "el", "hu", "it", "lv", "lt", "mt", "pl", "pt", "ro", "sk", "sl", "sv", "ru", "uk"],
+      "dialects": [],
+      "language_mode": "automatic-only",
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3/tree/541d1f99c6b0c3cd0b11a95167540bb8edefd82b"
+      }
+    },
+    {
+      "id": "cohere-transcribe-int8",
+      "role": "asr",
+      "engine": "cohere-transcribe",
+      "revision": "156a470cf08eefe706a0004f3c52d9ee567ca7a0",
+      "archive": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-cohere-transcribe-14-lang-int8-2026-04-01.tar.bz2",
+        "bytes": 1699791751,
+        "sha256": "bd582588d50685a795dcd2807ab77e11361b8312d96c53884682def45ab4206d"
+      },
+      "manifest_url": "https://huggingface.co/api/models/csukuangfj2/sherpa-onnx-cohere-transcribe-14-lang-int8-2026-04-01/revision/156a470cf08eefe706a0004f3c52d9ee567ca7a0",
+      "installed_bytes": 2888052036,
+      "files": [
+        { "path": "decoder.int8.onnx", "bytes": 153250705, "sha256": "8372ca6c8ff4db8b916ca3592f5c757a715e691b9edec751ba19b29fc854baf9" },
+        { "path": "encoder.int8.onnx", "bytes": 3090822, "sha256": "cf704f8cfa90e3f0a76f9ffc05998bdf00ba9ae983192c14a85a3a5eb008b367" },
+        { "path": "encoder.int8.onnx.data", "bytes": 2731503072, "sha256": "bcf1b7148c8518ae52df1ad2d2fc2b4e89261ea23e6c874eef1d9f55bcbaa4a3" },
+        { "path": "tokens.txt", "bytes": 207437, "sha256": "013ede043ae2480e3a9205cc34550d9686100cc682bacc90f702facdfbb93035" }
+      ],
+      "languages": ["en", "fr", "de", "it", "es", "pt", "el", "nl", "pl", "zh", "ja", "ko", "vi", "ar"],
+      "dialects": [],
+      "language_mode": "explicit-or-automatic",
+      "license": {
+        "spdx": "Apache-2.0",
+        "url": "https://huggingface.co/blog/CohereLabs/cohere-transcribe-03-2026-release"
+      }
+    },
+    {
+      "id": "qwen3-asr-06b-int8",
+      "role": "asr",
+      "engine": "qwen3-asr",
+      "revision": "68818b2313fe77bd06f6a7c5068ff3ef59d02b8a",
+      "archive": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",
+        "bytes": 878702423,
+        "sha256": "393f8a14e2f5fb96746aaab342997a40641001fbd5bf9592a080a8329178ee96"
+      },
+      "manifest_url": "https://huggingface.co/api/models/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/revision/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a",
+      "installed_bytes": 987015347,
+      "files": [
+        { "path": "conv_frontend.onnx", "bytes": 44148281, "sha256": "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e" },
+        { "path": "decoder.int8.onnx", "bytes": 755914231, "sha256": "4f6885be5959ae26af3089d38ee7972c5fafbeeb1cf8d5e76eab6d8b61ca5771" },
+        { "path": "encoder.int8.onnx", "bytes": 182491662, "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9" },
+        { "path": "tokenizer/merges.txt", "bytes": 1671853, "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5" },
+        { "path": "tokenizer/tokenizer_config.json", "bytes": 12487, "sha256": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c" },
+        { "path": "tokenizer/vocab.json", "bytes": 2776833, "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910" }
+      ],
+      "languages": ["zh", "en", "yue", "ar", "de", "fr", "es", "pt", "id", "it", "ko", "ru", "th", "vi", "ja", "tr", "hi", "ms", "nl", "sv", "da", "fi", "pl", "cs", "fil", "fa", "el", "hu", "mk", "ro"],
+      "dialects": ["zh-anhui", "zh-dongbei", "zh-fujian", "zh-gansu", "zh-guizhou", "zh-hebei", "zh-henan", "zh-hubei", "zh-hunan", "zh-jiangxi", "zh-ningxia", "zh-shandong", "zh-shaanxi", "zh-shanxi", "zh-sichuan", "zh-tianjin", "zh-yunnan", "zh-zhejiang", "yue-hk", "yue-guangdong", "wuu", "nan"],
+      "language_mode": "automatic-only",
+      "license": {
+        "spdx": "Apache-2.0",
+        "url": "https://huggingface.co/Qwen/Qwen3-ASR-0.6B/tree/5eb144179a02acc5e5ba31e748d22b0cf3e303b0"
+      }
+    },
+    {
+      "id": "silero-vad",
+      "role": "vad",
+      "engine": "silero-vad",
+      "revision": "sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "archive": {
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+        "bytes": 643854,
+        "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+      },
+      "manifest_url": "https://api.github.com/repos/k2-fsa/sherpa-onnx/releases/assets/271935959",
+      "installed_bytes": 643854,
+      "files": [
+        { "path": "silero_vad.onnx", "bytes": 643854, "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6" }
+      ],
+      "languages": [],
+      "dialects": [],
+      "language_mode": "automatic-only",
+      "license": {
+        "spdx": "MIT",
+        "url": "https://github.com/snakers4/silero-vad/blob/867c2aa692646a1f1de3e94a15c9dd9f614c0acb/LICENSE"
+      }
+    }
+  ]
+}

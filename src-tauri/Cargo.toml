@@ -12,7 +12,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 [features]
 default = []
 # Sonde temporaire T01, retirée en T13 après validation du service vocal réel.
-voice-probe = ["dep:block2", "dep:cpal", "dep:objc2-av-foundation"]
+voice-probe = ["dep:block2", "dep:objc2-av-foundation"]
 # Profil isolé réservé aux validations manuelles CEF. Les builds normaux
 # n'incluent pas cette redirection.
 cef-test-profile = []
@@ -188,7 +188,8 @@ objc2-av-foundation = { version = "0.3", default-features = false, features = ["
 cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
 
 [target.'cfg(any(target_os = "macos", windows))'.dependencies]
-cpal = { version = "=0.18.2", optional = true }
+cpal = "=0.18.2"
+sherpa-onnx = { version = "=1.13.8", default-features = false, features = ["static"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
