@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
    30 août, ce panneau du 31, et il ne s'y était pas inscrit. */
 
 const PANEL = readFileSync("src/components/settings/compression/compression-panel.css", "utf8");
+const SETTINGS_DIALOG = readFileSync("src/components/ui/settings-dialog.css", "utf8");
 const LAYOUT = readFileSync("src/components/layout/app-layout.css", "utf8");
 
 function bloc(css: string, selecteur: string): string {
@@ -17,18 +18,18 @@ function bloc(css: string, selecteur: string): string {
 }
 
 describe("surface des dialogues de compression", () => {
-  it.each([".cpa-dialog", ".cpd-dialog"])(
-    "%s prend le fond du contrat plutôt qu'une couleur à lui",
-    (selecteur) => {
-      const regle = bloc(PANEL, selecteur);
+  it.each([
+    { css: SETTINGS_DIALOG, selecteur: ".sd-dialog" },
+    { css: PANEL, selecteur: ".cpd-dialog" },
+  ])("$selecteur prend le fond du contrat plutôt qu'une couleur à lui", ({ css, selecteur }) => {
+      const regle = bloc(css, selecteur);
       expect(regle).toContain("background: var(--popover-bg,");
-    },
-  );
+    });
 
   it("inscrit les deux voiles dans la liste qui bascule les jetons à l'opaque", () => {
     const debut = LAYOUT.indexOf(".wk-dialog-overlay,");
     const liste = LAYOUT.slice(debut, LAYOUT.indexOf("}", debut));
-    expect(liste).toContain(".cpa-overlay,");
+    expect(liste).toContain(".sd-overlay,");
     expect(liste).toContain(".cpd-overlay,");
     expect(liste).toContain("--popover-bg: var(--shell-opaque);");
   });
@@ -36,7 +37,7 @@ describe("surface des dialogues de compression", () => {
   /* Le jeton vaut none sur Linux et Windows, volontairement : une valeur écrite
      en dur y ajoutait un flou que personne n'a demandé. */
   it("laisse le flou du voile au jeton du système", () => {
-    const regle = bloc(PANEL, ".cpa-backdrop-dismiss,\n.cpd-backdrop-dismiss");
+    const regle = bloc(SETTINGS_DIALOG, ".sd-backdrop-dismiss");
     expect(regle).toContain("backdrop-filter: var(--dialog-overlay-filter, none);");
     expect(regle).not.toMatch(/backdrop-filter:\s*blur\(/);
   });

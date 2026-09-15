@@ -1,4 +1,3 @@
-.cpa-overlay,
 .cpd-overlay {
   position: fixed;
   inset: 0;
@@ -11,7 +10,6 @@
 /* Le voile est un bouton plein écran plutôt qu'un clic posé sur le conteneur :
    il se ferme au clavier. Son flou vient du jeton et de nulle part ailleurs —
    celui-ci vaut none sur Linux et Windows, volontairement. */
-.cpa-backdrop-dismiss,
 .cpd-backdrop-dismiss {
   position: absolute;
   inset: 0;
@@ -22,56 +20,6 @@
   backdrop-filter: var(--dialog-overlay-filter, none);
   -webkit-backdrop-filter: var(--dialog-overlay-filter, none);
   cursor: default;
-}
-
-.cpa-dialog {
-  position: relative;
-  width: min(var(--dialog-wide-max-width), 92vw);
-  height: min(var(--dialog-tall-max-height), 88vh);
-  min-height: 0;
-  padding: var(--space-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  border-radius: var(--radius-panel);
-  background: var(--popover-bg, var(--surface-raised));
-  color: var(--ink);
-  box-shadow: var(--elev-above);
-}
-
-.cpa-head {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-md);
-}
-
-.cpa-head h2 {
-  margin: 0;
-  font-size: var(--settings-title-size);
-  font-weight: 600;
-}
-
-.cpa-head p {
-  margin: var(--space-xs) 0 0;
-  max-width: 56ch;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-}
-
-.cpa-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding-right: var(--space-sm);
-  overflow-y: auto;
-}
-
-.cpa-foot {
-  flex: none;
-  min-height: var(--space-xs);
-  border-top: 1px solid var(--edge);
 }
 
 .cpb-bar {
