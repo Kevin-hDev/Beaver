@@ -35,9 +35,12 @@ pub fn find_catalog_entry(
 
 pub(crate) use checkpoint::{discover_checkpoints, save_checkpoint};
 pub use checkpoint::{inspect_partial, Checkpoint, HttpValidator, PartialDecision};
+pub(crate) use extraction::verify_file;
 pub(crate) use installation::{install_archive, installed_receipt};
-pub(crate) use removal::resume_incomplete_removals;
+pub(crate) use receipt::InstallationReceipt;
 #[cfg(test)]
+pub(crate) use receipt::ReceiptFile;
+pub(crate) use removal::resume_incomplete_removals;
 pub(crate) use removal::{remove_installation, RemovalGate};
 pub(crate) use transfer::download_archive;
 pub(crate) use transfer_prepare::prepare_download;

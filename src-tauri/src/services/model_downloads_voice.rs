@@ -183,6 +183,9 @@ async fn install_entry(
     ) {
         emit_states(app, states);
     }
+    app.state::<crate::services::voice::runtime::VoiceRuntime>()
+        .models()
+        .prepare_reinstall(&data_dir, &entry.id)?;
     let entry = entry.clone();
     tokio::task::spawn_blocking(move || {
         crate::services::voice::download::install_archive(&entry, &archive, &data_dir)

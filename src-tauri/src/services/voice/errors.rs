@@ -58,6 +58,10 @@ impl VoiceError {
         Self::from_code(VoiceErrorCode::Busy)
     }
 
+    pub fn shutting_down() -> Self {
+        Self::from_code(VoiceErrorCode::ShuttingDown)
+    }
+
     pub fn invalid_settings() -> Self {
         Self::from_code(VoiceErrorCode::InvalidSettings)
     }

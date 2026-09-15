@@ -8,11 +8,15 @@ use tokio::sync::oneshot;
 #[derive(Clone)]
 pub struct VoiceRuntime {
     work: VoiceWork,
+    #[cfg(any(target_os = "macos", windows))]
+    models: super::model::lifecycle::ModelLifecycle,
 }
 
 pub fn new_voice_runtime(app_work: AppWorkSupervisor) -> VoiceRuntime {
     VoiceRuntime {
-        work: VoiceWork::new(app_work),
+        work: VoiceWork::new(app_work.clone()),
+        #[cfg(any(target_os = "macos", windows))]
+        models: super::model::lifecycle::ModelLifecycle::new(app_work),
     }
 }
 
@@ -45,10 +49,26 @@ impl VoiceRuntime {
 
     pub fn begin_closing(&self) {
         self.work.begin_closing();
+        #[cfg(any(target_os = "macos", windows))]
+        self.models.begin_closing();
     }
 
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
+        #[cfg(any(target_os = "macos", windows))]
+        {
+            let (work, models) = tokio::join!(
+                self.work.stop_and_wait(deadline),
+                self.models.stop_and_wait(deadline)
+            );
+            work && models
+        }
+        #[cfg(target_os = "linux")]
         self.work.stop_and_wait(deadline).await
+    }
+
+    #[cfg(any(target_os = "macos", windows))]
+    pub(crate) fn models(&self) -> &super::model::lifecycle::ModelLifecycle {
+        &self.models
     }
 
     #[cfg(test)]

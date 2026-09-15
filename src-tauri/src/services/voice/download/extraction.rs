@@ -59,7 +59,7 @@ pub(super) fn extract_verified(
     verify_manifest(destination, &entry.files)
 }
 
-pub(super) fn verify_file(path: &Path, bytes: u64, sha256: &str) -> Result<(), String> {
+pub(crate) fn verify_file(path: &Path, bytes: u64, sha256: &str) -> Result<(), String> {
     let mut file = fs::File::open(path).map_err(|_| archive_error())?;
     let metadata = file.metadata().map_err(|_| archive_error())?;
     if !metadata.is_file() || metadata.len() != bytes {
