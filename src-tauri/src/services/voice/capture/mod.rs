@@ -6,3 +6,6 @@ pub mod ring;
 pub mod session;
 pub mod stream;
 pub mod window_events;
+
+#[cfg(test)]
+mod activity_tests;

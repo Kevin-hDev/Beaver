@@ -1,5 +1,5 @@
 use crate::services::voice::{
-    limits::{MAX_CAPTURE_SECONDS, NO_SPEECH_GUARD_MS},
+    limits::{MAX_CAPTURE_SECONDS, NO_SPEECH_GUARD_MS, VOICE_SAMPLE_RATE},
     types::{VoiceMaxDuration, VoiceSilenceTimeout},
 };
 
@@ -17,11 +17,28 @@ pub enum CaptureStopReason {
 pub struct SpeechClock {
     spoken_ms: u64,
     detected: bool,
+    first_speech_sample: Option<usize>,
+    last_speech_sample: usize,
 }
 
 impl SpeechClock {
-    pub fn add_segment(&mut self, duration_ms: u64) {
+    pub(crate) fn add_spoken_ms(&mut self, duration_ms: u64) {
         self.spoken_ms = self.spoken_ms.saturating_add(duration_ms);
+    }
+
+    pub(crate) fn add_segment(&mut self, start: usize, samples: usize) {
+        self.detected = true;
+        self.first_speech_sample = Some(
+            self.first_speech_sample
+                .map_or(start, |first| first.min(start)),
+        );
+        self.last_speech_sample = self.last_speech_sample.max(start.saturating_add(samples));
+        self.add_spoken_ms(
+            u64::try_from(samples)
+                .unwrap_or(u64::MAX)
+                .saturating_mul(1_000)
+                / u64::from(VOICE_SAMPLE_RATE),
+        );
     }
 
     pub const fn spoken_ms(self) -> u64 {
@@ -32,6 +49,16 @@ impl SpeechClock {
         self.detected || self.spoken_ms != 0
     }
 
+    pub fn inference_range(self, total_samples: usize) -> Option<std::ops::Range<usize>> {
+        const CONTEXT_SAMPLES: usize = 450 * VOICE_SAMPLE_RATE as usize / 1_000;
+        let start = self.first_speech_sample?.saturating_sub(CONTEXT_SAMPLES);
+        let end = self
+            .last_speech_sample
+            .saturating_add(CONTEXT_SAMPLES)
+            .min(total_samples);
+        (start < end).then_some(start..end)
+    }
+
     pub fn observe_vad(
         &mut self,
         vad: &sherpa_onnx::VoiceActivityDetector,
@@ -40,21 +67,23 @@ impl SpeechClock {
     ) -> bool {
         vad.accept_waveform(samples);
         let currently_speaking = vad.detected();
+        let mut speech_observed = currently_speaking;
         self.detected |= currently_speaking;
         if flush {
             vad.flush();
         }
         while let Some(segment) = vad.front() {
-            self.detected = true;
-            let duration_ms = u64::try_from(segment.n())
-                .unwrap_or(0)
-                .saturating_mul(1_000)
-                / 16_000;
-            self.add_segment(duration_ms);
+            speech_observed = true;
+            if let (Ok(start), Ok(samples)) = (
+                usize::try_from(segment.start()),
+                usize::try_from(segment.n()),
+            ) {
+                self.add_segment(start, samples);
+            }
             drop(segment);
             vad.pop();
         }
-        currently_speaking
+        speech_observed
     }
 }
 
@@ -116,90 +145,5 @@ pub const fn automatic_stop_reason(
             Some(CaptureStopReason::Silence)
         }
         _ => None,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn thinking_after_first_speech_never_triggers_the_initial_guard() {
-        assert!(!no_speech_guard_reached(119_999, false));
-        assert!(no_speech_guard_reached(120_000, false));
-        assert!(!no_speech_guard_reached(120_001, true));
-    }
-
-    #[test]
-    fn silence_values_are_exact_and_never_is_unbounded() {
-        assert_eq!(
-            silence_timeout_ms(VoiceSilenceTimeout::ThreeSeconds),
-            Some(3_000)
-        );
-        assert_eq!(
-            silence_timeout_ms(VoiceSilenceTimeout::ThirtySeconds),
-            Some(30_000)
-        );
-        assert_eq!(silence_timeout_ms(VoiceSilenceTimeout::Never), None);
-    }
-
-    #[test]
-    fn all_duration_values_stay_under_the_rust_hard_limit() {
-        assert_eq!(max_duration_ms(VoiceMaxDuration::Two), 120_000);
-        assert_eq!(max_duration_ms(VoiceMaxDuration::Five), 300_000);
-        assert_eq!(max_duration_ms(VoiceMaxDuration::Ten), 600_000);
-        assert_eq!(max_duration_ms(VoiceMaxDuration::Twenty), 1_200_000);
-        assert_eq!(max_duration_ms(VoiceMaxDuration::Thirty), 1_800_000);
-    }
-
-    #[test]
-    fn speech_clock_saturates_instead_of_wrapping() {
-        let mut clock = SpeechClock::default();
-        clock.add_segment(u64::MAX);
-        clock.add_segment(1);
-        assert_eq!(clock.spoken_ms(), u64::MAX);
-    }
-
-    #[test]
-    fn stop_reasons_distinguish_no_speech_silence_limit_and_disconnect() {
-        let none = SpeechClock::default();
-        assert_eq!(
-            automatic_stop_reason(
-                120_000,
-                none,
-                120_000,
-                VoiceSilenceTimeout::Never,
-                VoiceMaxDuration::Thirty,
-                false,
-                false,
-            ),
-            Some(CaptureStopReason::NoSpeech)
-        );
-        let mut spoken = SpeechClock::default();
-        spoken.add_segment(500);
-        assert_eq!(
-            automatic_stop_reason(
-                6_000,
-                spoken,
-                5_000,
-                VoiceSilenceTimeout::FiveSeconds,
-                VoiceMaxDuration::Thirty,
-                false,
-                false,
-            ),
-            Some(CaptureStopReason::Silence)
-        );
-        assert_eq!(
-            automatic_stop_reason(
-                1,
-                spoken,
-                0,
-                VoiceSilenceTimeout::Never,
-                VoiceMaxDuration::Thirty,
-                true,
-                false,
-            ),
-            Some(CaptureStopReason::Disconnected)
-        );
     }
 }

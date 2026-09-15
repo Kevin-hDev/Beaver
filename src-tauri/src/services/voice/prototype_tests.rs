@@ -9,7 +9,7 @@ use zeroize::Zeroize;
 
 use super::{
     audio_buffer::AudioBuffer,
-    capture::{session::CaptureSession, stream::open_input_stream},
+    capture::{activity::SpeechClock, session::CaptureSession, stream::open_input_stream},
     download::{
         download_archive, ensure_disk_available, install_archive, installed_receipt, load_catalog,
         verify_file, VoiceCatalogEntry, VoiceEngine, VoiceModelRole,
@@ -26,6 +26,7 @@ use super::{
 const DATA_ENV: &str = "VOICE_PROTOTYPE_DATA_DIR";
 const CORPUS_ENV: &str = "VOICE_TEST_CORPUS_DIR";
 const REPORT_ENV: &str = "VOICE_PROTOTYPE_REPORT";
+const PROBE_PCM_ENV: &str = "VOICE_PROBE_PCM";
 const MAX_MANIFEST_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_FIXTURES: usize = 60;
 const MAX_CORPUS_BYTES: u64 = 2 * 1024 * 1024 * 1024;
@@ -352,6 +353,66 @@ async fn native_capture_finish_keeps_pending_microphone_samples() {
             .stop_and_wait(Instant::now() + std::time::Duration::from_secs(5))
             .await
     );
+}
+
+#[test]
+#[ignore = "loads native Parakeet and a caller-provided 16 kHz signed PCM probe"]
+fn native_parakeet_transcribes_after_leading_silence() {
+    let data_dir = prototype_data_dir();
+    let catalog = load_catalog(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let asr = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.id == "parakeet-tdt-v3-int8")
+        .unwrap();
+    let vad = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.role == VoiceModelRole::Vad)
+        .unwrap();
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let lifecycle = ModelLifecycle::new(coordinator.work_supervisor());
+    let mut lease = lifecycle
+        .acquire(
+            &data_dir,
+            asr,
+            vad,
+            ExecutionProfile::cpu(8).unwrap(),
+            VoiceUnloadDelay::Immediately,
+        )
+        .unwrap();
+    let bytes = std::fs::read(std::env::var(PROBE_PCM_ENV).unwrap()).unwrap();
+    let (pairs, remainder) = bytes.as_chunks::<2>();
+    assert!(remainder.is_empty());
+    let pcm: Vec<i16> = pairs.iter().map(|pair| i16::from_le_bytes(*pair)).collect();
+    let waveform = as_waveform(&pcm);
+    let detector = lease.prepared().vad();
+    detector.reset();
+    let mut clock = SpeechClock::default();
+    for chunk in waveform.chunks(800) {
+        clock.observe_vad(detector, chunk, false);
+    }
+    clock.observe_vad(detector, &[], true);
+    let mut audio = AudioBuffer::default();
+    audio.append(&pcm, 0).unwrap();
+    audio
+        .trim_to(
+            clock
+                .inference_range(audio.samples().len())
+                .expect("speech range"),
+        )
+        .unwrap();
+    let mut input = as_waveform(audio.samples());
+    let result =
+        recognize_probe(lease.prepared_mut(), &input, &EffectiveLanguage::Automatic).unwrap();
+    input.zeroize();
+    eprintln!(
+        "speech_ms={} kept_ms={} text={:?}",
+        clock.spoken_ms(),
+        audio.samples().len() * 1_000 / 16_000,
+        result.text
+    );
+    assert!(!result.text.trim().is_empty());
 }
 
 struct Evaluation {

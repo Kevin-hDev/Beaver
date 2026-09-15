@@ -1,3 +1,4 @@
+use std::ops::Range;
 use zeroize::Zeroize;
 
 use crate::services::voice::{errors::VoiceError, limits::MAX_PCM_SAMPLES};
@@ -31,6 +32,19 @@ impl AudioBuffer {
         self.lost_samples
     }
 
+    pub fn trim_to(&mut self, range: Range<usize>) -> Result<(), VoiceError> {
+        if range.start >= range.end || range.end > self.samples.len() {
+            return Err(VoiceError::invalid_settings());
+        }
+        self.samples[..range.start].zeroize();
+        self.samples[range.end..].zeroize();
+        let kept = range.len();
+        self.samples.copy_within(range, 0);
+        self.samples[kept..].zeroize();
+        self.samples.truncate(kept);
+        Ok(())
+    }
+
     pub fn clear(&mut self) {
         self.samples.zeroize();
         self.samples.clear();
@@ -61,5 +75,13 @@ mod tests {
         buffer.append(&[1], u64::MAX).unwrap();
         buffer.append(&[2], 1).unwrap();
         assert_eq!(buffer.lost_samples(), u64::MAX);
+    }
+
+    #[test]
+    fn trim_zeroizes_outer_silence_and_keeps_the_requested_range() {
+        let mut buffer = AudioBuffer::default();
+        buffer.append(&[0, 1, 2, 3, 0], 0).unwrap();
+        buffer.trim_to(1..4).unwrap();
+        assert_eq!(buffer.samples(), [1, 2, 3]);
     }
 }

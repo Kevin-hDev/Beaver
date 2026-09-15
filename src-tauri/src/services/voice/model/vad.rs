@@ -5,11 +5,12 @@ use sherpa_onnx::{SileroVadModelConfig, VadModelConfig, VoiceActivityDetector};
 use super::recognizer::{model_path, ExecutionProfile};
 
 pub(super) fn load(root: &Path, profile: &ExecutionProfile) -> Option<VoiceActivityDetector> {
+    // Short words need a brief onset; 450 ms keeps natural word boundaries around detected speech.
     let silero_vad = SileroVadModelConfig {
         model: Some(model_path(root, "silero_vad.onnx")),
-        threshold: 0.5,
-        min_silence_duration: 0.25,
-        min_speech_duration: 0.25,
+        threshold: 0.3,
+        min_silence_duration: 0.45,
+        min_speech_duration: 0.06,
         max_speech_duration: 30.0,
         ..Default::default()
     };

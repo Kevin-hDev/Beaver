@@ -11,7 +11,6 @@ use crate::services::voice::{
 };
 
 const MAX_SLICE_SAMPLES: usize = 32 * 16_000;
-const INFERENCE_SILENCE_TAIL_SAMPLES: usize = 16_000 / 4;
 const ENGINE_VERSION: &str = "sherpa-onnx-1.13.8";
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -137,7 +136,6 @@ fn recognize_with_limit(
     if pcm.is_empty() || pcm.len() > max_samples || pcm.iter().any(|sample| !sample.is_finite()) {
         return Err(VoiceError::invalid_settings());
     }
-    let mut inference_pcm = append_inference_silence(pcm)?;
     let stream = prepared.recognizer.create_stream();
     if prepared.engine == VoiceEngine::CohereTranscribe {
         if let EffectiveLanguage::Language(code) = language {
@@ -145,10 +143,9 @@ fn recognize_with_limit(
             stream.set_option("language", code);
         }
     }
-    stream.accept_waveform(16_000, &inference_pcm);
+    stream.accept_waveform(16_000, pcm);
     prepared.recognizer.decode(&stream);
     let result = stream.get_result();
-    inference_pcm.zeroize();
     let result = result.ok_or_else(VoiceError::configuration_unavailable)?;
     if result.text.chars().count() > MAX_TRANSCRIPT_CHARS {
         return Err(VoiceError::configuration_unavailable());
@@ -170,17 +167,6 @@ fn recognize_with_limit(
         durations_ms: measured_times(result.durations, result.tokens.len()),
         tokens: result.tokens,
     })
-}
-
-pub(super) fn append_inference_silence(pcm: &[f32]) -> Result<Vec<f32>, VoiceError> {
-    let length = pcm
-        .len()
-        .checked_add(INFERENCE_SILENCE_TAIL_SAMPLES)
-        .ok_or_else(VoiceError::invalid_settings)?;
-    let mut padded = Vec::with_capacity(length);
-    padded.extend_from_slice(pcm);
-    padded.resize(length, 0.0);
-    Ok(padded)
 }
 
 pub(super) fn base_config(profile: &ExecutionProfile) -> OfflineRecognizerConfig {

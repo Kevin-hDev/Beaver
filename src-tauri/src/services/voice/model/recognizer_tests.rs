@@ -1,6 +1,6 @@
 use super::{
     cohere, parakeet, qwen,
-    recognizer::{append_inference_silence, measured_times, ExecutionProfile},
+    recognizer::{measured_times, ExecutionProfile},
 };
 
 #[test]
@@ -46,12 +46,4 @@ fn timestamps_are_kept_only_when_the_native_shape_is_usable() {
     );
     assert_eq!(measured_times(Some(vec![0.0]), 2), None);
     assert_eq!(measured_times(Some(vec![f32::NAN]), 1), None);
-}
-
-#[test]
-fn inference_gets_a_quarter_second_to_finalize_its_last_word() {
-    let padded = append_inference_silence(&[0.25, -0.25]).unwrap();
-    assert_eq!(&padded[..2], &[0.25, -0.25]);
-    assert_eq!(padded.len(), 4_002);
-    assert!(padded[2..].iter().all(|sample| *sample == 0.0));
 }

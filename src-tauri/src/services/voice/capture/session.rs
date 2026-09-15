@@ -74,11 +74,11 @@ impl CaptureSession {
             .map(|sample| f32::from(*sample) / i16::MAX as f32)
             .collect();
         pcm.zeroize();
-        let speaking = self.speech.observe_vad(vad, &waveform, false);
+        let speech_observed = self.speech.observe_vad(vad, &waveform, false);
         waveform.zeroize();
 
         let elapsed_ms = u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
-        if speaking {
+        if speech_observed {
             self.last_speech_ms = elapsed_ms;
         }
         let silence_ms = elapsed_ms.saturating_sub(self.last_speech_ms);
@@ -115,6 +115,9 @@ impl CaptureSession {
         tail.zeroize();
         self.speech.observe_vad(vad, &waveform, true);
         waveform.zeroize();
+        if let Some(range) = self.speech.inference_range(self.audio.samples().len()) {
+            self.audio.trim_to(range)?;
+        }
         Ok((self.audio, self.speech.spoken_ms()))
     }
 }
