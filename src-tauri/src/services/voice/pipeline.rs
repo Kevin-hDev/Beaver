@@ -53,7 +53,7 @@ fn run(
         .find(|item| item.role == VoiceModelRole::Vad)
         .ok_or_else(VoiceError::configuration_unavailable)?;
     let threads = std::thread::available_parallelism().map_or(1, |count| count.get().min(8)) as i32;
-    let mut lease = runtime.models().acquire(
+    let mut model = runtime.models().acquire_for_capture(
         &crate::services::paths::data_dir(),
         asr,
         vad,
@@ -76,6 +76,7 @@ fn run(
     let started = Instant::now();
     loop {
         std::thread::sleep(POLL_INTERVAL);
+        model.poll_loading()?;
         let phase = runtime.snapshot().phase;
         if matches!(
             phase,
@@ -84,7 +85,7 @@ fn run(
             break;
         }
         let poll = capture.poll(
-            lease.prepared_mut(),
+            model.vad(),
             &windows,
             settings.silence_timeout,
             settings.max_duration,
@@ -126,13 +127,17 @@ fn run(
     }
     let phase = runtime.snapshot().phase;
     if phase == VoicePhase::Stopping {
+        // Le micro ferme tout de suite, mais l'opération reste visible et
+        // réservée jusqu'au retour du chargement natif déjà engagé.
+        drop(capture);
+        drop(model.into_ready());
         runtime
             .coordinator_for_pipeline()
             .stop_without_result(operation_id)?;
         emit(app, runtime);
         return Ok(());
     }
-    let (mut audio, speech_ms) = capture.finish(lease.prepared_mut())?;
+    let (mut audio, speech_ms) = capture.finish(model.vad())?;
     let capture_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
     runtime.coordinator_for_pipeline().record_capture(
         operation_id,
@@ -141,6 +146,7 @@ fn run(
         audio.lost_samples() > 0,
         0.0,
     )?;
+    let mut lease = model.into_ready()?;
     let effective = effective_language(asr.engine, language.unwrap_or(&settings.language));
     let compute_started = Instant::now();
     let result = transcribe(&mut lease, &mut audio, &effective)?;

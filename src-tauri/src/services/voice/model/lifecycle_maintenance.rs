@@ -36,7 +36,9 @@ impl ModelLifecycle {
             std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
         >,
     ) -> Self {
-        let maintenance = ServiceWorkSupervisor::new(app_work);
+        // Deux places : une boucle de maintenance permanente et, au plus, un
+        // chargement ASR. La réservation du modèle interdit un second chargement.
+        let work = ServiceWorkSupervisor::new(app_work);
         let (plan, receiver) = tokio::sync::watch::channel(UnloadPlan {
             generation: 0,
             deadline: None,
@@ -45,7 +47,7 @@ impl ModelLifecycle {
             state: std::sync::Mutex::new(LifecycleState::default()),
             plan,
         });
-        if maintenance
+        if work
             .spawn({
                 let inner = std::sync::Arc::downgrade(&inner);
                 move |cancel| run(inner, receiver, cancel, coordinator)
@@ -55,7 +57,7 @@ impl ModelLifecycle {
             ::log::warn!("[voice] model maintenance unavailable");
             lock(&inner.state).closing = true;
         }
-        Self { inner, maintenance }
+        Self { inner, work }
     }
 
     pub fn begin_closing(&self) {
@@ -64,11 +66,11 @@ impl ModelLifecycle {
             state.closing = true;
             state.generation = state.generation.wrapping_add(1);
         }
-        self.maintenance.begin_closing();
+        self.work.begin_closing();
     }
 
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
-        self.maintenance.stop_and_wait(deadline).await
+        self.work.stop_and_wait(deadline).await
     }
 }
 

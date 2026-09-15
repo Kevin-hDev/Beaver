@@ -19,6 +19,27 @@ fn every_unload_setting_has_one_exact_deadline() {
 }
 
 #[tokio::test]
+async fn model_work_tracks_maintenance_and_one_asr_load() {
+    let exit = AppExitCoordinator::initialize().unwrap();
+    let lifecycle = ModelLifecycle::new(exit.work_supervisor());
+    assert_eq!(lifecycle.work.diagnostics().active, 1);
+
+    let loading = lifecycle.work.try_admit().unwrap();
+    let cancellation = loading.cancellation();
+    assert_eq!(lifecycle.work.diagnostics().active, 2);
+    assert!(lifecycle.work.try_admit().is_err());
+
+    lifecycle.begin_closing();
+    assert!(cancellation.is_cancelled());
+    drop(loading);
+    assert!(
+        lifecycle
+            .stop_and_wait(std::time::Instant::now() + std::time::Duration::from_secs(1))
+            .await
+    );
+}
+
+#[tokio::test]
 async fn occupied_asr_and_shared_vad_cannot_be_removed() {
     let exit = AppExitCoordinator::initialize().unwrap();
     let lifecycle = ModelLifecycle::new(exit.work_supervisor());

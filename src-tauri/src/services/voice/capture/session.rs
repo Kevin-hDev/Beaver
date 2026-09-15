@@ -6,9 +6,9 @@ use crate::services::voice::{
     audio_buffer::AudioBuffer,
     errors::VoiceError,
     limits::MAX_PCM_SAMPLES,
-    model::recognizer::PreparedModel,
     types::{VoiceInputDevice, VoiceMaxDuration, VoiceSilenceTimeout},
 };
+use sherpa_onnx::VoiceActivityDetector;
 
 use super::{
     activity::{automatic_stop_reason, CaptureStopReason, SpeechClock},
@@ -57,7 +57,7 @@ impl CaptureSession {
 
     pub fn poll(
         &mut self,
-        model: &mut PreparedModel,
+        vad: &VoiceActivityDetector,
         windows: &WindowEventState,
         silence_timeout: VoiceSilenceTimeout,
         max_duration: VoiceMaxDuration,
@@ -74,7 +74,7 @@ impl CaptureSession {
             .map(|sample| f32::from(*sample) / i16::MAX as f32)
             .collect();
         pcm.zeroize();
-        let speaking = self.speech.observe_vad(model.vad(), &waveform, false);
+        let speaking = self.speech.observe_vad(vad, &waveform, false);
         waveform.zeroize();
 
         let elapsed_ms = u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
@@ -99,13 +99,13 @@ impl CaptureSession {
         })
     }
 
-    pub fn finish(mut self, model: &mut PreparedModel) -> Result<(AudioBuffer, u64), VoiceError> {
+    pub fn finish(mut self, vad: &VoiceActivityDetector) -> Result<(AudioBuffer, u64), VoiceError> {
         let mut tail = self.normalizer.finish();
         let remaining = MAX_PCM_SAMPLES.saturating_sub(self.audio.samples().len());
         tail.truncate(remaining);
         self.audio.append(&tail, 0)?;
         tail.zeroize();
-        self.speech.observe_vad(model.vad(), &[], true);
+        self.speech.observe_vad(vad, &[], true);
         Ok((self.audio, self.speech.spoken_ms()))
     }
 }

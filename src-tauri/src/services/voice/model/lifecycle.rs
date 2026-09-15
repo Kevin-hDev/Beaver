@@ -16,14 +16,14 @@ use super::{
 #[derive(Clone)]
 pub struct ModelLifecycle {
     pub(super) inner: Arc<LifecycleInner>,
-    pub(super) maintenance: crate::services::work_registry::ServiceWorkSupervisor<1>,
+    pub(super) work: crate::services::work_registry::ServiceWorkSupervisor<2>,
 }
 
 pub struct ModelLease {
-    inner: Arc<LifecycleInner>,
-    model: Option<PreparedModel>,
-    key: ModelKey,
-    delay: VoiceUnloadDelay,
+    pub(super) inner: Arc<LifecycleInner>,
+    pub(super) model: Option<PreparedModel>,
+    pub(super) key: ModelKey,
+    pub(super) delay: VoiceUnloadDelay,
 }
 
 impl ModelLifecycle {
@@ -122,17 +122,17 @@ impl ModelLifecycle {
         Ok(state.loaded.take())
     }
 
-    fn fail_acquire(&self, key: &ModelKey) {
+    pub(super) fn fail_acquire(&self, key: &ModelKey) {
         let mut state = lock(&self.inner.state);
         if state.occupied.as_ref() == Some(key) {
             state.occupied = None;
         }
     }
 
-    pub(super) fn verify_once(
+    pub(super) fn verify_once<const N: usize>(
         &self,
         data_dir: &Path,
-        receipts: [&InstallationReceipt; 2],
+        receipts: [&InstallationReceipt; N],
     ) -> Result<(), VoiceError> {
         for receipt in receipts {
             let fingerprint = (receipt.entry_id.clone(), receipt.revision.clone());
@@ -151,40 +151,12 @@ impl ModelLifecycle {
 }
 
 impl ModelLease {
+    pub fn prepared(&self) -> &PreparedModel {
+        self.model.as_ref().expect("model lease owns the model")
+    }
+
     pub fn prepared_mut(&mut self) -> &mut PreparedModel {
         self.model.as_mut().expect("model lease owns the model")
-    }
-}
-
-impl Drop for ModelLease {
-    fn drop(&mut self) {
-        let Some(model) = self.model.take() else {
-            return;
-        };
-        let mut state = lock(&self.inner.state);
-        state.occupied = None;
-        state.generation = state.generation.wrapping_add(1);
-        let generation = state.generation;
-        if state.closing || self.delay == VoiceUnloadDelay::Immediately {
-            drop(state);
-            drop(model);
-            return;
-        }
-        state.loaded = Some(LoadedModel {
-            key: self.key.clone(),
-            model,
-        });
-        if self
-            .inner
-            .plan
-            .send(UnloadPlan {
-                generation,
-                deadline: super::lifecycle_maintenance::deadline(self.delay),
-            })
-            .is_err()
-        {
-            drop(state.loaded.take());
-        }
     }
 }
 
@@ -194,7 +166,10 @@ impl RemovalGate for ModelLifecycle {
     }
 }
 
-fn receipt(entry: &VoiceCatalogEntry, data_dir: &Path) -> Result<InstallationReceipt, VoiceError> {
+pub(super) fn receipt(
+    entry: &VoiceCatalogEntry,
+    data_dir: &Path,
+) -> Result<InstallationReceipt, VoiceError> {
     installed_receipt(entry, data_dir)
         .map_err(|_| VoiceError::configuration_unavailable())?
         .ok_or_else(VoiceError::configuration_unavailable)

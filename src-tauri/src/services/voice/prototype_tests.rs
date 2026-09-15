@@ -9,6 +9,7 @@ use zeroize::Zeroize;
 
 use super::{
     audio_buffer::AudioBuffer,
+    capture::stream::open_input_stream,
     download::{
         download_archive, ensure_disk_available, install_archive, installed_receipt, load_catalog,
         verify_file, VoiceCatalogEntry, VoiceEngine, VoiceModelRole,
@@ -19,7 +20,7 @@ use super::{
         recognizer::{recognize_probe, EffectiveLanguage, ExecutionProfile},
     },
     transcription::transcribe,
-    types::VoiceUnloadDelay,
+    types::{VoiceInputDevice, VoiceUnloadDelay},
 };
 
 const DATA_ENV: &str = "VOICE_PROTOTYPE_DATA_DIR";
@@ -246,6 +247,56 @@ async fn native_model_matrix() {
             corpus_revision: manifest.dataset_revision,
             models: reports,
         },
+    );
+}
+
+#[tokio::test]
+#[ignore = "loads native Parakeet and opens the real microphone"]
+async fn native_parakeet_opens_microphone_under_two_seconds() {
+    let data_dir = prototype_data_dir();
+    let catalog = load_catalog(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let asr = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.id == "parakeet-tdt-v3-int8")
+        .unwrap();
+    let vad = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.role == VoiceModelRole::Vad)
+        .unwrap();
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let lifecycle = ModelLifecycle::new(coordinator.work_supervisor());
+    let started = Instant::now();
+    let preparation = lifecycle
+        .acquire_for_capture(
+            &data_dir,
+            asr,
+            vad,
+            ExecutionProfile::cpu(8).unwrap(),
+            VoiceUnloadDelay::OnExit,
+        )
+        .unwrap();
+    let vad_ready_ms = elapsed_ms(started);
+    let stream = open_input_stream(&VoiceInputDevice::SystemDefault).unwrap();
+    stream.start().unwrap();
+    let listening_ready_ms = elapsed_ms(started);
+    assert!(
+        listening_ready_ms < 2_000,
+        "microphone ready: {listening_ready_ms} ms"
+    );
+    let lease = preparation.into_ready().unwrap();
+    let asr_ready_ms = elapsed_ms(started);
+    eprintln!(
+        "vad_ready_ms={vad_ready_ms} listening_ready_ms={listening_ready_ms} asr_ready_ms={asr_ready_ms}"
+    );
+    drop(stream);
+    drop(lease);
+    lifecycle.begin_closing();
+    assert!(
+        lifecycle
+            .stop_and_wait(Instant::now() + std::time::Duration::from_secs(5))
+            .await
     );
 }
 
