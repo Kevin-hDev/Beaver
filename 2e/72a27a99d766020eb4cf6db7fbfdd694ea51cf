@@ -13,11 +13,11 @@ Validation :
 - tests capture : 15 réussis.
 - tests actions vocales : 6 réussis.
 - suite Rust sans le corpus externe : 5721 réussis, 28 ignorés, 1 filtré explicitement.
-- preuve native Parakeet installé : capture prête en 23 ms ; ASR complet prêt en 1873 ms.
+- preuve native Parakeet installé : VAD prêt en 18 ms ; microphone système ouvert et actif en 303 ms ; ASR complet prêt en 1856 ms.
 - La suite Voice non filtrée exige toujours VOICE_TEST_CORPUS_DIR pour son test de corpus externe, exigence préexistante consignée dans PREUVES-PROTOTYPE.md.
 
 Points de revue :
 - courses d’annulation autour du canal de rendez-vous ;
 - restitution de la réservation et du cache lorsque le receveur disparaît ;
-- attente du worker bloquant enregistré pendant la fermeture ;
+- attente du travail bloquant enregistré pendant la fermeture ;
 - validation Windows réelle encore requise pour la qualification finale.
