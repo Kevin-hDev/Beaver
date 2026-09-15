@@ -1,0 +1,13 @@
+Correctif post-implémentation — paquet macOS de développement
+
+Cause : le lanceur CEF Dev copiait les skills mais pas resources/voice-catalog.json. voice_get_catalog échouait donc au montage et VoiceSettingsSection retournait null. Le plist Dev ne déclarait pas non plus l'usage du microphone.
+
+Correction : copie explicite du catalogue dans Contents/Resources/resources, ajout de NSMicrophoneUsageDescription au plist Dev et fixture correspondante.
+
+Preuves :
+- test Rust exact : 1 réussi ;
+- tests du profil CEF macOS : 11 réussis ;
+- plutil source et paquet : OK ;
+- cargo fmt et git diff --check : OK ;
+- paquet Dev : catalogue copié, signature valide ;
+- vérification visuelle : Mode vocal visible dans Réglages > Avancé après Ollama.
