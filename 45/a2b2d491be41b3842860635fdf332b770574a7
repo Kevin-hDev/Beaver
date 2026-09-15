@@ -1,0 +1,12 @@
+Correctif post-implémentation — boutons du premier usage vocal
+
+Cause : les deux actions utilisaient les variantes btn-primary et btn-secondary mais omettaient btn-sm, qui est l'autorité commune pour la hauteur et le rembourrage horizontal des boutons texte Beaver.
+
+Correction : ajout de btn-sm à Plus tard et Continuer, sans nouveau CSS ni nouvelle valeur.
+
+Preuves :
+- test ciblé : 5 tests réussis, dont le contrat de classe des deux boutons ;
+- TypeScript réussi ;
+- ESLint ciblé réussi ;
+- git diff --check réussi ;
+- vérification visuelle réelle dans Beaver Dev : hauteur et marges internes standard visibles.
