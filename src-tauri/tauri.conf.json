@@ -85,7 +85,14 @@
       ],
       "files": {
         "Frameworks": "target/cef-runtime/macos/helpers",
-        "Resources/cef/LICENSE.txt": "target/cef-runtime/macos/LICENSE.txt"
+        "Resources/cef/LICENSE.txt": "target/cef-runtime/macos/LICENSE.txt",
+        "Resources/fr.lproj/InfoPlist.strings": "resources/macos-localizations/fr.lproj/InfoPlist.strings",
+        "Resources/en.lproj/InfoPlist.strings": "resources/macos-localizations/en.lproj/InfoPlist.strings",
+        "Resources/es.lproj/InfoPlist.strings": "resources/macos-localizations/es.lproj/InfoPlist.strings",
+        "Resources/de.lproj/InfoPlist.strings": "resources/macos-localizations/de.lproj/InfoPlist.strings",
+        "Resources/it.lproj/InfoPlist.strings": "resources/macos-localizations/it.lproj/InfoPlist.strings",
+        "Resources/zh.lproj/InfoPlist.strings": "resources/macos-localizations/zh.lproj/InfoPlist.strings",
+        "Resources/ja.lproj/InfoPlist.strings": "resources/macos-localizations/ja.lproj/InfoPlist.strings"
       }
     }
   }

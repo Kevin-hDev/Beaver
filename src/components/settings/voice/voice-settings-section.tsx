@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { showToast } from "@/lib/toast-emitter";
 import { IS_LINUX } from "@/lib/platform";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsSectionFrame } from "@/components/ui/settings-section-frame";
@@ -35,14 +36,15 @@ export function VoiceSettingsSection() {
     return () => cleanupTauriListener(unlisten);
   }, [refresh]);
   const save = async (patch: VoiceSettingsPatch) => setSettings(await updateVoiceSettings(patch));
+  const reportFailure = () => showToast(t("errors.operationFailed"), "error");
   if (IS_LINUX || !settings) return null;
   const selected = catalog.find((item) => item.model === settings.model);
   return <SettingsSectionFrame title={t("voice.settings.title")}>
     <SettingsCard>
-      <SettingsRow title={t("voice.settings.enabled")} description={t("voice.settings.enabledDescription")}><ToggleSwitch checked={settings.enabled} ariaLabel={t("voice.settings.enabled")} onCheckedChange={(enabled) => void save({ enabled })} /></SettingsRow>
-      <SettingsRow title={t("voice.settings.model")} description={selected ? `${selected.languages.length} · ${selected.installed ? t("voice.settings.installed") : t("voice.settings.notInstalled")}` : undefined}><SettingsSelect value={settings.model} options={catalog.filter((item) => item.model).map((item) => ({ value: item.model!, label: voiceModelName(item.model!) }))} onChange={(model) => void save({ model: model as VoiceSettings["model"] })} /></SettingsRow>
-      <SettingsRow title={t("voice.settings.advanced")} description={t("voice.settings.advancedDescription")}><button type="button" className="btn btn-sm btn-secondary" onClick={() => { setOpen(true); void refresh(); }}>{t("voice.settings.open")}</button></SettingsRow>
+      <SettingsRow title={t("voice.settings.enabled")} description={t("voice.settings.enabledDescription")}><ToggleSwitch checked={settings.enabled} ariaLabel={t("voice.settings.enabled")} onCheckedChange={(enabled) => void save({ enabled }).catch(reportFailure)} /></SettingsRow>
+      <SettingsRow title={t("voice.settings.model")} description={selected ? `${selected.languages.length} · ${selected.installed ? t("voice.settings.installed") : t("voice.settings.notInstalled")}` : undefined}><SettingsSelect value={settings.model} options={catalog.filter((item) => item.model).map((item) => ({ value: item.model!, label: voiceModelName(item.model!) }))} onChange={(model) => void save({ model: model as VoiceSettings["model"] }).catch(reportFailure)} /></SettingsRow>
+      <SettingsRow title={t("voice.settings.advanced")} description={t("voice.settings.advancedDescription")}><button type="button" className="btn btn-sm btn-secondary" onClick={() => { setOpen(true); void refresh().catch(reportFailure); }}>{t("voice.settings.open")}</button></SettingsRow>
     </SettingsCard>
-    {open && <VoicePanel settings={settings} catalog={catalog} devices={devices} downloads={downloads.downloads} onClose={() => setOpen(false)} onSave={(patch) => void save(patch)} onRefreshDevices={() => void refresh()} onInstall={(id) => void downloads.startDownload({ kind: "voice", modelId: id })} onCancel={(id) => void downloads.cancelDownload(id)} onRemove={(id) => void invoke("voice_dispatch", { action: { action: "uninstall", model_id: id } }).then(refresh)} />}
+    {open && <VoicePanel settings={settings} catalog={catalog} devices={devices} downloads={downloads.downloads} onClose={() => setOpen(false)} onSave={(patch) => void save(patch).catch(reportFailure)} onRefreshDevices={() => void refresh().catch(reportFailure)} onInstall={(id) => void downloads.startDownload({ kind: "voice", modelId: id }).catch(reportFailure)} onCancel={(id) => void downloads.cancelDownload(id).catch(reportFailure)} onResume={(id) => void downloads.resumeDownload(id).catch(reportFailure)} onRemove={(id) => void invoke("voice_dispatch", { action: { action: "uninstall", model_id: id } }).then(refresh).catch(reportFailure)} />}
   </SettingsSectionFrame>;
 }

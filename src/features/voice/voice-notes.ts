@@ -10,7 +10,7 @@ export function voiceNotes(snapshot: VoiceSnapshot | null, draftKey: string): Vo
   if (destination?.kind === "draft" && destination.draft_key === draftKey) {
     notes.push({ kind: "activity", key: `voice.status.${snapshot.phase}` });
   }
-  if (snapshot.recovery?.draftKey === draftKey) {
+  if (snapshot.recovery && (snapshot.recovery.draftKey === draftKey || snapshot.recovery.draftKey === null)) {
     notes.push({ kind: "recovery", key: `voice.recovery.${snapshot.recovery.status}` });
   }
   if (snapshot.error) notes.push({ kind: "error", key: `voice.error.${snapshot.error.code}` });

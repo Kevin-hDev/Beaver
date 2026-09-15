@@ -14,6 +14,7 @@ const idle = {
   available: true, origin: false, activeElsewhere: false, pending: false, dialog: null,
   snapshot: { phase: "idle", operation: null }, begin: vi.fn(), acceptExplanation: vi.fn(),
   closeDialog: vi.fn(), start: vi.fn(), validate: vi.fn(), cancel: vi.fn(),
+  modelDownload: null, cancelDownload: vi.fn(), resumeDownload: vi.fn(),
 };
 
 describe("VoiceControls", () => {
@@ -33,5 +34,20 @@ describe("VoiceControls", () => {
     expect(screen.getByRole("button", { name: "voice.cancel" })).toBeVisible();
     expect(screen.getByRole("button", { name: "voice.validate" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "voice.start" })).toBeNull();
+  });
+
+  it("shows the selected voice model download in the composer", () => {
+    controller.mockReturnValue({ ...idle, modelDownload: { id: "download", status: "running", percent: 42 } });
+    render(<VoiceControls draftKey="session:one" />);
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "42");
+    expect(screen.queryByRole("button", { name: "voice.start" })).toBeNull();
+  });
+
+  it("can resume a suspended voice model download", () => {
+    const resumeDownload = vi.fn();
+    controller.mockReturnValue({ ...idle, resumeDownload, modelDownload: { id: "download", status: "suspended", percent: 42 } });
+    render(<VoiceControls draftKey="session:one" />);
+    screen.getByRole("button", { name: "modelDownloads.resume" }).click();
+    expect(resumeDownload).toHaveBeenCalledWith("download");
   });
 });

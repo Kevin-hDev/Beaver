@@ -120,7 +120,10 @@ impl VoiceCoordinator {
     }
 
     pub fn stop_without_result(&mut self, operation_id: &str) -> Result<(), VoiceError> {
-        let operation = self.operation.take().ok_or_else(VoiceError::invalid_transition)?;
+        let operation = self
+            .operation
+            .take()
+            .ok_or_else(VoiceError::invalid_transition)?;
         if operation.id != operation_id {
             self.operation = Some(operation);
             return Err(VoiceError::invalid_transition());
@@ -131,7 +134,11 @@ impl VoiceCoordinator {
     }
 
     pub fn fail(&mut self, operation_id: &str, error: VoiceError) {
-        if self.operation.as_ref().is_some_and(|item| item.id == operation_id) {
+        if self
+            .operation
+            .as_ref()
+            .is_some_and(|item| item.id == operation_id)
+        {
             self.operation.take();
             self.error = Some(error);
             self.bump();

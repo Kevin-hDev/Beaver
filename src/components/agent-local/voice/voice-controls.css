@@ -13,5 +13,6 @@
 .vc-notes { display: grid; gap: var(--space-xs); padding: 0 var(--space-sm) var(--space-xs); }
 .vc-note { color: var(--ink-muted); font-size: var(--text-xs); }
 .vc-note-error { color: var(--danger); }
+.vc-recovery-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .vc-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); padding-top: var(--space-md); }
 .vc-language-options { display: grid; gap: var(--space-sm); }

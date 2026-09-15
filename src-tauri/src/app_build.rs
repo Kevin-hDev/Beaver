@@ -61,10 +61,6 @@ fn build_with_mode(
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
     let builder = crate::services::extensions::ui_protocol::register(builder, ui_startup.clone());
-    #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-    let builder = builder.manage(crate::services::voice_probe::VoiceProbeRuntime::new(
-        exit_coordinator.work_supervisor(),
-    ));
     let ollama_manager = runtime.ollama.clone();
     let builder = builder
         .manage(OllamaClient::new(ollama_manager))
@@ -132,8 +128,6 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "macos")]
     crate::macos_termination::install(app.handle())
         .map_err(|_| std::io::Error::other("native termination hook unavailable"))?;
-    #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-    crate::services::voice_probe_exit::start_if_requested(app.handle());
     report_lifecycle(LifecycleStage::SetupEntered);
     let startup_cutoff = chrono::Utc::now();
     let background = app

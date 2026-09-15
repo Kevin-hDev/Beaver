@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import i18n from "@/i18n";
+import { showToast } from "@/lib/toast-emitter";
 import { IS_LINUX } from "@/lib/platform";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
+import { useModelDownloads } from "@/hooks/use-model-downloads";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesVoiceShortcut } from "./voice-keyboard";
 import type { VoiceLanguage, VoiceSettings } from "@/types/voice.generated";
 import { dispatchVoiceAction, getVoiceCatalog, getVoiceSettings, listVoiceDevices, updateVoiceSettings } from "./voice-client";
@@ -9,8 +13,13 @@ import { acceptVoiceSnapshot, useVoiceSnapshot } from "./voice-store";
 let contextGeneration = 0;
 
 export function useVoiceController(draftKey: string) {
+  const surfaceActive = useAppSurfaceActive();
   const snapshot = useVoiceSnapshot();
+  const downloads = useModelDownloads();
+  const cancelModelDownload = downloads.cancelDownload;
+  const resumeModelDownload = downloads.resumeDownload;
   const [settings, setSettings] = useState<VoiceSettings | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [deviceCount, setDeviceCount] = useState<number | null>(null);
   const [dialog, setDialog] = useState<"first-use" | "language" | null>(null);
   const [pending, setPending] = useState(false);
@@ -23,18 +32,27 @@ export function useVoiceController(draftKey: string) {
   }, []);
 
   useEffect(() => {
-    if (IS_LINUX) return;
-    void getVoiceSettings().then(setSettings).catch(() => setSettings(null));
+    if (IS_LINUX || !surfaceActive) return;
+    void Promise.all([getVoiceSettings(), getVoiceCatalog()]).then(([next, catalog]) => {
+      setSettings(next);
+      setSelectedModelId(catalog.find((item) => item.model === next.model)?.id ?? null);
+    }).catch(() => setSettings(null));
     void Promise.resolve().then(refreshDevices);
     const onFocus = () => { void refreshDevices(); };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [refreshDevices]);
+  }, [refreshDevices, surfaceActive]);
 
   const run = useCallback(async (action: Parameters<typeof dispatchVoiceAction>[0]) => {
     if (pending) return;
     setPending(true);
-    try { acceptVoiceSnapshot(await dispatchVoiceAction(action)); } finally { setPending(false); }
+    try {
+      acceptVoiceSnapshot(await dispatchVoiceAction(action));
+    } catch {
+      showToast(i18n.t("errors.operationFailed"), "error");
+    } finally {
+      setPending(false);
+    }
   }, [pending]);
 
   const begin = useCallback(() => {
@@ -43,14 +61,19 @@ export function useVoiceController(draftKey: string) {
   }, [settings]);
 
   const acceptExplanation = useCallback(async () => {
-    const next = await updateVoiceSettings({ explanation_accepted: true });
-    setSettings(next);
-    const selected = (await getVoiceCatalog()).find((item) => item.model === next.model);
-    if (selected && !selected.installed) {
-      acceptVoiceSnapshot(await dispatchVoiceAction({ action: "install", model_id: selected.id }));
-      setDialog(null);
-    } else {
-      setDialog("language");
+    try {
+      const next = await updateVoiceSettings({ explanation_accepted: true });
+      setSettings(next);
+      const selected = (await getVoiceCatalog()).find((item) => item.model === next.model);
+      setSelectedModelId(selected?.id ?? null);
+      if (selected && !selected.installed) {
+        acceptVoiceSnapshot(await dispatchVoiceAction({ action: "install", model_id: selected.id }));
+        setDialog(null);
+      } else {
+        setDialog("language");
+      }
+    } catch {
+      showToast(i18n.t("errors.operationFailed"), "error");
     }
   }, []);
 
@@ -61,8 +84,11 @@ export function useVoiceController(draftKey: string) {
   }, [draftKey, run]);
 
   const operationId = origin ? snapshot?.operation?.id : null;
+  const modelDownload = downloads.downloads.find((item) => item.kind === "voice"
+    && item.modelId === selectedModelId
+    && ["queued", "running", "cancelling", "suspended"].includes(item.status)) ?? null;
   useEffect(() => {
-    if (IS_LINUX) return;
+    if (IS_LINUX || !surfaceActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.repeat || !(settings?.shortcut ? matchesVoiceShortcut(event, settings.shortcut) : matchesAppShortcut(event, "toggleVoice"))) return;
       event.preventDefault();
@@ -72,13 +98,16 @@ export function useVoiceController(draftKey: string) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [begin, run, settings?.shortcut, snapshot]);
+  }, [begin, run, settings?.shortcut, snapshot, surfaceActive]);
   return useMemo(() => ({
     snapshot, settings, origin, activeElsewhere: Boolean(snapshot?.operation && !origin),
     available: !IS_LINUX && settings?.enabled !== false && deviceCount !== 0,
     checkingDevices: deviceCount === null, dialog, pending, begin, acceptExplanation,
     closeDialog: () => setDialog(null), start, refreshDevices,
+    modelDownload,
+    cancelDownload: (id: string) => cancelModelDownload(id).catch(() => showToast(i18n.t("errors.operationFailed"), "error")),
+    resumeDownload: (id: string) => resumeModelDownload(id).catch(() => showToast(i18n.t("errors.operationFailed"), "error")),
     validate: () => operationId && run({ action: "validate", operation_id: operationId }),
     cancel: () => operationId && run({ action: "cancel-insertion", operation_id: operationId }),
-  }), [snapshot, settings, origin, deviceCount, dialog, pending, begin, acceptExplanation, start, refreshDevices, operationId, run]);
+  }), [snapshot, settings, origin, deviceCount, dialog, pending, begin, acceptExplanation, start, refreshDevices, modelDownload, cancelModelDownload, resumeModelDownload, operationId, run]);
 }

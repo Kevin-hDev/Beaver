@@ -2692,12 +2692,12 @@
       "try": "Prova",
       "startTrial": "Avvia prova",
       "unloadValues": {
-        "immediately": "Immediately",
-        "one-minute": "After 1 minute",
-        "two-minutes": "After 2 minutes",
-        "five-minutes": "After 5 minutes",
-        "fifteen-minutes": "After 15 minutes",
-        "on-exit": "When Beaver closes"
+        "immediately": "Subito",
+        "one-minute": "Dopo 1 minuto",
+        "two-minutes": "Dopo 2 minuti",
+        "five-minutes": "Dopo 5 minuti",
+        "fifteen-minutes": "Dopo 15 minuti",
+        "on-exit": "Alla chiusura di Beaver"
       },
       "shortcut": "Scorciatoia da tastiera",
       "noShortcut": "Nessuna",
@@ -2705,39 +2705,28 @@
       "trialTiming": "Calcolo: {{compute}} s · Testo dopo lo stop: {{delay}} s"
     },
     "status": {
-      "preparing": "Preparing microphone…",
-      "listening": "Listening",
-      "transcribing": "Transcribing…",
-      "recovering": "Preparing recovery…",
-      "stopping": "Stopping…",
-      "delivering": "Inserting text…",
-      "idle": "Ready"
+      "preparing": "Preparazione del microfono…",
+      "listening": "Ascolto in corso",
+      "transcribing": "Trascrizione…",
+      "recovering": "Preparazione del recupero…",
+      "stopping": "Arresto del calcolo…",
+      "delivering": "Inserimento del testo…",
+      "idle": "Pronto"
     },
     "recovery": {
-      "preparing": "Preparing recovery…",
-      "ready": "A dictation can be restored.",
-      "failed": "Recovery failed."
+      "preparing": "Preparazione del recupero…",
+      "ready": "È possibile ripristinare una dettatura.",
+      "failed": "Recupero non riuscito.",
+      "restore": "Ripristina dettatura ({{duration}})",
+      "delete": "Elimina recupero",
+      "duration": "{{minutes}} min {{seconds}} s"
     },
     "error": {
-      "busy": "Another voice operation is running.",
-      "shutting-down": "Beaver is closing.",
-      "invalid-settings": "Check voice mode settings.",
-      "configuration-unavailable": "The required voice model is unavailable.",
-      "invalid-transition": "This voice action is no longer available."
-    }
-  },
-  "voiceProbe": {
-    "title": "Test del microfono",
-    "start": "Avvia test",
-    "stop": "Interrompi",
-    "samples": "{{count}} campioni ricevuti",
-    "level": "Livello del microfono",
-    "status": {
-      "idle": "Pronto",
-      "starting": "Apertura…",
-      "listening": "Ascolto in corso",
-      "stopping": "Interruzione…",
-      "error": "Impossibile avviare il microfono. Controlla l’autorizzazione e riprova."
+      "busy": "È già in corso un’altra operazione vocale.",
+      "shutting-down": "Beaver si sta chiudendo.",
+      "invalid-settings": "Controlla le impostazioni della modalità vocale.",
+      "configuration-unavailable": "Il modello vocale richiesto non è disponibile.",
+      "invalid-transition": "Questa azione vocale non è più disponibile."
     }
   },
   "installer": {

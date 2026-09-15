@@ -120,14 +120,6 @@ mod update_notifications_tests;
 pub mod update_progress;
 pub mod vault;
 pub mod voice;
-#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-pub mod voice_probe;
-#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-pub mod voice_probe_exit;
-#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-mod voice_probe_state;
-#[cfg(all(test, feature = "voice-probe", any(target_os = "macos", windows)))]
-mod voice_probe_tests;
 mod windows_fs_retry;
 pub mod work_registry;
 #[cfg(test)]

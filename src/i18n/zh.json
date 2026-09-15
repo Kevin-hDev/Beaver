@@ -2691,12 +2691,12 @@
       "try": "试用",
       "startTrial": "开始试用",
       "unloadValues": {
-        "immediately": "Immediately",
-        "one-minute": "After 1 minute",
-        "two-minutes": "After 2 minutes",
-        "five-minutes": "After 5 minutes",
-        "fifteen-minutes": "After 15 minutes",
-        "on-exit": "When Beaver closes"
+        "immediately": "立即",
+        "one-minute": "1 分钟后",
+        "two-minutes": "2 分钟后",
+        "five-minutes": "5 分钟后",
+        "fifteen-minutes": "15 分钟后",
+        "on-exit": "Beaver 关闭时"
       },
       "shortcut": "键盘快捷键",
       "noShortcut": "无",
@@ -2704,39 +2704,28 @@
       "trialTiming": "计算：{{compute}} 秒 · 停止后显示：{{delay}} 秒"
     },
     "status": {
-      "preparing": "Preparing microphone…",
-      "listening": "Listening",
-      "transcribing": "Transcribing…",
-      "recovering": "Preparing recovery…",
-      "stopping": "Stopping…",
-      "delivering": "Inserting text…",
-      "idle": "Ready"
+      "preparing": "正在准备麦克风…",
+      "listening": "正在聆听",
+      "transcribing": "正在转写…",
+      "recovering": "正在准备恢复内容…",
+      "stopping": "正在停止计算…",
+      "delivering": "正在插入文本…",
+      "idle": "就绪"
     },
     "recovery": {
-      "preparing": "Preparing recovery…",
-      "ready": "A dictation can be restored.",
-      "failed": "Recovery failed."
+      "preparing": "正在准备恢复内容…",
+      "ready": "有一段听写可以恢复。",
+      "failed": "恢复失败。",
+      "restore": "恢复听写（{{duration}}）",
+      "delete": "删除恢复内容",
+      "duration": "{{minutes}}分{{seconds}}秒"
     },
     "error": {
-      "busy": "Another voice operation is running.",
-      "shutting-down": "Beaver is closing.",
-      "invalid-settings": "Check voice mode settings.",
-      "configuration-unavailable": "The required voice model is unavailable.",
-      "invalid-transition": "This voice action is no longer available."
-    }
-  },
-  "voiceProbe": {
-    "title": "麦克风测试",
-    "start": "开始测试",
-    "stop": "停止",
-    "samples": "已接收 {{count}} 个采样",
-    "level": "麦克风音量",
-    "status": {
-      "idle": "就绪",
-      "starting": "正在打开…",
-      "listening": "正在聆听",
-      "stopping": "正在停止…",
-      "error": "无法启动麦克风。请检查权限后重试。"
+      "busy": "另一个语音操作正在运行。",
+      "shutting-down": "Beaver 正在关闭。",
+      "invalid-settings": "请检查语音模式设置。",
+      "configuration-unavailable": "所需的语音模型不可用。",
+      "invalid-transition": "此语音操作已不可用。"
     }
   },
   "installer": {

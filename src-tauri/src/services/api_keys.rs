@@ -93,6 +93,7 @@ pub fn init() -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(feature = "e2e")]
 fn ephemeral_vault_state() -> VaultState {
     let mut master_key = vec![0_u8; 32];
     crate::services::secure_random::fill(&mut master_key);
@@ -104,11 +105,10 @@ fn ephemeral_vault_state() -> VaultState {
 
 pub fn init_for_runtime() -> Result<(), String> {
     #[cfg(not(feature = "e2e"))]
-    if !cfg!(feature = "voice-probe") {
-        return init();
-    }
+    return init();
 
-    // La sonde micro empaquetée ne doit jamais demander l'accès au trousseau avant le clic testé.
+    // Le profil e2e ne doit jamais demander l'accès au trousseau du compte hôte.
+    #[cfg(feature = "e2e")]
     {
         let mut state = STATE
             .lock()

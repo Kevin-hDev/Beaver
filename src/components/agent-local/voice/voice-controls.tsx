@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/components/ui/tooltip";
+import { OperationProgressAction } from "@/components/ui/operation-progress-action";
 import { X } from "@/components/ui/icons";
 import { useVoiceController } from "@/features/voice/use-voice-controller";
 import { VoiceSignal } from "./voice-signal";
@@ -14,7 +15,15 @@ export function VoiceControls({ draftKey }: { draftKey: string }) {
   const operation = voice.snapshot?.operation;
   return (
     <>
-      {voice.origin && operation ? (
+      {voice.modelDownload?.status === "suspended" ? (
+        <button type="button" className="btn btn-sm btn-secondary" onClick={() => void voice.resumeDownload(voice.modelDownload!.id)}>{t("modelDownloads.resume")}</button>
+      ) : voice.modelDownload ? (
+        <OperationProgressAction compact percent={voice.modelDownload.status === "queued" ? null : voice.modelDownload.percent}
+          phaseLabel={t(voice.modelDownload.status === "queued" ? "modelDownloads.queued" : "voice.settings.installing")}
+          cancelling={voice.modelDownload.status === "cancelling"} canCancel
+          cancelLabel={t("common.cancel")} cancellingLabel={t("voice.settings.cancelling")}
+          onCancel={() => void voice.cancelDownload(voice.modelDownload!.id)} />
+      ) : voice.origin && operation ? (
         <div className="vc-active">
           {voice.snapshot?.phase === "listening" && <VoiceSignal level={operation.level} />}
           <button type="button" className="icon-btn vc-cancel" aria-label={t("voice.cancel")} onClick={() => void voice.cancel()}><X size="var(--icon-sm)" /></button>

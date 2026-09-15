@@ -145,8 +145,6 @@ pub mod update_notifications;
 pub mod update_progress;
 #[cfg(any(target_os = "macos", windows))]
 pub mod voice;
-#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-pub mod voice_probe;
 #[cfg(all(test, any(target_os = "macos", windows)))]
 mod voice_tests;
 
@@ -221,5 +219,3 @@ pub use update_notifications::*;
 pub use update_progress::*;
 #[cfg(any(target_os = "macos", windows))]
 pub use voice::*;
-#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
-pub use voice_probe::*;

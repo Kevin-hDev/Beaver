@@ -19,10 +19,11 @@ interface Props {
   onSelect: (model: VoiceModel) => void;
   onInstall: (id: string) => void;
   onCancel: (id: string) => void;
+  onResume: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
-export function VoiceModelList({ items, selected, downloads, onSelect, onInstall, onCancel, onRemove }: Props) {
+export function VoiceModelList({ items, selected, downloads, onSelect, onInstall, onCancel, onResume, onRemove }: Props) {
   const { t, i18n } = useTranslation();
   return <div className="vset-models">{items.map((item) => {
     const model = item.model;
@@ -32,7 +33,8 @@ export function VoiceModelList({ items, selected, downloads, onSelect, onInstall
         <strong>{model ? voiceModelName(model) : "Silero VAD"}</strong>
         <span>{t("voice.settings.languageCount", { count: item.languages.length })} · {new Intl.NumberFormat(i18n.language, { style: "unit", unit: "megabyte", maximumFractionDigits: 0 }).format(item.downloadBytes / 1_000_000)}</span>
       </button>
-      {download ? <OperationProgressAction compact percent={download.status === "suspended" ? null : download.percent} phaseLabel={t("voice.settings.installing")} cancelling={download.status === "cancelling"} canCancel={download.status !== "suspended"} cancelLabel={t("common.cancel")} cancellingLabel={t("voice.settings.cancelling")} onCancel={() => onCancel(download.id)} />
+      {download?.status === "suspended" ? <button type="button" className="btn btn-sm btn-secondary" onClick={() => onResume(download.id)}>{t("modelDownloads.resume")}</button>
+        : download ? <OperationProgressAction compact percent={download.percent} phaseLabel={t("voice.settings.installing")} cancelling={download.status === "cancelling"} canCancel cancelLabel={t("common.cancel")} cancellingLabel={t("voice.settings.cancelling")} onCancel={() => onCancel(download.id)} />
         : <button type="button" className="btn btn-sm btn-secondary" onClick={() => item.installed ? onRemove(item.id) : onInstall(item.id)}>{t(item.installed ? "voice.settings.remove" : "voice.settings.install")}</button>}
       <details><summary>{t("voice.settings.languages")}</summary><p>{item.languages.map((code) => new Intl.DisplayNames([i18n.language], { type: "language" }).of(code) ?? code).join(" · ")}</p></details>
     </article>;

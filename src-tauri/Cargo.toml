@@ -11,8 +11,6 @@ crate-type = ["lib", "cdylib", "staticlib"]
 
 [features]
 default = []
-# Sonde temporaire T01, retirée en T13 après validation du service vocal réel.
-voice-probe = ["dep:block2", "dep:objc2-av-foundation"]
 # Profil isolé réservé aux validations manuelles CEF. Les builds normaux
 # n'incluent pas cette redirection.
 cef-test-profile = []
@@ -182,8 +180,6 @@ objc2 = "0.6"
 objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSEvent", "NSView"] }
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSDate", "NSGeometry", "NSObject", "NSObjCRuntime", "NSRunLoop", "NSString", "NSTimer", "objc2-core-foundation"] }
 dispatch2 = "0.3"
-block2 = { version = "0.6", optional = true }
-objc2-av-foundation = { version = "0.3", default-features = false, features = ["AVCaptureDevice", "AVMediaFormat", "block2"], optional = true }
 # Cargo ignore le suffixe build dans une contrainte semver ; Cargo.lock fixe
 # précisément le paquet publié 150.0.0+150.0.10.
 cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }

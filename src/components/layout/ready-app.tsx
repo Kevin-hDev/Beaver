@@ -8,7 +8,6 @@ import { usePanelFocus } from "@/hooks/use-panel-focus";
 import { useAgentSessionWorkspace } from "@/hooks/use-agent-session-workspace";
 import { useNavigationAvailability } from "@/features/extension-ui/slot-contexts";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
-import { VoiceProbeGate } from "@/features/voice-probe/voice-probe-panel";
 import { VoiceRoot } from "@/features/voice/voice-root";
 import type { ThemeChoice } from "@/hooks/use-theme";
 import type { TabId } from "./nav-items";
@@ -88,7 +87,6 @@ export function ReadyApp(props: ReadyAppProps) {
   return (
     <>
       {vaultError && <VaultErrorBanner onDismiss={onDismissVaultError} />}
-      <VoiceProbeGate />
       <VoiceRoot />
       <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
         <AppLayout
