@@ -50,4 +50,11 @@ describe("VoiceControls", () => {
     screen.getByRole("button", { name: "modelDownloads.resume" }).click();
     expect(resumeDownload).toHaveBeenCalledWith("download");
   });
+
+  it("uses the standard Beaver button geometry in the first-use dialog", () => {
+    controller.mockReturnValue({ ...idle, dialog: "first-use" });
+    render(<VoiceControls draftKey="session:one" />);
+    expect(screen.getByRole("button", { name: "voice.firstUse.later" })).toHaveClass("btn-sm");
+    expect(screen.getByRole("button", { name: "voice.firstUse.continue" })).toHaveClass("btn-sm");
+  });
 });
