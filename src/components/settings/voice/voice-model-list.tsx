@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { ConfirmButton } from "@/components/settings/confirm-button";
 import type { ModelDownloadState } from "@/types/model-download.generated";
 import type { VoiceCatalogItem, VoiceModel } from "@/types/voice.generated";
 import "./voice-settings.css";
@@ -25,15 +26,18 @@ export function VoiceModelList({ items, selected, downloads, onSelect, onInstall
   const { t, i18n } = useTranslation();
   return <div className="vset-models">{items.map((item) => {
     const model = item.model;
+    if (!model) return null;
     const download = downloads.find((entry) => entry.kind === "voice" && entry.modelId === item.id && ["queued", "running", "cancelling", "suspended"].includes(entry.status));
-    return <article key={item.id} className="vset-model" data-selected={model ? selected === model : false}>
-      <button type="button" className="vset-model-choice" disabled={!model} onClick={() => model && onSelect(model)}>
-        <strong>{model ? voiceModelName(model) : "Silero VAD"}</strong>
+    return <article key={item.id} className="vset-model" data-selected={selected === model}>
+      <button type="button" className="vset-model-choice" onClick={() => onSelect(model)}>
+        <strong>{voiceModelName(model)}</strong>
         <span>{t("voice.settings.languageCount", { count: item.languages.length })} · {new Intl.NumberFormat(i18n.language, { style: "unit", unit: "megabyte", maximumFractionDigits: 0 }).format(item.downloadBytes / 1_000_000)}</span>
       </button>
       {download?.status === "suspended" ? <button type="button" className="btn btn-sm btn-secondary" onClick={() => onResume(download.id)}>{t("modelDownloads.resume")}</button>
         : download ? null
-        : <button type="button" className="btn btn-sm btn-secondary" onClick={() => item.installed ? onRemove(item.id) : onInstall(item.id)}>{t(item.installed ? "voice.settings.remove" : "voice.settings.install")}</button>}
+        : item.installed
+          ? <ConfirmButton className="btn btn-sm btn-destructive" label={t("voice.settings.remove")} confirmLabel={t("settings.confirm.deleteModel")} onConfirm={() => onRemove(item.id)} />
+          : <button type="button" className="btn btn-sm btn-secondary" onClick={() => onInstall(item.id)}>{t("voice.settings.install")}</button>}
       <details><summary>{t("voice.settings.languages")}</summary><p>{item.languages.map((code) => new Intl.DisplayNames([i18n.language], { type: "language" }).of(code) ?? code).join(" · ")}</p></details>
     </article>;
   })}</div>;

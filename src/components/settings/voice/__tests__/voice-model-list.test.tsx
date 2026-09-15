@@ -8,6 +8,24 @@ vi.mock("react-i18next", () => ({
 }));
 
 describe("VoiceModelList", () => {
+  it("hides Silero and confirms before removing a transcription model", () => {
+    const onRemove = vi.fn();
+    render(<VoiceModelList
+      items={[
+        { id: "silero-vad", model: null, languages: [], dialects: [], downloadBytes: 1, installedBytes: 0, installed: false, languageMode: "automatic-only" },
+        { id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 100, installed: true, languageMode: "automatic-only" },
+      ]}
+      selected="parakeet-tdt-v3" downloads={[]}
+      onSelect={vi.fn()} onInstall={vi.fn()} onResume={vi.fn()} onRemove={onRemove}
+    />);
+
+    expect(screen.queryByText("Silero VAD")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "voice.settings.remove" }));
+    expect(onRemove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "settings.confirm.deleteModel" }));
+    expect(onRemove).toHaveBeenCalledWith("parakeet");
+  });
+
   it("resumes a suspended model download", () => {
     const onResume = vi.fn();
     const download: ModelDownloadState = {
