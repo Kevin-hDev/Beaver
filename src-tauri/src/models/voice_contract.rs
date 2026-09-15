@@ -38,6 +38,7 @@ pub(crate) fn typescript_bindings() -> String {
         VoicePhase::decl(&config),
         VoiceModel::decl(&config),
         VoiceInputDevice::decl(&config),
+        VoiceInputGain::decl(&config),
         VoiceSilenceTimeout::decl(&config),
         VoiceMaxDuration::decl(&config),
         VoiceLanguage::decl(&config),

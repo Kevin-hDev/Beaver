@@ -6,7 +6,7 @@ use crate::services::voice::{
     audio_buffer::AudioBuffer,
     errors::VoiceError,
     limits::MAX_PCM_SAMPLES,
-    types::{VoiceInputDevice, VoiceMaxDuration, VoiceSilenceTimeout},
+    types::{VoiceInputDevice, VoiceInputGain, VoiceMaxDuration, VoiceSilenceTimeout},
 };
 use sherpa_onnx::VoiceActivityDetector;
 
@@ -37,12 +37,13 @@ pub struct CaptureSession {
 impl CaptureSession {
     pub fn open(
         device: &VoiceInputDevice,
+        gain: VoiceInputGain,
         cancelled: bool,
         foreground: bool,
         generation: u64,
     ) -> Result<Self, VoiceError> {
         let stream = open_input_stream_if(device, cancelled, foreground)?;
-        let normalizer = Normalizer::new(stream.sample_rate(), stream.channels())?;
+        let normalizer = Normalizer::new(stream.sample_rate(), stream.channels(), gain)?;
         stream.start()?;
         Ok(Self {
             stream,

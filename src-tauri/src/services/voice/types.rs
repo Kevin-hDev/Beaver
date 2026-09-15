@@ -30,6 +30,32 @@ pub enum VoiceInputDevice {
     Device(String),
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "kebab-case")]
+pub enum VoiceInputGain {
+    #[serde(rename = "zero-db")]
+    Zero,
+    #[serde(rename = "three-db")]
+    Three,
+    #[default]
+    #[serde(rename = "six-db")]
+    Six,
+    #[serde(rename = "nine-db")]
+    Nine,
+}
+
+impl VoiceInputGain {
+    pub const fn multiplier(self) -> f32 {
+        match self {
+            Self::Zero => 1.0,
+            Self::Three => 1.412_537_6,
+            Self::Six => 1.995_262_3,
+            Self::Nine => 2.818_383,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "kebab-case")]
@@ -85,6 +111,8 @@ pub struct VoiceSettings {
     pub enabled: bool,
     pub model: VoiceModel,
     pub input_device: VoiceInputDevice,
+    #[serde(default)]
+    pub input_gain: VoiceInputGain,
     pub silence_timeout: VoiceSilenceTimeout,
     pub max_duration: VoiceMaxDuration,
     pub language: VoiceLanguage,
@@ -100,6 +128,7 @@ impl Default for VoiceSettings {
             enabled: true,
             model: VoiceModel::ParakeetTdtV3,
             input_device: VoiceInputDevice::SystemDefault,
+            input_gain: VoiceInputGain::default(),
             silence_timeout: VoiceSilenceTimeout::FiveSeconds,
             max_duration: VoiceMaxDuration::Ten,
             language: VoiceLanguage::FollowInterface,
@@ -117,6 +146,7 @@ impl VoiceSettings {
         }
         let patch = VoiceSettingsPatch {
             input_device: Some(self.input_device.clone()),
+            input_gain: Some(self.input_gain),
             language: Some(self.language.clone()),
             shortcut: Some(self.shortcut.clone()),
             ..Default::default()
@@ -133,6 +163,7 @@ pub struct VoiceSettingsPatch {
     pub enabled: Option<bool>,
     pub model: Option<VoiceModel>,
     pub input_device: Option<VoiceInputDevice>,
+    pub input_gain: Option<VoiceInputGain>,
     pub silence_timeout: Option<VoiceSilenceTimeout>,
     pub max_duration: Option<VoiceMaxDuration>,
     pub language: Option<VoiceLanguage>,
@@ -173,6 +204,7 @@ impl VoiceSettingsPatch {
         replace!(enabled);
         replace!(model);
         replace!(input_device);
+        replace!(input_gain);
         replace!(silence_timeout);
         replace!(max_duration);
         replace!(language);

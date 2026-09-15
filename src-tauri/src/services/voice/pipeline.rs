@@ -70,7 +70,8 @@ fn run(
     // Silero is recurrent: a new capture must not inherit the previous capture's state.
     model.vad().reset();
     let windows = app.state::<WindowEventState>();
-    let mut capture = CaptureSession::open(&settings.input_device, false, true, 1)?;
+    let mut capture =
+        CaptureSession::open(&settings.input_device, settings.input_gain, false, true, 1)?;
     runtime
         .coordinator_for_pipeline()
         .begin_listening(operation_id)?;

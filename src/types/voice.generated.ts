@@ -9,6 +9,8 @@ export type VoiceModel = "parakeet-tdt-v3" | "cohere-transcribe" | "qwen3-asr06b
 
 export type VoiceInputDevice = { "kind": "system-default" } | { "kind": "device", "value": string };
 
+export type VoiceInputGain = "zero-db" | "three-db" | "six-db" | "nine-db";
+
 export type VoiceSilenceTimeout = "three-seconds" | "five-seconds" | "ten-seconds" | "twenty-seconds" | "thirty-seconds" | "never";
 
 export type VoiceMaxDuration = "2-minutes" | "5-minutes" | "10-minutes" | "20-minutes" | "30-minutes";
@@ -17,9 +19,9 @@ export type VoiceLanguage = { "kind": "follow-interface" } | { "kind": "automati
 
 export type VoiceUnloadDelay = "immediately" | "one-minute" | "two-minutes" | "five-minutes" | "fifteen-minutes" | "on-exit";
 
-export type VoiceSettings = { version: number, enabled: boolean, model: VoiceModel, input_device: VoiceInputDevice, silence_timeout: VoiceSilenceTimeout, max_duration: VoiceMaxDuration, language: VoiceLanguage, shortcut: string | null, unload_delay: VoiceUnloadDelay, explanation_accepted: boolean, };
+export type VoiceSettings = { version: number, enabled: boolean, model: VoiceModel, input_device: VoiceInputDevice, input_gain: VoiceInputGain, silence_timeout: VoiceSilenceTimeout, max_duration: VoiceMaxDuration, language: VoiceLanguage, shortcut: string | null, unload_delay: VoiceUnloadDelay, explanation_accepted: boolean, };
 
-export type VoiceSettingsPatch = { enabled?: boolean, model?: VoiceModel, input_device?: VoiceInputDevice, silence_timeout?: VoiceSilenceTimeout, max_duration?: VoiceMaxDuration, language?: VoiceLanguage, shortcut?: string | null, unload_delay?: VoiceUnloadDelay, explanation_accepted?: boolean, };
+export type VoiceSettingsPatch = { enabled?: boolean, model?: VoiceModel, input_device?: VoiceInputDevice, input_gain?: VoiceInputGain, silence_timeout?: VoiceSilenceTimeout, max_duration?: VoiceMaxDuration, language?: VoiceLanguage, shortcut?: string | null, unload_delay?: VoiceUnloadDelay, explanation_accepted?: boolean, };
 
 export type VoiceDestination = { "kind": "draft", draft_key: string, } | { "kind": "trial", trial_id: string, };
 

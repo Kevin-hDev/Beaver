@@ -1,10 +1,13 @@
 use super::settings::{read_voice_settings_at_path, update_voice_settings_at_path};
-use super::types::{VoiceMaxDuration, VoiceSettings, VoiceSettingsPatch, VoiceSilenceTimeout};
+use super::types::{
+    VoiceInputGain, VoiceMaxDuration, VoiceSettings, VoiceSettingsPatch, VoiceSilenceTimeout,
+};
 
 #[test]
 fn defaults_match_the_product_decisions_and_invalid_input_fails_closed() {
     let settings = VoiceSettings::default();
     assert!(settings.enabled);
+    assert_eq!(settings.input_gain, VoiceInputGain::Six);
     assert_eq!(settings.silence_timeout, VoiceSilenceTimeout::FiveSeconds);
     assert_eq!(settings.max_duration, VoiceMaxDuration::Ten);
     assert!(VoiceSettingsPatch {
@@ -19,6 +22,25 @@ fn defaults_match_the_product_decisions_and_invalid_input_fails_closed() {
         }))
         .is_err()
     );
+}
+
+#[test]
+fn legacy_settings_receive_the_default_gain_without_losing_other_values() {
+    let legacy = serde_json::json!({
+        "version": 1,
+        "enabled": true,
+        "model": "qwen3-asr06b",
+        "input_device": { "kind": "system-default" },
+        "silence_timeout": "ten-seconds",
+        "max_duration": "10-minutes",
+        "language": { "kind": "follow-interface" },
+        "shortcut": null,
+        "unload_delay": "two-minutes",
+        "explanation_accepted": true
+    });
+    let settings: VoiceSettings = serde_json::from_value(legacy).unwrap();
+    assert_eq!(settings.input_gain, VoiceInputGain::Six);
+    assert_eq!(settings.silence_timeout, VoiceSilenceTimeout::TenSeconds);
 }
 
 #[test]

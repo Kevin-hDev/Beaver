@@ -20,7 +20,7 @@ use super::{
         recognizer::{recognize_probe, EffectiveLanguage, ExecutionProfile},
     },
     transcription::transcribe,
-    types::{VoiceInputDevice, VoiceUnloadDelay},
+    types::{VoiceInputDevice, VoiceInputGain, VoiceUnloadDelay},
 };
 
 const DATA_ENV: &str = "VOICE_PROTOTYPE_DATA_DIR";
@@ -339,7 +339,14 @@ async fn native_capture_finish_keeps_pending_microphone_samples() {
             VoiceUnloadDelay::OnExit,
         )
         .unwrap();
-    let capture = CaptureSession::open(&VoiceInputDevice::SystemDefault, false, true, 1).unwrap();
+    let capture = CaptureSession::open(
+        &VoiceInputDevice::SystemDefault,
+        VoiceInputGain::Zero,
+        false,
+        true,
+        1,
+    )
+    .unwrap();
     std::thread::sleep(std::time::Duration::from_millis(100));
     let (audio, _) = capture.finish(lease.prepared().vad()).unwrap();
     assert!(

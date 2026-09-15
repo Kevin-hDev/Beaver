@@ -1,18 +1,21 @@
 use sherpa_onnx::LinearResampler;
 use zeroize::Zeroize;
 
-use crate::services::voice::{errors::VoiceError, limits::VOICE_SAMPLE_RATE};
+use crate::services::voice::{
+    errors::VoiceError, limits::VOICE_SAMPLE_RATE, types::VoiceInputGain,
+};
 
 use super::ring::CaptureChunk;
 
 pub struct Normalizer {
     sample_rate: u32,
     channels: u16,
+    gain: VoiceInputGain,
     resampler: Option<LinearResampler>,
 }
 
 impl Normalizer {
-    pub fn new(sample_rate: u32, channels: u16) -> Result<Self, VoiceError> {
+    pub fn new(sample_rate: u32, channels: u16, gain: VoiceInputGain) -> Result<Self, VoiceError> {
         let resampler = if sample_rate == VOICE_SAMPLE_RATE {
             None
         } else {
@@ -26,6 +29,7 @@ impl Normalizer {
         Ok(Self {
             sample_rate,
             channels,
+            gain,
             resampler,
         })
     }
@@ -49,20 +53,20 @@ impl Normalizer {
             }
             None => mono,
         };
-        let output = to_pcm(&normalized);
+        let output = to_pcm(&normalized, self.gain.multiplier());
         normalized.zeroize();
         Ok(output)
     }
 }
 
 pub fn normalize_chunk(chunk: CaptureChunk) -> Result<Vec<i16>, VoiceError> {
-    Normalizer::new(chunk.sample_rate, chunk.channels)?.process(chunk, true)
+    Normalizer::new(chunk.sample_rate, chunk.channels, VoiceInputGain::Zero)?.process(chunk, true)
 }
 
-fn to_pcm(samples: &[f32]) -> Vec<i16> {
+fn to_pcm(samples: &[f32], gain: f32) -> Vec<i16> {
     samples
         .iter()
-        .map(|sample| (sample.clamp(-1.0, 1.0) * i16::MAX as f32).round() as i16)
+        .map(|sample| ((sample * gain).clamp(-1.0, 1.0) * i16::MAX as f32).round() as i16)
         .collect()
 }
 
@@ -118,7 +122,7 @@ mod tests {
 
     #[test]
     fn streaming_resampler_preserves_duration_across_small_chunks() {
-        let normalizer = Normalizer::new(48_000, 1).unwrap();
+        let normalizer = Normalizer::new(48_000, 1, VoiceInputGain::Zero).unwrap();
         let mut output = Vec::new();
         for _ in 0..100 {
             output.extend(
@@ -133,5 +137,15 @@ mod tests {
                 .unwrap(),
         );
         assert!((15_990..=16_010).contains(&output.len()));
+    }
+
+    #[test]
+    fn configured_gain_boosts_quiet_speech_and_still_clips_safely() {
+        let normalizer = Normalizer::new(16_000, 1, VoiceInputGain::Six).unwrap();
+        let output = normalizer
+            .process(chunk(vec![0.1, 0.75], 16_000, 1), true)
+            .unwrap();
+        assert!((6_530..=6_550).contains(&output[0]));
+        assert_eq!(output[1], i16::MAX);
     }
 }
