@@ -11,5 +11,6 @@
 .vset-trial h3 { margin: 0 0 var(--space-sm); font-size: var(--text-sm); }
 .vset-trial-line { display: flex; align-items: center; gap: var(--space-sm); }
 .vset-result { margin: var(--space-sm) 0 0; color: var(--ink); }
-.vset-shortcut { display: grid; gap: var(--space-xs); }
+.vset-shortcut { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-sm); flex-wrap: wrap; }
+.vset-shortcut-value { color: var(--ink-muted); }
 .vset-shortcut [role="alert"] { color: var(--danger); font-size: var(--text-xs); }

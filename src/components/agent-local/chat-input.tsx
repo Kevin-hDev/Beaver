@@ -19,7 +19,6 @@ import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { rememberComposerSelection } from "@/hooks/composer-draft-store";
 import { notifyVoiceMessageAccepted } from "@/features/voice/voice-context";
 import { useVoiceSnapshot } from "@/features/voice/voice-store";
-import { handleVoiceKeyboard } from "@/features/voice/voice-keyboard";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
@@ -121,7 +120,6 @@ export function ChatInput({
   }, [handleSend, slash.showDropdown, slash.skills, slash.activeIndex, skills]);
   const handleKeyEvent = useCallback((event: KeyboardEvent): boolean | void => {
     const pressed = event.key;
-    if (handleVoiceKeyboard(event, voiceSnapshot, draftKey)) return true;
     if (slash.showDropdown) {
       if (pressed === K_UP) { event.preventDefault(); slash.moveUp(); return true; }
       if (pressed === K_DOWN) { event.preventDefault(); slash.moveDown(); return true; }
@@ -141,7 +139,7 @@ export function ChatInput({
       requestStop();
       return true;
     }
-  }, [draftKey, handleEnter, isStreaming, requestStop, slash, voiceSnapshot]);
+  }, [handleEnter, isStreaming, requestStop, slash]);
   useEffect(() => {
     if (!surfaceActive || !slash.showDropdown) return;
     const handler = (e: MouseEvent) => {

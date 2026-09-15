@@ -33,6 +33,6 @@ export function VoicePanel(props: Props) {
       {selected && <SettingsCard><VoiceCaptureSettings settings={props.settings} devices={props.devices} languages={selected.languages} languageMode={selected.languageMode} onSave={props.onSave} onRefresh={props.onRefreshDevices} /></SettingsCard>}
       <SettingsCard><SettingsRow title={t("voice.settings.unload")}><SettingsSelect value={props.settings.unload_delay} options={["immediately","one-minute","two-minutes","five-minutes","fifteen-minutes","on-exit"].map((value) => ({ value, label: t(`voice.settings.unloadValues.${value}`) }))} onChange={(value) => props.onSave({ unload_delay: value as VoiceSettings["unload_delay"] })} /></SettingsRow></SettingsCard>
     </div>
-    <footer className="sd-foot"><VoiceTrial language={props.settings.language} languageMode={selected?.languageMode ?? "automatic-only"} /></footer>
+    <footer className="sd-foot"><VoiceTrial language={props.settings.language} languageMode={selected?.languageMode ?? "automatic-only"} model={props.settings.model} models={props.catalog} onModelChange={selectModel} /></footer>
   </SettingsDialog>;
 }

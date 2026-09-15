@@ -2,10 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast-emitter";
 import { IS_LINUX } from "@/lib/platform";
-import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
-import { matchesVoiceShortcut } from "./voice-keyboard";
+import { handleVoiceKeyboard, matchesVoiceShortcut } from "./voice-keyboard";
 import { resolveVoiceLanguage } from "./voice-language-options";
 import type { VoiceLanguage, VoiceLanguageMode, VoiceSettings } from "@/types/voice.generated";
 import { dispatchVoiceAction, getVoiceCatalog, getVoiceSettings, listVoiceDevices, updateVoiceSettings } from "./voice-client";
@@ -98,15 +97,17 @@ export function useVoiceController(draftKey: string) {
   useEffect(() => {
     if (IS_LINUX || !surfaceActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.repeat || !(settings?.shortcut ? matchesVoiceShortcut(event, settings.shortcut) : matchesAppShortcut(event, "toggleVoice"))) return;
+      if (event.repeat) return;
+      if (handleVoiceKeyboard(event, snapshot, draftKey)) return;
+      if (!matchesVoiceShortcut(event, settings?.shortcut ?? null)) return;
       event.preventDefault();
       const activeId = snapshot?.operation?.id;
       if (snapshot?.phase === "listening" && activeId) void run({ action: "validate", operation_id: activeId });
       else if (snapshot?.phase === "idle") begin();
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [begin, run, settings?.shortcut, snapshot, surfaceActive]);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [begin, draftKey, run, settings?.shortcut, snapshot, surfaceActive]);
   return useMemo(() => ({
     snapshot, settings, origin, activeElsewhere: Boolean(snapshot?.operation && !origin),
     available: !IS_LINUX && settings?.enabled !== false && deviceCount !== 0,
