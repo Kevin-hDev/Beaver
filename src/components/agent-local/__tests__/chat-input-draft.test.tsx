@@ -4,6 +4,10 @@ import { ChatInput } from "../chat-input";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
 import { clearComposerDraft, useComposerDraft } from "@/hooks/use-composer-draft";
 
+const notifyVoiceMessageAccepted = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
+vi.mock("@/features/voice/voice-context", () => ({ notifyVoiceMessageAccepted }));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -14,12 +18,16 @@ vi.mock("../chat-input-editor", () => ({
     onTextChange,
   }: {
     value: string;
-    onTextChange: (value: string, cursor: number) => void;
+    onTextChange: (value: string, anchor: number, head: number) => void;
   }) => (
     <textarea
       aria-label="composer"
       value={value}
-      onChange={(event) => onTextChange(event.target.value, event.target.value.length)}
+      onChange={(event) => onTextChange(
+        event.target.value,
+        event.target.value.length,
+        event.target.value.length,
+      )}
     />
   ),
 }));
@@ -130,6 +138,25 @@ describe("ChatInput drafts", () => {
     expect(screen.getByRole("textbox", { name: "composer" }))
       .toHaveValue("Texte à conserver");
     expect(onClearFiles).not.toHaveBeenCalled();
+    expect(notifyVoiceMessageAccepted).not.toHaveBeenCalled();
+  });
+
+  it("notifie la voix seulement après l'admission réelle du message", async () => {
+    const pending = deferred<boolean>();
+    render(<ChatInput
+      {...baseProps}
+      draftKey="session:one"
+      onSend={vi.fn().mockReturnValue(pending.promise)}
+    />);
+    fireEvent.change(screen.getByRole("textbox", { name: "composer" }), {
+      target: { value: "Message" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "send" }));
+    expect(notifyVoiceMessageAccepted).not.toHaveBeenCalled();
+
+    await act(async () => { pending.resolve(true); await pending.promise; });
+    expect(notifyVoiceMessageAccepted).toHaveBeenCalledOnce();
+    expect(notifyVoiceMessageAccepted).toHaveBeenCalledWith("session:one", expect.any(String));
   });
 
   it("préserve le texte saisi pendant l'envoi précédent", async () => {

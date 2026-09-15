@@ -12,6 +12,7 @@ import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { SkillInfo } from "@/types/agent";
 import type { SkillChipConfig } from "./skill-chip-extension";
+import type { ComposerSelection } from "@/hooks/composer-draft-insertion";
 
 const BUILT_IN_NAMES = ["compress"];
 
@@ -20,7 +21,8 @@ interface ChatInputEditorProps {
   placeholder: string;
   readOnly: boolean;
   activeSkills: SkillInfo[];
-  onTextChange: (value: string, cursorPos: number) => void;
+  selection?: ComposerSelection | null;
+  onTextChange: (value: string, anchor: number, head: number) => void;
   onKeyEvent: (event: KeyboardEvent) => boolean | void;
 }
 
@@ -29,6 +31,7 @@ function ChatInputEditorImpl({
   placeholder,
   readOnly,
   activeSkills,
+  selection,
   onTextChange,
   onKeyEvent,
 }: ChatInputEditorProps) {
@@ -43,6 +46,7 @@ function ChatInputEditorImpl({
     placeholder,
     readOnly,
     chipConfig,
+    selection,
     onChange: onTextChange,
     onKeyEvent: onKeyEvent,
   });

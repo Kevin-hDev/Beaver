@@ -21,6 +21,8 @@ import {
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import { useUnavailableModelFallback } from "@/hooks/use-unavailable-model-fallback";
 import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
+import { closeVoiceDraftWhile } from "@/features/voice/voice-context";
+import { sessionComposerDraftKey } from "@/hooks/use-composer-draft";
 import {
   normalizeReasoningMode,
   reasoningModeOptions,
@@ -193,7 +195,7 @@ export function useAgentLocalTab({
   }, [terminalState, projectsHook]);
 
   const handleArchiveSession = useCallback(async (id: string) => {
-    await archive(id);
+    await closeVoiceDraftWhile(sessionComposerDraftKey(id), () => archive(id));
     onWorkspaceClear?.(id);
   }, [archive, onWorkspaceClear]);
 

@@ -16,6 +16,8 @@ import { sameChatFiles } from "./chat-input-snapshot";
 import { useChatStopShortcut } from "./use-chat-stop-shortcut";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
+import { rememberComposerSelection } from "@/hooks/composer-draft-store";
+import { notifyVoiceMessageAccepted } from "@/features/voice/voice-context";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
@@ -37,6 +39,7 @@ export function ChatInput({
   const { t } = useTranslation();
   const {
     text,
+    selection,
     skills: draftSkills,
     setText,
     rememberSkill,
@@ -74,7 +77,7 @@ export function ChatInput({
 
   const handleSend = useCallback(async () => {
     if (!hasContent || interactivePending || sendingRef.current) return;
-    const sentDraft = { text, skills: [...draftSkills] };
+    const sentDraft = { text, skills: [...draftSkills], selection };
     const sentFiles = files?.map((file) => ({ ...file }));
     const consumedOptimistically = !isStreaming;
     sendingRef.current = true;
@@ -89,18 +92,20 @@ export function ChatInput({
       }
       if (!consumedOptimistically) consumeDraft(sentDraft);
       if (sameChatFiles(filesRef.current, sentFiles)) onClearFiles?.();
+      void notifyVoiceMessageAccepted(draftKey, crypto.randomUUID()).catch(() => {});
     } catch (error) {
       if (consumedOptimistically) restoreDraft(sentDraft);
       throw error;
     } finally {
       sendingRef.current = false;
     }
-  }, [text, draftSkills, hasContent, hasFiles, files, skills, interactivePending, isStreaming, onSend, onClearFiles, consumeDraft, restoreDraft]);
+  }, [text, draftSkills, selection, hasContent, hasFiles, files, skills, interactivePending, isStreaming, onSend, onClearFiles, consumeDraft, restoreDraft, draftKey]);
 
-  const handleChange = useCallback((value: string, cursorPos: number) => {
+  const handleChange = useCallback((value: string, anchor: number, head: number) => {
     setText(value);
-    slash.handleInput(value, cursorPos);
-  }, [setText, slash]);
+    rememberComposerSelection(draftKey, anchor, head);
+    slash.handleInput(value, head);
+  }, [draftKey, setText, slash]);
 
   // Shared Enter logic. The editor gives the four chat control keys priority
   // only when this handler consumes them.
@@ -174,6 +179,7 @@ export function ChatInput({
             placeholder={t("agentLocal.placeholder")}
             readOnly={false}
             activeSkills={skills.activeSkills}
+            selection={selection}
             onTextChange={handleChange}
             onKeyEvent={handleKeyEvent}
           />
