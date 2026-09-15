@@ -12,7 +12,7 @@ use crate::services::voice::{errors::VoiceError, limits, types::VoiceInputDevice
 
 use super::{
     device,
-    ring::{InputRing, InputSampleFormat},
+    ring::{CaptureChunk, InputRing, InputSampleFormat},
 };
 
 pub struct CaptureStream {
@@ -42,6 +42,11 @@ impl CaptureStream {
 
     pub fn channels(&self) -> u16 {
         self.ring.channels()
+    }
+
+    pub fn finish(self) -> CaptureChunk {
+        drop(self.stream);
+        self.ring.drain()
     }
 }
 

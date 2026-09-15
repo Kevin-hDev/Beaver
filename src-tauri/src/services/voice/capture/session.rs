@@ -100,12 +100,21 @@ impl CaptureSession {
     }
 
     pub fn finish(mut self, vad: &VoiceActivityDetector) -> Result<(AudioBuffer, u64), VoiceError> {
-        let mut tail = self.normalizer.finish();
+        // Fermer le flux avant le dernier drain garantit que le clic de
+        // validation ne laisse pas la fin d'un mot dans le tampon du micro.
+        let chunk = self.stream.finish();
+        let lost_samples = chunk.lost_samples;
+        let mut tail = self.normalizer.process(chunk, true)?;
         let remaining = MAX_PCM_SAMPLES.saturating_sub(self.audio.samples().len());
         tail.truncate(remaining);
-        self.audio.append(&tail, 0)?;
+        self.audio.append(&tail, lost_samples)?;
+        let mut waveform: Vec<f32> = tail
+            .iter()
+            .map(|sample| f32::from(*sample) / i16::MAX as f32)
+            .collect();
         tail.zeroize();
-        self.speech.observe_vad(vad, &[], true);
+        self.speech.observe_vad(vad, &waveform, true);
+        waveform.zeroize();
         Ok((self.audio, self.speech.spoken_ms()))
     }
 }

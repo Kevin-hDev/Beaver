@@ -53,18 +53,6 @@ impl Normalizer {
         normalized.zeroize();
         Ok(output)
     }
-
-    pub fn finish(&self) -> Vec<i16> {
-        self.resampler
-            .as_ref()
-            .map(|resampler| {
-                let mut tail = resampler.resample(&[], true);
-                let output = to_pcm(&tail);
-                tail.zeroize();
-                output
-            })
-            .unwrap_or_default()
-    }
 }
 
 pub fn normalize_chunk(chunk: CaptureChunk) -> Result<Vec<i16>, VoiceError> {
@@ -139,7 +127,11 @@ mod tests {
                     .unwrap(),
             );
         }
-        output.extend(normalizer.finish());
+        output.extend(
+            normalizer
+                .process(chunk(Vec::new(), 48_000, 1), true)
+                .unwrap(),
+        );
         assert!((15_990..=16_010).contains(&output.len()));
     }
 }

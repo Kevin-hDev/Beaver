@@ -9,7 +9,7 @@ use zeroize::Zeroize;
 
 use super::{
     audio_buffer::AudioBuffer,
-    capture::stream::open_input_stream,
+    capture::{session::CaptureSession, stream::open_input_stream},
     download::{
         download_archive, ensure_disk_available, install_archive, installed_receipt, load_catalog,
         verify_file, VoiceCatalogEntry, VoiceEngine, VoiceModelRole,
@@ -280,6 +280,18 @@ async fn native_parakeet_opens_microphone_under_two_seconds() {
     let vad_ready_ms = elapsed_ms(started);
     let stream = open_input_stream(&VoiceInputDevice::SystemDefault).unwrap();
     stream.start().unwrap();
+    let stream_started_ms = elapsed_ms(started);
+    let first_audio_deadline = Instant::now() + std::time::Duration::from_secs(2);
+    loop {
+        if !stream.ring().drain().samples.is_empty() {
+            break;
+        }
+        assert!(
+            Instant::now() < first_audio_deadline,
+            "microphone stayed empty"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
     let listening_ready_ms = elapsed_ms(started);
     assert!(
         listening_ready_ms < 2_000,
@@ -288,9 +300,51 @@ async fn native_parakeet_opens_microphone_under_two_seconds() {
     let lease = preparation.into_ready().unwrap();
     let asr_ready_ms = elapsed_ms(started);
     eprintln!(
-        "vad_ready_ms={vad_ready_ms} listening_ready_ms={listening_ready_ms} asr_ready_ms={asr_ready_ms}"
+        "vad_ready_ms={vad_ready_ms} stream_started_ms={stream_started_ms} listening_ready_ms={listening_ready_ms} asr_ready_ms={asr_ready_ms}"
     );
     drop(stream);
+    drop(lease);
+    lifecycle.begin_closing();
+    assert!(
+        lifecycle
+            .stop_and_wait(Instant::now() + std::time::Duration::from_secs(5))
+            .await
+    );
+}
+
+#[tokio::test]
+#[ignore = "loads native Parakeet and opens the real microphone"]
+async fn native_capture_finish_keeps_pending_microphone_samples() {
+    let data_dir = prototype_data_dir();
+    let catalog = load_catalog(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let asr = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.id == "parakeet-tdt-v3-int8")
+        .unwrap();
+    let vad = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.role == VoiceModelRole::Vad)
+        .unwrap();
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let lifecycle = ModelLifecycle::new(coordinator.work_supervisor());
+    let lease = lifecycle
+        .acquire(
+            &data_dir,
+            asr,
+            vad,
+            ExecutionProfile::cpu(8).unwrap(),
+            VoiceUnloadDelay::OnExit,
+        )
+        .unwrap();
+    let capture = CaptureSession::open(&VoiceInputDevice::SystemDefault, false, true, 1).unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let (audio, _) = capture.finish(lease.prepared().vad()).unwrap();
+    assert!(
+        !audio.samples().is_empty(),
+        "pending microphone samples were discarded"
+    );
     drop(lease);
     lifecycle.begin_closing();
     assert!(
