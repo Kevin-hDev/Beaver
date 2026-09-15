@@ -1,0 +1,10 @@
+T10 — Primitives visuelles partagées
+
+- SettingsDialog possède le portail, le voile, le cadre, le focus cyclique, Échap et le retour du focus ; Compression le consomme désormais.
+- SettingsSectionFrame remplace les titres en style inline de Compression et Ollama.
+- SelectChevron donne le même CaretDown gras aux deux sélecteurs.
+- --voice-mic-icon-size est centralisé dans tokens-icon-sizes.css à 0,9 × icon-md.
+- La SPEC et les sept pages du mockup ont été réalignées ; beaver-styles.css a été régénéré depuis les styles produit.
+
+Validation : 41 tests ciblés Compression/réglages, TypeScript, lint strict, git diff --check, inspection visuelle du mockup sombre et graphify update . réussis.
+Limite : le contrôle interactif des six thèmes dans l’application empaquetée reste inclus dans T13.
