@@ -1,0 +1,28 @@
+Review correction pass for REVUE-IMPLEMENTATION-2026-09-15.md.
+
+Resolved:
+- lifecycle unload hot loop and generation-safe model reservations, including holding the reservation until load failure delivery
+- microphone disconnect/window-hide transcription, active-operation recovery collision, panic cleanup, failed recovery state, error clearing and expiry events
+- resumable download/install interruption cases, obsolete revisions, corrupt receipts, shared URL authority and structured traces
+- non-finite audio samples, 30-minute loss accounting, transcript zeroization and linear assembly character accounting
+- settings compatibility/atomic model guard, Cohere language validation, benchmark wiring and visible speed
+- trial cleanup/errors, listener admission, model progress, shortcut collision and keyboard routing
+- Escape uses explicit discard and never creates recovery; the protective cross button retains its existing recovery behavior
+- dead code and duplicate authorities removed; source files kept below 230 lines
+
+Validation:
+- VOICE_TEST_CORPUS_DIR=/Users/kevinh/Documents/Beaver-tests/vocal cargo test services::voice:: --lib: 104 passed, 5 ignored hardware probes
+- cargo clippy --all-targets -- -D warnings: passed
+- cargo fmt --all -- --check: passed
+- npm run lint: passed
+- npx tsc --noEmit: passed
+- npm run contracts:check: passed
+- npm test: 635 Vitest files / 3514 tests passed, all script suites passed
+- git diff --check: passed
+- graphify update .: passed
+
+Linux cross-check:
+- the missing cfg gate is fixed and Linux invisibility/CI contracts pass locally
+- macOS cross-compilation stops in GTK/GLib build scripts because no Linux pkg-config sysroot is configured; native Linux CI remains the final compiler proof
+
+Untracked review-dark.png was intentionally left untouched.
