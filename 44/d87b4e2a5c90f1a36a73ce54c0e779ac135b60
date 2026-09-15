@@ -1,0 +1,25 @@
+T06 — Capture, normalisation et assemblage
+
+Implémentation
+- La sonde T01 réutilise désormais le propriétaire de flux cpal commun ; l'ancien voice_probe_audio.rs est supprimé.
+- Le callback cpal ne fait qu'une conversion scalaire et un push dans un anneau préalloué via try_lock ; il n'alloue pas, ne bloque pas, ne journalise pas et n'appelle ni Silero ni l'ASR.
+- L'anneau est borné à 4 Mio, rejette les configurations hors budget, écrase les plus anciens échantillons et compte toute perte avec un compteur atomique saturant.
+- La normalisation persistante mélange les canaux, utilise LinearResampler de sherpa-onnx vers 16 kHz et produit le PCM i16 borné à 28 800 000 échantillons.
+- Silero alimente SpeechClock hors callback. Les motifs automatiques distinguent aucune parole, silence, limite, déconnexion et masquage/verrouillage.
+- Le masquage explicite, la minimisation et le verrouillage de session macOS/Windows sont raccordés ; une simple perte de focus ne coupe pas l'écoute.
+- Les tranches ont 30 s centrales et au plus 1 s de contexte de chaque côté. L'assemblage garde les jetons selon leurs repères temporels et refuse de fonctionner sans repères fiables.
+- Les buffers audio, les tranches temporaires et les résultats intermédiaires sont zéroïsés à leur dernière utilisation. Aucun chemin d'écriture audio ni journal de texte n'a été ajouté.
+
+Validation observée
+- cargo test --lib services::voice:: -- --nocapture : 67 réussis, 0 échec.
+- cargo test --lib services::voice::capture:: -- --nocapture : 15 réussis, 0 échec.
+- cargo test --lib --features voice-probe services::voice_probe -- --nocapture : 3 réussis, 0 échec.
+- cargo check --features voice-probe : réussi.
+- cargo clippy --all-targets -- -D warnings : réussi.
+- cargo fmt --check et git diff --check : réussis.
+- graphify update . : réussi.
+
+Limites à vérifier en T07
+- La présence et la qualité des repères temporels doivent être mesurées pour chacun des trois modèles. L'assemblage échoue volontairement si ces repères manquent.
+- Le contrôle complet Windows sur ce Mac s'arrête dans aws-lc-sys/zstd-sys faute de SDK MSVC (windows.h et en-têtes C absents). Le code Windows doit être compilé et exécuté sur le vrai hôte prévu par T07.
+- Les avertissements ts-rs sur deny_unknown_fields et __eh_frame du linker sont préexistants et n'ont pas rendu les suites rouges.
