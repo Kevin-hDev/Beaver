@@ -42,12 +42,20 @@ impl VoiceCoordinator {
             if operation.id != operation_id {
                 return Ok(self.snapshot());
             }
+            if operation.reservation.context().phase() == VoicePhase::Stopping {
+                return Ok(self.snapshot());
+            }
             operation
                 .reservation
                 .context()
                 .transition(VoicePhase::Stopping)?;
             operation.cancelled = true;
             operation.recovery_deleted = true;
+            if self.recovery.as_ref().is_some_and(|recovery| {
+                recovery.status == super::recovery::RecoveryStatus::Preparing
+            }) {
+                self.recovery.take();
+            }
             ::log::info!("[voice] operation={operation_id} step=discarded");
             self.bump();
         } else if self.delivery.as_ref().is_some_and(|delivery| {

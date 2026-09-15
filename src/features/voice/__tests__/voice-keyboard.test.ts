@@ -16,19 +16,20 @@ describe("voice keyboard", () => {
     expect(decideVoiceKeyboard({ ...input, origin: false })).toBe("none");
   });
 
-  it("leaves Enter to dialogs and terminals while Escape still cancels recording", () => {
+  it("leaves Enter and Escape to dialogs and terminals", () => {
     const dialog = document.createElement("div");
     dialog.setAttribute("role", "dialog");
     const dialogButton = document.createElement("button");
     dialog.append(dialogButton);
     expect(voiceKeyboardTargetExempt("Enter", dialogButton)).toBe(true);
-    expect(voiceKeyboardTargetExempt("Escape", dialogButton)).toBe(false);
+    expect(voiceKeyboardTargetExempt("Escape", dialogButton)).toBe(true);
 
     const terminal = document.createElement("div");
     terminal.className = "terminal-panel";
     const terminalInput = document.createElement("textarea");
     terminal.append(terminalInput);
     expect(voiceKeyboardTargetExempt("Enter", terminalInput)).toBe(true);
+    expect(voiceKeyboardTargetExempt("Escape", terminalInput)).toBe(true);
   });
 
   it("rejects standard editing and window shortcuts", () => {

@@ -4,6 +4,7 @@ import { OperationProgressBar } from "@/components/ui/operation-progress-action"
 import { CheckCircle2, Clock3, Warning, X } from "@/components/ui/icons";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";
 import { cn } from "@/lib/utils";
+import { formatByteSize } from "@/lib/format-byte-size";
 import { cancelUpdateOperation } from "./update-window-actions";
 import "./update-operation-row.css";
 
@@ -56,7 +57,7 @@ function OperationState({ operation, phaseLabel }: {
   operation: UpdateOperationSnapshot;
   phaseLabel: string;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   if (operation.status === "queued") {
     return <span className="upw-rank"><Clock3 aria-hidden="true" />{t("updates.window.queued", { position: operation.queuePosition })}</span>;
   }
@@ -64,6 +65,11 @@ function OperationState({ operation, phaseLabel }: {
     return <span className="upw-step upw-step-transient">{t("updates.window.cancelling")}</span>;
   }
   if (operation.status === "failed") {
+    if (operation.missingBytes !== null) {
+      return <span className="upw-failure">{t("updates.window.insufficientSpace", {
+        size: formatByteSize(operation.missingBytes, i18n.language),
+      })}</span>;
+    }
     return <span className="upw-failure">{t(operation.isUpdate === false ? "updates.window.downloadFailed" : "updates.window.failed")}</span>;
   }
   if (operation.status === "completed" || operation.status === "cancelled") {

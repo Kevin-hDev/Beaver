@@ -94,10 +94,20 @@ pub(crate) fn ensure_disk_available(
     data_dir: &std::path::Path,
     entry: &VoiceCatalogEntry,
 ) -> Result<(), String> {
+    match disk_shortfall(data_dir, entry)? {
+        None => Ok(()),
+        Some(_) => Err("model-download-disk-space".into()),
+    }
+}
+
+pub(crate) fn disk_shortfall(
+    data_dir: &std::path::Path,
+    entry: &VoiceCatalogEntry,
+) -> Result<Option<u64>, String> {
     let partial = std::fs::metadata(partial_path(data_dir, &entry.id))
         .ok()
         .map_or(0, |metadata| metadata.len().min(entry.archive.bytes));
-    disk_budget::ensure_available(
+    disk_budget::shortfall(
         data_dir,
         entry.archive.bytes,
         entry.installed_bytes,

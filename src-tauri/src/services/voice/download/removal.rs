@@ -49,6 +49,7 @@ pub fn resume_incomplete_removals(data_dir: &Path) -> Result<(), String> {
                 cleanup_obsolete_revisions(&entry.path(), &receipt.revision)?;
             }
             _ => {
+                ::log::warn!("[voice-download] step=orphan-model-removed reason=invalid-receipt");
                 remove_receipt_file(data_dir, &id)?;
                 remove_model_files(data_dir, &id)?;
             }

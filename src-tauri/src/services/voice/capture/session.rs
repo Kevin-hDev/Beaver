@@ -120,9 +120,14 @@ impl CaptureSession {
         tail.zeroize();
         self.speech.observe_vad(vad, &waveform, true);
         waveform.zeroize();
+        let missing_tail = self
+            .speech
+            .missing_transcription_tail(self.audio.samples().len());
         if let Some(range) = self.speech.inference_range(self.audio.samples().len()) {
             self.audio.trim_to(range)?;
         }
+        let padding = missing_tail.min(MAX_PCM_SAMPLES.saturating_sub(self.audio.samples().len()));
+        self.audio.append(&vec![0; padding], 0)?;
         Ok((self.audio, self.speech.spoken_ms()))
     }
 }

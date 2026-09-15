@@ -7,4 +7,4 @@ export type ModelDownloadStatus = "queued" | "running" | "cancelling" | "complet
 
 export type ModelDownloadPhase = "starting" | "downloading" | "preparing-runtime" | "installing" | "completed";
 
-export type ModelDownloadState = { id: string, kind: ModelDownloadKind, modelId: string, isUpdate: boolean, status: ModelDownloadStatus, phase: ModelDownloadPhase, percent: number, downloaded: number, total: number, errorKey: string | null, };
+export type ModelDownloadState = { id: string, kind: ModelDownloadKind, modelId: string, isUpdate: boolean, status: ModelDownloadStatus, phase: ModelDownloadPhase, percent: number, downloaded: number, total: number, errorKey: string | null, missingBytes: number | null, };

@@ -78,4 +78,6 @@ pub struct UpdateOperationSnapshot {
     pub can_retry: bool,
     pub is_update: Option<bool>,
     pub error_key: Option<String>,
+    #[cfg_attr(test, ts(type = "number | null"))]
+    pub missing_bytes: Option<u64>,
 }

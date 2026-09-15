@@ -139,6 +139,9 @@ pub(super) fn production_url_allowed(value: &str) -> bool {
 }
 
 fn url_allowed(url: &Url, allow_loopback: bool) -> bool {
+    if !url.username().is_empty() || url.password().is_some() {
+        return false;
+    }
     if url.scheme() == "https"
         && url
             .host_str()

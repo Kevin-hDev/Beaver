@@ -45,6 +45,15 @@ fn speech_clock_saturates_and_keeps_only_outer_silence_out_of_inference() {
 }
 
 #[test]
+fn short_manual_capture_gets_only_the_missing_transcription_tail() {
+    let mut clock = SpeechClock::default();
+    clock.add_segment(0, 1_600);
+    assert_eq!(clock.missing_transcription_tail(1_600), 4_000);
+    assert_eq!(clock.missing_transcription_tail(3_200), 2_400);
+    assert_eq!(clock.missing_transcription_tail(5_600), 0);
+}
+
+#[test]
 fn stop_reasons_distinguish_no_speech_silence_limit_and_disconnect() {
     let none = SpeechClock::default();
     assert_eq!(

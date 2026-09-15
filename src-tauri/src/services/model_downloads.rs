@@ -109,7 +109,7 @@ async fn finish_ollama(
             emit_states(
                 &app,
                 manager
-                    .finish(&id, ModelDownloadStatus::Completed, None)
+                    .finish(&id, ModelDownloadStatus::Completed, None, None)
                     .await,
             );
         }
@@ -123,7 +123,7 @@ async fn finish_ollama(
             emit_states(
                 &app,
                 manager
-                    .finish(&id, ModelDownloadStatus::Cancelled, None)
+                    .finish(&id, ModelDownloadStatus::Cancelled, None, None)
                     .await,
             );
         }
@@ -134,6 +134,7 @@ async fn finish_ollama(
                     &id,
                     ModelDownloadStatus::Failed,
                     Some("model-download-failed"),
+                    None,
                 )
                 .await,
         ),
@@ -178,7 +179,7 @@ async fn finish_forecast(
     };
     let _ = app.emit("forecast-models-changed", ());
     let error = (status == ModelDownloadStatus::Failed).then_some("model-download-failed");
-    emit_states(&app, manager.finish(&state.id, status, error).await);
+    emit_states(&app, manager.finish(&state.id, status, error, None).await);
 }
 
 fn progress_percent(completed: Option<u64>, total: Option<u64>) -> u8 {

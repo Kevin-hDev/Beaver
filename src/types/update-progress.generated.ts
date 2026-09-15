@@ -9,4 +9,4 @@ export type UpdateOperationPhase = "waiting" | "preparing" | "downloading" | "ve
 
 export type UpdateProgressMode = "none" | "indeterminate" | "determinate";
 
-export type UpdateOperationSnapshot = { id: string, sequence: number, kind: UpdateOperationKind, label: string, status: UpdateOperationStatus, phase: UpdateOperationPhase, progressMode: UpdateProgressMode, percent: number | null, queuePosition: number | null, canCancel: boolean, canRetry: boolean, isUpdate: boolean | null, errorKey: string | null, };
+export type UpdateOperationSnapshot = { id: string, sequence: number, kind: UpdateOperationKind, label: string, status: UpdateOperationStatus, phase: UpdateOperationPhase, progressMode: UpdateProgressMode, percent: number | null, queuePosition: number | null, canCancel: boolean, canRetry: boolean, isUpdate: boolean | null, errorKey: string | null, missingBytes: number | null, };

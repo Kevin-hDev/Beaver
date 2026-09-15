@@ -1491,6 +1491,7 @@
       "count": "{{count}} opérations en cours",
       "downloadCompleted": "Installation terminée",
       "downloadFailed": "Le téléchargement a échoué. Vérifie ta connexion, puis réessaie.",
+      "insufficientSpace": "Il manque {{size}} d’espace disque pour poursuivre.",
       "close": "Fermer la fenêtre",
       "open": "Afficher la progression",
       "openFailed": "La fenêtre de progression ne peut pas être affichée.",

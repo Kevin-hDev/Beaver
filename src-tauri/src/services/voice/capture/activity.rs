@@ -58,6 +58,15 @@ impl SpeechClock {
         (start < end).then_some(start..end)
     }
 
+    pub fn missing_transcription_tail(self, total_samples: usize) -> usize {
+        if self.first_speech_sample.is_none() {
+            return 0;
+        }
+        let required =
+            super::super::limits::MIN_TRANSCRIPTION_TAIL_MS * VOICE_SAMPLE_RATE as usize / 1_000;
+        required.saturating_sub(total_samples.saturating_sub(self.last_speech_sample))
+    }
+
     pub fn observe_vad(
         &mut self,
         vad: &sherpa_onnx::VoiceActivityDetector,

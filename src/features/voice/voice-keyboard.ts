@@ -42,9 +42,8 @@ export function handleVoiceKeyboard(event: KeyboardEvent, snapshot: VoiceSnapsho
 }
 
 export function voiceKeyboardTargetExempt(key: string, target: EventTarget | null): boolean {
-  // Entrée reste disponible dans les couches qui possèdent leur propre action.
-  // Échap conserve volontairement son rôle global d'annulation de la dictée.
-  return key === "Enter" && target instanceof Element
+  // La couche qui a le focus garde ses propres actions ; ailleurs Échap annule la dictée.
+  return (key === "Enter" || key === "Escape") && target instanceof Element
     && Boolean(target.closest('[role="dialog"], .search-dialog, .terminal-panel, .xterm'));
 }
 

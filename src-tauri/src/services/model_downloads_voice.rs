@@ -1,7 +1,8 @@
 use super::model_downloads::{emit_states, ModelDownloadManager};
 use super::model_downloads_store::{DownloadEntry, DownloadStore};
 use super::model_downloads_types::{
-    ModelDownloadKind, ModelDownloadState, ModelDownloadStatus, MAX_PENDING_DOWNLOADS,
+    download_percentage, ModelDownloadKind, ModelDownloadState, ModelDownloadStatus,
+    VoiceDownloadFailure, MAX_PENDING_DOWNLOADS,
 };
 use tauri::AppHandle;
 use tauri::{Emitter, Manager};
@@ -46,7 +47,8 @@ impl ModelDownloadManager {
             );
             state.downloaded = checkpoint.durable_bytes;
             state.total = checkpoint.expected_bytes;
-            state.percent = percentage(checkpoint.durable_bytes, checkpoint.expected_bytes);
+            state.percent =
+                download_percentage(checkpoint.durable_bytes, checkpoint.expected_bytes);
             store.order.push_back(id.clone());
             store.entries.insert(
                 id,
@@ -65,13 +67,6 @@ fn has_voice_model(store: &DownloadStore, model_id: &str) -> bool {
     })
 }
 
-fn percentage(downloaded: u64, total: u64) -> u8 {
-    if total == 0 {
-        return 0;
-    }
-    ((downloaded.saturating_mul(100) / total).min(100)) as u8
-}
-
 pub async fn run_voice_download(
     app: AppHandle,
     manager: ModelDownloadManager,
@@ -85,9 +80,9 @@ pub async fn run_voice_download(
     );
     let result = run_voice_download_inner(&app, &manager, &state, &cancel).await;
     let current = manager.state(&state.id).await;
-    let (status, error) = match result {
-        Ok(()) => (ModelDownloadStatus::Completed, None),
-        Err(ref error)
+    let (status, error, missing_bytes) = match result {
+        Ok(()) => (ModelDownloadStatus::Completed, None, None),
+        Err(VoiceDownloadFailure::Code(ref error))
             if error == "cancelled"
                 && current
                     .as_ref()
@@ -95,7 +90,7 @@ pub async fn run_voice_download(
         {
             return;
         }
-        Err(ref error) if error == "cancelled" => {
+        Err(VoiceDownloadFailure::Code(ref error)) if error == "cancelled" => {
             if let Err(code) = crate::services::voice::download::cleanup_request(
                 &crate::services::paths::data_dir(),
                 &state.model_id,
@@ -105,9 +100,18 @@ pub async fn run_voice_download(
                     state.model_id
                 );
             }
-            (ModelDownloadStatus::Cancelled, None)
+            (ModelDownloadStatus::Cancelled, None, None)
         }
-        Err(_) => (ModelDownloadStatus::Failed, Some("model-download-failed")),
+        Err(VoiceDownloadFailure::DiskSpace(missing)) => (
+            ModelDownloadStatus::Failed,
+            Some("model-download-disk-space"),
+            Some(missing),
+        ),
+        Err(VoiceDownloadFailure::Code(_)) => (
+            ModelDownloadStatus::Failed,
+            Some("model-download-failed"),
+            None,
+        ),
     };
     if status == ModelDownloadStatus::Completed {
         let _ = app.emit("voice-models-changed", ());
@@ -117,7 +121,12 @@ pub async fn run_voice_download(
         state.id,
         state.model_id
     );
-    emit_states(&app, manager.finish(&state.id, status, error).await);
+    emit_states(
+        &app,
+        manager
+            .finish(&state.id, status, error, missing_bytes)
+            .await,
+    );
 }
 
 async fn run_voice_download_inner(
@@ -125,7 +134,7 @@ async fn run_voice_download_inner(
     manager: &ModelDownloadManager,
     state: &ModelDownloadState,
     cancel: &CancellationToken,
-) -> Result<(), String> {
+) -> Result<(), VoiceDownloadFailure> {
     let resource_dir = app
         .path()
         .resource_dir()
@@ -155,7 +164,7 @@ async fn install_entry(
     state: &ModelDownloadState,
     entry: &crate::services::voice::download::VoiceCatalogEntry,
     cancel: &CancellationToken,
-) -> Result<(), String> {
+) -> Result<(), VoiceDownloadFailure> {
     let data_dir = crate::services::paths::data_dir();
     if crate::services::voice::download::installed_receipt(entry, &data_dir)?.is_some() {
         if let Err(error) = crate::services::voice::download::cleanup_partial(&data_dir, &entry.id)
@@ -168,7 +177,9 @@ async fn install_entry(
         }
         return Ok(());
     }
-    crate::services::voice::download::ensure_disk_available(&data_dir, entry)?;
+    if let Some(missing) = crate::services::voice::download::disk_shortfall(&data_dir, entry)? {
+        return Err(VoiceDownloadFailure::DiskSpace(missing));
+    }
     let id = state.id.clone();
     let progress_manager = manager.clone();
     let progress_app = app.clone();
@@ -184,7 +195,7 @@ async fn install_entry(
                     phase: super::model_downloads_types::ModelDownloadPhase::Downloading,
                     downloaded,
                     total,
-                    percent: percentage(downloaded, total),
+                    percent: download_percentage(downloaded, total),
                 },
             ) {
                 emit_states(&progress_app, states);
@@ -193,7 +204,7 @@ async fn install_entry(
     )
     .await?;
     if cancel.is_cancelled() {
-        return Err("cancelled".into());
+        return Err(String::from("cancelled").into());
     }
     if let Some(states) = manager.try_progress(
         &state.id,

@@ -34,6 +34,7 @@ pub async fn start_model_download(
                         &state.id,
                         crate::services::model_downloads_types::ModelDownloadStatus::Failed,
                         Some("model-download-failed"),
+                        None,
                     )
                     .await;
             }

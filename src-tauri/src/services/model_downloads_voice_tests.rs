@@ -47,7 +47,7 @@ async fn restored_voice_checkpoint_stays_suspended_until_manual_resume() {
         .await
         .expect("start unrelated transfer");
     manager
-        .finish(&other.id, ModelDownloadStatus::Completed, None)
+        .finish(&other.id, ModelDownloadStatus::Completed, None, None)
         .await;
     assert!(manager.complete_and_activate_next().await.is_none());
     assert_eq!(

@@ -21,6 +21,7 @@ pub const MAX_CATALOG_ID_CHARS: usize = 64;
 pub const MAX_CATALOG_PATH_CHARS: usize = 256;
 pub const MAX_CATALOG_URL_CHARS: usize = 2_048;
 pub const VOICE_SAMPLE_RATE: u32 = 16_000;
+pub const MIN_TRANSCRIPTION_TAIL_MS: usize = 250;
 pub const MAX_CAPTURE_SECONDS: usize = 30 * 60;
 pub const MAX_PCM_SAMPLES: usize = VOICE_SAMPLE_RATE as usize * MAX_CAPTURE_SECONDS;
 pub const MAX_ASR_SLICE_SAMPLES: usize = VOICE_SAMPLE_RATE as usize * 30;

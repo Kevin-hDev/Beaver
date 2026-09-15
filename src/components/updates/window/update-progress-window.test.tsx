@@ -27,13 +27,15 @@ vi.mock("./use-update-operations", () => ({
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string, values?: { count?: number; position?: number }) =>
-    values?.count ? `${values.count} opérations` : values?.position ? `position ${values.position}` : key }),
+    values?.count ? `${values.count} opérations` : values?.position ? `position ${values.position}` : key,
+  i18n: { language: "fr" } }),
 }));
 
 const base: UpdateOperationSnapshot = {
   id: "one", sequence: 1, kind: "app-release", label: "Beaver 1.4.2",
   status: "running", phase: "downloading", progressMode: "determinate",
   percent: 43, queuePosition: null, canCancel: true, canRetry: false, isUpdate: null, errorKey: null,
+  missingBytes: null,
 };
 
 describe("UpdateProgressWindow", () => {
@@ -94,6 +96,20 @@ describe("UpdateProgressWindow", () => {
     expect(screen.getByText("updates.window.failed")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "updates.window.retry" }));
     expect(mocks.invoke).toHaveBeenCalledWith("request_update_operation_retry", { id: "one" });
+  });
+
+  it("affiche la quantité manquante pour un modèle vocal", () => {
+    mocks.operations = [{
+      ...base,
+      kind: "voice-model",
+      isUpdate: false,
+      status: "failed",
+      canCancel: false,
+      canRetry: true,
+      missingBytes: 1_048_576,
+    }];
+    render(<UpdateProgressWindow />);
+    expect(screen.getByText("updates.window.insufficientSpace")).toBeTruthy();
   });
 
   it("valide le thème initial et les changements du canal fermé", () => {

@@ -8,7 +8,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(() => Promise.resolve()) 
 const operation = (kind: UpdateOperationSnapshot["kind"]): UpdateOperationSnapshot => ({
   id: "operation-1", sequence: 1, kind, label: "model", status: "running",
   phase: "downloading", progressMode: "determinate", percent: 20,
-  queuePosition: null, canCancel: true, canRetry: false, isUpdate: null, errorKey: null,
+  queuePosition: null, canCancel: true, canRetry: false, isUpdate: null, errorKey: null, missingBytes: null,
 });
 
 describe("update window actions", () => {

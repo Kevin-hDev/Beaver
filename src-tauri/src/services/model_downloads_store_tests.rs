@@ -48,7 +48,7 @@ mod tests {
         assert_eq!(cancelling[0].status, ModelDownloadStatus::Cancelling);
 
         let states = manager
-            .finish(&state.id, ModelDownloadStatus::Cancelled, None)
+            .finish(&state.id, ModelDownloadStatus::Cancelled, None, None)
             .await;
         assert_eq!(states[0].status, ModelDownloadStatus::Cancelled);
     }
@@ -72,7 +72,7 @@ mod tests {
             )
             .await;
         manager
-            .finish(&state.id, ModelDownloadStatus::Completed, None)
+            .finish(&state.id, ModelDownloadStatus::Completed, None, None)
             .await;
         assert!(manager.complete_and_activate_next().await.is_none());
 
@@ -99,7 +99,7 @@ mod tests {
             .unwrap();
 
         manager
-            .finish(&first.id, ModelDownloadStatus::Completed, None)
+            .finish(&first.id, ModelDownloadStatus::Completed, None, None)
             .await;
         let (activated, _) = manager.complete_and_activate_next().await.unwrap();
 
@@ -148,7 +148,7 @@ mod tests {
             ModelDownloadStatus::Cancelled,
         );
         manager
-            .finish(&first.id, ModelDownloadStatus::Completed, None)
+            .finish(&first.id, ModelDownloadStatus::Completed, None, None)
             .await;
         assert!(manager.complete_and_activate_next().await.is_none());
     }
@@ -242,7 +242,7 @@ mod tests {
             .await
             .unwrap();
         manager
-            .finish(&first.id, ModelDownloadStatus::Completed, None)
+            .finish(&first.id, ModelDownloadStatus::Completed, None, None)
             .await;
         assert!(runner.is_some());
         assert!(manager.complete_and_activate_next().await.is_none());

@@ -145,11 +145,13 @@ impl ModelDownloadManager {
         id: &str,
         status: ModelDownloadStatus,
         error_key: Option<&str>,
+        missing_bytes: Option<u64>,
     ) -> Vec<ModelDownloadState> {
         let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(entry) = store.entries.get_mut(id) {
             entry.state.status = status;
             entry.state.error_key = error_key.map(str::to_string);
+            entry.state.missing_bytes = missing_bytes;
             if status == ModelDownloadStatus::Completed {
                 entry.state.phase = ModelDownloadPhase::Completed;
                 entry.state.percent = 100;

@@ -1374,7 +1374,7 @@
     "window": {
       "open": "進行状況を表示",
       "openFailed": "進行状況ウィンドウを表示できませんでした。",
-      "title": "アップデート", "downloadTitle": "ダウンロード", "count": "{{count}} 件の処理中の操作", "downloadCompleted": "インストール完了", "downloadFailed": "ダウンロードに失敗しました。接続を確認して再試行してください。", "close": "ウィンドウを閉じる", "remove": "この行を削除", "retry": "再試行", "cancel": "キャンセル", "queued": "待機中 · {{position}} 番目", "cancelling": "キャンセル中…", "completed": "更新済み", "cancelledResult": "キャンセル済み", "failed": "アップデートに失敗しました。接続を確認して再試行してください。", "restarting": "Beaver を再起動中…",
+      "title": "アップデート", "downloadTitle": "ダウンロード", "count": "{{count}} 件の処理中の操作", "downloadCompleted": "インストール完了", "downloadFailed": "ダウンロードに失敗しました。接続を確認して再試行してください。", "insufficientSpace": "続行するには、さらに {{size}} の空き容量が必要です。", "close": "ウィンドウを閉じる", "remove": "この行を削除", "retry": "再試行", "cancel": "キャンセル", "queued": "待機中 · {{position}} 番目", "cancelling": "キャンセル中…", "completed": "更新済み", "cancelledResult": "キャンセル済み", "failed": "アップデートに失敗しました。接続を確認して再試行してください。", "restarting": "Beaver を再起動中…",
       "phases": { "waiting": "待機中", "preparing": "準備中", "downloading": "ダウンロード中", "verifying": "整合性を確認中", "extracting": "展開中", "installing": "インストール中", "restarting": "再起動中", "recovering": "復旧中", "rolling-back": "ロールバック中", "cleaning": "クリーンアップ中", "completed": "完了" }
     }
   },

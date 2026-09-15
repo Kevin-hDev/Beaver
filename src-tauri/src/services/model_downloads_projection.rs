@@ -96,6 +96,7 @@ pub(crate) fn project_state(
         can_retry: status == UpdateOperationStatus::Failed,
         is_update: Some(state.is_update),
         error_key: state.error_key.clone(),
+        missing_bytes: state.missing_bytes,
     }
 }
 

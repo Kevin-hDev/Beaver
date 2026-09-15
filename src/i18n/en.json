@@ -1439,6 +1439,7 @@
       "count": "{{count}} operations in progress",
       "downloadCompleted": "Installation complete",
       "downloadFailed": "The download failed. Check your connection and try again.",
+      "insufficientSpace": "{{size}} of additional disk space is required to continue.",
       "close": "Close window",
       "open": "Show progress",
       "openFailed": "The progress window could not be shown.",

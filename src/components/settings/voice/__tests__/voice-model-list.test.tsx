@@ -32,7 +32,7 @@ describe("VoiceModelList", () => {
     const download: ModelDownloadState = {
       id: "download", kind: "voice", modelId: "parakeet", isUpdate: false,
       status: "suspended", phase: "downloading", percent: 42,
-      downloaded: 42, total: 100, errorKey: null,
+      downloaded: 42, total: 100, errorKey: null, missingBytes: null,
     };
     render(<VoiceModelList
       items={[{ id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 0, installed: false, languageMode: "automatic-only", speedMultiplier: null }]}
@@ -47,7 +47,7 @@ describe("VoiceModelList", () => {
     const download: ModelDownloadState = {
       id: "download", kind: "voice", modelId: "parakeet", isUpdate: false,
       status: "running", phase: "downloading", percent: 42,
-      downloaded: 42, total: 100, errorKey: null,
+      downloaded: 42, total: 100, errorKey: null, missingBytes: null,
     };
     render(<VoiceModelList
       items={[{ id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 0, installed: false, languageMode: "automatic-only", speedMultiplier: null }]}

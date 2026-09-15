@@ -90,6 +90,40 @@ fn explicit_discard_never_creates_a_recovery() {
 }
 
 #[test]
+fn explicit_discard_removes_a_preparing_recovery_and_is_idempotent() {
+    let runtime = runtime();
+    let operation_id = start(&runtime, "draft");
+    runtime
+        .coordinator_for_test()
+        .record_capture(&operation_id, 40_000, 35_000, 0, 0.5)
+        .unwrap();
+    runtime
+        .dispatch(
+            VoiceAction::CancelInsertion {
+                operation_id: operation_id.clone(),
+            },
+            true,
+        )
+        .unwrap();
+    assert_eq!(
+        runtime.snapshot().recovery.unwrap().status,
+        VoiceRecoveryState::Preparing
+    );
+
+    for _ in 0..2 {
+        runtime
+            .dispatch(
+                VoiceAction::DiscardOperation {
+                    operation_id: operation_id.clone(),
+                },
+                true,
+            )
+            .unwrap();
+    }
+    assert!(runtime.snapshot().recovery.is_none());
+}
+
+#[test]
 fn microphone_disconnection_reaches_the_delivered_result() {
     let runtime = runtime();
     let operation_id = start(&runtime, "draft");

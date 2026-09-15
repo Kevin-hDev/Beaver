@@ -52,6 +52,8 @@ pub struct ModelDownloadState {
     #[cfg_attr(test, ts(type = "number"))]
     pub total: u64,
     pub error_key: Option<String>,
+    #[cfg_attr(test, ts(type = "number | null"))]
+    pub missing_bytes: Option<u64>,
 }
 
 #[cfg(test)]
@@ -97,6 +99,25 @@ impl ModelDownloadState {
             downloaded: 0,
             total: 0,
             error_key: None,
+            missing_bytes: None,
         }
     }
+}
+
+pub(super) enum VoiceDownloadFailure {
+    Code(String),
+    DiskSpace(u64),
+}
+
+impl From<String> for VoiceDownloadFailure {
+    fn from(value: String) -> Self {
+        Self::Code(value)
+    }
+}
+
+pub(super) fn download_percentage(downloaded: u64, total: u64) -> u8 {
+    if total == 0 {
+        return 0;
+    }
+    ((downloaded.saturating_mul(100) / total).min(100)) as u8
 }

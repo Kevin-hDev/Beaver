@@ -1374,7 +1374,7 @@
     "window": {
       "open": "显示进度",
       "openFailed": "无法显示进度窗口。",
-      "title": "更新", "downloadTitle": "下载", "count": "{{count}} 个进行中的操作", "downloadCompleted": "安装完成", "downloadFailed": "下载失败。请检查网络连接后重试。", "close": "关闭窗口", "remove": "移除此行", "retry": "重试", "cancel": "取消", "queued": "等待中 · 第 {{position}} 位", "cancelling": "正在取消…", "completed": "已更新", "cancelledResult": "已取消", "failed": "更新失败。请检查网络连接后重试。", "restarting": "正在重启 Beaver…",
+      "title": "更新", "downloadTitle": "下载", "count": "{{count}} 个进行中的操作", "downloadCompleted": "安装完成", "downloadFailed": "下载失败。请检查网络连接后重试。", "insufficientSpace": "还需要 {{size}} 可用磁盘空间才能继续。", "close": "关闭窗口", "remove": "移除此行", "retry": "重试", "cancel": "取消", "queued": "等待中 · 第 {{position}} 位", "cancelling": "正在取消…", "completed": "已更新", "cancelledResult": "已取消", "failed": "更新失败。请检查网络连接后重试。", "restarting": "正在重启 Beaver…",
       "phases": { "waiting": "等待中", "preparing": "准备中", "downloading": "下载中", "verifying": "正在验证完整性", "extracting": "解压中", "installing": "安装中", "restarting": "重启中", "recovering": "恢复中", "rolling-back": "正在回滚", "cleaning": "清理中", "completed": "已完成" }
     }
   },

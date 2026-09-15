@@ -71,6 +71,10 @@ fn traversing_identifier_is_rejected() {
 #[test]
 fn unsafe_sources_are_rejected() {
     rejects(|value| value["entries"][0]["archive"]["url"] = "http://example.com/a".into());
+    rejects(|value| {
+        value["entries"][0]["archive"]["url"] =
+            "https://user:secret@github.com/example/model.tar.gz".into()
+    });
     rejects(|value| value["entries"][0]["manifest_url"] = "https://untrusted.example/a".into());
 }
 
