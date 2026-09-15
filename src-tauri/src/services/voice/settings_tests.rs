@@ -16,6 +16,9 @@ fn defaults_match_the_product_decisions_and_invalid_input_fails_closed() {
     }
     .validate()
     .is_err());
+    let clear_shortcut: VoiceSettingsPatch =
+        serde_json::from_value(serde_json::json!({ "shortcut": null })).unwrap();
+    assert_eq!(clear_shortcut.shortcut, Some(None));
     assert!(
         serde_json::from_value::<VoiceSettingsPatch>(serde_json::json!({
             "model_path": "/tmp/untrusted"

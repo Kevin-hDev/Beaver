@@ -168,6 +168,7 @@ pub struct VoiceSettingsPatch {
     pub max_duration: Option<VoiceMaxDuration>,
     pub language: Option<VoiceLanguage>,
     #[cfg_attr(test, ts(optional, type = "string | null"))]
+    #[serde(default, deserialize_with = "super::nullable::deserialize")]
     pub shortcut: Option<Option<String>>,
     pub unload_delay: Option<VoiceUnloadDelay>,
     pub explanation_accepted: Option<bool>,

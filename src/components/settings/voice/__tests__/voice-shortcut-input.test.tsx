@@ -7,13 +7,19 @@ vi.mock("react-i18next", () => ({
 }));
 
 describe("VoiceShortcutInput", () => {
-  it("captures a shortcut after the user clicks Create", () => {
+  it("captures a combination only when its main key is released", () => {
     const onChange = vi.fn();
     render(<VoiceShortcutInput value={null} onChange={onChange} />);
 
     fireEvent.click(screen.getByRole("button", { name: "voice.settings.createShortcut" }));
-    fireEvent.keyDown(document.body, { key: "k", code: "KeyK", metaKey: true });
+    fireEvent.keyDown(document.body, { key: "Meta", code: "MetaLeft", metaKey: true });
+    expect(onChange).not.toHaveBeenCalled();
 
+    fireEvent.keyDown(document.body, { key: "k", code: "KeyK", metaKey: true });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText(/(?:⌘|Meta) \+ K/)).toBeInTheDocument();
+
+    fireEvent.keyUp(document.body, { key: "k", code: "KeyK", metaKey: true });
     expect(onChange).toHaveBeenCalledWith("Meta+KeyK");
   });
 });

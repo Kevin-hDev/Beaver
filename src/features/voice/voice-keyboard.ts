@@ -41,7 +41,7 @@ export function handleVoiceKeyboard(event: KeyboardEvent, snapshot: VoiceSnapsho
 }
 
 export function voiceShortcutValue(event: Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey">): string | null {
-  if (!event.code || (!event.metaKey && !event.ctrlKey && !event.altKey)) return null;
+  if (!event.code || /^(Meta|Control|Alt|Shift)(Left|Right)$/.test(event.code) || (!event.metaKey && !event.ctrlKey && !event.altKey)) return null;
   return [event.metaKey ? "Meta" : "", event.ctrlKey ? "Control" : "", event.altKey ? "Alt" : "", event.shiftKey ? "Shift" : "", event.code]
     .filter(Boolean).join("+");
 }
