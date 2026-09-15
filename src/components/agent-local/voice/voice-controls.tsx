@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/components/ui/tooltip";
 import { X } from "@/components/ui/icons";
+import { StopIcon } from "../send-stop-icons";
 import { useVoiceController } from "@/features/voice/use-voice-controller";
 import { VoiceSignal } from "./voice-signal";
 import { VoiceFirstUseDialog } from "./voice-first-use-dialog";
-import { VoiceLanguageDialog } from "./voice-language-dialog";
 import "./voice-controls.css";
 
 export function VoiceControls({ draftKey }: { draftKey: string }) {
@@ -19,10 +19,10 @@ export function VoiceControls({ draftKey }: { draftKey: string }) {
         <button type="button" className="btn btn-sm btn-secondary" onClick={() => void voice.resumeDownload(voice.modelDownload!.id)}>{t("modelDownloads.resume")}</button>
       ) : voice.origin && operation ? (
         <div className="vc-active">
-          {voice.snapshot?.phase === "listening" && <VoiceSignal level={operation.level} />}
+          {voice.snapshot?.phase === "listening" && <VoiceSignal level={operation.level} label={t("voice.status.listening")} />}
           <button type="button" className="icon-btn vc-cancel" aria-label={t("voice.cancel")} onClick={() => void voice.cancel()}><X size="var(--icon-sm)" /></button>
           {voice.snapshot?.phase === "listening" && (
-            <button type="button" className="icon-btn vc-validate" aria-label={t("voice.validate")} onClick={() => void voice.validate()}><span /></button>
+            <button type="button" className="icon-btn send-btn vc-validate" aria-label={t("voice.validate")} onClick={() => void voice.validate()}><StopIcon /></button>
           )}
         </div>
       ) : voice.activeElsewhere ? (
@@ -36,7 +36,6 @@ export function VoiceControls({ draftKey }: { draftKey: string }) {
         </Tooltip>
       )}
       {voice.dialog === "first-use" && <VoiceFirstUseDialog onAccept={() => void voice.acceptExplanation()} onClose={voice.closeDialog} />}
-      {voice.dialog === "language" && <VoiceLanguageDialog onStart={(language) => void voice.start(language)} onClose={voice.closeDialog} />}
     </>
   );
 }

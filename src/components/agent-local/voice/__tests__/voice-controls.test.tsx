@@ -33,6 +33,7 @@ describe("VoiceControls", () => {
     render(<VoiceControls draftKey="session:one" />);
     expect(screen.getByRole("button", { name: "voice.cancel" })).toBeVisible();
     expect(screen.getByRole("button", { name: "voice.validate" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "voice.status.listening" }).querySelector("polygon")).toHaveStyle({ transform: "scaleY(0.7)" });
     expect(screen.queryByRole("button", { name: "voice.start" })).toBeNull();
   });
 

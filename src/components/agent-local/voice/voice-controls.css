@@ -1,13 +1,16 @@
 .vc-active { display: inline-flex; align-items: center; gap: var(--space-xs); }
 .vc-mic { position: relative; top: 4px; color: var(--ink-muted); }
 .vc-mic > span { width: var(--voice-mic-icon-size); height: var(--voice-mic-icon-size); background: currentColor; mask: url("../../../assets/bi--mic.svg") center / contain no-repeat; }
-.vc-signal { display: inline-flex; align-items: center; gap: 2px; height: var(--icon-md); }
-.vc-bar { width: 2px; height: 25%; border-radius: var(--radius-full); background: var(--ink-faint); transition: height 50ms linear, background 50ms linear; }
-.vc-bar:nth-child(2), .vc-bar:nth-child(4) { height: 45%; }
-.vc-bar:nth-child(3) { height: 65%; }
-.vc-bar-on { height: 100% !important; background: var(--pulse); }
+.vc-signal { flex: 1; min-width: 80px; height: 48px; color: var(--pulse); overflow: visible; }
+.vc-signal polygon { fill: currentColor; transform-box: fill-box; transform-origin: center; transition: transform 50ms linear; }
 .vc-cancel, .vc-validate { color: var(--ink-muted); }
-.vc-validate > span { width: var(--icon-sm); height: var(--icon-sm); border-radius: var(--radius-full); background: var(--danger); }
+.vc-validate { top: 0; }
+.chat-input-bubble-voice-listening > .chat-textarea-shell,
+.chat-input-bubble-voice-listening > .chat-file-list,
+.chat-input-bubble-voice-listening > .vc-notes,
+.chat-input-bubble-voice-listening > .chat-input-row3 > :not(.vc-active) { display: none; }
+.chat-input-bubble-voice-listening > .chat-input-row3 { min-height: 72px; padding: var(--space-sm) var(--space-md); }
+.chat-input-bubble-voice-listening .vc-active { width: 100%; }
 .vc-elsewhere { border: 0; padding: var(--space-xs); background: none; color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; cursor: pointer; }
 .vc-elsewhere:hover { color: var(--ink); }
 .vc-notes { display: grid; gap: var(--space-xs); padding: 0 var(--space-sm) var(--space-xs); }
@@ -15,4 +18,3 @@
 .vc-note-error { color: var(--danger); }
 .vc-recovery-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .vc-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); padding-top: var(--space-md); }
-.vc-language-options { display: grid; gap: var(--space-sm); }

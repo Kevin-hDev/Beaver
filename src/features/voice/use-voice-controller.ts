@@ -6,7 +6,7 @@ import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesVoiceShortcut } from "./voice-keyboard";
-import type { VoiceLanguage, VoiceSettings } from "@/types/voice.generated";
+import type { VoiceSettings } from "@/types/voice.generated";
 import { dispatchVoiceAction, getVoiceCatalog, getVoiceSettings, listVoiceDevices, updateVoiceSettings } from "./voice-client";
 import { acceptVoiceSnapshot, useVoiceSnapshot } from "./voice-store";
 
@@ -21,7 +21,7 @@ export function useVoiceController(draftKey: string) {
   const [settings, setSettings] = useState<VoiceSettings | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [deviceCount, setDeviceCount] = useState<number | null>(null);
-  const [dialog, setDialog] = useState<"first-use" | "language" | null>(null);
+  const [dialog, setDialog] = useState<"first-use" | null>(null);
   const [pending, setPending] = useState(false);
   const destination = snapshot?.operation?.destination;
   const origin = destination?.kind === "draft" && destination.draft_key === draftKey;
@@ -55,10 +55,16 @@ export function useVoiceController(draftKey: string) {
     }
   }, [pending]);
 
+  const start = useCallback(async () => {
+    setDialog(null);
+    contextGeneration = (contextGeneration + 1) % Number.MAX_SAFE_INTEGER || 1;
+    await run({ action: "start", destination: { kind: "draft", draft_key: draftKey }, context_generation: contextGeneration, language: null });
+  }, [draftKey, run]);
+
   const begin = useCallback(() => {
     if (!settings?.explanation_accepted) setDialog("first-use");
-    else setDialog("language");
-  }, [settings]);
+    else void start();
+  }, [settings?.explanation_accepted, start]);
 
   const acceptExplanation = useCallback(async () => {
     try {
@@ -70,18 +76,12 @@ export function useVoiceController(draftKey: string) {
         acceptVoiceSnapshot(await dispatchVoiceAction({ action: "install", model_id: selected.id }));
         setDialog(null);
       } else {
-        setDialog("language");
+        await start();
       }
     } catch {
       showToast(i18n.t("errors.operationFailed"), "error");
     }
-  }, []);
-
-  const start = useCallback(async (language: VoiceLanguage | null) => {
-    setDialog(null);
-    contextGeneration = (contextGeneration + 1) % Number.MAX_SAFE_INTEGER || 1;
-    await run({ action: "start", destination: { kind: "draft", draft_key: draftKey }, context_generation: contextGeneration, language });
-  }, [draftKey, run]);
+  }, [start]);
 
   const operationId = origin ? snapshot?.operation?.id : null;
   const modelDownload = downloads.downloads.find((item) => item.kind === "voice"
