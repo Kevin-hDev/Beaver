@@ -95,7 +95,9 @@ fn run(
             capture_ms,
             poll.speech_ms,
             poll.level.lost_samples > 0,
-            poll.level.mean,
+            // La crête, pas la moyenne : la moyenne d'une voix normale reste
+            // sous 0,1 et dessinerait un signal plat à l'écran.
+            poll.level.peak,
         )?;
         emit(app, runtime);
         if let Some(reason) = poll.stop_reason {

@@ -237,3 +237,10 @@ ts-rs = "12.0.1"
 [target.'cfg(target_os = "windows")'.dev-dependencies]
 rcgen = "0.14"
 tokio-rustls = "0.26"
+
+# Le hachage SHA-256 des modèles vocaux (652 Mo) prend ~24 s compilé sans
+# optimisations, contre ~1 s optimisé. On optimise ce seul paquet en dev pour
+# que la première dictée d'un lancement ne coûte pas 30 s pendant le
+# développement ; la release n'est pas concernée.
+[profile.dev.package.sha2]
+opt-level = 3

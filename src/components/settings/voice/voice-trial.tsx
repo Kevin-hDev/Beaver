@@ -20,7 +20,7 @@ export function VoiceTrial() {
   const start = () => dispatchVoiceAction({ action: "start", destination: { kind: "trial", trial_id: trialId }, context_generation: Date.now(), language: null });
   return <section className="vset-trial">
     <h3>{t("voice.settings.try")}</h3>
-    {operation ? <div className="vset-trial-line"><VoiceSignal level={operation.level} /><button type="button" className="btn btn-sm btn-secondary" onClick={() => { setStoppedAt(performance.now()); setDelayMs(null); void dispatchVoiceAction({ action: "validate", operation_id: operation.id }); }}>{t("voice.validate")}</button></div>
+    {operation ? <div className="vset-trial-line"><VoiceSignal level={operation.level} tick={operation.captureMs} /><button type="button" className="btn btn-sm btn-secondary" onClick={() => { setStoppedAt(performance.now()); setDelayMs(null); void dispatchVoiceAction({ action: "validate", operation_id: operation.id }); }}>{t("voice.validate")}</button></div>
       : <button type="button" className="btn btn-sm btn-secondary" onClick={() => void start()}>{t("voice.settings.startTrial")}</button>}
     {result && <div className="vset-result"><p>{result.text}</p><small>{t("voice.settings.trialTiming", { compute: (result.computeMs / 1000).toFixed(1), delay: delayMs === null ? "—" : (delayMs / 1000).toFixed(1) })}</small></div>}
   </section>;

@@ -29,11 +29,14 @@ describe("VoiceControls", () => {
   });
 
   it("replaces the microphone with stable listening controls", () => {
-    controller.mockReturnValue({ ...idle, origin: true, snapshot: { phase: "listening", operation: { id: "op", level: 0.7 } } });
+    controller.mockReturnValue({ ...idle, origin: true, snapshot: { phase: "listening", operation: { id: "op", level: 0.7, captureMs: 150, speechMs: 100 } } });
     render(<VoiceControls draftKey="session:one" />);
     expect(screen.getByRole("button", { name: "voice.cancel" })).toBeVisible();
     expect(screen.getByRole("button", { name: "voice.validate" })).toBeVisible();
-    expect(screen.getByRole("img", { name: "voice.status.listening" }).querySelector("polygon")).toHaveStyle({ transform: "scaleY(0.7)" });
+    const signalBars = screen.getByRole("img", { name: "voice.status.listening" }).querySelectorAll("span");
+    expect(signalBars.length).toBeGreaterThan(0);
+    // 0.7 de crête ≈ −3,1 dB → 0,92 sur l'échelle en décibels (plancher −40 dB).
+    expect(signalBars[signalBars.length - 1]?.getAttribute("style")).toContain("--vc-h: 0.92");
     expect(screen.queryByRole("button", { name: "voice.start" })).toBeNull();
   });
 

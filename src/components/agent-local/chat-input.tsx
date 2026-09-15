@@ -175,7 +175,7 @@ export function ChatInput({
           )}
           <ChatInputEditor
             value={text}
-            placeholder={t("agentLocal.placeholder")}
+            placeholder={voiceSnapshot?.phase === "preparing" && voiceSnapshot.operation?.destination.kind === "draft" && voiceSnapshot.operation.destination.draft_key === draftKey ? t("voice.status.preparing") : t("agentLocal.placeholder")}
             readOnly={false}
             activeSkills={skills.activeSkills}
             selection={selection}
