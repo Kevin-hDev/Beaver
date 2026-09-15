@@ -37,7 +37,7 @@ fn current_revision_and_profile_replace_the_previous_measurement() {
     let entries = store.load(data.path()).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].revision, "b".repeat(40));
-    assert_eq!(entries[0].multiplier(), 0.25);
+    assert_eq!(entries[0].multiplier(), 4.0);
     assert!(store
         .current(
             data.path(),

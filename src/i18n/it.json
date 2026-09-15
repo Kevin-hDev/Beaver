@@ -2655,9 +2655,6 @@
       "continue": "Continua"
     },
     "language": {
-      "title": "Lingua della dettatura",
-      "description": "Scegli la lingua per questa dettatura.",
-      "configured": "Usa impostazione attuale",
       "automatic": "Rilevamento automatico"
     },
     "settings": {
@@ -2672,6 +2669,7 @@
       "advancedDescription": "Modelli, microfono e memoria.",
       "open": "Avanzate",
       "languageCount": "{{count}} lingue",
+      "lastSpeed": "≈ {{speed}}× tempo reale · ultima misura, caricamento escluso",
       "installing": "Installazione…",
       "cancelling": "Annullamento…",
       "remove": "Rimuovi",
@@ -2727,6 +2725,7 @@
       "delete": "Elimina recupero",
       "duration": "{{minutes}} min {{seconds}} s"
     },
+    "notice": { "microphoneDisconnected": "Il microfono si è disconnesso. L’audio acquisito è stato trascritto." },
     "error": {
       "busy": "È già in corso un’altra operazione vocale.",
       "shutting-down": "Beaver si sta chiudendo.",

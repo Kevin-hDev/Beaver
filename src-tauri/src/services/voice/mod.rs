@@ -1,6 +1,3 @@
-// T02 fixe les contrats que les commandes et moteurs des tâches T05 à T09 consommeront.
-#![allow(dead_code)]
-
 #[cfg(any(target_os = "macos", windows))]
 pub mod actions;
 #[cfg(any(target_os = "macos", windows))]
@@ -11,6 +8,8 @@ pub mod capture;
 pub mod contracts;
 #[cfg(any(target_os = "macos", windows))]
 pub mod delivery;
+#[cfg(any(target_os = "macos", windows))]
+mod delivery_types;
 pub mod download;
 pub mod errors;
 mod language;
@@ -21,10 +20,18 @@ pub mod maintenance;
 pub mod model;
 mod nullable;
 #[cfg(any(target_os = "macos", windows))]
+mod operation;
+#[cfg(any(target_os = "macos", windows))]
 pub mod pipeline;
+#[cfg(any(target_os = "macos", windows))]
+mod pipeline_benchmark;
+#[cfg(any(target_os = "macos", windows))]
+mod pipeline_stop;
 #[cfg(any(target_os = "macos", windows))]
 pub mod recovery;
 pub mod runtime;
+#[cfg(test)]
+mod runtime_test_support;
 pub mod settings;
 pub mod slicing;
 #[cfg(any(target_os = "macos", windows))]
@@ -41,6 +48,8 @@ mod actions_tests;
 mod delivery_tests;
 #[cfg(all(test, any(target_os = "macos", windows)))]
 mod maintenance_tests;
+#[cfg(all(test, any(target_os = "macos", windows)))]
+mod pipeline_tests;
 #[cfg(all(test, any(target_os = "macos", windows)))]
 mod recovery_tests;
 #[cfg(test)]

@@ -2,7 +2,7 @@ import type { VoicePhase } from "@/types/voice.generated";
 import type { VoiceSnapshot } from "@/types/voice.generated";
 import { dispatchVoiceAction } from "./voice-client";
 
-export type VoiceKeyboardDecision = "none" | "consume" | "validate" | "cancel-insertion" | "toggle";
+export type VoiceKeyboardDecision = "none" | "consume" | "validate" | "discard" | "toggle";
 
 interface VoiceKeyboardInput {
   key: string;
@@ -18,11 +18,12 @@ export function decideVoiceKeyboard(input: VoiceKeyboardInput): VoiceKeyboardDec
     if (input.phase === "listening") return "validate";
     if (["preparing", "transcribing", "recovering", "delivering"].includes(input.phase)) return "consume";
   }
-  if (input.key === "Escape" && input.phase !== "idle") return "cancel-insertion";
+  if (input.key === "Escape" && input.phase !== "idle") return "discard";
   return "none";
 }
 
 export function handleVoiceKeyboard(event: KeyboardEvent, snapshot: VoiceSnapshot | null, draftKey: string): boolean {
+  if (voiceKeyboardTargetExempt(event.key, event.target)) return false;
   const destination = snapshot?.operation?.destination;
   const decision = decideVoiceKeyboard({
     key: event.key,
@@ -36,8 +37,15 @@ export function handleVoiceKeyboard(event: KeyboardEvent, snapshot: VoiceSnapsho
   event.stopPropagation();
   const operationId = snapshot?.operation?.id ?? snapshot?.delivery?.id;
   if (operationId && decision === "validate") void dispatchVoiceAction({ action: "validate", operation_id: operationId });
-  if (operationId && decision === "cancel-insertion") void dispatchVoiceAction({ action: "cancel-insertion", operation_id: operationId });
+  if (operationId && decision === "discard") void dispatchVoiceAction({ action: "discard-operation", operation_id: operationId });
   return true;
+}
+
+export function voiceKeyboardTargetExempt(key: string, target: EventTarget | null): boolean {
+  // Entrée reste disponible dans les couches qui possèdent leur propre action.
+  // Échap conserve volontairement son rôle global d'annulation de la dictée.
+  return key === "Enter" && target instanceof Element
+    && Boolean(target.closest('[role="dialog"], .search-dialog, .terminal-panel, .xterm'));
 }
 
 export function voiceShortcutValue(event: Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey">): string | null {
@@ -48,4 +56,14 @@ export function voiceShortcutValue(event: Pick<KeyboardEvent, "altKey" | "code" 
 
 export function matchesVoiceShortcut(event: KeyboardEvent, configured: string | null): boolean {
   return configured ? voiceShortcutValue(event) === configured : false;
+}
+
+const RESERVED_SYSTEM_CODES: ReadonlySet<string> = new Set([
+  "KeyA", "KeyC", "KeyV", "KeyX", "KeyZ", "KeyQ", "KeyW",
+]);
+
+export function isReservedVoiceShortcut(value: string): boolean {
+  const parts = value.split("+");
+  return (parts.includes("Meta") || parts.includes("Control"))
+    && RESERVED_SYSTEM_CODES.has(parts[parts.length - 1] ?? "");
 }

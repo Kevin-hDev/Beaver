@@ -15,11 +15,10 @@ export function acceptVoiceSnapshot(next: VoiceSnapshot): boolean {
 
 export function readVoiceSnapshot(): VoiceSnapshot | null { return snapshot; }
 
-function subscribe(listener: () => void): () => void {
-  while (listeners.size >= MAX_LISTENERS) {
-    const oldest = listeners.keys().next().value;
-    if (oldest === undefined) break;
-    listeners.delete(oldest);
+export function subscribeVoiceSnapshots(listener: () => void): () => void {
+  if (listeners.size >= MAX_LISTENERS) {
+    console.error("[voice] listener limit reached");
+    return () => undefined;
   }
   const id = nextListenerId++;
   listeners.set(id, listener);
@@ -27,7 +26,7 @@ function subscribe(listener: () => void): () => void {
 }
 
 export function useVoiceSnapshot(): VoiceSnapshot | null {
-  return useSyncExternalStore(subscribe, readVoiceSnapshot, readVoiceSnapshot);
+  return useSyncExternalStore(subscribeVoiceSnapshots, readVoiceSnapshot, readVoiceSnapshot);
 }
 
-export function resetVoiceStoreForTests() { snapshot = null; }
+export function resetVoiceStoreForTests() { snapshot = null; listeners.clear(); }

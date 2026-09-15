@@ -57,7 +57,6 @@ impl VoiceState {
                 VoicePhase::Transcribing,
                 VoicePhase::Delivering | VoicePhase::Recovering | VoicePhase::Stopping
             ) | (VoicePhase::Recovering, VoicePhase::Stopping)
-                | (VoicePhase::Delivering, VoicePhase::Recovering)
         );
         if !allowed {
             return Err(VoiceError::invalid_transition());
@@ -74,6 +73,7 @@ impl VoiceState {
         self.phase != VoicePhase::Idle
     }
 
+    #[cfg(test)]
     pub fn locks_models(&self) -> bool {
         matches!(
             self.phase,

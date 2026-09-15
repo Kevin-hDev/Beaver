@@ -2654,9 +2654,6 @@
       "continue": "続ける"
     },
     "language": {
-      "title": "音声入力の言語",
-      "description": "今回の言語を選択します。",
-      "configured": "現在の設定を使用",
       "automatic": "自動検出"
     },
     "settings": {
@@ -2671,6 +2668,7 @@
       "advancedDescription": "モデル、マイク、メモリ。",
       "open": "詳細",
       "languageCount": "{{count}} 言語",
+      "lastSpeed": "≈ {{speed}}× リアルタイム · 最新の測定、読み込み時間を除く",
       "installing": "インストール中…",
       "cancelling": "キャンセル中…",
       "remove": "削除",
@@ -2726,6 +2724,7 @@
       "delete": "復元データを削除",
       "duration": "{{minutes}}分{{seconds}}秒"
     },
+    "notice": { "microphoneDisconnected": "マイクが切断されました。切断前に録音された音声は文字起こしされました。" },
     "error": {
       "busy": "別の音声操作を実行中です。",
       "shutting-down": "Beaverを終了しています。",

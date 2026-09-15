@@ -75,6 +75,13 @@ fn unsafe_sources_are_rejected() {
 }
 
 #[test]
+fn archive_hosts_match_the_downloader_allowlist() {
+    rejects(|value| {
+        value["entries"][0]["archive"]["url"] = "https://huggingface.co/example/model.tar.gz".into()
+    });
+}
+
+#[test]
 fn absent_hash_is_rejected() {
     rejects(|value| value["entries"][0]["files"][0]["sha256"] = "".into());
 }

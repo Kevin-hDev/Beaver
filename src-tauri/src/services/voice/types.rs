@@ -106,12 +106,12 @@ pub enum VoiceUnloadDelay {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(default)]
 pub struct VoiceSettings {
     pub version: u8,
     pub enabled: bool,
     pub model: VoiceModel,
     pub input_device: VoiceInputDevice,
-    #[serde(default)]
     pub input_gain: VoiceInputGain,
     pub silence_timeout: VoiceSilenceTimeout,
     pub max_duration: VoiceMaxDuration,

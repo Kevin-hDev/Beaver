@@ -26,6 +26,7 @@ pub enum CaptureModelLease {
 pub struct LoadingModelLease {
     lifecycle: ModelLifecycle,
     key: ModelKey,
+    generation: u64,
     delay: VoiceUnloadDelay,
     vad: VoiceActivityDetector,
     result: Option<Receiver<Result<PreparedModel, VoiceError>>>,
@@ -44,48 +45,52 @@ impl ModelLifecycle {
     ) -> Result<CaptureModelLease, VoiceError> {
         profile.validate()?;
         let key = ModelKey::new(asr, vad, profile.clone());
-        let previous = self.begin_acquire(&key)?;
-        let asr_receipt = receipt(asr, data_dir).inspect_err(|_| self.fail_acquire(&key))?;
-        let vad_receipt = receipt(vad, data_dir).inspect_err(|_| self.fail_acquire(&key))?;
+        let (previous, generation) = self.begin_acquire(&key)?;
+        let asr_receipt =
+            receipt(asr, data_dir).inspect_err(|_| self.fail_acquire(&key, generation))?;
+        let vad_receipt =
+            receipt(vad, data_dir).inspect_err(|_| self.fail_acquire(&key, generation))?;
         if let Some(loaded) = previous {
             if loaded.key == key {
                 return Ok(CaptureModelLease::Ready(Box::new(ModelLease {
                     inner: self.inner.clone(),
                     model: Some(loaded.model),
                     key,
+                    generation,
                     delay,
                 })));
             }
             drop(loaded);
         }
         self.verify_once(data_dir, [&vad_receipt])
-            .inspect_err(|_| self.fail_acquire(&key))?;
+            .inspect_err(|_| self.fail_acquire(&key, generation))?;
         let capture_vad = super::vad::load(&vad_receipt.install_dir(data_dir), &profile)
             .ok_or_else(VoiceError::configuration_unavailable)
-            .inspect_err(|_| self.fail_acquire(&key))?;
+            .inspect_err(|_| self.fail_acquire(&key, generation))?;
         let admission = self
             .work
             .try_admit()
             .map_err(map_admission_error)
-            .inspect_err(|_| self.fail_acquire(&key))?;
+            .inspect_err(|_| self.fail_acquire(&key, generation))?;
         let result = spawn(
             LoadRequest {
                 lifecycle: self.clone(),
                 key: key.clone(),
+                generation,
                 delay,
                 data_dir: data_dir.to_path_buf(),
                 asr: asr.clone(),
-                vad: vad.clone(),
                 asr_receipt,
                 vad_receipt,
                 profile,
             },
             admission,
         )
-        .inspect_err(|_| self.fail_acquire(&key))?;
+        .inspect_err(|_| self.fail_acquire(&key, generation))?;
         Ok(CaptureModelLease::Loading(Box::new(LoadingModelLease {
             lifecycle: self.clone(),
             key,
+            generation,
             delay,
             vad: capture_vad,
             result: Some(result),
@@ -124,6 +129,9 @@ impl LoadingModelLease {
     }
 
     fn poll(&mut self) -> Result<(), VoiceError> {
+        if self.finished {
+            return Err(VoiceError::configuration_unavailable());
+        }
         if self.ready.is_some() {
             return Ok(());
         }
@@ -136,7 +144,8 @@ impl LoadingModelLease {
             Ok(result) => result,
             Err(TryRecvError::Empty) => return Ok(()),
             Err(TryRecvError::Disconnected) => {
-                self.lifecycle.fail_acquire(&self.key);
+                self.result.take();
+                self.lifecycle.fail_acquire(&self.key, self.generation);
                 self.finished = true;
                 return Err(VoiceError::configuration_unavailable());
             }
@@ -146,6 +155,9 @@ impl LoadingModelLease {
     }
 
     fn finish(mut self) -> Result<ModelLease, VoiceError> {
+        if self.finished {
+            return Err(VoiceError::configuration_unavailable());
+        }
         if let Some(ready) = self.ready.take() {
             return Ok(ready);
         }
@@ -169,6 +181,7 @@ impl LoadingModelLease {
             inner: self.lifecycle.inner.clone(),
             model: Some(model),
             key: self.key.clone(),
+            generation: self.generation,
             delay: self.delay,
         })
     }
@@ -180,8 +193,14 @@ impl Drop for LoadingModelLease {
             return;
         }
         match self.result.take().and_then(|result| result.try_recv().ok()) {
-            Some(Ok(model)) => release_model(&self.lifecycle.inner, &self.key, self.delay, model),
-            Some(Err(_)) => self.lifecycle.fail_acquire(&self.key),
+            Some(Ok(model)) => release_model(
+                &self.lifecycle.inner,
+                &self.key,
+                self.generation,
+                self.delay,
+                model,
+            ),
+            Some(Err(_)) => self.lifecycle.fail_acquire(&self.key, self.generation),
             None => {}
         }
     }

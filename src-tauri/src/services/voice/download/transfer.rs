@@ -57,6 +57,14 @@ pub(super) async fn download_with_client(
         &partial_file,
     )?;
     progress(checkpoint.durable_bytes, entry.archive.bytes);
+    if checkpoint.durable_bytes == entry.archive.bytes {
+        ::log::info!(
+            "[voice-download] model={} step=transfer-reused bytes={}",
+            entry.id,
+            checkpoint.durable_bytes
+        );
+        return Ok(partial_file);
+    }
 
     for attempt in 0..MAX_ATTEMPTS {
         if cancel.is_cancelled() {
@@ -73,16 +81,37 @@ pub(super) async fn download_with_client(
         )
         .await
         {
-            Ok(()) => return Ok(partial_file),
+            Ok(()) => {
+                ::log::info!(
+                    "[voice-download] model={} step=transfer-complete bytes={}",
+                    entry.id,
+                    entry.archive.bytes
+                );
+                return Ok(partial_file);
+            }
             Err(error) if error == "cancelled" => return Err(error),
-            Err(_) if attempt + 1 < MAX_ATTEMPTS => {
+            Err(ref error) if attempt + 1 < MAX_ATTEMPTS => {
+                ::log::warn!(
+                    "[voice-download] model={} step=transfer-retry attempt={} code={}",
+                    entry.id,
+                    attempt + 1,
+                    error
+                );
                 let delay = Duration::from_millis(250 * (u64::from(attempt) + 1));
                 tokio::select! {
                     _ = cancel.cancelled() => return Err("cancelled".into()),
                     _ = tokio::time::sleep(delay) => {}
                 }
             }
-            Err(error) => return Err(error),
+            Err(error) => {
+                ::log::warn!(
+                    "[voice-download] model={} step=transfer-failed attempt={} code={}",
+                    entry.id,
+                    attempt + 1,
+                    error
+                );
+                return Err(error);
+            }
         }
     }
     Err("model-download-network-failed".into())

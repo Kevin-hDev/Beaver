@@ -2793,9 +2793,6 @@
       "continue": "Continue"
     },
     "language": {
-      "title": "Dictation language",
-      "description": "Choose the language for this dictation.",
-      "configured": "Use current setting",
       "automatic": "Automatic detection"
     },
     "settings": {
@@ -2810,6 +2807,7 @@
       "advancedDescription": "Installed models, microphone and memory.",
       "open": "Advanced",
       "languageCount": "{{count}} languages",
+      "lastSpeed": "≈ {{speed}}× real time · latest measurement, loading excluded",
       "installing": "Installing…",
       "cancelling": "Cancelling…",
       "remove": "Remove",
@@ -2865,6 +2863,7 @@
       "delete": "Delete recovery",
       "duration": "{{minutes}} min {{seconds}} s"
     },
+    "notice": { "microphoneDisconnected": "The microphone disconnected. Captured speech was transcribed." },
     "error": {
       "busy": "Another voice operation is running.",
       "shutting-down": "Beaver is closing.",

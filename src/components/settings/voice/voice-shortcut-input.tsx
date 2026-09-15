@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { APP_SHORTCUTS, matchesAppShortcut } from "@/lib/app-shortcuts";
 import { ALT_LABEL, IS_MAC } from "@/lib/platform";
-import { voiceShortcutValue } from "@/features/voice/voice-keyboard";
+import { isReservedVoiceShortcut, voiceShortcutValue } from "@/features/voice/voice-keyboard";
 
 export function formatVoiceShortcut(value: string): string {
   return value.split("+").map((part) => {
@@ -39,7 +39,8 @@ export function VoiceShortcutInput({ value, onChange }: { value: string | null; 
       }
       const next = voiceShortcutValue(event);
       if (!next) return;
-      const collision = APP_SHORTCUTS.some((shortcut) => matchesAppShortcut(event, shortcut.id));
+      const collision = isReservedVoiceShortcut(next)
+        || APP_SHORTCUTS.some((shortcut) => matchesAppShortcut(event, shortcut.id));
       setError(collision);
       if (collision) { resetCandidate(); return; }
       candidateRef.current = { value: next, code: event.code };

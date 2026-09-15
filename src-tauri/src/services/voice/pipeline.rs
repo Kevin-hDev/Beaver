@@ -3,18 +3,16 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
 use super::{
-    capture::{
-        activity::CaptureStopReason, session::CaptureSession, window_events::WindowEventState,
-    },
+    capture::{session::CaptureSession, window_events::WindowEventState},
     download::{VoiceCatalogEntry, VoiceEngine, VoiceModelRole},
     errors::VoiceError,
     model::recognizer::{EffectiveLanguage, ExecutionProfile},
+    pipeline_stop::{stop_action, StopAction},
     runtime::VoiceRuntime,
     transcription::transcribe,
     types::{VoiceLanguage, VoiceModel, VoicePhase, VoiceSettings},
 };
 
-const CHANGED_EVENT: &str = "voice-state-changed";
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 pub fn spawn(
@@ -25,7 +23,10 @@ pub fn spawn(
     language: Option<VoiceLanguage>,
 ) {
     tauri::async_runtime::spawn_blocking(move || {
-        if let Err(error) = run(&app, &runtime, &operation_id, &settings, language.as_ref()) {
+        let result = catch_pipeline_panic(|| {
+            run(&app, &runtime, &operation_id, &settings, language.as_ref())
+        });
+        if let Err(error) = result {
             runtime
                 .coordinator_for_pipeline()
                 .fail(&operation_id, error);
@@ -71,7 +72,7 @@ fn run(
     model.vad().reset();
     let windows = app.state::<WindowEventState>();
     let mut capture =
-        CaptureSession::open(&settings.input_device, settings.input_gain, false, true, 1)?;
+        CaptureSession::open(&settings.input_device, settings.input_gain, false, true)?;
     runtime
         .coordinator_for_pipeline()
         .begin_listening(operation_id)?;
@@ -98,30 +99,32 @@ fn run(
             operation_id,
             capture_ms,
             poll.speech_ms,
-            poll.level.lost_samples > 0,
+            poll.lost_samples,
             // La crête, pas la moyenne : la moyenne d'une voix normale reste
             // sous 0,1 et dessinerait un signal plat à l'écran.
             poll.level.peak,
         )?;
         emit(app, runtime);
         if let Some(reason) = poll.stop_reason {
-            match reason {
-                CaptureStopReason::NoSpeech => {
+            ::log::info!(
+                "[voice] operation={operation_id} step=automatic-stop reason={reason:?} capture_ms={capture_ms} speech_ms={}",
+                poll.speech_ms
+            );
+            if reason == super::capture::activity::CaptureStopReason::Disconnected {
+                runtime
+                    .coordinator_for_pipeline()
+                    .note_microphone_disconnected(operation_id)?;
+            }
+            match stop_action(reason) {
+                StopAction::Discard => {
                     runtime
                         .coordinator_for_pipeline()
                         .stop_without_result(operation_id)?;
                     emit(app, runtime);
                     return Ok(());
                 }
-                CaptureStopReason::Silence
-                | CaptureStopReason::DurationLimit
-                | CaptureStopReason::Validated => {
+                StopAction::Validate => {
                     runtime.coordinator_for_pipeline().validate(operation_id)?;
-                }
-                CaptureStopReason::Disconnected | CaptureStopReason::HiddenOrLocked => {
-                    runtime
-                        .coordinator_for_pipeline()
-                        .cancel_insertion(operation_id)?;
                 }
             }
             emit(app, runtime);
@@ -146,14 +149,25 @@ fn run(
         operation_id,
         capture_ms,
         speech_ms,
-        audio.lost_samples() > 0,
+        audio.lost_samples(),
         0.0,
     )?;
     let mut lease = model.into_ready()?;
-    let effective = effective_language(asr.engine, language.unwrap_or(&settings.language));
+    let benchmark = super::pipeline_benchmark::candidate(&lease, &audio);
+    let effective = effective_language(asr.engine, language.unwrap_or(&settings.language))?;
     let compute_started = Instant::now();
     let result = transcribe(&mut lease, &mut audio, &effective)?;
     let compute_ms = u64::try_from(compute_started.elapsed().as_millis()).unwrap_or(u64::MAX);
+    let benchmark = super::model::benchmarks::Benchmark {
+        compute_ms: compute_ms.max(1),
+        ..benchmark
+    };
+    if let Err(error) = runtime
+        .models()
+        .record_benchmark(&crate::services::paths::data_dir(), benchmark)
+    {
+        ::log::warn!("[voice] operation={operation_id} step=benchmark-failed code={error}");
+    }
     let now_ms = runtime.coordinator_for_pipeline().now_ms();
     runtime.coordinator_for_pipeline().complete_with_metrics(
         operation_id,
@@ -163,6 +177,13 @@ fn run(
     )?;
     emit(app, runtime);
     Ok(())
+}
+
+pub(super) fn catch_pipeline_panic(
+    work: impl FnOnce() -> Result<(), VoiceError>,
+) -> Result<(), VoiceError> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(work))
+        .unwrap_or_else(|_| Err(VoiceError::configuration_unavailable()))
 }
 
 fn find_model(
@@ -180,15 +201,19 @@ fn find_model(
         .ok_or_else(VoiceError::configuration_unavailable)
 }
 
-fn effective_language(engine: VoiceEngine, language: &VoiceLanguage) -> EffectiveLanguage {
+pub(super) fn effective_language(
+    engine: VoiceEngine,
+    language: &VoiceLanguage,
+) -> Result<EffectiveLanguage, VoiceError> {
     match (engine, language) {
         (VoiceEngine::CohereTranscribe, VoiceLanguage::Language(code)) => {
-            EffectiveLanguage::Language(code.clone())
+            Ok(EffectiveLanguage::Language(code.clone()))
         }
-        _ => EffectiveLanguage::Automatic,
+        (VoiceEngine::CohereTranscribe, _) => Err(VoiceError::invalid_settings()),
+        _ => Ok(EffectiveLanguage::Automatic),
     }
 }
 
 fn emit(app: &AppHandle, runtime: &VoiceRuntime) {
-    let _ = app.emit(CHANGED_EVENT, runtime.snapshot());
+    let _ = app.emit(super::contracts::VOICE_CHANGED_EVENT, runtime.snapshot());
 }

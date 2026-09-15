@@ -78,6 +78,11 @@ pub async fn run_voice_download(
     state: ModelDownloadState,
     cancel: CancellationToken,
 ) {
+    ::log::info!(
+        "[voice-download] transfer={} model={} step=started",
+        state.id,
+        state.model_id
+    );
     let result = run_voice_download_inner(&app, &manager, &state, &cancel).await;
     let current = manager.state(&state.id).await;
     let (status, error) = match result {
@@ -91,10 +96,15 @@ pub async fn run_voice_download(
             return;
         }
         Err(ref error) if error == "cancelled" => {
-            let _ = crate::services::voice::download::cleanup_request(
+            if let Err(code) = crate::services::voice::download::cleanup_request(
                 &crate::services::paths::data_dir(),
                 &state.model_id,
-            );
+            ) {
+                ::log::warn!(
+                    "[voice-download] model={} step=cancel-cleanup-failed code={code}",
+                    state.model_id
+                );
+            }
             (ModelDownloadStatus::Cancelled, None)
         }
         Err(_) => (ModelDownloadStatus::Failed, Some("model-download-failed")),
@@ -102,6 +112,11 @@ pub async fn run_voice_download(
     if status == ModelDownloadStatus::Completed {
         let _ = app.emit("voice-models-changed", ());
     }
+    ::log::info!(
+        "[voice-download] transfer={} model={} step=finished status={status:?}",
+        state.id,
+        state.model_id
+    );
     emit_states(&app, manager.finish(&state.id, status, error).await);
 }
 
@@ -143,6 +158,14 @@ async fn install_entry(
 ) -> Result<(), String> {
     let data_dir = crate::services::paths::data_dir();
     if crate::services::voice::download::installed_receipt(entry, &data_dir)?.is_some() {
+        if let Err(error) = crate::services::voice::download::cleanup_partial(&data_dir, &entry.id)
+        {
+            ::log::warn!(
+                "[voice-download] model={} step=partial-cleanup-pending code={}",
+                entry.id,
+                error
+            );
+        }
         return Ok(());
     }
     crate::services::voice::download::ensure_disk_available(&data_dir, entry)?;

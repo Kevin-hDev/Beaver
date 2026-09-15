@@ -103,6 +103,7 @@ export function useVoiceController(draftKey: string) {
       event.preventDefault();
       const activeId = snapshot?.operation?.id;
       if (snapshot?.phase === "listening" && activeId) void run({ action: "validate", operation_id: activeId });
+      else if (snapshot?.error) void run({ action: "clear-error" });
       else if (snapshot?.phase === "idle") begin();
     };
     document.addEventListener("keydown", onKeyDown, true);

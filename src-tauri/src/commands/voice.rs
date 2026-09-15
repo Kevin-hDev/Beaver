@@ -10,8 +10,6 @@ use crate::services::{
     },
 };
 
-const CHANGED_EVENT: &str = "voice-state-changed";
-
 #[tauri::command]
 pub fn voice_get_snapshot(voice: tauri::State<'_, VoiceRuntime>) -> VoiceSnapshot {
     voice.snapshot()
@@ -23,12 +21,17 @@ pub fn voice_get_settings() -> Result<VoiceSettings, VoiceError> {
 }
 
 #[tauri::command]
-pub fn voice_get_catalog(app: AppHandle) -> Result<Vec<VoiceCatalogItem>, VoiceError> {
+pub fn voice_get_catalog(
+    app: AppHandle,
+    voice: tauri::State<'_, VoiceRuntime>,
+) -> Result<Vec<VoiceCatalogItem>, VoiceError> {
     let resource_dir = app
         .path()
         .resource_dir()
         .map_err(|_| VoiceError::configuration_unavailable())?;
     let data_dir = crate::services::paths::data_dir();
+    let threads = std::thread::available_parallelism().map_or(1, |count| count.get().min(8)) as i32;
+    let profile = crate::services::voice::model::recognizer::ExecutionProfile::cpu(threads)?;
     crate::services::voice::download::load_catalog(&resource_dir)?
         .entries
         .into_iter()
@@ -43,6 +46,21 @@ pub fn voice_get_catalog(app: AppHandle) -> Result<Vec<VoiceCatalogItem>, VoiceE
             let installed = crate::services::voice::download::installed_receipt(&entry, &data_dir)
                 .map_err(|_| VoiceError::configuration_unavailable())?
                 .is_some();
+            let speed_multiplier = match voice.models().current_benchmark(
+                &data_dir,
+                &entry.id,
+                &entry.revision,
+                &profile,
+            ) {
+                Ok(benchmark) => benchmark.map(|value| value.multiplier()),
+                Err(code) => {
+                    ::log::warn!(
+                        "[voice] model={} step=benchmark-read-failed code={code}",
+                        entry.id
+                    );
+                    None
+                }
+            };
             Ok(VoiceCatalogItem {
                 id: entry.id,
                 model,
@@ -52,6 +70,7 @@ pub fn voice_get_catalog(app: AppHandle) -> Result<Vec<VoiceCatalogItem>, VoiceE
                 languages: entry.languages,
                 dialects: entry.dialects,
                 language_mode: entry.language_mode,
+                speed_multiplier,
             })
         })
         .collect()
@@ -128,7 +147,10 @@ pub async fn voice_dispatch(
             snapshot
         }
     };
-    let _ = app.emit(CHANGED_EVENT, &snapshot);
+    let _ = app.emit(
+        crate::services::voice::contracts::VOICE_CHANGED_EVENT,
+        &snapshot,
+    );
     Ok(snapshot)
 }
 
@@ -138,14 +160,25 @@ pub fn voice_update_settings(
     patch: VoiceSettingsPatch,
     voice: tauri::State<'_, VoiceRuntime>,
 ) -> Result<VoiceSettings, VoiceError> {
-    if patch.model.is_some() && voice.snapshot().operation.is_some() {
+    let model_guard = patch
+        .model
+        .is_some()
+        .then(|| voice.coordinator_for_command());
+    if model_guard
+        .as_ref()
+        .is_some_and(|coordinator| coordinator.snapshot().operation.is_some())
+    {
         return Err(VoiceError::busy());
     }
     let disabled = patch.enabled == Some(false);
     let settings = crate::services::voice::settings::update_voice_settings(patch)?;
+    drop(model_guard);
     if disabled {
         let snapshot = voice.coordinator_for_command().disable();
-        let _ = app.emit(CHANGED_EVENT, snapshot);
+        let _ = app.emit(
+            crate::services::voice::contracts::VOICE_CHANGED_EVENT,
+            snapshot,
+        );
     }
     Ok(settings)
 }

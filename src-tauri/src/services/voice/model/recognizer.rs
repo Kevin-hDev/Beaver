@@ -147,11 +147,17 @@ fn recognize_with_limit(
     prepared.recognizer.decode(&stream);
     let result = stream.get_result();
     let result = result.ok_or_else(VoiceError::configuration_unavailable)?;
-    if result.text.chars().count() > MAX_TRANSCRIPT_CHARS {
+    let recognition = RecognitionSlice {
+        text: result.text,
+        timestamps_ms: measured_times(result.timestamps, result.tokens.len()),
+        durations_ms: measured_times(result.durations, result.tokens.len()),
+        tokens: result.tokens,
+    };
+    if recognition.text.chars().count() > MAX_TRANSCRIPT_CHARS {
         return Err(VoiceError::configuration_unavailable());
     }
-    if result.tokens.len() > MAX_TRANSCRIPT_CHARS
-        || result
+    if recognition.tokens.len() > MAX_TRANSCRIPT_CHARS
+        || recognition
             .tokens
             .iter()
             .try_fold(0_usize, |total, token| {
@@ -161,12 +167,7 @@ fn recognize_with_limit(
     {
         return Err(VoiceError::configuration_unavailable());
     }
-    Ok(RecognitionSlice {
-        text: result.text,
-        timestamps_ms: measured_times(result.timestamps, result.tokens.len()),
-        durations_ms: measured_times(result.durations, result.tokens.len()),
-        tokens: result.tokens,
-    })
+    Ok(recognition)
 }
 
 pub(super) fn base_config(profile: &ExecutionProfile) -> OfflineRecognizerConfig {

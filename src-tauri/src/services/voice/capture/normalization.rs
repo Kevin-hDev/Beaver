@@ -42,7 +42,11 @@ impl Normalizer {
         let channels = usize::from(chunk.channels);
         let mut mono = Vec::with_capacity(chunk.samples.len() / channels);
         for frame in chunk.samples.chunks_exact(channels) {
-            mono.push(frame.iter().copied().sum::<f32>() / channels as f32);
+            let sum = frame
+                .iter()
+                .map(|sample| if sample.is_finite() { *sample } else { 0.0 })
+                .sum::<f32>();
+            mono.push(sum / channels as f32);
         }
         chunk.samples.zeroize();
         let mut normalized = match &self.resampler {
@@ -59,6 +63,7 @@ impl Normalizer {
     }
 }
 
+#[cfg(test)]
 pub fn normalize_chunk(chunk: CaptureChunk) -> Result<Vec<i16>, VoiceError> {
     Normalizer::new(chunk.sample_rate, chunk.channels, VoiceInputGain::Zero)?.process(chunk, true)
 }
@@ -73,14 +78,11 @@ fn to_pcm(samples: &[f32], gain: f32) -> Vec<i16> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::voice::capture::ring::InputSampleFormat;
-
     fn chunk(samples: Vec<f32>, rate: u32, channels: u16) -> CaptureChunk {
         CaptureChunk {
             samples,
             sample_rate: rate,
             channels,
-            format: InputSampleFormat::F32,
             lost_samples: 0,
         }
     }
@@ -147,5 +149,12 @@ mod tests {
             .unwrap();
         assert!((6_530..=6_550).contains(&output[0]));
         assert_eq!(output[1], i16::MAX);
+    }
+
+    #[test]
+    fn non_finite_driver_samples_are_replaced_with_silence() {
+        let output =
+            normalize_chunk(chunk(vec![0.5, f32::NAN, f32::INFINITY, -0.5], 16_000, 1)).unwrap();
+        assert_eq!(output, [16_384, 0, 0, -16_384]);
     }
 }

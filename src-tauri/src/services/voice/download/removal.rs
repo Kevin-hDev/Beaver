@@ -2,7 +2,10 @@ use std::{fs, path::Path};
 
 use crate::services::private_store::sync_directory;
 
-use super::{models_root, receipt::receipt_path};
+use super::{
+    models_root,
+    receipt::{load_receipt, receipt_path},
+};
 
 pub trait RemovalGate {
     fn release_for_removal(&self, model_id: &str) -> bool;
@@ -23,12 +26,7 @@ pub fn remove_installation(
     if !gate.release_for_removal(model_id) {
         return Err("model-download-model-busy".into());
     }
-    let receipt = receipt_path(data_dir, model_id);
-    match fs::remove_file(&receipt) {
-        Ok(()) => sync_directory(receipt.parent().ok_or_else(storage_error)?)?,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(_) => return Err(storage_error()),
-    }
+    remove_receipt_file(data_dir, model_id)?;
     remove_model_files(data_dir, model_id)
 }
 
@@ -43,13 +41,46 @@ pub fn resume_incomplete_removals(data_dir: &Path) -> Result<(), String> {
         .filter_map(Result::ok)
     {
         let id = entry.file_name().to_string_lossy().into_owned();
-        if entry.file_type().is_ok_and(|kind| kind.is_dir())
-            && !receipt_path(data_dir, &id).is_file()
-        {
-            remove_model_files(data_dir, &id)?;
+        if !entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+            continue;
+        }
+        match load_receipt(data_dir, &id) {
+            Ok(Some(receipt)) if receipt.entry_id == id => {
+                cleanup_obsolete_revisions(&entry.path(), &receipt.revision)?;
+            }
+            _ => {
+                remove_receipt_file(data_dir, &id)?;
+                remove_model_files(data_dir, &id)?;
+            }
         }
     }
     Ok(())
+}
+
+pub(super) fn remove_receipt_file(data_dir: &Path, model_id: &str) -> Result<(), String> {
+    let receipt = receipt_path(data_dir, model_id);
+    match fs::remove_file(&receipt) {
+        Ok(()) => sync_directory(receipt.parent().ok_or_else(storage_error)?),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err(storage_error()),
+    }
+}
+
+fn cleanup_obsolete_revisions(model_dir: &Path, current: &str) -> Result<(), String> {
+    let Ok(entries) = fs::read_dir(model_dir) else {
+        return Ok(());
+    };
+    for entry in entries
+        .take(crate::services::voice::limits::MAX_CATALOG_FILES_PER_ENTRY)
+        .filter_map(Result::ok)
+    {
+        if entry.file_name() != std::ffi::OsStr::new(current)
+            && entry.file_type().is_ok_and(|kind| kind.is_dir())
+        {
+            fs::remove_dir_all(entry.path()).map_err(|_| storage_error())?;
+        }
+    }
+    sync_directory(model_dir)
 }
 
 fn cleanup_staging(data_dir: &Path) -> Result<(), String> {

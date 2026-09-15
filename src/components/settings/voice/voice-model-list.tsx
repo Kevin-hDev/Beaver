@@ -32,9 +32,10 @@ export function VoiceModelList({ items, selected, downloads, onSelect, onInstall
       <button type="button" className="vset-model-choice" onClick={() => onSelect(model)}>
         <strong>{voiceModelName(model)}</strong>
         <span>{t("voice.settings.languageCount", { count: item.languages.length })} · {new Intl.NumberFormat(i18n.language, { style: "unit", unit: "megabyte", maximumFractionDigits: 0 }).format(item.downloadBytes / 1_000_000)}</span>
+        {item.speedMultiplier != null && <span>{t("voice.settings.lastSpeed", { speed: new Intl.NumberFormat(i18n.language, { maximumSignificantDigits: 2 }).format(item.speedMultiplier) })}</span>}
       </button>
       {download?.status === "suspended" ? <button type="button" className="btn btn-sm btn-secondary" onClick={() => onResume(download.id)}>{t("modelDownloads.resume")}</button>
-        : download ? null
+        : download ? <span className="vset-language-mode">{t(download.status === "cancelling" ? "voice.settings.cancelling" : "voice.settings.installing")}</span>
         : item.installed
           ? <ConfirmButton className="btn btn-sm btn-destructive" label={t("voice.settings.remove")} confirmLabel={t("settings.confirm.deleteModel")} onConfirm={() => onRemove(item.id)} />
           : <button type="button" className="btn btn-sm btn-secondary" onClick={() => onInstall(item.id)}>{t("voice.settings.install")}</button>}

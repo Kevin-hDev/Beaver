@@ -19,7 +19,7 @@ export function VoiceControls({ draftKey }: { draftKey: string }) {
         <button type="button" className="btn btn-sm btn-secondary" onClick={() => void voice.resumeDownload(voice.modelDownload!.id)}>{t("modelDownloads.resume")}</button>
       ) : voice.origin && operation ? (
         <div className="vc-active">
-          {voice.snapshot?.phase === "listening" && <VoiceSignal level={operation.level} tick={operation.captureMs} label={t("voice.status.listening")} />}
+          {voice.snapshot?.phase === "listening" && <VoiceSignal key={operation.id} level={operation.level} tick={operation.captureMs} label={t("voice.status.listening")} />}
           {voice.snapshot && ["transcribing", "delivering", "stopping"].includes(voice.snapshot.phase) && <span className="vc-status-text">{t(`voice.status.${voice.snapshot.phase}`)}</span>}
           <button type="button" className="icon-btn vc-cancel" aria-label={t("voice.cancel")} onClick={() => void voice.cancel()}><X size="var(--icon-sm)" /></button>
           {voice.snapshot?.phase === "listening" && (

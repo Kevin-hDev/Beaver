@@ -27,11 +27,11 @@ export type VoiceDestination = { "kind": "draft", draft_key: string, } | { "kind
 
 export type VoiceDeliveryOutcome = "inserted" | "already-inserted" | "closed";
 
-export type VoiceAction = { "action": "start", destination: VoiceDestination, context_generation: number, language: VoiceLanguage | null, } | { "action": "validate", operation_id: string, } | { "action": "cancel-insertion", operation_id: string, } | { "action": "abandon-trial", trial_id: string, } | { "action": "delete-recovery", recovery_id: string, } | { "action": "restore-recovery", recovery_id: string, draft_key: string, } | { "action": "acknowledge-delivery", result_id: string, outcome: VoiceDeliveryOutcome, } | { "action": "destination-closed", destination: VoiceDestination, } | { "action": "message-accepted", draft_key: string, send_id: string, } | { "action": "install", model_id: string, } | { "action": "resume", transfer_id: string, } | { "action": "cancel-download", transfer_id: string, } | { "action": "uninstall", model_id: string, };
+export type VoiceAction = { "action": "start", destination: VoiceDestination, context_generation: number, language: VoiceLanguage | null, } | { "action": "validate", operation_id: string, } | { "action": "cancel-insertion", operation_id: string, } | { "action": "discard-operation", operation_id: string, } | { "action": "clear-error" } | { "action": "abandon-trial", trial_id: string, } | { "action": "delete-recovery", recovery_id: string, } | { "action": "restore-recovery", recovery_id: string, draft_key: string, } | { "action": "acknowledge-delivery", result_id: string, outcome: VoiceDeliveryOutcome, } | { "action": "destination-closed", destination: VoiceDestination, } | { "action": "message-accepted", draft_key: string, send_id: string, } | { "action": "install", model_id: string, } | { "action": "resume", transfer_id: string, } | { "action": "cancel-download", transfer_id: string, } | { "action": "uninstall", model_id: string, };
 
 export type VoiceDevice = { id: string, name: string, };
 
-export type VoiceCatalogItem = { id: string, model: VoiceModel | null, installed: boolean, downloadBytes: number, installedBytes: number, languages: Array<string>, dialects: Array<string>, languageMode: VoiceLanguageMode, };
+export type VoiceCatalogItem = { id: string, model: VoiceModel | null, installed: boolean, downloadBytes: number, installedBytes: number, languages: Array<string>, dialects: Array<string>, languageMode: VoiceLanguageMode, speedMultiplier: number | null, };
 
 export type VoiceOperationSnapshot = { id: string, destination: VoiceDestination, contextGeneration: number, captureMs: number, speechMs: number, captureIncomplete: boolean, level: number, };
 
@@ -39,7 +39,7 @@ export type VoiceRecoverySnapshot = { id: string, draftKey: string | null, captu
 
 export type VoiceRecoveryState = "preparing" | "ready" | "failed";
 
-export type VoiceDeliverySnapshot = { id: string, draftKey: string, text: string, };
+export type VoiceDeliverySnapshot = { id: string, draftKey: string, text: string, microphoneDisconnected: boolean, };
 
 export type VoiceTrialResult = { trialId: string, text: string, captureMs: number, computeMs: number, };
 
@@ -47,10 +47,4 @@ export type VoiceSnapshot = { revision: number, phase: VoicePhase, operation: Vo
 
 export type VoiceErrorCode = "busy" | "shutting-down" | "invalid-settings" | "configuration-unavailable" | "invalid-transition";
 
-export type VoiceErrorParamKey = "required-bytes" | "available-bytes";
-
-export type VoiceErrorParam = { key: VoiceErrorParamKey, value: string, };
-
-export type VoiceError = { code: VoiceErrorCode, params: Array<VoiceErrorParam>, };
-
-export type VoiceProjection = { phase: VoicePhase, error: VoiceError | null, };
+export type VoiceError = { code: VoiceErrorCode, };

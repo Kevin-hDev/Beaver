@@ -11,11 +11,16 @@ use super::{
 pub(super) fn release_model(
     inner: &Arc<LifecycleInner>,
     key: &ModelKey,
+    generation: u64,
     delay: VoiceUnloadDelay,
     model: PreparedModel,
 ) {
     let mut state = lock(&inner.state);
-    if state.occupied.as_ref() != Some(key) {
+    if !state
+        .occupied
+        .as_ref()
+        .is_some_and(|reservation| reservation.key == *key && reservation.generation == generation)
+    {
         return;
     }
     state.occupied = None;
@@ -43,7 +48,7 @@ pub(super) fn release_model(
 impl Drop for ModelLease {
     fn drop(&mut self) {
         if let Some(model) = self.model.take() {
-            release_model(&self.inner, &self.key, self.delay, model);
+            release_model(&self.inner, &self.key, self.generation, self.delay, model);
         }
     }
 }

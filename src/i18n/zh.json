@@ -2654,9 +2654,6 @@
       "continue": "继续"
     },
     "language": {
-      "title": "听写语言",
-      "description": "选择本次听写的语言。",
-      "configured": "使用当前设置",
       "automatic": "自动检测"
     },
     "settings": {
@@ -2671,6 +2668,7 @@
       "advancedDescription": "模型、麦克风和内存。",
       "open": "高级",
       "languageCount": "{{count}} 种语言",
+      "lastSpeed": "≈ {{speed}}× 实时速度 · 最近测量，不含加载",
       "installing": "正在安装…",
       "cancelling": "正在取消…",
       "remove": "删除",
@@ -2726,6 +2724,7 @@
       "delete": "删除恢复内容",
       "duration": "{{minutes}}分{{seconds}}秒"
     },
+    "notice": { "microphoneDisconnected": "麦克风已断开连接，已转录此前捕获的语音。" },
     "error": {
       "busy": "另一个语音操作正在运行。",
       "shutting-down": "Beaver 正在关闭。",

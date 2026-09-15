@@ -19,10 +19,10 @@ use super::{
 pub(super) struct LoadRequest {
     pub(super) lifecycle: ModelLifecycle,
     pub(super) key: ModelKey,
+    pub(super) generation: u64,
     pub(super) delay: VoiceUnloadDelay,
     pub(super) data_dir: PathBuf,
     pub(super) asr: VoiceCatalogEntry,
-    pub(super) vad: VoiceCatalogEntry,
     pub(super) asr_receipt: InstallationReceipt,
     pub(super) vad_receipt: InstallationReceipt,
     pub(super) profile: ExecutionProfile,
@@ -40,7 +40,11 @@ pub(super) fn spawn(
         .name("voice-asr-loader".into())
         .spawn(move || {
             let _admission = admission;
-            let mut guard = ReservationGuard::new(request.lifecycle.clone(), request.key.clone());
+            let mut guard = ReservationGuard::new(
+                request.lifecycle.clone(),
+                request.key.clone(),
+                request.generation,
+            );
             let loaded = if cancellation.is_cancelled() {
                 Err(VoiceError::shutting_down())
             } else {
@@ -68,6 +72,7 @@ pub(super) fn spawn(
                             release_model(
                                 &request.lifecycle.inner,
                                 &request.key,
+                                request.generation,
                                 request.delay,
                                 model,
                             );
@@ -76,8 +81,8 @@ pub(super) fn spawn(
                     }
                 },
                 Err(error) => {
-                    guard.fail_now();
                     let _ = sender.send(Err(error));
+                    guard.fail_now();
                 }
             }
         })
@@ -88,14 +93,16 @@ pub(super) fn spawn(
 struct ReservationGuard {
     lifecycle: ModelLifecycle,
     key: ModelKey,
+    generation: u64,
     armed: bool,
 }
 
 impl ReservationGuard {
-    fn new(lifecycle: ModelLifecycle, key: ModelKey) -> Self {
+    fn new(lifecycle: ModelLifecycle, key: ModelKey, generation: u64) -> Self {
         Self {
             lifecycle,
             key,
+            generation,
             armed: true,
         }
     }
@@ -105,7 +112,7 @@ impl ReservationGuard {
     }
 
     fn fail_now(&mut self) {
-        self.lifecycle.fail_acquire(&self.key);
+        self.lifecycle.fail_acquire(&self.key, self.generation);
         self.disarm();
     }
 }
@@ -113,7 +120,7 @@ impl ReservationGuard {
 impl Drop for ReservationGuard {
     fn drop(&mut self) {
         if self.armed {
-            self.lifecycle.fail_acquire(&self.key);
+            self.lifecycle.fail_acquire(&self.key, self.generation);
         }
     }
 }

@@ -344,7 +344,6 @@ async fn native_capture_finish_keeps_pending_microphone_samples() {
         VoiceInputGain::Zero,
         false,
         true,
-        1,
     )
     .unwrap();
     std::thread::sleep(std::time::Duration::from_millis(100));

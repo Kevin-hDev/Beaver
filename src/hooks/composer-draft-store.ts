@@ -142,10 +142,9 @@ export function acknowledgeVoiceDelivery(key: string, deliveryId: string) {
 }
 
 export function subscribeComposerDrafts(listener: () => void): () => void {
-  while (listeners.size >= MAX_LISTENERS) {
-    const oldest = listeners.keys().next().value;
-    if (oldest === undefined) break;
-    listeners.delete(oldest);
+  if (listeners.size >= MAX_LISTENERS) {
+    console.error("[composer-draft] listener limit reached");
+    return () => undefined;
   }
   const id = nextListenerId++;
   listeners.set(id, listener);
@@ -154,4 +153,5 @@ export function subscribeComposerDrafts(listener: () => void): () => void {
 
 export function resetComposerDraftStoreForTests() {
   drafts = new Map();
+  listeners.clear();
 }

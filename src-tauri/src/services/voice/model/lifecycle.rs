@@ -8,9 +8,11 @@ use crate::services::voice::{
     types::VoiceUnloadDelay,
 };
 
+#[cfg(test)]
+use super::recognizer::ExecutionProfile;
 use super::{
-    lifecycle_state::{lock, LifecycleInner, LoadedModel, ModelKey, UnloadPlan},
-    recognizer::{ExecutionProfile, PreparedModel},
+    lifecycle_state::{lock, LifecycleInner, LoadedModel, ModelKey, ModelReservation, UnloadPlan},
+    recognizer::PreparedModel,
 };
 
 #[derive(Clone)]
@@ -23,10 +25,12 @@ pub struct ModelLease {
     pub(super) inner: Arc<LifecycleInner>,
     pub(super) model: Option<PreparedModel>,
     pub(super) key: ModelKey,
+    pub(super) generation: u64,
     pub(super) delay: VoiceUnloadDelay,
 }
 
 impl ModelLifecycle {
+    #[cfg(test)]
     pub fn acquire(
         &self,
         data_dir: &Path,
@@ -37,18 +41,18 @@ impl ModelLifecycle {
     ) -> Result<ModelLease, VoiceError> {
         profile.validate()?;
         let key = ModelKey::new(asr, vad, profile.clone());
-        let previous = self.begin_acquire(&key)?;
+        let (previous, generation) = self.begin_acquire(&key)?;
         let asr_receipt = match receipt(asr, data_dir) {
             Ok(receipt) => receipt,
             Err(error) => {
-                self.fail_acquire(&key);
+                self.fail_acquire(&key, generation);
                 return Err(error);
             }
         };
         let vad_receipt = match receipt(vad, data_dir) {
             Ok(receipt) => receipt,
             Err(error) => {
-                self.fail_acquire(&key);
+                self.fail_acquire(&key, generation);
                 return Err(error);
             }
         };
@@ -58,21 +62,23 @@ impl ModelLifecycle {
                     inner: Arc::clone(&self.inner),
                     model: Some(loaded.model),
                     key,
+                    generation,
                     delay,
                 });
             }
             drop(loaded);
         }
         if let Err(error) = self.verify_once(data_dir, [&asr_receipt, &vad_receipt]) {
-            self.fail_acquire(&key);
+            self.fail_acquire(&key, generation);
             return Err(error);
         }
         let model = PreparedModel::load(asr, &asr_receipt, &vad_receipt, data_dir, profile)
-            .inspect_err(|_| self.fail_acquire(&key))?;
+            .inspect_err(|_| self.fail_acquire(&key, generation))?;
         Ok(ModelLease {
             inner: Arc::clone(&self.inner),
             model: Some(model),
             key,
+            generation,
             delay,
         })
     }
@@ -82,7 +88,7 @@ impl ModelLifecycle {
         if state
             .occupied
             .as_ref()
-            .is_some_and(|key| key.uses(model_id))
+            .is_some_and(|reservation| reservation.key.uses(model_id))
         {
             return Err(VoiceError::busy());
         }
@@ -97,7 +103,10 @@ impl ModelLifecycle {
         Ok(())
     }
 
-    pub(super) fn begin_acquire(&self, key: &ModelKey) -> Result<Option<LoadedModel>, VoiceError> {
+    pub(super) fn begin_acquire(
+        &self,
+        key: &ModelKey,
+    ) -> Result<(Option<LoadedModel>, u64), VoiceError> {
         let mut state = lock(&self.inner.state);
         if state.closing {
             return Err(VoiceError::shutting_down());
@@ -106,12 +115,16 @@ impl ModelLifecycle {
             return Err(VoiceError::busy());
         }
         state.generation = state.generation.wrapping_add(1);
-        state.occupied = Some(key.clone());
+        let generation = state.generation;
+        state.occupied = Some(ModelReservation {
+            key: key.clone(),
+            generation,
+        });
         if self
             .inner
             .plan
             .send(UnloadPlan {
-                generation: state.generation,
+                generation,
                 deadline: None,
             })
             .is_err()
@@ -119,12 +132,14 @@ impl ModelLifecycle {
             state.occupied = None;
             return Err(VoiceError::shutting_down());
         }
-        Ok(state.loaded.take())
+        Ok((state.loaded.take(), generation))
     }
 
-    pub(super) fn fail_acquire(&self, key: &ModelKey) {
+    pub(super) fn fail_acquire(&self, key: &ModelKey, generation: u64) {
         let mut state = lock(&self.inner.state);
-        if state.occupied.as_ref() == Some(key) {
+        if state.occupied.as_ref().is_some_and(|reservation| {
+            reservation.key == *key && reservation.generation == generation
+        }) {
             state.occupied = None;
         }
     }

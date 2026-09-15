@@ -13,15 +13,18 @@ import type { VoiceDeliverySnapshot, VoiceSnapshot } from "@/types/voice.generat
 import { deliverVoiceResult } from "../voice-delivery";
 import { VoiceRoot } from "../voice-root";
 import { resetVoiceStoreForTests } from "../voice-store";
+import { showToast } from "@/lib/toast-emitter";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 vi.mock("@/lib/platform", () => ({ IS_LINUX: false }));
+vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
 
 const delivery: VoiceDeliverySnapshot = {
   id: "result-1",
   draftKey: "session:one",
   text: " dictée",
+  microphoneDisconnected: false,
 };
 const snapshot = { revision: 2 } as VoiceSnapshot;
 
@@ -39,6 +42,12 @@ describe("voice delivery", () => {
     await expect(deliverVoiceResult(delivery, acknowledge)).resolves.toBe(snapshot);
     expect(readComposerDraft("session:one").text).toBe(" dictée");
     expect(acknowledge).toHaveBeenCalledWith(delivery, "inserted");
+  });
+
+  it("signale une déconnexion seulement après une insertion réussie", async () => {
+    const acknowledge = vi.fn().mockResolvedValue(snapshot);
+    await deliverVoiceResult({ ...delivery, microphoneDisconnected: true }, acknowledge);
+    expect(showToast).toHaveBeenCalledOnce();
   });
 
   it("ne duplique pas après un échec d'acquittement puis une relecture", async () => {

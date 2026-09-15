@@ -1,67 +1,8 @@
-use zeroize::Zeroize;
-
-use super::{errors::VoiceError, limits};
-
-pub struct Delivery {
-    pub id: String,
-    pub operation_id: String,
-    pub draft_key: String,
-    pub text: String,
-    pub created_at_ms: u64,
-    pub capture_ms: u64,
-    pub speech_ms: u64,
-}
-
-pub struct TrialResult {
-    pub trial_id: String,
-    pub text: String,
-    pub capture_ms: u64,
-    pub compute_ms: u64,
-}
-
-impl Drop for TrialResult {
-    fn drop(&mut self) {
-        self.text.zeroize();
-    }
-}
-
-impl Delivery {
-    pub fn new(
-        operation_id: String,
-        draft_key: String,
-        text: String,
-        now_ms: u64,
-        capture_ms: u64,
-        speech_ms: u64,
-    ) -> Result<Self, VoiceError> {
-        if text.chars().count() > limits::MAX_TRANSCRIPT_CHARS {
-            return Err(VoiceError::configuration_unavailable());
-        }
-        Ok(Self {
-            id: uuid::Uuid::new_v4().to_string(),
-            operation_id,
-            draft_key,
-            text,
-            created_at_ms: now_ms,
-            capture_ms,
-            speech_ms,
-        })
-    }
-
-    pub fn is_expired_at(&self, now_ms: u64) -> bool {
-        now_ms.saturating_sub(self.created_at_ms) >= limits::DELIVERY_TIMEOUT_MS
-    }
-}
-
-impl Drop for Delivery {
-    fn drop(&mut self) {
-        self.text.zeroize();
-    }
-}
-
 use super::{
     actions::VoiceCoordinator,
     contracts::{VoiceDeliveryOutcome, VoiceDestination, VoiceSnapshot},
+    delivery_types::{Delivery, TrialResult},
+    errors::VoiceError,
     recovery::{Recovery, RecoveryStatus},
     start_guards::validate_id,
 };
@@ -75,6 +16,9 @@ impl VoiceCoordinator {
     ) -> Result<VoiceSnapshot, VoiceError> {
         validate_id(&draft_key, super::limits::MAX_DESTINATION_ID_CHARS)?;
         if self.delivery.is_some() {
+            return Err(VoiceError::busy());
+        }
+        if self.operation.is_some() {
             return Err(VoiceError::busy());
         }
         let Some(recovery) = self.recovery.take() else {
@@ -92,6 +36,7 @@ impl VoiceCoordinator {
             recovery.capture_ms,
             super::limits::RECOVERY_SPEECH_THRESHOLD_MS,
         )?);
+        ::log::info!("[voice] operation={} step=recovery-restored", recovery.id);
         self.bump();
         Ok(self.snapshot())
     }
@@ -110,6 +55,10 @@ impl VoiceCoordinator {
             self.delivery = Some(delivery);
             return Ok(self.snapshot());
         }
+        ::log::info!(
+            "[voice] operation={} step=delivery-acknowledged outcome={outcome:?}",
+            delivery.operation_id
+        );
         if outcome == VoiceDeliveryOutcome::Closed
             && delivery.speech_ms >= super::limits::RECOVERY_SPEECH_THRESHOLD_MS
         {
@@ -129,6 +78,7 @@ impl VoiceCoordinator {
         Ok(self.snapshot())
     }
 
+    #[cfg(test)]
     pub fn complete(
         &mut self,
         operation_id: &str,
@@ -153,6 +103,9 @@ impl VoiceCoordinator {
             self.operation = Some(operation);
             return Err(VoiceError::invalid_transition());
         }
+        let text_chars = text.chars().count();
+        let capture_ms = operation.capture_ms;
+        let lost_samples = operation.lost_samples;
         if text.chars().count() > super::limits::MAX_TRANSCRIPT_CHARS {
             self.error = Some(VoiceError::configuration_unavailable());
             if let Some(recovery) = self.recovery.as_mut() {
@@ -167,14 +120,16 @@ impl VoiceCoordinator {
         } else {
             match operation.destination.clone() {
                 VoiceDestination::Draft { draft_key } => {
-                    self.delivery = Some(Delivery::new(
+                    let mut delivery = Delivery::new(
                         operation.id.clone(),
                         draft_key,
                         text,
                         now_ms,
                         operation.capture_ms,
                         operation.speech_ms,
-                    )?);
+                    )?;
+                    delivery.microphone_disconnected = operation.microphone_disconnected;
+                    self.delivery = Some(delivery);
                 }
                 VoiceDestination::Trial { trial_id } => {
                     self.trial_result = Some(TrialResult {
@@ -182,11 +137,20 @@ impl VoiceCoordinator {
                         text,
                         capture_ms: operation.capture_ms,
                         compute_ms,
+                        created_at_ms: now_ms,
                     });
                 }
             }
         }
         drop(operation);
+        ::log::info!(
+            "[voice] operation={} step=completed capture_ms={} compute_ms={} text_chars={} lost_samples={}",
+            operation_id,
+            capture_ms,
+            compute_ms,
+            text_chars,
+            lost_samples
+        );
         self.bump();
         Ok(self.snapshot())
     }

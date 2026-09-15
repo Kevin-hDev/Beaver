@@ -50,10 +50,16 @@ pub(super) struct LoadedModel {
     pub(super) model: PreparedModel,
 }
 
+#[derive(Clone)]
+pub(super) struct ModelReservation {
+    pub(super) key: ModelKey,
+    pub(super) generation: u64,
+}
+
 #[derive(Default)]
 pub(super) struct LifecycleState {
     pub(super) loaded: Option<LoadedModel>,
-    pub(super) occupied: Option<ModelKey>,
+    pub(super) occupied: Option<ModelReservation>,
     pub(super) verified: HashSet<(String, String)>,
     pub(super) generation: u64,
     pub(super) closing: bool,

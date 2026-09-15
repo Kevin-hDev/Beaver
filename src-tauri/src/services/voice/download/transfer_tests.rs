@@ -165,6 +165,42 @@ async fn ignored_range_restarts_without_appending_duplicate_bytes() {
     assert_eq!(tokio::fs::read(path).await.unwrap(), BODY);
 }
 
+#[tokio::test]
+async fn a_complete_durable_partial_is_reused_without_network_access() {
+    let data = tempfile::tempdir().unwrap();
+    let entry = entry("http://127.0.0.1:9/must-not-be-called".into());
+    let partial = partial_path(data.path(), &entry.id);
+    tokio::fs::create_dir_all(partial.parent().unwrap())
+        .await
+        .unwrap();
+    tokio::fs::write(&partial, BODY).await.unwrap();
+    let mut checkpoint = Checkpoint::new(
+        entry.id.clone(),
+        entry.id.clone(),
+        entry.revision.clone(),
+        entry.archive.bytes,
+        entry.archive.sha256.clone(),
+    )
+    .unwrap();
+    checkpoint.durable_bytes = entry.archive.bytes;
+    save_checkpoint(&checkpoint_path(data.path(), &entry.id), &checkpoint).unwrap();
+
+    let path = download_with_client(
+        &entry,
+        &entry.id,
+        data.path(),
+        &CancellationToken::new(),
+        &reqwest::Client::new(),
+        true,
+        &mut |_, _| {},
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(path, partial);
+    assert_eq!(tokio::fs::read(path).await.unwrap(), BODY);
+}
+
 #[tokio::test(start_paused = true)]
 async fn cancellation_interrupts_retry_backoff() {
     let data = tempfile::tempdir().unwrap();

@@ -7,7 +7,6 @@ pub enum WindowSignal {
     FocusChanged(bool),
     Hidden,
     Minimized,
-    SessionLocked,
 }
 
 #[derive(Clone, Default)]
@@ -18,7 +17,7 @@ impl WindowEventState {
         if let Ok(mut current) = self.0.lock() {
             let stop_is_pending = matches!(
                 *current,
-                Some(WindowSignal::Hidden | WindowSignal::Minimized | WindowSignal::SessionLocked)
+                Some(WindowSignal::Hidden | WindowSignal::Minimized)
             );
             if !stop_is_pending || !matches!(signal, WindowSignal::FocusChanged(_)) {
                 *current = Some(signal);
@@ -29,9 +28,7 @@ impl WindowEventState {
     pub fn take_stop_signal(&self) -> Option<WindowSignal> {
         let mut current = self.0.lock().ok()?;
         match *current {
-            Some(WindowSignal::Hidden | WindowSignal::Minimized | WindowSignal::SessionLocked) => {
-                current.take()
-            }
+            Some(WindowSignal::Hidden | WindowSignal::Minimized) => current.take(),
             _ => None,
         }
     }

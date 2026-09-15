@@ -2,8 +2,10 @@ use super::errors::{VoiceError, VoiceErrorCode};
 use super::state::VoiceState;
 use super::types::VoicePhase;
 use crate::app_exit::AppWorkSupervisor;
+#[cfg(test)]
+use crate::services::work_registry::ServiceWorkCancellation;
 use crate::services::work_registry::{
-    ServiceWorkAdmission, ServiceWorkAdmissionError, ServiceWorkCancellation, ServiceWorkSupervisor,
+    ServiceWorkAdmission, ServiceWorkAdmissionError, ServiceWorkSupervisor,
 };
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -16,6 +18,7 @@ pub(super) struct VoiceWork {
 }
 
 pub struct VoiceWorkContext {
+    #[cfg(test)]
     cancellation: ServiceWorkCancellation,
     state: Arc<Mutex<VoiceState>>,
 }
@@ -50,10 +53,12 @@ impl VoiceWork {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn phase(&self) -> VoicePhase {
         lock_state(&self.state).phase()
     }
 
+    #[cfg(test)]
     pub(super) fn active(&self) -> usize {
         self.supervisor.diagnostics().active
     }
@@ -70,6 +75,7 @@ impl VoiceWork {
 impl VoiceOwner {
     pub(super) fn context(&self) -> VoiceWorkContext {
         VoiceWorkContext {
+            #[cfg(test)]
             cancellation: self
                 .admission
                 .as_ref()
@@ -88,6 +94,7 @@ impl Drop for VoiceOwner {
 }
 
 impl VoiceWorkContext {
+    #[cfg(test)]
     pub fn is_cancelled(&self) -> bool {
         self.cancellation.is_cancelled()
     }

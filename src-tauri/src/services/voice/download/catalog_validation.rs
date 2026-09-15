@@ -27,9 +27,11 @@ pub(super) fn validate_catalog(catalog: &VoiceCatalog) -> Result<(), VoiceError>
 fn validate_entry(entry: &VoiceCatalogEntry) -> Result<(), VoiceError> {
     validate_id(&entry.id)?;
     validate_revision(&entry.revision)?;
-    validate_url(&entry.archive.url)?;
-    validate_url(&entry.manifest_url)?;
-    validate_url(&entry.license.url)?;
+    if !super::transfer_http::production_url_allowed(&entry.archive.url) {
+        return invalid();
+    }
+    validate_source_url(&entry.manifest_url)?;
+    validate_source_url(&entry.license.url)?;
     validate_sha(&entry.archive.sha256)?;
     if (is_commit_revision(&entry.revision) && !entry.manifest_url.contains(&entry.revision))
         || entry.archive.bytes == 0
@@ -169,7 +171,7 @@ fn is_commit_revision(value: &str) -> bool {
             .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
 }
 
-fn validate_url(value: &str) -> Result<(), VoiceError> {
+fn validate_source_url(value: &str) -> Result<(), VoiceError> {
     if value.chars().count() > limits::MAX_CATALOG_URL_CHARS {
         return invalid();
     }

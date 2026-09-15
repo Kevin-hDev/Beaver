@@ -100,6 +100,10 @@ fn reset_partial(
     checkpoint_file: &Path,
     checkpoint: &mut Checkpoint,
 ) -> Result<(), String> {
+    ::log::warn!(
+        "[voice-download] model={} step=partial-reset",
+        checkpoint.entry_id
+    );
     std::fs::OpenOptions::new()
         .create(true)
         .write(true)
@@ -127,6 +131,11 @@ fn validator_value(validator: Option<&HttpValidator>) -> Option<&str> {
     match validator? {
         HttpValidator::Etag(value) | HttpValidator::LastModified(value) => Some(value),
     }
+}
+
+pub(super) fn production_url_allowed(value: &str) -> bool {
+    value.chars().count() <= crate::services::voice::limits::MAX_CATALOG_URL_CHARS
+        && Url::parse(value).is_ok_and(|url| url_allowed(&url, false))
 }
 
 fn url_allowed(url: &Url, allow_loopback: bool) -> bool {

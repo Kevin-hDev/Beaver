@@ -19,7 +19,6 @@ pub struct CaptureChunk {
     pub samples: Vec<f32>,
     pub sample_rate: u32,
     pub channels: u16,
-    pub format: InputSampleFormat,
     pub lost_samples: u64,
 }
 
@@ -39,7 +38,6 @@ impl CaptureChunk {
                 .samples
                 .len()
                 .is_multiple_of(usize::from(self.channels))
-            || self.samples.iter().any(|sample| !sample.is_finite())
         {
             Err(VoiceError::invalid_settings())
         } else {
@@ -54,7 +52,6 @@ pub struct InputRing {
     lost: Arc<AtomicU64>,
     sample_rate: u32,
     channels: u16,
-    format: InputSampleFormat,
 }
 
 struct RingState {
@@ -68,7 +65,7 @@ impl InputRing {
         capacity_samples: usize,
         sample_rate: u32,
         channels: u16,
-        format: InputSampleFormat,
+        _format: InputSampleFormat,
     ) -> Result<Self, VoiceError> {
         let bytes = capacity_samples
             .checked_mul(size_of::<f32>())
@@ -91,7 +88,6 @@ impl InputRing {
             lost: Arc::new(AtomicU64::new(0)),
             sample_rate,
             channels,
-            format,
         })
     }
 
@@ -137,7 +133,6 @@ impl InputRing {
             samples,
             sample_rate: self.sample_rate,
             channels: self.channels,
-            format: self.format,
             lost_samples,
         }
     }

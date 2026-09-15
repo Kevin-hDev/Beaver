@@ -3,28 +3,14 @@ use super::{
         VoiceDeliverySnapshot, VoiceDestination, VoiceOperationSnapshot, VoiceRecoverySnapshot,
         VoiceRecoveryState, VoiceSnapshot, VoiceTrialResult,
     },
-    delivery::{Delivery, TrialResult},
+    delivery_types::{Delivery, TrialResult},
     errors::VoiceError,
+    operation::Operation,
     recovery::{Recovery, RecoveryStatus},
     runtime::VoiceReservation,
     start_guards::{validate_id, validate_start},
     types::{VoiceLanguage, VoicePhase, VoiceSettings},
 };
-
-pub(super) struct Operation {
-    pub(super) id: String,
-    pub(super) destination: VoiceDestination,
-    pub(super) context_generation: u64,
-    pub(super) language: Option<VoiceLanguage>,
-    pub(super) settings: VoiceSettings,
-    pub(super) capture_ms: u64,
-    pub(super) speech_ms: u64,
-    pub(super) capture_incomplete: bool,
-    pub(super) level: f32,
-    pub(super) cancelled: bool,
-    pub(super) recovery_deleted: bool,
-    pub(super) reservation: VoiceReservation,
-}
 
 pub struct VoiceCoordinator {
     pub(super) revision: u64,
@@ -65,20 +51,26 @@ impl VoiceCoordinator {
             return Err(VoiceError::busy());
         }
         self.error.take();
+        let operation_id = uuid::Uuid::new_v4().to_string();
         self.operation = Some(Operation {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: operation_id.clone(),
             destination,
             context_generation,
-            language,
-            settings,
             capture_ms: 0,
             speech_ms: 0,
-            capture_incomplete: false,
+            lost_samples: 0,
+            microphone_disconnected: false,
             level: 0.0,
             cancelled: false,
             recovery_deleted: false,
             reservation,
         });
+        ::log::info!(
+            "[voice] operation={} step=started model={:?} language={:?}",
+            operation_id,
+            settings.model,
+            language
+        );
         self.bump();
         Ok(self.snapshot())
     }
@@ -89,6 +81,7 @@ impl VoiceCoordinator {
             .reservation
             .context()
             .transition(VoicePhase::Transcribing)?;
+        ::log::info!("[voice] operation={operation_id} step=validation-requested");
         self.bump();
         Ok(self.snapshot())
     }
@@ -98,13 +91,13 @@ impl VoiceCoordinator {
         operation_id: &str,
         capture_ms: u64,
         speech_ms: u64,
-        incomplete: bool,
+        lost_samples: u64,
         level: f32,
     ) -> Result<(), VoiceError> {
         let operation = self.matching_operation_mut(operation_id)?;
         operation.capture_ms = capture_ms;
         operation.speech_ms = speech_ms.min(capture_ms);
-        operation.capture_incomplete |= incomplete;
+        operation.lost_samples = lost_samples;
         operation.level = level.clamp(0.0, 1.0);
         self.bump();
         Ok(())
@@ -115,6 +108,7 @@ impl VoiceCoordinator {
             .reservation
             .context()
             .transition(VoicePhase::Listening)?;
+        ::log::info!("[voice] operation={operation_id} step=listening");
         self.bump();
         Ok(())
     }
@@ -129,6 +123,7 @@ impl VoiceCoordinator {
             return Err(VoiceError::invalid_transition());
         }
         drop(operation);
+        ::log::info!("[voice] operation={operation_id} step=stopped-without-result");
         self.bump();
         Ok(())
     }
@@ -140,9 +135,26 @@ impl VoiceCoordinator {
             .is_some_and(|item| item.id == operation_id)
         {
             self.operation.take();
+            if let Some(recovery) = self.recovery.as_mut() {
+                if recovery.status == RecoveryStatus::Preparing {
+                    recovery.status = RecoveryStatus::Failed;
+                }
+            }
             self.error = Some(error);
+            ::log::warn!(
+                "[voice] operation={} step=failed code={:?}",
+                operation_id,
+                self.error.as_ref().map(VoiceError::code)
+            );
             self.bump();
         }
+    }
+
+    pub fn clear_error(&mut self) -> VoiceSnapshot {
+        if self.error.take().is_some() {
+            self.bump();
+        }
+        self.snapshot()
     }
 
     pub fn snapshot(&self) -> VoiceSnapshot {
@@ -162,7 +174,7 @@ impl VoiceCoordinator {
                 context_generation: item.context_generation,
                 capture_ms: item.capture_ms,
                 speech_ms: item.speech_ms,
-                capture_incomplete: item.capture_incomplete,
+                capture_incomplete: item.lost_samples > 0,
                 level: item.level,
             }),
             recovery: self.recovery.as_ref().map(|item| VoiceRecoverySnapshot {
@@ -179,6 +191,7 @@ impl VoiceCoordinator {
                 id: item.id.clone(),
                 draft_key: item.draft_key.clone(),
                 text: item.text.clone(),
+                microphone_disconnected: item.microphone_disconnected,
             }),
             trial_result: self.trial_result.as_ref().map(|item| VoiceTrialResult {
                 trial_id: item.trial_id.clone(),

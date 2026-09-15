@@ -24,6 +24,7 @@ export function VoiceSettingsSection() {
   const [devices, setDevices] = useState<VoiceDevice[]>([]);
   const [open, setOpen] = useState(false);
   const downloads = useModelDownloads();
+  const reportFailure = useCallback(() => showToast(t("errors.operationFailed"), "error"), [t]);
   const refresh = useCallback(async () => {
     if (IS_LINUX) return;
     const [nextSettings, nextCatalog, nextDevices] = await Promise.all([getVoiceSettings(), getVoiceCatalog(), listVoiceDevices().catch(() => [])]);
@@ -31,12 +32,11 @@ export function VoiceSettingsSection() {
   }, []);
   useEffect(() => {
     if (IS_LINUX) return;
-    void Promise.resolve().then(refresh);
-    const unlisten = listen("voice-models-changed", () => { void refresh(); });
+    void Promise.resolve().then(refresh).catch(reportFailure);
+    const unlisten = listen("voice-models-changed", () => { void refresh().catch(reportFailure); });
     return () => cleanupTauriListener(unlisten);
-  }, [refresh]);
+  }, [refresh, reportFailure]);
   const save = async (patch: VoiceSettingsPatch) => setSettings(await updateVoiceSettings(patch));
-  const reportFailure = () => showToast(t("errors.operationFailed"), "error");
   if (IS_LINUX || !settings) return null;
   const selected = catalog.find((item) => item.model === settings.model);
   return <SettingsSectionFrame title={t("voice.settings.title")}>

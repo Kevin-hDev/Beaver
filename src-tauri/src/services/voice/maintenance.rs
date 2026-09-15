@@ -17,6 +17,10 @@ impl VoiceCoordinator {
             .delivery
             .as_ref()
             .is_some_and(|item| item.is_expired_at(now_ms));
+        let trial_expired = self
+            .trial_result
+            .as_ref()
+            .is_some_and(|item| item.is_expired_at(now_ms));
         if expired {
             self.recovery.take();
         }
@@ -24,7 +28,16 @@ impl VoiceCoordinator {
             self.delivery.take();
             self.error = Some(VoiceError::configuration_unavailable());
         }
-        if expired || delivery_expired {
+        if trial_expired {
+            self.trial_result.take();
+        }
+        if expired || delivery_expired || trial_expired {
+            ::log::info!(
+                "[voice] step=expired recovery={} delivery={} trial={}",
+                expired,
+                delivery_expired,
+                trial_expired
+            );
             self.bump();
         }
     }

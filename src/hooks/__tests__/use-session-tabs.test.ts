@@ -72,7 +72,7 @@ describe("useSessionTabs", () => {
     await waitFor(() => expect(result.current.tabs).toEqual(cloneTabs));
     await act(async () => { await result.current.selectTab("main"); });
 
-    expect(applyVoiceDelivery({ id: "delivery", draftKey: "session:clone", text: "texte" }))
+    expect(applyVoiceDelivery({ id: "delivery", draftKey: "session:clone", text: "texte", microphoneDisconnected: false }))
       .toBe("inserted");
   });
 
@@ -86,7 +86,7 @@ describe("useSessionTabs", () => {
     await waitFor(() => expect(result.current.tabs).toEqual(cloneTabs));
     await act(async () => { await result.current.closeTab("branch-1"); });
 
-    expect(applyVoiceDelivery({ id: "delivery", draftKey: "session:clone", text: "texte" }))
+    expect(applyVoiceDelivery({ id: "delivery", draftKey: "session:clone", text: "texte", microphoneDisconnected: false }))
       .toBe("destination-closed");
   });
 

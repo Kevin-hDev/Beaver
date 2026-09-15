@@ -29,7 +29,7 @@ pub struct Benchmark {
 
 impl Benchmark {
     pub fn multiplier(&self) -> f64 {
-        self.compute_ms as f64 / self.audio_ms as f64
+        self.audio_ms as f64 / self.compute_ms as f64
     }
 
     fn valid(&self) -> bool {

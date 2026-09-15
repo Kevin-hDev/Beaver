@@ -10,7 +10,6 @@ use crate::services::voice::{
 
 pub struct TranscriptionResult {
     pub text: String,
-    pub lost_samples: u64,
 }
 
 pub fn transcribe(
@@ -37,7 +36,6 @@ fn transcribe_inner(
             if plan.intervals().len() == 1 {
                 return Ok(TranscriptionResult {
                     text: recognition.take_text(),
-                    lost_samples: audio.lost_samples(),
                 });
             }
             return transcribe_without_timestamps(lease, audio, language);
@@ -49,8 +47,7 @@ fn transcribe_inner(
         assembly.push(&plan, &result)?;
     }
     let text = assembly.finish(&plan)?;
-    let lost_samples = audio.lost_samples();
-    Ok(TranscriptionResult { text, lost_samples })
+    Ok(TranscriptionResult { text })
 }
 
 fn transcribe_without_timestamps(
@@ -60,14 +57,13 @@ fn transcribe_without_timestamps(
 ) -> Result<TranscriptionResult, VoiceError> {
     let plan = AssemblyPlan::without_overlap_at_quiet_points(audio.samples())
         .ok_or_else(VoiceError::invalid_settings)?;
-    let mut text = String::new();
+    let mut text = zeroize::Zeroizing::new(String::new());
     for interval in plan.intervals() {
         let recognition = recognize_interval(lease, audio, *interval, language)?;
         append_without_overlap(&mut text, &recognition.text)?;
     }
     Ok(TranscriptionResult {
-        text,
-        lost_samples: audio.lost_samples(),
+        text: std::mem::take(&mut *text),
     })
 }
 

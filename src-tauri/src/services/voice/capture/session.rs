@@ -21,6 +21,7 @@ use super::{
 pub struct CapturePoll {
     pub level: LevelFrame,
     pub speech_ms: u64,
+    pub lost_samples: u64,
     pub stop_reason: Option<CaptureStopReason>,
 }
 
@@ -31,7 +32,6 @@ pub struct CaptureSession {
     speech: SpeechClock,
     started: Instant,
     last_speech_ms: u64,
-    generation: u64,
 }
 
 impl CaptureSession {
@@ -40,7 +40,6 @@ impl CaptureSession {
         gain: VoiceInputGain,
         cancelled: bool,
         foreground: bool,
-        generation: u64,
     ) -> Result<Self, VoiceError> {
         let stream = open_input_stream_if(device, cancelled, foreground)?;
         let normalizer = Normalizer::new(stream.sample_rate(), stream.channels(), gain)?;
@@ -52,7 +51,6 @@ impl CaptureSession {
             speech: SpeechClock::default(),
             started: Instant::now(),
             last_speech_ms: 0,
-            generation,
         })
     }
 
@@ -64,12 +62,14 @@ impl CaptureSession {
         max_duration: VoiceMaxDuration,
     ) -> Result<CapturePoll, VoiceError> {
         let chunk = self.stream.ring().drain();
-        let lost_samples = chunk.lost_samples;
+        let mut lost_samples = chunk.lost_samples;
         let mut pcm = self.normalizer.process(chunk, false)?;
         let remaining = MAX_PCM_SAMPLES.saturating_sub(self.audio.samples().len());
+        lost_samples = lost_samples
+            .saturating_add(u64::try_from(pcm.len().saturating_sub(remaining)).unwrap_or(u64::MAX));
         pcm.truncate(remaining);
         self.audio.append(&pcm, lost_samples)?;
-        let level = LevelFrame::from_pcm(&pcm, self.generation, lost_samples);
+        let level = LevelFrame::from_pcm(&pcm, lost_samples);
         let mut waveform: Vec<f32> = pcm
             .iter()
             .map(|sample| f32::from(*sample) / i16::MAX as f32)
@@ -96,6 +96,7 @@ impl CaptureSession {
         Ok(CapturePoll {
             level,
             speech_ms: self.speech.spoken_ms(),
+            lost_samples: self.audio.lost_samples(),
             stop_reason,
         })
     }
@@ -104,9 +105,12 @@ impl CaptureSession {
         // Fermer le flux avant le dernier drain garantit que le clic de
         // validation ne laisse pas la fin d'un mot dans le tampon du micro.
         let chunk = self.stream.finish();
-        let lost_samples = chunk.lost_samples;
+        let mut lost_samples = chunk.lost_samples;
         let mut tail = self.normalizer.process(chunk, true)?;
         let remaining = MAX_PCM_SAMPLES.saturating_sub(self.audio.samples().len());
+        lost_samples = lost_samples.saturating_add(
+            u64::try_from(tail.len().saturating_sub(remaining)).unwrap_or(u64::MAX),
+        );
         tail.truncate(remaining);
         self.audio.append(&tail, lost_samples)?;
         let mut waveform: Vec<f32> = tail

@@ -75,6 +75,30 @@ fn legacy_settings_receive_the_default_gain_without_losing_other_values() {
 }
 
 #[test]
+fn a_missing_field_uses_its_default_without_resetting_other_voice_settings() {
+    let value = serde_json::json!({
+        "version": 1,
+        "enabled": false,
+        "model": "qwen3-asr06b",
+        "input_device": { "kind": "system-default" },
+        "input_gain": "nine-db",
+        "max_duration": "30-minutes",
+        "language": { "kind": "automatic" },
+        "shortcut": null,
+        "unload_delay": "five-minutes",
+        "explanation_accepted": true
+    });
+    let settings = serde_json::from_value::<VoiceSettings>(value)
+        .unwrap()
+        .normalized()
+        .unwrap();
+    assert!(!settings.enabled);
+    assert_eq!(settings.model, VoiceModel::Qwen3Asr06b);
+    assert_eq!(settings.silence_timeout, VoiceSilenceTimeout::FiveSeconds);
+    assert_eq!(settings.max_duration, VoiceMaxDuration::Thirty);
+}
+
+#[test]
 fn tolerant_read_and_serialized_update_preserve_other_config_sections() {
     let directory = tempfile::tempdir().expect("temp dir");
     let path = directory.path().join("config.json");

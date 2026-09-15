@@ -10,6 +10,7 @@ use crate::{
         work_registry::{ServiceWorkCancellation, ServiceWorkSupervisor},
     },
 };
+use tauri::Emitter;
 
 use super::{
     lifecycle::ModelLifecycle,
@@ -17,8 +18,9 @@ use super::{
 };
 
 impl ModelLifecycle {
+    #[cfg(test)]
     pub fn new(app_work: AppWorkSupervisor) -> Self {
-        Self::build(app_work, None)
+        Self::build(app_work, None, None)
     }
 
     pub fn new_with_coordinator(
@@ -26,8 +28,9 @@ impl ModelLifecycle {
         coordinator: std::sync::Weak<
             std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>,
         >,
+        event_app: std::sync::Weak<std::sync::Mutex<Option<tauri::AppHandle>>>,
     ) -> Self {
-        Self::build(app_work, Some(coordinator))
+        Self::build(app_work, Some(coordinator), Some(event_app))
     }
 
     fn build(
@@ -35,6 +38,7 @@ impl ModelLifecycle {
         coordinator: Option<
             std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
         >,
+        event_app: Option<std::sync::Weak<std::sync::Mutex<Option<tauri::AppHandle>>>>,
     ) -> Self {
         // Deux places : une boucle de maintenance permanente et, au plus, un
         // chargement ASR. La réservation du modèle interdit un second chargement.
@@ -50,7 +54,7 @@ impl ModelLifecycle {
         if work
             .spawn({
                 let inner = std::sync::Arc::downgrade(&inner);
-                move |cancel| run(inner, receiver, cancel, coordinator)
+                move |cancel| run(inner, receiver, cancel, coordinator, event_app)
             })
             .is_err()
         {
@@ -85,25 +89,31 @@ pub(super) async fn run(
     coordinator: Option<
         std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
     >,
+    event_app: Option<std::sync::Weak<std::sync::Mutex<Option<tauri::AppHandle>>>>,
 ) {
+    let mut unloaded_generation = None;
     loop {
         let plan = *plans.borrow_and_update();
+        let deadline = pending_deadline(plan, unloaded_generation);
         let changed = async {
             let _ = plans.changed().await;
         };
         let tick = tokio::time::sleep(Duration::from_secs(1));
         tokio::pin!(tick);
-        match plan.deadline {
+        match deadline {
             Some(deadline) => tokio::select! {
                 _ = cancel.cancelled() => break,
                 _ = changed => continue,
-                _ = tokio::time::sleep_until(deadline) => unload(&inner, plan.generation),
-                _ = &mut tick => expire(&coordinator),
+                _ = tokio::time::sleep_until(deadline) => {
+                    unload(&inner, plan.generation);
+                    unloaded_generation = Some(plan.generation);
+                },
+                _ = &mut tick => expire(&coordinator, &event_app),
             },
             None => tokio::select! {
                 _ = cancel.cancelled() => break,
                 _ = changed => continue,
-                _ = &mut tick => expire(&coordinator),
+                _ = &mut tick => expire(&coordinator, &event_app),
             },
         }
     }
@@ -112,10 +122,19 @@ pub(super) async fn run(
     }
 }
 
+pub(super) fn pending_deadline(
+    plan: UnloadPlan,
+    unloaded_generation: Option<u64>,
+) -> Option<tokio::time::Instant> {
+    plan.deadline
+        .filter(|_| unloaded_generation != Some(plan.generation))
+}
+
 fn expire(
     coordinator: &Option<
         std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
     >,
+    event_app: &Option<std::sync::Weak<std::sync::Mutex<Option<tauri::AppHandle>>>>,
 ) {
     let Some(coordinator) = coordinator.as_ref().and_then(std::sync::Weak::upgrade) else {
         return;
@@ -124,7 +143,24 @@ fn expire(
         .lock()
         .unwrap_or_else(|error| error.into_inner());
     let now_ms = coordinator.now_ms();
+    let revision = coordinator.snapshot().revision;
     coordinator.expire_at(now_ms);
+    if coordinator.snapshot().revision == revision {
+        return;
+    }
+    let snapshot = coordinator.snapshot();
+    drop(coordinator);
+    let Some(app) = event_app
+        .as_ref()
+        .and_then(std::sync::Weak::upgrade)
+        .and_then(|app| app.lock().ok()?.clone())
+    else {
+        return;
+    };
+    let _ = app.emit(
+        crate::services::voice::contracts::VOICE_CHANGED_EVENT,
+        snapshot,
+    );
 }
 
 fn unload(inner: &Weak<LifecycleInner>, generation: u64) {

@@ -5,7 +5,6 @@ use crate::services::voice::{
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CaptureStopReason {
-    Validated,
     Silence,
     DurationLimit,
     NoSpeech,

@@ -1,4 +1,4 @@
-use super::delivery::Delivery;
+use super::delivery_types::Delivery;
 
 #[test]
 fn transcript_limit_counts_unicode_characters() {

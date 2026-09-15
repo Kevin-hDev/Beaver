@@ -2655,9 +2655,6 @@
       "continue": "Weiter"
     },
     "language": {
-      "title": "Diktatsprache",
-      "description": "Sprache für dieses Diktat wählen.",
-      "configured": "Aktuelle Einstellung",
       "automatic": "Automatisch erkennen"
     },
     "settings": {
@@ -2672,6 +2669,7 @@
       "advancedDescription": "Modelle, Mikrofon und Speicher.",
       "open": "Erweitert",
       "languageCount": "{{count}} Sprachen",
+      "lastSpeed": "≈ {{speed}}× Echtzeit · letzte Messung, ohne Laden",
       "installing": "Installation…",
       "cancelling": "Abbruch…",
       "remove": "Entfernen",
@@ -2727,6 +2725,7 @@
       "delete": "Wiederherstellung löschen",
       "duration": "{{minutes}} Min. {{seconds}} Sek."
     },
+    "notice": { "microphoneDisconnected": "Das Mikrofon wurde getrennt. Die erfasste Sprache wurde transkribiert." },
     "error": {
       "busy": "Ein anderer Sprachvorgang läuft bereits.",
       "shutting-down": "Beaver wird beendet.",

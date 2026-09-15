@@ -4,6 +4,7 @@ use crate::services::voice::{
     model::recognizer::RecognitionSlice,
     slicing::{AssemblyPlan, SliceInterval},
 };
+use zeroize::Zeroize;
 
 pub struct SliceResult {
     pub interval: SliceInterval,
@@ -13,6 +14,7 @@ pub struct SliceResult {
 #[derive(Default)]
 pub struct AssemblyAccumulator {
     text: String,
+    chars: usize,
     next_interval: usize,
 }
 
@@ -23,20 +25,33 @@ impl AssemblyAccumulator {
             .get(self.next_interval)
             .filter(|expected| **expected == slice.interval)
             .ok_or_else(VoiceError::configuration_unavailable)?;
-        append_central_tokens(&mut self.text, plan, *expected, &slice.recognition)?;
+        append_central_tokens(
+            &mut self.text,
+            &mut self.chars,
+            plan,
+            *expected,
+            &slice.recognition,
+        )?;
         self.next_interval += 1;
         Ok(())
     }
 
-    pub fn finish(self, plan: &AssemblyPlan) -> Result<String, VoiceError> {
+    pub fn finish(mut self, plan: &AssemblyPlan) -> Result<String, VoiceError> {
         if self.next_interval == plan.intervals().len() {
-            Ok(self.text)
+            Ok(std::mem::take(&mut self.text))
         } else {
             Err(VoiceError::configuration_unavailable())
         }
     }
 }
 
+impl Drop for AssemblyAccumulator {
+    fn drop(&mut self) {
+        self.text.zeroize();
+    }
+}
+
+#[cfg(test)]
 pub fn assemble(plan: &AssemblyPlan, slices: &[SliceResult]) -> Result<String, VoiceError> {
     if slices.len() != plan.intervals().len() {
         return Err(VoiceError::configuration_unavailable());
@@ -50,6 +65,7 @@ pub fn assemble(plan: &AssemblyPlan, slices: &[SliceResult]) -> Result<String, V
 
 fn append_central_tokens(
     text: &mut String,
+    chars: &mut usize,
     plan: &AssemblyPlan,
     interval: SliceInterval,
     recognition: &RecognitionSlice,
@@ -73,10 +89,12 @@ fn append_central_tokens(
             && (absolute < interval.central_end
                 || (plan.is_last(interval) && absolute == interval.central_end));
         if in_central {
-            if text.chars().count().saturating_add(token.chars().count()) > MAX_TRANSCRIPT_CHARS {
+            let token_chars = token.chars().count();
+            if chars.saturating_add(token_chars) > MAX_TRANSCRIPT_CHARS {
                 return Err(VoiceError::configuration_unavailable());
             }
             text.push_str(token);
+            *chars = chars.saturating_add(token_chars);
         }
     }
     Ok(())

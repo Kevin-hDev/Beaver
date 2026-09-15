@@ -1,34 +1,8 @@
-// La projection est publiée par les commandes vocales ajoutées en T09.
-#![allow(dead_code)]
-
-use serde::Serialize;
-
-use crate::services::voice::errors::VoiceError;
-use crate::services::voice::types::VoicePhase;
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[cfg_attr(test, derive(ts_rs::TS))]
-pub struct VoiceProjection {
-    pub phase: VoicePhase,
-    pub error: Option<VoiceError>,
-}
-
-impl VoiceProjection {
-    pub fn idle_error(error: VoiceError) -> Self {
-        Self {
-            phase: VoicePhase::Idle,
-            error: Some(error),
-        }
-    }
-}
-
 #[cfg(test)]
 pub(crate) fn typescript_bindings() -> String {
     use crate::services::voice::contracts::*;
     use crate::services::voice::download::VoiceLanguageMode;
-    use crate::services::voice::errors::{
-        VoiceError, VoiceErrorCode, VoiceErrorParam, VoiceErrorParamKey,
-    };
+    use crate::services::voice::errors::{VoiceError, VoiceErrorCode};
     use crate::services::voice::types::*;
     use ts_rs::{Config, TS};
 
@@ -57,10 +31,7 @@ pub(crate) fn typescript_bindings() -> String {
         VoiceTrialResult::decl(&config),
         VoiceSnapshot::decl(&config),
         VoiceErrorCode::decl(&config),
-        VoiceErrorParamKey::decl(&config),
-        VoiceErrorParam::decl(&config),
         VoiceError::decl(&config),
-        VoiceProjection::decl(&config),
     ];
     format!(
         "// @generated from Rust by `npm run contracts:generate:voice`.\n\

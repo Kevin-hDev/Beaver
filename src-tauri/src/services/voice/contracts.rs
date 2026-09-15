@@ -5,6 +5,8 @@ use super::{
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
+pub const VOICE_CHANGED_EVENT: &str = "voice-state-changed";
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -38,6 +40,10 @@ pub enum VoiceAction {
     CancelInsertion {
         operation_id: String,
     },
+    DiscardOperation {
+        operation_id: String,
+    },
+    ClearError,
     AbandonTrial {
         trial_id: String,
     },
@@ -81,7 +87,7 @@ pub struct VoiceDevice {
     pub name: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceCatalogItem {
@@ -95,6 +101,7 @@ pub struct VoiceCatalogItem {
     pub languages: Vec<String>,
     pub dialects: Vec<String>,
     pub language_mode: VoiceLanguageMode,
+    pub speed_multiplier: Option<f64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -140,6 +147,7 @@ pub struct VoiceDeliverySnapshot {
     pub id: String,
     pub draft_key: String,
     pub text: String,
+    pub microphone_disconnected: bool,
 }
 
 impl Drop for VoiceDeliverySnapshot {

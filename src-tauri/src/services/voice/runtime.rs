@@ -1,61 +1,52 @@
 use super::errors::VoiceError;
-use super::types::VoicePhase;
 use super::work::{VoiceOwner, VoiceWork, VoiceWorkContext};
 use crate::app_exit::AppWorkSupervisor;
 #[cfg(any(target_os = "macos", windows))]
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use tokio::sync::oneshot;
 
 #[derive(Clone)]
 pub struct VoiceRuntime {
-    work: VoiceWork,
+    pub(super) work: VoiceWork,
     #[cfg(any(target_os = "macos", windows))]
     models: super::model::lifecycle::ModelLifecycle,
     #[cfg(any(target_os = "macos", windows))]
     coordinator: Arc<Mutex<super::actions::VoiceCoordinator>>,
+    #[cfg(any(target_os = "macos", windows))]
+    event_app: Arc<Mutex<Option<tauri::AppHandle>>>,
 }
 
 pub fn new_voice_runtime(app_work: AppWorkSupervisor) -> VoiceRuntime {
     #[cfg(any(target_os = "macos", windows))]
     let coordinator = Arc::new(Mutex::new(super::actions::VoiceCoordinator::default()));
+    #[cfg(any(target_os = "macos", windows))]
+    let event_app = Arc::new(Mutex::new(None));
     VoiceRuntime {
         work: VoiceWork::new(app_work.clone()),
         #[cfg(any(target_os = "macos", windows))]
         models: super::model::lifecycle::ModelLifecycle::new_with_coordinator(
             app_work,
             Arc::downgrade(&coordinator),
+            Arc::downgrade(&event_app),
         ),
         #[cfg(any(target_os = "macos", windows))]
         coordinator,
+        #[cfg(any(target_os = "macos", windows))]
+        event_app,
     }
 }
 
 impl VoiceRuntime {
+    #[cfg(any(target_os = "macos", windows))]
+    pub(crate) fn attach_app(&self, app: &tauri::AppHandle) {
+        *self
+            .event_app
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = Some(app.clone());
+    }
+
     pub fn try_reserve(&self) -> Result<VoiceReservation, VoiceError> {
         self.work.try_reserve().map(VoiceReservation)
-    }
-
-    pub fn spawn_blocking<Work, Output>(
-        &self,
-        work: Work,
-    ) -> Result<oneshot::Receiver<Output>, VoiceError>
-    where
-        Work: FnOnce(VoiceWorkContext) -> Output + Send + 'static,
-        Output: Send + 'static,
-    {
-        let owner = self.work.try_reserve()?;
-        let context = owner.context();
-        let (sender, receiver) = oneshot::channel();
-        tauri::async_runtime::spawn_blocking(move || {
-            let _owner = owner;
-            let _ = sender.send(work(context));
-        });
-        Ok(receiver)
-    }
-
-    pub fn phase(&self) -> VoicePhase {
-        self.work.phase()
     }
 
     pub fn begin_closing(&self) {
@@ -93,6 +84,7 @@ impl VoiceRuntime {
     }
 
     #[cfg(any(target_os = "macos", windows))]
+    #[cfg(test)]
     pub fn dispatch(
         &self,
         action: super::contracts::VoiceAction,
@@ -132,6 +124,10 @@ impl VoiceRuntime {
             VoiceAction::CancelInsertion { operation_id } => {
                 coordinator.cancel_insertion(&operation_id)
             }
+            VoiceAction::DiscardOperation { operation_id } => {
+                coordinator.discard_operation(&operation_id)
+            }
+            VoiceAction::ClearError => Ok(coordinator.clear_error()),
             VoiceAction::AbandonTrial { trial_id } => coordinator.abandon_trial(&trial_id),
             VoiceAction::DeleteRecovery { recovery_id } => {
                 coordinator.delete_recovery(&recovery_id)
@@ -178,6 +174,7 @@ impl VoiceRuntime {
         self.lock_coordinator()
     }
 
+    #[cfg(any(target_os = "macos", windows))]
     pub(crate) fn coordinator_for_pipeline(
         &self,
     ) -> std::sync::MutexGuard<'_, super::actions::VoiceCoordinator> {

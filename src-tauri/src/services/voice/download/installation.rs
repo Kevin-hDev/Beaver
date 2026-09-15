@@ -17,7 +17,7 @@ pub(crate) fn install_archive(
     archive: &Path,
     data_dir: &Path,
 ) -> Result<InstallationReceipt, String> {
-    if let Some(receipt) = load_receipt(data_dir, &entry.id)? {
+    if let Some(receipt) = tolerant_receipt(data_dir, &entry.id) {
         if receipt_matches(&receipt, entry) && receipt.install_dir(data_dir).is_dir() {
             cleanup_partial(data_dir, &entry.id)?;
             return Ok(receipt);
@@ -30,6 +30,7 @@ pub(crate) fn install_archive(
     ensure_private_dir(&model_parent)?;
     ensure_private_dir(&staging_parent)?;
     if final_dir.exists() {
+        super::removal::remove_receipt_file(data_dir, &entry.id)?;
         fs::remove_dir_all(&final_dir).map_err(|_| storage_error())?;
     }
     let staging = staging_parent.join(format!("{}-{}", entry.id, Uuid::new_v4()));
@@ -51,9 +52,23 @@ pub(crate) fn installed_receipt(
     entry: &VoiceCatalogEntry,
     data_dir: &Path,
 ) -> Result<Option<InstallationReceipt>, String> {
-    Ok(load_receipt(data_dir, &entry.id)?.filter(|receipt| {
+    Ok(tolerant_receipt(data_dir, &entry.id).filter(|receipt| {
         receipt_matches(receipt, entry) && receipt.install_dir(data_dir).is_dir()
     }))
+}
+
+fn tolerant_receipt(data_dir: &Path, id: &str) -> Option<InstallationReceipt> {
+    match load_receipt(data_dir, id) {
+        Ok(receipt) => receipt,
+        Err(error) => {
+            ::log::warn!(
+                "[voice-download] model={} step=receipt-ignored code={}",
+                id,
+                error
+            );
+            None
+        }
+    }
 }
 
 fn publish(
@@ -75,7 +90,18 @@ fn publish(
     sync_directory(model_parent)?;
     let receipt = InstallationReceipt::from_entry(entry);
     save_receipt(data_dir, &receipt)?;
-    cleanup_partial(data_dir, &entry.id)?;
+    ::log::info!(
+        "[voice-download] model={} step=published revision={}",
+        entry.id,
+        entry.revision
+    );
+    if let Err(error) = cleanup_partial(data_dir, &entry.id) {
+        ::log::warn!(
+            "[voice-download] model={} step=partial-cleanup-pending code={}",
+            entry.id,
+            error
+        );
+    }
     Ok(receipt)
 }
 

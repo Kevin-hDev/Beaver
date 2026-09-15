@@ -50,6 +50,7 @@ impl CaptureStream {
     }
 }
 
+#[cfg(test)]
 pub fn open_input_stream(selection: &VoiceInputDevice) -> Result<CaptureStream, VoiceError> {
     open_input_stream_if(selection, false, true)
 }

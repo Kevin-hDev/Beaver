@@ -33,7 +33,7 @@ fn cancellation_threshold_and_repeated_cross_are_deterministic() {
         let operation_id = start(&runtime, "draft");
         runtime
             .coordinator_for_test()
-            .record_capture(&operation_id, 40_000, speech_ms, false, 0.5)
+            .record_capture(&operation_id, 40_000, speech_ms, 0, 0.5)
             .unwrap();
         runtime
             .dispatch(
@@ -63,12 +63,55 @@ fn cancellation_threshold_and_repeated_cross_are_deterministic() {
 }
 
 #[test]
+fn explicit_discard_never_creates_a_recovery() {
+    let runtime = runtime();
+    let operation_id = start(&runtime, "draft");
+    runtime
+        .coordinator_for_test()
+        .record_capture(&operation_id, 40_000, 35_000, 0, 0.5)
+        .unwrap();
+
+    runtime
+        .dispatch(
+            VoiceAction::DiscardOperation {
+                operation_id: operation_id.clone(),
+            },
+            true,
+        )
+        .unwrap();
+    runtime
+        .coordinator_for_test()
+        .complete(&operation_id, "texte jeté".into(), 100)
+        .unwrap();
+
+    let snapshot = runtime.snapshot();
+    assert!(snapshot.recovery.is_none());
+    assert!(snapshot.delivery.is_none());
+}
+
+#[test]
+fn microphone_disconnection_reaches_the_delivered_result() {
+    let runtime = runtime();
+    let operation_id = start(&runtime, "draft");
+    runtime
+        .coordinator_for_test()
+        .note_microphone_disconnected(&operation_id)
+        .unwrap();
+    runtime
+        .coordinator_for_test()
+        .complete(&operation_id, "texte conservé".into(), 100)
+        .unwrap();
+
+    assert!(runtime.snapshot().delivery.unwrap().microphone_disconnected);
+}
+
+#[test]
 fn delivery_can_be_replayed_then_acknowledged_once() {
     let runtime = runtime();
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 35_000, true, 0.5)
+        .record_capture(&operation_id, 40_000, 35_000, 1, 0.5)
         .unwrap();
     runtime
         .coordinator_for_test()
@@ -103,7 +146,7 @@ fn closing_before_insertion_redirects_a_long_result_to_recovery() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 30_000, false, 0.5)
+        .record_capture(&operation_id, 40_000, 30_000, 0, 0.5)
         .unwrap();
     runtime
         .coordinator_for_test()
@@ -123,7 +166,7 @@ fn oversized_recovery_fails_without_truncating_or_replacing_text() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 30_000, false, 0.5)
+        .record_capture(&operation_id, 40_000, 30_000, 0, 0.5)
         .unwrap();
     runtime
         .dispatch(
@@ -152,7 +195,7 @@ fn recovery_moves_global_on_close_and_is_consumed_only_after_acknowledgement() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 30_000, false, 0.5)
+        .record_capture(&operation_id, 40_000, 30_000, 0, 0.5)
         .unwrap();
     runtime
         .dispatch(
@@ -206,6 +249,86 @@ fn recovery_moves_global_on_close_and_is_consumed_only_after_acknowledgement() {
 }
 
 #[test]
+fn ready_recovery_cannot_be_restored_while_an_operation_is_active() {
+    let runtime = runtime();
+    let old_operation = start(&runtime, "old-draft");
+    runtime
+        .coordinator_for_test()
+        .record_capture(&old_operation, 40_000, 30_000, 0, 0.5)
+        .unwrap();
+    runtime
+        .dispatch(
+            VoiceAction::CancelInsertion {
+                operation_id: old_operation.clone(),
+            },
+            true,
+        )
+        .unwrap();
+    runtime
+        .coordinator_for_test()
+        .complete(&old_operation, "ancien texte".into(), 100)
+        .unwrap();
+    let recovery_id = runtime.snapshot().recovery.unwrap().id;
+    let active_operation = start(&runtime, "new-draft");
+
+    assert!(runtime
+        .dispatch(
+            VoiceAction::RestoreRecovery {
+                recovery_id: recovery_id.clone(),
+                draft_key: "new-draft".into(),
+            },
+            true,
+        )
+        .is_err());
+    let snapshot = runtime.snapshot();
+    assert_eq!(snapshot.operation.unwrap().id, active_operation);
+    assert_eq!(snapshot.recovery.unwrap().id, recovery_id);
+    assert!(snapshot.delivery.is_none());
+}
+
+#[test]
+fn failed_recovery_stops_showing_preparation() {
+    let runtime = runtime();
+    let operation_id = start(&runtime, "draft");
+    runtime
+        .coordinator_for_test()
+        .record_capture(&operation_id, 40_000, 30_000, 0, 0.5)
+        .unwrap();
+    runtime
+        .dispatch(
+            VoiceAction::CancelInsertion {
+                operation_id: operation_id.clone(),
+            },
+            true,
+        )
+        .unwrap();
+
+    runtime.coordinator_for_test().fail(
+        &operation_id,
+        super::errors::VoiceError::configuration_unavailable(),
+    );
+
+    assert_eq!(
+        runtime.snapshot().recovery.unwrap().status,
+        VoiceRecoveryState::Failed
+    );
+}
+
+#[test]
+fn an_error_can_be_cleared_without_starting_a_new_recording() {
+    let runtime = runtime();
+    let operation_id = start(&runtime, "draft");
+    runtime.coordinator_for_test().fail(
+        &operation_id,
+        super::errors::VoiceError::configuration_unavailable(),
+    );
+    assert!(runtime.snapshot().error.is_some());
+    let snapshot = runtime.dispatch(VoiceAction::ClearError, true).unwrap();
+    assert!(snapshot.error.is_none());
+    assert!(snapshot.operation.is_none());
+}
+
+#[test]
 fn trial_result_is_separate_and_closing_it_never_creates_recovery() {
     let runtime = runtime();
     let operation_id = runtime
@@ -225,7 +348,7 @@ fn trial_result_is_separate_and_closing_it_never_creates_recovery() {
         .id;
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 35_000, false, 0.5)
+        .record_capture(&operation_id, 40_000, 35_000, 0, 0.5)
         .unwrap();
     runtime
         .coordinator_for_test()

@@ -96,6 +96,11 @@ impl VoiceCoordinator {
             super::types::VoicePhase::Stopping
         })?;
         operation.cancelled = true;
+        ::log::info!(
+            "[voice] operation={} step=cancelled recovery={}",
+            operation_id,
+            recovers
+        );
         if recovers {
             self.recovery = Some(Recovery::preparing(
                 uuid::Uuid::new_v4().to_string(),
