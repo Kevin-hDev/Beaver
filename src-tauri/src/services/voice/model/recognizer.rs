@@ -2,6 +2,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use sherpa_onnx::{OfflineRecognizer, OfflineRecognizerConfig, VoiceActivityDetector};
+use zeroize::Zeroize;
 
 use crate::services::voice::{
     download::{InstallationReceipt, VoiceCatalogEntry, VoiceEngine},
@@ -45,6 +46,13 @@ pub struct RecognitionSlice {
     pub tokens: Vec<String>,
     pub timestamps_ms: Option<Vec<u64>>,
     pub durations_ms: Option<Vec<u64>>,
+}
+
+impl Drop for RecognitionSlice {
+    fn drop(&mut self) {
+        self.text.zeroize();
+        self.tokens.iter_mut().for_each(Zeroize::zeroize);
+    }
 }
 
 pub struct PreparedModel {

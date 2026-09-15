@@ -29,6 +29,11 @@ pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
             api.prevent_close();
             match main_window_close_action(cfg!(target_os = "macos")) {
                 MainWindowCloseAction::Hide => {
+                    #[cfg(any(target_os = "macos", windows))]
+                    crate::services::voice::capture::window_events::record_for_app(
+                        app_handle,
+                        crate::services::voice::capture::window_events::WindowSignal::Hidden,
+                    );
                     if let Some(win) = app_handle.get_webview_window("main") {
                         let _ = win.hide();
                     }

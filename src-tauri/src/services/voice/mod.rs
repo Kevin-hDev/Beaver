@@ -1,6 +1,11 @@
 // T02 fixe les contrats que les commandes et moteurs des tâches T05 à T09 consommeront.
 #![allow(dead_code)]
 
+#[cfg(any(target_os = "macos", windows))]
+pub mod assembly;
+pub mod audio_buffer;
+#[cfg(any(target_os = "macos", windows))]
+pub mod capture;
 pub mod download;
 pub mod errors;
 pub mod limits;
@@ -8,7 +13,10 @@ pub mod limits;
 pub mod model;
 pub mod runtime;
 pub mod settings;
+pub mod slicing;
 pub mod state;
+#[cfg(any(target_os = "macos", windows))]
+pub mod transcription;
 pub mod types;
 mod work;
 

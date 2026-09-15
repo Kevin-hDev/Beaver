@@ -1,8 +1,10 @@
-use super::voice_probe_audio::{build_input_stream, InputUpdate};
+use super::voice::capture::{
+    level::LevelFrame, normalization::Normalizer, stream::open_input_stream,
+};
+use super::voice::types::VoiceInputDevice;
 use super::voice_probe_state::{ProbeState, VoiceProbeError};
 use crate::app_exit::AppWorkSupervisor;
 use crate::services::work_registry::{ServiceWorkCancellation, ServiceWorkSupervisor};
-use cpal::traits::StreamTrait;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
@@ -106,17 +108,24 @@ async fn run_probe(
         return;
     }
 
-    let (stream, updates) = match build_input_stream() {
-        Ok(pair) => pair,
+    let stream = match open_input_stream(&VoiceInputDevice::SystemDefault) {
+        Ok(stream) => stream,
         Err(_) => {
             finish_probe(&state, &active_cancellation, &app, true);
             return;
         }
     };
-    if stream.play().is_err() {
+    if stream.start().is_err() {
         finish_probe(&state, &active_cancellation, &app, true);
         return;
     }
+    let normalizer = match Normalizer::new(stream.sample_rate(), stream.channels()) {
+        Ok(normalizer) => normalizer,
+        Err(_) => {
+            finish_probe(&state, &active_cancellation, &app, true);
+            return;
+        }
+    };
     if let Ok(mut current) = state.lock() {
         current.mark_listening();
         emit_snapshot(&app, &current.snapshot());
@@ -126,28 +135,25 @@ async fn run_probe(
     tokio::pin!(deadline);
     let mut interval = tokio::time::interval(LEVEL_INTERVAL);
     let mut sample_count = 0_u64;
-    let mut failed = false;
     loop {
         tokio::select! {
             _ = cancellation.cancelled() => break,
             _ = &mut deadline => break,
             _ = interval.tick() => {
-                while let Ok(update) = updates.try_recv() {
-                    match update {
-                        InputUpdate::Samples { count, level } => {
-                            sample_count = sample_count.saturating_add(count);
-                            if let Ok(mut current) = state.lock() {
-                                current.record(sample_count, level);
-                                emit_snapshot(&app, &current.snapshot());
-                            }
-                        }
-                        InputUpdate::Failed => failed = true,
-                    }
+                if stream.disconnected() { break; }
+                let chunk = stream.ring().drain();
+                let lost = chunk.lost_samples;
+                let Ok(pcm) = normalizer.process(chunk, false) else { break; };
+                sample_count = sample_count.saturating_add(pcm.len() as u64);
+                let level = LevelFrame::from_pcm(&pcm, 0, lost);
+                if let Ok(mut current) = state.lock() {
+                    current.record(sample_count, level.peak);
+                    emit_snapshot(&app, &current.snapshot());
                 }
-                if failed { break; }
             }
         }
     }
+    let failed = stream.disconnected();
     drop(stream);
     finish_probe(&state, &active_cancellation, &app, failed);
 }

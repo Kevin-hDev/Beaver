@@ -66,7 +66,7 @@ fn build_with_mode(
         exit_coordinator.work_supervisor(),
     ));
     let ollama_manager = runtime.ollama.clone();
-    builder
+    let builder = builder
         .manage(OllamaClient::new(ollama_manager))
         .manage(runtime.ollama)
         .manage(exit_coordinator)
@@ -84,7 +84,11 @@ fn build_with_mode(
         .manage(crate::services::browser::BrowserRuntimeHandle::default())
         .manage(crate::services::browser::BrowserSessionService::default())
         .manage(crate::services::browser::LocalSiteScanner::default())
-        .manage(ui_startup)
+        .manage(ui_startup);
+    #[cfg(any(target_os = "macos", windows))]
+    let builder =
+        builder.manage(crate::services::voice::capture::window_events::WindowEventState::default());
+    builder
         .manage(crate::services::extensions::UiLoadAcknowledger::new())
         .manage(runtime.gateway)
         .manage(crate::commands::file_tree_watcher::FileTreeWatcher::new())
@@ -100,6 +104,22 @@ fn build_with_mode(
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Focused(focused) = event {
                 crate::services::mascot::handle_window_focus(window.app_handle(), *focused);
+                #[cfg(any(target_os = "macos", windows))]
+                crate::services::voice::capture::window_events::record_for_app(
+                    window.app_handle(),
+                    crate::services::voice::capture::window_events::WindowSignal::FocusChanged(
+                        *focused,
+                    ),
+                );
+            }
+            #[cfg(any(target_os = "macos", windows))]
+            if matches!(event, tauri::WindowEvent::Resized(_))
+                && window.is_minimized().unwrap_or(false)
+            {
+                crate::services::voice::capture::window_events::record_for_app(
+                    window.app_handle(),
+                    crate::services::voice::capture::window_events::WindowSignal::Minimized,
+                );
             }
         })
         .invoke_handler(crate::invoke_gate::wrap(

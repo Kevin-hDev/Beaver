@@ -6,8 +6,10 @@ fn sherpa_native_contracts_compile_and_resample() {
     };
 
     fn assert_send_sync<T: Send + Sync>() {}
+    fn assert_send<T: Send>() {}
 
     assert_send_sync::<VoiceActivityDetector>();
+    assert_send::<super::capture::stream::CaptureStream>();
     assert!(std::mem::needs_drop::<VoiceActivityDetector>());
     assert!(std::mem::needs_drop::<LinearResampler>());
 
