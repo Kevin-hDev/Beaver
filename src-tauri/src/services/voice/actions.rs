@@ -20,6 +20,7 @@ pub(super) struct Operation {
     pub(super) capture_ms: u64,
     pub(super) speech_ms: u64,
     pub(super) capture_incomplete: bool,
+    pub(super) level: f32,
     pub(super) cancelled: bool,
     pub(super) recovery_deleted: bool,
     pub(super) reservation: VoiceReservation,
@@ -73,6 +74,7 @@ impl VoiceCoordinator {
             capture_ms: 0,
             speech_ms: 0,
             capture_incomplete: false,
+            level: 0.0,
             cancelled: false,
             recovery_deleted: false,
             reservation,
@@ -97,12 +99,43 @@ impl VoiceCoordinator {
         capture_ms: u64,
         speech_ms: u64,
         incomplete: bool,
+        level: f32,
     ) -> Result<(), VoiceError> {
         let operation = self.matching_operation_mut(operation_id)?;
         operation.capture_ms = capture_ms;
         operation.speech_ms = speech_ms.min(capture_ms);
         operation.capture_incomplete |= incomplete;
+        operation.level = level.clamp(0.0, 1.0);
+        self.bump();
         Ok(())
+    }
+
+    pub fn begin_listening(&mut self, operation_id: &str) -> Result<(), VoiceError> {
+        self.matching_operation_mut(operation_id)?
+            .reservation
+            .context()
+            .transition(VoicePhase::Listening)?;
+        self.bump();
+        Ok(())
+    }
+
+    pub fn stop_without_result(&mut self, operation_id: &str) -> Result<(), VoiceError> {
+        let operation = self.operation.take().ok_or_else(VoiceError::invalid_transition)?;
+        if operation.id != operation_id {
+            self.operation = Some(operation);
+            return Err(VoiceError::invalid_transition());
+        }
+        drop(operation);
+        self.bump();
+        Ok(())
+    }
+
+    pub fn fail(&mut self, operation_id: &str, error: VoiceError) {
+        if self.operation.as_ref().is_some_and(|item| item.id == operation_id) {
+            self.operation.take();
+            self.error = Some(error);
+            self.bump();
+        }
     }
 
     pub fn snapshot(&self) -> VoiceSnapshot {
@@ -123,6 +156,7 @@ impl VoiceCoordinator {
                 capture_ms: item.capture_ms,
                 speech_ms: item.speech_ms,
                 capture_incomplete: item.capture_incomplete,
+                level: item.level,
             }),
             recovery: self.recovery.as_ref().map(|item| VoiceRecoverySnapshot {
                 id: item.id.clone(),

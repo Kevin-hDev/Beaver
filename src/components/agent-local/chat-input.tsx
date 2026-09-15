@@ -18,6 +18,8 @@ import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { rememberComposerSelection } from "@/hooks/composer-draft-store";
 import { notifyVoiceMessageAccepted } from "@/features/voice/voice-context";
+import { useVoiceSnapshot } from "@/features/voice/voice-store";
+import { handleVoiceKeyboard } from "@/features/voice/voice-keyboard";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
@@ -60,6 +62,7 @@ export function ChatInput({
   // eslint-disable-next-line react-hooks/refs -- latest props guard async snapshot cleanup
   filesRef.current = files;
   const { isConfirmingStop, requestStop, stopNow } = useStopConfirmation(isStreaming, onStop);
+  const voiceSnapshot = useVoiceSnapshot();
 
   const interactivePending = !!interactiveRequest;
   const surfaceActive = useAppSurfaceActive();
@@ -107,8 +110,6 @@ export function ChatInput({
     slash.handleInput(value, head);
   }, [draftKey, setText, slash]);
 
-  // Shared Enter logic. The editor gives the four chat control keys priority
-  // only when this handler consumes them.
   const handleEnter = useCallback((): boolean => {
     if (slash.showDropdown) {
       const selected = slash.skills[slash.activeIndex];
@@ -118,9 +119,9 @@ export function ChatInput({
     void handleSend();
     return true;
   }, [handleSend, slash.showDropdown, slash.skills, slash.activeIndex, skills]);
-
   const handleKeyEvent = useCallback((event: KeyboardEvent): boolean | void => {
     const pressed = event.key;
+    if (handleVoiceKeyboard(event, voiceSnapshot, draftKey)) return true;
     if (slash.showDropdown) {
       if (pressed === K_UP) { event.preventDefault(); slash.moveUp(); return true; }
       if (pressed === K_DOWN) { event.preventDefault(); slash.moveDown(); return true; }
@@ -140,8 +141,7 @@ export function ChatInput({
       requestStop();
       return true;
     }
-  }, [handleEnter, isStreaming, requestStop, slash]);
-
+  }, [draftKey, handleEnter, isStreaming, requestStop, slash, voiceSnapshot]);
   useEffect(() => {
     if (!surfaceActive || !slash.showDropdown) return;
     const handler = (e: MouseEvent) => {
@@ -150,7 +150,6 @@ export function ChatInput({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [slash, slash.showDropdown, surfaceActive]);
-
   const buttonState = hasContent && !interactivePending ? "send" as const
     : isStreaming ? (isConfirmingStop ? "confirmStop" as const : "stop" as const)
     : "hidden" as const;
@@ -196,6 +195,7 @@ export function ChatInput({
             </div>
           )}
           <ChatInputActionsRow
+            draftKey={draftKey}
             inputBubbleRef={bubbleRef}
             sessionId={sessionId}
             modelName={modelName}

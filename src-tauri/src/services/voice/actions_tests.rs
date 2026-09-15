@@ -33,7 +33,7 @@ fn cancellation_threshold_and_repeated_cross_are_deterministic() {
         let operation_id = start(&runtime, "draft");
         runtime
             .coordinator_for_test()
-            .record_capture(&operation_id, 40_000, speech_ms, false)
+            .record_capture(&operation_id, 40_000, speech_ms, false, 0.5)
             .unwrap();
         runtime
             .dispatch(
@@ -68,7 +68,7 @@ fn delivery_can_be_replayed_then_acknowledged_once() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 35_000, true)
+        .record_capture(&operation_id, 40_000, 35_000, true, 0.5)
         .unwrap();
     runtime
         .coordinator_for_test()
@@ -103,7 +103,7 @@ fn closing_before_insertion_redirects_a_long_result_to_recovery() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 30_000, false)
+        .record_capture(&operation_id, 40_000, 30_000, false, 0.5)
         .unwrap();
     runtime
         .coordinator_for_test()
@@ -123,7 +123,7 @@ fn oversized_recovery_fails_without_truncating_or_replacing_text() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 30_000, false)
+        .record_capture(&operation_id, 40_000, 30_000, false, 0.5)
         .unwrap();
     runtime
         .dispatch(
@@ -152,7 +152,7 @@ fn recovery_moves_global_on_close_and_is_consumed_only_after_acknowledgement() {
     let operation_id = start(&runtime, "draft");
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 30_000, false)
+        .record_capture(&operation_id, 40_000, 30_000, false, 0.5)
         .unwrap();
     runtime
         .dispatch(
@@ -225,7 +225,7 @@ fn trial_result_is_separate_and_closing_it_never_creates_recovery() {
         .id;
     runtime
         .coordinator_for_test()
-        .record_capture(&operation_id, 40_000, 35_000, false)
+        .record_capture(&operation_id, 40_000, 35_000, false, 0.5)
         .unwrap();
     runtime
         .coordinator_for_test()

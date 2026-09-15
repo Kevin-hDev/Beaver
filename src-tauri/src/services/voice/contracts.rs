@@ -70,7 +70,7 @@ pub enum VoiceAction {
     },
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceDevice {
@@ -78,7 +78,7 @@ pub struct VoiceDevice {
     pub name: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceOperationSnapshot {
@@ -91,9 +91,10 @@ pub struct VoiceOperationSnapshot {
     #[cfg_attr(test, ts(type = "number"))]
     pub speech_ms: u64,
     pub capture_incomplete: bool,
+    pub level: f32,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceRecoverySnapshot {
@@ -142,7 +143,7 @@ impl Drop for VoiceTrialResult {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceSnapshot {

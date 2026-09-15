@@ -1128,6 +1128,7 @@
       "openSettings": "設定を開く",
       "searchConversation": "会話内を検索",
       "focusComposer": "チャット入力欄にフォーカス",
+      "toggleVoice": "音声入力を切り替え",
       "selectSessionTab": "セッションタブを切り替える",
       "changePermissions": "権限を変更",
       "sendMessage": "メッセージを送信",
@@ -2638,6 +2639,47 @@
       "failed": "インストールに失敗しました。再試行できます。",
       "insufficientSpace": "続行するためのディスク容量が不足しています。",
       "recoveryUnavailable": "保存済みのインストール情報を復元できません。新しいインストールは停止されています。復元データを手動で確認する必要があります。"
+    }
+  },
+  "voice": {
+    "start": "音声入力を開始",
+    "cancel": "挿入をキャンセル",
+    "validate": "停止して文字起こし",
+    "activeElsewhere": "別のタブで音声入力中 · 移動",
+    "tabIndicator": "音声入力中",
+    "firstUse": {
+      "title": "音声モード",
+      "description": "下書きへ直接音声入力します。",
+      "local": "音声はこの端末内で処理され、自動送信されません。",
+      "later": "後で",
+      "continue": "続ける"
+    },
+    "language": {
+      "title": "音声入力の言語",
+      "description": "今回の言語を選択します。",
+      "configured": "現在の設定を使用",
+      "automatic": "自動検出"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed."
+    },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "voiceProbe": {

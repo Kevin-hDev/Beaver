@@ -1128,6 +1128,7 @@
       "openSettings": "打开设置",
       "searchConversation": "在对话中搜索",
       "focusComposer": "聚焦聊天输入框",
+      "toggleVoice": "切换听写",
       "selectSessionTab": "切换会话标签页",
       "changePermissions": "更改权限",
       "sendMessage": "发送消息",
@@ -2638,6 +2639,47 @@
       "failed": "安装失败。你可以重试。",
       "insufficientSpace": "磁盘空间不足，无法继续。",
       "recoveryUnavailable": "无法恢复已保存的安装记录。新安装已被阻止。恢复数据需要手动处理。"
+    }
+  },
+  "voice": {
+    "start": "开始听写",
+    "cancel": "取消插入",
+    "validate": "停止并转写",
+    "activeElsewhere": "另一标签页正在听写 · 前往",
+    "tabIndicator": "正在听写",
+    "firstUse": {
+      "title": "语音模式",
+      "description": "直接将语音转成草稿文字。",
+      "local": "音频仅在本机处理，绝不会自动发送。",
+      "later": "稍后",
+      "continue": "继续"
+    },
+    "language": {
+      "title": "听写语言",
+      "description": "选择本次听写的语言。",
+      "configured": "使用当前设置",
+      "automatic": "自动检测"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed."
+    },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "voiceProbe": {

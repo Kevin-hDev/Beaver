@@ -178,6 +178,12 @@ impl VoiceRuntime {
         self.lock_coordinator()
     }
 
+    pub(crate) fn coordinator_for_pipeline(
+        &self,
+    ) -> std::sync::MutexGuard<'_, super::actions::VoiceCoordinator> {
+        self.lock_coordinator()
+    }
+
     #[cfg(any(target_os = "macos", windows))]
     fn now_ms(&self) -> u64 {
         self.lock_coordinator().now_ms()

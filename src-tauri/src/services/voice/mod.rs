@@ -17,6 +17,8 @@ pub mod limits;
 #[cfg(any(target_os = "macos", windows))]
 pub mod maintenance;
 #[cfg(any(target_os = "macos", windows))]
+pub mod pipeline;
+#[cfg(any(target_os = "macos", windows))]
 pub mod model;
 #[cfg(any(target_os = "macos", windows))]
 pub mod recovery;

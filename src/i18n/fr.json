@@ -1237,6 +1237,7 @@
       "openSettings": "Ouvrir les réglages",
       "searchConversation": "Rechercher dans la conversation",
       "focusComposer": "Placer le curseur dans le champ de discussion",
+      "toggleVoice": "Basculer la dictée",
       "selectSessionTab": "Changer d’onglet de session",
       "changePermissions": "Modifier les permissions",
       "sendMessage": "Envoyer le message",
@@ -2826,6 +2827,47 @@
       "failed": "L’installation a échoué. Vous pouvez réessayer.",
       "insufficientSpace": "Espace disque insuffisant pour poursuivre.",
       "recoveryUnavailable": "Le suivi enregistré ne peut pas être récupéré. Les nouvelles installations sont bloquées. Une intervention sur les données de récupération est nécessaire."
+    }
+  },
+  "voice": {
+    "start": "Démarrer la dictée",
+    "cancel": "Annuler l’insertion",
+    "validate": "Arrêter et transcrire",
+    "activeElsewhere": "Dictée active dans un autre onglet · Aller",
+    "tabIndicator": "Dictée active",
+    "firstUse": {
+      "title": "Mode vocal",
+      "description": "Dictez du texte directement dans le brouillon.",
+      "local": "Le son est traité localement sur cet appareil et n’est jamais envoyé automatiquement.",
+      "later": "Plus tard",
+      "continue": "Continuer"
+    },
+    "language": {
+      "title": "Langue de la dictée",
+      "description": "Choisissez la langue pour cette dictée.",
+      "configured": "Utiliser le réglage actuel",
+      "automatic": "Détection automatique"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed."
+    },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "voiceProbe": {

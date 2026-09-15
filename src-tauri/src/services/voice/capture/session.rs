@@ -20,6 +20,7 @@ use super::{
 
 pub struct CapturePoll {
     pub level: LevelFrame,
+    pub speech_ms: u64,
     pub stop_reason: Option<CaptureStopReason>,
 }
 
@@ -91,16 +92,20 @@ impl CaptureSession {
             self.stream.disconnected(),
             hidden,
         );
-        Ok(CapturePoll { level, stop_reason })
+        Ok(CapturePoll {
+            level,
+            speech_ms: self.speech.spoken_ms(),
+            stop_reason,
+        })
     }
 
-    pub fn finish(mut self, model: &mut PreparedModel) -> Result<AudioBuffer, VoiceError> {
+    pub fn finish(mut self, model: &mut PreparedModel) -> Result<(AudioBuffer, u64), VoiceError> {
         let mut tail = self.normalizer.finish();
         let remaining = MAX_PCM_SAMPLES.saturating_sub(self.audio.samples().len());
         tail.truncate(remaining);
         self.audio.append(&tail, 0)?;
         tail.zeroize();
         self.speech.observe_vad(model.vad(), &[], true);
-        Ok(self.audio)
+        Ok((self.audio, self.speech.spoken_ms()))
     }
 }

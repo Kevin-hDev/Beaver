@@ -1185,6 +1185,7 @@
       "openSettings": "Open settings",
       "searchConversation": "Search within conversation",
       "focusComposer": "Focus the chat input",
+      "toggleVoice": "Toggle dictation",
       "selectSessionTab": "Switch session tab",
       "changePermissions": "Change permissions",
       "sendMessage": "Send message",
@@ -2774,6 +2775,47 @@
       "failed": "Installation failed. You can retry.",
       "insufficientSpace": "Not enough disk space to continue.",
       "recoveryUnavailable": "Saved installation tracking cannot be recovered. New installations are blocked. The recovery data requires manual intervention."
+    }
+  },
+  "voice": {
+    "start": "Start dictation",
+    "cancel": "Cancel insertion",
+    "validate": "Stop and transcribe",
+    "activeElsewhere": "Dictation active in another tab · Go",
+    "tabIndicator": "Dictation active",
+    "firstUse": {
+      "title": "Voice mode",
+      "description": "Dictate text directly into the draft.",
+      "local": "Audio is processed locally on this device and is never sent automatically.",
+      "later": "Later",
+      "continue": "Continue"
+    },
+    "language": {
+      "title": "Dictation language",
+      "description": "Choose the language for this dictation.",
+      "configured": "Use current setting",
+      "automatic": "Automatic detection"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed."
+    },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "voiceProbe": {

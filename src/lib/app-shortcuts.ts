@@ -4,7 +4,7 @@ export type AppShortcutId =
   | "zoomIn" | "zoomOut" | "resetZoom"
   | "openSettings" | "searchConversation" | "focusComposer" | "selectSessionTab"
   | "changePermissions" | "sendMessage" | "newLine" | "stopResponse"
-  | "submitEdit" | "cancelEdit";
+  | "submitEdit" | "cancelEdit" | "toggleVoice";
 
 export interface AppShortcutDefinition {
   id: AppShortcutId;
@@ -36,6 +36,7 @@ export const APP_SHORTCUTS: readonly AppShortcutDefinition[] = [
   { id: "openSettings", i18n: "settings.shortcuts.openSettings", keys: ["mod", ","], codes: ["Comma"], keyValues: [","], mod: true },
   { id: "searchConversation", i18n: "settings.shortcuts.searchConversation", keys: ["mod", "F"], codes: ["KeyF"], mod: true },
   { id: "focusComposer", i18n: "settings.shortcuts.focusComposer", keys: ["mod", "L"], codes: ["KeyL"], mod: true },
+  { id: "toggleVoice", i18n: "settings.shortcuts.toggleVoice", keys: ["alt", "mod", "V"], codes: ["KeyV"], mod: true, alt: true },
   { id: "selectSessionTab", i18n: "settings.shortcuts.selectSessionTab", keys: ["mod", "1–9"], codes: DIGIT_CODES, mod: true, allowExtraShift: true },
   { id: "changePermissions", i18n: "settings.shortcuts.changePermissions", keys: ["shift", "Tab"], codes: ["Tab"], shift: true },
   { id: "sendMessage", i18n: "settings.shortcuts.sendMessage", keys: ["Enter"], codes: ["Enter"] },

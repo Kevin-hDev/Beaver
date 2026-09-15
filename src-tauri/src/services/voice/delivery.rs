@@ -182,7 +182,7 @@ impl VoiceCoordinator {
         let Some(delivery) = self.delivery.take() else {
             return Ok(self.snapshot());
         };
-        if delivery.operation_id != operation_id {
+        if delivery.operation_id != operation_id && delivery.id != operation_id {
             self.delivery = Some(delivery);
             return Ok(self.snapshot());
         }

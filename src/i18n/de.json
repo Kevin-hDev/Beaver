@@ -1129,6 +1129,7 @@
       "openSettings": "Einstellungen öffnen",
       "searchConversation": "In der Unterhaltung suchen",
       "focusComposer": "Chat-Eingabe fokussieren",
+      "toggleVoice": "Diktat umschalten",
       "selectSessionTab": "Sitzungstab wechseln",
       "changePermissions": "Berechtigungen ändern",
       "sendMessage": "Nachricht senden",
@@ -2639,6 +2640,47 @@
       "failed": "Die Installation ist fehlgeschlagen. Du kannst es erneut versuchen.",
       "insufficientSpace": "Nicht genügend Speicherplatz zum Fortfahren.",
       "recoveryUnavailable": "Der gespeicherte Installationsstand kann nicht wiederhergestellt werden. Neue Installationen sind gesperrt. Die Wiederherstellungsdaten müssen manuell überprüft werden."
+    }
+  },
+  "voice": {
+    "start": "Diktat starten",
+    "cancel": "Einfügen abbrechen",
+    "validate": "Stoppen und transkribieren",
+    "activeElsewhere": "Diktat in anderem Tab aktiv · Öffnen",
+    "tabIndicator": "Diktat aktiv",
+    "firstUse": {
+      "title": "Sprachmodus",
+      "description": "Text direkt in den Entwurf diktieren.",
+      "local": "Audio wird lokal verarbeitet und nie automatisch gesendet.",
+      "later": "Später",
+      "continue": "Weiter"
+    },
+    "language": {
+      "title": "Diktatsprache",
+      "description": "Sprache für dieses Diktat wählen.",
+      "configured": "Aktuelle Einstellung",
+      "automatic": "Automatisch erkennen"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed."
+    },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "voiceProbe": {

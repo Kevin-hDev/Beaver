@@ -1129,6 +1129,7 @@
       "openSettings": "Apri impostazioni",
       "searchConversation": "Cerca nella conversazione",
       "focusComposer": "Attiva il campo della chat",
+      "toggleVoice": "Attiva/disattiva dettatura",
       "selectSessionTab": "Cambia scheda della sessione",
       "changePermissions": "Modifica autorizzazioni",
       "sendMessage": "Invia messaggio",
@@ -2639,6 +2640,47 @@
       "failed": "L’installazione non è riuscita. Puoi riprovare.",
       "insufficientSpace": "Spazio su disco insufficiente per proseguire.",
       "recoveryUnavailable": "Impossibile recuperare lo stato salvato delle installazioni. Le nuove installazioni sono bloccate. I dati di recupero richiedono un intervento manuale."
+    }
+  },
+  "voice": {
+    "start": "Avvia dettatura",
+    "cancel": "Annulla inserimento",
+    "validate": "Ferma e trascrivi",
+    "activeElsewhere": "Dettatura attiva in un’altra scheda · Vai",
+    "tabIndicator": "Dettatura attiva",
+    "firstUse": {
+      "title": "Modalità vocale",
+      "description": "Detta il testo direttamente nella bozza.",
+      "local": "L’audio viene elaborato localmente e non viene mai inviato automaticamente.",
+      "later": "Più tardi",
+      "continue": "Continua"
+    },
+    "language": {
+      "title": "Lingua della dettatura",
+      "description": "Scegli la lingua per questa dettatura.",
+      "configured": "Usa impostazione attuale",
+      "automatic": "Rilevamento automatico"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed."
+    },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "voiceProbe": {

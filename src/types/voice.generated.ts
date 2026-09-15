@@ -27,7 +27,7 @@ export type VoiceAction = { "action": "start", destination: VoiceDestination, co
 
 export type VoiceDevice = { id: string, name: string, };
 
-export type VoiceOperationSnapshot = { id: string, destination: VoiceDestination, contextGeneration: number, captureMs: number, speechMs: number, captureIncomplete: boolean, };
+export type VoiceOperationSnapshot = { id: string, destination: VoiceDestination, contextGeneration: number, captureMs: number, speechMs: number, captureIncomplete: boolean, level: number, };
 
 export type VoiceRecoverySnapshot = { id: string, draftKey: string | null, captureMs: number, status: VoiceRecoveryState, };
 

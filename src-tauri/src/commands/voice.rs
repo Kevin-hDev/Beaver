@@ -18,6 +18,11 @@ pub fn voice_get_snapshot(voice: tauri::State<'_, VoiceRuntime>) -> VoiceSnapsho
 }
 
 #[tauri::command]
+pub fn voice_get_settings() -> Result<VoiceSettings, VoiceError> {
+    crate::services::voice::settings::read_voice_settings()
+}
+
+#[tauri::command]
 pub async fn voice_dispatch(
     app: AppHandle,
     action: VoiceAction,
@@ -63,7 +68,15 @@ pub async fn voice_dispatch(
             } else {
                 None
             };
-            voice.dispatch_with_settings(action, main_window_is_foreground(&app), start_settings)?
+            let start_request = match (&action, &start_settings) {
+                (VoiceAction::Start { language, .. }, Some(settings)) => Some((settings.clone(), language.clone())),
+                _ => None,
+            };
+            let snapshot = voice.dispatch_with_settings(action, main_window_is_foreground(&app), start_settings)?;
+            if let (Some(operation), Some((settings, language))) = (snapshot.operation.as_ref(), start_request) {
+                crate::services::voice::pipeline::spawn(app.clone(), voice.inner().clone(), operation.id.clone(), settings, language);
+            }
+            snapshot
         }
     };
     let _ = app.emit(CHANGED_EVENT, &snapshot);
