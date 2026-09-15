@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveVoiceLanguage, voiceLanguageOptions } from "../voice-language-options";
+import { resolveVoiceLanguage, voiceLanguageChoices, voiceLanguageOptions } from "../voice-language-options";
 
 describe("voiceLanguageOptions", () => {
   it("deduplicates and localizes catalogue codes", () => {
@@ -16,5 +16,15 @@ describe("voiceLanguageOptions", () => {
       .toEqual({ kind: "language", value: "de" });
     expect(resolveVoiceLanguage({ kind: "automatic" }, "fr", "automatic-only"))
       .toEqual({ kind: "automatic" });
+    expect(resolveVoiceLanguage({ kind: "language", value: "fr" }, "fr", "automatic-only"))
+      .toEqual({ kind: "automatic" });
+  });
+
+  it("offers only choices the selected engine can apply", () => {
+    const labels = { automatic: "Détection automatique", followInterface: "Suivre l’interface" };
+    expect(voiceLanguageChoices(["fr", "en"], "fr", "automatic-only", labels))
+      .toEqual([{ value: "automatic", label: "Détection automatique" }]);
+    expect(voiceLanguageChoices(["fr", "en"], "fr", "explicit-only", labels).map(({ value }) => value))
+      .toEqual(["follow-interface", "en", "fr"]);
   });
 });

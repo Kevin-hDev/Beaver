@@ -19,13 +19,7 @@ export function VoicePanel(props: Props) {
   const { t } = useTranslation();
   const selected = props.catalog.find((item) => item.model === props.settings.model);
   const selectModel = (model: VoiceSettings["model"]) => {
-    const item = props.catalog.find((candidate) => candidate.model === model);
-    props.onSave({
-      model,
-      ...(item?.languageMode === "explicit-only" && props.settings.language.kind === "automatic"
-        ? { language: { kind: "follow-interface" as const } }
-        : {}),
-    });
+    props.onSave({ model });
   };
   return <SettingsDialog title={t("voice.settings.title")} description={t("voice.settings.description")} onClose={props.onClose}>
     <div className="sd-body vset-body">

@@ -13,6 +13,7 @@ pub mod contracts;
 pub mod delivery;
 pub mod download;
 pub mod errors;
+mod language;
 pub mod limits;
 #[cfg(any(target_os = "macos", windows))]
 pub mod maintenance;

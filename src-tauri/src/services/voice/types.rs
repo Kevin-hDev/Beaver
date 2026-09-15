@@ -131,7 +131,7 @@ impl Default for VoiceSettings {
             input_gain: VoiceInputGain::default(),
             silence_timeout: VoiceSilenceTimeout::FiveSeconds,
             max_duration: VoiceMaxDuration::Ten,
-            language: VoiceLanguage::FollowInterface,
+            language: VoiceLanguage::Automatic,
             shortcut: None,
             unload_delay: VoiceUnloadDelay::TwoMinutes,
             explanation_accepted: false,
@@ -140,7 +140,7 @@ impl Default for VoiceSettings {
 }
 
 impl VoiceSettings {
-    pub(crate) fn normalized(self) -> Option<Self> {
+    pub(crate) fn normalized(mut self) -> Option<Self> {
         if self.version != super::limits::SETTINGS_VERSION {
             return None;
         }
@@ -151,7 +151,9 @@ impl VoiceSettings {
             shortcut: Some(self.shortcut.clone()),
             ..Default::default()
         };
-        patch.validate().ok().map(|_| self)
+        patch.validate().ok()?;
+        self.language = super::language::normalize_for_model(self.model, self.language);
+        Some(self)
     }
 }
 
@@ -212,6 +214,8 @@ impl VoiceSettingsPatch {
         replace!(shortcut);
         replace!(unload_delay);
         replace!(explanation_accepted);
+        settings.language =
+            super::language::normalize_for_model(settings.model, settings.language.clone());
         settings.version = super::limits::SETTINGS_VERSION;
     }
 }

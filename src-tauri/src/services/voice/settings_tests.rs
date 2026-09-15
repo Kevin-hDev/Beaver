@@ -1,6 +1,7 @@
 use super::settings::{read_voice_settings_at_path, update_voice_settings_at_path};
 use super::types::{
-    VoiceInputGain, VoiceMaxDuration, VoiceSettings, VoiceSettingsPatch, VoiceSilenceTimeout,
+    VoiceInputGain, VoiceLanguage, VoiceMaxDuration, VoiceModel, VoiceSettings, VoiceSettingsPatch,
+    VoiceSilenceTimeout,
 };
 
 #[test]
@@ -10,6 +11,7 @@ fn defaults_match_the_product_decisions_and_invalid_input_fails_closed() {
     assert_eq!(settings.input_gain, VoiceInputGain::Six);
     assert_eq!(settings.silence_timeout, VoiceSilenceTimeout::FiveSeconds);
     assert_eq!(settings.max_duration, VoiceMaxDuration::Ten);
+    assert_eq!(settings.language, VoiceLanguage::Automatic);
     assert!(VoiceSettingsPatch {
         shortcut: Some(Some("bad\nshortcut".into())),
         ..Default::default()
@@ -28,6 +30,28 @@ fn defaults_match_the_product_decisions_and_invalid_input_fails_closed() {
 }
 
 #[test]
+fn model_changes_keep_only_a_language_the_engine_can_apply() {
+    let mut settings = VoiceSettings {
+        model: VoiceModel::CohereTranscribe,
+        language: VoiceLanguage::Language("fr".into()),
+        ..VoiceSettings::default()
+    };
+    VoiceSettingsPatch {
+        model: Some(VoiceModel::Qwen3Asr06b),
+        ..Default::default()
+    }
+    .apply(&mut settings);
+    assert_eq!(settings.language, VoiceLanguage::Automatic);
+
+    VoiceSettingsPatch {
+        model: Some(VoiceModel::CohereTranscribe),
+        ..Default::default()
+    }
+    .apply(&mut settings);
+    assert_eq!(settings.language, VoiceLanguage::FollowInterface);
+}
+
+#[test]
 fn legacy_settings_receive_the_default_gain_without_losing_other_values() {
     let legacy = serde_json::json!({
         "version": 1,
@@ -41,9 +65,13 @@ fn legacy_settings_receive_the_default_gain_without_losing_other_values() {
         "unload_delay": "two-minutes",
         "explanation_accepted": true
     });
-    let settings: VoiceSettings = serde_json::from_value(legacy).unwrap();
+    let settings = serde_json::from_value::<VoiceSettings>(legacy)
+        .unwrap()
+        .normalized()
+        .unwrap();
     assert_eq!(settings.input_gain, VoiceInputGain::Six);
     assert_eq!(settings.silence_timeout, VoiceSilenceTimeout::TenSeconds);
+    assert_eq!(settings.language, VoiceLanguage::Automatic);
 }
 
 #[test]

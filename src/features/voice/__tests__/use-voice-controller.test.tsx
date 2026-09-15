@@ -73,7 +73,7 @@ describe("useVoiceController", () => {
 
     act(() => view.result.current.begin());
 
-    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(expect.objectContaining({ action: "start", language: { kind: "language", value: "fr" } })));
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(expect.objectContaining({ action: "start", language: { kind: "automatic" } })));
     expect(view.result.current.dialog).toBeNull();
   });
 });
