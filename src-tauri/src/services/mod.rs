@@ -43,12 +43,18 @@ pub mod mascot;
 pub mod mcp_bridge;
 pub mod mcp_oauth;
 pub mod model_downloads;
+#[cfg(test)]
+mod model_downloads_contract_tests;
 mod model_downloads_projection;
+mod model_downloads_runner;
 pub mod model_downloads_store;
 mod model_downloads_store_queue;
 #[cfg(test)]
 mod model_downloads_store_tests;
 pub mod model_downloads_types;
+mod model_downloads_voice;
+#[cfg(test)]
+mod model_downloads_voice_tests;
 pub(crate) mod model_identifier;
 pub mod oauth_completion;
 pub mod oauth_providers;

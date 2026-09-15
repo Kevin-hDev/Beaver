@@ -1074,6 +1074,7 @@ dependencies = [
  "beaver-data-path",
  "block2",
  "bytes",
+ "bzip2 0.5.2",
  "calamine",
  "cef",
  "chacha20poly1305",

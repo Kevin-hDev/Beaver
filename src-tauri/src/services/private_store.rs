@@ -7,9 +7,11 @@ fn private_store_error() -> String {
 }
 
 pub(crate) use cache::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
-pub(crate) use private_store_atomic::atomic_write;
 #[cfg(test)]
 pub(crate) use private_store_atomic::atomic_write_fail_before_replace;
+pub(crate) use private_store_atomic::{
+    atomic_write, atomic_write_with_durability, PublicationDurability,
+};
 
 #[path = "private_store/cache.rs"]
 mod cache;
@@ -20,6 +22,11 @@ pub(crate) use bounded_read::{read_bounded_regular_classified_async, BoundedRead
 
 #[path = "private_store/atomic_write.rs"]
 mod private_store_atomic;
+
+#[path = "private_store/durable_sync.rs"]
+mod durable_sync;
+pub(crate) use durable_sync::sync_directory;
+use durable_sync::sync_parent;
 
 #[path = "private_store/temp_cleanup.rs"]
 mod temp_cleanup;
@@ -190,18 +197,6 @@ fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
 #[cfg(not(windows))]
 fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
     std::fs::rename(source, destination).map_err(|_| private_store_error())
-}
-
-#[cfg(unix)]
-fn sync_parent(parent: &Path) -> Result<(), String> {
-    File::open(parent)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|_| private_store_error())
-}
-
-#[cfg(not(unix))]
-fn sync_parent(_parent: &Path) -> Result<(), String> {
-    Ok(())
 }
 
 #[cfg(windows)]

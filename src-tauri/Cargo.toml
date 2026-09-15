@@ -149,6 +149,7 @@ which = "7"
 zstd = "0.13"
 tar = "0.4"
 flate2 = "1"
+bzip2 = "0.5"
 
 # Existants
 regex = "1"

@@ -76,14 +76,14 @@ impl ModelDownloadManager {
         if store.entries.values().any(|entry| {
             entry.state.kind == kind
                 && entry.state.model_id == model_id
-                && is_pending(entry.state.status)
+                && is_retained(entry.state.status)
         }) {
             return Err("model-download-already-queued".into());
         }
         if store
             .entries
             .values()
-            .filter(|entry| is_pending(entry.state.status))
+            .filter(|entry| is_retained(entry.state.status))
             .count()
             >= MAX_PENDING_DOWNLOADS
         {
@@ -115,6 +115,11 @@ impl ModelDownloadManager {
     pub async fn list(&self) -> Vec<ModelDownloadState> {
         let store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         list_locked(&store)
+    }
+
+    pub async fn state(&self, id: &str) -> Option<ModelDownloadState> {
+        let store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
+        store.entries.get(id).map(|entry| entry.state.clone())
     }
 
     #[cfg(test)]
@@ -178,10 +183,14 @@ fn is_pending(status: ModelDownloadStatus) -> bool {
     )
 }
 
+fn is_retained(status: ModelDownloadStatus) -> bool {
+    is_pending(status) || status == ModelDownloadStatus::Suspended
+}
+
 fn remove_finished(store: &mut DownloadStore) {
     store
         .entries
-        .retain(|_, entry| is_pending(entry.state.status));
+        .retain(|_, entry| is_retained(entry.state.status));
     store.order.retain(|id| store.entries.contains_key(id));
 }
 

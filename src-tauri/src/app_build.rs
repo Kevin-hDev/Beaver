@@ -120,6 +120,20 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .clone();
     crate::runtime_state::initialize_agent_runtime(app.handle())?;
     crate::storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
+    #[cfg(any(target_os = "macos", windows))]
+    if let Some(downloads) =
+        app.try_state::<crate::services::model_downloads::ModelDownloadManager>()
+    {
+        if crate::services::voice::download::resume_incomplete_removals(
+            &crate::services::paths::data_dir(),
+        )
+        .is_err()
+        {
+            ::log::warn!("[voice] incomplete model cleanup remains pending");
+        }
+        let resource_dir = app.path().resource_dir()?;
+        downloads.restore_voice_checkpoints(&crate::services::paths::data_dir(), &resource_dir);
+    }
     report_lifecycle(LifecycleStage::StorageInitialized);
     if crate::services::agent_local::directory_access::initialize_policy().is_err() {
         ::log::error!("[directory-access] policy unavailable");

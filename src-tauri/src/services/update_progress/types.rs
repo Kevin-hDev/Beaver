@@ -9,6 +9,7 @@ pub enum UpdateOperationKind {
     OllamaBinary,
     OllamaModel,
     ForecastModel,
+    VoiceModel,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

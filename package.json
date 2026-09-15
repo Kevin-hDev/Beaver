@@ -47,6 +47,7 @@
     "contracts:generate:agent": "node scripts/contracts/generate-agent-session.mjs",
     "contracts:generate:compression": "node scripts/contracts/generate-compression-profiles.mjs",
     "contracts:generate:voice": "node scripts/contracts/generate-voice.mjs",
+    "contracts:generate:model-downloads": "cd src-tauri && cargo test --lib services::model_downloads_contract_tests::export_typescript_model_download_contract -- --ignored --exact --nocapture",
     "contracts:generate:extension-installs": "cd src-tauri && cargo test --lib services::extensions::install_jobs::contract_tests::export_typescript_contract -- --ignored --exact --nocapture",
     "contracts:generate:ollama": "cd src-tauri && cargo test services::ollama_manager::typescript_contract_tests::export_typescript_runtime_contract -- --ignored --exact --nocapture",
     "contracts:generate:update-progress": "cd src-tauri && cargo test services::update_progress::tests::export_typescript_update_progress_contract -- --ignored --exact --nocapture",

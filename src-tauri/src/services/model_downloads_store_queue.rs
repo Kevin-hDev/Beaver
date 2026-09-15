@@ -19,8 +19,11 @@ impl ModelDownloadManager {
             .entries
             .get_mut(id)
             .ok_or_else(|| "model-download-not-found".to_string())?;
-        if entry.state.kind == super::model_downloads_types::ModelDownloadKind::Forecast
-            && entry.state.phase == super::model_downloads_types::ModelDownloadPhase::Installing
+        if matches!(
+            entry.state.kind,
+            super::model_downloads_types::ModelDownloadKind::Forecast
+                | super::model_downloads_types::ModelDownloadKind::Voice
+        ) && entry.state.phase == super::model_downloads_types::ModelDownloadPhase::Installing
         {
             return Ok(list_locked(&store));
         }
@@ -29,10 +32,62 @@ impl ModelDownloadManager {
             entry.state.status = ModelDownloadStatus::Cancelled;
         } else if entry.state.status == ModelDownloadStatus::Running {
             entry.state.status = ModelDownloadStatus::Cancelling;
+        } else if entry.state.status == ModelDownloadStatus::Suspended {
+            entry.state.status = ModelDownloadStatus::Cancelled;
         }
         Ok(list_locked(&store))
     }
 
+    pub async fn resume(
+        &self,
+        id: &str,
+    ) -> Result<
+        (
+            ModelDownloadState,
+            Option<(
+                CancellationToken,
+                super::model_downloads_store::DownloadWorkAdmission,
+            )>,
+        ),
+        String,
+    > {
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
+        if store
+            .entries
+            .get(id)
+            .is_none_or(|entry| entry.state.status != ModelDownloadStatus::Suspended)
+        {
+            return Err("model-download-not-suspended".into());
+        }
+        let admission = if store.worker_running {
+            self.work
+                .try_probe()
+                .map_err(|error| error.public_code().to_string())?;
+            None
+        } else {
+            Some(
+                self.work
+                    .try_admit()
+                    .map_err(|error| error.public_code().to_string())?,
+            )
+        };
+        let runs_now = !store.worker_running;
+        let entry = store.entries.get_mut(id).expect("checked suspended entry");
+        entry.cancel = CancellationToken::new();
+        entry.state.status = if runs_now {
+            ModelDownloadStatus::Running
+        } else {
+            ModelDownloadStatus::Queued
+        };
+        let state = entry.state.clone();
+        let cancel = entry.cancel.clone();
+        if runs_now {
+            store.worker_running = true;
+        }
+        Ok((state, admission.map(|admission| (cancel, admission))))
+    }
+
+    #[cfg(test)]
     pub async fn cancel_all(&self) {
         let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         for entry in store.entries.values_mut() {
@@ -56,8 +111,29 @@ impl ModelDownloadManager {
 
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.work.begin_closing();
-        self.cancel_all().await;
+        self.suspend_voice_and_cancel_others().await;
         self.work.stop_and_wait(deadline).await
+    }
+
+    async fn suspend_voice_and_cancel_others(&self) {
+        let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
+        for entry in store.entries.values_mut() {
+            entry.cancel.cancel();
+            entry.state.status = if entry.state.kind
+                == super::model_downloads_types::ModelDownloadKind::Voice
+                && matches!(
+                    entry.state.status,
+                    ModelDownloadStatus::Queued | ModelDownloadStatus::Running
+                ) {
+                ModelDownloadStatus::Suspended
+            } else if entry.state.status == ModelDownloadStatus::Queued {
+                ModelDownloadStatus::Cancelled
+            } else if entry.state.status == ModelDownloadStatus::Running {
+                ModelDownloadStatus::Cancelling
+            } else {
+                entry.state.status
+            };
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { ModelDownloadState } from "@/hooks/use-model-downloads";
+import type { ModelDownloadKind, ModelDownloadState } from "@/hooks/use-model-downloads";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { UpdateOperationSnapshot } from "@/types/update-progress.generated";
 
@@ -11,7 +11,7 @@ interface UpdateRetryOptions {
   downloadAppUpdate: (assetUrl: string) => Promise<void>;
   updateOllamaBinary: () => Promise<void>;
   startDownload: (args: {
-    kind: "ollama" | "forecast";
+    kind: ModelDownloadKind;
     modelId: string;
     isUpdate?: boolean;
   }) => Promise<ModelDownloadState>;
@@ -37,9 +37,14 @@ export function useUpdateRetry(options: UpdateRetryOptions) {
           void updateOllamaBinary();
           void invoke("dismiss_update_operation", { id }).catch(() => {});
         } else {
-          if (operation.kind === "ollama-model" || operation.kind === "forecast-model") {
+          const kind: ModelDownloadKind | null = operation.kind === "ollama-model"
+            ? "ollama"
+            : operation.kind === "forecast-model"
+              ? "forecast"
+              : operation.kind === "voice-model" ? "voice" : null;
+          if (kind) {
             void startDownload({
-              kind: operation.kind === "ollama-model" ? "ollama" : "forecast",
+              kind,
               modelId: operation.label,
               isUpdate: operation.isUpdate ?? false,
             }).then(() => invoke("dismiss_update_operation", { id })).catch(() => {});
