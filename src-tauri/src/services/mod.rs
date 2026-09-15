@@ -123,6 +123,8 @@ pub mod voice;
 #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
 pub mod voice_probe;
 #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
+pub mod voice_probe_exit;
+#[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
 mod voice_probe_state;
 #[cfg(all(test, feature = "voice-probe", any(target_os = "macos", windows)))]
 mod voice_probe_tests;

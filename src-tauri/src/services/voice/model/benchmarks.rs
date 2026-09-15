@@ -47,7 +47,7 @@ impl Benchmark {
 }
 
 #[derive(Default)]
-pub(super) struct BenchmarkStore;
+pub(crate) struct BenchmarkStore;
 
 #[derive(Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

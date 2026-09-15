@@ -46,6 +46,58 @@ impl AssemblyPlan {
     pub fn is_last(&self, interval: SliceInterval) -> bool {
         interval.central_end == self.total_samples
     }
+
+    pub fn without_overlap_at_quiet_points(samples: &[i16]) -> Option<Self> {
+        if samples.is_empty() {
+            return None;
+        }
+        let mut intervals = Vec::with_capacity(samples.len().div_ceil(MAX_ASR_SLICE_SAMPLES));
+        let mut start = 0;
+        while start < samples.len() {
+            let target = start
+                .saturating_add(MAX_ASR_SLICE_SAMPLES)
+                .min(samples.len());
+            let end = if target == samples.len() {
+                target
+            } else {
+                quiet_boundary(samples, start, target)
+            };
+            intervals.push(SliceInterval {
+                context_start: start,
+                context_end: end,
+                central_start: start,
+                central_end: end,
+            });
+            start = end;
+        }
+        Some(Self {
+            total_samples: samples.len(),
+            intervals,
+        })
+    }
+}
+
+fn quiet_boundary(samples: &[i16], start: usize, target: usize) -> usize {
+    const SEARCH_SAMPLES: usize = 16_000;
+    const FRAME_SAMPLES: usize = 320;
+
+    let search_start = target
+        .saturating_sub(SEARCH_SAMPLES)
+        .max(start.saturating_add(FRAME_SAMPLES));
+    (search_start..target)
+        .step_by(FRAME_SAMPLES)
+        .filter_map(|frame_start| {
+            let frame_end = frame_start.checked_add(FRAME_SAMPLES)?.min(target);
+            let energy = samples[frame_start..frame_end]
+                .iter()
+                .fold(0_u64, |sum, sample| {
+                    sum.saturating_add(u64::from(sample.unsigned_abs()))
+                });
+            Some((energy, frame_end))
+        })
+        .min_by_key(|(energy, _)| *energy)
+        .map(|(_, end)| end)
+        .unwrap_or(target)
 }
 
 #[cfg(test)]
@@ -65,5 +117,20 @@ mod tests {
             MAX_ASR_SLICE_SAMPLES - 16_000
         );
         assert!(AssemblyPlan::new(1, MAX_ASR_OVERLAP_SAMPLES + 1).is_none());
+    }
+
+    #[test]
+    fn timestamp_free_plan_uses_a_quiet_boundary_without_overlap() {
+        let mut samples = vec![10_i16; MAX_ASR_SLICE_SAMPLES + 1];
+        samples[MAX_ASR_SLICE_SAMPLES - 8_000..MAX_ASR_SLICE_SAMPLES - 7_680].fill(0);
+        let plan = AssemblyPlan::without_overlap_at_quiet_points(&samples).unwrap();
+        assert_eq!(
+            plan.intervals()[0].central_end,
+            MAX_ASR_SLICE_SAMPLES - 7_680
+        );
+        assert_eq!(
+            plan.intervals()[1].context_start,
+            plan.intervals()[0].context_end
+        );
     }
 }

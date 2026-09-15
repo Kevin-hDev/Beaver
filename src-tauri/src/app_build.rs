@@ -132,6 +132,8 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "macos")]
     crate::macos_termination::install(app.handle())
         .map_err(|_| std::io::Error::other("native termination hook unavailable"))?;
+    #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
+    crate::services::voice_probe_exit::start_if_requested(app.handle());
     report_lifecycle(LifecycleStage::SetupEntered);
     let startup_cutoff = chrono::Utc::now();
     let background = app

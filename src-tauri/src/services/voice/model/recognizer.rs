@@ -55,6 +55,12 @@ impl Drop for RecognitionSlice {
     }
 }
 
+impl RecognitionSlice {
+    pub(in crate::services::voice) fn take_text(&mut self) -> String {
+        std::mem::take(&mut self.text)
+    }
+}
+
 pub struct PreparedModel {
     pub entry_id: String,
     pub revision: String,
@@ -104,10 +110,30 @@ pub fn recognize_slice(
     pcm: &[f32],
     language: &EffectiveLanguage,
 ) -> Result<RecognitionSlice, VoiceError> {
-    if pcm.is_empty()
-        || pcm.len() > MAX_SLICE_SAMPLES
-        || pcm.iter().any(|sample| !sample.is_finite())
-    {
+    recognize_with_limit(prepared, pcm, language, MAX_SLICE_SAMPLES)
+}
+
+#[cfg(test)]
+pub(crate) fn recognize_probe(
+    prepared: &mut PreparedModel,
+    pcm: &[f32],
+    language: &EffectiveLanguage,
+) -> Result<RecognitionSlice, VoiceError> {
+    recognize_with_limit(
+        prepared,
+        pcm,
+        language,
+        crate::services::voice::limits::MAX_PCM_SAMPLES,
+    )
+}
+
+fn recognize_with_limit(
+    prepared: &mut PreparedModel,
+    pcm: &[f32],
+    language: &EffectiveLanguage,
+    max_samples: usize,
+) -> Result<RecognitionSlice, VoiceError> {
+    if pcm.is_empty() || pcm.len() > max_samples || pcm.iter().any(|sample| !sample.is_finite()) {
         return Err(VoiceError::invalid_settings());
     }
     let stream = prepared.recognizer.create_stream();

@@ -29,3 +29,5 @@ mod work_tests;
 
 #[cfg(all(test, any(target_os = "macos", windows)))]
 mod native_contract_tests;
+#[cfg(all(test, any(target_os = "macos", windows)))]
+mod prototype_tests;
