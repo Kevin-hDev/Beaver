@@ -1,0 +1,7 @@
+Task: make the advanced voice model list unambiguous and protect model removal.
+
+Root causes: the catalog row for Silero had no transcription model id but the UI still rendered it as a disabled fourth model, and installed ASR models called uninstall on the first click.
+
+Implementation: omit catalog entries without a transcription model from the advanced list while keeping Silero in the backend catalog and automatic ASR download dependency. Reuse Beaver's ConfirmButton for installed ASR models so the first click changes to the translated confirmation state and only the second action removes files.
+
+Validation: the focused VoiceModelList test passed (3 tests), the related confirmation suite passed, TypeScript and ESLint passed, and diff checks passed. In Beaver Dev, the advanced panel showed only Parakeet, Cohere and Qwen; the first removal click changed to Confirmer ? without deleting anything, then the test was cancelled. Graphify was updated. The ignored SPEC and vocal mockup were aligned locally. review-dark.png was left untouched.
