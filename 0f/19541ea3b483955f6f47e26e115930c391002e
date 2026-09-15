@@ -1,0 +1,43 @@
+T13 — Qualification reproductible et paquet macOS
+
+Portée:
+- retrait complet du prototype T01 et de sa feature Cargo;
+- ajout des contrats Voice en CI et des scénarios E2E Linux invisibles;
+- localisations natives de la permission microphone dans les sept langues;
+- raccord de la progression et de la reprise des téléchargements dans le composeur et les réglages;
+- actions Restaurer/Supprimer du filet, erreurs génériques et raccourci limité à la surface active.
+
+Preuves exécutées le 15 septembre 2026:
+- npm test: 630 fichiers Vitest, 3497 tests, puis toutes les suites Node/E2E/CEF/extensions/contrats réussies;
+- npm run lint et npx tsc --noEmit: réussis sans erreur ni avertissement;
+- cargo fmt --check, cargo check, cargo clippy --all-targets -- -D warnings: réussis;
+- cargo test avec VOICE_TEST_CORPUS_DIR: 5721 tests bibliothèque réussis, 27 ignorés; 51 tests CLI et intégrations réussis;
+- filtres CI: Voice 84 réussis/2 bancs natifs ignorés, commandes Voice 1, téléchargements 17/2 ignorés, écritures privées 33;
+- scripts/voice/*.test.mjs: 4 réussis;
+- test:e2e-runner: 101 réussis;
+- graphify update .: réussi;
+- git diff --check: réussi.
+
+Paquet final:
+- CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npm run tauri build: réussi;
+- Beaver.app 788 Mio et Beaver_1.2.2_aarch64.dmg 337 Mio;
+- codesign --verify --deep --strict: réussi;
+- catalogue empaqueté identique octet pour octet;
+- InfoPlist.strings fr/en/es/de/it/zh/ja valides;
+- NSMicrophoneUsageDescription présente;
+- aucun modèle Voice ni .onnx empaqueté;
+- AudioToolbox et CoreAudio liés.
+
+Défauts révélés puis corrigés pendant T13:
+- le raccourci répondait depuis une surface inactive;
+- la progression du premier téléchargement manquait dans le composeur;
+- le téléchargement suspendu n'était pas reprenable;
+- les actions de récupération et certains libellés n'étaient pas complètement raccordés.
+
+Limites non extrapolées:
+- Windows réel et permission microphone Windows non testés;
+- scénarios Linux collectés mais exécution CI Linux en attente;
+- trois modèles non parcourus de bout en bout dans l'application finale;
+- charge simultanée Ollama et vocabulaire technique humain non testés;
+- inspection visuelle des six thèmes/900x600/zoom 200 % impossible: la capture CUA de la fenêtre empaquetée a expiré.
+La Porte B globale reste ouverte pour ces qualifications produit.
