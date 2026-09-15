@@ -1,0 +1,19 @@
+T05 — Posséder les modèles et leur mémoire jusqu'au retour natif
+
+Implémentation :
+- propriétaire unique du couple ASR/Silero, réservé avant lecture des reçus puis gardé pendant vérification, chargement et appel natif ;
+- adaptateurs sherpa-onnx 1.13.8 pour Parakeet, Cohere et Qwen ; Cohere applique la langue par flux, les deux autres restent automatiques ;
+- modèle préparé possédant OfflineRecognizer et VoiceActivityDetector, avec résultats bornés et repères natifs conservés seulement quand leur forme est exploitable ;
+- cache de vérification par modèle/révision, invalidé par suppression ou réinstallation ;
+- suppression et réinstallation refusées tant que l'ASR ou le VAD partagé est occupé ;
+- tâche unique de maintenance enregistrée auprès du superviseur de Beaver pour les six politiques de déchargement et la fermeture ;
+- mesures versionnées dans data_dir()/voice-benchmarks.json, sans audio ni texte, qualifiantes à partir de 30 secondes et filtrées par modèle/révision/profil exact.
+
+Preuves :
+- cargo test --lib services::voice::model:: -- --nocapture : 9 réussis ;
+- cargo test --lib services::voice:: -- --nocapture : 48 réussis ;
+- cargo test --lib model_downloads -- --nocapture : 17 réussis, 2 preuves ignorées ;
+- cargo fmt --check, cargo clippy --all-targets -- -D warnings et git diff --check : réussis ;
+- les tests couvrent les trois configurations moteur, la forme des repères, les six délais, l'exclusion ASR/VAD, l'invalidation après réinstallation et la revalidation au nouveau processus.
+
+Limite planifiée : les temps réels, l'arrêt coopératif et la présence de repères utilisables sur les trois poids sont mesurés à la Porte B de T07. Le message de panique visible dans la suite vocale provient du test volontaire qui vérifie la libération après panique ; le test est vert.
