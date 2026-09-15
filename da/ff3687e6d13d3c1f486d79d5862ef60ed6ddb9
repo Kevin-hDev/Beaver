@@ -1,0 +1,9 @@
+Cause: le résumé du modèle concaténait le nombre brut et son état, ce qui affichait « 25 · installé » sans dire que 25 désigne les langues prises en charge.
+
+Correction: le résumé réutilise l'autorité i18n voice.settings.languageCount déjà employée dans la fenêtre avancée. L'affichage français devient « 25 langues · installé » et les six autres langues suivent leur traduction existante.
+
+Validation:
+- npx tsc --noEmit: réussi
+- npm run lint: réussi
+- vérification visuelle dans Beaver Dev, Réglages > Avancé: « 25 langues · installé » visible
+- graphify update .: réussi
