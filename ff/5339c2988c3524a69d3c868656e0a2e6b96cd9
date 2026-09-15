@@ -1,0 +1,18 @@
+T08 — Commandes, récupération et échéances
+
+Preuve locale :
+- docs/fonctionnalites/vocal/PREUVES-PROTOTYPE.md, section T08
+
+Résultats :
+- Quatre commandes Tauri publiées sur macOS/Windows uniquement.
+- Snapshot projeté depuis l’unique machine à états Rust, avec révision monotone.
+- Réglages, langue, destination et génération figés au départ.
+- Récupération unique à 30 000 ms de parole, attache brouillon/global, suppression distincte.
+- Livraison et résultat d’essai séparés, relisibles et acquittés de façon idempotente.
+- Limite Unicode exacte de 100 000 caractères, sans troncature.
+- Expirations et déchargement réunis dans une seule maintenance suivie.
+- Téléchargement/suppression délégués aux propriétaires existants.
+
+Validation : 84 tests Voice actifs, 2 preuves lourdes ignorées, 1 test commande, génération et contrôle des contrats, Clippy strict, TypeScript, git diff --check.
+
+Graphify : graphe de code mis à jour. La mise à jour sémantique de la preuve locale n’a pas pu s’exécuter faute de clé LLM configurée ; aucun code n’est concerné.
