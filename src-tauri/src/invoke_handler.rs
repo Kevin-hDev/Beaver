@@ -164,13 +164,27 @@ macro_rules! generate_with_voice_probe {
         #[cfg(all(feature = "voice-probe", any(target_os = "macos", windows)))]
         {
             crate::invoke_handler::generate![
+                crate::commands::voice_get_snapshot,
+                crate::commands::voice_dispatch,
+                crate::commands::voice_update_settings,
+                crate::commands::voice_list_devices,
                 crate::commands::voice_probe_available,
                 crate::commands::voice_probe_start,
                 crate::commands::voice_probe_stop,
                 $($extra,)*
             ]
         }
-        #[cfg(not(all(feature = "voice-probe", any(target_os = "macos", windows))))]
+        #[cfg(all(not(feature = "voice-probe"), any(target_os = "macos", windows)))]
+        {
+            crate::invoke_handler::generate![
+                crate::commands::voice_get_snapshot,
+                crate::commands::voice_dispatch,
+                crate::commands::voice_update_settings,
+                crate::commands::voice_list_devices,
+                $($extra,)*
+            ]
+        }
+        #[cfg(not(any(target_os = "macos", windows)))]
         {
             crate::invoke_handler::generate![$($extra,)*]
         }

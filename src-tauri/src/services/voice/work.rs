@@ -95,6 +95,10 @@ impl VoiceWorkContext {
     pub fn transition(&self, phase: VoicePhase) -> Result<(), VoiceError> {
         lock_state(&self.state).transition(phase)
     }
+
+    pub fn phase(&self) -> VoicePhase {
+        lock_state(&self.state).phase()
+    }
 }
 
 fn lock_state(state: &Mutex<VoiceState>) -> MutexGuard<'_, VoiceState> {

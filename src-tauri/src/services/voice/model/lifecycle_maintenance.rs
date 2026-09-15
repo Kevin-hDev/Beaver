@@ -18,6 +18,24 @@ use super::{
 
 impl ModelLifecycle {
     pub fn new(app_work: AppWorkSupervisor) -> Self {
+        Self::build(app_work, None)
+    }
+
+    pub fn new_with_coordinator(
+        app_work: AppWorkSupervisor,
+        coordinator: std::sync::Weak<
+            std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>,
+        >,
+    ) -> Self {
+        Self::build(app_work, Some(coordinator))
+    }
+
+    fn build(
+        app_work: AppWorkSupervisor,
+        coordinator: Option<
+            std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
+        >,
+    ) -> Self {
         let maintenance = ServiceWorkSupervisor::new(app_work);
         let (plan, receiver) = tokio::sync::watch::channel(UnloadPlan {
             generation: 0,
@@ -30,7 +48,7 @@ impl ModelLifecycle {
         if maintenance
             .spawn({
                 let inner = std::sync::Arc::downgrade(&inner);
-                move |cancel| run(inner, receiver, cancel)
+                move |cancel| run(inner, receiver, cancel, coordinator)
             })
             .is_err()
         {
@@ -62,27 +80,49 @@ pub(super) async fn run(
     inner: Weak<LifecycleInner>,
     mut plans: tokio::sync::watch::Receiver<super::lifecycle_state::UnloadPlan>,
     cancel: ServiceWorkCancellation,
+    coordinator: Option<
+        std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
+    >,
 ) {
     loop {
         let plan = *plans.borrow_and_update();
         let changed = async {
             let _ = plans.changed().await;
         };
+        let tick = tokio::time::sleep(Duration::from_secs(1));
+        tokio::pin!(tick);
         match plan.deadline {
             Some(deadline) => tokio::select! {
                 _ = cancel.cancelled() => break,
                 _ = changed => continue,
                 _ = tokio::time::sleep_until(deadline) => unload(&inner, plan.generation),
+                _ = &mut tick => expire(&coordinator),
             },
             None => tokio::select! {
                 _ = cancel.cancelled() => break,
                 _ = changed => continue,
+                _ = &mut tick => expire(&coordinator),
             },
         }
     }
     if let Some(inner) = inner.upgrade() {
         drop(lock(&inner.state).loaded.take());
     }
+}
+
+fn expire(
+    coordinator: &Option<
+        std::sync::Weak<std::sync::Mutex<crate::services::voice::actions::VoiceCoordinator>>,
+    >,
+) {
+    let Some(coordinator) = coordinator.as_ref().and_then(std::sync::Weak::upgrade) else {
+        return;
+    };
+    let mut coordinator = coordinator
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let now_ms = coordinator.now_ms();
+    coordinator.expire_at(now_ms);
 }
 
 fn unload(inner: &Weak<LifecycleInner>, generation: u64) {

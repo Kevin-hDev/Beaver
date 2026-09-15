@@ -24,6 +24,7 @@ impl VoiceProjection {
 
 #[cfg(test)]
 pub(crate) fn typescript_bindings() -> String {
+    use crate::services::voice::contracts::*;
     use crate::services::voice::errors::{
         VoiceError, VoiceErrorCode, VoiceErrorParam, VoiceErrorParamKey,
     };
@@ -41,6 +42,16 @@ pub(crate) fn typescript_bindings() -> String {
         VoiceUnloadDelay::decl(&config),
         VoiceSettings::decl(&config),
         VoiceSettingsPatch::decl(&config),
+        VoiceDestination::decl(&config),
+        VoiceDeliveryOutcome::decl(&config),
+        VoiceAction::decl(&config),
+        VoiceDevice::decl(&config),
+        VoiceOperationSnapshot::decl(&config),
+        VoiceRecoverySnapshot::decl(&config),
+        VoiceRecoveryState::decl(&config),
+        VoiceDeliverySnapshot::decl(&config),
+        VoiceTrialResult::decl(&config),
+        VoiceSnapshot::decl(&config),
         VoiceErrorCode::decl(&config),
         VoiceErrorParamKey::decl(&config),
         VoiceErrorParam::decl(&config),

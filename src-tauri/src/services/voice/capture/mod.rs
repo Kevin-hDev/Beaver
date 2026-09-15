@@ -1,5 +1,5 @@
 pub mod activity;
-mod device;
+pub mod device;
 pub mod level;
 pub mod normalization;
 pub mod ring;
