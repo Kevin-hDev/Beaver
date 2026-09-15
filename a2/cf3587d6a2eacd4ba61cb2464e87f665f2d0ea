@@ -1,0 +1,19 @@
+T07 — Prototype natif macOS
+
+Preuves locales :
+- docs/fonctionnalites/vocal/PREUVES-PROTOTYPE.md, section T07
+- /Users/kevinh/Documents/Beaver-tests/vocal/manifest.json
+- /Users/kevinh/Documents/Beaver-tests/vocal/prototype-report-macos.json
+- /Users/kevinh/Documents/Beaver-tests/vocal/closure-report-macos.json
+
+Résultats :
+- 4 archives du catalogue installées et vérifiées.
+- 20 extraits FLEURS réels + fixture longue de 93,48 s.
+- Parakeet : repères temporels + recouvrement.
+- Cohere/Qwen : absence de repères confirmée ; repli mesuré par coupes calmes sans recouvrement.
+- Qwen passe unique longue tronquée ; découpage requis.
+- Paquet macOS signé ad-hoc : PID coopératif 76187 libéré avec marqueur, PID forcé 76359 terminé par l'autorité ultime ; aucun processus résiduel.
+
+Validation : 72 tests Voice, 3 tests Node, test feature voice-probe, cargo check et Clippy strict, matrice native, tauri build, codesign.
+
+Restent volontairement non validés : vrai hôte Windows, charge Ollama, comparaison humaine de vocabulaire technique. La Porte B globale reste ouverte ; ne pas extrapoler ces lignes depuis macOS.
