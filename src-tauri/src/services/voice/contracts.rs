@@ -1,4 +1,4 @@
-use super::types::{VoiceLanguage, VoicePhase};
+use super::types::{VoiceLanguage, VoiceModel, VoicePhase};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
@@ -78,6 +78,22 @@ pub struct VoiceDevice {
     pub name: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceCatalogItem {
+    pub id: String,
+    pub model: Option<VoiceModel>,
+    pub installed: bool,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub download_bytes: u64,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub installed_bytes: u64,
+    pub languages: Vec<String>,
+    pub dialects: Vec<String>,
+    pub automatic_only: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
@@ -135,6 +151,10 @@ impl Drop for VoiceDeliverySnapshot {
 pub struct VoiceTrialResult {
     pub trial_id: String,
     pub text: String,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub capture_ms: u64,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub compute_ms: u64,
 }
 
 impl Drop for VoiceTrialResult {

@@ -176,6 +176,8 @@ impl VoiceCoordinator {
             trial_result: self.trial_result.as_ref().map(|item| VoiceTrialResult {
                 trial_id: item.trial_id.clone(),
                 text: item.text.clone(),
+                capture_ms: item.capture_ms,
+                compute_ms: item.compute_ms,
             }),
             error: self.error.clone(),
         }

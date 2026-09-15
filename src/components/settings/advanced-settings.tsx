@@ -18,6 +18,7 @@ import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import { ADVANCED_SETTINGS_DEFAULTS, type AdvancedSettingsState } from "./advanced-settings-state";
 import { SettingsSectionFrame } from "@/components/ui/settings-section-frame";
+import { VoiceSettingsSection } from "./voice/voice-settings-section";
 
 interface AdvancedSettingsProps {
   focusTarget?: "file-access" | null;
@@ -137,6 +138,8 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
           onSave={save}
         />
       </SettingsSectionFrame>
+
+      <VoiceSettingsSection />
 
       <FileAccessSettings
         paths={state.allowed_paths}

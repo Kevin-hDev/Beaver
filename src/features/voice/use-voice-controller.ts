@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { IS_LINUX } from "@/lib/platform";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
+import { matchesVoiceShortcut } from "./voice-keyboard";
 import type { VoiceLanguage, VoiceSettings } from "@/types/voice.generated";
-import { dispatchVoiceAction, getVoiceSettings, listVoiceDevices, updateVoiceSettings } from "./voice-client";
+import { dispatchVoiceAction, getVoiceCatalog, getVoiceSettings, listVoiceDevices, updateVoiceSettings } from "./voice-client";
 import { acceptVoiceSnapshot, useVoiceSnapshot } from "./voice-store";
 
 let contextGeneration = 0;
@@ -44,7 +45,13 @@ export function useVoiceController(draftKey: string) {
   const acceptExplanation = useCallback(async () => {
     const next = await updateVoiceSettings({ explanation_accepted: true });
     setSettings(next);
-    setDialog("language");
+    const selected = (await getVoiceCatalog()).find((item) => item.model === next.model);
+    if (selected && !selected.installed) {
+      acceptVoiceSnapshot(await dispatchVoiceAction({ action: "install", model_id: selected.id }));
+      setDialog(null);
+    } else {
+      setDialog("language");
+    }
   }, []);
 
   const start = useCallback(async (language: VoiceLanguage | null) => {
@@ -57,7 +64,7 @@ export function useVoiceController(draftKey: string) {
   useEffect(() => {
     if (IS_LINUX) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.repeat || !matchesAppShortcut(event, "toggleVoice")) return;
+      if (event.repeat || !(settings?.shortcut ? matchesVoiceShortcut(event, settings.shortcut) : matchesAppShortcut(event, "toggleVoice"))) return;
       event.preventDefault();
       const activeId = snapshot?.operation?.id;
       if (snapshot?.phase === "listening" && activeId) void run({ action: "validate", operation_id: activeId });
@@ -65,7 +72,7 @@ export function useVoiceController(draftKey: string) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [begin, run, snapshot]);
+  }, [begin, run, settings?.shortcut, snapshot]);
   return useMemo(() => ({
     snapshot, settings, origin, activeElsewhere: Boolean(snapshot?.operation && !origin),
     available: !IS_LINUX && settings?.enabled !== false && deviceCount !== 0,

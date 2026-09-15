@@ -46,6 +46,7 @@ pub(crate) fn typescript_bindings() -> String {
         VoiceDeliveryOutcome::decl(&config),
         VoiceAction::decl(&config),
         VoiceDevice::decl(&config),
+        VoiceCatalogItem::decl(&config),
         VoiceOperationSnapshot::decl(&config),
         VoiceRecoverySnapshot::decl(&config),
         VoiceRecoveryState::decl(&config),

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { VoiceAction, VoiceDevice, VoiceSettings, VoiceSettingsPatch, VoiceSnapshot } from "@/types/voice.generated";
+import type { VoiceAction, VoiceCatalogItem, VoiceDevice, VoiceSettings, VoiceSettingsPatch, VoiceSnapshot } from "@/types/voice.generated";
 
 export const VOICE_CHANGED_EVENT = "voice-state-changed";
 
@@ -21,4 +21,8 @@ export function updateVoiceSettings(patch: VoiceSettingsPatch): Promise<VoiceSet
 
 export function listVoiceDevices(): Promise<VoiceDevice[]> {
   return invoke<VoiceDevice[]>("voice_list_devices");
+}
+
+export function getVoiceCatalog(): Promise<VoiceCatalogItem[]> {
+  return invoke<VoiceCatalogItem[]>("voice_get_catalog");
 }

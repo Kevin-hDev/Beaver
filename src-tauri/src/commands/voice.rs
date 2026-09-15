@@ -3,7 +3,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::services::{
     model_downloads::{ModelDownloadKind, ModelDownloadManager},
     voice::{
-        contracts::{VoiceAction, VoiceDevice, VoiceSnapshot},
+        contracts::{VoiceAction, VoiceCatalogItem, VoiceDevice, VoiceSnapshot},
         errors::VoiceError,
         runtime::VoiceRuntime,
         types::{VoiceSettings, VoiceSettingsPatch},
@@ -20,6 +20,27 @@ pub fn voice_get_snapshot(voice: tauri::State<'_, VoiceRuntime>) -> VoiceSnapsho
 #[tauri::command]
 pub fn voice_get_settings() -> Result<VoiceSettings, VoiceError> {
     crate::services::voice::settings::read_voice_settings()
+}
+
+#[tauri::command]
+pub fn voice_get_catalog(app: AppHandle) -> Result<Vec<VoiceCatalogItem>, VoiceError> {
+    let resource_dir = app.path().resource_dir().map_err(|_| VoiceError::configuration_unavailable())?;
+    let data_dir = crate::services::paths::data_dir();
+    crate::services::voice::download::load_catalog(&resource_dir)?.entries.into_iter().map(|entry| {
+        use crate::services::voice::{download::{VoiceEngine, VoiceLanguageMode}, types::VoiceModel};
+        let model = match entry.engine {
+            VoiceEngine::NemoTransducer => Some(VoiceModel::ParakeetTdtV3),
+            VoiceEngine::CohereTranscribe => Some(VoiceModel::CohereTranscribe),
+            VoiceEngine::Qwen3Asr => Some(VoiceModel::Qwen3Asr06b),
+            VoiceEngine::SileroVad => None,
+        };
+        let installed = crate::services::voice::download::installed_receipt(&entry, &data_dir)
+            .map_err(|_| VoiceError::configuration_unavailable())?.is_some();
+        Ok(VoiceCatalogItem { id: entry.id, model, installed,
+            download_bytes: entry.archive.bytes, installed_bytes: entry.installed_bytes,
+            languages: entry.languages, dialects: entry.dialects,
+            automatic_only: entry.language_mode == VoiceLanguageMode::AutomaticOnly })
+    }).collect()
 }
 
 #[tauri::command]

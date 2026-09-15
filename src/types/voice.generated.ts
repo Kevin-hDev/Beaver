@@ -27,6 +27,8 @@ export type VoiceAction = { "action": "start", destination: VoiceDestination, co
 
 export type VoiceDevice = { id: string, name: string, };
 
+export type VoiceCatalogItem = { id: string, model: VoiceModel | null, installed: boolean, downloadBytes: number, installedBytes: number, languages: Array<string>, dialects: Array<string>, automaticOnly: boolean, };
+
 export type VoiceOperationSnapshot = { id: string, destination: VoiceDestination, contextGeneration: number, captureMs: number, speechMs: number, captureIncomplete: boolean, level: number, };
 
 export type VoiceRecoverySnapshot = { id: string, draftKey: string | null, captureMs: number, status: VoiceRecoveryState, };
@@ -35,7 +37,7 @@ export type VoiceRecoveryState = "preparing" | "ready" | "failed";
 
 export type VoiceDeliverySnapshot = { id: string, draftKey: string, text: string, };
 
-export type VoiceTrialResult = { trialId: string, text: string, };
+export type VoiceTrialResult = { trialId: string, text: string, captureMs: number, computeMs: number, };
 
 export type VoiceSnapshot = { revision: number, phase: VoicePhase, operation: VoiceOperationSnapshot | null, recovery: VoiceRecoverySnapshot | null, delivery: VoiceDeliverySnapshot | null, trialResult: VoiceTrialResult | null, error: VoiceError | null, };
 

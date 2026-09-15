@@ -117,21 +117,21 @@ async fn run_voice_download_inner(
         .map_err(|_| "model-download-invalid-model".to_string())?;
     let catalog = crate::services::voice::download::load_catalog(&resource_dir)
         .map_err(|_| "model-download-invalid-model".to_string())?;
-    let asr = catalog
+    let requested = catalog
         .entries
         .iter()
-        .find(|entry| {
-            entry.id == state.model_id
-                && entry.role == crate::services::voice::download::VoiceModelRole::Asr
-        })
+        .find(|entry| entry.id == state.model_id)
         .ok_or_else(|| "model-download-invalid-model".to_string())?;
     let vad = catalog
         .entries
         .iter()
         .find(|entry| entry.role == crate::services::voice::download::VoiceModelRole::Vad)
         .ok_or_else(|| "model-download-invalid-model".to_string())?;
-    install_entry(app, manager, state, asr, cancel).await?;
-    install_entry(app, manager, state, vad, cancel).await
+    install_entry(app, manager, state, requested, cancel).await?;
+    if requested.role == crate::services::voice::download::VoiceModelRole::Asr {
+        install_entry(app, manager, state, vad, cancel).await?;
+    }
+    Ok(())
 }
 
 async fn install_entry(

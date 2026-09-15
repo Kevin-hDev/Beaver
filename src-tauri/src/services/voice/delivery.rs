@@ -15,6 +15,8 @@ pub struct Delivery {
 pub struct TrialResult {
     pub trial_id: String,
     pub text: String,
+    pub capture_ms: u64,
+    pub compute_ms: u64,
 }
 
 impl Drop for TrialResult {
@@ -133,6 +135,16 @@ impl VoiceCoordinator {
         text: String,
         now_ms: u64,
     ) -> Result<VoiceSnapshot, VoiceError> {
+        self.complete_with_metrics(operation_id, text, now_ms, 0)
+    }
+
+    pub fn complete_with_metrics(
+        &mut self,
+        operation_id: &str,
+        text: String,
+        now_ms: u64,
+        compute_ms: u64,
+    ) -> Result<VoiceSnapshot, VoiceError> {
         let operation = self
             .operation
             .take()
@@ -165,7 +177,12 @@ impl VoiceCoordinator {
                     )?);
                 }
                 VoiceDestination::Trial { trial_id } => {
-                    self.trial_result = Some(TrialResult { trial_id, text });
+                    self.trial_result = Some(TrialResult {
+                        trial_id,
+                        text,
+                        capture_ms: operation.capture_ms,
+                        compute_ms,
+                    });
                 }
             }
         }

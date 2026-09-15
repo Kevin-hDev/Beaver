@@ -1,0 +1,15 @@
+.vset-body { display: grid; gap: var(--space-md); }
+.vset-models { display: grid; }
+.vset-model { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-xs) var(--space-md); padding: var(--space-md); border-bottom: 1px solid var(--edge); }
+.vset-model:last-child { border-bottom: 0; }
+.vset-model[data-selected="true"] { background: var(--surface-hover); }
+.vset-model-choice { display: grid; gap: var(--space-xs); min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer; }
+.vset-model-choice span, .vset-model details { color: var(--ink-muted); font-size: var(--text-xs); }
+.vset-model details { grid-column: 1 / -1; }
+.vset-model summary { cursor: pointer; }
+.vset-trial { padding-top: var(--space-md); }
+.vset-trial h3 { margin: 0 0 var(--space-sm); font-size: var(--text-sm); }
+.vset-trial-line { display: flex; align-items: center; gap: var(--space-sm); }
+.vset-result { margin: var(--space-sm) 0 0; color: var(--ink); }
+.vset-shortcut { display: grid; gap: var(--space-xs); }
+.vset-shortcut [role="alert"] { color: var(--danger); font-size: var(--text-xs); }

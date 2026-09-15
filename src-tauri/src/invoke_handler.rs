@@ -166,6 +166,7 @@ macro_rules! generate_with_voice_probe {
             crate::invoke_handler::generate![
                 crate::commands::voice_get_snapshot,
                 crate::commands::voice_get_settings,
+                crate::commands::voice_get_catalog,
                 crate::commands::voice_dispatch,
                 crate::commands::voice_update_settings,
                 crate::commands::voice_list_devices,
@@ -180,6 +181,7 @@ macro_rules! generate_with_voice_probe {
             crate::invoke_handler::generate![
                 crate::commands::voice_get_snapshot,
                 crate::commands::voice_get_settings,
+                crate::commands::voice_get_catalog,
                 crate::commands::voice_dispatch,
                 crate::commands::voice_update_settings,
                 crate::commands::voice_list_devices,

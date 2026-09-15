@@ -82,9 +82,11 @@ fn run(app: &AppHandle, runtime: &VoiceRuntime, operation_id: &str, settings: &V
     let capture_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
     runtime.coordinator_for_pipeline().record_capture(operation_id, capture_ms, speech_ms, audio.lost_samples() > 0, 0.0)?;
     let effective = effective_language(asr.engine, language.unwrap_or(&settings.language));
+    let compute_started = Instant::now();
     let result = transcribe(&mut lease, &mut audio, &effective)?;
+    let compute_ms = u64::try_from(compute_started.elapsed().as_millis()).unwrap_or(u64::MAX);
     let now_ms = runtime.coordinator_for_pipeline().now_ms();
-    runtime.coordinator_for_pipeline().complete(operation_id, result.text, now_ms)?;
+    runtime.coordinator_for_pipeline().complete_with_metrics(operation_id, result.text, now_ms, compute_ms)?;
     emit(app, runtime);
     Ok(())
 }
