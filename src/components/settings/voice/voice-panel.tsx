@@ -17,13 +17,22 @@ interface Props {
 
 export function VoicePanel(props: Props) {
   const { t } = useTranslation();
-  const languages = props.catalog.flatMap((item) => item.languages);
+  const selected = props.catalog.find((item) => item.model === props.settings.model);
+  const selectModel = (model: VoiceSettings["model"]) => {
+    const item = props.catalog.find((candidate) => candidate.model === model);
+    props.onSave({
+      model,
+      ...(item?.languageMode === "explicit-only" && props.settings.language.kind === "automatic"
+        ? { language: { kind: "follow-interface" as const } }
+        : {}),
+    });
+  };
   return <SettingsDialog title={t("voice.settings.title")} description={t("voice.settings.description")} onClose={props.onClose}>
     <div className="sd-body vset-body">
-      <SettingsCard><VoiceModelList items={props.catalog} selected={props.settings.model} downloads={props.downloads} onSelect={(model) => props.onSave({ model })} onInstall={props.onInstall} onResume={props.onResume} onRemove={props.onRemove} /></SettingsCard>
-      <SettingsCard><VoiceCaptureSettings settings={props.settings} devices={props.devices} languages={languages} onSave={props.onSave} onRefresh={props.onRefreshDevices} /></SettingsCard>
+      <SettingsCard><VoiceModelList items={props.catalog} selected={props.settings.model} downloads={props.downloads} onSelect={selectModel} onInstall={props.onInstall} onResume={props.onResume} onRemove={props.onRemove} /></SettingsCard>
+      {selected && <SettingsCard><VoiceCaptureSettings settings={props.settings} devices={props.devices} languages={selected.languages} languageMode={selected.languageMode} onSave={props.onSave} onRefresh={props.onRefreshDevices} /></SettingsCard>}
       <SettingsCard><SettingsRow title={t("voice.settings.unload")}><SettingsSelect value={props.settings.unload_delay} options={["immediately","one-minute","two-minutes","five-minutes","fifteen-minutes","on-exit"].map((value) => ({ value, label: t(`voice.settings.unloadValues.${value}`) }))} onChange={(value) => props.onSave({ unload_delay: value as VoiceSettings["unload_delay"] })} /></SettingsRow></SettingsCard>
     </div>
-    <footer className="sd-foot"><VoiceTrial /></footer>
+    <footer className="sd-foot"><VoiceTrial language={props.settings.language} languageMode={selected?.languageMode ?? "automatic-only"} /></footer>
   </SettingsDialog>;
 }

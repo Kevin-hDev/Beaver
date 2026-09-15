@@ -2,7 +2,7 @@ use std::fs;
 
 use serde_json::Value;
 
-use super::load_catalog;
+use super::{load_catalog, VoiceLanguageMode};
 
 fn source_catalog() -> Value {
     serde_json::from_str(include_str!("../../../../resources/voice-catalog.json"))
@@ -40,6 +40,13 @@ fn source_catalog_is_complete_and_valid() {
         .expect("Qwen entry");
     assert_eq!(qwen.languages.len(), 30);
     assert_eq!(qwen.dialects.len(), 22);
+    let cohere = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.id == "cohere-transcribe-int8")
+        .expect("Cohere entry");
+    assert_eq!(cohere.languages.len(), 14);
+    assert_eq!(cohere.language_mode, VoiceLanguageMode::ExplicitOnly);
 }
 
 #[test]

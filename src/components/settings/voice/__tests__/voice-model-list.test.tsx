@@ -16,7 +16,7 @@ describe("VoiceModelList", () => {
       downloaded: 42, total: 100, errorKey: null,
     };
     render(<VoiceModelList
-      items={[{ id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 0, installed: false, automaticOnly: false }]}
+      items={[{ id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 0, installed: false, languageMode: "automatic-only" }]}
       selected="parakeet-tdt-v3" downloads={[download]}
       onSelect={vi.fn()} onInstall={vi.fn()} onResume={onResume} onRemove={vi.fn()}
     />);
@@ -31,7 +31,7 @@ describe("VoiceModelList", () => {
       downloaded: 42, total: 100, errorKey: null,
     };
     render(<VoiceModelList
-      items={[{ id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 0, installed: false, automaticOnly: false }]}
+      items={[{ id: "parakeet", model: "parakeet-tdt-v3", languages: ["fr"], dialects: [], downloadBytes: 100, installedBytes: 0, installed: false, languageMode: "automatic-only" }]}
       selected="parakeet-tdt-v3" downloads={[download]}
       onSelect={vi.fn()} onInstall={vi.fn()} onResume={vi.fn()} onRemove={vi.fn()}
     />);

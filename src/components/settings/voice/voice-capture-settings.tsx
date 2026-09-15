@@ -2,21 +2,23 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsRow } from "../settings-row";
 import { SettingsSelect } from "../settings-select";
-import type { VoiceDevice, VoiceSettings, VoiceSettingsPatch } from "@/types/voice.generated";
+import type { VoiceDevice, VoiceLanguageMode, VoiceSettings, VoiceSettingsPatch } from "@/types/voice.generated";
 import { voiceLanguageOptions } from "@/features/voice/voice-language-options";
 import { VoiceShortcutInput } from "./voice-shortcut-input";
 
-export function VoiceCaptureSettings({ settings, devices, languages, onSave, onRefresh }: {
-  settings: VoiceSettings; devices: VoiceDevice[]; languages: string[];
+export function VoiceCaptureSettings({ settings, devices, languages, languageMode, onSave, onRefresh }: {
+  settings: VoiceSettings; devices: VoiceDevice[]; languages: string[]; languageMode: VoiceLanguageMode;
   onSave: (patch: VoiceSettingsPatch) => void; onRefresh: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const languageOptions = useMemo(() => [
     { value: "follow-interface", label: t("voice.settings.followInterface") },
-    { value: "automatic", label: t("voice.language.automatic") },
+    ...(languageMode === "explicit-only" ? [] : [{ value: "automatic", label: t("voice.language.automatic") }]),
     ...voiceLanguageOptions(languages, i18n.language),
-  ], [i18n.language, languages, t]);
-  const languageValue = settings.language.kind === "language" ? settings.language.value : settings.language.kind;
+  ], [i18n.language, languageMode, languages, t]);
+  const languageValue = settings.language.kind === "automatic" && languageMode === "explicit-only"
+    ? "follow-interface"
+    : settings.language.kind === "language" ? settings.language.value : settings.language.kind;
   return <>
     <SettingsRow title={t("voice.settings.device")}>
       {devices.length ? <SettingsSelect value={settings.input_device.kind === "device" ? settings.input_device.value : "default"} options={[{ value: "default", label: t("voice.settings.systemDevice") }, ...devices.map((device) => ({ value: device.id, label: device.name }))]} onChange={(value) => onSave({ input_device: value === "default" ? { kind: "system-default" } : { kind: "device", value } })} />

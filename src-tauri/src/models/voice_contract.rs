@@ -25,6 +25,7 @@ impl VoiceProjection {
 #[cfg(test)]
 pub(crate) fn typescript_bindings() -> String {
     use crate::services::voice::contracts::*;
+    use crate::services::voice::download::VoiceLanguageMode;
     use crate::services::voice::errors::{
         VoiceError, VoiceErrorCode, VoiceErrorParam, VoiceErrorParamKey,
     };
@@ -33,6 +34,7 @@ pub(crate) fn typescript_bindings() -> String {
 
     let config = Config::default();
     let declarations = [
+        VoiceLanguageMode::decl(&config),
         VoicePhase::decl(&config),
         VoiceModel::decl(&config),
         VoiceInputDevice::decl(&config),

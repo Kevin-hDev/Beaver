@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useVoiceSnapshot } from "@/features/voice/voice-store";
 import { dispatchVoiceAction } from "@/features/voice/voice-client";
+import { resolveVoiceLanguage } from "@/features/voice/voice-language-options";
 import { VoiceSignal } from "@/components/agent-local/voice/voice-signal";
+import type { VoiceLanguage, VoiceLanguageMode } from "@/types/voice.generated";
 
-export function VoiceTrial() {
-  const { t } = useTranslation();
+export function VoiceTrial({ language, languageMode }: { language: VoiceLanguage; languageMode: VoiceLanguageMode }) {
+  const { t, i18n } = useTranslation();
   const snapshot = useVoiceSnapshot();
   const [trialId] = useState(() => crypto.randomUUID());
   const [stoppedAt, setStoppedAt] = useState<number | null>(null);
@@ -17,7 +19,7 @@ export function VoiceTrial() {
     const measured = performance.now() - stoppedAt;
     queueMicrotask(() => setDelayMs(measured));
   }, [delayMs, result, stoppedAt]);
-  const start = () => dispatchVoiceAction({ action: "start", destination: { kind: "trial", trial_id: trialId }, context_generation: Date.now(), language: null });
+  const start = () => dispatchVoiceAction({ action: "start", destination: { kind: "trial", trial_id: trialId }, context_generation: Date.now(), language: resolveVoiceLanguage(language, i18n.resolvedLanguage ?? i18n.language, languageMode) });
   return <section className="vset-trial">
     <h3>{t("voice.settings.try")}</h3>
     {operation ? <div className="vset-trial-line"><VoiceSignal level={operation.level} tick={operation.captureMs} /><button type="button" className="btn btn-sm btn-secondary" onClick={() => { setStoppedAt(performance.now()); setDelayMs(null); void dispatchVoiceAction({ action: "validate", operation_id: operation.id }); }}>{t("voice.validate")}</button></div>

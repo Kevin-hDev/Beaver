@@ -47,7 +47,7 @@
       ],
       "languages": ["en", "fr", "de", "it", "es", "pt", "el", "nl", "pl", "zh", "ja", "ko", "vi", "ar"],
       "dialects": [],
-      "language_mode": "explicit-or-automatic",
+      "language_mode": "explicit-only",
       "license": {
         "spdx": "Apache-2.0",
         "url": "https://huggingface.co/blog/CohereLabs/cohere-transcribe-03-2026-release"

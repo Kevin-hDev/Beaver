@@ -1,4 +1,7 @@
-use super::types::{VoiceLanguage, VoiceModel, VoicePhase};
+use super::{
+    download::VoiceLanguageMode,
+    types::{VoiceLanguage, VoiceModel, VoicePhase},
+};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
@@ -91,7 +94,7 @@ pub struct VoiceCatalogItem {
     pub installed_bytes: u64,
     pub languages: Vec<String>,
     pub dialects: Vec<String>,
-    pub automatic_only: bool,
+    pub language_mode: VoiceLanguageMode,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

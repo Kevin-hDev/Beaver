@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,11 +40,12 @@ pub enum VoiceEngine {
     SileroVad,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "kebab-case")]
 pub enum VoiceLanguageMode {
     AutomaticOnly,
-    ExplicitOrAutomatic,
+    ExplicitOnly,
 }
 
 #[derive(Clone, Debug, Deserialize)]

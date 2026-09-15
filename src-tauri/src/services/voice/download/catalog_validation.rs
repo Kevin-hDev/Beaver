@@ -79,7 +79,7 @@ fn validate_entry(entry: &VoiceCatalogEntry) -> Result<(), VoiceError> {
         }
         VoiceEngine::CohereTranscribe => {
             entry.role == VoiceModelRole::Asr
-                && entry.language_mode == VoiceLanguageMode::ExplicitOrAutomatic
+                && entry.language_mode == VoiceLanguageMode::ExplicitOnly
                 && entry.dialects.is_empty()
         }
         VoiceEngine::Qwen3Asr => {

@@ -33,10 +33,7 @@ pub fn voice_get_catalog(app: AppHandle) -> Result<Vec<VoiceCatalogItem>, VoiceE
         .entries
         .into_iter()
         .map(|entry| {
-            use crate::services::voice::{
-                download::{VoiceEngine, VoiceLanguageMode},
-                types::VoiceModel,
-            };
+            use crate::services::voice::{download::VoiceEngine, types::VoiceModel};
             let model = match entry.engine {
                 VoiceEngine::NemoTransducer => Some(VoiceModel::ParakeetTdtV3),
                 VoiceEngine::CohereTranscribe => Some(VoiceModel::CohereTranscribe),
@@ -54,7 +51,7 @@ pub fn voice_get_catalog(app: AppHandle) -> Result<Vec<VoiceCatalogItem>, VoiceE
                 installed_bytes: entry.installed_bytes,
                 languages: entry.languages,
                 dialects: entry.dialects,
-                automatic_only: entry.language_mode == VoiceLanguageMode::AutomaticOnly,
+                language_mode: entry.language_mode,
             })
         })
         .collect()

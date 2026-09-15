@@ -6,7 +6,8 @@ import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesVoiceShortcut } from "./voice-keyboard";
-import type { VoiceSettings } from "@/types/voice.generated";
+import { resolveVoiceLanguage } from "./voice-language-options";
+import type { VoiceLanguage, VoiceLanguageMode, VoiceSettings } from "@/types/voice.generated";
 import { dispatchVoiceAction, getVoiceCatalog, getVoiceSettings, listVoiceDevices, updateVoiceSettings } from "./voice-client";
 import { acceptVoiceSnapshot, useVoiceSnapshot } from "./voice-store";
 
@@ -20,6 +21,7 @@ export function useVoiceController(draftKey: string) {
   const resumeModelDownload = downloads.resumeDownload;
   const [settings, setSettings] = useState<VoiceSettings | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [languageMode, setLanguageMode] = useState<VoiceLanguageMode>("automatic-only");
   const [deviceCount, setDeviceCount] = useState<number | null>(null);
   const [dialog, setDialog] = useState<"first-use" | null>(null);
   const [pending, setPending] = useState(false);
@@ -35,7 +37,9 @@ export function useVoiceController(draftKey: string) {
     if (IS_LINUX || !surfaceActive) return;
     void Promise.all([getVoiceSettings(), getVoiceCatalog()]).then(([next, catalog]) => {
       setSettings(next);
-      setSelectedModelId(catalog.find((item) => item.model === next.model)?.id ?? null);
+      const selected = catalog.find((item) => item.model === next.model);
+      setSelectedModelId(selected?.id ?? null);
+      setLanguageMode(selected?.languageMode ?? "automatic-only");
     }).catch(() => setSettings(null));
     void Promise.resolve().then(refreshDevices);
     const onFocus = () => { void refreshDevices(); };
@@ -55,11 +59,14 @@ export function useVoiceController(draftKey: string) {
     }
   }, [pending]);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (savedLanguage: VoiceLanguage | undefined = settings?.language, selectedLanguageMode = languageMode) => {
     setDialog(null);
     contextGeneration = (contextGeneration + 1) % Number.MAX_SAFE_INTEGER || 1;
-    await run({ action: "start", destination: { kind: "draft", draft_key: draftKey }, context_generation: contextGeneration, language: null });
-  }, [draftKey, run]);
+    const language = savedLanguage
+      ? resolveVoiceLanguage(savedLanguage, i18n.resolvedLanguage ?? i18n.language, selectedLanguageMode)
+      : null;
+    await run({ action: "start", destination: { kind: "draft", draft_key: draftKey }, context_generation: contextGeneration, language });
+  }, [draftKey, languageMode, run, settings?.language]);
 
   const begin = useCallback(() => {
     if (!settings?.explanation_accepted) setDialog("first-use");
@@ -72,11 +79,12 @@ export function useVoiceController(draftKey: string) {
       setSettings(next);
       const selected = (await getVoiceCatalog()).find((item) => item.model === next.model);
       setSelectedModelId(selected?.id ?? null);
+      setLanguageMode(selected?.languageMode ?? "automatic-only");
       if (selected && !selected.installed) {
         acceptVoiceSnapshot(await dispatchVoiceAction({ action: "install", model_id: selected.id }));
         setDialog(null);
       } else {
-        await start();
+        await start(next.language, selected?.languageMode ?? "automatic-only");
       }
     } catch {
       showToast(i18n.t("errors.operationFailed"), "error");
