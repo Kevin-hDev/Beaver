@@ -27,7 +27,7 @@ vi.mock("./use-update-operations", () => ({
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string, values?: { count?: number; position?: number }) =>
-    values?.count ? `${values.count} mises à jour` : values?.position ? `position ${values.position}` : key }),
+    values?.count ? `${values.count} opérations` : values?.position ? `position ${values.position}` : key }),
 }));
 
 const base: UpdateOperationSnapshot = {
@@ -65,11 +65,26 @@ describe("UpdateProgressWindow", () => {
     render(<UpdateProgressWindow />);
 
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
-    expect(screen.getByText("4 mises à jour")).toBeTruthy();
+    expect(screen.getByText("4 opérations")).toBeTruthy();
     expect(screen.getByText("43%")).toBeTruthy();
     expect(screen.getByText("position 2")).toBeTruthy();
     expect(screen.queryByText("0%")).toBeNull();
     expect(screen.getAllByRole("button", { name: "updates.window.cancel" })).toHaveLength(2);
+  });
+
+  it("names a model installation as a download", () => {
+    mocks.operations = [{ ...base, kind: "voice-model", isUpdate: false }];
+    render(<UpdateProgressWindow />);
+    expect(screen.getByText("updates.window.downloadTitle")).toBeTruthy();
+    expect(screen.getByRole("main", { name: "updates.window.downloadTitle" })).toBeTruthy();
+    expect(screen.queryByText("updates.window.title")).toBeNull();
+  });
+
+  it("reports a completed model installation without calling it an update", () => {
+    mocks.operations = [{ ...base, kind: "voice-model", isUpdate: false, status: "completed", phase: "completed", canCancel: false }];
+    render(<UpdateProgressWindow />);
+    expect(screen.getByText("updates.window.downloadCompleted")).toBeTruthy();
+    expect(screen.queryByText("updates.window.completed")).toBeNull();
   });
 
   it("offre le réessai après un échec générique", () => {

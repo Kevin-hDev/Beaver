@@ -36,10 +36,10 @@ describe("VoiceControls", () => {
     expect(screen.queryByRole("button", { name: "voice.start" })).toBeNull();
   });
 
-  it("shows the selected voice model download in the composer", () => {
+  it("leaves active model download progress to the global window", () => {
     controller.mockReturnValue({ ...idle, modelDownload: { id: "download", status: "running", percent: 42 } });
-    render(<VoiceControls draftKey="session:one" />);
-    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "42");
+    const { container } = render(<VoiceControls draftKey="session:one" />);
+    expect(container).toBeEmptyDOMElement();
     expect(screen.queryByRole("button", { name: "voice.start" })).toBeNull();
   });
 

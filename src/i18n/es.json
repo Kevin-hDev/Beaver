@@ -1380,7 +1380,7 @@
     "window": {
       "open": "Mostrar progreso",
       "openFailed": "No se pudo mostrar la ventana de progreso.",
-      "title": "Actualización", "count": "{{count}} actualizaciones", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "cancelledResult": "Cancelado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…",
+      "title": "Actualización", "downloadTitle": "Descarga", "count": "{{count}} operaciones en curso", "downloadCompleted": "Instalación completada", "downloadFailed": "La descarga ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "cancelledResult": "Cancelado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…",
       "phases": { "waiting": "En espera", "preparing": "Preparando", "downloading": "Descargando", "verifying": "Verificando la integridad", "extracting": "Extrayendo", "installing": "Instalando", "restarting": "Reiniciando", "recovering": "Recuperando", "rolling-back": "Restaurando", "cleaning": "Limpiando", "completed": "Completado" }
     }
   },

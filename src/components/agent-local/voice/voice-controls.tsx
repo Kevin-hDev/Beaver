@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/components/ui/tooltip";
-import { OperationProgressAction } from "@/components/ui/operation-progress-action";
 import { X } from "@/components/ui/icons";
 import { useVoiceController } from "@/features/voice/use-voice-controller";
 import { VoiceSignal } from "./voice-signal";
@@ -12,17 +11,12 @@ export function VoiceControls({ draftKey }: { draftKey: string }) {
   const { t } = useTranslation();
   const voice = useVoiceController(draftKey);
   if (!voice.available && !voice.origin && !voice.activeElsewhere) return null;
+  if (voice.modelDownload && voice.modelDownload.status !== "suspended") return null;
   const operation = voice.snapshot?.operation;
   return (
     <>
       {voice.modelDownload?.status === "suspended" ? (
         <button type="button" className="btn btn-sm btn-secondary" onClick={() => void voice.resumeDownload(voice.modelDownload!.id)}>{t("modelDownloads.resume")}</button>
-      ) : voice.modelDownload ? (
-        <OperationProgressAction compact percent={voice.modelDownload.status === "queued" ? null : voice.modelDownload.percent}
-          phaseLabel={t(voice.modelDownload.status === "queued" ? "modelDownloads.queued" : "voice.settings.installing")}
-          cancelling={voice.modelDownload.status === "cancelling"} canCancel
-          cancelLabel={t("common.cancel")} cancellingLabel={t("voice.settings.cancelling")}
-          onCancel={() => void voice.cancelDownload(voice.modelDownload!.id)} />
       ) : voice.origin && operation ? (
         <div className="vc-active">
           {voice.snapshot?.phase === "listening" && <VoiceSignal level={operation.level} />}

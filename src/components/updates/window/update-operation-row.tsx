@@ -63,9 +63,14 @@ function OperationState({ operation, phaseLabel }: {
   if (operation.status === "cancelling") {
     return <span className="upw-step upw-step-transient">{t("updates.window.cancelling")}</span>;
   }
-  if (operation.status === "failed") return <span className="upw-failure">{t("updates.window.failed")}</span>;
+  if (operation.status === "failed") {
+    return <span className="upw-failure">{t(operation.isUpdate === false ? "updates.window.downloadFailed" : "updates.window.failed")}</span>;
+  }
   if (operation.status === "completed" || operation.status === "cancelled") {
-    return <span className="upw-finished"><CheckCircle2 aria-hidden="true" />{t(operation.status === "completed" ? "updates.window.completed" : "updates.window.cancelledResult")}</span>;
+    const resultKey = operation.status === "cancelled"
+      ? "updates.window.cancelledResult"
+      : operation.isUpdate === false ? "updates.window.downloadCompleted" : "updates.window.completed";
+    return <span className="upw-finished"><CheckCircle2 aria-hidden="true" />{t(resultKey)}</span>;
   }
   if (operation.kind === "app-release" && operation.phase === "restarting") {
     return <span className="upw-restarting">{t("updates.window.restarting")}</span>;

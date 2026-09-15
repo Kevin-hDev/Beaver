@@ -1488,7 +1488,10 @@
     "cancelled": "Téléchargement annulé et fichiers temporaires supprimés.",
     "window": {
       "title": "Mise à jour",
-      "count": "{{count}} mises à jour",
+      "downloadTitle": "Téléchargement",
+      "count": "{{count}} opérations en cours",
+      "downloadCompleted": "Installation terminée",
+      "downloadFailed": "Le téléchargement a échoué. Vérifie ta connexion, puis réessaie.",
       "close": "Fermer la fenêtre",
       "open": "Afficher la progression",
       "openFailed": "La fenêtre de progression ne peut pas être affichée.",
