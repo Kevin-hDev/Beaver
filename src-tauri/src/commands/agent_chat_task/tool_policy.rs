@@ -131,4 +131,26 @@ mod tests {
         assert_eq!(policy.tools.len(), 1);
         assert_eq!(policy.tools[0]["function"]["description"], "native");
     }
+
+    #[test]
+    fn child_inspection_respects_route_policy_and_native_fallback() {
+        let tools = vec![
+            serde_json::json!({"function": {"name": "list_extensions"}}),
+            serde_json::json!({"function": {"name": "inspect_extensions"}}),
+            serde_json::json!({
+                "_beaverCoreFallback": {
+                    "function": {"name": "read_file", "description": "native"}
+                },
+                "function": {"name": "read_file", "description": "extension"}
+            }),
+        ];
+
+        let policy = apply_with(ExtensionToolPolicy::WithoutExtensions, tools, |name| {
+            name == "read_file"
+        });
+
+        assert_eq!(policy.tools.len(), 1);
+        assert_eq!(policy.tools[0]["function"]["name"], "read_file");
+        assert_eq!(policy.tools[0]["function"]["description"], "native");
+    }
 }

@@ -13,13 +13,16 @@ fn explorer_profile_has_exact_capabilities() {
             "glob",
             "web_search",
             "web_fetch",
+            "list_extensions",
+            "inspect_extensions",
+            "load_extension_resource",
         ]
     );
 }
 
 #[test]
 fn coder_profile_only_adds_load_skill_when_enabled() {
-    let expected = vec![
+    let base = vec![
         "bash",
         "bash_control",
         "read_file",
@@ -31,9 +34,20 @@ fn coder_profile_only_adds_load_skill_when_enabled() {
         "web_search",
         "web_fetch",
     ];
+    let mut expected = base.clone();
+    expected.extend([
+        "list_extensions",
+        "inspect_extensions",
+        "load_extension_resource",
+    ]);
     assert_eq!(SubagentToolProfile::Coder.tool_names(false), expected);
-    let mut with_skill = expected;
+    let mut with_skill = base;
     with_skill.push("load_skill");
+    with_skill.extend([
+        "list_extensions",
+        "inspect_extensions",
+        "load_extension_resource",
+    ]);
     assert_eq!(SubagentToolProfile::Coder.tool_names(true), with_skill);
 }
 
@@ -53,7 +67,7 @@ fn definitions_and_prompt_names_match_executable_names() {
 }
 
 #[test]
-fn subagent_definitions_exclude_extension_discovery_and_resource_tools() {
+fn subagent_definitions_include_extension_discovery_and_resource_tools() {
     for profile in [SubagentToolProfile::Explorer, SubagentToolProfile::Coder] {
         let definitions = profile.definitions(true);
         let names = definitions
@@ -63,9 +77,9 @@ fn subagent_definitions_exclude_extension_discovery_and_resource_tools() {
                     .and_then(serde_json::Value::as_str)
             })
             .collect::<Vec<_>>();
-        assert!(!names.contains(&"list_extensions"));
-        assert!(!names.contains(&"inspect_extensions"));
-        assert!(!names.contains(&super::tool_extension_resource::NAME));
+        assert!(names.contains(&"list_extensions"));
+        assert!(names.contains(&"inspect_extensions"));
+        assert!(names.contains(&super::tool_extension_resource::NAME));
     }
 }
 

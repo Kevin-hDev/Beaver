@@ -18,6 +18,44 @@ fn epoch_key_ignores_the_frozen_mask_value() {
     assert!(!same_key(&left, &right));
 }
 
+#[tokio::test]
+async fn catalog_change_invalidates_session_discovery() {
+    let id = uuid::Uuid::new_v4().to_string();
+    let epoch = DiscoveryEpoch {
+        provider: "openai".to_string(),
+        model: "gpt".to_string(),
+        context_window: 128_000,
+        catalog_version: "a".repeat(64),
+        masked: true,
+    };
+    configure(&id, epoch.clone(), true, 0, Vec::new(), false)
+        .await
+        .unwrap();
+    mutate(&id, |state| {
+        state.discovered_plugin_ids.push("example.one".to_string());
+        Ok(())
+    })
+    .await
+    .unwrap();
+
+    configure(
+        &id,
+        DiscoveryEpoch {
+            catalog_version: "b".repeat(64),
+            ..epoch
+        },
+        true,
+        0,
+        Vec::new(),
+        false,
+    )
+    .await
+    .unwrap();
+
+    assert!(read(&id).await.unwrap().discovered_plugin_ids.is_empty());
+    remove(&id).await.unwrap();
+}
+
 #[test]
 fn sanitize_bounds_and_deduplicates_discoveries() {
     let mut state = ExtensionSessionState {

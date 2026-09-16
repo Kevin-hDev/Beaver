@@ -49,3 +49,17 @@ pub(super) fn todo_tools_enabled(enabled_tool_names: &[String]) -> bool {
         ],
     )
 }
+
+pub(super) fn preserve_explicit_dynamic_tools(has_explicit_tools: bool, is_subagent: bool) -> bool {
+    has_explicit_tools && !is_subagent
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn explicit_subagent_tools_do_not_bypass_extension_discovery() {
+        assert!(super::preserve_explicit_dynamic_tools(true, false));
+        assert!(!super::preserve_explicit_dynamic_tools(true, true));
+        assert!(!super::preserve_explicit_dynamic_tools(false, true));
+    }
+}

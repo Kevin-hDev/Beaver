@@ -46,6 +46,11 @@ pub async fn configure(
         return Err(error_codes::STATE_UNAVAILABLE.to_string());
     }
     mutate(session_id, |state| {
+        if state.epoch.as_ref().is_some_and(|current| {
+            current.catalog_version != epoch.catalog_version
+        }) {
+            state.discovered_plugin_ids.clear();
+        }
         if state
             .epoch
             .as_ref()
