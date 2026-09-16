@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -33,5 +33,12 @@ test("rejects a changed packaged catalogue", async (context) => {
   const paths = await fixture();
   context.after(() => rm(paths.root, { recursive: true, force: true }));
   await writeFile(paths.bundled, '{"version":2}\n');
+  await assert.rejects(checkPackagedVoiceCatalog(paths.resources, paths.source));
+});
+
+test("rejects a packaged catalogue reached through a symbolic link", async (context) => {
+  const paths = await fixture();
+  context.after(() => rm(paths.root, { recursive: true, force: true }));
+  await symlink(paths.source, paths.bundled);
   await assert.rejects(checkPackagedVoiceCatalog(paths.resources, paths.source));
 });

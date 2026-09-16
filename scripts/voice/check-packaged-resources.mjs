@@ -1,15 +1,12 @@
-import { readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { readRegularFile } from "../file-system/regular-file.mjs";
 
 const MAX_CATALOG_BYTES = 256 * 1024;
 
 async function readCatalogue(path) {
-  const metadata = await stat(path);
-  if (!metadata.isFile() || metadata.size === 0 || metadata.size > MAX_CATALOG_BYTES) {
-    throw new Error("invalid voice catalogue");
-  }
-  return readFile(path);
+  return readRegularFile(path, MAX_CATALOG_BYTES);
 }
 
 export async function checkPackagedVoiceCatalog(resourceDirectory, sourceFile) {
