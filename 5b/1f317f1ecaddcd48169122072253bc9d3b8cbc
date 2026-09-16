@@ -1,0 +1,16 @@
+Correctif de raccordement B7 détecté pendant la préparation de B9.
+
+Cause
+- Les méthodes subagents.* et le SDK étaient implémentés, et l’Hôte Node savait accepter la capacité, mais la liste Rust du handshake ne demandait pas subagents. La surface restait donc absente en production.
+
+Correction
+- Ajout de OptionalExtensionCapability::Subagents à l’autorité de capacités réellement annoncées par Rust.
+- Test du handshake mis à jour : subagents est accepté, tout en restant issu du contrat central.
+
+Validation
+- cargo test --lib core_api_contract : 1 réussi, 0 échec.
+- node --test core-api-contract, api-expansion et core-subagents : 16 réussis, 0 échec.
+- cargo fmt et git diff --check : verts.
+- graphify update . exécuté.
+
+Aucun changement de contrat ni nouvelle capacité : ce commit raccorde seulement la capacité B7 déjà livrée.
