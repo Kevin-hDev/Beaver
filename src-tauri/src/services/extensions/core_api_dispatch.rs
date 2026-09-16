@@ -11,6 +11,9 @@ pub(super) fn policy(
     context: &super::call_context::ExtensionCallContext,
     method: &str,
 ) -> Result<CoreMethodPolicy, ExtensionBridgeError> {
+    if let Some(reason) = context.core_scope_error() {
+        return Err(ExtensionBridgeError::Context(reason));
+    }
     if let Some(contract) = super::types::CORE_API_METHODS
         .iter()
         .find(|contract| contract.name == method)

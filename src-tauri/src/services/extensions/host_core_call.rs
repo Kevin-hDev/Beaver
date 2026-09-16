@@ -17,7 +17,8 @@ pub(super) async fn spawn(
     let spawn_cancel = task_cancel.clone();
     let reader_cancel = reader_cancel.clone();
     let task_id = id.clone();
-    let spawn = work.spawn_core_call(move |cancel| async move {
+    let identity = context.identity().clone();
+    let spawn = work.spawn_core_call(&identity, move |cancel| async move {
         let response = tokio::select! {
             biased;
             _ = spawn_cancel.cancelled() => return,

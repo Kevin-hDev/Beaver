@@ -97,11 +97,19 @@ where
     tokio::select! {
         biased;
         _ = context.revoked().cancelled() => Err(ExtensionBridgeError::Revoked),
+        _ = wait_for_turn_cancel(context) => Err(ExtensionBridgeError::Revoked),
         result = tokio::time::timeout(budget, operation) => match result {
             Ok(Ok(response)) => Ok(response),
             Ok(Err(error)) => Err(error),
             Err(_) => Err(ExtensionBridgeError::Timeout),
         },
+    }
+}
+
+async fn wait_for_turn_cancel(context: &super::call_context::ExtensionCallContext) {
+    match context.core_scope() {
+        Some(scope) => scope.agent.cancel.cancelled().await,
+        None => std::future::pending::<()>().await,
     }
 }
 

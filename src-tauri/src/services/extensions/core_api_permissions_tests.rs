@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
-fn scoped_context(
+pub(super) fn scoped_context(
     plan_active: bool,
     cancel: CancellationToken,
 ) -> super::call_context::ExtensionCallContext {
@@ -160,4 +160,20 @@ fn contextual_method_without_scope_is_rejected() {
         super::core_api_dispatch::policy(&context, "memory.read"),
         Err(ExtensionBridgeError::Context("core_context_required"))
     ));
+}
+
+#[test]
+fn malformed_or_expired_scope_never_falls_back_to_ambient_legacy_access() {
+    let context = super::call_context::ExtensionCallContext::for_test(
+        HostIdentity::Official,
+        ExtensionApiLevel::Advanced,
+    )
+    .with_core_scope_error("core_context_expired");
+
+    for method in ["mcp.tool.call", "secrets.provider.get", "app.info"] {
+        assert!(matches!(
+            super::core_api_dispatch::policy(&context, method),
+            Err(ExtensionBridgeError::Context("core_context_expired"))
+        ));
+    }
 }

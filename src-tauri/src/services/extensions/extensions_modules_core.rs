@@ -8,6 +8,7 @@ mod core_automations_tests;
 #[cfg(test)]
 mod core_api_permissions_tests;
 mod core_bridge;
+mod core_call_quota;
 mod core_model_catalog;
 mod core_model_generation;
 mod core_model_quota;

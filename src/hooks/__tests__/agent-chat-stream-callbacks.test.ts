@@ -270,6 +270,23 @@ describe("permissionRequest", () => {
     });
     expect(next.pendingPermissions).toEqual([]);
   });
+
+  it("conserve une permission tant que Rust ne ferme pas son attente", () => {
+    const state = makeState({
+      pendingPermissions: [{ id: "req-1", toolName: "bash", arguments: {} }],
+      currentTools: [{ name: "grep", args: {} }],
+    });
+    const { state: afterVisibleResult } = applyStreamEvent(state, {
+      event: "toolResult",
+      data: { name: "grep", toolCallIndex: 0, content: "ok", isError: false },
+    });
+    const { state: afterHiddenResult } = applyStreamEvent(afterVisibleResult, {
+      event: "toolResult",
+      data: { name: "subagent_status", toolCallIndex: 0, content: "ok", isError: false },
+    });
+
+    expect(afterHiddenResult.pendingPermissions).toEqual(state.pendingPermissions);
+  });
 });
 
 describe("toolResult — cas limites", () => {

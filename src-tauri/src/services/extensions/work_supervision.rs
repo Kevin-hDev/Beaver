@@ -44,6 +44,7 @@ pub(super) struct ExtensionWorkServices {
     readers: ExtensionReaderWork,
     operations: ExtensionOperationWork,
     core_calls: ExtensionCoreCallWork,
+    core_call_quota: super::core_call_quota::CoreCallQuota,
     core_scopes: super::core_scope::CoreScopeRegistry,
     pub(super) events: ExtensionEventWork,
     pub(super) event_router: super::event_delivery::EventRouter,
@@ -56,6 +57,7 @@ impl ExtensionWorkServices {
             readers: ExtensionReaderWork::new(app.clone()),
             operations: ExtensionOperationWork::new(app.clone()),
             core_calls: ExtensionCoreCallWork::new(app.clone()),
+            core_call_quota: super::core_call_quota::CoreCallQuota::default(),
             core_scopes: super::core_scope::CoreScopeRegistry::default(),
             events: ExtensionEventWork::new(app.clone()),
             event_router: super::event_delivery::EventRouter::default(),
@@ -117,13 +119,23 @@ impl ExtensionWorkServices {
 
     pub(super) fn spawn_core_call<Factory, Task>(
         &self,
+        identity: &super::host_identity::HostIdentity,
         work: Factory,
     ) -> Result<(), ExtensionWorkAdmissionError>
     where
         Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
         Task: Future + Send + 'static,
     {
-        self.core_calls.spawn(work).map_err(map_admission_error)
+        let lease = self
+            .core_call_quota
+            .acquire(identity)
+            .ok_or(ExtensionWorkAdmissionError::Busy)?;
+        self.core_calls
+            .spawn(move |cancel| async move {
+                let _lease = lease;
+                work(cancel).await;
+            })
+            .map_err(map_admission_error)
     }
 
     pub(super) fn core_scopes(&self) -> &super::core_scope::CoreScopeRegistry {

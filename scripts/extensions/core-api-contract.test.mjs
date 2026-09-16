@@ -40,6 +40,17 @@ const CORE_METHODS = [
   "subagents.cancel",
 ];
 
+test("les capacités optionnelles restent fermées avant un handshake valide", async () => {
+  const moduleUrl = new URL(
+    `../../src-tauri/resources/extension-host/extension-api-capabilities.mjs?test=${Date.now()}`,
+    import.meta.url,
+  );
+  const capabilities = await import(moduleUrl);
+
+  assert.deepEqual(capabilities.activeCapabilities(), contract.capabilities);
+  assert.deepEqual(capabilities.negotiateCapabilities(null), contract.capabilities);
+});
+
 test("le contrat central décrit toute la seconde surface sans l'activer", () => {
   assert.deepEqual(
     contract.optionalCapabilities.slice(-CORE_CAPABILITIES.length),
