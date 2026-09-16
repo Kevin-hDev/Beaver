@@ -114,6 +114,10 @@ jobs:
         working-directory: src-tauri
         run: cargo test --all
 
+      # Contract checks compile Rust, so they share the backend's Tauri dependencies.
+      - name: Rust to TypeScript contracts
+        run: npm run contracts:check
+
       - name: Ollama manager contracts and historical scenarios
         run: |
           cd src-tauri
@@ -678,7 +682,6 @@ jobs:
 
       - name: Voice contracts and frontend
         run: |
-          npm run contracts:check
           node --test scripts/voice/*.test.mjs
           npx vitest run src/features/voice src/components/agent-local/voice src/components/settings/voice src/i18n/voice-translations.test.ts
 

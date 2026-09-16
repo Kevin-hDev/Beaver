@@ -216,7 +216,7 @@ test("aucune nouvelle identité de stockage Beaver n’est introduite", () => {
 
 test("une migration incomplète bloque le démarrage sans exposer de chemin", () => {
   const startup = boundedRead(
-    safeRelativePath("src-tauri/src/app_build.rs"),
+    safeRelativePath("src-tauri/src/app_setup.rs"),
     MAX_SOURCE_BYTES,
   );
   assert.match(
