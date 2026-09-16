@@ -1,0 +1,28 @@
+Review corrections — contextual core boundaries (A1-A6)
+
+What changed:
+- Rejects malformed or expired core scopes before both typed and legacy method dispatch, preventing fallback to ambient access.
+- Wires the existing turn cancellation token into in-flight contextual core calls, so Stop and double Escape interrupt the nested operation.
+- Enforces the contract limit of 8 concurrent core calls per HostIdentity without letting one extension consume the shared pool.
+- Keeps optional host capabilities closed until a valid handshake explicitly requests them; malformed handshakes stay on the base contract.
+- Preserves pending permission prompts until Rust emits permissionClosed instead of clearing every prompt on an unrelated tool result.
+- Moves extension tool declarations into the existing extension module include, bringing agent_local_modules_tools.rs below the 230-line source limit without adding a new abstraction.
+
+Root-cause choices:
+- The scope guard lives in core_api_dispatch::policy because every stable, advanced and legacy dispatch route passes there.
+- The quota key is HostIdentity, matching the contract and preserving the intentionally shared identity of official plugins.
+- Permission lifetime remains owned by the backend PendingGuard; the frontend now consumes its explicit close event only.
+
+Validation executed:
+- cargo test malformed_or_expired_scope_never_falls_back_to_ambient_legacy_access
+- cargo test stop_interrupts_an_in_flight_scoped_core_operation
+- cargo test core_call_quota
+- node --test scripts/extensions/core-api-contract.test.mjs (5 passed)
+- npx vitest run src/hooks/__tests__/agent-chat-stream-callbacks.test.ts (31 passed)
+- npx tsc --noEmit
+- cargo fmt --all -- --check
+- git diff --check
+- graphify update .
+
+Known unrelated warnings:
+- Existing ts-rs serde attribute parsing warnings and macOS linker compact-unwind warning were emitted by Rust test compilation; all targeted tests passed.
