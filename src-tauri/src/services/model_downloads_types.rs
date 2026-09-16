@@ -104,17 +104,20 @@ impl ModelDownloadState {
     }
 }
 
+#[cfg(any(target_os = "macos", windows))]
 pub(super) enum VoiceDownloadFailure {
     Code(String),
     DiskSpace(u64),
 }
 
+#[cfg(any(target_os = "macos", windows))]
 impl From<String> for VoiceDownloadFailure {
     fn from(value: String) -> Self {
         Self::Code(value)
     }
 }
 
+#[cfg(any(target_os = "macos", windows))]
 pub(super) fn download_percentage(downloaded: u64, total: u64) -> u8 {
     if total == 0 {
         return 0;

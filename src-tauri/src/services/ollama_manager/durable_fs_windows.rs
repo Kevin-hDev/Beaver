@@ -2,8 +2,8 @@
 
 use super::super::path_identity::CanonicalDirectory;
 use super::{
-    retry_windows_sharing, sync_parent_pair, validate_wide_units, OllamaDurableFs, OllamaFsError,
-    OllamaFsErrorKind,
+    retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
+    OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
 };
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -16,12 +16,13 @@ use std::sync::{
 use std::thread;
 
 use windows_sys::Win32::Foundation::{
-    GetLastError, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS,
+    CloseHandle, GetLastError, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS,
     ERROR_FILE_NOT_FOUND, ERROR_INVALID_PARAMETER, ERROR_LOCK_VIOLATION, ERROR_PATH_NOT_FOUND,
-    ERROR_SHARING_VIOLATION,
+    ERROR_SHARING_VIOLATION, GENERIC_WRITE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
-    MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
+    CreateFileW, FlushFileBuffers, MoveFileExW, FILE_SHARE_DELETE, FILE_SHARE_READ,
+    FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH, OPEN_EXISTING,
 };
 
 #[path = "durable_fs_windows_verified.rs"]
@@ -161,6 +162,32 @@ fn move_file(
 fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
     crate::services::private_store::sync_directory(path)
         .map_err(|_| OllamaFsError::new(OllamaFsErrorKind::Other))
+}
+
+fn flush_path(path: &Path, flags: u32) -> Result<(), OllamaFsError> {
+    let wide_path = wide(path)?;
+    debug_assert_eq!(windows_file_flush_access(), GENERIC_WRITE);
+    let handle = unsafe {
+        CreateFileW(
+            wide_path.as_ptr(),
+            GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            std::ptr::null(),
+            OPEN_EXISTING,
+            flags,
+            std::ptr::null_mut(),
+        )
+    };
+    if handle == INVALID_HANDLE_VALUE {
+        return Err(win_error(unsafe { GetLastError() }));
+    }
+    let result = if unsafe { FlushFileBuffers(handle) } != 0 {
+        Ok(())
+    } else {
+        Err(win_error(unsafe { GetLastError() }))
+    };
+    unsafe { CloseHandle(handle) };
+    result
 }
 
 fn sync_parent_path(path: &Path) -> Result<(), OllamaFsError> {
