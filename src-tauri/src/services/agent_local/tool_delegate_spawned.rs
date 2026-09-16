@@ -17,4 +17,5 @@ pub struct SpawnedSubagent {
     pub run_id: String,
     pub execution_id: String,
     pub spawn_event: StreamEvent,
+    pub extension_owned: bool,
 }

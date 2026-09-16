@@ -2,7 +2,7 @@ use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::Value;
 
 pub struct PendingDelegate {
-    child_id: String,
+    pub(crate) child_id: String,
 }
 
 pub async fn dispatch_delegate(
@@ -21,6 +21,15 @@ pub async fn spawn_delegate(
     session_id: &str,
     cancel: tokio_util::sync::CancellationToken,
 ) -> Result<PendingDelegate, ToolResult> {
+    spawn_delegate_owned(args, session_id, cancel, None).await
+}
+
+pub(crate) async fn spawn_delegate_owned(
+    args: &Value,
+    session_id: &str,
+    cancel: tokio_util::sync::CancellationToken,
+    owner: Option<super::types_session::SubagentExtensionOwner>,
+) -> Result<PendingDelegate, ToolResult> {
     let Some(app) = super::app_handle_global::get() else {
         return Err(ToolResult::internal(
             "application_context_unavailable",
@@ -38,12 +47,15 @@ pub async fn spawn_delegate(
         session_id.to_string(),
         emitter,
         cancel,
+        owner,
     )
     .await
     {
         Err(tr) => Err(tr),
         Ok(spawned) => {
             let child_id = spawned.child_id.clone();
+            let run_id = spawned.run_id.clone();
+            let extension_owned = spawned.extension_owned;
             let spawn_emitter = spawned.parent_emitter.clone();
             let spawn_event = spawned.spawn_event;
             if let Err(e) = super::subagent_spawn_channel::send(
@@ -80,6 +92,16 @@ pub async fn spawn_delegate(
                     false,
                 )
                 .with_error_hint("Inspecter le sous-agent créé avant de relancer la délégation."));
+            }
+            if extension_owned {
+                let _ = crate::services::extensions::subagent_status_event(
+                    session_id,
+                    &run_id,
+                    &child_id,
+                    super::subagent_status::RUNNING,
+                    true,
+                    false,
+                );
             }
             Ok(PendingDelegate { child_id })
         }

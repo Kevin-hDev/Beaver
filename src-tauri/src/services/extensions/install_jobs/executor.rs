@@ -120,7 +120,7 @@ fn publish(
             // Grants belong to the old code, even when its host is already absent.
             crate::services::agent_local::permission_gate::clear_extension(&previous.manifest.id)
                 .await;
-            if crate::services::scheduler::revoke_extension_automations(&previous.manifest.id)
+            if crate::services::scheduler::revoke_extension_work(&previous.manifest.id)
                 .await
                 .is_err()
             {

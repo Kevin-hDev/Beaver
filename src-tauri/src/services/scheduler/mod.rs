@@ -127,8 +127,10 @@ pub fn notify_config_changed() {
     }
 }
 
-pub(crate) async fn revoke_extension_automations(extension_id: &str) -> Result<(), String> {
+pub(crate) async fn revoke_extension_work(extension_id: &str) -> Result<(), String> {
     occurrence_cancellation::revoke_owner(extension_id);
+    crate::services::agent_local::subagent_registry::cancel_children_for_extension(extension_id)
+        .await;
     crate::services::automations::revoke_extension_owner(extension_id).await?;
     notify_config_changed();
     Ok(())

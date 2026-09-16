@@ -157,6 +157,30 @@ pub async fn cancel_stopped_parent_stream_children(parent_id: &str) {
     }
 }
 
+pub async fn cancel_children_for_extension(extension_id: &str) {
+    let child_ids = REGISTRY.lock().await.entries.keys().cloned().collect::<Vec<_>>();
+    for child_id in child_ids {
+        let owned = super::session_store::get(&child_id)
+            .await
+            .ok()
+            .and_then(|child| child.subagent_extension_owner)
+            .is_some_and(|owner| owner.extension_id == extension_id);
+        if owned {
+            let _ = cancel_one_owned(&child_id).await;
+        }
+    }
+}
+
+async fn cancel_one_owned(child_id: &str) -> bool {
+    let state = REGISTRY.lock().await;
+    if let Some(entry) = state.entries.get(child_id) {
+        entry.cancel.cancel();
+        true
+    } else {
+        false
+    }
+}
+
 #[cfg(test)]
 pub async fn cancel_one(child_id: &str) -> bool {
     let state = REGISTRY.lock().await;

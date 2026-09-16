@@ -47,6 +47,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         working_dir: String::new(),
         working_dir_managed: false,
         parent_session_id: parent.then(|| Uuid::new_v4().to_string()),
+        subagent_extension_owner: None,
         subagent_type: Some("coder".into()),
         subagent_worktree: None,
         subagent_prompt: None,

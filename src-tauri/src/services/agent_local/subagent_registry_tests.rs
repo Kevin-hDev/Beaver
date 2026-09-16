@@ -47,6 +47,29 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn subagent_creation_uses_existing_admission_limits() {
+        let parent = uid();
+        let mut children = Vec::new();
+        for _ in 0..MAX_PER_PARENT {
+            let child = uid();
+            register(&parent, &child, CancellationToken::new())
+                .await
+                .expect("admit within native parent limit");
+            children.push(child);
+        }
+        let rejected = register(&parent, &uid(), CancellationToken::new())
+            .await
+            .expect_err("reject above native parent limit");
+        assert_eq!(
+            rejected,
+            format!("Limite de {MAX_PER_PARENT} sous-agents par session atteinte")
+        );
+        for child in children {
+            unregister(&child).await;
+        }
+    }
+
     // All tests run in a single async test to avoid state conflicts
     // on the global static registry shared across parallel tokio tests.
     #[tokio::test]

@@ -125,6 +125,12 @@ pub struct AgentSession {
     pub working_dir_managed: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent_session_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_subagent_extension_owner",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub subagent_extension_owner: Option<SubagentExtensionOwner>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subagent_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -167,6 +173,24 @@ pub struct AgentSession {
     pub clone_root_session_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub git_branch: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SubagentExtensionOwner {
+    pub extension_id: String,
+    pub extension_version: String,
+    pub extension_fingerprint: String,
+}
+
+fn deserialize_subagent_extension_owner<'de, D>(
+    deserializer: D,
+) -> Result<Option<SubagentExtensionOwner>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Option::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(raw.and_then(|value| serde_json::from_value(value).ok()))
 }
 
 pub(super) fn default_provider() -> String {

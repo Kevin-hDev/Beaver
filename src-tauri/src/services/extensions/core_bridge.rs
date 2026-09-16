@@ -119,6 +119,9 @@ async fn dispatch(
     if method.starts_with("automations.") {
         return super::core_automations::call(context, method, params).await;
     }
+    if method.starts_with("subagents.") {
+        return super::core_subagents::call(context, method, params).await;
+    }
     dispatch_legacy(method, params)
         .await
         .map_err(|()| ExtensionBridgeError::Failed)

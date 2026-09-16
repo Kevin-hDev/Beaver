@@ -20,5 +20,8 @@ mod core_response_audit;
 #[cfg(test)]
 mod core_response_audit_tests;
 pub(crate) mod core_scope;
+mod core_subagents;
+#[cfg(test)]
+mod core_subagents_tests;
 #[cfg(test)]
 mod core_scope_tests;

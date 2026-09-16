@@ -17,6 +17,7 @@ pub async fn prepare_delegate(
     parent_session_id: String,
     parent_emitter: AgentEventEmitter,
     parent_cancel: CancellationToken,
+    extension_owner: Option<super::types_session::SubagentExtensionOwner>,
 ) -> Result<SpawnedSubagent, ToolResult> {
     let mission_prompt = super::tool_delegate_prompt::from_args(&args)?;
     let subagent_type = match args["subagent_type"].as_str() {
@@ -118,6 +119,20 @@ pub async fn prepare_delegate(
         }
     };
 
+    if extension_owner.is_some()
+        && existing_child_id.is_some()
+        && child.subagent_extension_owner != extension_owner
+    {
+        subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
+        return Err(ToolResult::not_found(
+            "subagent_not_found",
+            "Sous-agent introuvable.",
+        ));
+    }
+    if extension_owner.is_some() {
+        child.subagent_extension_owner = extension_owner;
+    }
+
     if super::tool_delegate_child::inherit_parent_context(&mut child, &parent)
         .await
         .is_err()
@@ -176,7 +191,6 @@ pub async fn prepare_delegate(
         prompt_preview: prompt_preview.clone(),
         run_id: Some(run_id.clone()),
     };
-
     Ok(SpawnedSubagent {
         app,
         child_id,
@@ -194,5 +208,6 @@ pub async fn prepare_delegate(
         run_id,
         execution_id: registered.execution_id,
         spawn_event,
+        extension_owned: child.subagent_extension_owner.is_some(),
     })
 }

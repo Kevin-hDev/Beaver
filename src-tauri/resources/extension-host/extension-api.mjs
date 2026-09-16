@@ -151,6 +151,17 @@ export function createExtensionApi(specification) {
           ),
         })
       : undefined,
+    subagents: capabilities.includes("subagents")
+      ? Object.freeze({
+          spawn: (type, prompt) => callAtLevel("stable", "subagents.spawn", { type, prompt }),
+          list: (options = {}) => callAtLevel("stable", "subagents.list", options),
+          get: (subagentId) => callAtLevel("stable", "subagents.get", { subagentId }),
+          send: (subagentId, prompt) => callAtLevel(
+            "stable", "subagents.send", { subagentId, prompt },
+          ),
+          cancel: (subagentId) => callAtLevel("stable", "subagents.cancel", { subagentId }),
+        })
+      : undefined,
     secrets: Object.freeze({
       getProviderKey: (providerId) =>
         callCore("secrets.provider.get", { providerId: String(providerId) }),

@@ -25,7 +25,7 @@ const V4_TOOL_ACTIVITY_FIXTURE: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v4-with-tool-activity.json");
 
 #[tokio::test]
-async fn v5_context_fixture_migrates_to_v6_with_an_exact_backup() {
+async fn v5_context_fixture_migrates_to_v7_with_an_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
         .path()
@@ -48,7 +48,7 @@ async fn v5_context_fixture_migrates_to_v6_with_an_exact_backup() {
         migrated.version(),
         super::session_migration::LoadedVersion::V5
     );
-    assert_eq!(migrated.session().schema_version, 6);
+    assert_eq!(migrated.session().schema_version, 7);
     assert_eq!(migrated.session().accumulated_tokens, 45_123);
     assert_eq!(migrated.session().compression_count, 2);
     assert_eq!(migrated.session().context_tokens, None);
@@ -83,12 +83,12 @@ async fn v5_context_fixture_migrates_to_v6_with_an_exact_backup() {
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V6
+        super::session_migration::LoadedVersion::V7
     );
 }
 
 #[test]
-fn current_v6_context_record_is_not_remigrated() {
+fn current_v7_context_record_is_not_remigrated() {
     use super::context_usage_record::{
         ContextCountCoverage, ContextCountSource, ContextMeasurementSnapshot,
         ContextRequestIdentity, ContextTokenCount, ContextUsageRecord,
@@ -122,7 +122,7 @@ fn current_v6_context_record_is_not_remigrated() {
 
     assert_eq!(
         loaded.version(),
-        super::session_migration::LoadedVersion::V6
+        super::session_migration::LoadedVersion::V7
     );
     assert_eq!(loaded.session().context_usage, session.context_usage);
 }
@@ -217,7 +217,7 @@ async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup
 }
 
 #[tokio::test]
-async fn v4_migrates_to_v6_with_empty_artifacts_and_exact_backup() {
+async fn v4_migrates_to_v7_with_empty_artifacts_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
         .path()
@@ -235,7 +235,7 @@ async fn v4_migrates_to_v6_with_empty_artifacts_and_exact_backup() {
         migrated.version(),
         super::session_migration::LoadedVersion::V4
     );
-    assert_eq!(migrated.session().schema_version, 6);
+    assert_eq!(migrated.session().schema_version, 7);
     assert!(migrated.session().messages.iter().all(|message| {
         message
             .tool_activities
@@ -279,7 +279,7 @@ fn v6_read_rejects_artifact_metadata_that_exceeds_the_shared_limit() {
 }
 
 #[tokio::test]
-async fn v3_migrates_to_v6_with_an_empty_guard_and_exact_backup() {
+async fn v3_migrates_to_v7_with_an_empty_guard_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
         .path()
@@ -294,7 +294,7 @@ async fn v3_migrates_to_v6_with_an_empty_guard_and_exact_backup() {
         loaded.version(),
         super::session_migration::LoadedVersion::V3
     );
-    assert_eq!(loaded.session().schema_version, 6);
+    assert_eq!(loaded.session().schema_version, 7);
     assert!(loaded.session().automatic_compression_guard.is_empty());
     assert_eq!(loaded.session().compression_count, 2);
     assert_eq!(loaded.session().messages.len(), 3);
@@ -308,7 +308,7 @@ async fn v3_migrates_to_v6_with_an_empty_guard_and_exact_backup() {
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V6
+        super::session_migration::LoadedVersion::V7
     );
     assert!(reloaded.session().automatic_compression_guard.is_empty());
 }
@@ -339,7 +339,7 @@ fn invalid_automatic_compression_guard_does_not_make_the_session_unreadable() {
 }
 
 #[tokio::test]
-async fn v2_compression_markers_migrate_to_v6_with_an_exact_backup() {
+async fn v2_compression_markers_migrate_to_v7_with_an_exact_backup() {
     use super::types_message::AgentMessageKind;
 
     let root = tempfile::tempdir().expect("tempdir");
@@ -355,7 +355,7 @@ async fn v2_compression_markers_migrate_to_v6_with_an_exact_backup() {
         loaded.version(),
         super::session_migration::LoadedVersion::V2
     );
-    assert_eq!(loaded.session().schema_version, 6);
+    assert_eq!(loaded.session().schema_version, 7);
     assert_eq!(
         loaded.session().messages[0].message_kind,
         Some(AgentMessageKind::CompressionCheckpoint)
@@ -377,9 +377,9 @@ async fn v2_compression_markers_migrate_to_v6_with_an_exact_backup() {
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V6
+        super::session_migration::LoadedVersion::V7
     );
-    assert_eq!(reloaded.session().schema_version, 6);
+    assert_eq!(reloaded.session().schema_version, 7);
 }
 
 #[test]

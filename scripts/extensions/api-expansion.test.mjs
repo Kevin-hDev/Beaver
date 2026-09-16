@@ -65,6 +65,7 @@ test("api.capabilities est une copie gelée des capacités déjà utilisables", 
     "models",
     "memory",
     "automations",
+    "subagents",
   ]);
   assert.equal(Object.isFrozen(api.capabilities), true);
   assert.throws(() => api.capabilities.push("skills"), TypeError);
@@ -87,6 +88,8 @@ test("api.capabilities est une copie gelée des capacités déjà utilisables", 
   assert.equal(typeof api.memory?.list, "function");
   assert.equal(api.capabilities.includes("automations"), true);
   assert.equal(typeof api.automations?.create, "function");
+  assert.equal(api.capabilities.includes("subagents"), true);
+  assert.equal(typeof api.subagents?.spawn, "function");
 });
 
 test("une extension récente reste compatible avec un Hôte historique seulement si elle garde les capacités", async () => {

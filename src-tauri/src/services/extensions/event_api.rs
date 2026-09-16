@@ -83,7 +83,6 @@ pub(crate) fn automation_event(
     ))
 }
 
-#[allow(dead_code, reason = "producer is connected by the subagent lot B7")]
 pub(crate) fn subagent_status_changed(
     session_id: &str,
     request_id: &str,

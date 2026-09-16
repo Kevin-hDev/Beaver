@@ -122,7 +122,7 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
         id
     };
     if !enabled {
-        crate::services::scheduler::revoke_extension_automations(automation_owner).await?;
+        crate::services::scheduler::revoke_extension_work(automation_owner).await?;
     }
     let mut reminder = false;
     update(id, |record| {

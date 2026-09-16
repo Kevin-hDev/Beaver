@@ -18,6 +18,9 @@ export function validateCoreApiParams(methodName, input) {
       continue;
     }
     if (!validType(value, param.type)) throw new Error("core_request_failed");
+    if (param.required && typeof value === "string" && !value.trim()) {
+      throw new Error("core_request_failed");
+    }
     if (
       param.limit
       && typeof value === "string"

@@ -114,6 +114,7 @@ mod tests {
             working_dir: String::new(),
             working_dir_managed: false,
             parent_session_id: None,
+        subagent_extension_owner: None,
             subagent_type: None,
             subagent_worktree: None,
             subagent_prompt: None,

@@ -36,6 +36,7 @@ pub mod tool_definitions_subagent;
 pub mod tool_definitions_todo;
 pub mod tool_definitions_web;
 pub mod tool_delegate;
+pub(crate) mod subagent_extension_api;
 pub mod tool_delegate_child;
 mod tool_delegate_identity;
 mod tool_delegate_prompt;

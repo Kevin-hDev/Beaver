@@ -186,6 +186,7 @@ pub(crate) use discovery_inspection::InspectionStatus;
 pub(crate) use discovery_listing::list as list_discoverable;
 pub(crate) use discovery_result_serialization::serialize_bounded_result;
 pub(crate) use event_api::automation_event;
+pub(crate) use event_api::subagent_status_changed as subagent_status_event;
 pub(crate) const MAX_INSPECTED_EXTENSIONS: usize = discovery_contract::MAX_INSPECTED_EXTENSIONS;
 pub(crate) use discovery_contract::{CONTEXT_THRESHOLD_PERCENT, UNKNOWN_CONTEXT_TOKENS};
 pub(crate) use discovery_limits::DISCOVERY_STORE_MAX_BYTES;

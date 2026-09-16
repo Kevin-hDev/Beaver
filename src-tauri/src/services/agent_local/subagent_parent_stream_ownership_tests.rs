@@ -45,6 +45,28 @@ async fn replacement_adopts_existing_children_and_current_stop_cancels_them() {
     subagent_registry::unregister(&new_child).await;
 }
 
+#[tokio::test]
+async fn spawn_return_does_not_cancel_child_but_parent_stop_does() {
+    let parent = uid();
+    let child = uid();
+    let parent_stream = CancellationToken::new();
+    subagent_registry::register_execution_for_parent_stream(
+        &parent,
+        &child,
+        CancellationToken::new(),
+        None,
+        &parent_stream,
+    )
+    .await
+    .expect("register child");
+
+    assert!(!run(&child).await.cancelled);
+    parent_stream.cancel();
+    subagent_registry::cancel_stopped_parent_stream_children(&parent).await;
+    assert!(run(&child).await.cancelled);
+    subagent_registry::unregister(&child).await;
+}
+
 #[test]
 fn chat_stream_transfers_and_cancels_parent_stream_ownership() {
     let command = [
