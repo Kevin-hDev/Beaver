@@ -128,6 +128,7 @@ test("le handshake n'annonce que les capacités réellement raccordées", async 
       "resources",
       "richToolResults",
       "models",
+      "memory",
     ]);
     assert.equal(hello.capabilities.includes("models"), true);
   } finally {

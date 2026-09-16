@@ -698,6 +698,8 @@
       "core_cancelled",
       "core_partial_apply",
       "core_model_unavailable",
+      "core_memory_not_found",
+      "core_memory_stale",
       "interception_individual_timeout",
       "interception_chain_timeout",
       "extension_host_busy",

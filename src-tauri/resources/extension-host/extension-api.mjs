@@ -122,6 +122,14 @@ export function createExtensionApi(specification) {
           generate: (options) => callAtLevel("stable", "models.generate", options),
         })
       : undefined,
+    memory: capabilities.includes("memory")
+      ? Object.freeze({
+          list: (options) => callAtLevel("stable", "memory.list", options),
+          read: (options) => callAtLevel("stable", "memory.read", options),
+          write: (options) => callMemoryWrite(options),
+          archive: (options) => callAtLevel("stable", "memory.archive", options),
+        })
+      : undefined,
     secrets: Object.freeze({
       getProviderKey: (providerId) =>
         callCore("secrets.provider.get", { providerId: String(providerId) }),
@@ -179,4 +187,14 @@ function callAtLevel(level, method, params) {
     requested,
     coreMethod ? validateCoreApiParams(requested, params) : params,
   );
+}
+
+function callMemoryWrite(options) {
+  if (
+    !options
+    || (options.topicId === undefined) !== (options.expectedUpdatedAt === undefined)
+  ) {
+    throw new Error("core_request_failed");
+  }
+  return callAtLevel("stable", "memory.write", options);
 }

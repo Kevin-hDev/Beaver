@@ -113,6 +113,9 @@ async fn dispatch(
     if method.starts_with("models.") {
         return super::core_models::call(context, method, params).await;
     }
+    if method.starts_with("memory.") {
+        return super::core_memory::call(context, method, params).await;
+    }
     dispatch_legacy(method, params)
         .await
         .map_err(|()| ExtensionBridgeError::Failed)

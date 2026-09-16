@@ -8,6 +8,12 @@ pub use super::memory_io::write_if_missing;
 
 static MEMORY_WRITE_LOCK: Mutex<()> = Mutex::const_new(());
 
+#[path = "memory_store_topics.rs"]
+mod topics;
+pub use topics::{
+    archive_topic, archive_topic_result, edit_topic, read_topic, replace_topic,
+};
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum MemoryEditError {
     Stale,
@@ -65,9 +71,7 @@ async fn write_topic_locked(
     let parsed = memory_format::parse(content, path, scope_kind(scope))
         .map_err(MemoryWriteError::ContentInvalid)?;
     if parsed.topic.status == "archived" {
-        return super::memory_archive::store(scope, path, content)
-            .await
-            .map_err(MemoryWriteError::StorageFailed);
+        return super::memory_archive::store(scope, path, content).await;
     }
     super::memory_io::write_atomic(path, content.as_bytes())
         .await
@@ -79,53 +83,6 @@ async fn write_topic_locked(
             .map_err(MemoryWriteError::AppliedButIndexFailed)?,
     );
     Ok(changed)
-}
-
-pub async fn edit_topic(
-    scope: &MemoryScope,
-    path: &Path,
-    old: &str,
-    new: &str,
-) -> Result<Vec<String>, MemoryEditError> {
-    let _guard = MEMORY_WRITE_LOCK.lock().await;
-    validate_topic_target(scope, path)
-        .map_err(MemoryWriteError::TargetInvalid)
-        .map_err(MemoryEditError::Failed)?;
-    match tokio::fs::try_exists(path).await {
-        Ok(true) => {}
-        Ok(false) => return Err(MemoryEditError::NotFound),
-        Err(error) => {
-            return Err(MemoryEditError::Failed(
-                MemoryWriteError::SourceUnavailable(super::memory_io::storage_error(
-                    "topic existence check",
-                    error,
-                )),
-            ))
-        }
-    }
-    let current = super::memory_io::read_bounded(path, 64 * 1024)
-        .await
-        .map_err(MemoryWriteError::SourceUnavailable)
-        .map_err(MemoryEditError::Failed)?;
-    if current.matches(old).count() != 1 {
-        return Err(MemoryEditError::Stale);
-    }
-    write_topic_locked(scope, path, &current.replacen(old, new, 1))
-        .await
-        .map_err(MemoryEditError::Failed)
-}
-
-pub async fn archive_topic(
-    scope: &MemoryScope,
-    path: &Path,
-) -> Result<Vec<String>, String> {
-    let _guard = MEMORY_WRITE_LOCK.lock().await;
-    validate_topic_target(scope, path)?;
-    let current = super::memory_io::read_bounded(path, 64 * 1024).await?;
-    let archived = super::memory_format_update::archive(&current)?;
-    write_topic_locked(scope, path, &archived)
-        .await
-        .map_err(|error| error.message().to_string())
 }
 
 pub async fn load_summary(scope: &MemoryScope) -> String {

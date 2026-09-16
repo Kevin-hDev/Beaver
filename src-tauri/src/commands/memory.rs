@@ -42,7 +42,9 @@ pub async fn archive_memory_topic(
 ) -> Result<MemoryOverview, String> {
     let layout = crate::services::agent_local::memory_paths::MemoryLayout::production();
     let (scope, topic_path) = layout.management_topic(&path)?;
-    crate::services::agent_local::memory_store::archive_topic(&scope, &topic_path).await?;
+    crate::services::agent_local::memory_store::archive_topic(&scope, &topic_path)
+        .await
+        .map_err(|error| error.message().to_string())?;
     let working_dir = resolve_working_dir(None, session_id.as_deref()).await?;
     Ok(crate::services::agent_local::memory_overview::load(working_dir.as_deref()).await)
 }

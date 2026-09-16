@@ -61,6 +61,14 @@ pub fn write_allowed(session_id: &str) -> bool {
     })
 }
 
+pub fn write_defaults(session_id: &str) -> Option<(&'static str, &'static str)> {
+    policy(session_id).and_then(|policy| match policy.mode {
+        MemoryMode::Automatic => Some(("inferred", "extractor")),
+        MemoryMode::Manual if policy.write_authorized => Some(("confirmed", "user")),
+        MemoryMode::Disabled | MemoryMode::Manual => None,
+    })
+}
+
 pub fn consume_result(session_id: &str, content: &str) -> (String, bool) {
     let mut policies = lock_policies();
     let Some(policy) = policies

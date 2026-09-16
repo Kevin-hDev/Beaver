@@ -11,6 +11,8 @@ pub(super) fn advertised_capabilities() -> Vec<&'static str> {
                 OptionalExtensionCapability::Skills,
                 OptionalExtensionCapability::Resources,
                 OptionalExtensionCapability::RichToolResults,
+                OptionalExtensionCapability::Models,
+                OptionalExtensionCapability::Memory,
             ]
             .iter()
             .map(OptionalExtensionCapability::as_str),

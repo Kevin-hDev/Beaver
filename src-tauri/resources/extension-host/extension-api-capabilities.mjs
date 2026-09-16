@@ -2,7 +2,7 @@ import { CAPABILITIES, OPTIONAL_CAPABILITIES } from "./contract.mjs";
 
 const LEGACY_IMPLEMENTED = Object.freeze(
   OPTIONAL_CAPABILITIES.filter((capability) =>
-    ["skills", "resources", "richToolResults", "models"].includes(capability)),
+    ["skills", "resources", "richToolResults", "models", "memory"].includes(capability)),
 );
 let active = Object.freeze([...CAPABILITIES, ...LEGACY_IMPLEMENTED]);
 
