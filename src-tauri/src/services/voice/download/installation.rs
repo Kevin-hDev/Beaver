@@ -77,7 +77,9 @@ fn publish(
 ) -> Result<InstallationReceipt, String> {
     extract_verified(entry, archive, staging)?;
     for path in manifest_paths(staging, &entry.files) {
-        fs::File::open(path)
+        fs::OpenOptions::new()
+            .write(true)
+            .open(path)
             .and_then(|file| file.sync_all())
             .map_err(|_| storage_error())?;
     }
