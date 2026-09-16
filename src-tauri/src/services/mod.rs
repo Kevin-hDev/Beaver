@@ -43,12 +43,19 @@ pub mod mascot;
 pub mod mcp_bridge;
 pub mod mcp_oauth;
 pub mod model_downloads;
+#[cfg(test)]
+mod model_downloads_contract_tests;
 mod model_downloads_projection;
+mod model_downloads_runner;
 pub mod model_downloads_store;
 mod model_downloads_store_queue;
 #[cfg(test)]
 mod model_downloads_store_tests;
 pub mod model_downloads_types;
+#[cfg(any(target_os = "macos", windows))]
+mod model_downloads_voice;
+#[cfg(all(test, any(target_os = "macos", windows)))]
+mod model_downloads_voice_tests;
 pub(crate) mod model_identifier;
 pub mod oauth_completion;
 pub mod oauth_providers;
@@ -113,6 +120,7 @@ pub mod update_notifications;
 mod update_notifications_tests;
 pub mod update_progress;
 pub mod vault;
+pub mod voice;
 mod windows_fs_retry;
 pub mod work_registry;
 #[cfg(test)]

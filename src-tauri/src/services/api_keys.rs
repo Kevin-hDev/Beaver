@@ -107,6 +107,7 @@ pub fn init_for_runtime() -> Result<(), String> {
     #[cfg(not(feature = "e2e"))]
     return init();
 
+    // Le profil e2e ne doit jamais demander l'accès au trousseau du compte hôte.
     #[cfg(feature = "e2e")]
     {
         let mut state = STATE

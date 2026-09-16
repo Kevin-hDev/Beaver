@@ -8,6 +8,7 @@ import { usePanelFocus } from "@/hooks/use-panel-focus";
 import { useAgentSessionWorkspace } from "@/hooks/use-agent-session-workspace";
 import { useNavigationAvailability } from "@/features/extension-ui/slot-contexts";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
+import { VoiceRoot } from "@/features/voice/voice-root";
 import type { ThemeChoice } from "@/hooks/use-theme";
 import type { TabId } from "./nav-items";
 import {
@@ -86,6 +87,7 @@ export function ReadyApp(props: ReadyAppProps) {
   return (
     <>
       {vaultError && <VaultErrorBanner onDismiss={onDismissVaultError} />}
+      <VoiceRoot />
       <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
         <AppLayout
           onOpenExtension={(extensionId) => pushNav({ tab: "settings", settings: { subTab: "extensions", extensionsSection: "custom", extensionId } })}

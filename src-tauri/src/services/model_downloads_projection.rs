@@ -48,6 +48,7 @@ pub(crate) fn project_state(
         ModelDownloadStatus::Completed => UpdateOperationStatus::Completed,
         ModelDownloadStatus::Failed => UpdateOperationStatus::Failed,
         ModelDownloadStatus::Cancelled => UpdateOperationStatus::Cancelled,
+        ModelDownloadStatus::Suspended => UpdateOperationStatus::Cancelled,
     };
     let phase = match (state.status, state.phase) {
         (ModelDownloadStatus::Queued, _) => UpdateOperationPhase::Waiting,
@@ -73,14 +74,17 @@ pub(crate) fn project_state(
     let can_cancel = matches!(
         status,
         UpdateOperationStatus::Queued | UpdateOperationStatus::Running
-    ) && !(state.kind == ModelDownloadKind::Forecast
-        && state.phase == ModelDownloadPhase::Installing);
+    ) && !(matches!(
+        state.kind,
+        ModelDownloadKind::Forecast | ModelDownloadKind::Voice
+    ) && state.phase == ModelDownloadPhase::Installing);
     UpdateOperationSnapshot {
         id: state.id.clone(),
         sequence: 0,
         kind: match state.kind {
             ModelDownloadKind::Ollama => UpdateOperationKind::OllamaModel,
             ModelDownloadKind::Forecast => UpdateOperationKind::ForecastModel,
+            ModelDownloadKind::Voice => UpdateOperationKind::VoiceModel,
         },
         label: state.model_id.clone(),
         status,
@@ -92,6 +96,7 @@ pub(crate) fn project_state(
         can_retry: status == UpdateOperationStatus::Failed,
         is_update: Some(state.is_update),
         error_key: state.error_key.clone(),
+        missing_bytes: state.missing_bytes,
     }
 }
 

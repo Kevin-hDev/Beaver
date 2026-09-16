@@ -194,6 +194,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## Voice transcription
+
+Beaver uses [cpal 0.18.2](https://github.com/RustAudio/cpal) for native audio
+capture and [sherpa-onnx 1.13.8](https://github.com/k2-fsa/sherpa-onnx) for local
+speech recognition, voice activity detection and resampling on macOS and
+Windows. Both are distributed under the Apache License 2.0.
+
+The following model weights are downloaded only when requested by the user.
+Their exact sources, revisions and SHA-256 checksums are recorded in
+`src-tauri/resources/voice-catalog.json`.
+
+- NVIDIA Parakeet TDT 0.6B v3, converted to INT8 ONNX by k2-fsa:
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), copyright NVIDIA.
+- Cohere Transcribe 03-2026, converted to INT8 ONNX by k2-fsa:
+  [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), copyright
+  Cohere Labs.
+- Qwen3-ASR 0.6B, converted to INT8 ONNX by k2-fsa:
+  [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), copyright
+  Qwen Team and Alibaba Group.
+- Silero VAD: [MIT License](https://github.com/snakers4/silero-vad/blob/867c2aa692646a1f1de3e94a15c9dd9f614c0acb/LICENSE),
+  copyright 2020-present Silero Team.
+
+The Apache-licensed components are provided on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND. See the linked license for the specific
+language governing permissions and limitations.
+
 ## AI-Driven Dev Framework
 
 Parts of the workflow design in Beaver's programming skills suite are adapted

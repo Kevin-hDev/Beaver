@@ -1435,7 +1435,11 @@
     "cancelled": "Download cancelled and temporary files removed.",
     "window": {
       "title": "Update",
-      "count": "{{count}} updates",
+      "downloadTitle": "Download",
+      "count": "{{count}} operations in progress",
+      "downloadCompleted": "Installation complete",
+      "downloadFailed": "The download failed. Check your connection and try again.",
+      "insufficientSpace": "{{size}} of additional disk space is required to continue.",
       "close": "Close window",
       "open": "Show progress",
       "openFailed": "The progress window could not be shown.",
@@ -2774,6 +2778,99 @@
       "failed": "Installation failed. You can retry.",
       "insufficientSpace": "Not enough disk space to continue.",
       "recoveryUnavailable": "Saved installation tracking cannot be recovered. New installations are blocked. The recovery data requires manual intervention."
+    }
+  },
+  "voice": {
+    "start": "Start dictation",
+    "cancel": "Cancel insertion",
+    "validate": "Stop and transcribe",
+    "activeElsewhere": "Dictation active in another tab · Go",
+    "tabIndicator": "Dictation active",
+    "firstUse": {
+      "title": "Voice mode",
+      "description": "Dictate text directly into the draft.",
+      "local": "Audio is processed locally on this device and is never sent automatically.",
+      "later": "Later",
+      "continue": "Continue"
+    },
+    "language": {
+      "automatic": "Automatic detection"
+    },
+    "settings": {
+      "title": "Voice mode",
+      "description": "Beaver transcribes your voice on this device. Audio never leaves it.",
+      "enabled": "Voice dictation",
+      "enabledDescription": "Speak into the composer instead of typing.",
+      "model": "Transcription model",
+      "installed": "installed",
+      "notInstalled": "not installed",
+      "advanced": "Advanced settings",
+      "advancedDescription": "Installed models, microphone and memory.",
+      "open": "Advanced",
+      "languageCount": "{{count}} languages",
+      "lastSpeed": "≈ {{speed}}× real time · latest measurement, loading excluded",
+      "installing": "Installing…",
+      "cancelling": "Cancelling…",
+      "remove": "Remove",
+      "install": "Install",
+      "languages": "Languages",
+      "device": "Input device",
+      "systemDevice": "System microphone",
+      "refreshDevice": "Refresh",
+      "gain": "Microphone gain",
+      "gainDescription": "Boosts quiet voices before transcription.",
+      "gainValues": { "zero-db": "0 dB", "three-db": "+3 dB", "six-db": "+6 dB", "nine-db": "+9 dB" },
+      "silence": "Silence before stop",
+      "seconds": "{{count}} seconds",
+      "never": "Never",
+      "duration": "Maximum duration",
+      "minutes": "{{count}} minutes",
+      "language": "Dictation language",
+      "followInterface": "Follow interface",
+      "unload": "Unload model",
+      "try": "Try",
+      "startTrial": "Start trial",
+      "unloadValues": {
+        "immediately": "Immediately",
+        "one-minute": "After 1 minute",
+        "two-minutes": "After 2 minutes",
+        "five-minutes": "After 5 minutes",
+        "fifteen-minutes": "After 15 minutes",
+        "on-exit": "When Beaver closes"
+      },
+      "shortcut": "Keyboard shortcut",
+      "noShortcut": "None",
+      "createShortcut": "Create",
+      "modifyShortcut": "Edit",
+      "cancelShortcut": "Cancel",
+      "pressShortcut": "Press the desired shortcut…",
+      "shortcutConflict": "This shortcut is already used.",
+      "trialTiming": "Compute: {{compute}} s · Text shown after stop: {{delay}} s"
+    },
+    "status": {
+      "preparing": "Preparing microphone…",
+      "listening": "Listening",
+      "transcribing": "Transcribing…",
+      "recovering": "Preparing recovery…",
+      "stopping": "Stopping…",
+      "delivering": "Inserting text…",
+      "idle": "Ready"
+    },
+    "recovery": {
+      "preparing": "Preparing recovery…",
+      "ready": "A dictation can be restored.",
+      "failed": "Recovery failed.",
+      "restore": "Restore dictation ({{duration}})",
+      "delete": "Delete recovery",
+      "duration": "{{minutes}} min {{seconds}} s"
+    },
+    "notice": { "microphoneDisconnected": "The microphone disconnected. Captured speech was transcribed." },
+    "error": {
+      "busy": "Another voice operation is running.",
+      "shutting-down": "Beaver is closing.",
+      "invalid-settings": "Check voice mode settings.",
+      "configuration-unavailable": "The required voice model is unavailable.",
+      "invalid-transition": "This voice action is no longer available."
     }
   },
   "installer": {

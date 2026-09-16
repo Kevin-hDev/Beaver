@@ -1374,7 +1374,7 @@
     "window": {
       "open": "显示进度",
       "openFailed": "无法显示进度窗口。",
-      "title": "更新", "count": "{{count}} 个更新", "close": "关闭窗口", "remove": "移除此行", "retry": "重试", "cancel": "取消", "queued": "等待中 · 第 {{position}} 位", "cancelling": "正在取消…", "completed": "已更新", "cancelledResult": "已取消", "failed": "更新失败。请检查网络连接后重试。", "restarting": "正在重启 Beaver…",
+      "title": "更新", "downloadTitle": "下载", "count": "{{count}} 个进行中的操作", "downloadCompleted": "安装完成", "downloadFailed": "下载失败。请检查网络连接后重试。", "insufficientSpace": "还需要 {{size}} 可用磁盘空间才能继续。", "close": "关闭窗口", "remove": "移除此行", "retry": "重试", "cancel": "取消", "queued": "等待中 · 第 {{position}} 位", "cancelling": "正在取消…", "completed": "已更新", "cancelledResult": "已取消", "failed": "更新失败。请检查网络连接后重试。", "restarting": "正在重启 Beaver…",
       "phases": { "waiting": "等待中", "preparing": "准备中", "downloading": "下载中", "verifying": "正在验证完整性", "extracting": "解压中", "installing": "安装中", "restarting": "重启中", "recovering": "恢复中", "rolling-back": "正在回滚", "cleaning": "清理中", "completed": "已完成" }
     }
   },
@@ -2638,6 +2638,99 @@
       "failed": "安装失败。你可以重试。",
       "insufficientSpace": "磁盘空间不足，无法继续。",
       "recoveryUnavailable": "无法恢复已保存的安装记录。新安装已被阻止。恢复数据需要手动处理。"
+    }
+  },
+  "voice": {
+    "start": "开始听写",
+    "cancel": "取消插入",
+    "validate": "停止并转写",
+    "activeElsewhere": "另一标签页正在听写 · 前往",
+    "tabIndicator": "正在听写",
+    "firstUse": {
+      "title": "语音模式",
+      "description": "直接将语音转成草稿文字。",
+      "local": "音频仅在本机处理，绝不会自动发送。",
+      "later": "稍后",
+      "continue": "继续"
+    },
+    "language": {
+      "automatic": "自动检测"
+    },
+    "settings": {
+      "title": "语音模式",
+      "description": "Beaver 在本机转写语音。",
+      "enabled": "语音听写",
+      "enabledDescription": "在输入框中说话。",
+      "model": "转写模型",
+      "installed": "已安装",
+      "notInstalled": "未安装",
+      "advanced": "高级设置",
+      "advancedDescription": "模型、麦克风和内存。",
+      "open": "高级",
+      "languageCount": "{{count}} 种语言",
+      "lastSpeed": "≈ {{speed}}× 实时速度 · 最近测量，不含加载",
+      "installing": "正在安装…",
+      "cancelling": "正在取消…",
+      "remove": "删除",
+      "install": "安装",
+      "languages": "语言",
+      "device": "输入设备",
+      "systemDevice": "系统麦克风",
+      "refreshDevice": "刷新",
+      "gain": "麦克风增益",
+      "gainDescription": "转录前增强较轻的声音。",
+      "gainValues": { "zero-db": "0 dB", "three-db": "+3 dB", "six-db": "+6 dB", "nine-db": "+9 dB" },
+      "silence": "静音后停止",
+      "seconds": "{{count}} 秒",
+      "never": "从不",
+      "duration": "最长时间",
+      "minutes": "{{count}} 分钟",
+      "language": "听写语言",
+      "followInterface": "跟随界面",
+      "unload": "卸载模型",
+      "try": "试用",
+      "startTrial": "开始试用",
+      "unloadValues": {
+        "immediately": "立即",
+        "one-minute": "1 分钟后",
+        "two-minutes": "2 分钟后",
+        "five-minutes": "5 分钟后",
+        "fifteen-minutes": "15 分钟后",
+        "on-exit": "Beaver 关闭时"
+      },
+      "shortcut": "键盘快捷键",
+      "noShortcut": "无",
+      "createShortcut": "创建",
+      "modifyShortcut": "修改",
+      "cancelShortcut": "取消",
+      "pressShortcut": "请按下所需快捷键…",
+      "shortcutConflict": "此快捷键已被使用。",
+      "trialTiming": "计算：{{compute}} 秒 · 停止后显示：{{delay}} 秒"
+    },
+    "status": {
+      "preparing": "正在准备麦克风…",
+      "listening": "正在聆听",
+      "transcribing": "正在转写…",
+      "recovering": "正在准备恢复内容…",
+      "stopping": "正在停止计算…",
+      "delivering": "正在插入文本…",
+      "idle": "就绪"
+    },
+    "recovery": {
+      "preparing": "正在准备恢复内容…",
+      "ready": "有一段听写可以恢复。",
+      "failed": "恢复失败。",
+      "restore": "恢复听写（{{duration}}）",
+      "delete": "删除恢复内容",
+      "duration": "{{minutes}}分{{seconds}}秒"
+    },
+    "notice": { "microphoneDisconnected": "麦克风已断开连接，已转录此前捕获的语音。" },
+    "error": {
+      "busy": "另一个语音操作正在运行。",
+      "shutting-down": "Beaver 正在关闭。",
+      "invalid-settings": "请检查语音模式设置。",
+      "configuration-unavailable": "所需的语音模型不可用。",
+      "invalid-transition": "此语音操作已不可用。"
     }
   },
   "installer": {

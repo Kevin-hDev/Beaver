@@ -94,7 +94,7 @@ export function CompressionProfileEditor({
         enabled={profile.allow_under_64k}
         onChange={(allow_under_64k) => update({ ...profile, allow_under_64k })}
       />
-      <div className="cpa-body">
+      <div className="sd-body">
         <CompressionContentSection
           band={band}
           limits={limits}
@@ -123,7 +123,7 @@ export function CompressionProfileEditor({
           onResetPrompts={() => { void controller.resetPrompts(profile.id); }}
         />
       </div>
-      <footer className="cpa-foot">
+      <footer className="sd-foot">
         <CompressionBudgetPreview
           profileId={profile.id}
           profileRevision={confirmed.revision}

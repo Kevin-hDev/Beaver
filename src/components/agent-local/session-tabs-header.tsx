@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/components/ui/icons";
 import type { SessionTabs } from "@/types/agent";
+import { useVoiceSnapshot } from "@/features/voice/voice-store";
 import "./session-tabs-header.css";
 
 interface SessionTabsHeaderProps {
@@ -22,6 +23,21 @@ export function SessionTabsHeader({
   const { t } = useTranslation();
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const voiceSnapshot = useVoiceSnapshot();
+  const voiceDestination = voiceSnapshot?.operation?.destination;
+  const voiceSessionId = voiceDestination?.kind === "draft" && voiceDestination.draft_key.startsWith("session:")
+    ? voiceDestination.draft_key.slice("session:".length) : null;
+  useEffect(() => {
+    const goToVoice = (event: Event) => {
+      const draftKey = (event as CustomEvent<unknown>).detail;
+      if (typeof draftKey !== "string" || !draftKey.startsWith("session:")) return;
+      const sessionId = draftKey.slice("session:".length);
+      const tab = tabs?.tabs.find((item) => item.session_id === sessionId);
+      if (tab) onSelect(tab.tab_id);
+    };
+    window.addEventListener("beaver:voice-go-to-draft", goToVoice);
+    return () => window.removeEventListener("beaver:voice-go-to-draft", goToVoice);
+  }, [onSelect, tabs]);
   if (!tabs || tabs.tabs.length <= 1) return null;
 
   const startRename = (tabId: string, label: string) => {
@@ -80,6 +96,7 @@ export function SessionTabsHeader({
                 <X size="var(--icon-xs)" />
               </button>
             )}
+            {voiceSessionId === tab.session_id && <span className="sth-voice" aria-label={t("voice.tabIndicator")}>●</span>}
           </div>
         );
       })}

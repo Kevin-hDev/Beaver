@@ -16,6 +16,7 @@ fn state(
         downloaded: 4,
         total: 10,
         error_key: None,
+        missing_bytes: None,
     }
 }
 
@@ -123,6 +124,17 @@ fn maps_model_phases_to_the_closed_progress_contract() {
             expected,
         );
     }
+}
+
+#[test]
+fn projects_the_exact_voice_disk_shortfall() {
+    let mut source = state(
+        ModelDownloadKind::Voice,
+        ModelDownloadStatus::Failed,
+        ModelDownloadPhase::Starting,
+    );
+    source.missing_bytes = Some(42);
+    assert_eq!(project_state(&source, None).missing_bytes, Some(42));
 }
 
 #[test]

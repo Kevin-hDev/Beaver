@@ -8,6 +8,7 @@ pub mod file_tree;
 pub mod gateway_config;
 pub mod mascot;
 pub mod provider_contract;
+pub mod voice_contract;
 
 pub use automation::*;
 pub use config::*;
@@ -24,3 +25,5 @@ mod compression_profile_contract_tests;
 mod file_tree_tests;
 #[cfg(test)]
 mod provider_contract_tests;
+#[cfg(test)]
+mod voice_contract_tests;

@@ -1,4 +1,6 @@
 export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
+  // Le démarrage reprend les installations vocales interrompues depuis la racine commune.
+  ["src-tauri/src/app_setup.rs", 2],
   // Le CLI résout la racine commune en lecture, puis délègue ses chemins à cli_support.
   ["src-tauri/src/bin/beaver/cleanup.rs", 1],
   ["src-tauri/src/bin/beaver/doctor.rs", 1],
@@ -7,10 +9,12 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/bin/beaver/status.rs", 1],
   ["src-tauri/src/commands/agent_md.rs", 1],
   ["src-tauri/src/commands/heartbeat.rs", 2],
+  ["src-tauri/src/commands/model_downloads.rs", 2],
   ["src-tauri/src/commands/ollama_setup.rs", 1],
   ["src-tauri/src/commands/ollama_setup_update.rs", 1],
   ["src-tauri/src/commands/personality.rs", 1],
   ["src-tauri/src/commands/projects.rs", 1],
+  ["src-tauri/src/commands/voice.rs", 1],
   ["src-tauri/src/services/agent_import/documents.rs", 1],
   ["src-tauri/src/services/agent_import/mod.rs", 1],
   ["src-tauri/src/services/agent_import/registry.rs", 1],
@@ -112,6 +116,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/mcp_bridge/config.rs", 1],
   ["src-tauri/src/services/mcp_bridge/process_env.rs", 2],
   ["src-tauri/src/services/model_downloads.rs", 1],
+  ["src-tauri/src/services/model_downloads_voice.rs", 2],
   ["src-tauri/src/services/ollama_manager/cli_access.rs", 1],
   ["src-tauri/src/services/ollama_manager/manager_process.rs", 2],
   ["src-tauri/src/services/ollama_manager/manager_runtime.rs", 1],
@@ -134,6 +139,9 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/update_health.rs", 1],
   ["src-tauri/src/services/update_notifications.rs", 1],
   ["src-tauri/src/services/vault.rs", 1],
+  // Le moteur vocal partage cette racine avec l'autorité des modèles et benchmarks.
+  ["src-tauri/src/services/voice/pipeline.rs", 2],
+  ["src-tauri/src/services/voice/runtime.rs", 1],
   ["src-tauri/src/storage_migration.rs", 4],
   ["src-tauri/src/updater_worker/linux.rs", 1],
   ["src-tauri/src/updater_worker/macos.rs", 1],

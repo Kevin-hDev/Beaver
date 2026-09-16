@@ -178,7 +178,7 @@ fn ultimate_exit_is_initialized_before_tauri_builder_side_effects() {
 
 #[test]
 fn macos_termination_hook_is_installed_before_runtime_recovery_and_sidecars() {
-    let source = include_str!("app_build.rs");
+    let source = include_str!("app_setup.rs");
     let setup = source.find("fn setup(").expect("setup");
     let hook = source[setup..]
         .find("macos_termination::install")

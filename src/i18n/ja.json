@@ -1374,7 +1374,7 @@
     "window": {
       "open": "進行状況を表示",
       "openFailed": "進行状況ウィンドウを表示できませんでした。",
-      "title": "アップデート", "count": "{{count}} 件のアップデート", "close": "ウィンドウを閉じる", "remove": "この行を削除", "retry": "再試行", "cancel": "キャンセル", "queued": "待機中 · {{position}} 番目", "cancelling": "キャンセル中…", "completed": "更新済み", "cancelledResult": "キャンセル済み", "failed": "アップデートに失敗しました。接続を確認して再試行してください。", "restarting": "Beaver を再起動中…",
+      "title": "アップデート", "downloadTitle": "ダウンロード", "count": "{{count}} 件の処理中の操作", "downloadCompleted": "インストール完了", "downloadFailed": "ダウンロードに失敗しました。接続を確認して再試行してください。", "insufficientSpace": "続行するには、さらに {{size}} の空き容量が必要です。", "close": "ウィンドウを閉じる", "remove": "この行を削除", "retry": "再試行", "cancel": "キャンセル", "queued": "待機中 · {{position}} 番目", "cancelling": "キャンセル中…", "completed": "更新済み", "cancelledResult": "キャンセル済み", "failed": "アップデートに失敗しました。接続を確認して再試行してください。", "restarting": "Beaver を再起動中…",
       "phases": { "waiting": "待機中", "preparing": "準備中", "downloading": "ダウンロード中", "verifying": "整合性を確認中", "extracting": "展開中", "installing": "インストール中", "restarting": "再起動中", "recovering": "復旧中", "rolling-back": "ロールバック中", "cleaning": "クリーンアップ中", "completed": "完了" }
     }
   },
@@ -2638,6 +2638,99 @@
       "failed": "インストールに失敗しました。再試行できます。",
       "insufficientSpace": "続行するためのディスク容量が不足しています。",
       "recoveryUnavailable": "保存済みのインストール情報を復元できません。新しいインストールは停止されています。復元データを手動で確認する必要があります。"
+    }
+  },
+  "voice": {
+    "start": "音声入力を開始",
+    "cancel": "挿入をキャンセル",
+    "validate": "停止して文字起こし",
+    "activeElsewhere": "別のタブで音声入力中 · 移動",
+    "tabIndicator": "音声入力中",
+    "firstUse": {
+      "title": "音声モード",
+      "description": "下書きへ直接音声入力します。",
+      "local": "音声はこの端末内で処理され、自動送信されません。",
+      "later": "後で",
+      "continue": "続ける"
+    },
+    "language": {
+      "automatic": "自動検出"
+    },
+    "settings": {
+      "title": "音声モード",
+      "description": "Beaver はこの端末内で音声を文字起こしします。",
+      "enabled": "音声入力",
+      "enabledDescription": "入力欄へ話しかけます。",
+      "model": "文字起こしモデル",
+      "installed": "インストール済み",
+      "notInstalled": "未インストール",
+      "advanced": "詳細設定",
+      "advancedDescription": "モデル、マイク、メモリ。",
+      "open": "詳細",
+      "languageCount": "{{count}} 言語",
+      "lastSpeed": "≈ {{speed}}× リアルタイム · 最新の測定、読み込み時間を除く",
+      "installing": "インストール中…",
+      "cancelling": "キャンセル中…",
+      "remove": "削除",
+      "install": "インストール",
+      "languages": "言語",
+      "device": "入力デバイス",
+      "systemDevice": "システムマイク",
+      "refreshDevice": "更新",
+      "gain": "マイクゲイン",
+      "gainDescription": "文字起こし前に小さな声を増幅します。",
+      "gainValues": { "zero-db": "0 dB", "three-db": "+3 dB", "six-db": "+6 dB", "nine-db": "+9 dB" },
+      "silence": "停止までの無音",
+      "seconds": "{{count}} 秒",
+      "never": "なし",
+      "duration": "最大時間",
+      "minutes": "{{count}} 分",
+      "language": "音声入力言語",
+      "followInterface": "表示言語に合わせる",
+      "unload": "モデルを解放",
+      "try": "試す",
+      "startTrial": "テスト開始",
+      "unloadValues": {
+        "immediately": "すぐに",
+        "one-minute": "1分後",
+        "two-minutes": "2分後",
+        "five-minutes": "5分後",
+        "fifteen-minutes": "15分後",
+        "on-exit": "Beaver終了時"
+      },
+      "shortcut": "キーボードショートカット",
+      "noShortcut": "なし",
+      "createShortcut": "作成",
+      "modifyShortcut": "変更",
+      "cancelShortcut": "キャンセル",
+      "pressShortcut": "希望するショートカットを押してください…",
+      "shortcutConflict": "このショートカットは使用済みです。",
+      "trialTiming": "計算：{{compute}}秒 · 停止後の表示：{{delay}}秒"
+    },
+    "status": {
+      "preparing": "マイクを準備しています…",
+      "listening": "聞き取り中",
+      "transcribing": "文字起こし中…",
+      "recovering": "復元データを準備しています…",
+      "stopping": "処理を停止しています…",
+      "delivering": "テキストを挿入しています…",
+      "idle": "準備完了"
+    },
+    "recovery": {
+      "preparing": "復元データを準備しています…",
+      "ready": "復元できる音声入力があります。",
+      "failed": "復元に失敗しました。",
+      "restore": "音声入力を復元（{{duration}}）",
+      "delete": "復元データを削除",
+      "duration": "{{minutes}}分{{seconds}}秒"
+    },
+    "notice": { "microphoneDisconnected": "マイクが切断されました。切断前に録音された音声は文字起こしされました。" },
+    "error": {
+      "busy": "別の音声操作を実行中です。",
+      "shutting-down": "Beaverを終了しています。",
+      "invalid-settings": "音声モードの設定を確認してください。",
+      "configuration-unavailable": "必要な音声モデルを利用できません。",
+      "invalid-transition": "この音声操作は利用できなくなりました。"
     }
   },
   "installer": {

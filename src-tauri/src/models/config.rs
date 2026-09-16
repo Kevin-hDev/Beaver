@@ -11,6 +11,7 @@ pub struct ClgoConfig {
     pub advanced: AdvancedSettings,
     pub gateway: GatewayConfig,
     pub mascot: super::mascot::MascotSettings,
+    pub voice: crate::services::voice::types::VoiceSettings,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1375,7 +1375,7 @@
     "window": {
       "open": "Fortschritt anzeigen",
       "openFailed": "Das Fortschrittsfenster konnte nicht angezeigt werden.",
-      "title": "Update", "count": "{{count}} Updates", "close": "Fenster schließen", "remove": "Diese Zeile entfernen", "retry": "Erneut versuchen", "cancel": "Abbrechen", "queued": "Wartet · Position {{position}}", "cancelling": "Wird abgebrochen…", "completed": "Aktualisiert", "cancelledResult": "Abgebrochen", "failed": "Das Update ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.", "restarting": "Beaver wird neu gestartet…",
+      "title": "Update", "downloadTitle": "Download", "count": "{{count}} laufende Vorgänge", "downloadCompleted": "Installation abgeschlossen", "downloadFailed": "Der Download ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.", "insufficientSpace": "Zum Fortfahren werden zusätzlich {{size}} Speicherplatz benötigt.", "close": "Fenster schließen", "remove": "Diese Zeile entfernen", "retry": "Erneut versuchen", "cancel": "Abbrechen", "queued": "Wartet · Position {{position}}", "cancelling": "Wird abgebrochen…", "completed": "Aktualisiert", "cancelledResult": "Abgebrochen", "failed": "Das Update ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.", "restarting": "Beaver wird neu gestartet…",
       "phases": { "waiting": "Wartet", "preparing": "Vorbereitung", "downloading": "Herunterladen", "verifying": "Integrität wird geprüft", "extracting": "Entpacken", "installing": "Installation", "restarting": "Neustart", "recovering": "Wiederherstellung", "rolling-back": "Zurücksetzen", "cleaning": "Bereinigung", "completed": "Abgeschlossen" }
     }
   },
@@ -2639,6 +2639,99 @@
       "failed": "Die Installation ist fehlgeschlagen. Du kannst es erneut versuchen.",
       "insufficientSpace": "Nicht genügend Speicherplatz zum Fortfahren.",
       "recoveryUnavailable": "Der gespeicherte Installationsstand kann nicht wiederhergestellt werden. Neue Installationen sind gesperrt. Die Wiederherstellungsdaten müssen manuell überprüft werden."
+    }
+  },
+  "voice": {
+    "start": "Diktat starten",
+    "cancel": "Einfügen abbrechen",
+    "validate": "Stoppen und transkribieren",
+    "activeElsewhere": "Diktat in anderem Tab aktiv · Öffnen",
+    "tabIndicator": "Diktat aktiv",
+    "firstUse": {
+      "title": "Sprachmodus",
+      "description": "Text direkt in den Entwurf diktieren.",
+      "local": "Audio wird lokal verarbeitet und nie automatisch gesendet.",
+      "later": "Später",
+      "continue": "Weiter"
+    },
+    "language": {
+      "automatic": "Automatisch erkennen"
+    },
+    "settings": {
+      "title": "Sprachmodus",
+      "description": "Beaver transkribiert lokal auf diesem Gerät.",
+      "enabled": "Sprachdiktat",
+      "enabledDescription": "Sprechen statt tippen.",
+      "model": "Transkriptionsmodell",
+      "installed": "installiert",
+      "notInstalled": "nicht installiert",
+      "advanced": "Erweiterte Einstellungen",
+      "advancedDescription": "Modelle, Mikrofon und Speicher.",
+      "open": "Erweitert",
+      "languageCount": "{{count}} Sprachen",
+      "lastSpeed": "≈ {{speed}}× Echtzeit · letzte Messung, ohne Laden",
+      "installing": "Installation…",
+      "cancelling": "Abbruch…",
+      "remove": "Entfernen",
+      "install": "Installieren",
+      "languages": "Sprachen",
+      "device": "Eingabegerät",
+      "systemDevice": "Systemmikrofon",
+      "refreshDevice": "Aktualisieren",
+      "gain": "Mikrofonverstärkung",
+      "gainDescription": "Verstärkt leise Stimmen vor der Transkription.",
+      "gainValues": { "zero-db": "0 dB", "three-db": "+3 dB", "six-db": "+6 dB", "nine-db": "+9 dB" },
+      "silence": "Stille vor Stopp",
+      "seconds": "{{count}} Sekunden",
+      "never": "Nie",
+      "duration": "Maximale Dauer",
+      "minutes": "{{count}} Minuten",
+      "language": "Diktatsprache",
+      "followInterface": "Oberfläche folgen",
+      "unload": "Modell entladen",
+      "try": "Testen",
+      "startTrial": "Test starten",
+      "unloadValues": {
+        "immediately": "Sofort",
+        "one-minute": "Nach 1 Minute",
+        "two-minutes": "Nach 2 Minuten",
+        "five-minutes": "Nach 5 Minuten",
+        "fifteen-minutes": "Nach 15 Minuten",
+        "on-exit": "Beim Beenden von Beaver"
+      },
+      "shortcut": "Tastenkürzel",
+      "noShortcut": "Keines",
+      "createShortcut": "Erstellen",
+      "modifyShortcut": "Ändern",
+      "cancelShortcut": "Abbrechen",
+      "pressShortcut": "Gewünschtes Kürzel drücken…",
+      "shortcutConflict": "Dieses Kürzel wird bereits verwendet.",
+      "trialTiming": "Berechnung: {{compute}} s · Text nach Stopp: {{delay}} s"
+    },
+    "status": {
+      "preparing": "Mikrofon wird vorbereitet…",
+      "listening": "Aufnahme läuft",
+      "transcribing": "Transkription läuft…",
+      "recovering": "Wiederherstellung wird vorbereitet…",
+      "stopping": "Berechnung wird beendet…",
+      "delivering": "Text wird eingefügt…",
+      "idle": "Bereit"
+    },
+    "recovery": {
+      "preparing": "Wiederherstellung wird vorbereitet…",
+      "ready": "Ein Diktat kann wiederhergestellt werden.",
+      "failed": "Wiederherstellung fehlgeschlagen.",
+      "restore": "Diktat wiederherstellen ({{duration}})",
+      "delete": "Wiederherstellung löschen",
+      "duration": "{{minutes}} Min. {{seconds}} Sek."
+    },
+    "notice": { "microphoneDisconnected": "Das Mikrofon wurde getrennt. Die erfasste Sprache wurde transkribiert." },
+    "error": {
+      "busy": "Ein anderer Sprachvorgang läuft bereits.",
+      "shutting-down": "Beaver wird beendet.",
+      "invalid-settings": "Prüfe die Einstellungen des Sprachmodus.",
+      "configuration-unavailable": "Das benötigte Sprachmodell ist nicht verfügbar.",
+      "invalid-transition": "Diese Sprachaktion ist nicht mehr verfügbar."
     }
   },
   "installer": {

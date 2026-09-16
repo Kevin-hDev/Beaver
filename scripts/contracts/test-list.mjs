@@ -7,6 +7,8 @@ export const CONTRACT_TESTS = Object.freeze([
   "services::update_progress::tests::checked_in_typescript_matches_the_rust_update_progress_contract",
   "models::agent_session_contract_tests::checked_in_agent_session_types_match_rust",
   "models::compression_profile_contract_tests::checked_in_compression_profile_types_match_rust",
+  "models::voice_contract_tests::checked_in_voice_types_match_rust",
+  "services::model_downloads_contract_tests::checked_in_model_download_types_match_rust",
   "services::extensions::contract_artifact_tests::checked_in_typescript_matches_the_extension_contract",
   "services::extensions::contract_artifact_tests::checked_in_sdk_contract_matches_the_extension_contract",
   "services::extensions::contract_artifact_tests::checked_in_sdk_readme_tables_match_the_contract",

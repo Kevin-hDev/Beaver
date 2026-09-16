@@ -65,7 +65,7 @@ describe("contrat des listeners d'interface des surfaces", () => {
     expect(failures).toEqual([]);
   });
 
-  it("limite l'exception useDialogKeyboard aux réglages et extensions", () => {
+  it("limite useDialogKeyboard aux dialogues dédiés", () => {
     const importers = Object.entries(SOURCES)
       .filter(([, source]) => source.includes("useDialogKeyboard"))
       .map(([path]) => path)
@@ -75,6 +75,7 @@ describe("contrat des listeners d'interface des surfaces", () => {
     expect(importers.every((path) => (
       path.startsWith("/src/components/settings/")
       || path.startsWith("/src/components/extensions/")
+      || path === "/src/components/ui/settings-dialog.tsx"
     ))).toBe(true);
   });
 });

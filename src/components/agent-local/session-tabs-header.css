@@ -67,6 +67,8 @@
   background: var(--edge);
 }
 
+.sth-voice { color: var(--pulse); padding-right: var(--space-xs); font-size: var(--text-xs); }
+
 /* Renommage en place dans la barre d'onglets : plus court et plus bas que le
    champ standard, qui déborderait d'onglets hauts de 24 px. */
 .sth-input {

@@ -26,6 +26,7 @@ pub(super) fn running_operation(
         can_retry: false,
         is_update: None,
         error_key: None,
+        missing_bytes: None,
     }
 }
 

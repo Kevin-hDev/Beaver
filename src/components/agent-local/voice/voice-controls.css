@@ -1,0 +1,34 @@
+.vc-active { display: inline-flex; align-items: center; gap: var(--space-xs); }
+.vc-mic { position: relative; top: 4px; color: var(--ink-muted); }
+.vc-mic > span { width: var(--voice-mic-icon-size); height: var(--voice-mic-icon-size); background: currentColor; mask: url("../../../assets/bi--mic.svg") center / contain no-repeat; }
+/* Relevé en barres de la maquette (docs/mokup/vocal/voc-signal.css) : largeur
+   de barre fixe — c'est elle qui donne l'échelle de lecture —, plancher de
+   2px pour qu'un silence reste une ligne et non un trou. Les barres neuves
+   arrivent à droite ; les anciennes débordent à gauche, coupées. */
+.vc-signal { display: flex; justify-content: flex-end; align-items: center; gap: 2px; flex: 1; min-width: 80px; height: var(--btn-height); overflow: hidden; }
+.vc-signal span { flex: none; width: 3px; height: max(2px, calc(var(--vc-h, 0) * var(--vc-bar-scale, 18px))); border-radius: 1px; background: var(--pulse); }
+.vc-status-text { color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; }
+.vc-cancel, .vc-validate { color: var(--ink-muted); }
+.vc-validate { top: 0; }
+/* Pendant l'écoute, la zone de texte garde sa place (visibility, pas
+   display) : le champ ne change pas de hauteur en entrant ni en sortant du
+   mode vocal. La rangée d'écoute [signal ✕ ■] se superpose au champ entier
+   et se centre verticalement — l'onde occupe la hauteur au lieu de laisser
+   du vide au-dessus, et gagne une échelle double de celle du bloc Essayer. */
+.chat-input-bubble-voice-listening { position: relative; }
+.chat-input-bubble-voice-listening > .chat-textarea-shell,
+.chat-input-bubble-voice-listening > .chat-file-list { visibility: hidden; }
+.chat-input-bubble-voice-listening > .vc-notes,
+.chat-input-bubble-voice-listening > .chat-input-row3 > :not(.vc-active) { display: none; }
+/* La rangée vidée garde sa hauteur habituelle (bouton + marge basse) pour que
+   le champ ne bouge pas d'un pixel à l'entrée et à la sortie de l'écoute. */
+.chat-input-bubble-voice-listening > .chat-input-row3 { min-height: calc(var(--btn-height) + var(--space-sm)); }
+.chat-input-bubble-voice-listening .vc-active { position: absolute; inset: 0; padding: 0 var(--space-sm); --vc-bar-scale: 36px; }
+.chat-input-bubble-voice-listening .vc-signal { height: 100%; }
+.vc-elsewhere { border: 0; padding: var(--space-xs); background: none; color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; cursor: pointer; }
+.vc-elsewhere:hover { color: var(--ink); }
+.vc-notes { display: grid; gap: var(--space-xs); padding: 0 var(--space-sm) var(--space-xs); }
+.vc-note { color: var(--ink-muted); font-size: var(--text-xs); }
+.vc-note-error { color: var(--danger); }
+.vc-recovery-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.vc-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); padding-top: var(--space-md); }

@@ -24,6 +24,8 @@
   <true/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Beaver utilise le microphone pour transcrire votre dictée sur cet appareil.</string>
   <key>NSSupportsAutomaticGraphicsSwitching</key>
   <true/>
 </dict>

@@ -159,11 +159,32 @@ macro_rules! generate {
     };
 }
 
+macro_rules! generate_with_voice {
+    ($($extra:path),* $(,)?) => {{
+        #[cfg(any(target_os = "macos", windows))]
+        {
+            crate::invoke_handler::generate![
+                crate::commands::voice_get_snapshot,
+                crate::commands::voice_get_settings,
+                crate::commands::voice_get_catalog,
+                crate::commands::voice_dispatch,
+                crate::commands::voice_update_settings,
+                crate::commands::voice_list_devices,
+                $($extra,)*
+            ]
+        }
+        #[cfg(not(any(target_os = "macos", windows)))]
+        {
+            crate::invoke_handler::generate![$($extra,)*]
+        }
+    }};
+}
+
 macro_rules! for_build {
     () => {{
         #[cfg(all(feature = "e2e", debug_assertions))]
         {
-            crate::invoke_handler::generate![
+            crate::invoke_handler::generate_with_voice![
                 crate::commands::e2e_initialize_extension_host,
                 crate::commands::e2e_extension_install_fixture,
                 crate::commands::e2e_browser_session_key_fixture,
@@ -178,7 +199,7 @@ macro_rules! for_build {
         }
         #[cfg(all(feature = "e2e", not(debug_assertions)))]
         {
-            crate::invoke_handler::generate![
+            crate::invoke_handler::generate_with_voice![
                 crate::commands::e2e_initialize_extension_host,
                 crate::commands::e2e_extension_install_fixture,
                 crate::commands::e2e_browser_session_key_fixture,
@@ -190,7 +211,7 @@ macro_rules! for_build {
         }
         #[cfg(all(not(feature = "e2e"), debug_assertions))]
         {
-            crate::invoke_handler::generate![
+            crate::invoke_handler::generate_with_voice![
                 crate::commands::export_reasoning_fixture_report,
                 crate::commands::run_reasoning_fixture_tools,
                 crate::commands::run_reasoning_fixture_agent_local
@@ -198,10 +219,11 @@ macro_rules! for_build {
         }
         #[cfg(all(not(feature = "e2e"), not(debug_assertions)))]
         {
-            crate::invoke_handler::generate![]
+            crate::invoke_handler::generate_with_voice![]
         }
     }};
 }
 
 pub(crate) use for_build;
 pub(crate) use generate;
+pub(crate) use generate_with_voice;

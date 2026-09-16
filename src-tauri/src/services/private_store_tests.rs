@@ -205,6 +205,15 @@ fn windows_acl_implementation_uses_no_external_commands() {
 }
 
 #[test]
+fn windows_metadata_durability_uses_write_through_rename() {
+    let source = include_str!("private_store/private_store_windows.rs");
+
+    assert!(source.contains("MOVEFILE_WRITE_THROUGH"));
+    assert!(!source.contains("FlushFileBuffers"));
+    assert!(!source.contains("FILE_FLAG_BACKUP_SEMANTICS"));
+}
+
+#[test]
 fn frontend_contract_covers_every_local_store_error_code() {
     let contract: std::collections::BTreeMap<String, String> = serde_json::from_str(include_str!(
         "../../../src/lib/local-store-error-contract.json"

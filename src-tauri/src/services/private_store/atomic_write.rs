@@ -2,6 +2,12 @@ use std::io::Write;
 use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PublicationDurability {
+    Durable,
+    PublishedDurabilityUnconfirmed,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum AtomicWriteStage {
     TempOpened,
     ContentWritten,
@@ -13,10 +19,18 @@ pub(super) enum AtomicWriteStage {
 
 /// Publishes one complete generation at `path`.
 ///
-/// `Ok(())` means readers can observe the new complete generation. If the
-/// directory synchronization fails after publication, the failure is traced
-/// but is not returned: retrying a read-modify-write could apply it twice.
+/// Existing callers only need publication. A failure to confirm directory
+/// durability is logged because retrying a read-modify-write could apply it twice.
 pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let durability = write_with_hook(path, bytes, None, |_| {})?;
+    report_unconfirmed(durability);
+    Ok(())
+}
+
+pub(crate) fn atomic_write_with_durability(
+    path: &Path,
+    bytes: &[u8],
+) -> Result<PublicationDurability, String> {
     write_with_hook(path, bytes, None, |_| {})
 }
 
@@ -26,49 +40,75 @@ pub(super) fn atomic_write_with_hook(
     bytes: &[u8],
     hook: impl FnMut(AtomicWriteStage),
 ) -> Result<(), String> {
-    write_with_hook(path, bytes, None, hook)
+    let durability = write_with_hook(path, bytes, None, hook)?;
+    report_unconfirmed(durability);
+    Ok(())
 }
 
 #[cfg(test)]
 pub(crate) fn atomic_write_fail_before_replace(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    write_with_hook(path, bytes, Some(AtomicWriteStage::FileSynced), |_| {})
+    write_with_hook(path, bytes, Some(AtomicWriteStage::FileSynced), |_| {}).map(|_| ())
 }
 
 fn write_with_hook(
     path: &Path,
     bytes: &[u8],
     failure: Option<AtomicWriteStage>,
+    hook: impl FnMut(AtomicWriteStage),
+) -> Result<PublicationDurability, String> {
+    write_inner(
+        path,
+        bytes,
+        failure,
+        hook,
+        super::durable_sync::confirm_atomic_publication,
+    )
+}
+
+#[cfg(test)]
+fn write_with_sync(
+    path: &Path,
+    bytes: &[u8],
+    sync_parent: impl FnOnce(&Path) -> Result<(), String>,
+) -> Result<PublicationDurability, String> {
+    write_inner(path, bytes, None, |_| {}, sync_parent)
+}
+
+fn write_inner(
+    path: &Path,
+    bytes: &[u8],
+    failure: Option<AtomicWriteStage>,
     mut hook: impl FnMut(AtomicWriteStage),
-) -> Result<(), String> {
+    sync_parent: impl FnOnce(&Path) -> Result<(), String>,
+) -> Result<PublicationDurability, String> {
     let parent = path.parent().ok_or_else(super::private_store_error)?;
     super::create_private_dirs(parent)?;
     let temp = super::temp_path(path)?;
     let _temp_cleanup = TempCleanup(&temp);
-    (|| {
-        let mut file = super::open_private_file(&temp)?;
-        hook(AtomicWriteStage::TempOpened);
-        file.write_all(bytes)
-            .map_err(|_| super::private_store_error())?;
-        hook(AtomicWriteStage::ContentWritten);
-        file.sync_all().map_err(|_| super::private_store_error())?;
-        hook(AtomicWriteStage::FileSynced);
-        if failure == Some(AtomicWriteStage::FileSynced) {
-            return Err(super::private_store_error());
-        }
-        super::repair_path(&temp)?;
-        hook(AtomicWriteStage::PermissionsRepaired);
-        super::replace_file(&temp, path)?;
-        hook(AtomicWriteStage::Replaced);
-        report_parent_sync(super::sync_parent(parent));
-        hook(AtomicWriteStage::ParentSynced);
-        Ok(())
-    })()
+    let mut file = super::open_private_file(&temp)?;
+    hook(AtomicWriteStage::TempOpened);
+    file.write_all(bytes)
+        .map_err(|_| super::private_store_error())?;
+    hook(AtomicWriteStage::ContentWritten);
+    file.sync_all().map_err(|_| super::private_store_error())?;
+    hook(AtomicWriteStage::FileSynced);
+    if failure == Some(AtomicWriteStage::FileSynced) {
+        return Err(super::private_store_error());
+    }
+    super::repair_path(&temp)?;
+    hook(AtomicWriteStage::PermissionsRepaired);
+    super::replace_file(&temp, path)?;
+    hook(AtomicWriteStage::Replaced);
+    let durability = match sync_parent(parent) {
+        Ok(()) => PublicationDurability::Durable,
+        Err(_) => PublicationDurability::PublishedDurabilityUnconfirmed,
+    };
+    hook(AtomicWriteStage::ParentSynced);
+    Ok(durability)
 }
 
-fn report_parent_sync(result: Result<(), String>) {
-    if result.is_err() {
-        // The destination is already authoritative. Returning a retryable error could
-        // repeat a read-modify-write operation against a value that was committed.
+fn report_unconfirmed(durability: PublicationDurability) {
+    if durability == PublicationDurability::PublishedDurabilityUnconfirmed {
         ::log::error!(
             "[private-store] operation=parent-sync result=failed publication=complete durability=unconfirmed"
         );
@@ -85,8 +125,19 @@ impl Drop for TempCleanup<'_> {
 
 #[cfg(test)]
 mod tests {
+    use super::PublicationDurability;
+
     #[test]
-    fn post_publication_sync_failure_is_not_reported_as_a_retryable_write_failure() {
-        super::report_parent_sync(Err("sync failed".to_string()));
+    fn durability_api_distinguishes_a_parent_sync_failure_after_publication() {
+        let directory = tempfile::tempdir().expect("directory");
+        let path = directory.path().join("state.json");
+        let result = super::write_with_sync(&path, b"new", |_| Err("sync failed".into()))
+            .expect("published value");
+
+        assert_eq!(
+            result,
+            PublicationDurability::PublishedDurabilityUnconfirmed
+        );
+        assert_eq!(std::fs::read(path).unwrap(), b"new");
     }
 }

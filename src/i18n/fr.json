@@ -1487,7 +1487,11 @@
     "cancelled": "Téléchargement annulé et fichiers temporaires supprimés.",
     "window": {
       "title": "Mise à jour",
-      "count": "{{count}} mises à jour",
+      "downloadTitle": "Téléchargement",
+      "count": "{{count}} opérations en cours",
+      "downloadCompleted": "Installation terminée",
+      "downloadFailed": "Le téléchargement a échoué. Vérifie ta connexion, puis réessaie.",
+      "insufficientSpace": "Il manque {{size}} d’espace disque pour poursuivre.",
       "close": "Fermer la fenêtre",
       "open": "Afficher la progression",
       "openFailed": "La fenêtre de progression ne peut pas être affichée.",
@@ -2826,6 +2830,99 @@
       "failed": "L’installation a échoué. Vous pouvez réessayer.",
       "insufficientSpace": "Espace disque insuffisant pour poursuivre.",
       "recoveryUnavailable": "Le suivi enregistré ne peut pas être récupéré. Les nouvelles installations sont bloquées. Une intervention sur les données de récupération est nécessaire."
+    }
+  },
+  "voice": {
+    "start": "Démarrer la dictée",
+    "cancel": "Annuler l’insertion",
+    "validate": "Arrêter et transcrire",
+    "activeElsewhere": "Dictée active dans un autre onglet · Aller",
+    "tabIndicator": "Dictée active",
+    "firstUse": {
+      "title": "Mode vocal",
+      "description": "Dictez du texte directement dans le brouillon.",
+      "local": "Le son est traité localement sur cet appareil et n’est jamais envoyé automatiquement.",
+      "later": "Plus tard",
+      "continue": "Continuer"
+    },
+    "language": {
+      "automatic": "Détection automatique"
+    },
+    "settings": {
+      "title": "Mode vocal",
+      "description": "Beaver transcrit votre voix sur votre machine. Aucun son ne quitte l’ordinateur.",
+      "enabled": "Dictée vocale",
+      "enabledDescription": "Parler dans la zone de saisie plutôt que taper.",
+      "model": "Modèle de transcription",
+      "installed": "installé",
+      "notInstalled": "non installé",
+      "advanced": "Configuration avancée",
+      "advancedDescription": "Modèles installés, micro et mémoire.",
+      "open": "Avancé",
+      "languageCount": "{{count}} langues",
+      "lastSpeed": "≈ {{speed}}× le temps réel · dernière mesure, chargement exclu",
+      "installing": "Installation…",
+      "cancelling": "Annulation…",
+      "remove": "Supprimer",
+      "install": "Installer",
+      "languages": "Langues",
+      "device": "Périphérique d’entrée",
+      "systemDevice": "Micro du système",
+      "refreshDevice": "Actualiser",
+      "gain": "Gain du microphone",
+      "gainDescription": "Augmente les voix faibles avant la transcription.",
+      "gainValues": { "zero-db": "0 dB", "three-db": "+3 dB", "six-db": "+6 dB", "nine-db": "+9 dB" },
+      "silence": "Silence avant arrêt",
+      "seconds": "{{count}} secondes",
+      "never": "Jamais",
+      "duration": "Durée maximale",
+      "minutes": "{{count}} minutes",
+      "language": "Langue de dictée",
+      "followInterface": "Suivre l’interface",
+      "unload": "Décharger le modèle",
+      "try": "Essayer",
+      "startTrial": "Démarrer l’essai",
+      "unloadValues": {
+        "immediately": "Immédiatement",
+        "one-minute": "Après 1 minute",
+        "two-minutes": "Après 2 minutes",
+        "five-minutes": "Après 5 minutes",
+        "fifteen-minutes": "Après 15 minutes",
+        "on-exit": "À la fermeture de Beaver"
+      },
+      "shortcut": "Raccourci clavier",
+      "noShortcut": "Aucun",
+      "createShortcut": "Créer",
+      "modifyShortcut": "Modifier",
+      "cancelShortcut": "Annuler",
+      "pressShortcut": "Appuyez sur le raccourci souhaité…",
+      "shortcutConflict": "Ce raccourci est déjà utilisé.",
+      "trialTiming": "Calcul : {{compute}} s · Texte affiché après arrêt : {{delay}} s"
+    },
+    "status": {
+      "preparing": "Préparation du microphone…",
+      "listening": "Écoute en cours",
+      "transcribing": "Transcription…",
+      "recovering": "Préparation de la récupération…",
+      "stopping": "Arrêt du calcul…",
+      "delivering": "Insertion du texte…",
+      "idle": "Prêt"
+    },
+    "recovery": {
+      "preparing": "Préparation de la récupération…",
+      "ready": "Une dictée peut être restaurée.",
+      "failed": "La récupération a échoué.",
+      "restore": "Restaurer la dictée ({{duration}})",
+      "delete": "Supprimer la récupération",
+      "duration": "{{minutes}} min {{seconds}} s"
+    },
+    "notice": { "microphoneDisconnected": "Le microphone s’est déconnecté, le texte capté a été transcrit." },
+    "error": {
+      "busy": "Une autre opération vocale est en cours.",
+      "shutting-down": "Beaver est en cours de fermeture.",
+      "invalid-settings": "Vérifiez les réglages du mode vocal.",
+      "configuration-unavailable": "Le modèle vocal requis est indisponible.",
+      "invalid-transition": "Cette action vocale n’est plus disponible."
     }
   },
   "installer": {

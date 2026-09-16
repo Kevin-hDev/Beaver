@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { CaretDown, MagnifyingGlass } from "@/components/ui/icons";
+import { MagnifyingGlass } from "@/components/ui/icons";
+import { SelectChevron } from "@/components/ui/select-chevron";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import {
   floatingMenuPortalRoot,
@@ -214,7 +215,7 @@ export function SettingsSelect({
             </span>
           )}
         </span>
-        <CaretDown size="var(--icon-sm)" weight="bold" className="ss-trigger-icon" />
+        <SelectChevron className="ss-trigger-icon" />
       </div>
 
       {panel ? createPortal(panel, floatingMenuPortalRoot()) : null}

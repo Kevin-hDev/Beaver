@@ -2,8 +2,8 @@
 
 use super::super::path_identity::CanonicalDirectory;
 use super::{
-    retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
-    OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
+    retry_windows_sharing, validate_wide_units, windows_file_flush_access, OllamaDurableFs,
+    OllamaFsError, OllamaFsErrorKind,
 };
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -21,9 +21,8 @@ use windows_sys::Win32::Foundation::{
     ERROR_SHARING_VIOLATION, GENERIC_WRITE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileW, FlushFileBuffers, MoveFileExW, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_DELETE,
-    FILE_SHARE_READ, FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
-    OPEN_EXISTING,
+    CreateFileW, FlushFileBuffers, MoveFileExW, FILE_SHARE_DELETE, FILE_SHARE_READ,
+    FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH, OPEN_EXISTING,
 };
 
 #[path = "durable_fs_windows_verified.rs"]
@@ -60,9 +59,7 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn create_directory_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        fs::create_dir_all(path).map_err(|error| OllamaFsError::from_io(&error))?;
-        sync_directory(path)?;
-        sync_parent_path(path)
+        fs::create_dir_all(path).map_err(|error| OllamaFsError::from_io(&error))
     }
 
     fn write_new_atomic(
@@ -84,18 +81,15 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn rename_durable(&self, source: &Path, destination: &Path) -> Result<(), OllamaFsError> {
-        move_file(source, destination, true, &self.cancelled)?;
-        sync_parent_pair(source, destination, sync_directory)
+        move_file(source, destination, true, &self.cancelled)
     }
 
     fn remove_file_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        fs::remove_file(path).map_err(|error| OllamaFsError::from_io(&error))?;
-        sync_parent_path(path)
+        fs::remove_file(path).map_err(|error| OllamaFsError::from_io(&error))
     }
 
     fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError> {
-        fs::remove_dir_all(root).map_err(|error| OllamaFsError::from_io(&error))?;
-        sync_parent_path(root)
+        fs::remove_dir_all(root).map_err(|error| OllamaFsError::from_io(&error))
     }
 
     fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
@@ -107,7 +101,9 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError> {
-        sync_parent_path(path)
+        let _ = path;
+        // Windows confirms published metadata in move_file with MOVEFILE_WRITE_THROUGH.
+        Ok(())
     }
 }
 
@@ -128,8 +124,7 @@ fn write_atomic(
             .map_err(|error| OllamaFsError::from_io(&error))?;
         file.sync_all()
             .map_err(|error| OllamaFsError::from_io(&error))?;
-        move_file(tmp, final_path, replace, cancelled)?;
-        sync_parent_pair(tmp, final_path, sync_directory)
+        move_file(tmp, final_path, replace, cancelled)
     })()
 }
 
@@ -160,10 +155,6 @@ fn move_file(
     )
 }
 
-fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
-    flush_path(path, FILE_FLAG_BACKUP_SEMANTICS)
-}
-
 fn flush_path(path: &Path, flags: u32) -> Result<(), OllamaFsError> {
     let wide_path = wide(path)?;
     debug_assert_eq!(windows_file_flush_access(), GENERIC_WRITE);
@@ -188,13 +179,6 @@ fn flush_path(path: &Path, flags: u32) -> Result<(), OllamaFsError> {
     };
     unsafe { CloseHandle(handle) };
     result
-}
-
-fn sync_parent_path(path: &Path) -> Result<(), OllamaFsError> {
-    let parent = path
-        .parent()
-        .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
-    sync_directory(parent)
 }
 
 fn win_error(code: u32) -> OllamaFsError {

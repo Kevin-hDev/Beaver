@@ -76,14 +76,14 @@ impl ModelDownloadManager {
         if store.entries.values().any(|entry| {
             entry.state.kind == kind
                 && entry.state.model_id == model_id
-                && is_pending(entry.state.status)
+                && is_retained(entry.state.status)
         }) {
             return Err("model-download-already-queued".into());
         }
         if store
             .entries
             .values()
-            .filter(|entry| is_pending(entry.state.status))
+            .filter(|entry| is_retained(entry.state.status))
             .count()
             >= MAX_PENDING_DOWNLOADS
         {
@@ -117,6 +117,11 @@ impl ModelDownloadManager {
         list_locked(&store)
     }
 
+    pub async fn state(&self, id: &str) -> Option<ModelDownloadState> {
+        let store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
+        store.entries.get(id).map(|entry| entry.state.clone())
+    }
+
     #[cfg(test)]
     pub async fn progress(&self, id: &str, update: ProgressUpdate) -> Vec<ModelDownloadState> {
         let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
@@ -140,11 +145,13 @@ impl ModelDownloadManager {
         id: &str,
         status: ModelDownloadStatus,
         error_key: Option<&str>,
+        missing_bytes: Option<u64>,
     ) -> Vec<ModelDownloadState> {
         let mut store = self.inner.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(entry) = store.entries.get_mut(id) {
             entry.state.status = status;
             entry.state.error_key = error_key.map(str::to_string);
+            entry.state.missing_bytes = missing_bytes;
             if status == ModelDownloadStatus::Completed {
                 entry.state.phase = ModelDownloadPhase::Completed;
                 entry.state.percent = 100;
@@ -178,10 +185,14 @@ fn is_pending(status: ModelDownloadStatus) -> bool {
     )
 }
 
+fn is_retained(status: ModelDownloadStatus) -> bool {
+    is_pending(status) || status == ModelDownloadStatus::Suspended
+}
+
 fn remove_finished(store: &mut DownloadStore) {
     store
         .entries
-        .retain(|_, entry| is_pending(entry.state.status));
+        .retain(|_, entry| is_retained(entry.state.status));
     store.order.retain(|id| store.entries.contains_key(id));
 }
 

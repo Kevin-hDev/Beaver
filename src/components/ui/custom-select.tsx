@@ -7,6 +7,7 @@ import {
 } from "@/hooks/use-floating-menu-position";
 import { useLocalListNavigation } from "@/hooks/use-local-list-navigation";
 import "./custom-select.css";
+import { SelectChevron } from "./select-chevron";
 
 interface SelectOption {
   value: string;
@@ -116,7 +117,7 @@ export function CustomSelect({
         <span className={selected ? undefined : "cs-placeholder"}>
           {selected?.label ?? placeholder ?? "—"}
         </span>
-        <span className="cs-trigger-caret">▾</span>
+        <SelectChevron className="cs-trigger-caret" />
       </button>
       {dropdown ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{dropdown}</AppSurfacePortal> : null}
     </div>

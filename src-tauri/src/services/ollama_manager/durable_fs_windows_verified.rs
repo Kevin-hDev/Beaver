@@ -2,7 +2,7 @@ use super::super::super::path_identity::{
     CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver,
 };
 use super::super::OllamaFsOperation;
-use super::{sync_parent_path, OllamaFsError, OllamaFsErrorKind};
+use super::{OllamaFsError, OllamaFsErrorKind};
 use std::os::windows::io::AsRawHandle;
 
 #[path = "durable_fs_windows_verified/entries.rs"]
@@ -44,7 +44,8 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
     revalidate_root(root, expected, &stable_info)?;
     handles::mark_deleted(deletion.raw())
         .map_err(|error| error.at(OllamaFsOperation::MarkRootDeleted))?;
-    sync_parent_path(root.path()).map_err(|error| error.at(OllamaFsOperation::SyncParent))
+    // Windows has no supported directory flush equivalent; the verified handle owns deletion.
+    Ok(())
 }
 
 fn revalidate_root(
