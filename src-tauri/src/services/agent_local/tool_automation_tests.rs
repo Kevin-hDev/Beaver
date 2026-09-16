@@ -315,6 +315,7 @@ async fn external_instruction_cannot_mutate_another_sessions_automation_without_
             cancel,
             false,
             None,
+            None,
         )
         .await;
         assert!(result.is_error);

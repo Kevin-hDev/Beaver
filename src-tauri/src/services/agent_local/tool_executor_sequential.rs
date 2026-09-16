@@ -150,6 +150,7 @@ pub async fn run_sequential(
                     super::tool_dispatch_trace::DispatchTrace {
                         session_id,
                         request_id: Some(request_id),
+                        tool_call_id: tool_call_ids.get(idx).map(String::as_str),
                     },
                     cancel.clone(),
                     "manual",

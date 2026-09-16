@@ -1,5 +1,6 @@
 import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
+import { activeEventHandlerCount } from "./event-handlers.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
 import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
@@ -8,8 +9,13 @@ import { snapshotContribution } from "./contribution-snapshot.mjs";
 import { assertProtocolResultFits } from "./protocol-output.mjs";
 import { importExtensionModule } from "./module-loader.mjs";
 import { runWithCoreContext } from "./core-context.mjs";
+import { createEventDelivery } from "./event-delivery.mjs";
 const extensions = new Map();
 const tools = new Map();
+const eventDelivery = createEventDelivery(
+  () => extensions.values(),
+  activeEventHandlerCount,
+);
 
 export async function resetExtensions() {
   await deactivateAll();
@@ -89,15 +95,10 @@ function isLowSurrogate(value) {
 
 export async function emitExtensionEvent(event, payload) {
   if (!supportsEvent(event)) throw new Error("invalid_event_name");
-  for (const extension of extensions.values()) {
-    try {
-      await extension.context.emit(event, payload);
-    } catch {
-      // One extension cannot prevent delivery to the others.
-    }
-  }
-  return { delivered: extensions.size };
+  return eventDelivery.enqueue(event, payload);
 }
+
+export const extensionEventActivity = eventDelivery.activity;
 
 export async function callExtensionUiAction(params) {
   return invokeUiAction(extensions.get(params?.extensionId), params);

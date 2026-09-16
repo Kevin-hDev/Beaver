@@ -16,6 +16,7 @@ pub async fn dispatch_read(
     working_dir: &Path,
     session_id: &str,
     request_id: &str,
+    tool_call_id: Option<&str>,
     cancel: tokio_util::sync::CancellationToken,
     permission_mode: &str,
     plan_active: bool,
@@ -28,6 +29,7 @@ pub async fn dispatch_read(
         super::tool_dispatch_trace::DispatchTrace {
             session_id,
             request_id: Some(request_id),
+            tool_call_id,
         },
         cancel,
         permission_mode == "chat",

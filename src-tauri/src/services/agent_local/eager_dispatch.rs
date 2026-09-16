@@ -83,6 +83,7 @@ pub async fn collect_eager_results(
                     super::tool_dispatch_trace::DispatchTrace {
                         session_id: &session_id,
                         request_id: Some(&request_id),
+                        tool_call_id: None,
                     },
                     cancel,
                     permission_mode == "chat",

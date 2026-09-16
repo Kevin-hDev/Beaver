@@ -21,6 +21,7 @@ mod discovery_preferences;
 mod discovery_result_serialization;
 mod discovery_usage;
 pub(crate) mod error_codes;
+include!("extensions_modules_events.rs");
 mod extension_internal_exports;
 pub(crate) mod extension_recovery;
 mod fingerprint;
@@ -101,6 +102,7 @@ mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
 mod runtime_dispatch_result;
+include!("extensions_modules_runtime.rs");
 mod runtime_exit_monitor;
 mod runtime_failed_spawn;
 mod runtime_host_generation;
@@ -154,7 +156,7 @@ mod ui_view_validation;
 mod validation;
 mod verified_file_read;
 mod view;
-mod work_supervision;
+include!("extensions_modules_work.rs");
 #[allow(dead_code)]
 mod ui_contract {
     include!(concat!(env!("OUT_DIR"), "/extension_ui_contract.rs"));
@@ -169,8 +171,6 @@ mod discovery_contract {
 }
 #[cfg(test)]
 mod ui_startup_tests;
-#[cfg(test)]
-mod work_supervision_tests;
 
 #[cfg(test)]
 include!("test_modules.inc.rs");
@@ -198,7 +198,7 @@ pub use public_api::{
 };
 include!("registry_exports.inc.rs");
 pub use runtime::status;
-pub use runtime_dispatch::{dispatch_tool, emit_event};
+pub use runtime_dispatch::dispatch_tool;
 pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};
 pub use runtime_lifecycle::{restart, stop_and_wait};
 #[cfg(feature = "e2e")]

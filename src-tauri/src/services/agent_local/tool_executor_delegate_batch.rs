@@ -67,7 +67,7 @@ pub async fn run_delegate_batch(
                 pending: delegate,
             }),
             Err(result) => {
-                let result = super::tool_dispatcher_entry::finalize_result(
+                let result = super::tool_dispatcher_finalize::finalize(
                     result,
                     DELEGATE_TOOL,
                     session_id,
@@ -95,7 +95,7 @@ pub async fn run_delegate_batch(
     drop(tx);
 
     while let Some((index, summary, result)) = rx.recv().await {
-        let result = super::tool_dispatcher_entry::finalize_result(
+        let result = super::tool_dispatcher_finalize::finalize(
             result,
             DELEGATE_TOOL,
             session_id,
@@ -120,7 +120,7 @@ pub async fn run_delegate_batch(
         .with_error_hint(
             "Vérifier la liste des sous-agents avant de relancer : le lancement a pu réussir.",
         );
-        let result = super::tool_dispatcher_entry::finalize_result(
+        let result = super::tool_dispatcher_finalize::finalize(
             result,
             DELEGATE_TOOL,
             session_id,

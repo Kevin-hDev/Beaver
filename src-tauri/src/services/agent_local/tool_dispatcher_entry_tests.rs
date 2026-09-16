@@ -31,6 +31,7 @@ fn common_dispatch_boundary_keeps_the_child_future_off_parent_state() {
         DispatchTrace {
             session_id: "test-session",
             request_id: Some("test-request"),
+            tool_call_id: None,
         },
         CancellationToken::new(),
         false,
@@ -121,6 +122,7 @@ async fn inspection_without_an_exact_request_correlation_fails_closed() {
         DispatchTrace {
             session_id: "test-session",
             request_id: None,
+            tool_call_id: None,
         },
         CancellationToken::new(),
         None,

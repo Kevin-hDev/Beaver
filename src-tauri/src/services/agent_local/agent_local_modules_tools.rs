@@ -43,6 +43,8 @@ mod tool_dispatch_trace;
 pub mod tool_dispatcher;
 pub mod tool_dispatcher_delegate;
 mod tool_dispatcher_entry;
+mod tool_dispatcher_events;
+mod tool_dispatcher_validation;
 mod tool_dispatcher_error;
 mod tool_dispatcher_execute;
 pub mod tool_dispatcher_fallback;

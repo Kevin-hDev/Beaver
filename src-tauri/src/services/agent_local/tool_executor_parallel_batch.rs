@@ -22,6 +22,7 @@ pub(super) struct BatchEntry<'a> {
     pub global_idx: usize,
     pub name: &'a str,
     pub effective_args: &'a Value,
+    pub tool_call_id: Option<&'a str>,
 }
 
 pub(super) async fn flush_read_batch<'a>(
@@ -164,6 +165,7 @@ async fn dispatch_pending(
         working_dir,
         session_id,
         request_id,
+        entry.tool_call_id,
         cancel,
         permission_mode,
         plan_active,

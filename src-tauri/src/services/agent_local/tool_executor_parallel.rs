@@ -134,6 +134,7 @@ pub async fn run_with_parallel_reads(
                     cancel: cancel.clone(),
                     plan_mode_active,
                     tool_call_index: i,
+                    tool_call_id: tool_call_ids.get(i).map(String::as_str),
                 },
             )
             .await;
@@ -173,6 +174,7 @@ pub async fn run_with_parallel_reads(
                         global_idx: i,
                         name: name.as_str(),
                         effective_args: args,
+                        tool_call_id: tool_call_ids.get(i).map(String::as_str),
                     });
                 }
             }

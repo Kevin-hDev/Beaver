@@ -35,8 +35,9 @@ pub(super) async fn finish(
     session_id: &str,
     request_id: &str,
     cancel: &CancellationToken,
+    extension_events_admitted: bool,
 ) -> Result<CompletedStreamTurn, String> {
-    match guarded {
+    let result = match guarded {
         Ok(Ok(completed)) => Ok(completed),
         Ok(Err(error)) => {
             let terminal = if error == "Annulé" {
@@ -76,7 +77,11 @@ pub(super) async fn finish(
             }
             Err("stream_error".to_string())
         }
+    };
+    if extension_events_admitted {
+        super::session_events::emit_terminal(session_id, request_id, &result);
     }
+    result
 }
 
 #[cfg(test)]

@@ -23,6 +23,7 @@ async fn flushes_two_read_chunks_before_one_shared_artifact_budget() {
             global_idx,
             name,
             effective_args,
+            tool_call_id: None,
         })
         .collect();
     let mut eager = std::collections::HashMap::new();

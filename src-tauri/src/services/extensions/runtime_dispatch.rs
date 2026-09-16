@@ -114,56 +114,6 @@ fn core_saturated() -> ToolResult {
     )
 }
 
-pub async fn emit_event(name: &str, payload: Value) {
-    if super::validation::identifier(name).is_err() || super::validation::message(&payload).is_err()
-    {
-        return;
-    }
-    let Ok(runtime) = super::runtime::global().map(Arc::clone) else {
-        return;
-    };
-    let name = name.to_string();
-    let work = runtime.work.clone();
-    let _ = work
-        .run_operation(move |cancel| async move {
-            tokio::select! {
-                _ = cancel.cancelled() => {},
-                _ = emit_tracked(runtime, name, payload) => {},
-            }
-        })
-        .await;
-}
-
-async fn emit_tracked(
-    runtime: Arc<super::runtime::ExtensionRuntime>,
-    name: String,
-    payload: Value,
-) {
-    let snapshots = runtime.hosts.lock().await.usable_snapshots();
-    let mut calls = tokio::task::JoinSet::new();
-    for (identity, _, process) in snapshots {
-        let event = name.clone();
-        let body = payload.clone();
-        calls.spawn(async move {
-            let result = process
-                .request("event.emit", json!({"event": event, "payload": body}))
-                .await;
-            (identity, process, result.is_ok())
-        });
-    }
-    while let Some(Ok((identity, process, succeeded))) = calls.join_next().await {
-        if !succeeded {
-            invalidate(
-                &runtime,
-                identity,
-                process,
-                super::runtime_lifecycle::new_stop_deadline(),
-            )
-            .await;
-        }
-    }
-}
-
 async fn invalidate(
     runtime: &super::runtime::ExtensionRuntime,
     identity: HostIdentity,

@@ -50,13 +50,16 @@ pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
     let recovery_session_id = params.session_id.clone();
     let recovery_request_id = params.request_id.clone();
     let recovery_cancel = params.cancel.clone();
-    let mascot_session = params.on_event.start_mascot_session();
-    #[cfg(debug_assertions)]
-    let fixture_limits = params.fixture_run.as_ref().map(|run| run.limits());
-    #[cfg(debug_assertions)]
-    let fixture_cancel = params.cancel.clone();
-    let inner = Box::pin(run_stream_task_inner(params));
     Box::pin(async move {
+        let mode = common::resolve_permission_mode(&params.permission_mode).await;
+        let extension_events_admitted =
+            session_events::emit_started(&recovery_session_id, &recovery_request_id, mode.is_chat);
+        let mascot_session = params.on_event.start_mascot_session();
+        #[cfg(debug_assertions)]
+        let fixture_limits = params.fixture_run.as_ref().map(|run| run.limits());
+        #[cfg(debug_assertions)]
+        let fixture_cancel = params.cancel.clone();
+        let inner = Box::pin(run_stream_task_inner(params, mode));
         let guarded = recovery::guard(async move {
             #[cfg(debug_assertions)]
             {
@@ -83,6 +86,7 @@ pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
             &recovery_session_id,
             &recovery_request_id,
             &recovery_cancel,
+            extension_events_admitted,
         )
         .await;
         if let Some(session) = mascot_session {
@@ -94,6 +98,7 @@ pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
 
 async fn run_stream_task_inner(
     mut params: StreamTaskParams,
+    mode: common::StreamMode,
 ) -> Result<CompletedStreamTurn, String> {
     crate::services::agent_local::tool_bash_security::initialize()
         .await
@@ -120,7 +125,7 @@ async fn run_stream_task_inner(
         current.attach_recovery(log, owner);
     }
     context_lifecycle::activate(journal.as_ref()).await?;
-    let outcome = context_lifecycle::run(params, messages, &mut journal).await;
+    let outcome = context_lifecycle::run(params, messages, &mut journal, mode).await;
     context_lifecycle::finish(journal.as_ref(), &outcome).await?;
     outcome
 }

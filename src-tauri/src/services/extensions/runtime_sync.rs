@@ -15,11 +15,15 @@ pub struct BuildSpecs {
     pub sensitive_access_reminder: bool,
 }
 
+pub(super) type EventSubscriptions =
+    BTreeMap<super::host_identity::HostIdentity, std::collections::BTreeSet<String>>;
+
 pub struct ApplyResult {
     pub active: usize,
     pub diagnostics: Vec<ExtensionDiagnostic>,
     pub completed_ids: HashSet<String>,
     pub ui_updates: Vec<super::ui_catalog::UiCatalogUpdate>,
+    pub event_subscriptions: EventSubscriptions,
 }
 
 pub(super) use super::runtime_recovery_preflight::{filter_for_recovery, RecoveryPreflight};

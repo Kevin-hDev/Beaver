@@ -1,5 +1,6 @@
 use super::tool_dispatch_trace::DispatchTrace;
 use super::tool_dispatcher_route::{dynamic_route, is_chat_tool};
+use super::tool_dispatcher_finalize::finalize as finalize_result;
 use super::tool_result_contract::ToolErrorCategory;
 use super::types_tools::ToolResult;
 use super::extension_tool_authority::ToolDispatchAuthority;
@@ -23,6 +24,7 @@ pub async fn dispatch_for_mode(
         DispatchTrace {
             session_id,
             request_id,
+            tool_call_id: None,
         },
         cancel,
         chat_mode,
@@ -176,7 +178,7 @@ async fn dispatch_inner_entry(
             .await
         }
     };
-    let args = match validate_arguments(dynamic_tool, tool_name, args) {
+    let args = match super::tool_dispatcher_validation::validate(dynamic_tool, tool_name, args) {
         Ok(cleaned) => cleaned,
         Err(msg) => {
             return finalize_result(
@@ -193,7 +195,14 @@ async fn dispatch_inner_entry(
             .await
         }
     };
-    super::tool_dispatcher_execute::execute(
+    let event = super::tool_dispatcher_events::start(
+        authority.is_some(),
+        trace,
+        tool_name,
+        &args,
+        working_dir,
+    );
+    let result = super::tool_dispatcher_execute::execute(
         tool_name,
         args,
         working_dir,
@@ -204,24 +213,9 @@ async fn dispatch_inner_entry(
         dynamic_tool,
         authority,
     )
-    .await
-}
-
-pub(super) async fn finalize_result(
-    result: ToolResult,
-    tool_name: &str,
-    session_id: &str,
-    working_dir: &Path,
-) -> ToolResult {
-    super::tool_dispatcher_finalize::finalize(result, tool_name, session_id, working_dir).await
-}
-
-fn validate_arguments(dynamic_tool: bool, tool_name: &str, args: &Value) -> Result<Value, String> {
-    if dynamic_tool {
-        crate::services::extensions::validate_arguments(tool_name, args)
-    } else {
-        super::tool_validate::validate(tool_name, args)
-    }
+    .await;
+    super::tool_dispatcher_events::finish(event, trace, tool_name, &result);
+    result
 }
 
 #[cfg(test)]

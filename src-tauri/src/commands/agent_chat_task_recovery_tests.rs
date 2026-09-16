@@ -47,7 +47,7 @@ async fn stream_recovery_process_converts_a_worker_panic_and_restores_its_token(
     })
     .await;
 
-    let error = match finish(guarded, &session.id, &request_id, &cancel).await {
+    let error = match finish(guarded, &session.id, &request_id, &cancel, false).await {
         Err(error) => error,
         Ok(_) => panic!("panic must become an error"),
     };

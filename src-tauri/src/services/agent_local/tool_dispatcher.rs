@@ -29,6 +29,7 @@ pub async fn dispatch(
         super::tool_dispatch_trace::DispatchTrace {
             session_id,
             request_id: None,
+            tool_call_id: None,
         },
         cancel,
         false,

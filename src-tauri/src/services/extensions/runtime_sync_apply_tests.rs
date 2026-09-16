@@ -48,11 +48,13 @@ fn contribution_validation_failures_keep_their_distinct_generic_diagnostics() {
     use super::runtime_sync_contributions::ValidationError;
 
     assert_eq!(
-        super::runtime_sync_apply::contribution_diagnostic_code(ValidationError::AdvancedRequired),
+        super::runtime_sync_apply_diagnostics::contribution_diagnostic_code(
+            ValidationError::AdvancedRequired,
+        ),
         DIAGNOSTIC_ADVANCED_REQUIRED,
     );
     assert_eq!(
-        super::runtime_sync_apply::contribution_diagnostic_code(
+        super::runtime_sync_apply_diagnostics::contribution_diagnostic_code(
             ValidationError::InvalidContribution
         ),
         DIAGNOSTIC_LOAD_FAILED,

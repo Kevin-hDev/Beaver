@@ -54,7 +54,7 @@ test("loads TypeScript tools, events and core calls through Jiti", async () => {
       event: "session.turn.started",
       payload: { sessionId: "test" },
     });
-    assert.equal(event.delivered, 1);
+    assert.equal(event.queued, true);
 
     const result = await host.request("tool.call", {
       name: "com.beaver.test.echo",

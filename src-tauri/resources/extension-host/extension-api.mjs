@@ -6,11 +6,10 @@ import {
   methodLevel,
   RESOURCE_TYPES,
   supportsEffect,
-  supportsEvent,
-  TIMEOUTS,
 } from "./contract.mjs";
 import { validateCoreApiParams } from "./core-api-validation.mjs";
 import { createUiApi } from "./ui-api.mjs";
+import { createEventHandlers } from "./event-handlers.mjs";
 import { activeCapabilities } from "./extension-api-capabilities.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
 import {
@@ -20,15 +19,12 @@ import {
   validRelativePath,
 } from "./contribution-validation.mjs";
 
-const inFlightHandlers = new Set();
-
 export function createExtensionApi(specification) {
   const tools = [];
   const skills = [];
   const resources = [];
-  const handlers = new Map();
+  const eventHandlers = createEventHandlers();
   const ui = createUiApi(specification);
-  let handlerCount = 0;
 
   function registerTool(definition, replacesCore = false) {
     if (
@@ -65,32 +61,6 @@ export function createExtensionApi(specification) {
     tools.push({ metadata: tool, execute: definition.execute });
   }
 
-  function on(eventName, eventHandler) {
-    if (
-      typeof eventHandler !== "function"
-      || handlerCount >= LIMITS.maxEventsPerExtension
-    ) {
-      throw new Error("invalid_event_handler");
-    }
-    const event = String(eventName);
-    if (!validIdentifier(event) || !supportsEvent(event)) {
-      throw new Error("invalid_event_name");
-    }
-    const current = handlers.get(event) ?? [];
-    current.push(eventHandler);
-    handlers.set(event, current);
-    handlerCount += 1;
-    let subscribed = true;
-    return () => {
-      if (!subscribed) return;
-      subscribed = false;
-      const next = (handlers.get(event) ?? []).filter((item) => item !== eventHandler);
-      if (next.length === 0) handlers.delete(event);
-      else handlers.set(event, next);
-      handlerCount -= 1;
-    };
-  }
-
   function registerSkill(definition) {
     const skill = snapshotContribution(definition);
     if (
@@ -124,7 +94,7 @@ export function createExtensionApi(specification) {
     registerSkill,
     registerResource,
     ui: ui.api,
-    on,
+    on: eventHandlers.on,
     call: (method, params = {}) => callAtLevel("stable", method, params),
     sessions: Object.freeze({
       list: () => callCore("sessions.list"),
@@ -183,35 +153,10 @@ export function createExtensionApi(specification) {
     tools,
     skills,
     resources,
-    events: handlers,
+    events: eventHandlers.events,
     ui,
-    emit: async (event, payload) => {
-      for (const eventHandler of handlers.get(event) ?? []) {
-        await runEventHandler(eventHandler, payload);
-      }
-    },
+    emit: eventHandlers.emit,
   };
-}
-
-async function runEventHandler(handler, payload) {
-  if (inFlightHandlers.size >= LIMITS.maxInFlightHandlers) {
-    throw new Error("too_many_event_handlers_running");
-  }
-  const execution = Promise.resolve().then(() => handler(payload));
-  inFlightHandlers.add(execution);
-  void execution.finally(() => inFlightHandlers.delete(execution)).catch(() => {});
-  let timer;
-  try {
-    await Promise.race([
-      execution,
-      new Promise((resolve) => {
-        timer = setTimeout(resolve, TIMEOUTS.eventHandlerTimeoutMs);
-        timer.unref();
-      }),
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 function callAtLevel(level, method, params) {

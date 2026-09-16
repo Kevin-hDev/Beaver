@@ -1,4 +1,4 @@
-use super::{api, chat_engine, common, compress, ollama, session_events, ChatEngine};
+use super::{api, chat_engine, common, compress, ollama, ChatEngine};
 use crate::services::agent_local::agent_loop_finish::CompletedStreamTurn;
 use crate::services::agent_local::context_usage_record::ContextPreparationState;
 use crate::services::agent_local::conversation_journal::ConversationJournal;
@@ -37,8 +37,8 @@ pub(super) async fn run(
     params: super::StreamTaskParams,
     messages: Vec<ChatMessage>,
     journal: &mut Option<ConversationJournal>,
+    mode: common::StreamMode,
 ) -> Result<CompletedStreamTurn, String> {
-    let mode = common::resolve_permission_mode(&params.permission_mode).await;
     if compress::is_compress_command(&messages) {
         let working_dir = common::resolve_working_dir(&params.working_dir)?;
         common::update_working_dir(&params.session_id, &working_dir).await?;
@@ -59,7 +59,6 @@ pub(super) async fn run(
         return Ok(CompletedStreamTurn::compression(messages));
     }
     let response_language = response_language(&params);
-    session_events::emit_started(&params.session_id, &mode.mode);
     if chat_engine(&params.provider) == ChatEngine::Ollama {
         ollama::run(params, messages, mode, response_language, journal).await
     } else {

@@ -14,6 +14,7 @@ pub(super) const MAX_EXTENSION_CORE_CALLS: usize = MAX_IN_FLIGHT_REQUESTS;
 type ExtensionReaderWork = ServiceWorkSupervisor<MAX_HOST_PROCESSES>;
 type ExtensionOperationWork = ServiceWorkSupervisor<MAX_EXTENSION_OPERATIONS>;
 type ExtensionCoreCallWork = ServiceWorkSupervisor<MAX_EXTENSION_CORE_CALLS>;
+type ExtensionEventWork = ServiceWorkSupervisor<MAX_HOST_PROCESSES>;
 type ExtensionLifecycleWork = ServiceWorkSupervisor<1>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -44,6 +45,8 @@ pub(super) struct ExtensionWorkServices {
     operations: ExtensionOperationWork,
     core_calls: ExtensionCoreCallWork,
     core_scopes: super::core_scope::CoreScopeRegistry,
+    pub(super) events: ExtensionEventWork,
+    pub(super) event_router: super::event_delivery::EventRouter,
     lifecycle: ExtensionLifecycleWork,
 }
 
@@ -54,6 +57,8 @@ impl ExtensionWorkServices {
             operations: ExtensionOperationWork::new(app.clone()),
             core_calls: ExtensionCoreCallWork::new(app.clone()),
             core_scopes: super::core_scope::CoreScopeRegistry::default(),
+            events: ExtensionEventWork::new(app.clone()),
+            event_router: super::event_delivery::EventRouter::default(),
             lifecycle: ExtensionLifecycleWork::new(app),
         }
     }
@@ -142,6 +147,7 @@ impl ExtensionWorkServices {
         self.readers.begin_closing();
         self.operations.begin_closing();
         self.core_calls.begin_closing();
+        self.events.begin_closing();
         self.lifecycle.begin_closing();
     }
 
@@ -151,13 +157,14 @@ impl ExtensionWorkServices {
 
     pub(super) async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.begin_closing();
-        let (readers, operations, core_calls, lifecycle) = tokio::join!(
+        let (readers, operations, core_calls, events, lifecycle) = tokio::join!(
             self.readers.stop_and_wait(deadline),
             self.operations.stop_and_wait(deadline),
             self.core_calls.stop_and_wait(deadline),
+            self.events.stop_and_wait(deadline),
             self.lifecycle.stop_and_wait(deadline),
         );
-        readers && operations && core_calls && lifecycle
+        readers && operations && core_calls && events && lifecycle
     }
 
     #[cfg(test)]
@@ -186,7 +193,7 @@ impl ExtensionWorkServices {
     }
 }
 
-fn map_admission_error(error: ServiceWorkAdmissionError) -> ExtensionWorkAdmissionError {
+pub(super) fn map_admission_error(error: ServiceWorkAdmissionError) -> ExtensionWorkAdmissionError {
     match error {
         ServiceWorkAdmissionError::AppClosing | ServiceWorkAdmissionError::Closing => {
             ExtensionWorkAdmissionError::ShuttingDown
