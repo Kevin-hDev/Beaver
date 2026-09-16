@@ -125,12 +125,8 @@ pub struct AgentSession {
     pub working_dir_managed: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent_session_id: Option<String>,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_subagent_extension_owner",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub subagent_extension_owner: Option<SubagentExtensionOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subagent_extension_owner: Option<SubagentExtensionOwnership>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subagent_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -183,14 +179,20 @@ pub struct SubagentExtensionOwner {
     pub extension_fingerprint: String,
 }
 
-fn deserialize_subagent_extension_owner<'de, D>(
-    deserializer: D,
-) -> Result<Option<SubagentExtensionOwner>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let raw = Option::<serde_json::Value>::deserialize(deserializer)?;
-    Ok(raw.and_then(|value| serde_json::from_value(value).ok()))
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SubagentExtensionOwnership {
+    Valid(SubagentExtensionOwner),
+    Invalid(serde_json::Value),
+}
+
+impl SubagentExtensionOwnership {
+    pub fn valid(&self) -> Option<&SubagentExtensionOwner> {
+        match self {
+            Self::Valid(owner) => Some(owner),
+            Self::Invalid(_) => None,
+        }
+    }
 }
 
 pub(super) fn default_provider() -> String {

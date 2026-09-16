@@ -122,7 +122,14 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
         id
     };
     if !enabled {
-        crate::services::scheduler::revoke_extension_work(automation_owner).await?;
+        if crate::services::scheduler::revoke_extension_work(automation_owner)
+            .await
+            .is_err()
+        {
+            // Revocation in memory already closed admissions; persistence failure must not
+            // keep the extension itself enabled.
+            ::log::warn!("[extensions] automation revocation persistence unavailable");
+        }
     }
     let mut reminder = false;
     update(id, |record| {

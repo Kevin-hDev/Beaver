@@ -6,6 +6,36 @@ use serde_json::{json, Value};
 
 use super::core_bridge::{CoreResponse, ExtensionBridgeError};
 
+pub(super) async fn approval_arguments(
+    context: &super::call_context::ExtensionCallContext,
+    params: &Value,
+) -> Result<Value, ExtensionBridgeError> {
+    let owner = super::registry_access::automation_identity(context)
+        .map_err(|_| ExtensionBridgeError::Denied)?;
+    let definition = crate::services::automations::service_owned_api::definition_for_approval(
+        &owner,
+        super::core_automations_params::id(params)?,
+    )
+    .await
+    .map_err(super::core_automations_params::map_error)?;
+    Ok(approval_arguments_from_definition(definition))
+}
+
+pub(super) fn approval_arguments_from_definition(
+    definition: crate::models::AutomationDefinition,
+) -> Value {
+    json!({
+        "coreMethod": "automations.setActive",
+        "name": definition.name,
+        "prompt": definition.prompt,
+        "schedule": definition.schedule,
+        "provider": definition.provider,
+        "model": definition.model,
+        "target": definition.target,
+        "futureAgentExecution": true,
+    })
+}
+
 pub(super) async fn call(
     context: &super::call_context::ExtensionCallContext,
     method: &str,

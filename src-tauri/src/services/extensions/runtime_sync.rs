@@ -48,7 +48,14 @@ pub async fn build_specs(
     let recovered = filter_for_recovery(records, recovery);
     let verified = super::fingerprint::verify_records(recovered);
     for extension_id in verified.revocations.keys() {
-        crate::services::scheduler::revoke_extension_work(extension_id).await?;
+        if crate::services::scheduler::revoke_extension_work(extension_id)
+            .await
+            .is_err()
+        {
+            // Admissions are already blocked in memory; one persistence failure must not
+            // prevent healthy extensions from starting.
+            ::log::warn!("[extensions] automation revocation persistence unavailable");
+        }
     }
     let sensitive_access_reminder = super::registry::revoke_fingerprints(&verified.revocations)?;
     for extension_id in verified.revocations.keys() {

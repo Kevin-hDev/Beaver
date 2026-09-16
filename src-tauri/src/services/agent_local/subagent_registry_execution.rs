@@ -164,6 +164,7 @@ pub async fn cancel_children_for_extension(extension_id: &str) {
             .await
             .ok()
             .and_then(|child| child.subagent_extension_owner)
+            .and_then(|owner| owner.valid().cloned())
             .is_some_and(|owner| owner.extension_id == extension_id);
         if owned {
             let _ = cancel_one_owned(&child_id).await;

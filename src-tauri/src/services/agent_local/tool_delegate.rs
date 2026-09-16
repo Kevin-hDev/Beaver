@@ -119,18 +119,24 @@ pub async fn prepare_delegate(
         }
     };
 
-    if extension_owner.is_some()
-        && existing_child_id.is_some()
-        && child.subagent_extension_owner != extension_owner
-    {
-        subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
-        return Err(ToolResult::not_found(
-            "subagent_not_found",
-            "Sous-agent introuvable.",
-        ));
+    if let (Some(expected), Some(_)) = (extension_owner.as_ref(), existing_child_id) {
+        let matches = child
+            .subagent_extension_owner
+            .as_ref()
+            .and_then(super::types_session::SubagentExtensionOwnership::valid)
+            == Some(expected);
+        if !matches {
+            subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
+            return Err(ToolResult::not_found(
+                "subagent_not_found",
+                "Sous-agent introuvable.",
+            ));
+        }
     }
-    if extension_owner.is_some() {
-        child.subagent_extension_owner = extension_owner;
+    if let Some(owner) = extension_owner {
+        child.subagent_extension_owner = Some(
+            super::types_session::SubagentExtensionOwnership::Valid(owner),
+        );
     }
 
     if super::tool_delegate_child::inherit_parent_context(&mut child, &parent)

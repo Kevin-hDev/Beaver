@@ -4,18 +4,6 @@ use chrono::{DateTime, Utc};
 use std::path::Path;
 use uuid::Uuid;
 
-pub(super) async fn list_at(
-    root: &Path,
-    owner: &ExtensionActorIdentity,
-) -> Result<Vec<AutomationDefinition>, AutomationError> {
-    Ok(super::store::read_all_at(root)
-        .await
-        .map_err(|_| AutomationError::StoreUnavailable)?
-        .into_iter()
-        .filter(|item| super::ownership::require_owner(item, owner).is_ok())
-        .collect())
-}
-
 pub(super) async fn create_at(
     root: &Path,
     actor: &AutomationActor,
@@ -37,7 +25,7 @@ pub(super) async fn create_at(
     if definitions.len() >= super::store::MAX_AUTOMATIONS
         || definitions
             .iter()
-            .filter(|item| super::ownership::require_owner(item, owner).is_ok())
+            .filter(|item| super::ownership::belongs_to_extension(item, &owner.id))
             .count()
             >= super::types::MAX_AUTOMATIONS_PER_EXTENSION
     {
@@ -69,9 +57,15 @@ pub(super) async fn update_at(
         crate::services::scheduler::cancel_automation_occurrences(id);
     }
     let updated = current.clone();
-    super::store::write_definitions_unlocked_at(root, definitions)
+    if super::store::write_definitions_unlocked_at(root, definitions)
         .await
-        .map_err(|_| AutomationError::StoreUnavailable)?;
+        .is_err()
+    {
+        if updated.status == AutomationStatus::Disabled {
+            crate::services::scheduler::block_automation_admission(id);
+        }
+        return Err(AutomationError::StoreUnavailable);
+    }
     super::service_helpers::detail(updated, now)
 }
 
@@ -106,9 +100,18 @@ pub(super) async fn set_active_at(
     }
     current.revision = current.revision.saturating_add(1);
     let updated = current.clone();
-    super::store::write_definitions_unlocked_at(root, definitions)
+    if super::store::write_definitions_unlocked_at(root, definitions)
         .await
-        .map_err(|_| AutomationError::StoreUnavailable)?;
+        .is_err()
+    {
+        if !active {
+            crate::services::scheduler::block_automation_admission(id);
+        }
+        return Err(AutomationError::StoreUnavailable);
+    }
+    if active {
+        crate::services::scheduler::allow_automation_admission(id);
+    }
     if !active {
         super::runtime_store::remove_pending_unlocked_at(root, id)
             .await
@@ -127,11 +130,22 @@ pub(super) async fn delete_at(
     let mut definitions = mutable_definitions(root).await?;
     owned_mut(&mut definitions, owner, id, revision)?;
     crate::services::scheduler::cancel_automation_occurrences(id);
-    super::retire_if_referenced_unlocked_at(root, id).await?;
-    definitions.retain(|item| item.id != id);
-    super::store::write_definitions_unlocked_at(root, definitions)
+    if super::retire_if_referenced_unlocked_at(root, id)
         .await
-        .map_err(|_| AutomationError::StoreUnavailable)?;
+        .is_err()
+    {
+        crate::services::scheduler::block_automation_admission(id);
+        return Err(AutomationError::StoreUnavailable);
+    }
+    definitions.retain(|item| item.id != id);
+    if super::store::write_definitions_unlocked_at(root, definitions)
+        .await
+        .is_err()
+    {
+        crate::services::scheduler::block_automation_admission(id);
+        return Err(AutomationError::StoreUnavailable);
+    }
+    crate::services::scheduler::allow_automation_admission(id);
     super::runtime_store::remove_pending_unlocked_at(root, id)
         .await
         .map_err(|_| AutomationError::StoreUnavailable)
@@ -165,17 +179,6 @@ pub(crate) async fn revoke_owner_at(
             .map_err(|_| AutomationError::StoreUnavailable)?;
     }
     Ok(changed)
-}
-
-pub(crate) async fn is_extension_owned_at(root: &Path, id: Uuid) -> Result<bool, AutomationError> {
-    Ok(super::store::read_all_at(root)
-        .await
-        .map_err(|_| AutomationError::StoreUnavailable)?
-        .into_iter()
-        .find(|definition| definition.id == id)
-        .ok_or(AutomationError::NotFound)?
-        .extension_owner
-        .is_some())
 }
 
 pub(crate) async fn disable_unavailable_at(root: &Path, id: Uuid) -> Result<(), AutomationError> {

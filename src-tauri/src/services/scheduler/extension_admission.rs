@@ -57,12 +57,17 @@ async fn validate_target_and_model(definition: &AutomationDefinition) -> Result<
             .await
             .map(|_| ())
             .map_err(|_| "project_unavailable"),
-        AutomationTarget::ResumeSession { session_id } => {
+        AutomationTarget::ResumeSession { session_id } if validates_resume_target(definition) => {
             crate::services::agent_local::session_store::get(session_id)
                 .await
                 .map(|_| ())
                 .map_err(|_| "target_session_missing")
         }
-        AutomationTarget::NewSession { project_id: None } => Ok(()),
+        AutomationTarget::ResumeSession { .. }
+        | AutomationTarget::NewSession { project_id: None } => Ok(()),
     }
+}
+
+pub(super) fn validates_resume_target(definition: &AutomationDefinition) -> bool {
+    definition.extension_owner.is_some()
 }

@@ -102,3 +102,38 @@ fn global_pause_cancels_all_admitted_wakeups() {
         )
         .is_ok());
 }
+
+#[test]
+fn failed_disable_blocks_only_that_automation_until_a_successful_retry() {
+    let registry = Arc::new(OccurrenceCancellation::default());
+    let blocked = Uuid::new_v4();
+    let neighbor = Uuid::new_v4();
+    registry.block_automation(blocked);
+
+    assert!(registry
+        .admit(
+            Uuid::new_v4(),
+            blocked,
+            Some("owner"),
+            &CancellationToken::new(),
+        )
+        .is_err());
+    assert!(registry
+        .admit(
+            Uuid::new_v4(),
+            neighbor,
+            Some("owner"),
+            &CancellationToken::new(),
+        )
+        .is_ok());
+
+    registry.allow_automation(blocked);
+    assert!(registry
+        .admit(
+            Uuid::new_v4(),
+            blocked,
+            Some("owner"),
+            &CancellationToken::new(),
+        )
+        .is_ok());
+}

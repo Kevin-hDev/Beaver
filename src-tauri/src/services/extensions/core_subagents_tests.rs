@@ -1,4 +1,6 @@
-use crate::services::agent_local::types_session::{AgentSession, SubagentExtensionOwner};
+use crate::services::agent_local::types_session::{
+    AgentSession, SubagentExtensionOwner, SubagentExtensionOwnership,
+};
 
 #[test]
 fn subagents_require_parent_agent_mode_and_declared_parameters() {
@@ -26,11 +28,11 @@ fn extension_cannot_control_another_owners_child() {
         "messages": [],
         "parent_session_id": "parent"
     })).unwrap();
-    child.subagent_extension_owner = Some(SubagentExtensionOwner {
+    child.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
         extension_id: "owner.one".into(),
         extension_version: "1.0.0".into(),
         extension_fingerprint: "ab".repeat(32),
-    });
+    }));
     let neighbor = SubagentExtensionOwner {
         extension_id: "owner.two".into(),
         extension_version: "1.0.0".into(),
@@ -58,7 +60,7 @@ async fn revoked_owner_cannot_send_after_confirmation() {
         extension_fingerprint: "ab".repeat(32),
     };
     child.parent_session_id = Some(parent.id.clone());
-    child.subagent_extension_owner = Some(approved.clone());
+    child.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(approved.clone()));
     child.subagent_status = Some(subagent_status::RUNNING.into());
     let run_id = subagent_registry::register(&parent.id, &child.id, CancellationToken::new())
         .await
@@ -124,11 +126,11 @@ async fn owned_child(parent_id: &str, extension_id: &str) -> AgentSession {
         .await
         .unwrap();
     child.parent_session_id = Some(parent_id.to_string());
-    child.subagent_extension_owner = Some(SubagentExtensionOwner {
+    child.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
         extension_id: extension_id.into(),
         extension_version: "1.0.0".into(),
         extension_fingerprint: "ab".repeat(32),
-    });
+    }));
     session_store::save(&child).await.unwrap();
     child
 }

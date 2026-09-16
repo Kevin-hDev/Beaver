@@ -16,6 +16,7 @@ pub(super) struct OccurrenceCancellation {
 struct State {
     active: HashMap<Uuid, ActiveOccurrence>,
     blocked_owners: HashSet<String>,
+    blocked_automations: HashSet<Uuid>,
     extensions_closed: bool,
     globally_paused: bool,
 }
@@ -52,6 +53,14 @@ pub(super) fn cancel_automation(automation_id: Uuid) {
     REGISTRY.cancel_automation(automation_id);
 }
 
+pub(super) fn block_automation(automation_id: Uuid) {
+    REGISTRY.block_automation(automation_id);
+}
+
+pub(super) fn allow_automation(automation_id: Uuid) {
+    REGISTRY.allow_automation(automation_id);
+}
+
 pub(super) fn cancel_all() {
     REGISTRY.set_globally_paused(true);
 }
@@ -75,6 +84,7 @@ impl OccurrenceCancellation {
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         if state.active.len() >= SCHEDULED_WAKEUPS_CAPACITY
             || state.active.contains_key(&occurrence_id)
+            || state.blocked_automations.contains(&automation_id)
             || state.globally_paused
             || owner_id
                 .is_some_and(|id| state.extensions_closed || state.blocked_owners.contains(id))
@@ -143,6 +153,32 @@ impl OccurrenceCancellation {
         {
             entry.cancel.cancel();
         }
+    }
+
+    pub(super) fn block_automation(&self, automation_id: Uuid) {
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        if state.blocked_automations.contains(&automation_id)
+            || state.blocked_automations.len() < SCHEDULED_WAKEUPS_CAPACITY
+        {
+            state.blocked_automations.insert(automation_id);
+        } else {
+            state.globally_paused = true;
+        }
+        for entry in state
+            .active
+            .values()
+            .filter(|entry| entry.automation_id == automation_id)
+        {
+            entry.cancel.cancel();
+        }
+    }
+
+    pub(super) fn allow_automation(&self, automation_id: Uuid) {
+        self.state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .blocked_automations
+            .remove(&automation_id);
     }
 
     pub(super) fn set_globally_paused(&self, paused: bool) {

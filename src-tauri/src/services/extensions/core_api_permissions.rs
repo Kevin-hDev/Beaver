@@ -32,7 +32,8 @@ pub(super) async fn authorize(
     if method == "automations.setActive"
         && params.get("active").and_then(serde_json::Value::as_bool) == Some(true)
     {
-        return request_confirmation(context, method, effect).await;
+        let arguments = super::core_automations::approval_arguments(context, params).await?;
+        return request_confirmation(context, method, effect, &arguments).await;
     }
     if !crate::services::agent_local::permission_policy::uses_auto_bypass(
         &scope.agent.permission_mode,
@@ -42,7 +43,8 @@ pub(super) async fn authorize(
         {
             return Err(ExtensionBridgeError::Denied);
         }
-        request_confirmation(context, method, effect).await?;
+        let arguments = serde_json::json!({"coreMethod": method});
+        request_confirmation(context, method, effect, &arguments).await?;
     }
     Ok(())
 }
@@ -51,6 +53,7 @@ async fn request_confirmation(
     context: &super::call_context::ExtensionCallContext,
     method: &str,
     effect: ExtensionEffect,
+    arguments: &serde_json::Value,
 ) -> Result<(), ExtensionBridgeError> {
     let scope = context.core_scope().ok_or(ExtensionBridgeError::Denied)?;
     if scope.agent.purpose != crate::services::llm::request_purpose::RequestPurpose::ManualChat {
@@ -64,6 +67,7 @@ async fn request_confirmation(
         &scope.tool_name,
         method,
         effect,
+        arguments,
         scope.agent.cancel.clone(),
         scope.deadline,
     )

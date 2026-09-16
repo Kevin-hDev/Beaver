@@ -82,13 +82,19 @@ pub(super) async fn finish(
 
 pub(super) async fn reject_before_start(occurrence_id: Uuid, automation_id: Uuid, code: &str) {
     let _ = super::runtime::mark_terminal(occurrence_id, error_result(code, None)).await;
-    let _ = crate::services::automations::disable_extension_unavailable(automation_id).await;
+    if disables_extension_definition(code) {
+        let _ = crate::services::automations::disable_extension_unavailable(automation_id).await;
+    }
     if super::runtime::publish_terminal(occurrence_id)
         .await
         .is_err()
     {
         ::log::warn!("[scheduler] publication terminale différée");
     }
+}
+
+pub(super) fn disables_extension_definition(code: &str) -> bool {
+    code == "extension_unavailable"
 }
 
 pub(super) fn error_code(error: &str) -> &'static str {

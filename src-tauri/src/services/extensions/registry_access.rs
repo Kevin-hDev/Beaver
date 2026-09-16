@@ -41,6 +41,8 @@ fn automation_identity_from(
 fn official_automation_identity(
     records: &[ExtensionRecord],
 ) -> Option<crate::services::automations::ExtensionActorIdentity> {
+    // Official plugins intentionally share one audited Host identity. Changing one invalidates
+    // consent for the whole official set; the UI must explain that collective effect.
     let mut records = records
         .iter()
         .filter(|record| record.kind == ExtensionKind::Builtin && record.enabled && record.trusted)

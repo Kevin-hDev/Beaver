@@ -84,3 +84,32 @@ fn automation_and_subagent_contexts_cannot_schedule_descendants() {
         ));
     }
 }
+
+#[test]
+fn activation_confirmation_contains_every_approved_automation_field() {
+    let definition = AutomationDefinition {
+        id: Uuid::nil(),
+        revision: 1,
+        name: "Nightly report".into(),
+        description: None,
+        prompt: "Summarize the project".into(),
+        creator_session_id: None,
+        target: AutomationTarget::NewSession { project_id: Some("project".into()) },
+        provider: "openai".into(),
+        model: "gpt".into(),
+        schedule: AutomationSchedule::AfterCompletion { delay_minutes: 5 },
+        status: AutomationStatus::Disabled,
+        created_at: Utc::now(),
+        anchor_at: None,
+        extension_owner: None,
+    };
+    let summary = super::core_automations::approval_arguments_from_definition(definition);
+
+    assert_eq!(summary["name"], "Nightly report");
+    assert_eq!(summary["prompt"], "Summarize the project");
+    assert_eq!(summary["provider"], "openai");
+    assert_eq!(summary["model"], "gpt");
+    assert_eq!(summary["target"]["project_id"], "project");
+    assert_eq!(summary["schedule"]["kind"], "after_completion");
+    assert_eq!(summary["futureAgentExecution"], true);
+}

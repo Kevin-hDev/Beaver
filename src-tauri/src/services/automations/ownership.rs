@@ -39,6 +39,13 @@ pub(super) fn require_owner<'a>(
     }
 }
 
+pub(super) fn belongs_to_extension(definition: &AutomationDefinition, extension_id: &str) -> bool {
+    matches!(
+        definition.extension_owner.as_ref(),
+        Some(AutomationExtensionOwnership::Valid(owner)) if owner.extension_id == extension_id
+    )
+}
+
 pub(super) fn approve(
     definition: &mut AutomationDefinition,
     identity: &ExtensionActorIdentity,

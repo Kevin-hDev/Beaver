@@ -8,7 +8,7 @@ pub(crate) async fn list(
 ) -> Result<Vec<crate::models::AutomationDefinition>, AutomationError> {
     let root = root();
     let operation = super::audit_store::begin(&root, actor, "list", None, Vec::new()).await?;
-    let result = super::service_owned::list_at(&root, owner).await;
+    let result = super::service_owned_queries::list_at(&root, owner).await;
     let count = result.as_ref().ok().map(Vec::len);
     super::audit_store::complete(&root, actor, operation, "list", None, result, count).await
 }
@@ -33,9 +33,9 @@ pub(crate) async fn create(
     let result = super::service_owned::create_at(&root, actor, owner, input, Utc::now()).await;
     let id = result.as_ref().ok().map(|detail| detail.definition.id);
     let result =
-        super::audit_store::complete(&root, actor, operation, "create", id, result, None).await?;
+        super::audit_store::complete(&root, actor, operation, "create", id, result, None).await;
     crate::services::scheduler::notify_config_changed();
-    Ok(result)
+    result
 }
 
 pub(crate) async fn update(
@@ -52,9 +52,9 @@ pub(crate) async fn update(
         super::service_owned::update_at(&root, owner, id, revision, patch, Utc::now()).await;
     let result =
         super::audit_store::complete(&root, actor, operation, "update", Some(id), result, None)
-            .await?;
+            .await;
     crate::services::scheduler::notify_config_changed();
-    Ok(result)
+    result
 }
 
 pub(crate) async fn set_active(
@@ -75,9 +75,9 @@ pub(crate) async fn set_active(
             .await;
     let result =
         super::audit_store::complete(&root, actor, operation, "update", Some(id), result, None)
-            .await?;
+            .await;
     crate::services::scheduler::notify_config_changed();
-    Ok(result)
+    result
 }
 
 pub(crate) async fn delete(
@@ -89,9 +89,18 @@ pub(crate) async fn delete(
     let root = root();
     let operation = super::audit_store::begin(&root, actor, "delete", Some(id), Vec::new()).await?;
     let result = super::service_owned::delete_at(&root, owner, id, revision).await;
-    super::audit_store::complete(&root, actor, operation, "delete", Some(id), result, None).await?;
+    let result =
+        super::audit_store::complete(&root, actor, operation, "delete", Some(id), result, None)
+            .await;
     crate::services::scheduler::notify_config_changed();
-    Ok(())
+    result
+}
+
+pub(crate) async fn definition_for_approval(
+    owner: &ExtensionActorIdentity,
+    id: Uuid,
+) -> Result<crate::models::AutomationDefinition, AutomationError> {
+    super::service_owned_queries::owned_definition_at(&root(), owner, id).await
 }
 
 fn root() -> std::path::PathBuf {

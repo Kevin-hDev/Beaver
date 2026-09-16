@@ -27,6 +27,7 @@ mod service_helpers;
 mod service_mutations;
 pub(crate) mod service_owned;
 pub(crate) mod service_owned_api;
+mod service_owned_queries;
 mod store;
 mod store_migration_v2;
 mod store_wire;
@@ -76,9 +77,9 @@ pub(crate) use service_mutations::record_completion_at;
 pub(crate) use service_mutations::record_completion_unlocked_at;
 pub(crate) use service_owned::{
     disable_unavailable_at as disable_extension_unavailable_at,
-    is_extension_owned_at as is_extension_owned_automation_at,
     revoke_owner_at as revoke_extension_owner_at,
 };
+pub(crate) use service_owned_queries::is_extension_owned_at as is_extension_owned_automation_at;
 #[cfg(test)]
 pub(crate) use store::mutate;
 pub use store::read_all;

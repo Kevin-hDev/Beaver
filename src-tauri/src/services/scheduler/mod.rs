@@ -148,6 +148,14 @@ pub(crate) fn cancel_automation_occurrences(automation_id: uuid::Uuid) {
     occurrence_cancellation::cancel_automation(automation_id);
 }
 
+pub(crate) fn block_automation_admission(automation_id: uuid::Uuid) {
+    occurrence_cancellation::block_automation(automation_id);
+}
+
+pub(crate) fn allow_automation_admission(automation_id: uuid::Uuid) {
+    occurrence_cancellation::allow_automation(automation_id);
+}
+
 pub(crate) fn cancel_all_automation_occurrences() {
     occurrence_cancellation::cancel_all();
 }

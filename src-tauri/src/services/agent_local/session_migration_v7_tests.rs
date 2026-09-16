@@ -47,5 +47,14 @@ fn malformed_extension_owner_keeps_history_readable_but_unowned() {
         PathBuf::from("session.json"),
     )
     .unwrap();
-    assert!(loaded.session().subagent_extension_owner.is_none());
+    assert!(matches!(
+        loaded.session().subagent_extension_owner,
+        Some(super::types_session::SubagentExtensionOwnership::Invalid(_))
+    ));
+    let serialized = super::session_migration::serialize_current(loaded.session()).unwrap();
+    let value: serde_json::Value = serde_json::from_slice(&serialized).unwrap();
+    assert_eq!(
+        value["subagent_extension_owner"],
+        serde_json::json!({"extensionId": ["invalid"]})
+    );
 }

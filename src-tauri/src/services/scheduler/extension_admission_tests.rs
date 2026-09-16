@@ -71,3 +71,16 @@ fn malformed_or_unapproved_owner_is_never_admitted() {
     }
     assert!(super::extension_admission::admitted_owner(&definition, |_| true).is_err());
 }
+
+#[test]
+fn native_resume_target_is_left_to_the_disabling_fire_path() {
+    let native = definition();
+    let extension = owned();
+
+    assert!(!super::extension_admission::validates_resume_target(
+        &native
+    ));
+    assert!(super::extension_admission::validates_resume_target(
+        &extension
+    ));
+}

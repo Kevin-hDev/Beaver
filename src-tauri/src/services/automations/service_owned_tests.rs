@@ -236,6 +236,38 @@ async fn concurrent_creates_share_global_limit() {
     );
 }
 
+#[tokio::test]
+async fn previous_extension_versions_still_count_toward_owner_limit() {
+    let root = tempfile::tempdir().unwrap();
+    super::store::mutate_at(root.path(), |items| {
+        for index in 0..super::types::MAX_AUTOMATIONS_PER_EXTENSION {
+            let mut value = definition(Uuid::new_v4(), cron());
+            if let Some(crate::models::AutomationExtensionOwnership::Valid(owner)) =
+                value.extension_owner.as_mut()
+            {
+                owner.extension_version = format!("0.{index}.0");
+                owner.extension_fingerprint = format!("{index:064x}");
+            }
+            items.push(value);
+        }
+        Ok(())
+    })
+    .await
+    .unwrap();
+
+    assert_eq!(
+        super::service_owned::create_at(
+            root.path(),
+            &actor(AutomationOrigin::Extension),
+            &owner(),
+            input("overflow"),
+            Utc::now(),
+        )
+        .await,
+        Err(AutomationError::CapacityReached)
+    );
+}
+
 fn input(name: &str) -> CreateAutomation {
     CreateAutomation {
         name: name.into(),

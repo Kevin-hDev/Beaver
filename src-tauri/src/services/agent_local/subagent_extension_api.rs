@@ -1,4 +1,6 @@
-use super::types_session::{AgentSession, SubagentExtensionOwner};
+use super::types_session::{
+    AgentSession, SubagentExtensionOwner, SubagentExtensionOwnership,
+};
 use super::types_tools::ToolResult;
 use serde_json::json;
 use tokio_util::sync::CancellationToken;
@@ -88,7 +90,10 @@ pub(crate) fn owner_matches(
     owner: &SubagentExtensionOwner,
 ) -> bool {
     child.parent_session_id.as_deref() == Some(parent_id)
-        && child.subagent_extension_owner.as_ref() == Some(owner)
+        && matches!(
+            child.subagent_extension_owner.as_ref(),
+            Some(SubagentExtensionOwnership::Valid(current)) if current == owner
+        )
 }
 
 fn result(value: ToolResult) -> Result<(), ToolResult> {

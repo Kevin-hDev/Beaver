@@ -185,13 +185,13 @@ pub(crate) async fn request_extension_core(
     tool_name: &str,
     method: &str,
     effect: crate::services::extensions::ExtensionEffect,
+    arguments: &Value,
     cancel: CancellationToken,
     deadline: std::time::Instant,
 ) -> PermissionDecision {
     let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) else {
         return PermissionDecision::Deny;
     };
-    let arguments = serde_json::json!({"coreMethod": method});
     let id = uuid::Uuid::new_v4().to_string();
     let request = super::permission_request::for_extension(
         id.clone(),
@@ -199,7 +199,7 @@ pub(crate) async fn request_extension_core(
         &indexed.extension_name,
         method,
         effect,
-        &arguments,
+        arguments,
     );
     super::permission_pending::wait(on_event, request, cancel, Some(deadline)).await
 }
