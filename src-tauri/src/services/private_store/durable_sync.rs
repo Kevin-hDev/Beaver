@@ -36,7 +36,7 @@ pub(super) fn sync_parent(parent: &Path) -> Result<(), String> {
     #[cfg(windows)]
     {
         let _ = parent;
-        return Ok(());
+        Ok(())
     }
     #[cfg(not(windows))]
     sync_directory(parent)
