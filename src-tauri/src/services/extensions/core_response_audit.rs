@@ -15,7 +15,9 @@ fn classify(outcome: &Result<CoreResponse, ExtensionBridgeError>) -> AccessResul
         Err(ExtensionBridgeError::Denied | ExtensionBridgeError::Context(_)) => {
             AccessResult::Denied
         }
-        Err(ExtensionBridgeError::MethodUnavailable) => AccessResult::Failed,
+        Err(ExtensionBridgeError::Backend(_) | ExtensionBridgeError::MethodUnavailable) => {
+            AccessResult::Failed
+        }
         Err(ExtensionBridgeError::Failed) => AccessResult::Failed,
         Err(ExtensionBridgeError::Revoked) => AccessResult::Revoked,
         Err(ExtensionBridgeError::Timeout) => AccessResult::Timeout,

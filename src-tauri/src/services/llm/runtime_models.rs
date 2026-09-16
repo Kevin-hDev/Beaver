@@ -3,6 +3,10 @@ use std::sync::{LazyLock, RwLock};
 
 use super::types::ModelInfo;
 
+#[path = "runtime_models_snapshot.rs"]
+mod snapshot;
+pub(crate) use snapshot::snapshot;
+
 const MAX_RUNTIME_PROVIDERS: usize = 16;
 
 #[derive(Default)]

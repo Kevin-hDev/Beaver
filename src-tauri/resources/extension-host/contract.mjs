@@ -121,6 +121,11 @@ export const OPTIONAL_CAPABILITIES = strings(
   32,
   validOptionalCapability,
 );
+export const MODEL_FINISH_REASONS = exactStrings(
+  contract.modelFinishReasons,
+  ["stop", "length", "contentFilter"],
+  validOptionalCapability,
+);
 if (OPTIONAL_CAPABILITIES.some((capability) => CAPABILITIES.includes(capability))) {
   throw new Error("invalid_extension_contract");
 }

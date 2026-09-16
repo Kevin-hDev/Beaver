@@ -7,6 +7,7 @@ export declare const EXTENSION_CONTRIBUTION_TYPES: readonly ["tool","event","ui"
 export declare const EXTENSION_RESULT_BLOCK_TYPES: readonly ["text","file"];
 export declare const EXTENSION_RESULT_FILE_PURPOSES: readonly ["artifact","preview"];
 export declare const EXTENSION_RESOURCE_TYPES: readonly ["text","image","file"];
+export declare const MODEL_FINISH_REASONS: readonly ["stop","length","contentFilter"];
 export declare const CORE_TO_HOST_METHODS: readonly ["host.hello","host.reset","host.load","tool.call","event.emit","ui.action","tool.intercept"];
 export declare const STABLE_HOST_TO_CORE_REQUEST_METHODS: readonly ["app.info","sessions.list","sessions.get","projects.list","mcp.connectors.list","mcp.tool.call","channels.config.get","secrets.provider.get","secrets.mcp.oauth.get","secrets.mcp.env.get","secrets.channel.get","models.list","models.generate","memory.list","memory.read","memory.write","memory.archive","automations.list","automations.create","automations.update","automations.setActive","automations.delete","subagents.spawn","subagents.list","subagents.get","subagents.send","subagents.cancel"];
 export declare const ADVANCED_HOST_TO_CORE_REQUEST_METHODS: readonly [];
@@ -30,6 +31,7 @@ export type ExtensionContributionType = typeof EXTENSION_CONTRIBUTION_TYPES[numb
 export type ExtensionResultBlockType = typeof EXTENSION_RESULT_BLOCK_TYPES[number];
 export type ExtensionResultFilePurpose = typeof EXTENSION_RESULT_FILE_PURPOSES[number];
 export type ExtensionResourceType = typeof EXTENSION_RESOURCE_TYPES[number];
+export type ModelFinishReason = typeof MODEL_FINISH_REASONS[number];
 export type CoreToHostMethod = typeof CORE_TO_HOST_METHODS[number];
 export type StableHostToCoreRequestMethod = typeof STABLE_HOST_TO_CORE_REQUEST_METHODS[number];
 export type AdvancedHostToCoreRequestMethod = typeof ADVANCED_HOST_TO_CORE_REQUEST_METHODS[number];

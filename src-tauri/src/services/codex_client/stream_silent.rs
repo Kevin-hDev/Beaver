@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 use super::limits::MAX_STREAM_TEXT_BYTES;
 use super::{request, stream_measurement::StreamMeasurement, stream_protocol};
 
-pub async fn collect_chat_silent_for_compression(
+pub async fn collect_chat_silent(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
@@ -19,11 +19,12 @@ pub async fn collect_chat_silent_for_compression(
     max_output_tokens: Option<u32>,
     session_id: Option<&str>,
     cancel: CancellationToken,
+    request_timeout: std::time::Duration,
+    idle_timeout: std::time::Duration,
+    max_text_bytes: usize,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
     let mut measurement = StreamMeasurement::new(measurement);
-    let request_timeout = crate::services::compress::timeouts::compression_request_timeout();
-    let idle_timeout = crate::services::compress::timeouts::compression_idle_timeout();
     let resp = request::post_codex_stream_with_timeout(
         model,
         messages,
@@ -36,13 +37,14 @@ pub async fn collect_chat_silent_for_compression(
     )
     .await?;
     measurement.mark_headers();
-    consume_sse_silent(
+    consume_sse_silent_bounded(
         resp,
         cancel,
         idle_timeout,
         max_output_tokens,
         "openai",
         model,
+        max_text_bytes,
         &mut measurement,
     )
     .await
@@ -54,34 +56,38 @@ pub(crate) async fn consume_external_responses_sse_silent(
     max_output_tokens: Option<u32>,
     provider: &str,
     model: &str,
+    max_text_bytes: usize,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
     let mut measurement = StreamMeasurement::new(measurement);
-    consume_sse_silent(
+    consume_sse_silent_bounded(
         resp,
         cancel,
         crate::services::compress::timeouts::compression_idle_timeout(),
         max_output_tokens,
         provider,
         model,
+        max_text_bytes,
         &mut measurement,
     )
     .await
 }
 
-async fn consume_sse_silent(
+async fn consume_sse_silent_bounded(
     resp: reqwest::Response,
     cancel: CancellationToken,
     idle_timeout: std::time::Duration,
     max_output_tokens: Option<u32>,
     provider: &str,
     model: &str,
+    max_text_bytes: usize,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamResult, String> {
     let sse = crate::services::llm::stream_sse::bounded_response(resp).eventsource();
     futures_util::pin_mut!(sse);
     let mut result = StreamResult::default();
     let mut text_bytes = 0_usize;
+    let max_text_bytes = max_text_bytes.min(MAX_STREAM_TEXT_BYTES);
 
     loop {
         let event = tokio::select! {
@@ -114,6 +120,7 @@ async fn consume_sse_silent(
                     &mut result.thinking,
                     parsed["delta"].as_str().unwrap_or(""),
                     &mut text_bytes,
+                    max_text_bytes,
                 )?;
             }
             "response.output_text.delta" => {
@@ -127,6 +134,7 @@ async fn consume_sse_silent(
                     &mut result.content,
                     parsed["delta"].as_str().unwrap_or(""),
                     &mut text_bytes,
+                    max_text_bytes,
                 )?;
                 if output_is_over_local_limit(&result, max_output_tokens) {
                     return Ok(result);
@@ -162,11 +170,17 @@ async fn consume_sse_silent(
     Err(stream_protocol::closed_before_completed())
 }
 
-fn append_bounded(target: &mut String, delta: &str, total: &mut usize) -> Result<(), String> {
-    *total = total.saturating_add(delta.len());
-    if *total > MAX_STREAM_TEXT_BYTES {
+fn append_bounded(
+    target: &mut String,
+    delta: &str,
+    total: &mut usize,
+    max_text_bytes: usize,
+) -> Result<(), String> {
+    let next = total.saturating_add(delta.len());
+    if next > max_text_bytes {
         return Err("provider_payload_too_large".to_string());
     }
+    *total = next;
     target.push_str(delta);
     Ok(())
 }

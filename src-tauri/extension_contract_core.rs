@@ -39,6 +39,9 @@ pub fn validate_optional_capabilities(
 
 pub fn validate(contract: &Value) -> Result<(), String> {
     validate_transport(contract)?;
+    if contract["modelFinishReasons"] != serde_json::json!(["stop", "length", "contentFilter"]) {
+        return Err("invalid model finish reasons".to_string());
+    }
     let methods = contract["methods"]["hostToCore"]
         .as_array()
         .ok_or_else(|| "invalid host to core methods".to_string())?;

@@ -23,6 +23,9 @@ export function validateCoreApiParams(methodName, input) {
       && typeof value === "string"
       && Buffer.byteLength(value, "utf8") > LIMITS[param.limit]
     ) throw new Error("core_request_failed");
+    if (param.limit && typeof value === "number" && value > LIMITS[param.limit]) {
+      throw new Error("core_request_failed");
+    }
     output[param.name] = value;
   }
   return Object.freeze(output);

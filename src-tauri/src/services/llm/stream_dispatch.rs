@@ -3,6 +3,15 @@ use super::route_profile::{self, ClientSelector, FragmentMode, RouteProfile};
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::provider_usage::{UsageApiFormat, UsageContext};
 
+#[path = "stream_dispatch_models.rs"]
+mod models;
+pub(crate) use models::{model_route_descriptor, ModelRouteDescriptor};
+#[cfg(debug_assertions)]
+#[path = "stream_dispatch_fixture.rs"]
+mod fixture;
+#[cfg(debug_assertions)]
+pub(super) use fixture::resolve_fixture_transport;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum InvocationKind {
     Interactive,
@@ -173,54 +182,6 @@ fn resolve_checked(
         error_policy: profile.policies.errors,
         xai_catalog_model,
     })
-}
-
-#[cfg(debug_assertions)]
-pub(super) async fn resolve_fixture_transport(
-    route_id: &str,
-    model: &str,
-    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
-    purpose: RequestPurpose,
-) -> Result<ResolvedTransport, RouteSelectionError> {
-    use crate::services::llm::route_profile::CatalogPolicy;
-
-    if purpose != RequestPurpose::ManualChat || !target.is_fixture_candidate() {
-        return Err(RouteSelectionError::Unavailable);
-    }
-    let replay = target.replay().ok_or(RouteSelectionError::Unavailable)?;
-    let profile = route_profile::find(route_id).ok_or(RouteSelectionError::UnknownRoute)?;
-    // Recheck the sender's budget support even if admission was already checked upstream.
-    if !route_profile::supports_bounded_fixture(route_id) {
-        return Err(RouteSelectionError::Unavailable);
-    }
-    let fixture_catalog = matches!(
-        profile.catalog,
-        CatalogPolicy::PublicApi { .. } | CatalogPolicy::ConfigurableApi { .. }
-    ) || matches!(
-        profile.client,
-        ClientSelector::Codex | ClientSelector::XaiOauth
-    );
-    // Codex fixtures already use the bounded HTTP sender. Its OAuth catalogue
-    // must not reject a registered candidate before reaching that sender.
-    if !fixture_catalog
-        || replay.route_id != profile.id
-        || replay.model_id != model
-        || replay.validate().is_err()
-        || crate::services::reasoning_continuity::registry::replay_policy(replay).is_none()
-    {
-        return Err(RouteSelectionError::InvalidModel);
-    }
-    ensure_catalog_model(profile, model).await?;
-    let xai_model = if profile.client == ClientSelector::XaiOauth {
-        Some(
-            crate::services::llm_oauth::xai_catalog_model(model)
-                .await
-                .map_err(|_| RouteSelectionError::InvalidModel)?,
-        )
-    } else {
-        None
-    };
-    resolve_checked(profile, xai_model)
 }
 
 #[cfg(test)]

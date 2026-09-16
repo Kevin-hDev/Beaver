@@ -10,6 +10,9 @@ use crate::services::secure_http::{read_json_bounded, CODEX_MODELS_BODY_LIMIT};
 
 #[path = "model_catalog_reasoning.rs"]
 pub(super) mod reasoning;
+#[path = "model_catalog_views.rs"]
+mod views;
+pub use views::{available_models, cached_models};
 
 const CACHE_TTL: Duration = Duration::from_secs(300);
 const FAILURE_TTL: Duration = Duration::from_secs(30);
@@ -38,20 +41,6 @@ struct CacheState {
 }
 
 static CACHE: LazyLock<Mutex<CacheState>> = LazyLock::new(|| Mutex::new(CacheState::default()));
-
-pub async fn available_models() -> Result<Vec<ModelInfo>, String> {
-    let models = load_catalog().await?;
-    let visible = models
-        .into_iter()
-        .filter(|model| model.visible)
-        .map(|model| model.info)
-        .collect::<Vec<_>>();
-    if visible.is_empty() {
-        Err(unavailable())
-    } else {
-        Ok(visible)
-    }
-}
 
 pub async fn context_length(model_id: &str) -> u64 {
     if let Ok(models) = load_catalog().await {

@@ -37,6 +37,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             array_value(contract, "resourceTypes")?.to_vec(),
         ),
         (
+            "MODEL_FINISH_REASONS",
+            array_value(contract, "modelFinishReasons")?.to_vec(),
+        ),
+        (
             "CORE_TO_HOST_METHODS",
             array(methods, "coreToHost")?.to_vec(),
         ),
@@ -110,6 +114,7 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             "EXTENSION_RESULT_FILE_PURPOSES",
         ),
         ("ExtensionResourceType", "EXTENSION_RESOURCE_TYPES"),
+        ("ModelFinishReason", "MODEL_FINISH_REASONS"),
         ("CoreToHostMethod", "CORE_TO_HOST_METHODS"),
         (
             "StableHostToCoreRequestMethod",

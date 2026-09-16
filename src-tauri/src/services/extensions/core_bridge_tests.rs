@@ -162,7 +162,7 @@ async fn timeout_stops_waiting_without_starting_the_operation_twice() {
 
     let result = await_unrevoked(&context, std::time::Duration::from_millis(10), async move {
         observed.fetch_add(1, Ordering::SeqCst);
-        std::future::pending::<Result<CoreResponse, ()>>().await
+        std::future::pending::<Result<CoreResponse, ExtensionBridgeError>>().await
     })
     .await;
 

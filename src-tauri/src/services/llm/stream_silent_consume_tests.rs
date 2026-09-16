@@ -209,3 +209,42 @@ async fn embedded_provider_error_is_not_treated_as_a_valid_summary() {
     assert_eq!(error, "provider_temporarily_unavailable");
     assert!(!error.contains("private"));
 }
+
+#[tokio::test]
+async fn generation_is_cancelled_and_bounded_during_receive() {
+    let body = concat!(
+        "data: {\"choices\":[{\"delta\":{\"content\":\"abcdef\"}}]}\n\n",
+        "data: [DONE]\n\n",
+    );
+    let (_server, response) = streaming_response(body).await;
+    let error = consume_silent_bounded(
+        response,
+        CancellationToken::new(),
+        Duration::from_secs(2),
+        crate::services::provider_usage::UsageContext::chat("openai", "fixture"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        5,
+        None,
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(error, "provider_payload_too_large");
+
+    let (_server, response) = streaming_response(body).await;
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+    let error = consume_silent_bounded(
+        response,
+        cancel,
+        Duration::from_secs(2),
+        crate::services::provider_usage::UsageContext::chat("openai", "fixture"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        64,
+        None,
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(error, "Annulé");
+}

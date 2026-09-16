@@ -11,6 +11,7 @@ pub enum CoreResponse {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ExtensionBridgeError {
+    Backend(&'static str),
     Denied,
     Failed,
     MethodUnavailable,
@@ -22,6 +23,7 @@ pub enum ExtensionBridgeError {
 impl ExtensionBridgeError {
     pub(super) fn reason(self) -> &'static str {
         match self {
+            Self::Backend(reason) => reason,
             Self::Denied => "core_permission_denied",
             Self::Failed => "core_request_failed",
             Self::MethodUnavailable => "core_method_unavailable",
@@ -81,7 +83,7 @@ async fn execute(
     if budget.is_zero() {
         return Err(ExtensionBridgeError::Timeout);
     }
-    await_unrevoked(context, budget, dispatch(method, params)).await
+    await_unrevoked(context, budget, dispatch(context, method, params)).await
 }
 
 async fn await_unrevoked<F>(
@@ -90,20 +92,33 @@ async fn await_unrevoked<F>(
     operation: F,
 ) -> Result<CoreResponse, ExtensionBridgeError>
 where
-    F: std::future::Future<Output = Result<CoreResponse, ()>>,
+    F: std::future::Future<Output = Result<CoreResponse, ExtensionBridgeError>>,
 {
     tokio::select! {
         biased;
         _ = context.revoked().cancelled() => Err(ExtensionBridgeError::Revoked),
         result = tokio::time::timeout(budget, operation) => match result {
             Ok(Ok(response)) => Ok(response),
-            Ok(Err(())) => Err(ExtensionBridgeError::Failed),
+            Ok(Err(error)) => Err(error),
             Err(_) => Err(ExtensionBridgeError::Timeout),
         },
     }
 }
 
-async fn dispatch(method: &str, params: &Value) -> Result<CoreResponse, ()> {
+async fn dispatch(
+    context: &super::call_context::ExtensionCallContext,
+    method: &str,
+    params: &Value,
+) -> Result<CoreResponse, ExtensionBridgeError> {
+    if method.starts_with("models.") {
+        return super::core_models::call(context, method, params).await;
+    }
+    dispatch_legacy(method, params)
+        .await
+        .map_err(|()| ExtensionBridgeError::Failed)
+}
+
+async fn dispatch_legacy(method: &str, params: &Value) -> Result<CoreResponse, ()> {
     match method {
         "app.info" => Ok(CoreResponse::Json(json!({
             "apiVersion": super::types::BEAVER_API_VERSION,

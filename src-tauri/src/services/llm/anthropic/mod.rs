@@ -9,6 +9,7 @@ mod stream_record;
     reason = "continuation blocks are consumed by the next activation step"
 )]
 mod stream_state;
+mod stream_state_limits;
 mod stream_state_support;
 pub(super) mod tools;
 mod transport;
@@ -16,7 +17,9 @@ mod transport_error;
 
 pub(super) use client::{list_models, test_connection};
 pub(super) use payload::{build_payload, BuildError};
-pub(super) use transport::{collect_silent, stream_chat};
+#[cfg(test)]
+pub(super) use transport::collect_silent;
+pub(super) use transport::{collect_silent_bounded, stream_chat};
 
 pub(crate) fn prepared_context_count(
     messages: &[crate::services::agent_local::types_ollama::ChatMessage],

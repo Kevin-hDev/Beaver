@@ -56,6 +56,7 @@ pub(super) async fn stream_chat(
 pub(super) async fn collect_silent(
     config: &RequestConfig<'_>,
     cancel: CancellationToken,
+    max_text_bytes: usize,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
     let response = post(config, measurement.as_deref_mut(), None, None)
@@ -67,6 +68,7 @@ pub(super) async fn collect_silent(
         config.max_tokens,
         config.provider_id,
         config.model,
+        max_text_bytes,
         measurement,
     )
     .await

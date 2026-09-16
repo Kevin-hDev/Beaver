@@ -127,8 +127,9 @@ test("le handshake n'annonce que les capacités réellement raccordées", async 
       "skills",
       "resources",
       "richToolResults",
+      "models",
     ]);
-    assert.equal(hello.capabilities.includes("models"), false);
+    assert.equal(hello.capabilities.includes("models"), true);
   } finally {
     host.stop();
     await host.exited;

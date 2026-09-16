@@ -57,7 +57,7 @@ test("api.capabilities est une copie gelée des capacités déjà utilisables", 
     manifest: { apiLevel: "stable" },
   });
 
-  assert.deepEqual(api.capabilities, [...CAPABILITIES, "skills", "resources", "richToolResults"]);
+  assert.deepEqual(api.capabilities, [...CAPABILITIES, "skills", "resources", "richToolResults", "models"]);
   assert.equal(Object.isFrozen(api.capabilities), true);
   assert.throws(() => api.capabilities.push("skills"), TypeError);
   assert.deepEqual(OPTIONAL_CAPABILITIES, [
@@ -73,8 +73,8 @@ test("api.capabilities est une copie gelée des capacités déjà utilisables", 
   assert.equal(api.capabilities.includes("skills"), true);
   assert.equal(api.capabilities.includes("resources"), true);
   assert.equal(api.capabilities.includes("richToolResults"), true);
-  assert.equal(api.capabilities.includes("models"), false);
-  await assert.rejects(api.call("models.list"), /core_method_unavailable/u);
+  assert.equal(api.capabilities.includes("models"), true);
+  assert.equal(typeof api.models?.list, "function");
 });
 
 test("une extension récente reste compatible avec un Hôte historique seulement si elle garde les capacités", async () => {

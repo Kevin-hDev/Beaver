@@ -1,0 +1,43 @@
+{
+  "primary": {
+    "tokens": {
+      "input_tokens": 156469,
+      "output_tokens": 1417,
+      "cached_input_tokens": 45224,
+      "cache_write_input_tokens": 102371,
+      "cache_miss_input_tokens": 111245,
+      "reasoning_output_tokens": 463,
+      "total_tokens": 157886
+    },
+    "request_count": 64,
+    "usage_request_count": 64,
+    "cache_read_request_count": 64,
+    "cache_write_request_count": 64,
+    "cache_miss_request_count": 64,
+    "cost_usd_micros": 0,
+    "priced_request_count": 0,
+    "exact_cost_request_count": 0
+  },
+  "subagent": {
+    "tokens": {},
+    "request_count": 0,
+    "usage_request_count": 0,
+    "cache_read_request_count": 0,
+    "cache_write_request_count": 0,
+    "cache_miss_request_count": 0,
+    "cost_usd_micros": 0,
+    "priced_request_count": 0,
+    "exact_cost_request_count": 0
+  },
+  "compression": {
+    "tokens": {},
+    "request_count": 0,
+    "usage_request_count": 0,
+    "cache_read_request_count": 0,
+    "cache_write_request_count": 0,
+    "cache_miss_request_count": 0,
+    "cost_usd_micros": 0,
+    "priced_request_count": 0,
+    "exact_cost_request_count": 0
+  }
+}

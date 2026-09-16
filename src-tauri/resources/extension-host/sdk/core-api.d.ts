@@ -1,8 +1,10 @@
 import type { JsonValue } from "./index";
+import type { ModelFinishReason } from "./contract";
 
 export type BeaverPage<T> = {
   items: T[];
   nextCursor?: string;
+  incomplete?: boolean;
 };
 
 export interface BeaverModelDescriptor {
@@ -16,8 +18,8 @@ export interface BeaverModelDescriptor {
 
 export interface BeaverModelGeneration {
   text: string;
-  finishReason: "stop" | "length" | "contentFilter";
-  usage: { inputTokens?: number; outputTokens?: number };
+  finishReason: ModelFinishReason;
+  usage: { inputTokens?: number; outputTokens?: number; ledgerRecorded: boolean };
 }
 
 export interface BeaverModelsApi {

@@ -3,6 +3,7 @@ use super::core_scope::{AgentCoreScope, CoreScopeRegistry};
 use super::host_identity::HostIdentity;
 use super::types::{ExtensionApiLevel, ExtensionEffect};
 use crate::services::llm::request_purpose::RequestPurpose;
+use crate::services::agent_local::subagent_tool_profile::SubagentToolProfile;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
@@ -10,6 +11,16 @@ use tokio_util::sync::CancellationToken;
 fn scoped_context(
     plan_active: bool,
     cancel: CancellationToken,
+) -> super::call_context::ExtensionCallContext {
+    scoped_context_for(plan_active, cancel, "manual", None, RequestPurpose::ManualChat)
+}
+
+fn scoped_context_for(
+    plan_active: bool,
+    cancel: CancellationToken,
+    permission_mode: &str,
+    profile: Option<SubagentToolProfile>,
+    purpose: RequestPurpose,
 ) -> super::call_context::ExtensionCallContext {
     let registry = CoreScopeRegistry::default();
     let lease = registry
@@ -20,9 +31,9 @@ fn scoped_context(
                 session_id: "session".into(),
                 request_id: "request".into(),
                 working_directory: PathBuf::from("."),
-                permission_mode: "manual".into(),
-                profile: None,
-                purpose: RequestPurpose::ManualChat,
+                permission_mode: permission_mode.into(),
+                profile,
+                purpose,
                 cancel,
                 on_event: crate::services::agent_local::stream_events::AgentEventEmitter::test(
                     "session".into(),
@@ -47,9 +58,33 @@ fn scoped_context(
     super::call_context::ExtensionCallContext::for_test_with_capabilities(
         HostIdentity::Official,
         ExtensionApiLevel::Advanced,
-        vec!["memory".into()],
+        vec!["memory".into(), "models".into()],
     )
     .with_core_scope(scope)
+}
+
+#[tokio::test]
+async fn models_generate_is_denied_in_plan_explorer_and_chat() {
+    for context in [
+        scoped_context_for(true, CancellationToken::new(), "manual", None, RequestPurpose::ManualChat),
+        scoped_context_for(
+            false,
+            CancellationToken::new(),
+            "manual",
+            Some(SubagentToolProfile::Explorer),
+            RequestPurpose::ManualChat,
+        ),
+        scoped_context_for(false, CancellationToken::new(), "chat", None, RequestPurpose::ManualChat),
+    ] {
+        let policy = super::core_api_dispatch::policy(&context, "models.generate").unwrap();
+        assert_eq!(
+            super::core_api_permissions::authorize(&context, "models.generate", policy.effect).await,
+            Err(ExtensionBridgeError::Denied),
+        );
+    }
+    assert!(!crate::services::llm::stream_dispatch::model_route_descriptor("xai-oauth")
+        .unwrap()
+        .generation_supported);
 }
 
 #[tokio::test]

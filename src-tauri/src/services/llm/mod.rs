@@ -131,6 +131,7 @@ pub(crate) mod stream_sse;
 #[cfg(test)]
 pub(crate) mod stream_test_transport;
 mod stream_tools;
+pub(crate) mod text_generation;
 mod timeouts;
 pub(crate) mod tool_result_projection;
 pub(crate) mod tool_schema;

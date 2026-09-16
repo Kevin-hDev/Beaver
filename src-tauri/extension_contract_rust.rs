@@ -44,6 +44,10 @@ pub fn render(contract: &Value) -> Result<String, String> {
             array(object(contract, "methods")?, "coreToHost")?,
         ),
         ("EXTENSION_EVENTS", array_value(contract, "events")?),
+        (
+            "MODEL_FINISH_REASONS",
+            array_value(contract, "modelFinishReasons")?,
+        ),
     ] {
         render_slice(&mut output, name, values)?;
     }

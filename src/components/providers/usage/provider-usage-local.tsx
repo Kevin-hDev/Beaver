@@ -50,6 +50,7 @@ export function ProviderUsageLocal({ periods, loading }: Props) {
             [t("providers.usage.workloads.primary"), period.workloads.primary],
             [t("providers.usage.workloads.subagent"), period.workloads.subagent],
             [t("providers.usage.workloads.compression"), period.workloads.compression],
+            [t("providers.usage.workloads.extension"), period.workloads.extension],
           ]} />
         </>
       )}

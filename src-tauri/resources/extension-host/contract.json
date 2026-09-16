@@ -15,6 +15,7 @@
   "resultBlockTypes": ["text", "file"],
   "resultFilePurposes": ["artifact", "preview"],
   "resourceTypes": ["text", "image", "file"],
+  "modelFinishReasons": ["stop", "length", "contentFilter"],
   "methods": {
     "coreToHost": [
       "host.hello",

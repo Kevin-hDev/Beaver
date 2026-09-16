@@ -20,6 +20,7 @@ import {
 } from "./contribution-validation.mjs";
 
 export function createExtensionApi(specification) {
+  const capabilities = activeCapabilities();
   const tools = [];
   const skills = [];
   const resources = [];
@@ -88,7 +89,7 @@ export function createExtensionApi(specification) {
   const api = {
     id: specification.id,
     manifest: Object.freeze({ ...specification.manifest }),
-    capabilities: Object.freeze([...activeCapabilities()]),
+    capabilities: Object.freeze([...capabilities]),
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
     registerSkill,
@@ -115,6 +116,12 @@ export function createExtensionApi(specification) {
     channels: Object.freeze({
       getConfig: () => callCore("channels.config.get"),
     }),
+    models: capabilities.includes("models")
+      ? Object.freeze({
+          list: (options = {}) => callAtLevel("stable", "models.list", options),
+          generate: (options) => callAtLevel("stable", "models.generate", options),
+        })
+      : undefined,
     secrets: Object.freeze({
       getProviderKey: (providerId) =>
         callCore("secrets.provider.get", { providerId: String(providerId) }),

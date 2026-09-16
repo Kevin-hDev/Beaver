@@ -140,6 +140,7 @@ pub(super) async fn consume_silent(
     response: reqwest::Response,
     cancel: tokio_util::sync::CancellationToken,
     usage_context: UsageContext<'_>,
+    max_text_bytes: usize,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<crate::services::agent_local::types_ollama::StreamResult, String> {
     use eventsource_stream::Eventsource;
@@ -166,6 +167,13 @@ pub(super) async fn consume_silent(
                     measurement.mark_first_event();
                 }
                 total_chunks = total_chunks.saturating_add(1);
+                if !super::stream_state_limits::accepts(
+                    state.content.len().saturating_add(state.thinking.len()),
+                    &value,
+                    max_text_bytes,
+                ) {
+                    return Err("provider_payload_too_large".to_string());
+                }
                 state.apply(&value, usage_context)?;
                 if value.get("type").and_then(serde_json::Value::as_str) == Some("message_stop") {
                     break;

@@ -22,6 +22,7 @@ pub fn add(
         UsageWorkload::Primary => &mut target.workloads.primary,
         UsageWorkload::Subagent => &mut target.workloads.subagent,
         UsageWorkload::Compression => &mut target.workloads.compression,
+        UsageWorkload::Extension => &mut target.workloads.extension,
     };
     add_total(workload_total, usage, cost);
 }
@@ -108,6 +109,7 @@ fn merge(target: &mut UsageBreakdown, source: &UsageBreakdown) {
         &mut target.workloads.compression,
         &source.workloads.compression,
     );
+    merge_total(&mut target.workloads.extension, &source.workloads.extension);
 }
 
 fn merge_total(target: &mut UsageAggregate, source: &UsageAggregate) {

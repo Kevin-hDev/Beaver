@@ -75,13 +75,14 @@ async fn silent_stream_rejects_the_generic_error_event_immediately() {
     let mut measurement =
         crate::services::codex_client::stream_measurement::StreamMeasurement::new(None);
 
-    let error = consume_sse_silent(
+    let error = consume_sse_silent_bounded(
         response,
         CancellationToken::new(),
         Duration::from_secs(1),
         None,
         "openai",
         "gpt-5.6-sol",
+        usize::MAX,
         &mut measurement,
     )
     .await
@@ -96,13 +97,14 @@ async fn silent_oversized_incomplete_sse_is_rejected_before_the_idle_deadline() 
     let (response, server) = oversized_incomplete_sse_response().await;
     let mut measurement =
         crate::services::codex_client::stream_measurement::StreamMeasurement::new(None);
-    let error = consume_sse_silent(
+    let error = consume_sse_silent_bounded(
         response,
         CancellationToken::new(),
         Duration::from_secs(5),
         None,
         "openai",
         "gpt-5.6-sol",
+        usize::MAX,
         &mut measurement,
     )
     .await
@@ -151,13 +153,14 @@ async fn silent_responses_consumer_observes_the_final_served_tier() {
         Some(&mut request_measurement),
     );
 
-    consume_sse_silent(
+    consume_sse_silent_bounded(
         response,
         CancellationToken::new(),
         Duration::from_secs(1),
         None,
         "openai",
         "gpt-5.6-sol",
+        usize::MAX,
         &mut measurement,
     )
     .await
