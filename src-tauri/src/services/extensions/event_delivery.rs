@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 mod activity;
+mod sequence;
 
 #[derive(Clone, Default)]
 pub(super) struct EventRouter {
@@ -95,9 +96,12 @@ impl EventRouter {
         }
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         if state.deliveries.is_empty() {
+            if draft.terminal {
+                let _ = sequence::next(&mut state.sequences, &draft);
+            }
             return false;
         }
-        let sequence = match next_sequence(&mut state.sequences, &draft) {
+        let sequence = match sequence::next(&mut state.sequences, &draft) {
             Some(sequence) => sequence,
             None => return false,
         };
@@ -111,25 +115,6 @@ impl EventRouter {
         }
         true
     }
-}
-
-fn next_sequence(sequences: &mut BTreeMap<String, u64>, draft: &EventDraft) -> Option<u64> {
-    if draft.starts_flow {
-        if sequences.contains_key(&draft.flow_id)
-            || sequences.len() >= super::types::MAX_ACTIVE_CONTEXTS
-        {
-            return None;
-        }
-        sequences.insert(draft.flow_id.clone(), 1);
-        return Some(1);
-    }
-    let sequence = sequences.get_mut(&draft.flow_id)?;
-    *sequence = sequence.saturating_add(1);
-    let value = *sequence;
-    if draft.terminal {
-        sequences.remove(&draft.flow_id);
-    }
-    Some(value)
 }
 
 impl EventDelivery {
@@ -166,7 +151,10 @@ impl EventDelivery {
                     .await;
                 worker_counters.active_handlers.store(0, Ordering::Release);
                 match result {
-                    Ok(_) => increment(&worker_counters.delivered),
+                    Ok(response) if host_enqueued(&response) => {
+                        increment(&worker_counters.delivered)
+                    }
+                    Ok(_) => increment(&worker_counters.dropped),
                     Err(error) if error == super::error_codes::HOST_TIMEOUT => {
                         increment(&worker_counters.timed_out)
                     }
@@ -215,6 +203,10 @@ impl EventDelivery {
     pub(super) fn dropped(&self) -> u64 {
         self.counters.dropped.load(Ordering::Acquire)
     }
+}
+
+pub(super) fn host_enqueued(response: &serde_json::Value) -> bool {
+    response.get("queued").and_then(serde_json::Value::as_bool) == Some(true)
 }
 
 fn increment(counter: &AtomicU64) {

@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "connections": {
+    "openai": {
+      "updated_at": 1788217200,
+      "all_time": {
+        "totals": {
+          "tokens": { "input_tokens": 156469, "output_tokens": 1417, "total_tokens": 157886 },
+          "request_count": 64
+        },
+        "origins": {
+          "manual_chat": { "request_count": 64 },
+          "external_channel": {},
+          "automation": {}
+        },
+        "workloads": {
+          "primary": {
+            "tokens": { "input_tokens": 156469, "output_tokens": 1417, "total_tokens": 157886 },
+            "request_count": 64
+          },
+          "subagent": {},
+          "compression": {}
+        }
+      },
+      "days": {
+        "2026-09-01": {
+          "totals": { "request_count": 3 },
+          "origins": {
+            "manual_chat": { "request_count": 3 },
+            "external_channel": {},
+            "automation": {}
+          },
+          "workloads": {
+            "primary": { "request_count": 3 },
+            "subagent": {},
+            "compression": {}
+          }
+        }
+      },
+      "last_remote": null
+    }
+  }
+}

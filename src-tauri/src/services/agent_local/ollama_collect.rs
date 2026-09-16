@@ -81,7 +81,7 @@ pub(crate) async fn collect_extension_text(
     prompt: &str,
     timeout: Duration,
     num_predict: u32,
-) -> Result<(String, u32), String> {
+) -> Result<(String, u32, Option<String>), String> {
     let ollama = OllamaClient::from_global()?;
     let base_url = ollama.base_url().await?;
     let client = crate::services::secure_http::AuthenticatedClient::new_loopback(timeout)
@@ -118,7 +118,12 @@ pub(crate) async fn collect_extension_text(
         .and_then(serde_json::Value::as_u64)
         .and_then(|value| value.try_into().ok())
         .unwrap_or(0);
-    Ok((content.to_string(), eval_count))
+    let done_reason = value
+        .get("done_reason")
+        .and_then(serde_json::Value::as_str)
+        .filter(|reason| reason.len() <= 64)
+        .map(str::to_string);
+    Ok((content.to_string(), eval_count, done_reason))
 }
 
 pub(crate) async fn list_extension_models(timeout: Duration) -> Result<Vec<String>, String> {

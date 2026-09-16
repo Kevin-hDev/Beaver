@@ -10,6 +10,18 @@ fn invalid_file_recovers_to_empty_ledger() {
 }
 
 #[test]
+fn legacy_provider_usage_file_preserves_history_and_defaults_extension() {
+    let ledger = decode(include_bytes!("fixtures/provider-usage-v1.json"));
+    let connection = &ledger.connections["openai"];
+
+    assert_eq!(connection.all_time.totals.request_count, 64);
+    assert_eq!(connection.all_time.totals.tokens.total_tokens, 157_886);
+    assert_eq!(connection.all_time.workloads.primary.request_count, 64);
+    assert_eq!(connection.all_time.workloads.extension, Default::default());
+    assert_eq!(connection.days["2026-09-01"].totals.request_count, 3);
+}
+
+#[test]
 fn legacy_usage_without_cache_observation_fields_is_preserved() {
     let mut ledger = Ledger::default();
     let mut connection = ConnectionLedger::default();

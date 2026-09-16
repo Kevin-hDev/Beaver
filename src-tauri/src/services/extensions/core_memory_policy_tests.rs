@@ -74,17 +74,40 @@ async fn memory_api_shares_turn_budget_with_native_tools() {
         &session,
         MemoryMode::Automatic,
         false,
-        16,
+        1_000,
         0,
     );
+    let created = invoke(
+        &context,
+        "memory.write",
+        json!({"scope": "global", "content": topic("durable preference")}),
+        &layout,
+    )
+    .await
+    .unwrap();
+    let topic_id = created["topic"]["id"].as_str().unwrap();
     let _ = crate::services::agent_local::memory_runtime::consume_result(
         &session,
-        "native result that consumes the complete small budget",
+        &"native result ".repeat(1_000),
     );
+    let read = invoke(
+        &context,
+        "memory.read",
+        json!({"scope": "global", "topicId": topic_id}),
+        &layout,
+    )
+    .await
+    .unwrap();
     let page = invoke(&context, "memory.list", json!({"scope": "global"}), &layout)
         .await
         .unwrap();
+
+    assert!(read["content"]
+        .as_str()
+        .unwrap()
+        .contains("budget épuisé"));
     assert_eq!(page["items"], json!([]));
+    assert_eq!(page["nextCursor"], "0");
 }
 
 #[tokio::test]

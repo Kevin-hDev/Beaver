@@ -197,7 +197,7 @@ pub(crate) async fn origin_for_session(session_id: &str) -> Option<UsageOrigin> 
 
 #[cfg(test)]
 mod tests {
-    use super::{valid_reset_timestamp, WorkloadBreakdown};
+    use super::valid_reset_timestamp;
 
     #[test]
     fn reset_timestamps_must_be_plausible() {
@@ -205,16 +205,5 @@ mod tests {
         assert_eq!(valid_reset_timestamp(soon), Some(soon));
         assert_eq!(valid_reset_timestamp(i64::MAX), None);
         assert_eq!(valid_reset_timestamp(-1), None);
-    }
-
-    #[test]
-    fn legacy_provider_usage_is_preserved_with_extension_default() {
-        let legacy: WorkloadBreakdown =
-            serde_json::from_str(include_str!("fixtures/provider-usage-v1-workloads.json"))
-                .expect("real v1 workload fixture remains readable");
-
-        assert_eq!(legacy.primary.request_count, 64);
-        assert_eq!(legacy.primary.tokens.total_tokens, 157_886);
-        assert_eq!(legacy.extension, Default::default());
     }
 }

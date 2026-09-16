@@ -26,6 +26,7 @@ impl EventRouter {
         activity.delivered = activity.delivered.min(MAX_SAFE_JAVASCRIPT_INTEGER);
         activity.dropped = activity.dropped.min(MAX_SAFE_JAVASCRIPT_INTEGER);
         activity.timed_out = activity.timed_out.min(MAX_SAFE_JAVASCRIPT_INTEGER);
+        activity.active_handlers = activity.active_handlers.min(MAX_SAFE_JAVASCRIPT_INTEGER);
         activity
     }
 }

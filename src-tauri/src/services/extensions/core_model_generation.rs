@@ -14,20 +14,9 @@ pub(super) async fn generate(
     let session = crate::services::agent_local::session_store::get(&scope.agent.session_id)
         .await
         .map_err(|_| ExtensionBridgeError::Failed)?;
-    let prompt = required_string(params, "prompt")?;
-    if prompt.len() > super::types::MAX_MODEL_PROMPT_BYTES {
-        return Err(ExtensionBridgeError::Denied);
-    }
+    let (prompt, max_tokens) = request_limits(params)?;
     let connection = optional_string(params, "connectionId").unwrap_or(&session.provider);
     let model = optional_string(params, "modelId").unwrap_or(&session.model);
-    let max_tokens = params
-        .get("maxOutputTokens")
-        .and_then(Value::as_u64)
-        .unwrap_or(super::types::MAX_MODEL_OUTPUT_TOKENS as u64);
-    let max_tokens = u32::try_from(max_tokens)
-        .ok()
-        .filter(|value| *value > 0 && *value as usize <= super::types::MAX_MODEL_OUTPUT_TOKENS)
-        .ok_or(ExtensionBridgeError::Denied)?;
     if !crate::services::llm::stream_dispatch::model_route_descriptor(connection)
         .is_some_and(|route| route.generation_supported)
     {
@@ -47,12 +36,13 @@ pub(super) async fn generate(
     )
     .await;
     let (result, ledger_recorded) = if connection == "ollama" {
-        let (text, output) = crate::services::agent_local::ollama_collect::collect_extension_text(
-            model, prompt, timeout, max_tokens,
-        )
-        .await
-        .map_err(|_| ExtensionBridgeError::Failed)?;
-        (ollama_result(text, output), false)
+        let (text, output, done_reason) =
+            crate::services::agent_local::ollama_collect::collect_extension_text(
+                model, prompt, timeout, max_tokens,
+            )
+            .await
+            .map_err(|_| ExtensionBridgeError::Failed)?;
+        (ollama_result(text, output, done_reason), false)
     } else {
         let messages = [ChatMessage {
             continuity_barrier_before: false,
@@ -100,11 +90,15 @@ pub(super) async fn generate(
     })))
 }
 
-fn ollama_result(text: String, output: u32) -> crate::services::agent_local::types_ollama::StreamResult {
+fn ollama_result(
+    text: String,
+    output: u32,
+    done_reason: Option<String>,
+) -> crate::services::agent_local::types_ollama::StreamResult {
     crate::services::agent_local::types_ollama::StreamResult {
         content: text,
         eval_count: Some(output),
-        done_reason: Some("stop".to_string()),
+        done_reason,
         ..Default::default()
     }
 }
@@ -125,6 +119,22 @@ fn optional_string<'a>(params: &'a Value, key: &str) -> Option<&'a str> {
     params.get(key).and_then(Value::as_str).filter(|value| !value.is_empty())
 }
 
+fn request_limits(params: &Value) -> Result<(&str, u32), ExtensionBridgeError> {
+    let prompt = required_string(params, "prompt")?;
+    if prompt.len() > super::types::MAX_MODEL_PROMPT_BYTES {
+        return Err(ExtensionBridgeError::Failed);
+    }
+    let max_tokens = params
+        .get("maxOutputTokens")
+        .and_then(Value::as_u64)
+        .unwrap_or(super::types::MAX_MODEL_OUTPUT_TOKENS as u64);
+    let max_tokens = u32::try_from(max_tokens)
+        .ok()
+        .filter(|value| *value > 0 && *value as usize <= super::types::MAX_MODEL_OUTPUT_TOKENS)
+        .ok_or(ExtensionBridgeError::Failed)?;
+    Ok((prompt, max_tokens))
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -138,6 +148,26 @@ mod tests {
             let value = super::finish_reason(wire);
             assert_eq!(value, expected);
             assert!(super::super::types::MODEL_FINISH_REASONS.contains(&value));
+        }
+    }
+
+    #[test]
+    fn ollama_length_reason_is_preserved() {
+        let result = super::ollama_result("partial".into(), 10, Some("length".into()));
+        assert_eq!(super::finish_reason(result.done_reason.as_deref()), "length");
+    }
+
+    #[test]
+    fn model_limits_are_failures_not_permission_denials() {
+        let oversized = "x".repeat(super::super::types::MAX_MODEL_PROMPT_BYTES + 1);
+        for params in [
+            serde_json::json!({"prompt": oversized}),
+            serde_json::json!({"prompt": "ok", "maxOutputTokens": 0}),
+        ] {
+            assert_eq!(
+                super::request_limits(&params),
+                Err(super::ExtensionBridgeError::Failed)
+            );
         }
     }
 

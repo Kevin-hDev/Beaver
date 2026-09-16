@@ -98,3 +98,48 @@ fn stopping_generation_is_not_a_failed_neighbor() {
     assert!(stopped_probe.is_cancelled());
     assert!(!neighbor_probe.is_cancelled());
 }
+
+#[test]
+fn terminal_event_clears_a_flow_after_the_last_delivery_is_removed() {
+    use std::collections::BTreeSet;
+
+    let router = super::event_delivery::EventRouter::default();
+    let identity = super::host_identity::HostIdentity::ThirdParty("observer".to_string());
+    let (delivery, _receiver) = super::event_delivery::EventDelivery::test_delivery();
+    router.install(
+        identity.clone(),
+        1,
+        BTreeSet::from(["session.turn.started".to_string()]),
+        delivery,
+    );
+    assert!(router.publish(super::event_payload::turn_started("session", "request")));
+    router.clear(&identity);
+    assert!(!router.publish(super::event_payload::turn_terminal(
+        "session",
+        "request",
+        "session.turn.completed",
+        "completed",
+    )));
+
+    let (replacement, _receiver) = super::event_delivery::EventDelivery::test_delivery();
+    router.install(
+        identity,
+        2,
+        BTreeSet::from(["session.turn.started".to_string()]),
+        replacement,
+    );
+    assert!(router.publish(super::event_payload::turn_started("session", "request")));
+}
+
+#[test]
+fn host_queue_rejection_is_not_a_delivery() {
+    assert!(super::event_delivery::host_enqueued(
+        &serde_json::json!({"queued": true})
+    ));
+    assert!(!super::event_delivery::host_enqueued(
+        &serde_json::json!({"queued": false})
+    ));
+    assert!(!super::event_delivery::host_enqueued(
+        &serde_json::json!({"activity": {}})
+    ));
+}
