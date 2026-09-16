@@ -24,6 +24,17 @@ fn interception_order_uses_discovery_snapshot() {
     assert_eq!(catalog.snapshot(&order).extension_ids(), ["a", "z"]);
 }
 
+#[test]
+fn retired_or_restarted_interceptors_are_no_longer_current() {
+    let catalog = InterceptorCatalog::default();
+    let first = registration("guard", 1);
+    catalog.replace(vec![first.clone()]);
+    assert!(catalog.is_current(&first));
+    assert!(!catalog.is_current(&registration("guard", 2)));
+    catalog.remove("guard");
+    assert!(!catalog.is_current(&first));
+}
+
 #[tokio::test(start_paused = true)]
 async fn interceptor_can_deny_but_never_upgrade_permissions() {
     let effect_count = AtomicUsize::new(0);
@@ -89,10 +100,51 @@ fn interception_deadline_tie_does_not_disable_owner() {
     ));
 }
 
+#[test]
+fn expired_deadlines_are_attributed_to_the_earliest_boundary() {
+    let now = tokio::time::Instant::now();
+    let earlier = now - Duration::from_millis(2);
+    let later = now - Duration::from_millis(1);
+
+    assert!(matches!(
+        tool_interception_result::classify(Err(CallError::Timeout), earlier, later),
+        Outcome::Disable(super::types::DIAGNOSTIC_INTERCEPTOR_TIMEOUT)
+    ));
+    assert!(matches!(
+        tool_interception_result::classify(Err(CallError::Timeout), later, earlier),
+        Outcome::ChainTimeout
+    ));
+}
+
 #[tokio::test(start_paused = true)]
-async fn expired_chain_does_not_launch_the_next_handler() {
+async fn an_ineligible_interceptor_is_skipped_without_hiding_the_next_decision() {
+    let calls = AtomicUsize::new(0);
+    let (outcome, owner) = run_chain(
+        &[registration("removed", 1), registration("guard", 1)],
+        json!({}),
+        &CancellationToken::new(),
+        |_, _, _| {
+            let index = calls.fetch_add(1, Ordering::SeqCst);
+            async move {
+                if index == 0 {
+                    Err(CallError::Ineligible)
+                } else {
+                    Ok(json!({"decision":"deny"}))
+                }
+            }
+        },
+    )
+    .await;
+
+    assert!(matches!(outcome, Outcome::Deny));
+    assert_eq!(owner.unwrap().extension_id, "guard");
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test(start_paused = true)]
+async fn an_expired_active_handler_is_not_blame_shifted_to_the_next_handler() {
     let calls = Arc::new(AtomicUsize::new(0));
-    let (outcome, _) = run_chain(
+    let (outcome, owner) = run_chain(
         &[
             registration("first", 1),
             registration("second", 1),
@@ -117,7 +169,11 @@ async fn expired_chain_does_not_launch_the_next_handler() {
         },
     )
     .await;
-    assert!(matches!(outcome, Outcome::ChainTimeout));
+    assert!(matches!(
+        outcome,
+        Outcome::Disable(super::types::DIAGNOSTIC_INTERCEPTOR_TIMEOUT)
+    ));
+    assert_eq!(owner.unwrap().extension_id, "fourth");
     assert_eq!(calls.load(Ordering::SeqCst), 4);
 }
 

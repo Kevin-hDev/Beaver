@@ -88,6 +88,8 @@ pub mod tool_document_write_tests;
 pub mod tool_document_write_xml;
 mod tool_execution_artifacts;
 pub mod tool_execution_outcome;
+#[cfg(test)]
+mod extension_tool_interception_paths_tests;
 pub mod tool_executor;
 pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;

@@ -2029,7 +2029,8 @@
         "extensions_partial_apply": "La modification a été appliquée, mais une étape suivante a échoué.",
         "extensions_model_unavailable": "Le modèle demandé est indisponible.",
         "extensions_interception_individual_timeout": "Une extension a mis trop de temps à inspecter l’appel d’outil.",
-        "extensions_interception_chain_timeout": "La chaîne d’inspection des extensions a mis trop de temps."
+        "extensions_interception_chain_timeout": "La chaîne d’inspection des extensions a mis trop de temps.",
+        "extensions_eager_interception_conflict": "Un résultat d’outil anticipé a été refusé car l’inspection des extensions est active."
       }
     },
     "diagnostics": {
@@ -2050,6 +2051,7 @@
         "interceptor_invalid": "L’intercepteur d’outil est invalide",
         "interceptor_failed": "L’intercepteur d’outil a échoué",
         "interceptor_timeout": "L’intercepteur d’outil a mis trop de temps",
+        "interceptor_limit_exceeded": "Trop d’intercepteurs d’outils sont actifs",
         "interception_budget_exhausted": "Le temps alloué à l’inspection des outils est épuisé",
         "ui_contract_invalid": "Le contrat d’interface est invalide",
         "ui_contribution_invalid": "Une contribution d’interface est invalide",

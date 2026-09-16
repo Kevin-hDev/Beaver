@@ -2561,7 +2561,8 @@
         "extensions_partial_apply": "La modifica è stata applicata, ma un passaggio successivo non è riuscito.",
         "extensions_model_unavailable": "Il modello richiesto non è disponibile.",
         "extensions_interception_individual_timeout": "Un’estensione ha impiegato troppo tempo per ispezionare la chiamata allo strumento.",
-        "extensions_interception_chain_timeout": "La catena di ispezione delle estensioni ha impiegato troppo tempo."
+        "extensions_interception_chain_timeout": "La catena di ispezione delle estensioni ha impiegato troppo tempo.",
+        "extensions_eager_interception_conflict": "Un risultato anticipato dello strumento è stato rifiutato perché l’ispezione delle estensioni è attiva."
       }
     },
     "diagnostics": {
@@ -2582,6 +2583,7 @@
         "interceptor_invalid": "L’intercettore dello strumento non è valido",
         "interceptor_failed": "L’intercettore dello strumento non è riuscito",
         "interceptor_timeout": "L’intercettore dello strumento ha impiegato troppo tempo",
+        "interceptor_limit_exceeded": "Sono attivi troppi intercettori di strumenti",
         "interception_budget_exhausted": "Il tempo disponibile per l’ispezione degli strumenti è esaurito",
         "ui_contract_invalid": "Il contratto dell’interfaccia non è valido",
         "ui_contribution_invalid": "Un contributo dell’interfaccia non è valido",

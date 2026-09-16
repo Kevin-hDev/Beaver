@@ -2560,7 +2560,8 @@
         "extensions_partial_apply": "変更は適用されましたが、後続の処理に失敗しました。",
         "extensions_model_unavailable": "要求されたモデルを利用できません。",
         "extensions_interception_individual_timeout": "拡張機能によるツール呼び出しの検査がタイムアウトしました。",
-        "extensions_interception_chain_timeout": "拡張機能の検査チェーンがタイムアウトしました。"
+        "extensions_interception_chain_timeout": "拡張機能の検査チェーンがタイムアウトしました。",
+        "extensions_eager_interception_conflict": "拡張機能の検査が有効なため、先行して生成されたツール結果は拒否されました。"
       }
     },
     "diagnostics": {
@@ -2581,6 +2582,7 @@
         "interceptor_invalid": "ツールインターセプターが無効です",
         "interceptor_failed": "ツールインターセプターが失敗しました",
         "interceptor_timeout": "ツールインターセプターがタイムアウトしました",
+        "interceptor_limit_exceeded": "有効なツールインターセプターが多すぎます",
         "interception_budget_exhausted": "ツール検査の時間予算を使い切りました",
         "ui_contract_invalid": "インターフェース契約が無効です",
         "ui_contribution_invalid": "インターフェース拡張項目が無効です",

@@ -15,6 +15,7 @@ enum InterceptorDecision {
 pub(super) enum CallError {
     Timeout,
     Cancelled,
+    Ineligible,
     Failed,
 }
 
@@ -32,11 +33,8 @@ pub(super) fn classify(
     chain_deadline: tokio::time::Instant,
 ) -> Outcome {
     let now = tokio::time::Instant::now();
-    if now >= chain_deadline {
-        return Outcome::ChainTimeout;
-    }
-    if now >= handler_deadline {
-        return Outcome::Disable(super::types::DIAGNOSTIC_INTERCEPTOR_TIMEOUT);
+    if now >= chain_deadline || now >= handler_deadline {
+        return timeout_outcome(handler_deadline, chain_deadline);
     }
     match response {
         Ok(value) => match serde_json::from_value::<InterceptorDecision>(value) {
@@ -53,9 +51,20 @@ pub(super) fn classify(
             }
         },
         Err(CallError::Cancelled) => Outcome::Cancelled,
+        Err(CallError::Ineligible) => Outcome::Continue,
         Err(CallError::Failed) => Outcome::Disable(super::types::DIAGNOSTIC_INTERCEPTOR_FAILED),
-        Err(CallError::Timeout) if chain_deadline <= handler_deadline => Outcome::ChainTimeout,
-        Err(CallError::Timeout) => Outcome::Disable(super::types::DIAGNOSTIC_INTERCEPTOR_TIMEOUT),
+        Err(CallError::Timeout) => timeout_outcome(handler_deadline, chain_deadline),
+    }
+}
+
+fn timeout_outcome(
+    handler_deadline: tokio::time::Instant,
+    chain_deadline: tokio::time::Instant,
+) -> Outcome {
+    if chain_deadline <= handler_deadline {
+        Outcome::ChainTimeout
+    } else {
+        Outcome::Disable(super::types::DIAGNOSTIC_INTERCEPTOR_TIMEOUT)
     }
 }
 

@@ -169,6 +169,27 @@ fn summaries_expose_extension_origin_and_safe_inactive_reasons() {
     assert_eq!(native_summary.origin, AutomationOrigin::UserInterface);
     assert_eq!(native_summary.inactive_reason, None);
 
+    let mut session_created = native_summary_definition(Uuid::new_v4());
+    session_created.creator_session_id = Some("session-a".into());
+    assert_eq!(
+        super::service_helpers::summary_with_state(session_created, now, false, false, None).origin,
+        AutomationOrigin::Session
+    );
+
+    let channel_created = super::service_helpers::new_definition(
+        &AutomationActor {
+            origin: AutomationOrigin::ExternalChannel,
+            session_or_channel_id: "gateway:0123".into(),
+            current_automation_id: None,
+        },
+        input("Channel"),
+        now,
+    );
+    assert_eq!(
+        super::service_helpers::summary_with_state(channel_created, now, false, false, None).origin,
+        AutomationOrigin::ExternalChannel
+    );
+
     let unavailable = super::service_helpers::summary_with_state(
         definition(Uuid::new_v4(), cron()),
         now,
@@ -191,6 +212,12 @@ fn summaries_expose_extension_origin_and_safe_inactive_reasons() {
         invalid.inactive_reason,
         Some(AutomationInactiveReason::OwnerInvalid)
     );
+}
+
+fn native_summary_definition(id: Uuid) -> AutomationDefinition {
+    let mut value = definition(id, cron());
+    value.extension_owner = None;
+    value
 }
 
 #[tokio::test]

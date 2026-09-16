@@ -13,11 +13,37 @@ pub(super) struct InterceptorRegistration {
 #[derive(Clone, Default)]
 pub(crate) struct InterceptionSnapshot {
     pub(super) entries: Vec<InterceptorRegistration>,
+    #[cfg(test)]
+    deny_for_test: bool,
 }
 
 impl InterceptionSnapshot {
     pub(crate) fn is_empty(&self) -> bool {
         self.entries.is_empty()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_non_empty() -> Self {
+        Self {
+            entries: vec![InterceptorRegistration {
+                extension_id: "test.interceptor".into(),
+                identity: HostIdentity::ThirdParty("test.interceptor".into()),
+                generation: 1,
+            }],
+            deny_for_test: false,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_denied() -> Self {
+        let mut snapshot = Self::test_non_empty();
+        snapshot.deny_for_test = true;
+        snapshot
+    }
+
+    #[cfg(test)]
+    pub(super) fn denies_for_test(&self) -> bool {
+        self.deny_for_test
     }
 
     #[cfg(test)]
@@ -66,6 +92,15 @@ impl InterceptorCatalog {
         }
     }
 
+    pub(super) fn is_current(&self, entry: &InterceptorRegistration) -> bool {
+        self.entries
+            .read()
+            .ok()
+            .and_then(|entries| entries.get(&entry.extension_id).cloned())
+            .as_ref()
+            == Some(entry)
+    }
+
     pub(super) fn snapshot(&self, ordered_ids: &[String]) -> InterceptionSnapshot {
         let Ok(entries) = self.entries.read() else {
             return InterceptionSnapshot::default();
@@ -76,6 +111,8 @@ impl InterceptorCatalog {
                 .filter_map(|id| entries.get(id).cloned())
                 .take(MAX_INTERCEPTORS)
                 .collect(),
+            #[cfg(test)]
+            deny_for_test: false,
         }
     }
 }

@@ -1977,7 +1977,8 @@
         "extensions_partial_apply": "The change was applied, but a follow-up step failed.",
         "extensions_model_unavailable": "The requested model is unavailable.",
         "extensions_interception_individual_timeout": "An extension took too long to inspect the tool call.",
-        "extensions_interception_chain_timeout": "The extension inspection chain took too long."
+        "extensions_interception_chain_timeout": "The extension inspection chain took too long.",
+        "extensions_eager_interception_conflict": "An early tool result was rejected because extension inspection is active."
       }
     },
     "diagnostics": {
@@ -1998,6 +1999,7 @@
         "interceptor_invalid": "The tool interceptor is invalid",
         "interceptor_failed": "The tool interceptor failed",
         "interceptor_timeout": "The tool interceptor took too long",
+        "interceptor_limit_exceeded": "Too many tool interceptors are active",
         "interception_budget_exhausted": "The tool inspection time budget was exhausted",
         "ui_contract_invalid": "The interface contract is invalid",
         "ui_contribution_invalid": "An interface contribution is invalid",

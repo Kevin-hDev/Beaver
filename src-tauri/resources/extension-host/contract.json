@@ -610,6 +610,7 @@
       "interceptor_invalid",
       "interceptor_failed",
       "interceptor_timeout",
+      "interceptor_limit_exceeded",
       "interception_budget_exhausted"
     ]
   },
@@ -680,6 +681,7 @@
       "extensions_core_cancelled",
       "extensions_partial_apply",
       "extensions_model_unavailable",
+      "extensions_eager_interception_conflict",
       "extensions_interception_individual_timeout",
       "extensions_interception_chain_timeout"
     ],

@@ -2560,7 +2560,8 @@
         "extensions_partial_apply": "更改已应用，但后续步骤失败。",
         "extensions_model_unavailable": "请求的模型不可用。",
         "extensions_interception_individual_timeout": "某个扩展检查工具调用的时间过长。",
-        "extensions_interception_chain_timeout": "扩展检查链耗时过长。"
+        "extensions_interception_chain_timeout": "扩展检查链耗时过长。",
+        "extensions_eager_interception_conflict": "由于扩展检查已启用，提前生成的工具结果已被拒绝。"
       }
     },
     "diagnostics": {
@@ -2581,6 +2582,7 @@
         "interceptor_invalid": "工具拦截器无效",
         "interceptor_failed": "工具拦截器失败",
         "interceptor_timeout": "工具拦截器耗时过长",
+        "interceptor_limit_exceeded": "启用的工具拦截器过多",
         "interception_budget_exhausted": "工具检查时间预算已耗尽",
         "ui_contract_invalid": "界面契约无效",
         "ui_contribution_invalid": "界面扩展项无效",

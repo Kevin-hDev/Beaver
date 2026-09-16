@@ -33,7 +33,7 @@ pub(super) fn accepted(
                 super::runtime_sync::runtime_diagnostic(
                     &id,
                     super::types::HOST_LOAD_STAGE_REGISTER,
-                    super::types::DIAGNOSTIC_INTERCEPTION_BUDGET_EXHAUSTED,
+                    super::types::DIAGNOSTIC_INTERCEPTOR_LIMIT_EXCEEDED,
                 ),
             )?;
         }

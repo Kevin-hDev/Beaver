@@ -35,6 +35,10 @@ pub(crate) async fn before_effect(
     if mode == "chat" || snapshot.is_empty() {
         return Ok(());
     }
+    #[cfg(test)]
+    if snapshot.denies_for_test() {
+        return Err(super::tool_interception_result::denied());
+    }
     let call = json!({
         "toolName": tool_name,
         "effect": effect_for(tool_name),
@@ -58,15 +62,7 @@ pub(crate) async fn before_effect(
     match outcome {
         Outcome::Continue => Ok(()),
         Outcome::Deny => Err(super::tool_interception_result::denied()),
-        Outcome::ChainTimeout => {
-            if let Some(entry) = owner.as_ref() {
-                record_diagnostic(
-                    entry,
-                    super::types::DIAGNOSTIC_INTERCEPTION_BUDGET_EXHAUSTED,
-                );
-            }
-            Err(super::tool_interception_result::chain_timeout())
-        }
+        Outcome::ChainTimeout => Err(super::tool_interception_result::chain_timeout()),
         Outcome::Disable(code) => {
             if let Some(entry) = owner.as_ref() {
                 super::tool_interception_failure::disable(entry, code).await;
@@ -91,7 +87,7 @@ where
         + Duration::from_millis(super::types::INTERCEPTOR_CHAIN_TIMEOUT_MS as u64);
     for entry in entries {
         if tokio::time::Instant::now() >= chain_deadline {
-            return (Outcome::ChainTimeout, Some(entry.clone()));
+            return (Outcome::ChainTimeout, None);
         }
         let handler_deadline = tokio::time::Instant::now()
             + Duration::from_millis(super::types::INTERCEPTOR_HANDLER_TIMEOUT_MS as u64);
@@ -116,21 +112,32 @@ async fn call_interceptor(
 ) -> Result<Value, CallError> {
     let request = async {
         let runtime = super::runtime::global().map_err(|_| CallError::Failed)?;
+        if !entry_is_eligible(entry) || !runtime.tool_interceptors.is_current(entry) {
+            return Err(CallError::Ineligible);
+        }
         let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-        let (identity, generation, host) = runtime
+        let (identity, generation, host) = match runtime
             .process_for_extension(&entry.extension_id, std::time::Instant::now() + remaining)
             .await
-            .map_err(|_| CallError::Failed)?;
+        {
+            Ok(process) => process,
+            Err(_) if !entry_is_eligible(entry) => return Err(CallError::Ineligible),
+            Err(_) => return Err(CallError::Failed),
+        };
         if identity != entry.identity || generation != entry.generation {
-            return Err(CallError::Failed);
+            return Err(CallError::Ineligible);
         }
-        host.request_until_tokio(
-            "tool.intercept",
-            json!({"extensionId": entry.extension_id, "call": call}),
-            deadline,
-        )
-        .await
-        .map_err(|error| {
+        let result = host
+            .request_until_tokio(
+                "tool.intercept",
+                json!({"extensionId": entry.extension_id, "call": call}),
+                deadline,
+            )
+            .await;
+        if !entry_is_eligible(entry) || !runtime.tool_interceptors.is_current(entry) {
+            return Err(CallError::Ineligible);
+        }
+        result.map_err(|error| {
             if error == super::error_codes::HOST_TIMEOUT {
                 CallError::Timeout
             } else {
@@ -146,6 +153,15 @@ async fn call_interceptor(
     }
 }
 
+fn entry_is_eligible(entry: &InterceptorRegistration) -> bool {
+    super::registry::find(&entry.extension_id).is_ok_and(|record| {
+        record.enabled
+            && record.trusted
+            && super::host_identity::HostIdentity::from_record(&record)
+                .is_ok_and(|identity| identity == entry.identity)
+    })
+}
+
 fn effect_for(tool_name: &str) -> ExtensionEffect {
     super::indexed_tool(tool_name)
         .map(|indexed| indexed.tool.effect)
@@ -156,10 +172,4 @@ fn effect_for(tool_name: &str) -> ExtensionEffect {
                 ExtensionEffect::Unknown
             }
         })
-}
-
-fn record_diagnostic(entry: &InterceptorRegistration, code: &'static str) {
-    if let Ok(runtime) = super::runtime::global() {
-        runtime.record_interceptor_diagnostic(&entry.extension_id, code);
-    }
 }

@@ -42,7 +42,7 @@ pub(super) async fn prepare(
                         index,
                         ToolResult::error(
                             "Résultat anticipé refusé car l'inspection est active.",
-                            "eager_interception_conflict",
+                            "extensions_eager_interception_conflict",
                             super::tool_result_contract::ToolErrorCategory::Internal,
                             false,
                         ),

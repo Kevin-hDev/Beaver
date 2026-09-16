@@ -2565,7 +2565,8 @@
         "extensions_partial_apply": "El cambio se aplicó, pero falló un paso posterior.",
         "extensions_model_unavailable": "El modelo solicitado no está disponible.",
         "extensions_interception_individual_timeout": "Una extensión tardó demasiado en inspeccionar la llamada a la herramienta.",
-        "extensions_interception_chain_timeout": "La cadena de inspección de extensiones tardó demasiado."
+        "extensions_interception_chain_timeout": "La cadena de inspección de extensiones tardó demasiado.",
+        "extensions_eager_interception_conflict": "Se rechazó un resultado anticipado de herramienta porque la inspección de extensiones está activa."
       }
     },
     "diagnostics": {
@@ -2586,6 +2587,7 @@
         "interceptor_invalid": "El interceptor de herramientas no es válido",
         "interceptor_failed": "El interceptor de herramientas falló",
         "interceptor_timeout": "El interceptor de herramientas tardó demasiado",
+        "interceptor_limit_exceeded": "Hay demasiados interceptores de herramientas activos",
         "interception_budget_exhausted": "Se agotó el tiempo de inspección de herramientas",
         "ui_contract_invalid": "El contrato de interfaz no es válido",
         "ui_contribution_invalid": "Una contribución de interfaz no es válida",

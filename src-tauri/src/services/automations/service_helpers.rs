@@ -63,6 +63,14 @@ fn extension_state(
     definition: &AutomationDefinition,
 ) -> (AutomationOrigin, Option<AutomationInactiveReason>) {
     match definition.extension_owner.as_ref() {
+        None if definition
+            .creator_session_id
+            .as_deref()
+            .is_some_and(|id| id.starts_with("gateway:")) =>
+        {
+            (AutomationOrigin::ExternalChannel, None)
+        }
+        None if definition.creator_session_id.is_some() => (AutomationOrigin::Session, None),
         None => (AutomationOrigin::UserInterface, None),
         Some(crate::models::AutomationExtensionOwnership::Invalid(_)) => (
             AutomationOrigin::Extension,
@@ -94,8 +102,11 @@ pub(super) fn new_definition(
         name: input.name,
         description: input.description,
         prompt: input.prompt,
-        creator_session_id: matches!(actor.origin, AutomationOrigin::Session)
-            .then(|| actor.session_or_channel_id.clone()),
+        creator_session_id: matches!(
+            actor.origin,
+            AutomationOrigin::Session | AutomationOrigin::ExternalChannel
+        )
+        .then(|| actor.session_or_channel_id.clone()),
         target: input.target,
         provider: input.provider,
         model: input.model,

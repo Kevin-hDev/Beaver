@@ -2561,7 +2561,8 @@
         "extensions_partial_apply": "Die Änderung wurde angewendet, aber ein Folgeschritt ist fehlgeschlagen.",
         "extensions_model_unavailable": "Das angeforderte Modell ist nicht verfügbar.",
         "extensions_interception_individual_timeout": "Eine Erweiterung hat zu lange für die Prüfung des Tool-Aufrufs benötigt.",
-        "extensions_interception_chain_timeout": "Die Erweiterungs-Prüfkette hat zu lange benötigt."
+        "extensions_interception_chain_timeout": "Die Erweiterungs-Prüfkette hat zu lange benötigt.",
+        "extensions_eager_interception_conflict": "Ein vorzeitig erzeugtes Tool-Ergebnis wurde abgelehnt, weil die Erweiterungsprüfung aktiv ist."
       }
     },
     "diagnostics": {
@@ -2582,6 +2583,7 @@
         "interceptor_invalid": "Der Tool-Interzeptor ist ungültig",
         "interceptor_failed": "Der Tool-Interzeptor ist fehlgeschlagen",
         "interceptor_timeout": "Der Tool-Interzeptor hat zu lange benötigt",
+        "interceptor_limit_exceeded": "Zu viele Tool-Interzeptoren sind aktiv",
         "interception_budget_exhausted": "Das Zeitbudget für die Tool-Prüfung ist erschöpft",
         "ui_contract_invalid": "Der Oberflächenvertrag ist ungültig",
         "ui_contribution_invalid": "Ein Oberflächenbeitrag ist ungültig",
