@@ -336,6 +336,103 @@ async fn external_instruction_cannot_mutate_another_sessions_automation_without_
     .unwrap();
 }
 
+#[tokio::test]
+async fn extension_owned_execution_cannot_schedule_descendants() {
+    assert_descendant_creation(false).await;
+}
+
+#[tokio::test]
+async fn native_execution_keeps_existing_descendant_rights() {
+    assert_descendant_creation(true).await;
+}
+
+async fn assert_descendant_creation(native_owner: bool) {
+    let _guard = super::tool_automation::AUTOMATION_TOOL_TEST_LOCK
+        .lock()
+        .await;
+    crate::services::automations::mutate(|items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let session = super::session_store::create_full(
+        "Automation descendant",
+        "gpt-5.6-luna",
+        "codex-oauth",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let created = dispatch(
+        &session.id,
+        std::path::Path::new("."),
+        tokio_util::sync::CancellationToken::new(),
+        json!({
+            "action":"create",
+            "name":"Parent",
+            "prompt":"Run",
+            "target_mode":"resume_session",
+            "schedule":{"kind":"after_completion","delay_minutes":10}
+        }),
+    )
+    .await;
+    let parent_id = uuid::Uuid::parse_str(created["data"]["id"].as_str().unwrap()).unwrap();
+    if !native_owner {
+        crate::services::automations::mutate(|items| {
+            items[0].extension_owner = Some(
+                crate::models::AutomationExtensionOwnership::Valid(
+                    crate::models::AutomationExtensionOwner {
+                        extension_id: "com.example.owner".into(),
+                        extension_version: "1.0.0".into(),
+                        extension_fingerprint: "ab".repeat(32),
+                        approved_content_sha256: None,
+                        approved_at: None,
+                    },
+                ),
+            );
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
+    let actor = crate::services::automations::AutomationActor {
+        origin: crate::services::automations::AutomationOrigin::Session,
+        session_or_channel_id: session.id.clone(),
+        current_automation_id: Some(parent_id),
+    };
+    let request_id = format!("descendant-{native_owner}");
+    let _actor_guard =
+        crate::services::automations::actor_context::register_actor(&request_id, actor).unwrap();
+    let result = super::tool_dispatcher::dispatch_for_mode(
+        "manage_automation",
+        &json!({
+            "action":"create",
+            "name":"Child",
+            "prompt":"Run child",
+            "target_mode":"resume_session",
+            "schedule":{"kind":"after_completion","delay_minutes":10}
+        }),
+        std::path::Path::new("."),
+        &session.id,
+        Some(&request_id),
+        tokio_util::sync::CancellationToken::new(),
+        false,
+    )
+    .await;
+    assert_eq!(result.is_error, !native_owner, "{}", result.content);
+
+    crate::services::automations::mutate(|items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+    super::session_store::delete_one(&session.id).await.unwrap();
+    super::session_store::remove_session_lock(&session.id).await;
+}
+
 async fn dispatch(
     session_id: &str,
     cwd: &std::path::Path,

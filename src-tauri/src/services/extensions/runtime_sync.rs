@@ -46,6 +46,9 @@ pub async fn build_specs(
     }
     let recovered = filter_for_recovery(records, recovery);
     let verified = super::fingerprint::verify_records(recovered);
+    for extension_id in verified.revocations.keys() {
+        crate::services::scheduler::revoke_extension_automations(extension_id).await?;
+    }
     let sensitive_access_reminder = super::registry::revoke_fingerprints(&verified.revocations)?;
     for extension_id in verified.revocations.keys() {
         crate::services::agent_local::permission_gate::clear_extension(extension_id).await;

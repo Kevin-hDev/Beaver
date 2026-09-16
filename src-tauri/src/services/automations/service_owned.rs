@@ -65,6 +65,9 @@ pub(super) async fn update_at(
     let before = current.clone();
     super::service_helpers::apply_patch(current, patch, now)?;
     super::ownership::invalidate_if_changed(&before, current)?;
+    if current.status == AutomationStatus::Disabled {
+        crate::services::scheduler::cancel_automation_occurrences(id);
+    }
     let updated = current.clone();
     super::store::write_definitions_unlocked_at(root, definitions)
         .await
@@ -84,9 +87,15 @@ pub(super) async fn set_active_at(
     if active && globally_paused {
         return Err(AutomationError::GloballyPaused);
     }
+    if active && !crate::services::scheduler::extension_automation_mutations_allowed(&owner.id) {
+        return Err(AutomationError::ConsentRequired);
+    }
     let _guard = super::store_lock().await;
     let mut definitions = mutable_definitions(root).await?;
     let current = owned_mut(&mut definitions, owner, id, revision)?;
+    if !active {
+        crate::services::scheduler::cancel_automation_occurrences(id);
+    }
     current.status = if active {
         AutomationStatus::Active
     } else {
@@ -117,12 +126,72 @@ pub(super) async fn delete_at(
     let _guard = super::store_lock().await;
     let mut definitions = mutable_definitions(root).await?;
     owned_mut(&mut definitions, owner, id, revision)?;
+    crate::services::scheduler::cancel_automation_occurrences(id);
     super::retire_if_referenced_unlocked_at(root, id).await?;
     definitions.retain(|item| item.id != id);
     super::store::write_definitions_unlocked_at(root, definitions)
         .await
         .map_err(|_| AutomationError::StoreUnavailable)?;
     super::runtime_store::remove_pending_unlocked_at(root, id)
+        .await
+        .map_err(|_| AutomationError::StoreUnavailable)
+}
+
+pub(crate) async fn revoke_owner_at(
+    root: &Path,
+    extension_id: &str,
+) -> Result<usize, AutomationError> {
+    let _guard = super::store_lock().await;
+    let mut definitions = mutable_definitions(root).await?;
+    let mut changed = 0usize;
+    for definition in &mut definitions {
+        let owned = matches!(
+            definition.extension_owner.as_ref(),
+            Some(crate::models::AutomationExtensionOwnership::Valid(owner))
+                if owner.extension_id == extension_id
+        );
+        if owned
+            && (definition.status != AutomationStatus::Disabled
+                || super::ownership::consent_is_current(definition))
+        {
+            super::ownership::revoke_consent(definition);
+            definition.revision = definition.revision.saturating_add(1);
+            changed = changed.saturating_add(1);
+        }
+    }
+    if changed > 0 {
+        super::store::write_definitions_unlocked_at(root, definitions)
+            .await
+            .map_err(|_| AutomationError::StoreUnavailable)?;
+    }
+    Ok(changed)
+}
+
+pub(crate) async fn is_extension_owned_at(root: &Path, id: Uuid) -> Result<bool, AutomationError> {
+    Ok(super::store::read_all_at(root)
+        .await
+        .map_err(|_| AutomationError::StoreUnavailable)?
+        .into_iter()
+        .find(|definition| definition.id == id)
+        .ok_or(AutomationError::NotFound)?
+        .extension_owner
+        .is_some())
+}
+
+pub(crate) async fn disable_unavailable_at(root: &Path, id: Uuid) -> Result<(), AutomationError> {
+    let _guard = super::store_lock().await;
+    let mut definitions = mutable_definitions(root).await?;
+    let definition = definitions
+        .iter_mut()
+        .find(|definition| definition.id == id)
+        .ok_or(AutomationError::NotFound)?;
+    if definition.extension_owner.is_none() {
+        return Ok(());
+    }
+    crate::services::scheduler::cancel_automation_occurrences(id);
+    super::ownership::revoke_consent(definition);
+    definition.revision = definition.revision.saturating_add(1);
+    super::store::write_definitions_unlocked_at(root, definitions)
         .await
         .map_err(|_| AutomationError::StoreUnavailable)
 }

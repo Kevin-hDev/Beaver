@@ -1,4 +1,4 @@
-use super::error_code;
+use super::super::fire_result::error_code;
 
 #[test]
 fn provider_failures_are_stored_as_safe_codes() {

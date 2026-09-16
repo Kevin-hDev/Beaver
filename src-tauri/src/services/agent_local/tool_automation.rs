@@ -43,7 +43,29 @@ pub async fn execute(
         Ok(actor) => actor,
         Err(error) => return automation_failure(action_name, error),
     };
+    if restricted_mutation(&request, &session, &actor).await {
+        return failure(action_name, "permission_denied", ToolErrorCategory::Permission);
+    }
     dispatch(request, session, actor).await
+}
+
+async fn restricted_mutation(
+    request: &Action,
+    session: &super::types_session::AgentSession,
+    actor: &AutomationActor,
+) -> bool {
+    if !matches!(request, Action::Create(_) | Action::Update(_, _)) {
+        return false;
+    }
+    if session.parent_session_id.is_some() {
+        return true;
+    }
+    match actor.current_automation_id {
+        Some(id) => crate::services::automations::is_extension_owned_automation(id)
+            .await
+            .unwrap_or(true),
+        None => false,
+    }
 }
 
 fn action_name(args: &Value) -> &'static str {

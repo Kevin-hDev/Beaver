@@ -34,33 +34,55 @@ fn automation_identity_from(
                 fingerprint: record.fingerprint.clone()?,
             })
         }
-        HostIdentity::Official => {
-            let mut records = records
-                .iter()
-                .filter(|record| {
-                    record.kind == ExtensionKind::Builtin && record.enabled && record.trusted
-                })
-                .collect::<Vec<_>>();
-            records.sort_by(|left, right| left.manifest.id.cmp(&right.manifest.id));
-            if records.is_empty() || records.iter().any(|record| record.fingerprint.is_none()) {
-                return None;
-            }
-            let mut digest = Sha256::new();
-            for record in records {
-                digest.update(record.manifest.id.as_bytes());
-                digest.update([0]);
-                digest.update(record.manifest.version.as_bytes());
-                digest.update([0]);
-                digest.update(record.fingerprint.as_deref()?.as_bytes());
-                digest.update([0]);
-            }
-            Some(crate::services::automations::ExtensionActorIdentity {
-                id: super::host_identity::OFFICIAL_IDENTITY.to_string(),
-                version: env!("CARGO_PKG_VERSION").to_string(),
-                fingerprint: hex::encode(digest.finalize()),
-            })
-        }
+        HostIdentity::Official => official_automation_identity(records),
     }
+}
+
+fn official_automation_identity(
+    records: &[ExtensionRecord],
+) -> Option<crate::services::automations::ExtensionActorIdentity> {
+    let mut records = records
+        .iter()
+        .filter(|record| record.kind == ExtensionKind::Builtin && record.enabled && record.trusted)
+        .collect::<Vec<_>>();
+    records.sort_by(|left, right| left.manifest.id.cmp(&right.manifest.id));
+    if records.is_empty() || records.iter().any(|record| record.fingerprint.is_none()) {
+        return None;
+    }
+    let mut digest = Sha256::new();
+    for record in records {
+        digest.update(record.manifest.id.as_bytes());
+        digest.update([0]);
+        digest.update(record.manifest.version.as_bytes());
+        digest.update([0]);
+        digest.update(record.fingerprint.as_deref()?.as_bytes());
+        digest.update([0]);
+    }
+    Some(crate::services::automations::ExtensionActorIdentity {
+        id: super::host_identity::OFFICIAL_IDENTITY.to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        fingerprint: hex::encode(digest.finalize()),
+    })
+}
+
+pub(super) fn automation_owner_is_current(owner: &crate::models::AutomationExtensionOwner) -> bool {
+    super::registry_memory::with_records(|records| {
+        if owner.extension_id == super::host_identity::OFFICIAL_IDENTITY {
+            return official_automation_identity(records).is_some_and(|identity| {
+                identity.version == owner.extension_version
+                    && identity.fingerprint == owner.extension_fingerprint
+            });
+        }
+        records.iter().any(|record| {
+            record.kind == ExtensionKind::Local
+                && record.enabled
+                && record.trusted
+                && record.manifest.id == owner.extension_id
+                && record.manifest.version == owner.extension_version
+                && record.fingerprint.as_deref() == Some(owner.extension_fingerprint.as_str())
+        })
+    })
+    .unwrap_or(false)
 }
 
 pub(super) fn authorized_records(

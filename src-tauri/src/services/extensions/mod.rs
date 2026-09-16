@@ -185,6 +185,7 @@ pub(crate) use discovery_inspection::inspect as inspect_discoverable;
 pub(crate) use discovery_inspection::InspectionStatus;
 pub(crate) use discovery_listing::list as list_discoverable;
 pub(crate) use discovery_result_serialization::serialize_bounded_result;
+pub(crate) use event_api::automation_event;
 pub(crate) const MAX_INSPECTED_EXTENSIONS: usize = discovery_contract::MAX_INSPECTED_EXTENSIONS;
 pub(crate) use discovery_contract::{CONTEXT_THRESHOLD_PERCENT, UNKNOWN_CONTEXT_TOKENS};
 pub(crate) use discovery_limits::DISCOVERY_STORE_MAX_BYTES;
@@ -210,8 +211,8 @@ pub use tool_bridge::{merge_definitions as merge_tool_definitions, validate_argu
 pub(crate) use tool_result::unavailable as unavailable_tool_result;
 
 pub(crate) use public_api::{
-    close_command_error, record_tool_invocation, revoke_extension, MAX_DISCOVERED_PLUGINS,
-    MAX_EXTENSION_TOOLS, MAX_PERMISSION_SUMMARY_CHARS,
+    automation_owner_is_current, close_command_error, record_tool_invocation, revoke_extension,
+    MAX_DISCOVERED_PLUGINS, MAX_EXTENSION_TOOLS, MAX_PERMISSION_SUMMARY_CHARS,
 };
 
 pub(crate) use extension_internal_exports::*;

@@ -59,7 +59,6 @@ pub(crate) fn tool_finished(
     ));
 }
 
-#[allow(dead_code, reason = "producer is connected by the automation lot B6")]
 pub(crate) fn automation_event(
     session_id: &str,
     request_id: &str,

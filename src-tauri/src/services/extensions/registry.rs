@@ -115,6 +115,15 @@ pub(super) fn replace_ui_records(
 }
 
 pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<bool, String> {
+    let current = find(id)?;
+    let automation_owner = if current.kind == ExtensionKind::Builtin {
+        super::host_identity::OFFICIAL_IDENTITY
+    } else {
+        id
+    };
+    if !enabled {
+        crate::services::scheduler::revoke_extension_automations(automation_owner).await?;
+    }
     let mut reminder = false;
     update(id, |record| {
         if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
@@ -142,6 +151,8 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
     if !enabled {
         crate::services::agent_local::permission_gate::clear_extension(id).await;
         super::loading_marker::ui_clear_if_matches(id)?;
+    } else {
+        crate::services::scheduler::allow_extension_automations(automation_owner);
     }
     Ok(reminder)
 }

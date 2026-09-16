@@ -63,7 +63,13 @@ pub async fn set_wakeup_active(
 
 #[tauri::command]
 pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Result<(), String> {
+    if paused {
+        crate::services::scheduler::cancel_all_automation_occurrences();
+    }
     store::set_global_paused(paused)?;
+    if !paused {
+        crate::services::scheduler::resume_automation_occurrences();
+    }
     scheduler.notify_config_changed();
     Ok(())
 }

@@ -155,13 +155,13 @@ async fn an_error_before_the_first_durable_message_removes_only_an_empty_new_ses
 }
 
 #[tokio::test]
-async fn tool_trace_is_persisted_before_missing_text_is_reported_in_both_modes() {
+async fn owned_wakeup_preserves_agent_tool_trace() {
     for is_new_session in [false, true] {
-        assert_tool_trace_survives_missing_text(is_new_session).await;
+        assert_tool_trace_is_an_agent_result(is_new_session).await;
     }
 }
 
-async fn assert_tool_trace_survives_missing_text(is_new_session: bool) {
+async fn assert_tool_trace_is_an_agent_result(is_new_session: bool) {
     let session =
         session_store::create_full("Tool trace", "test-model", "ollama", is_new_session, None)
             .await
@@ -237,7 +237,7 @@ async fn assert_tool_trace_survives_missing_text(is_new_session: bool) {
         .map(|message| message.role.as_str())
         .collect::<Vec<_>>();
     assert_eq!(roles, vec!["user", "assistant", "tool"]);
-    assert!(!super::agentic::has_text_result(&[
+    assert!(super::agentic::has_agent_result(&[
         ChatMessage::assistant(String::new(), None, None, None, None),
         ChatMessage::tool("README.md".into(), Some("call-1".into()), None),
     ]));

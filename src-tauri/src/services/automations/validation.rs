@@ -86,7 +86,7 @@ pub(super) fn validate_definition(
     }
 }
 
-async fn validate_model(provider: &str, model: &str) -> Result<(), AutomationError> {
+pub(crate) async fn validate_model(provider: &str, model: &str) -> Result<(), AutomationError> {
     if llm::route::canonical_provider_id(provider) != provider
         || !llm::stream_dispatch::is_available(
             provider,

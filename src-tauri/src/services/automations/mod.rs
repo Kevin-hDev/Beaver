@@ -51,6 +51,9 @@ pub(crate) use runtime_scan::scan_definitions_at as scan_and_advance_at;
 #[cfg(test)]
 pub(crate) use history_store::all_at as all_history_at;
 pub(crate) use history_store::append_at as append_history_at;
+pub(crate) use ownership::consent_is_current as extension_consent_is_current;
+#[cfg(test)]
+pub(crate) use ownership::content_fingerprint as extension_content_fingerprint;
 pub(crate) use runtime_lifecycle::{
     mark_running_at as mark_runtime_running_at, mark_terminal_at as mark_runtime_terminal_at,
     remove_terminal_unlocked_at, runtime_at as read_runtime_at, terminal_unlocked_at,
@@ -69,6 +72,11 @@ pub use service::{create, delete, disable_missing_target, get, history, list, up
 #[cfg(test)]
 pub(crate) use service_mutations::record_completion_at;
 pub(crate) use service_mutations::record_completion_unlocked_at;
+pub(crate) use service_owned::{
+    disable_unavailable_at as disable_extension_unavailable_at,
+    is_extension_owned_at as is_extension_owned_automation_at,
+    revoke_owner_at as revoke_extension_owner_at,
+};
 #[cfg(test)]
 pub(crate) use store::mutate;
 pub use store::read_all;
@@ -76,7 +84,23 @@ pub(crate) use text_validation::{
     validate_multiline_text, validate_optional_multiline_text, validate_single_line_text,
 };
 pub use types::*;
+pub(crate) use validation::validate_model as validate_runtime_model;
 pub(crate) use validation::validate_schedule;
+
+pub(crate) async fn revoke_extension_owner(extension_id: &str) -> Result<(), String> {
+    revoke_extension_owner_at(&crate::services::paths::data_dir(), extension_id)
+        .await
+        .map(|_| ())
+        .map_err(|_| "store_unavailable".to_string())
+}
+
+pub(crate) async fn is_extension_owned_automation(id: uuid::Uuid) -> Result<bool, AutomationError> {
+    is_extension_owned_automation_at(&crate::services::paths::data_dir(), id).await
+}
+
+pub(crate) async fn disable_extension_unavailable(id: uuid::Uuid) -> Result<(), AutomationError> {
+    disable_extension_unavailable_at(&crate::services::paths::data_dir(), id).await
+}
 
 pub(crate) const fn history_max_lines() -> usize {
     history_store::MAX_LINES

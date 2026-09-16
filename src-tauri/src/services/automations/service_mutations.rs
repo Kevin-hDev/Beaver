@@ -83,6 +83,9 @@ pub(crate) async fn update_at(
         {
             return Err(AutomationError::ConsentRequired);
         }
+        if current.status == AutomationStatus::Disabled {
+            crate::services::scheduler::cancel_automation_occurrences(id);
+        }
         let updated = current.clone();
         super::store::write_definitions_unlocked_at(root, definitions)
             .await
@@ -111,6 +114,7 @@ pub(crate) async fn delete_at(
         if !definitions.iter().any(|item| item.id == id) {
             return Err(AutomationError::NotFound);
         }
+        crate::services::scheduler::cancel_automation_occurrences(id);
         super::retire_if_referenced_unlocked_at(root, id).await?;
         let before = definitions.len();
         definitions.retain(|item| item.id != id);
@@ -182,6 +186,7 @@ pub(super) async fn disable_missing_target_at(
         .iter_mut()
         .find(|item| item.id == id)
         .ok_or(AutomationError::NotFound)?;
+    crate::services::scheduler::cancel_automation_occurrences(id);
     definition.status = AutomationStatus::Disabled;
     definition.revision = definition.revision.saturating_add(1);
     super::store::write_definitions_unlocked_at(root, definitions)

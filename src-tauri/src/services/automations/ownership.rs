@@ -60,13 +60,21 @@ pub(super) fn approve(
     Ok(())
 }
 
-pub(super) fn consent_is_current(definition: &AutomationDefinition) -> bool {
+pub(crate) fn consent_is_current(definition: &AutomationDefinition) -> bool {
     let Some(AutomationExtensionOwnership::Valid(owner)) = definition.extension_owner.as_ref()
     else {
         return definition.extension_owner.is_none();
     };
     owner.approved_content_sha256.as_deref() == content_fingerprint(definition).ok().as_deref()
         && owner.approved_at.is_some()
+}
+
+pub(super) fn revoke_consent(definition: &mut AutomationDefinition) {
+    if let Some(AutomationExtensionOwnership::Valid(owner)) = definition.extension_owner.as_mut() {
+        owner.approved_content_sha256 = None;
+        owner.approved_at = None;
+    }
+    definition.status = crate::models::AutomationStatus::Disabled;
 }
 
 pub(super) fn invalidate_if_changed(
@@ -78,15 +86,11 @@ pub(super) fn invalidate_if_changed(
     {
         return Ok(());
     }
-    if let Some(AutomationExtensionOwnership::Valid(owner)) = after.extension_owner.as_mut() {
-        owner.approved_content_sha256 = None;
-        owner.approved_at = None;
-    }
-    after.status = crate::models::AutomationStatus::Disabled;
+    revoke_consent(after);
     Ok(())
 }
 
-pub(super) fn content_fingerprint(
+pub(crate) fn content_fingerprint(
     definition: &AutomationDefinition,
 ) -> Result<String, AutomationError> {
     let bytes = serde_json::to_vec(&ApprovedContent {

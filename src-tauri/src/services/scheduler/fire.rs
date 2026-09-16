@@ -15,12 +15,24 @@ pub async fn fire_automation(
     let Some(definition) = current_definition(automation_id).await else {
         return;
     };
+    let admission =
+        match super::extension_admission::admit(&definition, occurrence_id, &cancel).await {
+            Ok(admission) => admission,
+            Err(code) => {
+                super::fire_result::reject_before_start(occurrence_id, automation_id, code).await;
+                return;
+            }
+        };
+    let cancel = admission.cancel.clone();
     let session = match target_session(&definition).await {
         Ok(session) => session,
         Err(code) => {
-            if super::runtime::mark_terminal(occurrence_id, error_result(code, None))
-                .await
-                .is_err()
+            if super::runtime::mark_terminal(
+                occurrence_id,
+                super::fire_result::error_result(code, None),
+            )
+            .await
+            .is_err()
             {
                 return;
             }
@@ -63,6 +75,7 @@ pub async fn fire_automation(
                 return;
             }
         };
+    let request_id = stream.request_id.clone();
     let result = super::agentic::run(
         &app,
         &definition,
@@ -74,12 +87,23 @@ pub async fn fire_automation(
     .await;
     drop(actor_guard);
     if cancel.is_cancelled() {
+        super::fire_result::finish(
+            occurrence_id,
+            automation_id,
+            &session.id,
+            &request_id,
+            super::fire_result::cancelled_result(Some(session.id.clone())),
+        )
+        .await;
         return;
     }
     match result {
-        Ok(result) if result.has_text_result => {
-            finish(
+        Ok(result) if result.has_agent_result => {
+            super::fire_result::finish(
                 occurrence_id,
+                automation_id,
+                &session.id,
+                &request_id,
                 OccurrenceResult {
                     status: OccurrenceResultStatus::Ok,
                     finished_at: Utc::now(),
@@ -97,7 +121,17 @@ pub async fn fire_automation(
                 serde_json::json!({"wakeup_id": automation_id, "session_id": session.id}),
             );
         }
-        Ok(_) => finish_error(occurrence_id, "assistant_missing", Some(session.id)).await,
+        Ok(_) => {
+            super::fire_result::finish_error(
+                occurrence_id,
+                automation_id,
+                &session.id,
+                &request_id,
+                "assistant_missing",
+                Some(session.id.clone()),
+            )
+            .await
+        }
         Err(error) if error == super::agentic::RUNTIME_ADMISSION_FAILED => {
             if session.created {
                 delete_empty_session(&session.id).await;
@@ -107,37 +141,20 @@ pub async fn fire_automation(
             if session.created {
                 delete_empty_session(&session.id).await;
             }
-            finish_error(occurrence_id, error_code(&error), Some(session.id)).await;
+            super::fire_result::finish_error(
+                occurrence_id,
+                automation_id,
+                &session.id,
+                &request_id,
+                super::fire_result::error_code(&error),
+                Some(session.id.clone()),
+            )
+            .await;
             let _ = app.emit(
                 "wakeup-failed",
                 serde_json::json!({"wakeup_id": automation_id, "error": "Le réveil a échoué"}),
             );
         }
-    }
-}
-
-async fn finish_error(occurrence_id: Uuid, code: &str, session_id: Option<String>) {
-    finish(occurrence_id, error_result(code, session_id)).await;
-}
-
-fn error_result(code: &str, session_id: Option<String>) -> OccurrenceResult {
-    OccurrenceResult {
-        status: OccurrenceResultStatus::Error,
-        finished_at: Utc::now(),
-        error_code: Some(code.into()),
-        session_id,
-        tokens: None,
-        missed_count: None,
-        first_scheduled_for: None,
-        last_scheduled_for: None,
-    }
-}
-
-async fn finish(id: Uuid, result: OccurrenceResult) {
-    if super::runtime::mark_terminal(id, result).await.is_ok()
-        && super::runtime::publish_terminal(id).await.is_err()
-    {
-        ::log::warn!("[scheduler] publication terminale différée");
     }
 }
 
@@ -203,19 +220,6 @@ pub(super) async fn delete_empty_session(session_id: &str) {
     };
     if session.messages.is_empty() && session_store::delete_one(session_id).await.is_err() {
         ::log::warn!("empty_automation_cleanup_failed");
-    }
-}
-
-fn error_code(error: &str) -> &'static str {
-    let lower = error.to_ascii_lowercase();
-    if lower.contains("auth") || lower.contains("401") || lower.contains("403") {
-        "authentication_failed"
-    } else if lower.contains("model") {
-        "model_unavailable"
-    } else if lower.contains("provider") || lower.contains("ollama") {
-        "provider_unavailable"
-    } else {
-        "failed"
     }
 }
 

@@ -134,6 +134,29 @@ async fn extension_activation_respects_global_pause() {
 }
 
 #[tokio::test]
+async fn revoking_owner_disables_automations_and_requires_new_consent() {
+    let root = tempfile::tempdir().unwrap();
+    let id = Uuid::new_v4();
+    seed(root.path(), definition(id, cron())).await;
+    super::service_owned::set_active_at(root.path(), &owner(), id, 1, true, false, Utc::now())
+        .await
+        .unwrap();
+
+    assert_eq!(
+        super::service_owned::revoke_owner_at(root.path(), &owner().id)
+            .await
+            .unwrap(),
+        1
+    );
+    let current = super::store::read_all_at(root.path())
+        .await
+        .unwrap()
+        .remove(0);
+    assert_eq!(current.status, AutomationStatus::Disabled);
+    assert!(!super::ownership::consent_is_current(&current));
+}
+
+#[tokio::test]
 async fn concurrent_creates_share_global_limit() {
     let root = tempfile::tempdir().unwrap();
     super::store::mutate_at(root.path(), |items| {

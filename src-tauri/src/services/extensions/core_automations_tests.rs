@@ -54,3 +54,33 @@ fn public_schedule_is_strict_and_cursor_is_bounded_to_numbers() {
         Err(ExtensionBridgeError::Denied)
     );
 }
+
+#[test]
+fn automation_and_subagent_contexts_cannot_schedule_descendants() {
+    for (automation, subagent) in [(true, false), (false, true)] {
+        assert!(super::core_automations::restricted_execution(
+            "automations.create",
+            &serde_json::json!({}),
+            automation,
+            subagent,
+        ));
+        assert!(super::core_automations::restricted_execution(
+            "automations.setActive",
+            &serde_json::json!({"active": true}),
+            automation,
+            subagent,
+        ));
+        assert!(!super::core_automations::restricted_execution(
+            "automations.setActive",
+            &serde_json::json!({"active": false}),
+            automation,
+            subagent,
+        ));
+        assert!(!super::core_automations::restricted_execution(
+            "automations.list",
+            &serde_json::json!({}),
+            automation,
+            subagent,
+        ));
+    }
+}

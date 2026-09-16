@@ -13,7 +13,7 @@ pub(super) async fn call(
 ) -> Result<CoreResponse, ExtensionBridgeError> {
     let owner = super::registry_access::automation_identity(context)
         .map_err(|_| ExtensionBridgeError::Denied)?;
-    let actor = actor(context, &owner)?;
+    let actor = actor(context, &owner, method, params).await?;
     match method {
         "automations.list" => list(&actor, &owner, params).await,
         "automations.create" => create(context, &actor, &owner, params).await,
@@ -141,9 +141,11 @@ async fn delete(
     Ok(CoreResponse::Json(json!({"deleted": true})))
 }
 
-fn actor(
+async fn actor(
     context: &super::call_context::ExtensionCallContext,
     owner: &ExtensionActorIdentity,
+    method: &str,
+    params: &Value,
 ) -> Result<AutomationActor, ExtensionBridgeError> {
     let scope = context.core_scope().ok_or(ExtensionBridgeError::Denied)?;
     let base = crate::services::automations::actor_context::actor_for(
@@ -153,12 +155,34 @@ fn actor(
         Some(&scope.agent.request_id),
     )
     .map_err(super::core_automations_params::map_error)?;
-    if base.current_automation_id.is_some() {
+    let session = crate::services::agent_local::session_store::get(&scope.agent.session_id)
+        .await
+        .map_err(|_| ExtensionBridgeError::Failed)?;
+    if restricted_execution(
+        method,
+        params,
+        base.current_automation_id.is_some(),
+        session.parent_session_id.is_some(),
+    ) {
         return Err(ExtensionBridgeError::Denied);
     }
     Ok(AutomationActor {
         origin: AutomationOrigin::Extension,
         session_or_channel_id: owner.id.clone(),
-        current_automation_id: None,
+        current_automation_id: base.current_automation_id,
     })
+}
+
+pub(super) fn restricted_execution(
+    method: &str,
+    params: &Value,
+    is_automation: bool,
+    is_subagent: bool,
+) -> bool {
+    if !is_automation && !is_subagent {
+        return false;
+    }
+    matches!(method, "automations.create" | "automations.update")
+        || (method == "automations.setActive"
+            && params.get("active").and_then(Value::as_bool) == Some(true))
 }
