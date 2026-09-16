@@ -197,7 +197,8 @@ fn conflict(raw: &Value, retained: &mut Vec<Value>, conflicts: &mut Vec<Migratio
 }
 
 pub fn acknowledge_successful_startup(root: &Path) -> Result<(), String> {
-    super::migration_files::acknowledge_successful_startup(root)
+    super::migration_files::acknowledge_successful_startup(root)?;
+    super::store_migration_v2::acknowledge_successful_startup(root)
 }
 
 pub(super) fn migration_error() -> String {

@@ -92,19 +92,13 @@ async fn dispatch(
                 status: request.status,
             };
             match crate::services::automations::create(&actor, input).await {
-                Ok(item) => {
-                    crate::services::scheduler::notify_config_changed();
-                    success("create", view::detail(item))
-                }
+                Ok(item) => success("create", view::detail(item)),
                 Err(error) => automation_failure("create", error),
             }
         }
         Action::Update(id, patch) => {
             match crate::services::automations::update(&actor, id, patch).await {
-                Ok(item) => {
-                    crate::services::scheduler::notify_config_changed();
-                    success("update", view::detail(item))
-                }
+                Ok(item) => success("update", view::detail(item)),
                 Err(error) => automation_failure("update", error),
             }
         }
@@ -115,10 +109,7 @@ async fn dispatch(
             }
         }
         Action::Delete(id) => match crate::services::automations::delete(&actor, id).await {
-            Ok(()) => {
-                crate::services::scheduler::notify_config_changed();
-                success("delete", json!({"automation_id": id}))
-            }
+            Ok(()) => success("delete", json!({"automation_id": id})),
             Err(error) => automation_failure("delete", error),
         },
     }

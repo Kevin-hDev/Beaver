@@ -801,7 +801,7 @@
     },
     "target": { "new_session": "新しいセッション", "resume_session": "既存のセッション" },
     "migration": { "title": "ウェイクアップの移行", "timezone": "既存のウェイクアップで使用するタイムゾーンを確認してください。", "conflicts": "一部の古いウェイクアップには判断が必要です。", "remove": "古い項目を削除", "import": "新規として読み込む", "continue": "続行" },
-    "errors": { "audit_unavailable": "監査ログを利用できないため、変更はブロックされました。", "store_unavailable": "ウェイクアップは一時的に利用できません。", "migration_unavailable": "移行を利用できません。", "invalid_timezone": "タイムゾーンが無効です。", "invalid_schedule": "スケジュールが無効です。", "model_unavailable": "モデルを利用できません。", "provider_unavailable": "プロバイダーを利用できません。", "not_found": "ウェイクアップは存在しません。", "globally_paused": "ウェイクアップは一時停止中です。", "invalid_project": "プロジェクトが無効です。", "invalid_input": "入力項目が無効です。", "pauseAll": "すべて一時停止" }
+    "errors": { "audit_unavailable": "監査ログを利用できないため、変更はブロックされました。", "store_unavailable": "ウェイクアップは一時的に利用できません。", "migration_unavailable": "移行を利用できません。", "invalid_timezone": "タイムゾーンが無効です。", "invalid_schedule": "スケジュールが無効です。", "model_unavailable": "モデルを利用できません。", "provider_unavailable": "プロバイダーを利用できません。", "not_found": "ウェイクアップは存在しません。", "revision_conflict": "このウェイクアップは変更されています。再読み込みしてから再試行してください。", "globally_paused": "ウェイクアップは一時停止中です。", "consent_required": "有効化する前に、この変更を承認する必要があります。", "invalid_project": "プロジェクトが無効です。", "invalid_input": "入力項目が無効です。", "pauseAll": "すべて一時停止" }
   },
   "personality": {
     "files": "コア",

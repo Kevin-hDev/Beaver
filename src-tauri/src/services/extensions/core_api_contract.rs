@@ -13,6 +13,7 @@ pub(super) fn advertised_capabilities() -> Vec<&'static str> {
                 OptionalExtensionCapability::RichToolResults,
                 OptionalExtensionCapability::Models,
                 OptionalExtensionCapability::Memory,
+                OptionalExtensionCapability::Automations,
             ]
             .iter()
             .map(OptionalExtensionCapability::as_str),

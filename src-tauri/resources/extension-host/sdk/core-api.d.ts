@@ -62,7 +62,7 @@ export interface BeaverAutomation {
   id: string;
   revision: number;
   name: string;
-  description?: string;
+  description: string | null;
   prompt: string;
   schedule: JsonValue;
   active: boolean;

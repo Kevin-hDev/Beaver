@@ -4,6 +4,7 @@ use super::types::ExtensionEffect;
 pub(super) async fn authorize(
     context: &super::call_context::ExtensionCallContext,
     method: &str,
+    params: &serde_json::Value,
     effect: ExtensionEffect,
 ) -> Result<(), ExtensionBridgeError> {
     let Some(scope) = context.core_scope() else {
@@ -28,6 +29,11 @@ pub(super) async fn authorize(
     if scope.agent.permission_mode == "chat" {
         return Err(ExtensionBridgeError::Denied);
     }
+    if method == "automations.setActive"
+        && params.get("active").and_then(serde_json::Value::as_bool) == Some(true)
+    {
+        return request_confirmation(context, method, effect).await;
+    }
     if !crate::services::agent_local::permission_policy::uses_auto_bypass(
         &scope.agent.permission_mode,
     ) && needs_nested_confirmation(scope.tool_effect, effect)
@@ -36,30 +42,39 @@ pub(super) async fn authorize(
         {
             return Err(ExtensionBridgeError::Denied);
         }
-        let remaining = scope
-            .deadline
-            .saturating_duration_since(std::time::Instant::now());
-        if remaining.is_zero() {
-            return Err(ExtensionBridgeError::Timeout);
-        }
-        let decision = crate::services::agent_local::permission_gate::request_extension_core(
-            &scope.agent.on_event,
-            &scope.tool_name,
-            method,
-            effect,
-            scope.agent.cancel.clone(),
-            scope.deadline,
-        )
-        .await;
-        if decision != crate::services::agent_local::permission_gate::PermissionDecision::Allow {
-            return Err(if scope.agent.cancel.is_cancelled() {
-                ExtensionBridgeError::Revoked
-            } else {
-                ExtensionBridgeError::Denied
-            });
-        }
+        request_confirmation(context, method, effect).await?;
     }
     Ok(())
+}
+
+async fn request_confirmation(
+    context: &super::call_context::ExtensionCallContext,
+    method: &str,
+    effect: ExtensionEffect,
+) -> Result<(), ExtensionBridgeError> {
+    let scope = context.core_scope().ok_or(ExtensionBridgeError::Denied)?;
+    if scope.agent.purpose != crate::services::llm::request_purpose::RequestPurpose::ManualChat {
+        return Err(ExtensionBridgeError::Denied);
+    }
+    if std::time::Instant::now() >= scope.deadline {
+        return Err(ExtensionBridgeError::Timeout);
+    }
+    let decision = crate::services::agent_local::permission_gate::request_extension_core(
+        &scope.agent.on_event,
+        &scope.tool_name,
+        method,
+        effect,
+        scope.agent.cancel.clone(),
+        scope.deadline,
+    )
+    .await;
+    if decision == crate::services::agent_local::permission_gate::PermissionDecision::Allow {
+        Ok(())
+    } else if scope.agent.cancel.is_cancelled() {
+        Err(ExtensionBridgeError::Revoked)
+    } else {
+        Err(ExtensionBridgeError::Denied)
+    }
 }
 
 fn needs_nested_confirmation(parent: ExtensionEffect, requested: ExtensionEffect) -> bool {

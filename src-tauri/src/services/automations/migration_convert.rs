@@ -34,6 +34,7 @@ pub(super) fn convert(raw: &Value, timezone: Tz) -> Result<AutomationDefinition,
         },
         created_at,
         anchor_at: None,
+        extension_owner: None,
     })
 }
 

@@ -801,7 +801,7 @@
     },
     "target": { "new_session": "新会话", "resume_session": "现有会话" },
     "migration": { "title": "唤醒迁移", "timezone": "确认现有唤醒使用的时区。", "conflicts": "部分旧唤醒需要处理。", "remove": "删除旧项", "import": "作为新项导入", "continue": "继续" },
-    "errors": { "audit_unavailable": "审计日志不可用，修改已被阻止。", "store_unavailable": "唤醒暂时不可用。", "migration_unavailable": "唤醒迁移不可用。", "invalid_timezone": "时区无效。", "invalid_schedule": "计划无效。", "model_unavailable": "模型不可用。", "provider_unavailable": "提供商不可用。", "not_found": "唤醒已不存在。", "globally_paused": "唤醒已暂停。", "invalid_project": "项目无效。", "invalid_input": "一个或多个字段无效。", "pauseAll": "全部暂停" }
+    "errors": { "audit_unavailable": "审计日志不可用，修改已被阻止。", "store_unavailable": "唤醒暂时不可用。", "migration_unavailable": "唤醒迁移不可用。", "invalid_timezone": "时区无效。", "invalid_schedule": "计划无效。", "model_unavailable": "模型不可用。", "provider_unavailable": "提供商不可用。", "not_found": "唤醒已不存在。", "revision_conflict": "此唤醒已更改，请重新加载后再试。", "globally_paused": "唤醒已暂停。", "consent_required": "激活前必须批准此更改。", "invalid_project": "项目无效。", "invalid_input": "一个或多个字段无效。", "pauseAll": "全部暂停" }
   },
   "personality": {
     "files": "核心",

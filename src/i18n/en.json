@@ -827,7 +827,9 @@
       "model_unavailable": "The model is unavailable.",
       "provider_unavailable": "The provider is unavailable.",
       "not_found": "The wakeup no longer exists.",
+      "revision_conflict": "This wakeup changed. Reload it before trying again.",
       "globally_paused": "Wakeups are paused.",
+      "consent_required": "This change must be approved before activation.",
       "invalid_project": "The project is invalid.",
       "invalid_input": "One or more fields are invalid.",
       "pauseAll": "Pause all"

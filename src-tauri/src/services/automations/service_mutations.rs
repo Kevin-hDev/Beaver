@@ -33,7 +33,7 @@ pub(crate) async fn create_at(
         let mut definitions = super::store::read_all_unlocked_at(root)
             .await
             .map_err(|_| AutomationError::StoreUnavailable)?;
-        if definitions.len() >= 64 {
+        if definitions.len() >= super::store::MAX_AUTOMATIONS {
             return Err(AutomationError::CapacityReached);
         }
         definitions.push(definition.clone());
@@ -75,7 +75,14 @@ pub(crate) async fn update_at(
             .find(|item| item.id == id)
             .ok_or(AutomationError::NotFound)?;
         super::validation::validate_update_locked(current, &patch)?;
+        let before = current.clone();
         super::service_helpers::apply_patch(current, patch, now)?;
+        super::ownership::invalidate_if_changed(&before, current)?;
+        if current.status == AutomationStatus::Active
+            && !super::ownership::consent_is_current(current)
+        {
+            return Err(AutomationError::ConsentRequired);
+        }
         let updated = current.clone();
         super::store::write_definitions_unlocked_at(root, definitions)
             .await

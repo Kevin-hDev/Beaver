@@ -1,11 +1,66 @@
 use super::call_context::ExtensionCallContext;
 use super::host_identity::HostIdentity;
 use super::types::{ExtensionApiLevel, ExtensionKind, ExtensionRecord};
+use sha2::{Digest, Sha256};
 
 pub(super) fn authorize_call(context: &ExtensionCallContext) -> Result<bool, String> {
     debug_assert!(context.generation() > 0);
     super::registry_memory::with_records(|records| authorized_records(records, context))
         .map_err(|_| unavailable())
+}
+
+pub(super) fn automation_identity(
+    context: &ExtensionCallContext,
+) -> Result<crate::services::automations::ExtensionActorIdentity, String> {
+    super::registry_memory::with_records(|records| automation_identity_from(records, context))?
+        .ok_or_else(unavailable)
+}
+
+fn automation_identity_from(
+    records: &[ExtensionRecord],
+    context: &ExtensionCallContext,
+) -> Option<crate::services::automations::ExtensionActorIdentity> {
+    match context.identity() {
+        HostIdentity::ThirdParty(id) => {
+            let record = records.iter().find(|record| {
+                record.kind == ExtensionKind::Local
+                    && record.manifest.id == *id
+                    && record.enabled
+                    && record.trusted
+            })?;
+            Some(crate::services::automations::ExtensionActorIdentity {
+                id: id.clone(),
+                version: record.manifest.version.clone(),
+                fingerprint: record.fingerprint.clone()?,
+            })
+        }
+        HostIdentity::Official => {
+            let mut records = records
+                .iter()
+                .filter(|record| {
+                    record.kind == ExtensionKind::Builtin && record.enabled && record.trusted
+                })
+                .collect::<Vec<_>>();
+            records.sort_by(|left, right| left.manifest.id.cmp(&right.manifest.id));
+            if records.is_empty() || records.iter().any(|record| record.fingerprint.is_none()) {
+                return None;
+            }
+            let mut digest = Sha256::new();
+            for record in records {
+                digest.update(record.manifest.id.as_bytes());
+                digest.update([0]);
+                digest.update(record.manifest.version.as_bytes());
+                digest.update([0]);
+                digest.update(record.fingerprint.as_deref()?.as_bytes());
+                digest.update([0]);
+            }
+            Some(crate::services::automations::ExtensionActorIdentity {
+                id: super::host_identity::OFFICIAL_IDENTITY.to_string(),
+                version: env!("CARGO_PKG_VERSION").to_string(),
+                fingerprint: hex::encode(digest.finalize()),
+            })
+        }
+    }
 }
 
 pub(super) fn authorized_records(

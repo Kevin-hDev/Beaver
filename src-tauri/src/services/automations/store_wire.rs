@@ -1,4 +1,7 @@
-use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus, AutomationTarget};
+use crate::models::{
+    AutomationDefinition, AutomationExtensionOwner, AutomationExtensionOwnership,
+    AutomationSchedule, AutomationStatus, AutomationTarget,
+};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
@@ -37,6 +40,8 @@ struct AutomationWire {
     created_at: DateTime<Utc>,
     #[serde(skip_serializing_if = "Option::is_none")]
     anchor_at: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extension_owner: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -88,6 +93,7 @@ impl From<AutomationDefinition> for AutomationWire {
             status: value.status,
             created_at: value.created_at,
             anchor_at: value.anchor_at,
+            extension_owner: value.extension_owner.map(owner_to_wire),
         }
     }
 }
@@ -119,14 +125,47 @@ impl TryFrom<AutomationWire> for AutomationDefinition {
             status: value.status,
             created_at: value.created_at,
             anchor_at: value.anchor_at,
+            extension_owner: value.extension_owner.map(owner_from_wire),
         })
     }
 }
 
-pub(super) fn decode_file(file: &AutomationFile) -> Result<Vec<AutomationDefinition>, String> {
-    if file.schema_version != super::store::AUTOMATIONS_SCHEMA_VERSION {
-        return Err(super::store::store_error());
+fn owner_to_wire(value: AutomationExtensionOwnership) -> serde_json::Value {
+    match value {
+        AutomationExtensionOwnership::Valid(owner) => {
+            serde_json::to_value(owner).unwrap_or(serde_json::Value::Null)
+        }
+        AutomationExtensionOwnership::Invalid(raw) => raw,
     }
+}
+
+fn owner_from_wire(raw: serde_json::Value) -> AutomationExtensionOwnership {
+    let parsed = serde_json::from_value::<AutomationExtensionOwner>(raw.clone());
+    match parsed {
+        Ok(owner) if valid_owner(&owner) => AutomationExtensionOwnership::Valid(owner),
+        _ => AutomationExtensionOwnership::Invalid(raw),
+    }
+}
+
+fn valid_owner(owner: &AutomationExtensionOwner) -> bool {
+    let bounded = |value: &str| {
+        !value.is_empty() && value.chars().count() <= 128 && !value.chars().any(char::is_control)
+    };
+    bounded(&owner.extension_id)
+        && bounded(&owner.extension_version)
+        && valid_sha(&owner.extension_fingerprint)
+        && match (&owner.approved_content_sha256, owner.approved_at) {
+            (None, None) => true,
+            (Some(value), Some(_)) => valid_sha(value),
+            _ => false,
+        }
+}
+
+fn valid_sha(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+pub(super) fn decode_file(file: &AutomationFile) -> Result<Vec<AutomationDefinition>, String> {
     file.automations
         .iter()
         .cloned()

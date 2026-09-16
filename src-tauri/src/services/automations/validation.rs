@@ -177,6 +177,7 @@ fn schedule_probe(schedule: AutomationSchedule) -> AutomationDefinition {
         status: AutomationStatus::Active,
         created_at: Utc::now(),
         anchor_at: None,
+        extension_owner: None,
     }
 }
 

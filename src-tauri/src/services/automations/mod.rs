@@ -12,6 +12,7 @@ mod migration_files;
 pub(crate) mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
+mod ownership;
 mod runtime_lifecycle;
 mod runtime_recovery;
 mod runtime_retired;
@@ -22,7 +23,10 @@ mod runtime_wire;
 mod service;
 mod service_helpers;
 mod service_mutations;
+pub(crate) mod service_owned;
+pub(crate) mod service_owned_api;
 mod store;
+mod store_migration_v2;
 mod store_wire;
 mod text_validation;
 mod types;
@@ -93,6 +97,8 @@ mod automation_race_tests;
 #[cfg(test)]
 mod history_store_tests;
 #[cfg(test)]
+mod service_owned_tests;
+#[cfg(test)]
 mod service_tests;
 
 #[cfg(test)]
@@ -106,5 +112,7 @@ pub(crate) use store::{mutate_at as mutate_automations_at, read_all_at as read_a
 mod migration_tests;
 #[cfg(test)]
 mod runtime_store_tests;
+#[cfg(test)]
+mod store_migration_v2_tests;
 #[cfg(test)]
 mod store_tests;

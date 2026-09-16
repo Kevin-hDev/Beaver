@@ -75,6 +75,7 @@ pub(super) fn new_definition(
         status: input.status,
         created_at: now,
         anchor_at,
+        extension_owner: None,
     }
 }
 

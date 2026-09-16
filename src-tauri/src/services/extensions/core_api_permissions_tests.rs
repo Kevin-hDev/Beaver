@@ -58,9 +58,31 @@ fn scoped_context_for(
     super::call_context::ExtensionCallContext::for_test_with_capabilities(
         HostIdentity::Official,
         ExtensionApiLevel::Advanced,
-        vec!["memory".into(), "models".into()],
+        vec!["memory".into(), "models".into(), "automations".into()],
     )
     .with_core_scope(scope)
+}
+
+#[tokio::test]
+async fn automation_activation_always_requires_manual_confirmation() {
+    let context = scoped_context_for(
+        false,
+        CancellationToken::new(),
+        "auto",
+        None,
+        RequestPurpose::Automation,
+    );
+    let policy = super::core_api_dispatch::policy(&context, "automations.setActive").unwrap();
+    assert_eq!(
+        super::core_api_permissions::authorize(
+            &context,
+            "automations.setActive",
+            &serde_json::json!({"active": true}),
+            policy.effect,
+        )
+        .await,
+        Err(ExtensionBridgeError::Denied)
+    );
 }
 
 #[tokio::test]
@@ -78,7 +100,7 @@ async fn models_generate_is_denied_in_plan_explorer_and_chat() {
     ] {
         let policy = super::core_api_dispatch::policy(&context, "models.generate").unwrap();
         assert_eq!(
-            super::core_api_permissions::authorize(&context, "models.generate", policy.effect).await,
+            super::core_api_permissions::authorize(&context, "models.generate", &serde_json::json!({}), policy.effect).await,
             Err(ExtensionBridgeError::Denied),
         );
     }
@@ -92,7 +114,7 @@ async fn nested_call_cannot_upgrade_plan_or_parent_permissions() {
     let context = scoped_context(true, CancellationToken::new());
     let policy = super::core_api_dispatch::policy(&context, "memory.write").unwrap();
     assert_eq!(
-        super::core_api_permissions::authorize(&context, "memory.write", policy.effect).await,
+        super::core_api_permissions::authorize(&context, "memory.write", &serde_json::json!({}), policy.effect).await,
         Err(ExtensionBridgeError::Denied)
     );
 }
@@ -103,7 +125,7 @@ async fn legacy_call_and_typed_call_share_authorization() {
     for method in ["mcp.tool.call", "memory.write"] {
         let policy = super::core_api_dispatch::policy(&context, method).unwrap();
         assert_eq!(
-            super::core_api_permissions::authorize(&context, method, policy.effect).await,
+            super::core_api_permissions::authorize(&context, method, &serde_json::json!({}), policy.effect).await,
             Err(ExtensionBridgeError::Denied),
             "{method}"
         );
@@ -119,6 +141,7 @@ async fn stop_revokes_nested_work() {
         super::core_api_permissions::authorize(
             &context,
             "mcp.tool.call",
+            &serde_json::json!({}),
             ExtensionEffect::ExternalWrite
         )
         .await,

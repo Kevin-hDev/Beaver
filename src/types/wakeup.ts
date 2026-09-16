@@ -121,7 +121,9 @@ export type AutomationErrorCode =
   | "model_unavailable"
   | "provider_unavailable"
   | "not_found"
+  | "revision_conflict"
   | "globally_paused"
+  | "consent_required"
   | "invalid_project"
   | "invalid_input";
 

@@ -17,7 +17,7 @@ import { useFsEvent } from "./use-fs-event";
 const ERROR_CODES = new Set<AutomationErrorCode>([
   "audit_unavailable", "store_unavailable", "migration_unavailable", "invalid_timezone",
   "invalid_schedule", "model_unavailable", "provider_unavailable", "not_found",
-  "globally_paused", "invalid_project", "invalid_input",
+  "revision_conflict", "globally_paused", "consent_required", "invalid_project", "invalid_input",
 ]);
 
 function errorCode(error: unknown): AutomationErrorCode {

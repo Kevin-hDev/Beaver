@@ -130,6 +130,27 @@ export function createExtensionApi(specification) {
           archive: (options) => callAtLevel("stable", "memory.archive", options),
         })
       : undefined,
+    automations: capabilities.includes("automations")
+      ? Object.freeze({
+          list: (options = {}) => callAtLevel("stable", "automations.list", options),
+          create: (options) => callAtLevel("stable", "automations.create", options),
+          update: (automationId, revision, patch) => callAtLevel(
+            "stable",
+            "automations.update",
+            { ...patch, automationId: String(automationId), revision },
+          ),
+          setActive: (automationId, revision, active) => callAtLevel(
+            "stable",
+            "automations.setActive",
+            { automationId: String(automationId), revision, active },
+          ),
+          delete: (automationId, revision) => callAtLevel(
+            "stable",
+            "automations.delete",
+            { automationId: String(automationId), revision },
+          ),
+        })
+      : undefined,
     secrets: Object.freeze({
       getProviderKey: (providerId) =>
         callCore("secrets.provider.get", { providerId: String(providerId) }),

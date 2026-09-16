@@ -1,6 +1,10 @@
 mod core_api_contract;
 mod core_api_dispatch;
 mod core_api_permissions;
+mod core_automations;
+mod core_automations_params;
+#[cfg(test)]
+mod core_automations_tests;
 #[cfg(test)]
 mod core_api_permissions_tests;
 mod core_bridge;

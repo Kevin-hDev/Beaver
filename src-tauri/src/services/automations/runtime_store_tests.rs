@@ -27,6 +27,7 @@ fn cron_definition(
         status: crate::models::AutomationStatus::Active,
         created_at,
         anchor_at: None,
+        extension_owner: None,
     }
 }
 

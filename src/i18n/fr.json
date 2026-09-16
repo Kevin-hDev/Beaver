@@ -827,7 +827,9 @@
       "model_unavailable": "Le modèle est indisponible.",
       "provider_unavailable": "Le fournisseur est indisponible.",
       "not_found": "Ce réveil n'existe plus.",
+      "revision_conflict": "Ce réveil a été modifié. Rechargez-le avant de réessayer.",
       "globally_paused": "Les réveils sont en pause.",
+      "consent_required": "Cette modification doit être approuvée avant l'activation.",
       "invalid_project": "Le projet est invalide.",
       "invalid_input": "Un ou plusieurs champs sont invalides.",
       "pauseAll": "Tout mettre en pause"

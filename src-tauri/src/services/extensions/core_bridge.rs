@@ -72,7 +72,7 @@ async fn execute(
     if context.revoked().is_cancelled() {
         return Err(ExtensionBridgeError::Revoked);
     }
-    super::core_api_permissions::authorize(context, method, policy.effect).await?;
+    super::core_api_permissions::authorize(context, method, params, policy.effect).await?;
     let budget = context.core_scope().map_or(policy.budget, |scope| {
         policy.budget.min(
             scope
@@ -115,6 +115,9 @@ async fn dispatch(
     }
     if method.starts_with("memory.") {
         return super::core_memory::call(context, method, params).await;
+    }
+    if method.starts_with("automations.") {
+        return super::core_automations::call(context, method, params).await;
     }
     dispatch_legacy(method, params)
         .await
