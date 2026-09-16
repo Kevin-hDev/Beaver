@@ -14,7 +14,10 @@ pub(crate) fn sync_directory(_path: &Path) -> Result<(), String> {
 
 #[cfg(windows)]
 pub(crate) fn rename_durable(source: &Path, destination: &Path) -> Result<(), String> {
-    // Windows confirms the rename itself because directories cannot be flushed as files.
+    if source.is_dir() {
+        // Windows directory moves stay on one volume; WRITE_THROUGH only covers copy/delete moves.
+        return std::fs::rename(source, destination).map_err(|_| super::private_store_error());
+    }
     super::private_store_windows::rename_file(source, destination)
 }
 
