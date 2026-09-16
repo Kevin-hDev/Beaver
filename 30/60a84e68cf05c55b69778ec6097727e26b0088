@@ -1,0 +1,30 @@
+B7 — API de sous-agents et propriété persistée
+
+État validé
+- Le SDK expose spawn/list/get/send/cancel uniquement quand la capacité subagents est réellement raccordée.
+- Spawn réutilise prepare_delegate, le registre natif, ses plafonds et le dispatcher borné ; aucun second orchestrateur ni mapping parallèle.
+- La session enfant persiste une attribution Rust (id/version/empreinte) en schéma v7. Les sessions v6 reçoivent une sauvegarde exacte .v6.bak ; les versions futures restent lisibles mais non mutables. Une attribution malformée devient non contrôlable sans rendre l’historique illisible.
+- list/get/send/cancel exigent le parent et l’attribution exacte. Une mise à jour/révocation ne peut plus piloter l’enfant précédent ; les opérations natives conservent leur contrôle et ne suppriment pas l’attribution.
+- Le mode enfant part du mode propre à la session parente, borné par le réglage global. Chat, Plan, sous-agent et mode inconnu ferment l’API.
+- Le retour de spawn ne tue pas l’enfant ; l’arrêt du stream parent et la révocation de l’extension utilisent les mécanismes natifs d’annulation. La révocation ne touche pas les enfants voisins.
+- subagent.status.changed est publié seulement après admission réelle et après terminal persistant ; le commit terminal existant déduplique lecteur et superviseur.
+- Les paramètres requis vides et les clés hors contrat sont refusés côté Hôte et côté Rust.
+- L’attribution reste privée : aucun nouveau champ n’est projeté dans le type frontend de lecture.
+
+Auto-revue
+- Déplacement de l’événement started après acceptation du dispatcher pour éviter un faux démarrage.
+- Préservation de l’attribution lors d’une reprise native.
+- Renommage du point central de révocation en revoke_extension_work car il annule désormais automatisations et sous-agents.
+- Tous les fichiers de production touchés restent sous 230 lignes ; git diff --check est propre.
+
+Validation exécutée
+- npm run contracts:check : vert.
+- npm run test:extensions-host : 135/135 verts.
+- cargo test --lib services::extensions:: -- --test-threads=1 : 516 verts, 10 ignorés intentionnellement.
+- Suites ciblées registre, annulation, propriété du stream, contrôle/consignes, spawn channel, migration et scheduler : vertes.
+- Les 6 tests requis du plan ont chacun exécuté 1 test réel et sont verts.
+- cargo check, cargo fmt --all -- --check, cargo clippy --all-targets -- -D warnings : verts.
+- npm run lint : vert.
+- graphify update . : exécuté.
+
+Aucune PR, aucun push, aucune CI distante lancée.
