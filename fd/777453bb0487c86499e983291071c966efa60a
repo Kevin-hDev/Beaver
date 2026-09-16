@@ -1,0 +1,11 @@
+B6 — Exécution des réveils, révocation et reprise
+
+État validé : admission de chaque occurrence avant Running avec contrôle de propriétaire, approbation, empreinte, consentement, cible et modèle. Le registre occurrence→CancellationToken est borné par SCHEDULED_WAKEUPS_CAPACITY, isole les propriétaires et ferme les admissions lors des révocations et de la pause globale.
+
+Révocation : désactivation, mise à jour, changement d’empreinte, retrait et pause annulent les occurrences concernées avant la persistance de l’état inactif. Une erreur de persistance conserve le blocage en mémoire. La reprise explicite retire le blocage, mais ne restaure jamais un consentement révoqué.
+
+Exécution : le moteur Agent natif est conservé ; une trace outil sans texte compte comme résultat. automation.execution.started est émis après mark_running et le terminal après mark_terminal. Les créations/mises à jour/réactivations descendantes sont refusées aux sous-agents et aux automatisations d’extension, sans changer les droits historiques des automatisations natives.
+
+Auto-review : deux courses ont été détectées et corrigées avant commit. La pause globale bloque désormais les nouvelles admissions avant écriture du réglage, et une annulation observée avant mark_running restaure le tour sans lancer le modèle. Un dépassement impossible du registre des propriétaires ferme toutes les admissions d’extension au lieu de laisser passer.
+
+Validation exécutée : cargo check ; cargo fmt --all -- --check ; cargo clippy --all-targets -- -D warnings ; scheduler 26/26 ; tool_automation 9/9 ; automations 67/67 ; extensions core 43/43 ; registry 13/13 ; install_jobs 58/58 (1 test générateur ignoré prévu) ; heartbeat 4/4 ; git diff --check ; graphify update .
