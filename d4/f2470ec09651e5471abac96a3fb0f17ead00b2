@@ -1,0 +1,36 @@
+Lot B2 — événements Agent bornés et observables
+
+État validé
+- Les événements de tour sont émis uniquement pour Agent, y compris /compress et les échecs de préparation; agent_chat_task_recovery::finish reste l’unique propriétaire du terminal.
+- Les événements d’outil partent seulement après les gardes, au point réel d’exécution. Un appel refusé ne produit ni started ni finished.
+- Les payloads outil sont fermés à name, toolCallId, status, errorCode, truncated et domain; aucun contenu, résumé, chemin, artefact, persistance ou scope n’est exposé.
+- Ordre et séquence sont conservés par flux, sans ordre global revendiqué. Les flux automation et sous-agent sont préparés mais leurs producteurs restent volontairement reportés à B6/B7.
+- Les abonnements sont figés depuis les contributions validées de la génération. Un rechargement sans abonnement efface l’ancien routage.
+- Une file Rust bornée et une file Hôte bornée découplent le producteur des callbacks. L’accusé Hôte arrive après admission en file et avant les gestionnaires.
+- Saturation, expiration et callback pendant sont comptés sans invalider un Hôte sain. Une génération remplacée annule uniquement sa livraison, pas ses voisines.
+- Le plafond de callbacks actifs reste occupé après timeout tant que la Promise réelle ne se termine pas.
+
+Revue corrective du lot
+- Corrigé pendant la revue: l’ancien test Hôte attendait une livraison synchrone; il vérifie désormais l’accusé queued.
+- Corrigé pendant la revue: tool.finished était initialement projeté trop tard et pouvait suivre un refus; il est désormais couplé au started au point d’exécution.
+- Corrigé pendant la revue: une génération rechargée sans événement conservait son ancien abonnement; le routeur le retire explicitement.
+- Les responsabilités Node event handlers/delivery et Rust payload/delivery ont été séparées pour respecter la limite de taille des fichiers sans dupliquer les autorités.
+
+Validation exécutée
+- cargo test --lib services::extensions: 494 réussis, 10 ignorés, 0 échec.
+- npm run test:extensions-host: 131 réussis, 0 échec.
+- Tests ciblés event_: 6 réussis, 0 échec.
+- Test Chat sans événement observateur: 1 réussi, 0 échec.
+- Test récupération panic/terminal: 1 réussi, 0 échec.
+- cargo clippy --all-targets -- -D warnings: réussi.
+- cargo check: réussi.
+- npx tsc --noEmit: réussi.
+- npm run lint: réussi.
+- npm run contracts:check: réussi.
+- git diff --check: réussi.
+- graphify update .: réussi.
+
+Limites conscientes
+- Aucun rejeu durable ni garantie exactly-once, conformément au plan.
+- Les producteurs automation et sous-agent ne sont pas encore raccordés; seuls leurs constructeurs de flux sûrs sont prêts pour B6/B7.
+- Les compteurs Hôte restent internes jusqu’au raccordement de l’état d’activité prévu au lot B10.
