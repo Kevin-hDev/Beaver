@@ -5,11 +5,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createToolInterceptor } from "../../src-tauri/resources/extension-host/tool-interceptor.mjs";
 import { createExtensionApi } from "../../src-tauri/resources/extension-host/extension-api.mjs";
+import { negotiateCapabilities } from "../../src-tauri/resources/extension-host/extension-api-capabilities.mjs";
+import { OPTIONAL_CAPABILITIES } from "../../src-tauri/resources/extension-host/contract.mjs";
 import {
   callExtensionInterceptor,
   loadExtensionWithApi,
   resetExtensions,
 } from "../../src-tauri/resources/extension-host/loader.mjs";
+
+negotiateCapabilities(OPTIONAL_CAPABILITIES);
 
 test("late_or_mutating_response_cannot_execute_tool", async () => {
   const interceptor = createToolInterceptor(true);

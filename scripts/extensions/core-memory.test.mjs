@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { createExtensionApi } from "../../src-tauri/resources/extension-host/extension-api.mjs";
+import { negotiateCapabilities } from "../../src-tauri/resources/extension-host/extension-api-capabilities.mjs";
+import { OPTIONAL_CAPABILITIES } from "../../src-tauri/resources/extension-host/contract.mjs";
+
+negotiateCapabilities(OPTIONAL_CAPABILITIES);
 
 test("memory API exposes only scoped topic operations", () => {
   const { api } = createExtensionApi({

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
-import { createHost, resetAndLoad } from "./host-test-client.mjs";
+import { createHost, negotiateExpandedApi, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(".");
 const fixture = join(root, "scripts", "extensions", "fixtures", "core-api");
@@ -27,6 +27,7 @@ test("the documented contextual API example loads through Jiti and uses the core
   });
 
   try {
+    await negotiateExpandedApi(host);
     assert.equal(manifest.main, "./index.ts");
     const loaded = await resetAndLoad(host, [{
       id: manifest.id,

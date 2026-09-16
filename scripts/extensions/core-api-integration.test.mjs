@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
-import { createHost, resetAndLoad } from "./host-test-client.mjs";
+import { createHost, negotiateExpandedApi, resetAndLoad } from "./host-test-client.mjs";
 
 const hostScript = resolve("src-tauri/target/extension-host/host.mjs");
 const fixture = resolve("src-tauri/tests/fixtures/extensions/api-expansion");
@@ -35,6 +35,7 @@ test("an attributed tool composes model, memory replay and a rich result without
     },
   });
   try {
+    await negotiateExpandedApi(host);
     const manifest = JSON.parse(await readFile(join(fixture, "beaver-extension.json"), "utf8"));
     const loaded = await resetAndLoad(host, [{
       id: manifest.id,
@@ -100,6 +101,7 @@ test("controlled saturation and deceptive results remain isolated and bounded", 
     },
   });
   try {
+    await negotiateExpandedApi(host);
     const loaded = await resetAndLoad(host, [
       { id: "test.saturator", mainPath: saturator, manifest: { apiLevel: "stable" } },
       { id: "test.deceptive", mainPath: deceptive, manifest: { apiLevel: "stable" } },

@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import readline from "node:readline";
 
+import { CAPABILITIES, OPTIONAL_CAPABILITIES } from "../../src-tauri/resources/extension-host/contract.mjs";
+
 export function createHost(hostScript, options = {}) {
   const child = spawn(options.executable ?? process.execPath, [hostScript], {
     shell: false,
@@ -98,4 +100,10 @@ export async function resetAndLoad(host, extensions) {
     loaded.push(await host.request("host.load", { extension }));
   }
   return { extensions: loaded };
+}
+
+export function negotiateExpandedApi(host) {
+  return host.request("host.hello", {
+    capabilities: [...CAPABILITIES, ...OPTIONAL_CAPABILITIES],
+  });
 }

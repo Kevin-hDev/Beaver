@@ -13,8 +13,11 @@ import {
   RESULT_BLOCK_TYPES,
 } from "../../src-tauri/resources/extension-host/contract.mjs";
 import { createExtensionApi } from "../../src-tauri/resources/extension-host/extension-api.mjs";
+import { negotiateCapabilities } from "../../src-tauri/resources/extension-host/extension-api-capabilities.mjs";
 import { loadExtensionWithApi, resetExtensions } from "../../src-tauri/resources/extension-host/loader.mjs";
 import { createLegacyHostContext } from "./fixtures/legacy-host.mjs";
+
+negotiateCapabilities(OPTIONAL_CAPABILITIES);
 
 test("oversized contributions fail at registration without publishing any tools", async () => {
   const directory = await mkdtemp(join(tmpdir(), "beaver-contribution-budget-"));
