@@ -1,0 +1,1 @@
+Adds the v1.2.3 English changelog entry for local voice dictation on macOS and Windows. Documentation-only change; the complete frontend and Rust suites were already green on the immediately preceding implementation commit. CI is launched after this commit.
