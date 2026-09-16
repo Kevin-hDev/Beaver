@@ -2545,7 +2545,18 @@
         "extensions_result_too_large": "El resultado de la extensión es demasiado grande.",
         "extensions_listing_unavailable": "La lista de extensiones no está disponible.",
         "extensions_inspection_invalid": "La inspección de extensiones no es válida.",
-        "extensions_inspection_unavailable": "La inspección de extensiones no está disponible."
+        "extensions_inspection_unavailable": "La inspección de extensiones no está disponible.",
+        "extensions_context_required": "Esta acción de extensión requiere un turno de Agente activo.",
+        "extensions_context_invalid": "El contexto de la acción de extensión no es válido.",
+        "extensions_context_expired": "El contexto de la acción de extensión ha caducado.",
+        "extensions_context_revoked": "La acción de extensión ha sido revocada.",
+        "extensions_permission_denied": "La acción de extensión no está permitida.",
+        "extensions_core_saturated": "Beaver está procesando demasiadas acciones de extensión.",
+        "extensions_core_cancelled": "La acción de extensión fue cancelada.",
+        "extensions_partial_apply": "El cambio se aplicó, pero falló un paso posterior.",
+        "extensions_model_unavailable": "El modelo solicitado no está disponible.",
+        "extensions_interception_individual_timeout": "Una extensión tardó demasiado en inspeccionar la llamada a la herramienta.",
+        "extensions_interception_chain_timeout": "La cadena de inspección de extensiones tardó demasiado."
       }
     },
     "diagnostics": {
@@ -2563,6 +2574,10 @@
         "host_missing_response": "El host no confirmó la carga de esta extensión",
         "advanced_required": "Se requiere el modo avanzado para sustituir una herramienta integrada",
         "ui_manifest_legacy": "Se ignoró la declaración de interfaz antigua; las herramientas siguen disponibles",
+        "interceptor_invalid": "El interceptor de herramientas no es válido",
+        "interceptor_failed": "El interceptor de herramientas falló",
+        "interceptor_timeout": "El interceptor de herramientas tardó demasiado",
+        "interception_budget_exhausted": "Se agotó el tiempo de inspección de herramientas",
         "ui_contract_invalid": "El contrato de interfaz no es válido",
         "ui_contribution_invalid": "Una contribución de interfaz no es válida",
         "ui_reference_missing": "Falta una referencia de interfaz",

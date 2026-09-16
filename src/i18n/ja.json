@@ -2540,7 +2540,18 @@
         "extensions_result_too_large": "拡張機能の結果が大きすぎます。",
         "extensions_listing_unavailable": "拡張機能の一覧を利用できません。",
         "extensions_inspection_invalid": "拡張機能の検査が無効です。",
-        "extensions_inspection_unavailable": "拡張機能の検査を利用できません。"
+        "extensions_inspection_unavailable": "拡張機能の検査を利用できません。",
+        "extensions_context_required": "この拡張機能の操作には実行中の Agent ターンが必要です。",
+        "extensions_context_invalid": "拡張機能の操作コンテキストが無効です。",
+        "extensions_context_expired": "拡張機能の操作コンテキストの有効期限が切れました。",
+        "extensions_context_revoked": "拡張機能の操作は取り消されました。",
+        "extensions_permission_denied": "この拡張機能の操作は許可されていません。",
+        "extensions_core_saturated": "Beaver は多数の拡張機能操作を処理中です。",
+        "extensions_core_cancelled": "拡張機能の操作はキャンセルされました。",
+        "extensions_partial_apply": "変更は適用されましたが、後続の処理に失敗しました。",
+        "extensions_model_unavailable": "要求されたモデルを利用できません。",
+        "extensions_interception_individual_timeout": "拡張機能によるツール呼び出しの検査がタイムアウトしました。",
+        "extensions_interception_chain_timeout": "拡張機能の検査チェーンがタイムアウトしました。"
       }
     },
     "diagnostics": {
@@ -2558,6 +2569,10 @@
         "host_missing_response": "ホストがこの拡張機能の読み込みを確認しませんでした",
         "advanced_required": "内蔵ツールの置き換えには高度モードが必要です",
         "ui_manifest_legacy": "以前のインターフェース宣言は無視されました。ツールは引き続き利用できます",
+        "interceptor_invalid": "ツールインターセプターが無効です",
+        "interceptor_failed": "ツールインターセプターが失敗しました",
+        "interceptor_timeout": "ツールインターセプターがタイムアウトしました",
+        "interception_budget_exhausted": "ツール検査の時間予算を使い切りました",
         "ui_contract_invalid": "インターフェース契約が無効です",
         "ui_contribution_invalid": "インターフェース拡張項目が無効です",
         "ui_reference_missing": "インターフェース参照がありません",

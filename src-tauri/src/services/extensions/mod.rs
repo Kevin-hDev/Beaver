@@ -10,6 +10,7 @@ mod contribution_skills;
 #[cfg(test)]
 mod contribution_skills_tests;
 mod contribution_types;
+mod core_api_contract;
 mod core_bridge;
 mod core_response_audit;
 #[cfg(test)]
@@ -225,6 +226,5 @@ pub(crate) use resource_identifier::parse as parse_qualified_contribution_id;
 pub(crate) use resource_loader::{
     load_skill_for_session as load_extension_skill_for_session, LoadedResource, ResourceLoadError,
 };
-
 #[cfg(test)]
 mod storage_resilience_tests;

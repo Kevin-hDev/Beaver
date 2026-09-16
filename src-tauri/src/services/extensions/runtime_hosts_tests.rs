@@ -249,7 +249,7 @@ lines.on("line", (line) => {{
         .unwrap(),
     );
     hosts
-        .bind(reservation, ExtensionApiLevel::Stable, Arc::clone(&process))
+        .bind(reservation, ExtensionApiLevel::Stable, Arc::clone(&process), Vec::new())
         .unwrap();
     process
 }

@@ -38,12 +38,17 @@ pub(super) async fn load_specs(
 }
 
 pub(super) async fn validate_hello(process: &HostProcess) -> Result<HelloResult, String> {
-    let hello =
-        super::runtime::parse::<HelloResult>(process.request("host.hello", json!({})).await?)?;
+    let advertised = super::core_api_contract::advertised_capabilities();
+    let hello = super::runtime::parse::<HelloResult>(
+        process
+            .request("host.hello", json!({ "capabilities": advertised }))
+            .await?,
+    )?;
     if hello.api_version != super::types::BEAVER_API_VERSION {
         return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
     }
     super::runtime_version::validate_node(&hello.node_version)?;
+    super::core_api_contract::validate_negotiated_capabilities(&hello.capabilities)?;
     Ok(hello)
 }
 

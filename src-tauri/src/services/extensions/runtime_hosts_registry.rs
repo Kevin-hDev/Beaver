@@ -50,6 +50,7 @@ impl RuntimeHosts {
         reservation: HostReservation,
         api_level: ExtensionApiLevel,
         process: Arc<HostProcess>,
+        capabilities: Vec<String>,
     ) -> Result<(), HostReservation> {
         if self.len() >= MAX_HOST_PROCESSES || self.contains(&reservation.identity) {
             return Err(reservation);
@@ -59,6 +60,7 @@ impl RuntimeHosts {
             api_level,
             generation: Arc::clone(&reservation.generation),
             process,
+            capabilities,
             revoked: reservation.revoked,
             _temporary_directory: reservation.temporary_directory,
         };
@@ -86,6 +88,7 @@ impl RuntimeHosts {
             api_level,
             generation: reservation.generation,
             process,
+            capabilities: Vec::new(),
             revoked: reservation.revoked,
             _temporary_directory: reservation.temporary_directory,
         });

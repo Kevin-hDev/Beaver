@@ -56,7 +56,7 @@ fn validate_method_budgets(contract: &Value) -> Result<(), String> {
     for method in methods {
         let name = method["name"]
             .as_str()
-            .filter(|name| valid_protocol_code(name, maximum_name_chars))
+            .filter(|name| valid_method_name(name, maximum_name_chars))
             .ok_or_else(|| "invalid host to core method".to_string())?;
         if !names.insert(name) || !matches!(method["level"].as_str(), Some("stable" | "advanced")) {
             return Err("invalid host to core method".to_string());
@@ -93,7 +93,7 @@ fn validate_strings(contract: &Value) -> Result<(), String> {
     ] {
         exact_contract_strings(contract, pointer, expected, maximum_name_chars)?;
     }
-    exact_optional_capabilities(contract, maximum_name_chars)?;
+    super::core_contract::validate_optional_capabilities(contract, maximum_name_chars)?;
     for pointer in [
         "/methods/coreToHost",
         "/events",
@@ -162,26 +162,6 @@ fn exact_contract_strings(
     Ok(())
 }
 
-fn exact_optional_capabilities(contract: &Value, maximum_name_chars: usize) -> Result<(), String> {
-    let values = contract["optionalCapabilities"]
-        .as_array()
-        .ok_or_else(|| "invalid extension contract optional capabilities".to_string())?;
-    let strings = values
-        .iter()
-        .map(Value::as_str)
-        .collect::<Option<Vec<_>>>()
-        .ok_or_else(|| "invalid extension contract optional capabilities".to_string())?;
-    let expected = ["skills", "resources", "richToolResults"];
-    if strings.as_slice() != expected
-        || strings
-            .iter()
-            .any(|value| !valid_optional_capability(value, maximum_name_chars))
-    {
-        return Err("invalid extension contract optional capabilities".to_string());
-    }
-    Ok(())
-}
-
 fn validate_catalog_count(contract: &Value, directory: &Path) -> Result<(), String> {
     let catalog = super::io::read_bounded(
         &directory.join("builtin-plugins/catalog.json"),
@@ -222,9 +202,11 @@ fn valid_protocol_code(value: &str, maximum_chars: usize) -> bool {
         })
 }
 
-fn valid_optional_capability(value: &str, maximum_chars: usize) -> bool {
+fn valid_method_name(value: &str, maximum_chars: usize) -> bool {
     let mut bytes = value.bytes();
     bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
         && value.len() <= maximum_chars
-        && bytes.all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
+        && bytes.all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.')
+        })
 }

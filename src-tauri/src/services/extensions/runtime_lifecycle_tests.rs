@@ -81,7 +81,7 @@ async fn runtime_with_real_host() -> (tempfile::TempDir, ExtensionRuntime, Arc<H
     let mut hosts = RuntimeHosts::new(temporary_root).unwrap();
     let reservation = hosts.reserve(HostIdentity::Official).unwrap();
     hosts
-        .bind(reservation, ExtensionApiLevel::Stable, Arc::clone(&process))
+        .bind(reservation, ExtensionApiLevel::Stable, Arc::clone(&process), Vec::new())
         .unwrap();
     let runtime = ExtensionRuntime {
         paths: Some(paths),
@@ -131,7 +131,7 @@ async fn prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active() {
         .unwrap(),
     );
     hosts
-        .bind(reservation, ExtensionApiLevel::Stable, process)
+        .bind(reservation, ExtensionApiLevel::Stable, process, Vec::new())
         .unwrap();
     let runtime = Arc::new(ExtensionRuntime {
         paths: Some(paths),
@@ -202,7 +202,7 @@ async fn spontaneous_process_exit_marks_error_without_a_user_call() {
         .unwrap(),
     );
     hosts
-        .bind(reservation, ExtensionApiLevel::Stable, process)
+        .bind(reservation, ExtensionApiLevel::Stable, process, Vec::new())
         .unwrap();
     let runtime = Arc::new(ExtensionRuntime {
         paths: Some(paths),

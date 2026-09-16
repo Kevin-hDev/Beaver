@@ -8,6 +8,7 @@ import {
   resetExtensions,
 } from "./loader.mjs";
 import { JITI_VERSION } from "./versions.mjs";
+import { negotiateCapabilities } from "./extension-api-capabilities.mjs";
 
 for (const method of ["log", "info", "debug", "warn", "error"]) {
   console[method] = () => {};
@@ -26,6 +27,7 @@ startProtocol(async (method, params) => {
         apiVersion: API_VERSION,
         jitiVersion: JITI_VERSION,
         nodeVersion: process.version,
+        capabilities: negotiateCapabilities(params?.capabilities),
       };
     case "host.reset":
       loadedSinceReset = 0;

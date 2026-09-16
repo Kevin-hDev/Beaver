@@ -1,6 +1,7 @@
 import { callCore } from "./protocol.mjs";
 import {
   LIMITS,
+  CORE_API_METHODS,
   methodKind,
   methodLevel,
   RESOURCE_TYPES,
@@ -8,21 +9,18 @@ import {
   supportsEvent,
   TIMEOUTS,
 } from "./contract.mjs";
+import { validateCoreApiParams } from "./core-api-validation.mjs";
 import { createUiApi } from "./ui-api.mjs";
-import { ACTIVE_CAPABILITIES } from "./extension-api-capabilities.mjs";
+import { activeCapabilities } from "./extension-api-capabilities.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
 import {
   unicodeScalarLength,
   validContribution,
+  validIdentifier,
   validRelativePath,
 } from "./contribution-validation.mjs";
 
 const inFlightHandlers = new Set();
-function validIdentifier(value) {
-  return typeof value === "string"
-    && value.length <= LIMITS.maxIdentifierChars
-    && /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(value);
-}
 
 export function createExtensionApi(specification) {
   const tools = [];
@@ -97,7 +95,7 @@ export function createExtensionApi(specification) {
     const skill = snapshotContribution(definition);
     if (
       skills.length >= LIMITS.maxSkillsPerExtension
-      || !validContribution(skill, validIdentifier, ["id", "name", "description", "path"])
+      || !validContribution(skill, ["id", "name", "description", "path"])
       || !validRelativePath(skill.path)
       || !["SKILL.md", "skill.md"].includes(skill.path.split("/").at(-1))
       || skills.some((item) => item.id === skill.id)
@@ -109,7 +107,7 @@ export function createExtensionApi(specification) {
     const resource = snapshotContribution(definition);
     if (
       resources.length >= LIMITS.maxResourcesPerExtension
-      || !validContribution(resource, validIdentifier, ["id", "name", "description", "type", "path"])
+      || !validContribution(resource, ["id", "name", "description", "type", "path"])
       || !RESOURCE_TYPES.includes(resource.type)
       || !validRelativePath(resource.path)
       || resources.some((item) => item.id === resource.id)
@@ -120,7 +118,7 @@ export function createExtensionApi(specification) {
   const api = {
     id: specification.id,
     manifest: Object.freeze({ ...specification.manifest }),
-    capabilities: Object.freeze([...ACTIVE_CAPABILITIES]),
+    capabilities: Object.freeze([...activeCapabilities()]),
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
     registerSkill,
@@ -221,5 +219,12 @@ function callAtLevel(level, method, params) {
   if (methodLevel(requested) !== level || methodKind(requested) !== "request") {
     return Promise.reject(new Error("core_method_unavailable"));
   }
-  return callCore(requested, params);
+  const coreMethod = CORE_API_METHODS[requested];
+  if (coreMethod && !activeCapabilities().includes(coreMethod.capability)) {
+    return Promise.reject(new Error("core_method_unavailable"));
+  }
+  return callCore(
+    requested,
+    coreMethod ? validateCoreApiParams(requested, params) : params,
+  );
 }

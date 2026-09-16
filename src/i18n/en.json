@@ -1955,7 +1955,18 @@
         "extensions_result_too_large": "The extension result is too large.",
         "extensions_listing_unavailable": "The extension list is unavailable.",
         "extensions_inspection_invalid": "The extension inspection is invalid.",
-        "extensions_inspection_unavailable": "The extension inspection is unavailable."
+        "extensions_inspection_unavailable": "The extension inspection is unavailable.",
+        "extensions_context_required": "This extension action requires an active Agent turn.",
+        "extensions_context_invalid": "The extension action context is invalid.",
+        "extensions_context_expired": "The extension action context has expired.",
+        "extensions_context_revoked": "The extension action was revoked.",
+        "extensions_permission_denied": "The extension action is not permitted.",
+        "extensions_core_saturated": "Beaver is handling too many extension actions.",
+        "extensions_core_cancelled": "The extension action was cancelled.",
+        "extensions_partial_apply": "The change was applied, but a follow-up step failed.",
+        "extensions_model_unavailable": "The requested model is unavailable.",
+        "extensions_interception_individual_timeout": "An extension took too long to inspect the tool call.",
+        "extensions_interception_chain_timeout": "The extension inspection chain took too long."
       }
     },
     "diagnostics": {
@@ -1973,6 +1984,10 @@
         "host_missing_response": "The host did not confirm that this extension loaded",
         "advanced_required": "Advanced mode is required to replace a built-in tool",
         "ui_manifest_legacy": "The legacy interface declaration was ignored; tools remain available",
+        "interceptor_invalid": "The tool interceptor is invalid",
+        "interceptor_failed": "The tool interceptor failed",
+        "interceptor_timeout": "The tool interceptor took too long",
+        "interception_budget_exhausted": "The tool inspection time budget was exhausted",
         "ui_contract_invalid": "The interface contract is invalid",
         "ui_contribution_invalid": "An interface contribution is invalid",
         "ui_reference_missing": "An interface reference is missing",

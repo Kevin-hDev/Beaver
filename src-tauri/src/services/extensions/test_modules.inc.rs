@@ -2,6 +2,8 @@ mod access_log_tests;
 mod bounded_jsonl_tests;
 mod builtin_tests;
 mod contract_artifact_tests;
+mod core_api_contract_tests;
+mod core_api_test_support;
 mod contribution_contract_tests;
 mod fingerprint_tests;
 mod git_dependencies_tests;

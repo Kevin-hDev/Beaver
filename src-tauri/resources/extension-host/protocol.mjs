@@ -2,17 +2,14 @@ import { randomUUID } from "node:crypto";
 import {
   LIMITS,
   methodKind,
+  methodIsIdempotent,
   PROTOCOL_ERROR_REASONS,
+  RETRYABLE_REASONS,
   TIMEOUTS,
 } from "./contract.mjs";
 import { encodeProtocolMessage, MAX_REQUEST_ID_CHARS } from "./protocol-output.mjs";
 
 const ERROR_REASON_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
-const RETRYABLE_REASONS = new Set([
-  "core_busy",
-  "core_request_timeout",
-  "core_transport_failed",
-]);
 // Capture the protocol writer before host.mjs silences accidental stdout writes.
 const writeProtocol = process.stdout.write.bind(process.stdout);
 const pending = new Map();
@@ -36,16 +33,16 @@ export function callCore(method, params = {}) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
-      reject(coreError(-32_000, "core_request_timeout"));
+      reject(coreError(-32_000, "core_request_timeout", method));
     }, TIMEOUTS.coreRequestTimeoutMs);
     timer.unref();
-    pending.set(id, { resolve, reject, timer });
+    pending.set(id, { resolve, reject, timer, method });
     try {
       send({ jsonrpc: "2.0", id, method, params });
     } catch {
       clearTimeout(timer);
       pending.delete(id);
-      reject(coreError(-32_000, "core_transport_failed"));
+      reject(coreError(-32_000, "core_transport_failed", method));
     }
   });
 }
@@ -159,13 +156,13 @@ function settle(message) {
   clearTimeout(request.timer);
   pending.delete(message.id);
   if (message.error) {
-    request.reject(coreError(message.error.code, message.error.message));
+    request.reject(coreError(message.error.code, message.error.message, request.method));
   } else {
     request.resolve(message.result);
   }
 }
 
-function coreError(code, reason) {
+function coreError(code, reason, method) {
   const safeCode =
     Number.isSafeInteger(code) && code >= -32_768 && code <= -32_000
       ? code
@@ -180,7 +177,8 @@ function coreError(code, reason) {
   error.name = "BeaverExtensionError";
   error.code = safeCode;
   error.reason = safeReason;
-  error.retryable = RETRYABLE_REASONS.has(safeReason);
+  error.retryable = RETRYABLE_REASONS.includes(safeReason)
+    && (safeReason !== "core_request_timeout" || methodIsIdempotent(method));
   return error;
 }
 

@@ -2540,7 +2540,18 @@
         "extensions_result_too_large": "扩展结果过大。",
         "extensions_listing_unavailable": "扩展列表不可用。",
         "extensions_inspection_invalid": "扩展检查无效。",
-        "extensions_inspection_unavailable": "扩展检查不可用。"
+        "extensions_inspection_unavailable": "扩展检查不可用。",
+        "extensions_context_required": "此扩展操作需要正在进行的 Agent 回合。",
+        "extensions_context_invalid": "扩展操作上下文无效。",
+        "extensions_context_expired": "扩展操作上下文已过期。",
+        "extensions_context_revoked": "扩展操作已被撤销。",
+        "extensions_permission_denied": "不允许执行此扩展操作。",
+        "extensions_core_saturated": "Beaver 正在处理过多扩展操作。",
+        "extensions_core_cancelled": "扩展操作已取消。",
+        "extensions_partial_apply": "更改已应用，但后续步骤失败。",
+        "extensions_model_unavailable": "请求的模型不可用。",
+        "extensions_interception_individual_timeout": "某个扩展检查工具调用的时间过长。",
+        "extensions_interception_chain_timeout": "扩展检查链耗时过长。"
       }
     },
     "diagnostics": {
@@ -2558,6 +2569,10 @@
         "host_missing_response": "宿主未确认此扩展已加载",
         "advanced_required": "替换内置工具需要高级模式",
         "ui_manifest_legacy": "旧版界面声明已被忽略；工具仍然可用",
+        "interceptor_invalid": "工具拦截器无效",
+        "interceptor_failed": "工具拦截器失败",
+        "interceptor_timeout": "工具拦截器耗时过长",
+        "interception_budget_exhausted": "工具检查时间预算已耗尽",
         "ui_contract_invalid": "界面契约无效",
         "ui_contribution_invalid": "界面扩展项无效",
         "ui_reference_missing": "缺少界面引用",

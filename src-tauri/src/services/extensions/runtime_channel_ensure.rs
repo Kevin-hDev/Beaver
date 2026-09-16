@@ -67,7 +67,12 @@ impl ExtensionRuntime {
             self.hosts
                 .lock()
                 .await
-                .bind(reservation, api_level.clone(), Arc::clone(&process));
+                .bind(
+                    reservation,
+                    api_level.clone(),
+                    Arc::clone(&process),
+                    hello.capabilities.clone(),
+                );
         if let Err(reservation) = bind {
             return Err(self
                 .reject_spawn(

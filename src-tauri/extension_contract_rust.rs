@@ -30,6 +30,14 @@ pub fn render(contract: &Value) -> Result<String, String> {
     output.push_str("}\n");
     super::r0_enum_renderer::render(&mut output, contract)?;
     for (name, values) in [
+        (
+            "EXTENSION_CAPABILITIES",
+            array_value(contract, "capabilities")?,
+        ),
+        (
+            "OPTIONAL_EXTENSION_CAPABILITIES",
+            array_value(contract, "optionalCapabilities")?,
+        ),
         ("PROTOCOL_ERROR_REASONS", array(errors, "protocolReasons")?),
         (
             "CORE_TO_HOST_METHODS",
@@ -54,6 +62,10 @@ pub fn render(contract: &Value) -> Result<String, String> {
     render_slice(&mut output, "EXTENSION_EFFECT_CLASSES", effects)?;
     super::effect_renderer::render(&mut output, effects)?;
     render_host_methods(
+        &mut output,
+        array(object(contract, "methods")?, "hostToCore")?,
+    )?;
+    super::core_rust_renderer::render(
         &mut output,
         array(object(contract, "methods")?, "hostToCore")?,
     )?;

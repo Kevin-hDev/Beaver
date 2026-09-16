@@ -15,6 +15,7 @@ export const CONTRACT_TESTS = Object.freeze([
   "services::extensions::contract_artifact_tests::checked_in_private_document_tables_match_the_contract",
   "services::extensions::contract_artifact_tests::checked_in_ui_contract_artifacts_name_the_json_authority",
   "services::extensions::contract_artifact_tests::sdk_readme_has_one_bounded_ui_generated_section",
+  "services::extensions::core_api_contract_tests::core_api_contract_is_single_authority",
   "services::agent_local::extension_discovery_contract_tests::discovery_contract_defines_the_r0_names_limits_and_host_imports",
   "services::agent_local::extension_discovery_contract_tests::discovery_contract_rejects_duplicate_or_copied_authority_keys",
   "services::agent_local::extension_discovery_contract_tests::discovery_bootstrap_and_generated_rust_are_bounded",

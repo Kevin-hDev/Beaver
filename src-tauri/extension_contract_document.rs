@@ -19,7 +19,7 @@ pub fn generated_document_section(contract: &Value) -> Result<String, String> {
     }
 
     output.push_str(
-        "\n### Host to core\n\n| Method | Level | Kind | Rust budget (ms) |\n|---|---|---|---:|\n",
+        "\n### Host to core\n\n| Method | Level | Kind | Capability | Context | Idempotent | Effects | Result | Rust budget (ms) |\n|---|---|---|---|---|---|---|---|---:|\n",
     );
     for method in array(object(contract, "methods")?, "hostToCore")? {
         let method = method.as_object().ok_or("invalid host method")?;
@@ -27,10 +27,20 @@ pub fn generated_document_section(contract: &Value) -> Result<String, String> {
             .as_u64()
             .map_or_else(|| "n/a".to_string(), |value| value.to_string());
         output.push_str(&format!(
-            "| `{}` | `{}` | `{}` | {budget} |\n",
+            "| `{}` | `{}` | `{}` | `{}` | `{}` | `{}` | `{}` | `{}` | {budget} |\n",
             string(method, "name")?,
             string(method, "level")?,
             string(method, "kind")?,
+            optional_string(method, "capability"),
+            optional_bool(method, "requiresContext"),
+            optional_bool(method, "idempotent"),
+            method
+                .get("effects")
+                .and_then(Value::as_array)
+                .map(|values| strings(values).map(|values| values.join(", ")))
+                .transpose()?
+                .unwrap_or_else(|| "n/a".to_string()),
+            optional_string(method, "result"),
         ));
     }
 
@@ -50,6 +60,18 @@ pub fn generated_document_section(contract: &Value) -> Result<String, String> {
     }
     output.push_str("<!-- END GENERATED EXTENSION CONTRACT -->");
     Ok(output)
+}
+
+fn optional_string<'a>(value: &'a Map<String, Value>, name: &str) -> &'a str {
+    value.get(name).and_then(Value::as_str).unwrap_or("n/a")
+}
+
+fn optional_bool(value: &Map<String, Value>, name: &str) -> &'static str {
+    match value.get(name).and_then(Value::as_bool) {
+        Some(true) => "yes",
+        Some(false) => "no",
+        None => "n/a",
+    }
 }
 
 fn numeric_table(

@@ -2541,7 +2541,18 @@
         "extensions_result_too_large": "Das Erweiterungsergebnis ist zu groß.",
         "extensions_listing_unavailable": "Die Erweiterungsliste ist nicht verfügbar.",
         "extensions_inspection_invalid": "Die Erweiterungsprüfung ist ungültig.",
-        "extensions_inspection_unavailable": "Die Erweiterungsprüfung ist nicht verfügbar."
+        "extensions_inspection_unavailable": "Die Erweiterungsprüfung ist nicht verfügbar.",
+        "extensions_context_required": "Diese Erweiterungsaktion erfordert einen aktiven Agent-Durchlauf.",
+        "extensions_context_invalid": "Der Kontext der Erweiterungsaktion ist ungültig.",
+        "extensions_context_expired": "Der Kontext der Erweiterungsaktion ist abgelaufen.",
+        "extensions_context_revoked": "Die Erweiterungsaktion wurde widerrufen.",
+        "extensions_permission_denied": "Die Erweiterungsaktion ist nicht erlaubt.",
+        "extensions_core_saturated": "Beaver verarbeitet zu viele Erweiterungsaktionen.",
+        "extensions_core_cancelled": "Die Erweiterungsaktion wurde abgebrochen.",
+        "extensions_partial_apply": "Die Änderung wurde angewendet, aber ein Folgeschritt ist fehlgeschlagen.",
+        "extensions_model_unavailable": "Das angeforderte Modell ist nicht verfügbar.",
+        "extensions_interception_individual_timeout": "Eine Erweiterung hat zu lange für die Prüfung des Tool-Aufrufs benötigt.",
+        "extensions_interception_chain_timeout": "Die Erweiterungs-Prüfkette hat zu lange benötigt."
       }
     },
     "diagnostics": {
@@ -2559,6 +2570,10 @@
         "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
         "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich",
         "ui_manifest_legacy": "Die alte Oberflächendeklaration wurde ignoriert; die Tools bleiben verfügbar",
+        "interceptor_invalid": "Der Tool-Interzeptor ist ungültig",
+        "interceptor_failed": "Der Tool-Interzeptor ist fehlgeschlagen",
+        "interceptor_timeout": "Der Tool-Interzeptor hat zu lange benötigt",
+        "interception_budget_exhausted": "Das Zeitbudget für die Tool-Prüfung ist erschöpft",
         "ui_contract_invalid": "Der Oberflächenvertrag ist ungültig",
         "ui_contribution_invalid": "Ein Oberflächenbeitrag ist ungültig",
         "ui_reference_missing": "Eine Oberflächenreferenz fehlt",

@@ -2541,7 +2541,18 @@
         "extensions_result_too_large": "Il risultato dell’estensione è troppo grande.",
         "extensions_listing_unavailable": "L’elenco delle estensioni non è disponibile.",
         "extensions_inspection_invalid": "L’ispezione delle estensioni non è valida.",
-        "extensions_inspection_unavailable": "L’ispezione delle estensioni non è disponibile."
+        "extensions_inspection_unavailable": "L’ispezione delle estensioni non è disponibile.",
+        "extensions_context_required": "Questa azione dell’estensione richiede un turno Agente attivo.",
+        "extensions_context_invalid": "Il contesto dell’azione dell’estensione non è valido.",
+        "extensions_context_expired": "Il contesto dell’azione dell’estensione è scaduto.",
+        "extensions_context_revoked": "L’azione dell’estensione è stata revocata.",
+        "extensions_permission_denied": "L’azione dell’estensione non è consentita.",
+        "extensions_core_saturated": "Beaver sta gestendo troppe azioni delle estensioni.",
+        "extensions_core_cancelled": "L’azione dell’estensione è stata annullata.",
+        "extensions_partial_apply": "La modifica è stata applicata, ma un passaggio successivo non è riuscito.",
+        "extensions_model_unavailable": "Il modello richiesto non è disponibile.",
+        "extensions_interception_individual_timeout": "Un’estensione ha impiegato troppo tempo per ispezionare la chiamata allo strumento.",
+        "extensions_interception_chain_timeout": "La catena di ispezione delle estensioni ha impiegato troppo tempo."
       }
     },
     "diagnostics": {
@@ -2559,6 +2570,10 @@
         "host_missing_response": "L’host non ha confermato il caricamento di questa estensione",
         "advanced_required": "La modalità avanzata è necessaria per sostituire uno strumento integrato",
         "ui_manifest_legacy": "La dichiarazione di interfaccia precedente è stata ignorata; gli strumenti restano disponibili",
+        "interceptor_invalid": "L’intercettore dello strumento non è valido",
+        "interceptor_failed": "L’intercettore dello strumento non è riuscito",
+        "interceptor_timeout": "L’intercettore dello strumento ha impiegato troppo tempo",
+        "interception_budget_exhausted": "Il tempo disponibile per l’ispezione degli strumenti è esaurito",
         "ui_contract_invalid": "Il contratto dell’interfaccia non è valido",
         "ui_contribution_invalid": "Un contributo dell’interfaccia non è valido",
         "ui_reference_missing": "Manca un riferimento dell’interfaccia",
