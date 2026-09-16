@@ -35,12 +35,16 @@ pub fn find_catalog_entry(
 
 pub(crate) use checkpoint::{discover_checkpoints, save_checkpoint};
 pub use checkpoint::{inspect_partial, Checkpoint, HttpValidator, PartialDecision};
+#[cfg(any(test, target_os = "macos", windows))]
 pub(crate) use extraction::verify_file;
 pub(crate) use installation::{install_archive, installed_receipt};
+#[cfg(any(test, target_os = "macos", windows))]
 pub(crate) use receipt::InstallationReceipt;
 #[cfg(test)]
 pub(crate) use receipt::ReceiptFile;
+#[cfg(any(test, target_os = "macos", windows))]
 pub(crate) use removal::resume_incomplete_removals;
+#[cfg(any(test, target_os = "macos", windows))]
 pub(crate) use removal::{remove_installation, RemovalGate};
 pub(crate) use transfer::download_archive;
 pub(crate) use transfer_prepare::prepare_download;

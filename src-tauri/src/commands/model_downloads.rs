@@ -2,7 +2,9 @@ use crate::services::forecast::validation;
 use crate::services::model_downloads::{
     emit_states, run_download_queue, ModelDownloadKind, ModelDownloadManager, ModelDownloadState,
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
+#[cfg(any(target_os = "macos", windows))]
+use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
 const MAX_OLLAMA_MODEL_ID_LEN: usize = 200;

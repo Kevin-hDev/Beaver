@@ -52,8 +52,9 @@ mod model_downloads_store_queue;
 #[cfg(test)]
 mod model_downloads_store_tests;
 pub mod model_downloads_types;
+#[cfg(any(target_os = "macos", windows))]
 mod model_downloads_voice;
-#[cfg(test)]
+#[cfg(all(test, any(target_os = "macos", windows)))]
 mod model_downloads_voice_tests;
 pub(crate) mod model_identifier;
 pub mod oauth_completion;
