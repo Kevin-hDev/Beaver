@@ -129,6 +129,7 @@ async fn install_complete_catalogue_for_native_probe() {
 }
 
 #[test]
+#[ignore = "requires the licensed external voice corpus"]
 fn corpus_manifest_is_bounded_licensed_and_complete() {
     let root = corpus_root();
     let manifest = read_manifest(&root);

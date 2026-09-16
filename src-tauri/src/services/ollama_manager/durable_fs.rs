@@ -10,7 +10,7 @@ pub(super) use durable_fs_error::OllamaFsOperation;
 pub(super) use durable_fs_error::{OllamaFsError, OllamaFsErrorKind};
 
 pub(super) const MAX_WINDOWS_PATH_UNITS: usize = 32_768;
-pub(super) const WINDOWS_PARENT_FLUSH_ACCESS: u32 = 0x4000_0000;
+pub(super) const WINDOWS_FILE_FLUSH_ACCESS: u32 = 0x4000_0000;
 
 pub(super) trait OllamaDurableFs: Send + Sync {
     fn read_bounded(&self, path: &Path, max_bytes: usize) -> Result<Vec<u8>, OllamaFsError>;
@@ -75,7 +75,7 @@ where
 }
 
 pub(super) const fn windows_file_flush_access() -> u32 {
-    WINDOWS_PARENT_FLUSH_ACCESS
+    WINDOWS_FILE_FLUSH_ACCESS
 }
 
 pub(super) fn retry_windows_sharing<T, Operation, Cancel, Sleep>(

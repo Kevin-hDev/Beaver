@@ -3,7 +3,7 @@ use super::durable_fs::OllamaDurableFs;
 use super::durable_fs::PlatformOllamaDurableFs;
 use super::durable_fs::{
     retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
-    OllamaFsError, OllamaFsErrorKind, OllamaFsOperation, WINDOWS_PARENT_FLUSH_ACCESS,
+    OllamaFsError, OllamaFsErrorKind, OllamaFsOperation, WINDOWS_FILE_FLUSH_ACCESS,
 };
 use super::durable_fs_test_support::{ExpectedCall, FailurePoint, ScriptedFs};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
@@ -306,12 +306,12 @@ fn unix_publication_supports_distinct_source_and_destination_parents() {
 }
 
 #[test]
-fn windows_parent_flush_uses_generic_write() {
-    assert_eq!(WINDOWS_PARENT_FLUSH_ACCESS, 0x4000_0000);
+fn windows_file_flush_uses_generic_write() {
+    assert_eq!(WINDOWS_FILE_FLUSH_ACCESS, 0x4000_0000);
 }
 
 #[test]
-fn windows_file_flush_uses_the_same_write_access_contract() {
+fn windows_file_flush_helper_uses_the_write_access_contract() {
     assert_eq!(windows_file_flush_access(), 0x4000_0000);
 }
 
@@ -322,6 +322,14 @@ fn windows_sync_file_keeps_its_native_flush_implementation() {
     assert!(source.contains("fn sync_file(&self, path: &Path)"));
     assert!(source.contains("flush_path(path, 0)"));
     assert!(source.contains("fn flush_path(path: &Path, flags: u32)"));
+}
+
+#[test]
+fn windows_metadata_publication_uses_write_through_moves() {
+    let source = include_str!("durable_fs_windows.rs");
+
+    assert!(source.contains("MOVEFILE_WRITE_THROUGH"));
+    assert!(!source.contains("FILE_FLAG_BACKUP_SEMANTICS"));
 }
 
 #[test]

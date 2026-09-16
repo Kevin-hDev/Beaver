@@ -14,11 +14,14 @@ fn execution_profile_rejects_unbounded_native_threads() {
 fn each_engine_adapter_uses_only_its_manifest_paths() {
     let root = std::path::Path::new("/verified/model");
     let profile = ExecutionProfile::cpu(2).unwrap();
+    let expected = |relative: &str| root.join(relative).to_string_lossy().into_owned();
+    let expected_encoder = expected("encoder.int8.onnx");
+    let expected_tokenizer = expected("tokenizer");
 
     let parakeet = parakeet::config(root, &profile);
     assert_eq!(
         parakeet.model_config.transducer.encoder.as_deref(),
-        Some("/verified/model/encoder.int8.onnx")
+        Some(expected_encoder.as_str())
     );
     assert_eq!(
         parakeet.model_config.model_type.as_deref(),
@@ -33,7 +36,7 @@ fn each_engine_adapter_uses_only_its_manifest_paths() {
     let qwen = qwen::config(root, &profile);
     assert_eq!(
         qwen.model_config.qwen3_asr.tokenizer.as_deref(),
-        Some("/verified/model/tokenizer")
+        Some(expected_tokenizer.as_str())
     );
     assert_eq!(qwen.model_config.tokens.as_deref(), Some(""));
 }

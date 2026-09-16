@@ -25,6 +25,8 @@ mod private_store_atomic;
 
 #[path = "private_store/durable_sync.rs"]
 mod durable_sync;
+pub(crate) use durable_sync::rename_durable;
+#[cfg(not(windows))]
 pub(crate) use durable_sync::sync_directory;
 use durable_sync::sync_parent;
 

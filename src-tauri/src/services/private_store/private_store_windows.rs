@@ -12,6 +12,14 @@ fn retryable_replace_error(code: u32) -> bool {
 }
 
 pub fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
+    move_file(source, destination, true)
+}
+
+pub(super) fn rename_file(source: &Path, destination: &Path) -> Result<(), String> {
+    move_file(source, destination, false)
+}
+
+fn move_file(source: &Path, destination: &Path, replace: bool) -> Result<(), String> {
     use windows_sys::Win32::Foundation::GetLastError;
     use windows_sys::Win32::Storage::FileSystem::{
         MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
@@ -19,15 +27,15 @@ pub fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
     let _metadata_guard = security_metadata_guard()?;
     let source = wide(source);
     let destination = wide(destination);
+    let flags = MOVEFILE_WRITE_THROUGH
+        | if replace {
+            MOVEFILE_REPLACE_EXISTING
+        } else {
+            0
+        };
     crate::services::windows_fs_retry::bounded(
         || {
-            let success = unsafe {
-                MoveFileExW(
-                    source.as_ptr(),
-                    destination.as_ptr(),
-                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
-                )
-            };
+            let success = unsafe { MoveFileExW(source.as_ptr(), destination.as_ptr(), flags) };
             (success != 0)
                 .then_some(())
                 .ok_or_else(|| unsafe { GetLastError() })
@@ -73,33 +81,6 @@ fn path_is_directory(path: &[u16]) -> Result<bool, String> {
 
 fn wide(path: &Path) -> Vec<u16> {
     path.as_os_str().encode_wide().chain(Some(0)).collect()
-}
-
-pub(super) fn sync_directory(path: &Path) -> Result<(), String> {
-    use windows_sys::Win32::Foundation::{CloseHandle, GENERIC_WRITE, INVALID_HANDLE_VALUE};
-    use windows_sys::Win32::Storage::FileSystem::{
-        CreateFileW, FlushFileBuffers, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_DELETE,
-        FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
-    };
-
-    let path = wide(path);
-    let handle = unsafe {
-        CreateFileW(
-            path.as_ptr(),
-            GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            std::ptr::null(),
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS,
-            std::ptr::null_mut(),
-        )
-    };
-    if handle == INVALID_HANDLE_VALUE {
-        return Err(private_store_error());
-    }
-    let flushed = unsafe { FlushFileBuffers(handle) } != 0;
-    unsafe { CloseHandle(handle) };
-    flushed.then_some(()).ok_or_else(private_store_error)
 }
 
 #[cfg(test)]

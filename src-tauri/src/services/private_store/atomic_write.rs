@@ -56,7 +56,13 @@ fn write_with_hook(
     failure: Option<AtomicWriteStage>,
     hook: impl FnMut(AtomicWriteStage),
 ) -> Result<PublicationDurability, String> {
-    write_inner(path, bytes, failure, hook, super::sync_parent)
+    write_inner(
+        path,
+        bytes,
+        failure,
+        hook,
+        super::durable_sync::confirm_atomic_publication,
+    )
 }
 
 #[cfg(test)]
