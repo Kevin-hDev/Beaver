@@ -71,6 +71,7 @@ async function copyHostSources(source, destination) {
     "contract-bootstrap.json",
     "contract.json",
     "contract-core-api.mjs",
+    "core-context.mjs",
     "contract.mjs",
     "contribution-snapshot.mjs",
     "contribution-validation.mjs",

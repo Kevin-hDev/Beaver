@@ -1,4 +1,4 @@
-use super::types::{CORE_REQUEST_TIMEOUT_MS, MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS};
+use super::types::{MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -13,8 +13,23 @@ pub enum CoreResponse {
 pub enum ExtensionBridgeError {
     Denied,
     Failed,
+    MethodUnavailable,
+    Context(&'static str),
     Revoked,
     Timeout,
+}
+
+impl ExtensionBridgeError {
+    pub(super) fn reason(self) -> &'static str {
+        match self {
+            Self::Denied => "core_permission_denied",
+            Self::Failed => "core_request_failed",
+            Self::MethodUnavailable => "core_method_unavailable",
+            Self::Context(reason) => reason,
+            Self::Revoked => "core_context_revoked",
+            Self::Timeout => "core_request_timeout",
+        }
+    }
 }
 
 pub async fn call(
@@ -50,10 +65,21 @@ async fn execute(
         return Err(ExtensionBridgeError::Denied);
     }
     let params = params.unwrap_or(&Value::Null);
-    let budget = request_budget(context, method).ok_or(ExtensionBridgeError::Denied)?;
+    let policy = super::core_api_dispatch::policy(context, method)?;
     validate_request_params(params)?;
     if context.revoked().is_cancelled() {
         return Err(ExtensionBridgeError::Revoked);
+    }
+    super::core_api_permissions::authorize(context, method, policy.effect).await?;
+    let budget = context.core_scope().map_or(policy.budget, |scope| {
+        policy.budget.min(
+            scope
+                .deadline
+                .saturating_duration_since(std::time::Instant::now()),
+        )
+    });
+    if budget.is_zero() {
+        return Err(ExtensionBridgeError::Timeout);
     }
     await_unrevoked(context, budget, dispatch(method, params)).await
 }
@@ -124,37 +150,6 @@ async fn dispatch(method: &str, params: &Value) -> Result<CoreResponse, ()> {
         "secrets.mcp.env.get" => super::core_secrets::mcp_env(params),
         "secrets.channel.get" => super::core_secrets::channel(params),
         _ => Err(()),
-    }
-}
-
-fn request_budget(
-    context: &super::call_context::ExtensionCallContext,
-    method: &str,
-) -> Option<Duration> {
-    let (_, level, kind, budget) = super::types::HOST_TO_CORE_METHODS
-        .iter()
-        .find(|(declared, _, _, _)| *declared == method)?;
-    if !method_is_allowed(context.api_level(), level, kind) {
-        return None;
-    }
-    let milliseconds = budget
-        .filter(|budget| *budget > 0)
-        .unwrap_or(CORE_REQUEST_TIMEOUT_MS);
-    Some(Duration::from_millis(milliseconds as u64))
-}
-
-fn method_is_allowed(
-    api_level: &super::types::ExtensionApiLevel,
-    declared_level: &str,
-    kind: &str,
-) -> bool {
-    if kind != "request" {
-        return false;
-    }
-    match declared_level {
-        "stable" => true,
-        "advanced" => *api_level == super::types::ExtensionApiLevel::Advanced,
-        _ => false,
     }
 }
 

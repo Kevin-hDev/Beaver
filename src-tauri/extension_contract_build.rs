@@ -1,15 +1,15 @@
 #[path = "extension_contract_artifacts.rs"]
 #[allow(dead_code)]
 mod artifacts;
+#[path = "extension_contract_core_artifacts.rs"]
+mod core_artifacts;
+#[path = "extension_contract_core.rs"]
+mod core_contract;
+#[path = "extension_contract_core_rust.rs"]
+mod core_rust_renderer;
 #[path = "extension_contract_document.rs"]
 #[allow(dead_code)]
 mod document;
-#[path = "extension_contract_core.rs"]
-mod core_contract;
-#[path = "extension_contract_core_artifacts.rs"]
-mod core_artifacts;
-#[path = "extension_contract_core_rust.rs"]
-mod core_rust_renderer;
 #[path = "extension_contract_effect.rs"]
 mod effect_renderer;
 #[path = "extension_contract_enum.rs"]

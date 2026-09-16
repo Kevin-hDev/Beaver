@@ -152,6 +152,8 @@ pub async fn run_sequential(
                         request_id: Some(request_id),
                     },
                     cancel.clone(),
+                    "manual",
+                    plan_mode_active,
                     Some(idx),
                 )
                 .await

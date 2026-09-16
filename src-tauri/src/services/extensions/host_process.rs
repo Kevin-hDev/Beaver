@@ -45,6 +45,20 @@ impl HostProcess {
     }
 
     pub async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
+        self.request_until(
+            method,
+            params,
+            Instant::now() + Duration::from_millis(HOST_REQUEST_TIMEOUT_MS as u64),
+        )
+        .await
+    }
+
+    pub(super) async fn request_until(
+        &self,
+        method: &str,
+        params: Value,
+        deadline: Instant,
+    ) -> Result<Value, String> {
         if !self.is_alive() {
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
@@ -65,12 +79,7 @@ impl HostProcess {
             params,
         };
         host_channel::write(&self.writer, &request).await?;
-        match tokio::time::timeout(
-            Duration::from_millis(HOST_REQUEST_TIMEOUT_MS as u64),
-            receiver,
-        )
-        .await
-        {
+        match tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), receiver).await {
             Ok(Ok(result)) => result,
             Ok(Err(_)) => Err(error_codes::HOST_UNAVAILABLE.to_string()),
             Err(_) => Err(error_codes::HOST_TIMEOUT.to_string()),

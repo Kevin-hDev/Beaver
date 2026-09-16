@@ -78,7 +78,7 @@ pub async fn run_agent_loop(
                 cancel: cancel.clone(),
                 configured_context,
                 plan_mode_active,
-                chat_mode: permission_mode == "chat",
+                permission_mode,
                 turn,
                 subagents: &mut subagents,
                 context_usage_seed,

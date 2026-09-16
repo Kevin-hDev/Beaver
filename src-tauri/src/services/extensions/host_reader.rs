@@ -105,8 +105,8 @@ async fn receive_bound(
             .get("id")
             .and_then(Value::as_str)
             .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
-        let params = object.get("params").cloned();
-        let call_context = context_for_call(context, authority).await?;
+        let mut params = object.get("params").cloned();
+        let call_context = context_for_call(context, authority, &mut params).await?;
         return super::host_core_call::spawn(
             id.to_string(),
             method.to_string(),
@@ -171,12 +171,23 @@ async fn receive(
 async fn context_for_call(
     _context: &HostReaderContext<'_>,
     authority: &HostAuthority,
+    params: &mut Option<Value>,
 ) -> Result<super::call_context::ExtensionCallContext, String> {
     #[cfg(test)]
     if let Some(call_context) = &_context.call_context {
         return Ok(call_context.clone());
     }
-    super::runtime::call_context(&authority.identity, authority.generation.number).await
+    let runtime = super::runtime::global()?;
+    let context = runtime
+        .call_context(&authority.identity, authority.generation.number)
+        .await?;
+    Ok(super::host_reader_scope::attach(
+        context,
+        params,
+        runtime.work.core_scopes(),
+        &authority.identity,
+        authority.generation.number,
+    ))
 }
 
 async fn receive_notification(

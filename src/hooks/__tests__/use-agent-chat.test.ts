@@ -127,6 +127,30 @@ describe("useAgentChat", () => {
     await waitFor(() => expect(onPermission).toHaveBeenCalledWith(request));
   });
 
+  it("propage la fermeture Rust à la file locale de permissions", () => {
+    const onPermission = vi.fn();
+    const onPermissionClosed = vi.fn();
+    let subscriber: ((snapshot: StreamSnapshot) => void) | undefined;
+    subscribeToStream.mockImplementationOnce((_sessionId, callback) => {
+      subscriber = callback;
+      return () => {};
+    });
+    renderHook(() => useAgentChat(
+      "session-1", "llama3", "ollama", onPermission,
+      undefined, undefined, undefined, undefined, undefined, undefined,
+      onPermissionClosed,
+    ));
+    const request = { id: "permission", toolName: "plugin.tool", arguments: {} };
+    act(() => {
+      subscriber?.({ ...EMPTY_CHAT_STATE, pendingPermissions: [request], completed: false });
+    });
+    expect(onPermission).toHaveBeenCalledWith(request);
+    act(() => {
+      subscriber?.({ ...EMPTY_CHAT_STATE, pendingPermissions: [], completed: false });
+    });
+    expect(onPermissionClosed).toHaveBeenCalledWith("permission");
+  });
+
   it("ne tronque et ne relance qu'une fois pendant une reprise en cours", async () => {
     const pending = deferred<void>();
     startStream.mockReturnValueOnce(pending.promise);

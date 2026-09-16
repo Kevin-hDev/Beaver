@@ -6,14 +6,36 @@ use crate::services::agent_local::{
 use serde_json::Value;
 use std::path::Path;
 
-#[cfg(test)]
-pub use super::tool_dispatcher_entry::dispatch;
 pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
-pub(crate) use super::tool_dispatcher_entry::dispatch_with_progress;
+pub(crate) use super::tool_dispatcher_entry::dispatch_authorized_with_progress;
+pub(crate) use super::extension_tool_authority::ToolDispatchAuthority;
 #[cfg(test)]
 pub(crate) use super::tool_dispatcher_error::enrich as enrich_error;
 pub use crate::services::agent_local::tool_definitions::get_tool_definitions;
 pub use crate::services::agent_local::tool_definitions_chat::get_chat_tool_definitions;
+
+#[cfg(test)]
+pub async fn dispatch(
+    tool_name: &str,
+    args: &Value,
+    working_dir: &Path,
+    session_id: &str,
+    cancel: tokio_util::sync::CancellationToken,
+) -> ToolResult {
+    super::tool_dispatcher_entry::dispatch_with_progress(
+        tool_name,
+        args,
+        working_dir,
+        super::tool_dispatch_trace::DispatchTrace {
+            session_id,
+            request_id: None,
+        },
+        cancel,
+        false,
+        None,
+    )
+    .await
+}
 
 pub(super) async fn dispatch_inner(
     tool_name: &str,

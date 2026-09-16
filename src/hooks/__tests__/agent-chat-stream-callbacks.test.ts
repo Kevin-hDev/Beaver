@@ -260,6 +260,16 @@ describe("permissionRequest", () => {
 
     expect(state.pendingPermissions[0]).toEqual(data);
   });
+  it("retire la permission lorsque Rust ferme son attente", () => {
+    const state = makeState({
+      pendingPermissions: [{ id: "req-1", toolName: "bash", arguments: {} }],
+    });
+    const { state: next } = applyStreamEvent(state, {
+      event: "permissionClosed",
+      data: { id: "req-1" },
+    });
+    expect(next.pendingPermissions).toEqual([]);
+  });
 });
 
 describe("toolResult — cas limites", () => {

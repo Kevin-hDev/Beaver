@@ -12,11 +12,10 @@ use tokio_util::sync::CancellationToken;
 
 use super::tool_execution_outcome::ToolExecutionOutcome;
 use super::tool_executor_compression::ToolCompression;
-use super::tool_executor_helpers::{push_tool_message, push_tool_result, resolve_tool_path};
 use super::tool_executor_parallel_batch::{flush_read_batch, BatchEntry};
-use super::tool_executor_parallel_finalize::resolve_and_record_diagnostics;
-
-pub(super) type IndexedResult<'a> = Option<(&'a str, ToolResult)>;
+use super::tool_executor_parallel_finalize::{
+    publish_results, resolve_and_record_diagnostics, IndexedResult,
+};
 
 pub async fn run_with_parallel_reads(
     on_event: &AgentEventEmitter,
@@ -34,7 +33,6 @@ pub async fn run_with_parallel_reads(
     compression: Option<&ToolCompression<'_>>,
     can_use_delegate_batch: bool,
 ) -> ToolExecutionOutcome {
-    let tool_id = |idx| tool_call_ids.get(idx).map(String::as_str);
     let mut read_batch: Vec<BatchEntry> = Vec::new();
     let mut indexed_results: Vec<IndexedResult<'_>> = vec![None; tool_calls.len()];
     let mut emitted_results = vec![false; tool_calls.len()];
@@ -48,6 +46,7 @@ pub async fn run_with_parallel_reads(
             if !read_batch.is_empty() {
                 let batch: Vec<_> = std::mem::take(&mut read_batch);
                 flush_read_batch(
+                    on_event,
                     &batch,
                     &mut indexed_results,
                     working_dir,
@@ -56,7 +55,8 @@ pub async fn run_with_parallel_reads(
                     &mut eager_results,
                     session_id,
                     request_id,
-                    mode == "chat",
+                    mode,
+                    plan_mode_active,
                 )
                 .await;
             }
@@ -191,41 +191,15 @@ pub async fn run_with_parallel_reads(
     )
     .await;
 
-    let mut outcome = ToolExecutionOutcome::default();
-    for (idx, slot) in indexed_results.into_iter().enumerate() {
-        if let Some((name, mut tr)) = slot {
-            let artifacts = tr.take_ephemeral_artifacts();
-            let artifact_records = outcome
-                .retain_artifacts(idx, tool_id(idx), artifacts)
-                .unwrap_or_else(|()| {
-                    tr = ToolResult::error(
-                        "Résultat d'extension indisponible.",
-                        crate::services::extensions::error_codes::RESULT_TOO_LARGE,
-                        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Unavailable,
-                        false,
-                    );
-                    Vec::new()
-                });
-            let resolved_path = resolve_tool_path(name, &tool_calls[idx].1, working_dir);
-            let follow_up = if emitted_results[idx] {
-                push_tool_message(messages, name, tr, tool_id(idx))
-            } else {
-                push_tool_result(
-                    on_event,
-                    messages,
-                    name,
-                    tr,
-                    idx,
-                    tool_id(idx),
-                    resolved_path,
-                    artifact_records,
-                )
-            };
-            outcome.record(follow_up);
-            if let Some(compression) = compression {
-                outcome.compressed |= compression.try_run(messages).await;
-            }
-        }
-    }
-    outcome
+    publish_results(
+        on_event,
+        messages,
+        tool_calls,
+        working_dir,
+        indexed_results,
+        &emitted_results,
+        tool_call_ids,
+        compression,
+    )
+    .await
 }

@@ -12,7 +12,10 @@ pub(super) fn record_outcome(
 fn classify(outcome: &Result<CoreResponse, ExtensionBridgeError>) -> AccessResult {
     match outcome {
         Ok(_) => AccessResult::Granted,
-        Err(ExtensionBridgeError::Denied) => AccessResult::Denied,
+        Err(ExtensionBridgeError::Denied | ExtensionBridgeError::Context(_)) => {
+            AccessResult::Denied
+        }
+        Err(ExtensionBridgeError::MethodUnavailable) => AccessResult::Failed,
         Err(ExtensionBridgeError::Failed) => AccessResult::Failed,
         Err(ExtensionBridgeError::Revoked) => AccessResult::Revoked,
         Err(ExtensionBridgeError::Timeout) => AccessResult::Timeout,

@@ -83,22 +83,22 @@ async fn stable_channel_rejects_an_advanced_alias_not_declared_by_the_contract()
 fn method_policy_rejects_advanced_and_notification_entries_for_stable_requests() {
     use super::super::types::ExtensionApiLevel;
 
-    assert!(method_is_allowed(
+    assert!(super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Stable,
         "stable",
         "request"
     ));
-    assert!(!method_is_allowed(
+    assert!(!super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Stable,
         "advanced",
         "request"
     ));
-    assert!(method_is_allowed(
+    assert!(super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Advanced,
         "advanced",
         "request"
     ));
-    assert!(!method_is_allowed(
+    assert!(!super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Advanced,
         "stable",
         "notification"

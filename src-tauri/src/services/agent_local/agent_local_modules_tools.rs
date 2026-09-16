@@ -4,10 +4,7 @@ pub mod subagent_explorer_process;
 pub mod subagent_working_dir;
 pub mod subagent_worktree;
 include!("agent_local_modules_shell.rs");
-pub mod extension_skill_loader;
-#[cfg(test)]
-mod extension_skill_loader_tests;
-pub mod extension_tool_set;
+include!("agent_local_modules_extensions.rs");
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
 #[cfg(test)]
@@ -17,6 +14,7 @@ pub mod tool_automation;
 mod tool_automation_tests;
 mod tool_automation_validation;
 pub mod tool_availability;
+mod permission_pending;
 pub mod tool_catalog;
 mod tool_catalog_filter;
 #[cfg(test)]
@@ -46,6 +44,7 @@ pub mod tool_dispatcher;
 pub mod tool_dispatcher_delegate;
 mod tool_dispatcher_entry;
 mod tool_dispatcher_error;
+mod tool_dispatcher_execute;
 pub mod tool_dispatcher_fallback;
 mod tool_dispatcher_finalize;
 pub mod tool_dispatcher_forecast;

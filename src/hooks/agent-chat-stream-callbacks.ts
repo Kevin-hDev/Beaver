@@ -124,6 +124,9 @@ export function applyStreamEvent(
     case "permissionRequest":
       next.pendingPermissions = addPermission(next.pendingPermissions, { ...event.data });
       break;
+    case "permissionClosed":
+      next.pendingPermissions = next.pendingPermissions.filter(({ id }) => id !== event.data.id);
+      break;
     case "sessionSnapshot":
       break;
     case "subagentSpawned":

@@ -10,11 +10,7 @@ mod contribution_skills;
 #[cfg(test)]
 mod contribution_skills_tests;
 mod contribution_types;
-mod core_api_contract;
-mod core_bridge;
-mod core_response_audit;
-#[cfg(test)]
-mod core_response_audit_tests;
+include!("extensions_modules_core.rs");
 mod core_secrets;
 mod diagnostic_time;
 mod discovery_catalog;
@@ -44,6 +40,9 @@ mod host_paths;
 mod host_process;
 mod host_reader;
 mod host_reader_line;
+mod host_reader_scope;
+#[cfg(test)]
+mod host_reader_scope_tests;
 mod host_stop_boundary;
 #[cfg(test)]
 mod host_stop_boundary_tests;

@@ -44,6 +44,7 @@ startProtocol(async (method, params) => {
         String(params.name ?? ""),
         params.arguments ?? {},
         params.context,
+        params.scope,
       );
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);

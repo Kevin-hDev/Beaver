@@ -28,9 +28,8 @@ pub fn validate_optional_capabilities(
             let mut bytes = value.bytes();
             !bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
                 || value.len() > maximum_chars
-                || !bytes.all(|byte| {
-                    byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.')
-                })
+                || !bytes
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
         })
     {
         return Err("invalid extension contract optional capabilities".to_string());
@@ -45,11 +44,21 @@ pub fn validate(contract: &Value) -> Result<(), String> {
         .ok_or_else(|| "invalid host to core methods".to_string())?;
     let capabilities = contract["optionalCapabilities"]
         .as_array()
-        .and_then(|values| values.iter().map(Value::as_str).collect::<Option<BTreeSet<_>>>())
+        .and_then(|values| {
+            values
+                .iter()
+                .map(Value::as_str)
+                .collect::<Option<BTreeSet<_>>>()
+        })
         .ok_or_else(|| "invalid extension contract optional capabilities".to_string())?;
     let effects = contract["effectClasses"]
         .as_array()
-        .and_then(|values| values.iter().map(Value::as_str).collect::<Option<BTreeSet<_>>>())
+        .and_then(|values| {
+            values
+                .iter()
+                .map(Value::as_str)
+                .collect::<Option<BTreeSet<_>>>()
+        })
         .ok_or_else(|| "invalid extension effect classes".to_string())?;
     let limits = contract["limits"]
         .as_object()
@@ -146,10 +155,7 @@ fn validate_effects(method: &Value, allowed: &BTreeSet<&str>) -> Result<(), Stri
     Ok(())
 }
 
-fn validate_params(
-    method: &Value,
-    limits: &serde_json::Map<String, Value>,
-) -> Result<(), String> {
+fn validate_params(method: &Value, limits: &serde_json::Map<String, Value>) -> Result<(), String> {
     let params = method["params"]
         .as_array()
         .filter(|values| values.len() <= 16)

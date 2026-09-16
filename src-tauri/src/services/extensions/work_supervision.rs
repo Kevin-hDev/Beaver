@@ -43,6 +43,7 @@ pub(super) struct ExtensionWorkServices {
     readers: ExtensionReaderWork,
     operations: ExtensionOperationWork,
     core_calls: ExtensionCoreCallWork,
+    core_scopes: super::core_scope::CoreScopeRegistry,
     lifecycle: ExtensionLifecycleWork,
 }
 
@@ -52,6 +53,7 @@ impl ExtensionWorkServices {
             readers: ExtensionReaderWork::new(app.clone()),
             operations: ExtensionOperationWork::new(app.clone()),
             core_calls: ExtensionCoreCallWork::new(app.clone()),
+            core_scopes: super::core_scope::CoreScopeRegistry::default(),
             lifecycle: ExtensionLifecycleWork::new(app),
         }
     }
@@ -117,6 +119,10 @@ impl ExtensionWorkServices {
         Task: Future + Send + 'static,
     {
         self.core_calls.spawn(work).map_err(map_admission_error)
+    }
+
+    pub(super) fn core_scopes(&self) -> &super::core_scope::CoreScopeRegistry {
+        &self.core_scopes
     }
 
     pub(super) fn spawn_lifecycle<Factory, Task>(

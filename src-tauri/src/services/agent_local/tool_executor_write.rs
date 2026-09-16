@@ -153,6 +153,8 @@ pub(super) async fn execute_write(
                         request_id: Some(request_id),
                     },
                     cancel.clone(),
+                    mode,
+                    plan_mode_active,
                     tool_call_index,
                 )
                 .await

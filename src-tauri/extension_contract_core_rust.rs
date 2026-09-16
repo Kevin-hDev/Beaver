@@ -9,7 +9,10 @@ pub fn render(output: &mut String, methods: &[Value]) -> Result<(), String> {
         "#[allow(dead_code)]\npub struct CoreApiMethodContract { pub name: &'static str, pub capability: &'static str, pub requires_context: bool, pub idempotent: bool, pub effects: &'static [&'static str], pub params: &'static [CoreApiParamContract], pub result: &'static str }\n",
     );
     let mut rendered = Vec::new();
-    for method in methods.iter().filter(|method| method.get("capability").is_some()) {
+    for method in methods
+        .iter()
+        .filter(|method| method.get("capability").is_some())
+    {
         let params = method["params"]
             .as_array()
             .ok_or_else(|| "invalid core API parameters".to_string())?
@@ -70,7 +73,10 @@ fn render_method_idempotence(output: &mut String, methods: &[Value]) -> Result<(
 
 fn render_param(param: &Value) -> Result<String, String> {
     let limit = match param.get("limit") {
-        Some(limit) => format!("Some({:?})", limit.as_str().ok_or("invalid parameter limit")?),
+        Some(limit) => format!(
+            "Some({:?})",
+            limit.as_str().ok_or("invalid parameter limit")?
+        ),
         None => "None".to_string(),
     };
     Ok(format!(

@@ -1,9 +1,5 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::StreamEvent;
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::LazyLock;
-use tokio::sync::{oneshot, Mutex};
 use tokio_util::sync::CancellationToken;
 
 pub async fn clear_session(session_id: &str) {
@@ -68,7 +64,7 @@ pub(crate) async fn is_extension_allowed(
     super::permission_allow_cache::is_extension_allowed(session_id, extension_id, tool_name).await
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum PermissionDecision {
     Allow,
     AllowSession,
@@ -111,11 +107,7 @@ pub fn requires_permission(tool_name: &str, args: &serde_json::Value) -> bool {
     }
 }
 
-const MAX_PENDING: usize = 64;
 const MAX_DIAGNOSTIC_LOG_BYTES: u64 = 2 * 1024 * 1024;
-
-static PENDING: LazyLock<Mutex<HashMap<String, oneshot::Sender<PermissionDecision>>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub(crate) fn log_diagnostic(event: &str, tool_name: Option<&str>, detail: Option<&str>) {
     let entry = diagnostic_entry(event, tool_name, detail);
@@ -160,16 +152,17 @@ pub async fn request(
     arguments: &Value,
     cancel: CancellationToken,
 ) -> PermissionDecision {
-    let id = uuid::Uuid::new_v4().to_string();
-    let (tx, rx) = oneshot::channel();
-    {
-        let mut pending = PENDING.lock().await;
-        if pending.len() >= MAX_PENDING {
-            return PermissionDecision::Deny;
-        }
-        pending.insert(id.clone(), tx);
-    }
+    request_with_deadline(on_event, tool_name, arguments, cancel, None).await
+}
 
+async fn request_with_deadline(
+    on_event: &AgentEventEmitter,
+    tool_name: &str,
+    arguments: &Value,
+    cancel: CancellationToken,
+    deadline: Option<std::time::Instant>,
+) -> PermissionDecision {
+    let id = uuid::Uuid::new_v4().to_string();
     let request = crate::services::extensions::indexed_tool(tool_name).map_or_else(
         || super::permission_request::native(id.clone(), tool_name, arguments),
         |indexed| {
@@ -183,27 +176,42 @@ pub async fn request(
             )
         },
     );
-    let _ = on_event.send(StreamEvent::PermissionRequest(request));
     log_diagnostic("request", Some(tool_name), Some("permission_prompt_sent"));
+    super::permission_pending::wait(on_event, request, cancel, deadline).await
+}
 
-    tokio::select! {
-        res = rx => res.unwrap_or(PermissionDecision::Deny),
-        _ = cancel.cancelled() => {
-            PENDING.lock().await.remove(&id);
-            PermissionDecision::Deny
-        }
-    }
+pub(crate) async fn request_extension_core(
+    on_event: &AgentEventEmitter,
+    tool_name: &str,
+    method: &str,
+    effect: crate::services::extensions::ExtensionEffect,
+    cancel: CancellationToken,
+    deadline: std::time::Instant,
+) -> PermissionDecision {
+    let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) else {
+        return PermissionDecision::Deny;
+    };
+    let arguments = serde_json::json!({"coreMethod": method});
+    let id = uuid::Uuid::new_v4().to_string();
+    let request = super::permission_request::for_extension(
+        id.clone(),
+        &indexed.extension_id,
+        &indexed.extension_name,
+        method,
+        effect,
+        &arguments,
+    );
+    super::permission_pending::wait(on_event, request, cancel, Some(deadline)).await
 }
 
 pub async fn respond(id: &str, decision: PermissionDecision) {
-    if let Some(tx) = PENDING.lock().await.remove(id) {
+    if super::permission_pending::respond(id, decision) {
         let detail = match decision {
             PermissionDecision::Allow => "allow",
             PermissionDecision::AllowSession => "allow_session",
             PermissionDecision::Deny => "deny",
         };
         log_diagnostic("respond_found", None, Some(detail));
-        let _ = tx.send(decision);
     } else {
         log_diagnostic("respond_missing", None, Some("stale_or_unknown_permission"));
     }

@@ -7,6 +7,7 @@ import { snapshotToolResult } from "./tool-result-snapshot.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
 import { assertProtocolResultFits } from "./protocol-output.mjs";
 import { importExtensionModule } from "./module-loader.mjs";
+import { runWithCoreContext } from "./core-context.mjs";
 const extensions = new Map();
 const tools = new Map();
 
@@ -15,17 +16,18 @@ export async function resetExtensions() {
   return { reset: true };
 }
 
-export async function callExtensionTool(name, arguments_, context) {
+export async function callExtensionTool(name, arguments_, context, scope) {
   const entry = tools.get(name);
   if (!entry) throw new Error("tool_not_found");
   const executionContext = toolExecutionContext(context);
   let timer;
   const raw = await Promise.race([
-    Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext)),
+    runWithCoreContext(scope, () =>
+      Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext))),
     new Promise((_, reject) => {
       timer = setTimeout(
         () => reject(new Error("tool_timeout")),
-        TIMEOUTS.toolCallTimeoutMs,
+        Math.min(TIMEOUTS.toolCallTimeoutMs, scope.remainingMs),
       );
       timer.unref();
     }),

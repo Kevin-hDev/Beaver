@@ -1,7 +1,74 @@
 use tokio_util::sync::CancellationToken;
 
-use super::tool_executor_parallel::IndexedResult;
 use super::tool_pending_artifact_batch::resolve_batch;
+
+pub(super) type IndexedResult<'a> = Option<(
+    &'a str,
+    crate::services::agent_local::types_tools::ToolResult,
+)>;
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "finalization needs the collected batch context"
+)]
+pub(super) async fn publish_results(
+    on_event: &super::stream_events::AgentEventEmitter,
+    messages: &mut Vec<super::types_ollama::ChatMessage>,
+    tool_calls: &[(String, serde_json::Value)],
+    working_dir: &std::path::Path,
+    indexed_results: Vec<IndexedResult<'_>>,
+    emitted_results: &[bool],
+    tool_call_ids: &[String],
+    compression: Option<&super::tool_executor_compression::ToolCompression<'_>>,
+) -> super::tool_execution_outcome::ToolExecutionOutcome {
+    let tool_id = |idx| tool_call_ids.get(idx).map(String::as_str);
+    let mut outcome = super::tool_execution_outcome::ToolExecutionOutcome::default();
+    for (idx, slot) in indexed_results.into_iter().enumerate() {
+        if let Some((name, mut result)) = slot {
+            let artifacts = result.take_ephemeral_artifacts();
+            let artifact_records = outcome
+                .retain_artifacts(idx, tool_id(idx), artifacts)
+                .unwrap_or_else(|()| {
+                    result = crate::services::agent_local::types_tools::ToolResult::error(
+                        "Résultat d'extension indisponible.",
+                        crate::services::extensions::error_codes::RESULT_TOO_LARGE,
+                        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Unavailable,
+                        false,
+                    );
+                    Vec::new()
+                });
+            let resolved_path = super::tool_executor_helpers::resolve_tool_path(
+                name,
+                &tool_calls[idx].1,
+                working_dir,
+            );
+            let follow_up = if emitted_results[idx] {
+                super::tool_executor_helpers::push_tool_message(
+                    messages,
+                    name,
+                    result,
+                    tool_id(idx),
+                )
+            } else {
+                super::tool_executor_helpers::push_tool_result(
+                    on_event,
+                    messages,
+                    name,
+                    result,
+                    idx,
+                    tool_id(idx),
+                    resolved_path,
+                    artifact_records,
+                )
+            };
+            outcome.record(follow_up);
+            if let Some(compression) = compression {
+                outcome.compressed |= compression.try_run(messages).await;
+            }
+        }
+    }
+    outcome
+}
 
 pub(super) async fn resolve_and_record_diagnostics<'a>(
     indexed_results: &mut [IndexedResult<'a>],

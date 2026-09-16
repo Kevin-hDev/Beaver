@@ -206,7 +206,5 @@ fn valid_method_name(value: &str, maximum_chars: usize) -> bool {
     let mut bytes = value.bytes();
     bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
         && value.len() <= maximum_chars
-        && bytes.all(|byte| {
-            byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.')
-        })
+        && bytes.all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
 }

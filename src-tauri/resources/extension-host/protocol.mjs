@@ -8,6 +8,7 @@ import {
   TIMEOUTS,
 } from "./contract.mjs";
 import { encodeProtocolMessage, MAX_REQUEST_ID_CHARS } from "./protocol-output.mjs";
+import { coreContextForTransport, coreContextTimeout } from "./core-context.mjs";
 
 const ERROR_REASON_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 // Capture the protocol writer before host.mjs silences accidental stdout writes.
@@ -31,14 +32,23 @@ export function callCore(method, params = {}) {
   }
   const id = randomUUID();
   return new Promise((resolve, reject) => {
+    const timeoutMs = coreContextTimeout(TIMEOUTS.coreRequestTimeoutMs);
+    if (timeoutMs < 1) {
+      reject(coreError(-32_000, "core_context_expired", method));
+      return;
+    }
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(coreError(-32_000, "core_request_timeout", method));
-    }, TIMEOUTS.coreRequestTimeoutMs);
+    }, timeoutMs);
     timer.unref();
     pending.set(id, { resolve, reject, timer, method });
     try {
-      send({ jsonrpc: "2.0", id, method, params });
+      const context = coreContextForTransport();
+      const transportParams = context
+        ? Object.assign(Object.create(null), params, { __beaverContext: context })
+        : params;
+      send({ jsonrpc: "2.0", id, method, params: transportParams });
     } catch {
       clearTimeout(timer);
       pending.delete(id);

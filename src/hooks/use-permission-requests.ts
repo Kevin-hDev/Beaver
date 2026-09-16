@@ -27,12 +27,17 @@ export function usePermissionRequests() {
   }, []);
 
   const clear = useCallback(() => setQueue([]), []);
+  const remove = useCallback((id: string) => {
+    agentStreamManager.clearPermission(id);
+    setQueue((q) => q.filter((request) => request.id !== id));
+  }, []);
 
   return {
     queue,
     current: queue[0] ?? null,
     enqueue,
     respond,
+    remove,
     clear,
   };
 }

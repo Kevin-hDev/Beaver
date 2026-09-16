@@ -173,13 +173,6 @@ impl ExtensionRuntime {
     }
 }
 
-pub(super) async fn call_context(
-    identity: &HostIdentity,
-    generation: u64,
-) -> Result<super::call_context::ExtensionCallContext, String> {
-    global()?.call_context(identity, generation).await
-}
-
 pub(super) async fn revoke_extension(
     identity: &HostIdentity,
     deadline: std::time::Instant,

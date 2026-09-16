@@ -56,6 +56,7 @@ export type StreamEvent =
   | { event: "toolResult"; data: { name: string; content: string; isError: boolean; status?: ToolResultStatus; error?: ToolErrorInfo; warnings?: string[]; truncated?: boolean; displaySummary?: string; toolCallIndex: number; toolCallId?: string; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number; artifacts?: ToolArtifactRecordView[] } }
   | { event: "turnEnd"; data: Record<string, never> }
   | { event: "permissionRequest"; data: AgentPermissionRequest }
+  | { event: "permissionClosed"; data: { id: string } }
   | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; tpsEstimated?: boolean; promptTokens: number | null; contextTokens: number | null } }
   | {
     event: "error";

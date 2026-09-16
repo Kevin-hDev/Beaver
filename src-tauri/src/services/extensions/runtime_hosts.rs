@@ -155,6 +155,7 @@ impl BoundHostChannel {
             self.api_level.clone(),
             self.generation.number,
             self.revoked.clone(),
+            self.capabilities.clone(),
         )
     }
 }

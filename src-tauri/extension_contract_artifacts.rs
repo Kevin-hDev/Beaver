@@ -85,7 +85,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             json(&Value::Array(values))?
         ));
     }
-    output.push_str(&super::core_artifacts::render_typescript(contract, host_methods)?);
+    output.push_str(&super::core_artifacts::render_typescript(
+        contract,
+        host_methods,
+    )?);
     output.push_str(&format!(
         "export const LIMITS = Object.freeze({} as const);\n",
         json(&Value::Object(object(contract, "limits")?.clone()))?

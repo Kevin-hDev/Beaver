@@ -10,12 +10,59 @@ use tokio_util::sync::CancellationToken;
 
 const MAX_EAGER: usize = super::tool_executor_parallel_batch::MAX_PARALLEL;
 
-pub async fn collect_eager_results(
-    rx: mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
+#[expect(
+    clippy::too_many_arguments,
+    reason = "eager tool orchestration keeps the turn authority explicit"
+)]
+pub fn spawn_eager_handle(
+    receiver: mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
+    on_event: super::stream_events::AgentEventEmitter,
     working_dir: PathBuf,
     session_id: String,
     request_id: String,
-    chat_mode: bool,
+    permission_mode: String,
+    plan_active: bool,
+    cancel: CancellationToken,
+    enabled: bool,
+) -> super::agent_loop_thinking_retry::EagerHandle {
+    tokio::spawn(async move {
+        if enabled {
+            collect_eager_results(
+                receiver,
+                on_event,
+                working_dir,
+                session_id,
+                request_id,
+                permission_mode,
+                plan_active,
+                cancel,
+            )
+            .await
+        } else {
+            drain_eager_calls(receiver).await;
+            HashMap::new()
+        }
+    })
+}
+
+async fn drain_eager_calls(
+    mut receiver: mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
+) {
+    while receiver.recv().await.is_some() {}
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "eager tool orchestration keeps the turn authority explicit"
+)]
+pub async fn collect_eager_results(
+    rx: mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
+    on_event: super::stream_events::AgentEventEmitter,
+    working_dir: PathBuf,
+    session_id: String,
+    request_id: String,
+    permission_mode: String,
+    plan_active: bool,
     cancel: CancellationToken,
 ) -> HashMap<usize, ToolResult> {
     collect_eager_results_with(
@@ -23,19 +70,31 @@ pub async fn collect_eager_results(
         working_dir,
         session_id,
         request_id,
-        chat_mode,
+        permission_mode == "chat",
         cancel,
-        |name, args, working_dir, session_id, request_id, cancel, chat_mode| async move {
-            tool_dispatcher::dispatch_for_mode(
-                &name,
-                &args,
-                &working_dir,
-                &session_id,
-                Some(&request_id),
-                cancel,
-                chat_mode,
-            )
-            .await
+        move |name, args, working_dir, session_id, request_id, cancel, _| {
+            let on_event = on_event.clone();
+            let permission_mode = permission_mode.clone();
+            async move {
+                tool_dispatcher::dispatch_authorized_with_progress(
+                    &name,
+                    &args,
+                    &working_dir,
+                    super::tool_dispatch_trace::DispatchTrace {
+                        session_id: &session_id,
+                        request_id: Some(&request_id),
+                    },
+                    cancel,
+                    permission_mode == "chat",
+                    None,
+                    tool_dispatcher::ToolDispatchAuthority {
+                        on_event,
+                        permission_mode,
+                        plan_active,
+                    },
+                )
+                .await
+            }
         },
     )
     .await

@@ -81,7 +81,12 @@ async fn runtime_with_real_host() -> (tempfile::TempDir, ExtensionRuntime, Arc<H
     let mut hosts = RuntimeHosts::new(temporary_root).unwrap();
     let reservation = hosts.reserve(HostIdentity::Official).unwrap();
     hosts
-        .bind(reservation, ExtensionApiLevel::Stable, Arc::clone(&process), Vec::new())
+        .bind(
+            reservation,
+            ExtensionApiLevel::Stable,
+            Arc::clone(&process),
+            Vec::new(),
+        )
         .unwrap();
     let runtime = ExtensionRuntime {
         paths: Some(paths),

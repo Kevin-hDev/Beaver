@@ -24,6 +24,7 @@ export function useAgentChat(
   reasoningMode?: string | null,
   permissionMode?: string,
   onStreamStarted?: () => void | Promise<void>,
+  onPermissionClosed?: (id: string) => void,
 ) {
   const [state, setState] = useState<ChatState>(EMPTY_CHAT_STATE);
   const planMode = useAgentPlanMode(sessionId, setState);
@@ -46,7 +47,7 @@ export function useAgentChat(
   const [sessionLoading, setSessionLoading] = useState(true);
   const savingRef = useRef(false);
   const sessionRef = useRef(sessionId);
-  const permissions = useAgentPermissionDelivery(onPermissionRequest);
+  const permissions = useAgentPermissionDelivery(onPermissionRequest, onPermissionClosed);
   const {
     startStream, queueStreamMessage, stopStream, subscribeToStream, getStreamSnapshot,
   } = useAgentStream();
@@ -73,9 +74,7 @@ export function useAgentChat(
       setState(chatState);
       applyPlanStreamEnabled(chatState.planModeEnabled);
       setSessionLoading(false);
-      for (const request of pendingPermissions) {
-        permissions.deliver(request);
-      }
+      permissions.sync(pendingPermissions);
     };
     const unsubscribe = subscribeToStream(sessionId, applySnapshot);
     applySnapshot(getStreamSnapshot(sessionId));

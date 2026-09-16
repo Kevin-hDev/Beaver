@@ -59,15 +59,15 @@ pub(super) async fn spawn(
                 )
                 .await;
             }
-            Err(_) => {
+            Err(error) => {
                 let _ = write_unrevoked(
                     &output,
                     &RpcError {
                         jsonrpc: "2.0",
                         id: &task_id,
                         error: RpcErrorBody {
-                            code: -32601,
-                            message: "core_method_unavailable",
+                            code: error_code(error),
+                            message: error.reason(),
                         },
                     },
                     &spawn_cancel,
@@ -95,6 +95,13 @@ pub(super) async fn spawn(
         .await;
     }
     Ok(())
+}
+
+fn error_code(error: super::core_bridge::ExtensionBridgeError) -> i32 {
+    match error {
+        super::core_bridge::ExtensionBridgeError::MethodUnavailable => -32601,
+        _ => -32000,
+    }
 }
 
 async fn write_unrevoked(

@@ -20,7 +20,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub cancel: CancellationToken,
     pub configured_context: u64,
     pub plan_mode_active: bool,
-    pub chat_mode: bool,
+    pub permission_mode: &'a str,
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
@@ -129,12 +129,14 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     .await;
     let (tool_tx, tool_rx) = tokio::sync::mpsc::unbounded_channel();
     let mut eager_handle =
-        EagerHandleGuard::new(super::agent_loop_thinking_retry::spawn_eager_handle(
+        EagerHandleGuard::new(super::eager_dispatch::spawn_eager_handle(
             tool_rx,
+            params.on_event.clone(),
             params.working_dir.to_path_buf(),
             params.session_id.to_string(),
             params.request_id.to_string(),
-            params.chat_mode,
+            params.permission_mode.to_string(),
+            plan_active,
             params.cancel.clone(),
             params.enable_eager_tools,
         ));
@@ -181,7 +183,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             request_id: params.request_id.to_string(),
             cancel: params.cancel.clone(),
             plan_active,
-            chat_mode: params.chat_mode,
+            permission_mode: params.permission_mode.to_string(),
             realtime_budget,
             enable_eager_tools: params.enable_eager_tools,
             journal: params.journal,

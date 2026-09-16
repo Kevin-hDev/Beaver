@@ -2,32 +2,10 @@ use super::tool_dispatch_trace::DispatchTrace;
 use super::tool_dispatcher_route::{dynamic_route, is_chat_tool};
 use super::tool_result_contract::ToolErrorCategory;
 use super::types_tools::ToolResult;
+use super::extension_tool_authority::ToolDispatchAuthority;
 use serde_json::Value;
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
-
-#[cfg(test)]
-pub async fn dispatch(
-    tool_name: &str,
-    args: &Value,
-    working_dir: &Path,
-    session_id: &str,
-    cancel: CancellationToken,
-) -> ToolResult {
-    dispatch_with_progress(
-        tool_name,
-        args,
-        working_dir,
-        DispatchTrace {
-            session_id,
-            request_id: None,
-        },
-        cancel,
-        false,
-        None,
-    )
-    .await
-}
 
 pub async fn dispatch_for_mode(
     tool_name: &str,
@@ -61,6 +39,57 @@ pub async fn dispatch_with_progress(
     cancel: CancellationToken,
     chat_mode: bool,
     progress: Option<super::tool_bash_progress::ShellProgress>,
+) -> ToolResult {
+    dispatch_inner_entry(
+        tool_name,
+        args,
+        working_dir,
+        trace,
+        cancel,
+        chat_mode,
+        progress,
+        None,
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "dispatch boundary keeps the authorized turn context explicit"
+)]
+pub async fn dispatch_authorized_with_progress(
+    tool_name: &str,
+    args: &Value,
+    working_dir: &Path,
+    trace: DispatchTrace<'_>,
+    cancel: CancellationToken,
+    chat_mode: bool,
+    progress: Option<super::tool_bash_progress::ShellProgress>,
+    authority: ToolDispatchAuthority,
+) -> ToolResult {
+    dispatch_inner_entry(
+        tool_name,
+        args,
+        working_dir,
+        trace,
+        cancel,
+        chat_mode,
+        progress,
+        Some(authority),
+    )
+    .await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn dispatch_inner_entry(
+    tool_name: &str,
+    args: &Value,
+    working_dir: &Path,
+    trace: DispatchTrace<'_>,
+    cancel: CancellationToken,
+    chat_mode: bool,
+    progress: Option<super::tool_bash_progress::ShellProgress>,
+    authority: Option<ToolDispatchAuthority>,
 ) -> ToolResult {
     let session_id = trace.session_id;
     if chat_mode && !is_chat_tool(tool_name) {
@@ -164,40 +193,18 @@ pub async fn dispatch_with_progress(
             .await
         }
     };
-    let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
-    let mut result = if dynamic_tool {
-        if crate::services::extensions::record_tool_invocation(tool_name).is_err() {
-            ::log::warn!("[extensions] usage counter unavailable");
-        }
-        crate::services::extensions::dispatch_tool(tool_name, &args, working_dir, cancel.clone())
-            .await
-            .unwrap_or_else(crate::services::extensions::unavailable_tool_result)
-    } else {
-        match super::memory_tool::dispatch_if_memory(tool_name, &args, working_dir, session_id)
-            .await
-        {
-            Some(result) => result,
-            None => {
-                Box::pin(super::tool_dispatcher::dispatch_inner(
-                    tool_name,
-                    &args,
-                    working_dir,
-                    trace,
-                    cancel,
-                    profile,
-                    progress,
-                ))
-                .await
-            }
-        }
-    };
-    if let Some(change) = before.and_then(super::tool_file_changes::direct_change) {
-        if result.affected_paths().is_empty() {
-            result.affected_paths_mut().push(change.path.clone());
-        }
-        result.file_changes_mut().push(change);
-    }
-    super::tool_dispatcher_finalize::finalize(result, tool_name, session_id, working_dir).await
+    super::tool_dispatcher_execute::execute(
+        tool_name,
+        args,
+        working_dir,
+        trace,
+        cancel,
+        profile,
+        progress,
+        dynamic_tool,
+        authority,
+    )
+    .await
 }
 
 pub(super) async fn finalize_result(

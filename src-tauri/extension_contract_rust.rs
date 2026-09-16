@@ -65,6 +65,10 @@ pub fn render(contract: &Value) -> Result<String, String> {
         &mut output,
         array(object(contract, "methods")?, "hostToCore")?,
     )?;
+    output.push_str(&format!(
+        "pub const CORE_CONTEXT_ENVELOPE_FIELD: &str = {:?};\n",
+        string(object(contract, "transport")?, "contextEnvelopeField")?
+    ));
     super::core_rust_renderer::render(
         &mut output,
         array(object(contract, "methods")?, "hostToCore")?,
