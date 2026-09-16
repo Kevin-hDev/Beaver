@@ -45,3 +45,15 @@ fn receipt_round_trip_preserves_the_exact_manifest() {
         Some(receipt)
     );
 }
+
+#[test]
+fn sha256_revision_keeps_its_receipt_but_uses_a_portable_directory_name() {
+    let data = tempfile::tempdir().unwrap();
+    let receipt = InstallationReceipt::from_entry(&raw_entry(b"vad"));
+
+    assert!(receipt.revision.starts_with("sha256:"));
+    assert_eq!(
+        receipt.install_dir(data.path()).file_name().unwrap(),
+        receipt.revision.strip_prefix("sha256:").unwrap()
+    );
+}

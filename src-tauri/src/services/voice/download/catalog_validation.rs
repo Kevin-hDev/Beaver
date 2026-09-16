@@ -150,18 +150,22 @@ fn validate_id(value: &str) -> Result<(), VoiceError> {
 }
 
 fn validate_revision(value: &str) -> Result<(), VoiceError> {
-    let digest = value.strip_prefix("sha256:");
-    if !is_commit_revision(value)
-        && !(digest.is_some_and(|digest| {
-            digest.len() == 64
-                && digest
-                    .bytes()
-                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
-        }))
-    {
+    if revision_directory_name(value).is_none() {
         return invalid();
     }
     Ok(())
+}
+
+pub(super) fn revision_directory_name(value: &str) -> Option<&str> {
+    if is_commit_revision(value) {
+        return Some(value);
+    }
+    value.strip_prefix("sha256:").filter(|digest| {
+        digest.len() == 64
+            && digest
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    })
 }
 
 fn is_commit_revision(value: &str) -> bool {

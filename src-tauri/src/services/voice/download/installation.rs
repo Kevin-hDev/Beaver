@@ -7,6 +7,7 @@ use crate::services::private_store::sync_directory;
 use crate::services::private_store::{ensure_private_dir, rename_durable};
 
 use super::{
+    catalog_validation::revision_directory_name,
     cleanup_partial,
     extraction::{extract_verified, manifest_paths},
     models_root,
@@ -27,7 +28,8 @@ pub(crate) fn install_archive(
     }
     let root = models_root(data_dir);
     let model_parent = root.join("models").join(&entry.id);
-    let final_dir = model_parent.join(&entry.revision);
+    let final_dir =
+        model_parent.join(revision_directory_name(&entry.revision).ok_or_else(storage_error)?);
     let staging_parent = root.join("staging");
     ensure_private_dir(&model_parent)?;
     ensure_private_dir(&staging_parent)?;

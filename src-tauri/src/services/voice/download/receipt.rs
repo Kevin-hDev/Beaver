@@ -9,7 +9,9 @@ use crate::services::private_store::{
     atomic_write_with_durability, read_bounded_regular, BoundedFile, PublicationDurability,
 };
 
-use super::{models_root, VoiceCatalogEntry, VoiceModelFile};
+use super::{
+    catalog_validation::revision_directory_name, models_root, VoiceCatalogEntry, VoiceModelFile,
+};
 
 const RECEIPT_VERSION: u8 = 1;
 const MAX_RECEIPT_BYTES: u64 = 32 * 1024;
@@ -47,7 +49,7 @@ impl InstallationReceipt {
         models_root(data_dir)
             .join("models")
             .join(&self.entry_id)
-            .join(&self.revision)
+            .join(revision_directory_name(&self.revision).unwrap_or("invalid-revision"))
     }
 }
 
@@ -103,6 +105,7 @@ fn receipt_valid(receipt: &InstallationReceipt) -> bool {
         .try_fold(0_u64, |sum, file| sum.checked_add(file.bytes));
     receipt.version == RECEIPT_VERSION
         && !receipt.entry_id.is_empty()
+        && revision_directory_name(&receipt.revision).is_some()
         && receipt.entry_id.chars().all(|character| {
             character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
         })

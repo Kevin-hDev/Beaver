@@ -5,6 +5,7 @@ use crate::services::private_store::rename_durable;
 use crate::services::private_store::sync_directory;
 
 use super::{
+    catalog_validation::revision_directory_name,
     models_root,
     receipt::{load_receipt, receipt_path},
 };
@@ -48,7 +49,9 @@ pub fn resume_incomplete_removals(data_dir: &Path) -> Result<(), String> {
         }
         match load_receipt(data_dir, &id) {
             Ok(Some(receipt)) if receipt.entry_id == id => {
-                cleanup_obsolete_revisions(&entry.path(), &receipt.revision)?;
+                let revision =
+                    revision_directory_name(&receipt.revision).ok_or_else(storage_error)?;
+                cleanup_obsolete_revisions(&entry.path(), revision)?;
             }
             _ => {
                 ::log::warn!("[voice-download] step=orphan-model-removed reason=invalid-receipt");
