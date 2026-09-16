@@ -1,0 +1,34 @@
+B0 — Contrat additionnel, types et fixtures de conformité
+
+Base vérifiée: 0feb6cc5.
+
+État livré:
+- contract.json reste l’autorité unique des capacités, méthodes, effets, événements, délais, limites, erreurs et raisons retentables de l’API publique étendue.
+- Les artefacts Rust, Node, TypeScript, SDK et README sont générés ou contrôlés depuis ce contrat.
+- Le handshake ne conserve que l’intersection des capacités demandées et réellement implémentées.
+- models, memory, automations, subagents et toolInterception sont déclarées mais volontairement inactives jusqu’aux lots B2 à B9; Linux ne les annonce donc pas non plus.
+- L’appel générique ne peut pas contourner une capacité inactive.
+- Les paramètres sont fermés et bornés; un timeout n’est retentable que pour une méthode déclarée idempotente.
+- Les nouveaux diagnostics disposent des 7 traductions.
+
+Auto-review:
+- Correction d’un contournement initial par api.call sur capacité inactive.
+- Centralisation de validIdentifier pour maintenir extension-api.mjs à 230 lignes.
+- Aucun fichier source nouveau ou modifié ne dépasse la limite structurelle de 230 lignes; les fichiers de tests sont exclus de cette limite selon AGENTS.md.
+
+Validations exécutées:
+- node --test scripts/extensions/*.test.mjs: 124 réussis, 0 échec.
+- cargo test --lib services::extensions --no-fail-fast: 479 réussis, 0 échec, 10 ignorés.
+- npx vitest run src/i18n/extensions-translations.test.ts src/lib/extension-errors.test.ts src/lib/extension-host-status.test.ts: 16 réussis, 0 échec.
+- npx tsc --noEmit: réussi.
+- npx tsc --ignoreConfig --noEmit --skipLibCheck false --lib es2022,dom src-tauri/resources/extension-host/sdk/index.d.ts: réussi.
+- npm run lint: réussi.
+- npm run contracts:check: réussi, y compris core_api_contract_is_single_authority.
+- git diff --check: réussi.
+- graphify update .: réussi.
+
+Avertissements non bloquants observés:
+- ts-rs ignore deux attributs serde déjà connus.
+- Le linker macOS signale une table compact-unwind trop grande; aucun test ne se termine en erreur.
+
+Validation visuelle: non applicable à B0, aucune interface utilisateur modifiée.
