@@ -1,3 +1,12 @@
+#![cfg_attr(
+    target_os = "linux",
+    allow(
+        dead_code,
+        unused_imports,
+        reason = "voice mode is intentionally unavailable on Linux"
+    )
+)]
+
 #[cfg(any(target_os = "macos", windows))]
 pub mod actions;
 #[cfg(any(target_os = "macos", windows))]

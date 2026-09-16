@@ -141,7 +141,7 @@ fn validate_download_request(
             #[cfg(target_os = "linux")]
             {
                 let _ = app;
-                return Err("model-download-invalid-model".into());
+                Err("model-download-invalid-model".into())
             }
             #[cfg(any(target_os = "macos", windows))]
             {
