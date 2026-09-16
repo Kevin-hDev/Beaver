@@ -720,6 +720,9 @@
     "delete": "Supprimer",
     "confirmDelete": "Confirmer la suppression",
     "pausedHint": "Réveils en veille — désactive le master switch",
+    "approveExtension": "Réapprouver et activer",
+    "origins": { "session": "Session", "external_channel": "Canal externe", "user_interface": "Beaver", "extension": "Extension" },
+    "inactiveReasons": { "approval_required": "Cette automatisation doit être réapprouvée après sa modification.", "owner_unavailable": "L’extension propriétaire n’est plus disponible.", "owner_invalid": "Les informations du propriétaire sont invalides." },
     "badges": {
       "active": "Actif",
       "disabled": "Désactivé",
@@ -737,7 +740,8 @@
       "lastRun": "Dernière exécution",
       "description": "Description",
       "prompt": "Prompt",
-      "target": "Session"
+      "target": "Session",
+      "origin": "Origine"
     },
     "status": {
       "ok": "Réussi",
@@ -819,6 +823,10 @@
       "continue": "Continuer"
     },
     "errors": {
+      "capacity_reached": "La limite d’automatisations est atteinte.",
+      "immutable_field": "Ce champ ne peut pas être modifié.",
+      "model_tools_unsupported": "Ce modèle ne prend pas en charge les outils requis.",
+      "cursor_expired": "Cette page d’historique n’est plus disponible.",
       "audit_unavailable": "Le journal d'audit est indisponible. Les modifications sont bloquées.",
       "store_unavailable": "Les réveils sont temporairement indisponibles.",
       "migration_unavailable": "La migration des réveils est indisponible.",
@@ -1930,6 +1938,7 @@
       "api": "API Beaver",
     "active": "Extensions actives",
     "diagnostics": "Dernières erreurs de chargement",
+      "activity": { "empty": "Aucune activité d’extension pour le moment.", "interceptors": "Intercepteurs actifs", "queued": "Événements reçus", "delivered": "Événements livrés", "dropped": "Événements ignorés", "timedOut": "Événements expirés", "activeHandlers": "Gestionnaires actifs" },
       "unavailable": "Indisponible",
       "states": {
         "stopped": "Arrêté",

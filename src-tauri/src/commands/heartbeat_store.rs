@@ -76,6 +76,34 @@ pub(super) async fn set_active(id: Uuid, active: bool) -> Result<AutomationDetai
     .map_err(command_error)
 }
 
+pub(super) async fn approve_extension(id: Uuid) -> Result<AutomationDetail, String> {
+    let detail = crate::services::automations::get(&ui_actor(), id)
+        .await
+        .map_err(command_error)?;
+    let owner = match detail.definition.extension_owner.as_ref() {
+        Some(crate::models::AutomationExtensionOwnership::Valid(owner))
+            if crate::services::extensions::automation_owner_is_current(owner) =>
+        {
+            owner
+        }
+        _ => return Err(AutomationError::ConsentRequired.code().to_string()),
+    };
+    let identity = crate::services::automations::ExtensionActorIdentity {
+        id: owner.extension_id.clone(),
+        version: owner.extension_version.clone(),
+        fingerprint: owner.extension_fingerprint.clone(),
+    };
+    crate::services::automations::service_owned_api::set_active(
+        &ui_actor(),
+        &identity,
+        id,
+        detail.definition.revision,
+        true,
+    )
+    .await
+    .map_err(command_error)
+}
+
 pub(super) async fn delete(id: Uuid) -> Result<(), String> {
     crate::services::automations::delete(&ui_actor(), id)
         .await
@@ -104,7 +132,7 @@ pub(super) fn set_global_paused(paused: bool) -> Result<(), String> {
         config.heartbeat.global_paused = paused;
         Ok(())
     })
-    .map_err(|_| "store_unavailable".into())
+    .map_err(|_| AutomationError::StoreUnavailable.code().into())
 }
 
 pub(super) fn ui_actor() -> AutomationActor {
@@ -123,7 +151,7 @@ async fn validate_project(project_id: Option<&str>) -> Result<(), String> {
     if let Some(project_id) = project_id {
         crate::services::agent_local::directory_access::project_path(project_id)
             .await
-            .map_err(|_| "invalid_project")?;
+            .map_err(|_| AutomationError::InvalidProject.code())?;
     }
     Ok(())
 }

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub use super::contribution_types::{ExtensionResource, ExtensionSkill};
+pub use super::host_activity_types::{ExtensionEventActivity, ExtensionHostActivity};
 
 pub const MINIMUM_NODE_MAJOR: u64 = 20;
 include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
@@ -206,6 +207,7 @@ pub struct ExtensionHostStatus {
     pub active_extensions: usize,
     pub last_error: Option<String>,
     pub diagnostics: Vec<ExtensionDiagnostic>,
+    pub activity: ExtensionHostActivity,
 }
 
 impl Default for ExtensionHostStatus {
@@ -218,6 +220,7 @@ impl Default for ExtensionHostStatus {
             active_extensions: 0,
             last_error: None,
             diagnostics: Vec::new(),
+            activity: ExtensionHostActivity::default(),
         }
     }
 }

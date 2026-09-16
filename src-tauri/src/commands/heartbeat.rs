@@ -62,6 +62,14 @@ pub async fn set_wakeup_active(
 }
 
 #[tauri::command]
+pub async fn approve_extension_wakeup(
+    id: Uuid,
+    _scheduler: State<'_, Scheduler>,
+) -> Result<AutomationDetail, String> {
+    store::approve_extension(id).await
+}
+
+#[tauri::command]
 pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Result<(), String> {
     if paused {
         crate::services::scheduler::cancel_all_automation_occurrences();
@@ -78,7 +86,11 @@ pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Resul
 pub fn get_heartbeat_config() -> Result<HeartbeatConfig, String> {
     crate::services::config::read_config()
         .map(|config| config.heartbeat)
-        .map_err(|_| "store_unavailable".into())
+        .map_err(|_| {
+            crate::services::automations::AutomationError::StoreUnavailable
+                .code()
+                .into()
+        })
 }
 
 #[tauri::command]

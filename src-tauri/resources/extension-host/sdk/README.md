@@ -179,6 +179,32 @@ return {
 };
 ```
 
+### Contextual core APIs
+
+The optional `models`, `memory`, `automations`, `subagents`, and
+`toolInterception` capabilities expose attributed, bounded operations. Check both
+the capability and the matching method before registering a dependent tool. These
+methods require a live Agent tool-call context; activation callbacks, event handlers,
+and standard UI actions do not have one and are refused.
+
+`models.generate` can be billable and is not idempotent. Memory writes support an
+`expectedUpdatedAt` revision. `automations.create` always creates an inactive wakeup:
+only the user can approve and activate it from Beaver. Subagents belong to the parent
+request and stop with it. An interceptor may continue or deny an action; it can never
+grant a permission that Beaver refused.
+
+The executable example in `scripts/extensions/fixtures/core-api/` demonstrates model
+generation, a memory topic, an inactive wakeup, an attributed child, event observation,
+and restrictive interception without credentials or runtime downloads.
+
+### Errors and safe retries
+
+Core calls reject with `BeaverExtensionError`. Retry only when `retryable` is true,
+with a bounded attempt count and delay. A retryable transport failure does not prove
+that a non-idempotent operation was not applied. Inspect state or ask the user before
+retrying a model generation, memory or automation mutation, or subagent operation.
+Never blindly repeat a billable generation or a write.
+
 ### Standard interface contributions
 
 Declare `ui: { "apiVersion": "1", "mode": "standard" }` in the manifest, then

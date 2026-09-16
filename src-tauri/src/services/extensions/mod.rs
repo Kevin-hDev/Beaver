@@ -33,6 +33,7 @@ mod git_resolution;
 mod git_resolution_history;
 mod git_source;
 mod git_transport;
+mod host_activity_types;
 mod host_channel;
 mod host_core_call;
 mod host_identity;

@@ -26,7 +26,11 @@ pub(super) async fn resolve_at(
         ConflictDecision::RemoveHistorical => ConflictResolution::RemoveHistorical,
         ConflictDecision::ImportAsNew => ConflictResolution::ImportAsNew {
             timezone: crate::commands::heartbeat_validation::timezone(
-                timezone.as_deref().ok_or("invalid_timezone")?,
+                timezone.as_deref().ok_or_else(|| {
+                    crate::services::automations::AutomationError::InvalidTimezone
+                        .code()
+                        .to_string()
+                })?,
             )?,
         },
     };
@@ -37,7 +41,11 @@ pub(super) async fn resolve_at(
         resolution,
     )
     .await
-    .map_err(|_| "migration_unavailable".into())
+    .map_err(|_| {
+        crate::services::automations::AutomationError::MigrationUnavailable
+            .code()
+            .into()
+    })
 }
 
 impl From<crate::services::automations::migration::AutomationMigrationStatus>

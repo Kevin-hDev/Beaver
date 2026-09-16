@@ -713,6 +713,9 @@
     "delete": "删除",
     "confirmDelete": "确认删除",
     "pausedHint": "唤醒已暂停 — 请关闭主开关",
+    "approveExtension": "重新批准并启用",
+    "origins": { "session": "会话", "external_channel": "外部频道", "user_interface": "Beaver", "extension": "扩展" },
+    "inactiveReasons": { "approval_required": "此自动化在更改后必须重新批准。", "owner_unavailable": "所属扩展已不可用。", "owner_invalid": "所有者信息无效。" },
     "badges": {
       "active": "活跃",
       "disabled": "已禁用",
@@ -730,7 +733,8 @@
       "lastRun": "最近执行",
       "description": "描述",
       "prompt": "提示词",
-      "target": "会话"
+      "target": "会话",
+      "origin": "来源"
     },
     "status": {
       "ok": "成功",
@@ -801,7 +805,7 @@
     },
     "target": { "new_session": "新会话", "resume_session": "现有会话" },
     "migration": { "title": "唤醒迁移", "timezone": "确认现有唤醒使用的时区。", "conflicts": "部分旧唤醒需要处理。", "remove": "删除旧项", "import": "作为新项导入", "continue": "继续" },
-    "errors": { "audit_unavailable": "审计日志不可用，修改已被阻止。", "store_unavailable": "唤醒暂时不可用。", "migration_unavailable": "唤醒迁移不可用。", "invalid_timezone": "时区无效。", "invalid_schedule": "计划无效。", "model_unavailable": "模型不可用。", "provider_unavailable": "提供商不可用。", "not_found": "唤醒已不存在。", "revision_conflict": "此唤醒已更改，请重新加载后再试。", "globally_paused": "唤醒已暂停。", "consent_required": "激活前必须批准此更改。", "invalid_project": "项目无效。", "invalid_input": "一个或多个字段无效。", "pauseAll": "全部暂停" }
+    "errors": { "capacity_reached": "已达到自动化数量上限。", "immutable_field": "此字段无法修改。", "model_tools_unsupported": "此模型不支持所需工具。", "cursor_expired": "此页已过期，请重新加载历史记录。", "audit_unavailable": "审计日志不可用，修改已被阻止。", "store_unavailable": "唤醒暂时不可用。", "migration_unavailable": "唤醒迁移不可用。", "invalid_timezone": "时区无效。", "invalid_schedule": "计划无效。", "model_unavailable": "模型不可用。", "provider_unavailable": "提供商不可用。", "not_found": "唤醒已不存在。", "revision_conflict": "此唤醒已更改，请重新加载后再试。", "globally_paused": "唤醒已暂停。", "consent_required": "激活前必须批准此更改。", "invalid_project": "项目无效。", "invalid_input": "一个或多个字段无效。", "pauseAll": "全部暂停" }
   },
   "personality": {
     "files": "核心",
@@ -2032,6 +2036,10 @@
       "T": "分钟"
     },
     "errors": {
+      "capacity_reached": "已达到自动化数量上限。",
+      "immutable_field": "此字段无法修改。",
+      "model_tools_unsupported": "此模型不支持所需工具。",
+      "cursor_expired": "此历史记录页面已不可用。",
       "importFailed": "导入失败。请检查文件格式。",
       "launchFailed": "计算失败。请检查列、模型和 API 密钥。",
       "capacityReached": "Forecast 存储空间已满。请删除较旧的分析后重试。"
@@ -2461,6 +2469,7 @@
       "api": "Beaver API",
     "active": "活动扩展",
     "diagnostics": "最近的加载错误",
+      "activity": { "empty": "暂无扩展活动。", "interceptors": "活动拦截器", "queued": "已接收事件", "delivered": "已投递事件", "dropped": "已丢弃事件", "timedOut": "超时事件", "activeHandlers": "活动处理器" },
       "unavailable": "不可用",
       "states": {
         "stopped": "已停止",

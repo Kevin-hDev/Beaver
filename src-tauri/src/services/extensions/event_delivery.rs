@@ -5,6 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+mod activity;
+
 #[derive(Clone, Default)]
 pub(super) struct EventRouter {
     state: Arc<Mutex<RouterState>>,

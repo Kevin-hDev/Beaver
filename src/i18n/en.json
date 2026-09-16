@@ -720,6 +720,9 @@
     "delete": "Delete",
     "confirmDelete": "Confirm deletion",
     "pausedHint": "Wakeups paused — disable the master switch",
+    "approveExtension": "Reapprove and activate",
+    "origins": { "session": "Session", "external_channel": "External channel", "user_interface": "Beaver", "extension": "Extension" },
+    "inactiveReasons": { "approval_required": "This automation must be reapproved after its change.", "owner_unavailable": "The owning extension is no longer available.", "owner_invalid": "The owner information is invalid." },
     "badges": {
       "active": "Active",
       "disabled": "Disabled",
@@ -737,7 +740,8 @@
       "lastRun": "Last run",
       "description": "Description",
       "prompt": "Prompt",
-      "target": "Session"
+      "target": "Session",
+      "origin": "Origin"
     },
     "status": {
       "ok": "Succeeded",
@@ -819,6 +823,10 @@
       "continue": "Continue"
     },
     "errors": {
+      "capacity_reached": "The automation limit has been reached.",
+      "immutable_field": "This field cannot be changed.",
+      "model_tools_unsupported": "This model does not support the required tools.",
+      "cursor_expired": "This history page is no longer available.",
       "audit_unavailable": "The audit log is unavailable. Changes are blocked.",
       "store_unavailable": "Wakeups are temporarily unavailable.",
       "migration_unavailable": "Wakeup migration is unavailable.",
@@ -1878,6 +1886,7 @@
       "api": "Beaver API",
     "active": "Active extensions",
     "diagnostics": "Latest loading errors",
+      "activity": { "empty": "No extension activity yet.", "interceptors": "Active interceptors", "queued": "Events received", "delivered": "Events delivered", "dropped": "Events dropped", "timedOut": "Events timed out", "activeHandlers": "Active handlers" },
       "unavailable": "Unavailable",
       "states": {
         "stopped": "Stopped",

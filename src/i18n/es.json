@@ -713,6 +713,9 @@
     "delete": "Eliminar",
     "confirmDelete": "Confirmar eliminación",
     "pausedHint": "Wakeups pausados — desactiva el interruptor principal",
+    "approveExtension": "Volver a aprobar y activar",
+    "origins": { "session": "Sesión", "external_channel": "Canal externo", "user_interface": "Beaver", "extension": "Extensión" },
+    "inactiveReasons": { "approval_required": "Esta automatización debe volver a aprobarse después de su modificación.", "owner_unavailable": "La extensión propietaria ya no está disponible.", "owner_invalid": "La información del propietario no es válida." },
     "badges": {
       "active": "Activo",
       "disabled": "Desactivado",
@@ -730,7 +733,8 @@
       "lastRun": "Última ejecución",
       "description": "Descripción",
       "prompt": "Prompt",
-      "target": "Sesión"
+      "target": "Sesión",
+      "origin": "Origen"
     },
     "status": {
       "ok": "Correcto",
@@ -801,7 +805,7 @@
     },
     "target": { "new_session": "Nueva sesión", "resume_session": "Sesión existente" },
     "migration": { "title": "Migración de wakeups", "timezone": "Confirma la zona horaria de los wakeups existentes.", "conflicts": "Algunos wakeups antiguos requieren una decisión.", "remove": "Eliminar antiguo", "import": "Importar como nuevo", "continue": "Continuar" },
-    "errors": { "audit_unavailable": "El registro de auditoría no está disponible. Los cambios están bloqueados.", "store_unavailable": "Los wakeups no están disponibles temporalmente.", "migration_unavailable": "La migración no está disponible.", "invalid_timezone": "La zona horaria no es válida.", "invalid_schedule": "La programación no es válida.", "model_unavailable": "El modelo no está disponible.", "provider_unavailable": "El proveedor no está disponible.", "not_found": "El wakeup ya no existe.", "revision_conflict": "Este wakeup ha cambiado. Recárgalo antes de volver a intentarlo.", "globally_paused": "Los wakeups están pausados.", "consent_required": "Este cambio debe aprobarse antes de la activación.", "invalid_project": "El proyecto no es válido.", "invalid_input": "Uno o varios campos no son válidos.", "pauseAll": "Pausar todos" }
+    "errors": { "capacity_reached": "Se ha alcanzado el límite de automatizaciones.", "immutable_field": "Este campo no se puede modificar.", "model_tools_unsupported": "Este modelo no admite las herramientas necesarias.", "cursor_expired": "Esta página ha caducado. Vuelve a cargar el historial.", "audit_unavailable": "El registro de auditoría no está disponible. Los cambios están bloqueados.", "store_unavailable": "Los wakeups no están disponibles temporalmente.", "migration_unavailable": "La migración no está disponible.", "invalid_timezone": "La zona horaria no es válida.", "invalid_schedule": "La programación no es válida.", "model_unavailable": "El modelo no está disponible.", "provider_unavailable": "El proveedor no está disponible.", "not_found": "El wakeup ya no existe.", "revision_conflict": "Este wakeup ha cambiado. Recárgalo antes de volver a intentarlo.", "globally_paused": "Los wakeups están pausados.", "consent_required": "Este cambio debe aprobarse antes de la activación.", "invalid_project": "El proyecto no es válido.", "invalid_input": "Uno o varios campos no son válidos.", "pauseAll": "Pausar todos" }
   },
   "personality": {
     "files": "Principal",
@@ -2037,6 +2041,10 @@
       "T": "Minuto"
     },
     "errors": {
+      "capacity_reached": "Se alcanzó el límite de automatizaciones.",
+      "immutable_field": "Este campo no se puede modificar.",
+      "model_tools_unsupported": "Este modelo no admite las herramientas necesarias.",
+      "cursor_expired": "Esta página del historial ya no está disponible.",
       "importFailed": "No se pudo importar. Comprueba el formato del archivo.",
       "launchFailed": "El cálculo falló. Comprueba las columnas, el modelo y la clave API.",
       "capacityReached": "El almacenamiento de Forecast está lleno. Elimina análisis antiguos y vuelve a intentarlo."
@@ -2466,6 +2474,7 @@
       "api": "API de Beaver",
     "active": "Extensiones activas",
     "diagnostics": "Últimos errores de carga",
+      "activity": { "empty": "Aún no hay actividad de extensiones.", "interceptors": "Interceptores activos", "queued": "Eventos recibidos", "delivered": "Eventos entregados", "dropped": "Eventos descartados", "timedOut": "Eventos expirados", "activeHandlers": "Gestores activos" },
       "unavailable": "No disponible",
       "states": {
         "stopped": "Detenido",

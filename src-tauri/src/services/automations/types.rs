@@ -67,6 +67,8 @@ pub struct AutomationSummary {
     pub paused_by_global: bool,
     pub next_fire_at: Option<DateTime<Utc>>,
     pub last_run: Option<AutomationLastRun>,
+    pub origin: AutomationOrigin,
+    pub inactive_reason: Option<AutomationInactiveReason>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -80,6 +82,16 @@ pub struct AutomationLastRun {
 pub struct AutomationDetail {
     pub definition: AutomationDefinition,
     pub next_fire_at: Option<DateTime<Utc>>,
+    pub origin: AutomationOrigin,
+    pub inactive_reason: Option<AutomationInactiveReason>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AutomationInactiveReason {
+    ApprovalRequired,
+    OwnerUnavailable,
+    OwnerInvalid,
 }
 
 #[derive(Debug, Clone)]
@@ -138,6 +150,9 @@ pub enum AutomationError {
     RevisionConflict,
     GloballyPaused,
     ConsentRequired,
+    MigrationUnavailable,
+    InvalidTimezone,
+    InvalidProject,
 }
 
 impl std::fmt::Display for AutomationError {
@@ -149,6 +164,27 @@ impl std::fmt::Display for AutomationError {
 impl std::error::Error for AutomationError {}
 
 impl AutomationError {
+    #[cfg(test)]
+    pub const ALL: [Self; 17] = [
+        Self::NotFound,
+        Self::CapacityReached,
+        Self::InvalidInput,
+        Self::ImmutableField,
+        Self::InvalidSchedule,
+        Self::ProviderUnavailable,
+        Self::ModelUnavailable,
+        Self::ModelToolsUnsupported,
+        Self::AuditUnavailable,
+        Self::StoreUnavailable,
+        Self::CursorExpired,
+        Self::RevisionConflict,
+        Self::GloballyPaused,
+        Self::ConsentRequired,
+        Self::MigrationUnavailable,
+        Self::InvalidTimezone,
+        Self::InvalidProject,
+    ];
+
     pub const fn code(self) -> &'static str {
         match self {
             Self::NotFound => "not_found",
@@ -165,6 +201,9 @@ impl AutomationError {
             Self::RevisionConflict => "revision_conflict",
             Self::GloballyPaused => "globally_paused",
             Self::ConsentRequired => "consent_required",
+            Self::MigrationUnavailable => "migration_unavailable",
+            Self::InvalidTimezone => "invalid_timezone",
+            Self::InvalidProject => "invalid_project",
         }
     }
 }

@@ -9,6 +9,8 @@ export type WakeupTarget =
 
 export type WakeupStatus = "active" | "disabled" | "completed";
 export type WakeupDisplayStatus = WakeupStatus | "running" | "paused_by_global";
+export type AutomationOrigin = "session" | "external_channel" | "user_interface" | "extension";
+export type AutomationInactiveReason = "approval_required" | "owner_unavailable" | "owner_invalid";
 
 export interface WakeupLastRun {
   status: WakeupRunStatus;
@@ -29,9 +31,11 @@ export interface ScheduledWakeup {
   paused_by_global: boolean;
   next_fire_at: string | null;
   last_run: WakeupLastRun | null;
+  origin: AutomationOrigin;
+  inactive_reason: AutomationInactiveReason | null;
 }
 
-export interface WakeupDefinition extends Omit<ScheduledWakeup, "running" | "paused_by_global" | "next_fire_at" | "last_run"> {
+export interface WakeupDefinition extends Omit<ScheduledWakeup, "running" | "paused_by_global" | "next_fire_at" | "last_run" | "origin" | "inactive_reason"> {
   description: string | null;
   prompt: string;
   creator_session_id: string | null;
@@ -42,6 +46,8 @@ export interface WakeupDefinition extends Omit<ScheduledWakeup, "running" | "pau
 export interface WakeupDetail {
   definition: WakeupDefinition;
   next_fire_at: string | null;
+  origin: AutomationOrigin;
+  inactive_reason: AutomationInactiveReason | null;
 }
 
 export interface CreateWakeupInput {
@@ -112,20 +118,7 @@ export type AutomationMigrationStatus =
   | { status: "unavailable" }
   | { status: "conflicts"; conflicts: MigrationConflict[] };
 
-export type AutomationErrorCode =
-  | "audit_unavailable"
-  | "store_unavailable"
-  | "migration_unavailable"
-  | "invalid_timezone"
-  | "invalid_schedule"
-  | "model_unavailable"
-  | "provider_unavailable"
-  | "not_found"
-  | "revision_conflict"
-  | "globally_paused"
-  | "consent_required"
-  | "invalid_project"
-  | "invalid_input";
+export type { AutomationErrorCode } from "./automation-contract.generated";
 
 export function displayStatus(wakeup: ScheduledWakeup): WakeupDisplayStatus {
   if (wakeup.running) return "running";

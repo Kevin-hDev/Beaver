@@ -31,11 +31,19 @@ pub(super) fn schedule(
 }
 
 pub(super) fn timezone(value: &str) -> Result<Tz, String> {
-    Tz::from_str(value).map_err(|_| "invalid_timezone".into())
+    Tz::from_str(value).map_err(|_| {
+        crate::services::automations::AutomationError::InvalidTimezone
+            .code()
+            .into()
+    })
 }
 
 fn parse_datetime(value: &str) -> Result<NaiveDateTime, String> {
     NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M")
         .or_else(|_| NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S"))
-        .map_err(|_| "invalid_schedule".into())
+        .map_err(|_| {
+            crate::services::automations::AutomationError::InvalidSchedule
+                .code()
+                .into()
+        })
 }

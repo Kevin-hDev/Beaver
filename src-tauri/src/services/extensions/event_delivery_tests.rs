@@ -37,6 +37,34 @@ fn slow_observer_does_not_block_or_grow_unbounded() {
 }
 
 #[test]
+fn activity_aggregates_bounded_delivery_counters() {
+    use std::collections::BTreeSet;
+
+    let router = super::event_delivery::EventRouter::default();
+    for id in ["first", "second"] {
+        let (delivery, _receiver) = super::event_delivery::EventDelivery::test_delivery();
+        let envelope = super::event_payload::EventEnvelope::build(
+            super::event_payload::turn_started("session", id),
+            1,
+        )
+        .unwrap();
+        delivery.enqueue(envelope.clone());
+        delivery.enqueue(envelope);
+        router.install(
+            super::host_identity::HostIdentity::ThirdParty(id.to_string()),
+            1,
+            BTreeSet::from(["session.turn.started".to_string()]),
+            delivery,
+        );
+    }
+
+    let activity = router.activity();
+    assert_eq!(activity.queued, 2);
+    assert_eq!(activity.dropped, 2);
+    assert_eq!(activity.delivered, 0);
+}
+
+#[test]
 fn stopping_generation_is_not_a_failed_neighbor() {
     use std::collections::BTreeSet;
 

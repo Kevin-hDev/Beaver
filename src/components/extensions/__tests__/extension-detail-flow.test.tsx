@@ -60,6 +60,7 @@ function SelectablePage({ operationError = null }: { operationError?: string | n
         apiVersion: "1",
         activeExtensions: 1,
         diagnostics: [],
+        activity: { events: { queued: 0, delivered: 0, dropped: 0, timedOut: 0, activeHandlers: 0 }, activeInterceptors: 0 },
       }}
       hostLoaded
       loading={false}

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowsClockwise, ShieldWarning } from "@/components/ui/icons";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { extensionErrorKey } from "@/lib/extension-errors";
+import { IS_LINUX } from "@/lib/platform";
 import { UI_DIAGNOSTIC_CODES } from "@/types/extension-ui-contract.generated";
 import type { ExtensionHostStatus } from "@/types/extensions";
 import "./extensions-host-panel.css";
@@ -27,6 +28,8 @@ export function ExtensionsHostPanel({
 }: ExtensionsHostPanelProps) {
   const { t } = useTranslation();
   const stopUnconfirmed = host.lastError === "extensions_stop_unconfirmed";
+  const activityEmpty = host.activity.activeInterceptors === 0
+    && Object.values(host.activity.events).every((value) => value === 0);
   return (
     <>
       <p className="settings-panel-description">{t("extensions.host.description")}</p>
@@ -43,6 +46,19 @@ export function ExtensionsHostPanel({
           <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
           <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
           <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
+        </SettingsCard>
+      )}
+      {loaded && !IS_LINUX && activityEmpty && (
+        <p className="settings-panel-description">{t("extensions.host.activity.empty")}</p>
+      )}
+      {loaded && !IS_LINUX && !activityEmpty && (
+        <SettingsCard className="extp-lines">
+          <InfoLine label={t("extensions.host.activity.interceptors")} value={String(host.activity.activeInterceptors)} />
+          <InfoLine label={t("extensions.host.activity.queued")} value={String(host.activity.events.queued)} />
+          <InfoLine label={t("extensions.host.activity.delivered")} value={String(host.activity.events.delivered)} />
+          <InfoLine label={t("extensions.host.activity.dropped")} value={String(host.activity.events.dropped)} />
+          <InfoLine label={t("extensions.host.activity.timedOut")} value={String(host.activity.events.timedOut)} />
+          <InfoLine label={t("extensions.host.activity.activeHandlers")} value={String(host.activity.events.activeHandlers)} />
         </SettingsCard>
       )}
       {host.lastError && (

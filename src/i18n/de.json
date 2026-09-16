@@ -713,6 +713,9 @@
     "delete": "Löschen",
     "confirmDelete": "Löschen bestätigen",
     "pausedHint": "Wakeups pausiert — Hauptschalter deaktivieren",
+    "approveExtension": "Erneut genehmigen und aktivieren",
+    "origins": { "session": "Sitzung", "external_channel": "Externer Kanal", "user_interface": "Beaver", "extension": "Erweiterung" },
+    "inactiveReasons": { "approval_required": "Diese Automatisierung muss nach der Änderung erneut genehmigt werden.", "owner_unavailable": "Die zugehörige Erweiterung ist nicht mehr verfügbar.", "owner_invalid": "Die Eigentümerinformationen sind ungültig." },
     "badges": {
       "active": "Aktiv",
       "disabled": "Deaktiviert",
@@ -730,7 +733,8 @@
       "lastRun": "Letzte Ausführung",
       "description": "Beschreibung",
       "prompt": "Prompt",
-      "target": "Sitzung"
+      "target": "Sitzung",
+      "origin": "Ursprung"
     },
     "status": {
       "ok": "Erfolgreich",
@@ -801,7 +805,7 @@
     },
     "target": { "new_session": "Neue Sitzung", "resume_session": "Bestehende Sitzung" },
     "migration": { "title": "Wakeup-Migration", "timezone": "Bestätige die Zeitzone der bestehenden Wakeups.", "conflicts": "Einige alte Wakeups benötigen eine Entscheidung.", "remove": "Altes entfernen", "import": "Als neu importieren", "continue": "Weiter" },
-    "errors": { "audit_unavailable": "Das Auditprotokoll ist nicht verfügbar. Änderungen sind blockiert.", "store_unavailable": "Wakeups sind vorübergehend nicht verfügbar.", "migration_unavailable": "Die Migration ist nicht verfügbar.", "invalid_timezone": "Die Zeitzone ist ungültig.", "invalid_schedule": "Der Zeitplan ist ungültig.", "model_unavailable": "Das Modell ist nicht verfügbar.", "provider_unavailable": "Der Anbieter ist nicht verfügbar.", "not_found": "Das Wakeup existiert nicht mehr.", "revision_conflict": "Dieses Wakeup wurde geändert. Laden Sie es neu, bevor Sie es erneut versuchen.", "globally_paused": "Wakeups sind pausiert.", "consent_required": "Diese Änderung muss vor der Aktivierung genehmigt werden.", "invalid_project": "Das Projekt ist ungültig.", "invalid_input": "Ein oder mehrere Felder sind ungültig.", "pauseAll": "Alle pausieren" }
+    "errors": { "capacity_reached": "Das Automatisierungslimit wurde erreicht.", "immutable_field": "Dieses Feld kann nicht geändert werden.", "model_tools_unsupported": "Dieses Modell unterstützt die erforderlichen Werkzeuge nicht.", "cursor_expired": "Diese Seite ist abgelaufen. Laden Sie den Verlauf neu.", "audit_unavailable": "Das Auditprotokoll ist nicht verfügbar. Änderungen sind blockiert.", "store_unavailable": "Wakeups sind vorübergehend nicht verfügbar.", "migration_unavailable": "Die Migration ist nicht verfügbar.", "invalid_timezone": "Die Zeitzone ist ungültig.", "invalid_schedule": "Der Zeitplan ist ungültig.", "model_unavailable": "Das Modell ist nicht verfügbar.", "provider_unavailable": "Der Anbieter ist nicht verfügbar.", "not_found": "Das Wakeup existiert nicht mehr.", "revision_conflict": "Dieses Wakeup wurde geändert. Laden Sie es neu, bevor Sie es erneut versuchen.", "globally_paused": "Wakeups sind pausiert.", "consent_required": "Diese Änderung muss vor der Aktivierung genehmigt werden.", "invalid_project": "Das Projekt ist ungültig.", "invalid_input": "Ein oder mehrere Felder sind ungültig.", "pauseAll": "Alle pausieren" }
   },
   "personality": {
     "files": "Kern",
@@ -2033,6 +2037,10 @@
       "T": "Minute"
     },
     "errors": {
+      "capacity_reached": "Das Automatisierungslimit wurde erreicht.",
+      "immutable_field": "Dieses Feld kann nicht geändert werden.",
+      "model_tools_unsupported": "Dieses Modell unterstützt die benötigten Werkzeuge nicht.",
+      "cursor_expired": "Diese Verlaufsseite ist nicht mehr verfügbar.",
       "importFailed": "Import fehlgeschlagen. Prüfe das Dateiformat.",
       "launchFailed": "Die Berechnung ist fehlgeschlagen. Prüfe Spalten, Modell und API-Schlüssel.",
       "capacityReached": "Der Forecast-Speicher ist voll. Lösche ältere Analysen und versuche es erneut."
@@ -2462,6 +2470,7 @@
       "api": "Beaver-API",
     "active": "Aktive Erweiterungen",
     "diagnostics": "Letzte Ladefehler",
+      "activity": { "empty": "Noch keine Erweiterungsaktivität.", "interceptors": "Aktive Interzeptoren", "queued": "Empfangene Ereignisse", "delivered": "Zugestellte Ereignisse", "dropped": "Verworfene Ereignisse", "timedOut": "Abgelaufene Ereignisse", "activeHandlers": "Aktive Handler" },
       "unavailable": "Nicht verfügbar",
       "states": {
         "stopped": "Gestoppt",

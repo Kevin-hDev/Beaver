@@ -20,6 +20,7 @@ import type {
   ExtensionUiDiagnosticCode,
   ExtensionUiLoadingStage,
 } from "./extension-ui-contract.generated";
+import type { ExtensionHostActivity } from "./extension-host-activity";
 
 export {
   ADVANCED_HOST_TO_CORE_REQUEST_METHODS,
@@ -141,6 +142,7 @@ export interface ExtensionHostStatus {
   activeExtensions: number;
   lastError?: string;
   diagnostics: ExtensionDiagnostic[];
+  activity: ExtensionHostActivity;
 }
 
 export interface ExtensionDiscoveryPreferences {
@@ -225,3 +227,4 @@ export type {
   ExtensionUiDiagnosticCode,
   ExtensionUiLoadingStage,
 } from "./extension-ui-contract.generated";
+export type { ExtensionHostActivity } from "./extension-host-activity";

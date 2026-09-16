@@ -56,10 +56,17 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
 }
 
 pub fn status() -> ExtensionHostStatus {
-    global()
-        .ok()
-        .and_then(|runtime| runtime.status.read().ok().map(|status| status.clone()))
-        .unwrap_or_default()
+    let Ok(runtime) = global() else {
+        return ExtensionHostStatus::default();
+    };
+    let mut status = runtime
+        .status
+        .read()
+        .map(|status| status.clone())
+        .unwrap_or_default();
+    status.activity.events = runtime.work.event_router().activity();
+    status.activity.active_interceptors = runtime.tool_interceptors.len();
+    status
 }
 
 impl ExtensionRuntime {

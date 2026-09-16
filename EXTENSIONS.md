@@ -1,6 +1,6 @@
 # Extensions Beaver
 
-> Guide utilisateur et auteur — état de l’implémentation au 6 septembre 2026.
+> Guide utilisateur et auteur — état de l’implémentation au 16 septembre 2026.
 >
 > Ce guide décrit les extensions hébergées par Beaver. Les contrats JSON restent les
 > autorités exécutables lorsque leur détail diffère d’un exemple humain.
@@ -122,7 +122,12 @@ Une extension peut notamment :
 
 - déclarer jusqu’à 64 outils typés utilisables par le modèle ;
 - lire le dossier de travail transmis à chaque appel d’outil ;
-- écouter les événements publics de Beaver, actuellement `session.turn.started` ;
+- écouter les événements publics bornés de Beaver ;
+- générer du texte avec un modèle configuré dans le contexte d’un appel Agent ;
+- lire, créer et archiver des sujets mémoire attribués ;
+- proposer un réveil inactif que l’utilisateur doit approuver dans Beaver ;
+- créer et suivre des sous-agents Explorer ou Coder attribués à l’appel parent ;
+- refuser une action avec un intercepteur restrictif ;
 - consulter les sessions et les projets exposés par l’API ;
 - lister les connecteurs MCP et appeler un de leurs outils ;
 - consulter la configuration des canaux ;
@@ -348,11 +353,13 @@ reconstruite lors d’une mise à jour gérée. Les contributions enregistrées 
 du chargement ne modifient pas silencieusement le catalogue courant : un rechargement de
 l’Hôte rend le nouvel ensemble visible.
 
-### Événement disponible
+### Événements disponibles
 
-Le seul événement public actuel est `session.turn.started`. Son objet contient
-`sessionId` et `mode`. Un gestionnaire ne doit pas bloquer le tour : son temps est borné
-et une panne du gestionnaire est attribuée à son extension.
+Le contrat public couvre les changements de tour, l’exécution d’outils et
+d’automatisations, ainsi que les changements d’état des sous-agents. Un gestionnaire
+ne doit pas bloquer le travail : sa file, son temps et sa charge sont bornés, et une
+panne est attribuée à son extension. Les payloads exacts restent définis par le contrat
+du runtime.
 
 ```ts
 const unsubscribe = beaver.on("session.turn.started", async (event) => {
@@ -444,12 +451,31 @@ Le SDK fournit des méthodes typées pour :
 - `beaver.channels.getConfig()` ;
 - `beaver.secrets.getProviderKey(...)`, les jetons MCP et les jetons de canaux.
 
+Les capacités facultatives `models`, `memory`, `automations`, `subagents` et
+`toolInterception` ajoutent des opérations contextualisées. Vérifiez toujours la
+capacité et la méthode avant de l’utiliser. Elles fonctionnent pendant un appel
+d’outil en mode Agent ; l’activation de l’extension, ses événements et ses actions
+d’interface n’ont pas ce contexte et reçoivent un refus explicite.
+
+- `beaver.models` liste les modèles et produit une génération bornée ;
+- `beaver.memory` manipule des sujets globaux ou de projet avec contrôle de révision ;
+- `beaver.automations` crée uniquement des réveils inactifs. L’utilisateur les
+  réapprouve et les active depuis l’écran Automatisations ;
+- `beaver.subagents` crée, suit, contacte et annule les enfants de l’appel parent ;
+- `beaver.interceptTool` peut continuer ou refuser une action, jamais remplacer une
+  permission refusée par Beaver.
+
+Un exemple complet et exécuté par les tests se trouve dans
+[`scripts/extensions/fixtures/core-api/`](./scripts/extensions/fixtures/core-api/).
+
 `beaver.call(method, params)` expose le même pont stable de plus bas niveau. N’inventez
 pas un nom de méthode : seules les méthodes du contrat du runtime sont acceptées.
 
 Les erreurs du pont sont des `BeaverExtensionError` bornées. Elles fournissent `reason`,
 `code` et `retryable`. Retentez seulement une erreur explicitement retentable, avec un
-nombre d’essais et une attente bornés :
+nombre d’essais et une attente bornés. Une erreur de transport ne prouve pas qu’une
+mutation a échoué : relisez son état ou demandez confirmation avant de retenter une
+écriture, un réveil, un sous-agent ou une génération potentiellement facturable :
 
 ```ts
 import { isBeaverExtensionError } from "@beaver/sdk";
@@ -1016,7 +1042,7 @@ La fixture d’acceptation complète des skills, ressources et résultats se tro
 
 - Le runtime hébergé accepte JavaScript et TypeScript, pas directement Python, Rust,
   Go, Java ou C#.
-- Les événements publics sont encore limités à `session.turn.started`.
+- Les payloads et familles d’événements restent une surface versionnée et bornée.
 - L’API avancée est instable et peut changer entre deux versions de Beaver.
 - Il n’existe pas encore de marketplace intégrée pour découvrir des extensions.
 - Le protocole pour connecter des applications externes est un chantier distinct et

@@ -1,5 +1,7 @@
 pub(crate) mod actor_context;
 mod audit_store;
+#[cfg(test)]
+mod contract_export;
 mod history_cursor;
 mod history_metadata;
 mod history_store;
@@ -91,7 +93,7 @@ pub(crate) async fn revoke_extension_owner(extension_id: &str) -> Result<(), Str
     revoke_extension_owner_at(&crate::services::paths::data_dir(), extension_id)
         .await
         .map(|_| ())
-        .map_err(|_| "store_unavailable".to_string())
+        .map_err(|_| AutomationError::StoreUnavailable.code().to_string())
 }
 
 pub(crate) async fn is_extension_owned_automation(id: uuid::Uuid) -> Result<bool, AutomationError> {

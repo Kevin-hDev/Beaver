@@ -713,6 +713,9 @@
     "delete": "削除",
     "confirmDelete": "削除の確認",
     "pausedHint": "ウェイクアップが一時停止中 — マスタースイッチを無効にしてください",
+    "approveExtension": "再承認して有効化",
+    "origins": { "session": "セッション", "external_channel": "外部チャンネル", "user_interface": "Beaver", "extension": "拡張機能" },
+    "inactiveReasons": { "approval_required": "変更後、この自動化を再承認する必要があります。", "owner_unavailable": "所有する拡張機能は利用できません。", "owner_invalid": "所有者情報が無効です。" },
     "badges": {
       "active": "有効",
       "disabled": "無効",
@@ -730,7 +733,8 @@
       "lastRun": "最新実行",
       "description": "説明",
       "prompt": "プロンプト",
-      "target": "セッション"
+      "target": "セッション",
+      "origin": "作成元"
     },
     "status": {
       "ok": "成功",
@@ -801,7 +805,7 @@
     },
     "target": { "new_session": "新しいセッション", "resume_session": "既存のセッション" },
     "migration": { "title": "ウェイクアップの移行", "timezone": "既存のウェイクアップで使用するタイムゾーンを確認してください。", "conflicts": "一部の古いウェイクアップには判断が必要です。", "remove": "古い項目を削除", "import": "新規として読み込む", "continue": "続行" },
-    "errors": { "audit_unavailable": "監査ログを利用できないため、変更はブロックされました。", "store_unavailable": "ウェイクアップは一時的に利用できません。", "migration_unavailable": "移行を利用できません。", "invalid_timezone": "タイムゾーンが無効です。", "invalid_schedule": "スケジュールが無効です。", "model_unavailable": "モデルを利用できません。", "provider_unavailable": "プロバイダーを利用できません。", "not_found": "ウェイクアップは存在しません。", "revision_conflict": "このウェイクアップは変更されています。再読み込みしてから再試行してください。", "globally_paused": "ウェイクアップは一時停止中です。", "consent_required": "有効化する前に、この変更を承認する必要があります。", "invalid_project": "プロジェクトが無効です。", "invalid_input": "入力項目が無効です。", "pauseAll": "すべて一時停止" }
+    "errors": { "capacity_reached": "自動化の上限に達しました。", "immutable_field": "この項目は変更できません。", "model_tools_unsupported": "このモデルは必要なツールをサポートしていません。", "cursor_expired": "このページは期限切れです。履歴を再読み込みしてください。", "audit_unavailable": "監査ログを利用できないため、変更はブロックされました。", "store_unavailable": "ウェイクアップは一時的に利用できません。", "migration_unavailable": "移行を利用できません。", "invalid_timezone": "タイムゾーンが無効です。", "invalid_schedule": "スケジュールが無効です。", "model_unavailable": "モデルを利用できません。", "provider_unavailable": "プロバイダーを利用できません。", "not_found": "ウェイクアップは存在しません。", "revision_conflict": "このウェイクアップは変更されています。再読み込みしてから再試行してください。", "globally_paused": "ウェイクアップは一時停止中です。", "consent_required": "有効化する前に、この変更を承認する必要があります。", "invalid_project": "プロジェクトが無効です。", "invalid_input": "入力項目が無効です。", "pauseAll": "すべて一時停止" }
   },
   "personality": {
     "files": "コア",
@@ -2032,6 +2036,10 @@
       "T": "分"
     },
     "errors": {
+      "capacity_reached": "自動化の上限に達しました。",
+      "immutable_field": "この項目は変更できません。",
+      "model_tools_unsupported": "このモデルは必要なツールに対応していません。",
+      "cursor_expired": "この履歴ページは利用できなくなりました。",
       "importFailed": "インポートできません。ファイル形式を確認してください。",
       "launchFailed": "計算に失敗しました。列、モデル、API キーを確認してください。",
       "capacityReached": "Forecast の保存領域がいっぱいです。古い分析を削除してから再試行してください。"
@@ -2461,6 +2469,7 @@
       "api": "Beaver API",
     "active": "有効な拡張機能",
     "diagnostics": "最新の読み込みエラー",
+      "activity": { "empty": "拡張機能のアクティビティはまだありません。", "interceptors": "有効なインターセプター", "queued": "受信イベント", "delivered": "配信イベント", "dropped": "破棄イベント", "timedOut": "タイムアウトイベント", "activeHandlers": "有効なハンドラー" },
       "unavailable": "利用不可",
       "states": {
         "stopped": "停止",

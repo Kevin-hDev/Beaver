@@ -1,5 +1,6 @@
 // Exact Rust tests owned by contracts:check.
 export const CONTRACT_TESTS = Object.freeze([
+  "services::automations::contract_export::checked_in_automation_contract_matches_rust",
   "services::extensions::install_jobs::contract_tests::checked_in_typescript_matches_rust",
   "models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract",
   "services::llm::model_reasoning_contract_tests::checked_in_typescript_matches_the_rust_reasoning_contract",

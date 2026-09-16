@@ -35,6 +35,13 @@ pub(super) struct InterceptorCatalog {
 }
 
 impl InterceptorCatalog {
+    pub(super) fn len(&self) -> usize {
+        self.entries
+            .read()
+            .map(|entries| entries.len())
+            .unwrap_or(0)
+    }
+
     pub(super) fn replace(&self, entries: Vec<InterceptorRegistration>) {
         debug_assert!(entries.len() <= MAX_INTERCEPTORS);
         if let Ok(mut current) = self.entries.write() {

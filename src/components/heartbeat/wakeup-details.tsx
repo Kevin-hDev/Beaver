@@ -19,13 +19,14 @@ interface WakeupDetailsProps {
   loading: boolean;
   onBack: () => void;
   onToggle: (active: boolean) => void;
+  onApprove: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onLoadMore: () => void;
 }
 
 export function WakeupDetails({
-  summary, detail, runs, hasMore, loading, onBack, onToggle, onEdit, onDelete, onLoadMore,
+  summary, detail, runs, hasMore, loading, onBack, onToggle, onApprove, onEdit, onDelete, onLoadMore,
 }: WakeupDetailsProps) {
   const { t } = useTranslation();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -43,7 +44,7 @@ export function WakeupDetails({
           ) : (
             <Tooltip label={t("heartbeat.delete")}><button className="icon-btn icon-btn-destructive" onClick={() => setConfirmDelete(true)} type="button"><Trash size="var(--icon-sm)" /></button></Tooltip>
           )}
-          <ToggleSwitch checked={summary.status === "active"} disabled={summary.paused_by_global} ariaLabel={t("heartbeat.toggle")} title={summary.paused_by_global ? t("heartbeat.pausedHint") : undefined} onCheckedChange={onToggle} />
+          <ToggleSwitch checked={summary.status === "active"} disabled={summary.paused_by_global || Boolean(summary.inactive_reason)} ariaLabel={t("heartbeat.toggle")} title={summary.paused_by_global ? t("heartbeat.pausedHint") : undefined} onCheckedChange={onToggle} />
         </div>
       </div>
       <div className="wk-details-body">
@@ -55,7 +56,18 @@ export function WakeupDetails({
           <SettingsRow title={t("heartbeat.fields.schedule")}><span className="wk-row-value">{formatSchedule(summary.schedule)}</span></SettingsRow>
           <SettingsRow title={t("heartbeat.fields.nextFire")}><span className="wk-row-value">{formatDateTime(summary.next_fire_at)}</span></SettingsRow>
           <SettingsRow title={t("heartbeat.fields.lastStatus")}><span className="wk-row-value">{formatRunStatus(summary.last_run?.status)}</span></SettingsRow>
+          <SettingsRow title={t("heartbeat.fields.origin")}><span className="wk-row-value">{t(`heartbeat.origins.${summary.origin}`)}</span></SettingsRow>
         </SettingsCard>
+        {summary.inactive_reason && (
+          <div className="wk-alert" role="status">
+            <span>{t(`heartbeat.inactiveReasons.${summary.inactive_reason}`)}</span>
+            {summary.inactive_reason === "approval_required" && (
+              <button className="btn btn-sm btn-secondary" type="button" onClick={onApprove}>
+                {t("heartbeat.approveExtension")}
+              </button>
+            )}
+          </div>
+        )}
         {definition && <SettingsCard><div className="wk-prompt"><div className="wk-prompt-title">{t("heartbeat.fields.prompt")}</div><div className="wk-prompt-text">{definition.prompt}</div></div></SettingsCard>}
         <WakeupHistory runs={runs} hasMore={hasMore} onLoadMore={onLoadMore} />
       </div>

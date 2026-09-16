@@ -23,6 +23,8 @@ describe("WakeupRow", () => {
       paused_by_global: false,
       next_fire_at: "2026-09-11T10:05:00Z",
       last_run: null,
+      origin: "user_interface",
+      inactive_reason: null,
     };
 
     render(<WakeupRow wakeup={wakeup} onClick={vi.fn()} />);

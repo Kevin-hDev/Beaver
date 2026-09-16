@@ -156,6 +156,43 @@ async fn revoking_owner_disables_automations_and_requires_new_consent() {
     assert!(!super::ownership::consent_is_current(&current));
 }
 
+#[test]
+fn summaries_expose_extension_origin_and_safe_inactive_reasons() {
+    let now = Utc::now();
+    let native = {
+        let mut value = definition(Uuid::new_v4(), cron());
+        value.extension_owner = None;
+        value
+    };
+    let native_summary =
+        super::service_helpers::summary_with_state(native, now, false, false, None);
+    assert_eq!(native_summary.origin, AutomationOrigin::UserInterface);
+    assert_eq!(native_summary.inactive_reason, None);
+
+    let unavailable = super::service_helpers::summary_with_state(
+        definition(Uuid::new_v4(), cron()),
+        now,
+        false,
+        false,
+        None,
+    );
+    assert_eq!(unavailable.origin, AutomationOrigin::Extension);
+    assert_eq!(
+        unavailable.inactive_reason,
+        Some(AutomationInactiveReason::OwnerUnavailable)
+    );
+
+    let mut invalid = definition(Uuid::new_v4(), cron());
+    invalid.extension_owner = Some(crate::models::AutomationExtensionOwnership::Invalid(
+        serde_json::json!({"extensionId": "broken"}),
+    ));
+    let invalid = super::service_helpers::summary_with_state(invalid, now, false, false, None);
+    assert_eq!(
+        invalid.inactive_reason,
+        Some(AutomationInactiveReason::OwnerInvalid)
+    );
+}
+
 #[tokio::test]
 async fn concurrent_creates_share_global_limit() {
     let root = tempfile::tempdir().unwrap();
