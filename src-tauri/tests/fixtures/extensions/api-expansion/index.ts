@@ -3,6 +3,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 interface BeaverFixtureApi {
+  capabilities?: readonly string[];
+  models?: { generate(input: { prompt: string }): Promise<{ text: string; finishReason: string }> };
+  memory?: {
+    write(input: { scope: "global"; content: string }): Promise<{ topic: { id: string } }>;
+    read(input: { scope: "global"; topicId: string }): Promise<{ topic: { content: string } }>;
+  };
   registerTool(tool: unknown): void;
   registerSkill(skill: unknown): void;
   registerResource(resource: unknown): void;
@@ -23,6 +29,38 @@ export default function activate(beaver: BeaverFixtureApi) {
     effect: "read-only",
     execute: ({ query }: { query: string }) => `Explicit fixture call: ${query}`,
   });
+  const contextualCapabilities = [
+    "models",
+    "memory",
+    "automations",
+    "subagents",
+    "toolInterception",
+  ];
+  if (contextualCapabilities.every((capability) => beaver.capabilities?.includes(capability))) {
+    beaver.registerTool({
+      name: "contextual_journey",
+      description: "Runs an attributed model and memory journey and returns a rich receipt.",
+      parameters: {
+        type: "object",
+        properties: { prompt: { type: "string" } },
+        required: ["prompt"],
+        additionalProperties: false,
+      },
+      effect: "local-write",
+      async execute({ prompt }: { prompt: string }, context: { workingDirectory: string }) {
+        const model = await beaver.models!.generate({ prompt });
+        const written = await beaver.memory!.write({ scope: "global", content: model.text });
+        const reread = await beaver.memory!.read({ scope: "global", topicId: written.topic.id });
+        await writeFile(join(context.workingDirectory, "contextual-receipt.txt"), reread.topic.content);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify({ finishReason: model.finishReason, topicId: written.topic.id }) },
+            { type: "file", path: "contextual-receipt.txt", purpose: "artifact", displayName: "contextual-receipt.txt" },
+          ],
+        };
+      },
+    });
+  }
   beaver.registerTool({
     name: "produce_artifacts",
     description: "Writes one text artifact and one image preview in the approved workspace.",

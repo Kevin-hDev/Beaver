@@ -47,10 +47,10 @@ pub(super) async fn consume_silent_bounded(
     max_text_bytes: usize,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
+    let mut routing = super::provider_diagnostics::openrouter::take(&mut resp);
     if cancel.is_cancelled() {
         return Err("Annulé".to_string());
     }
-    let mut routing = super::provider_diagnostics::openrouter::take(&mut resp);
     let stream = super::stream_sse::bounded_response(resp).eventsource();
     futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();

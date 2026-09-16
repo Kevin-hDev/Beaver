@@ -250,7 +250,7 @@ test("un même identifiant local reste indépendant de son extension", () => {
   assert.equal(first.skills[0].id, second.skills[0].id);
 });
 
-test("la fixture API expansion installable enregistre deux outils, son skill et ses ressources", async () => {
+test("la fixture API expansion installable enregistre ses outils, son skill et ses ressources", async () => {
   const root = resolve("src-tauri/tests/fixtures/extensions/api-expansion");
   await resetExtensions();
   try {
@@ -263,7 +263,11 @@ test("la fixture API expansion installable enregistre deux outils, son skill et 
     assert.equal(loaded.error, undefined);
     assert.deepEqual(
       loaded.contributions.tools.map(({ name }) => name),
-      ["acceptance.api.expansion.catalog_probe", "acceptance.api.expansion.produce_artifacts"],
+      [
+        "acceptance.api.expansion.catalog_probe",
+        "acceptance.api.expansion.contextual_journey",
+        "acceptance.api.expansion.produce_artifacts",
+      ],
     );
     assert.deepEqual(loaded.contributions.skills.map(({ id }) => id), ["reference-skill"]);
     assert.deepEqual(

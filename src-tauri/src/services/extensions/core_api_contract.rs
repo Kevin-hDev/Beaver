@@ -3,6 +3,10 @@ use std::collections::BTreeSet;
 use super::types::{self, OptionalExtensionCapability};
 
 pub(super) fn advertised_capabilities() -> Vec<&'static str> {
+    advertised_capabilities_for(!cfg!(target_os = "linux"))
+}
+
+pub(super) fn advertised_capabilities_for(contextual_apis: bool) -> Vec<&'static str> {
     types::EXTENSION_CAPABILITIES
         .iter()
         .copied()
@@ -18,6 +22,15 @@ pub(super) fn advertised_capabilities() -> Vec<&'static str> {
                 OptionalExtensionCapability::ToolInterception,
             ]
             .iter()
+            .filter(|capability| {
+                contextual_apis
+                    || matches!(
+                        capability,
+                        OptionalExtensionCapability::Skills
+                            | OptionalExtensionCapability::Resources
+                            | OptionalExtensionCapability::RichToolResults
+                    )
+            })
             .map(OptionalExtensionCapability::as_str),
         )
         .collect()

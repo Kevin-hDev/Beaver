@@ -45,7 +45,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
     fs::create_dir_all(new.join("logs")).map_err(|_| migration_error())?;
 
     #[cfg(not(target_os = "windows"))]
-    {
+    if legacy_imports_enabled(cfg!(feature = "cef-test-profile")) {
         let home = dirs::home_dir().ok_or_else(migration_error)?;
 
         let cl_go_legacy = home.join(".local/share/cl-go");
@@ -57,7 +57,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
     }
 
     #[cfg(target_os = "macos")]
-    {
+    if legacy_imports_enabled(cfg!(feature = "cef-test-profile")) {
         let app_support_wrong = dirs::data_local_dir().and_then(|d| {
             let p = d.join("cl-go-dash");
             if p != new {
@@ -76,7 +76,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
     }
 
     #[cfg(target_os = "windows")]
-    {
+    if legacy_imports_enabled(cfg!(feature = "cef-test-profile")) {
         let appdata = dirs::data_dir().map(|d| d.join("cl-go-dash"));
         let win_marker = new.join(".migrated-from-appdata");
         if let Some(old) = appdata {
@@ -92,6 +92,10 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
     crate::storage_migration_files::install_forecast_sidecar(app_handle, &new)?;
 
     Ok(())
+}
+
+fn legacy_imports_enabled(test_profile: bool) -> bool {
+    !test_profile
 }
 
 fn init_base_structure(base: &std::path::Path) -> Result<(), String> {

@@ -5,6 +5,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsRow } from "@/components/settings/settings-row";
+import { IS_LINUX } from "@/lib/platform";
 import type { ScheduledWakeup, WakeupDetail, WakeupRun } from "@/types/wakeup";
 import { displayStatus } from "@/types/wakeup";
 import { formatDateTime, formatRunStatus, formatSchedule, formatTarget } from "@/lib/wakeup-format";
@@ -56,9 +57,9 @@ export function WakeupDetails({
           <SettingsRow title={t("heartbeat.fields.schedule")}><span className="wk-row-value">{formatSchedule(summary.schedule)}</span></SettingsRow>
           <SettingsRow title={t("heartbeat.fields.nextFire")}><span className="wk-row-value">{formatDateTime(summary.next_fire_at)}</span></SettingsRow>
           <SettingsRow title={t("heartbeat.fields.lastStatus")}><span className="wk-row-value">{formatRunStatus(summary.last_run?.status)}</span></SettingsRow>
-          <SettingsRow title={t("heartbeat.fields.origin")}><span className="wk-row-value">{t(`heartbeat.origins.${summary.origin}`)}</span></SettingsRow>
+          {!IS_LINUX && <SettingsRow title={t("heartbeat.fields.origin")}><span className="wk-row-value">{t(`heartbeat.origins.${summary.origin}`)}</span></SettingsRow>}
         </SettingsCard>
-        {summary.inactive_reason && (
+        {!IS_LINUX && summary.inactive_reason && (
           <div className="wk-alert" role="status">
             <span>{t(`heartbeat.inactiveReasons.${summary.inactive_reason}`)}</span>
             {summary.inactive_reason === "approval_required" && (

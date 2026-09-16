@@ -118,21 +118,28 @@ function tool(value: unknown): ExtensionTool {
 }
 
 function contributions(value: unknown): ExtensionContributions {
-  const input = objectWithKeys(value, ["tools", "events", "skills", "resources"]);
+  const input = objectWithKeys(
+    value,
+    ["tools", "events", "skills", "resources", "interceptors"],
+  );
   const skills = input.skills === undefined ? [] : input.skills;
   const resources = input.resources === undefined ? [] : input.resources;
+  const interceptors = input.interceptors === undefined ? [] : input.interceptors;
   if (
     !Array.isArray(input.tools)
     || !Array.isArray(input.events)
     || !Array.isArray(skills)
     || !Array.isArray(resources)
+    || !Array.isArray(interceptors)
     || input.tools.length > EXTENSION_VIEW_LIMITS.toolsPerExtension
     || input.events.length > EXTENSION_VIEW_LIMITS.eventsPerExtension
     || skills.length > EXTENSION_VIEW_LIMITS.skillsPerExtension
     || resources.length > EXTENSION_VIEW_LIMITS.resourcesPerExtension
+    || interceptors.length > LIMITS.maxInterceptors
   ) {
     invalid();
   }
+  for (const interceptor of interceptors) objectWithKeys(interceptor, []);
   return {
     tools: input.tools.map(tool),
     events: input.events
