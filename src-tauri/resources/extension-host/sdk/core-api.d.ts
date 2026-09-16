@@ -103,6 +103,8 @@ export interface BeaverSubagentsApi {
 export interface BeaverToolInterception {
   toolName: string;
   effect: string;
+  mode: string;
+  argumentSummary?: JsonValue;
 }
 export type BeaverToolInterceptionDecision =
   | { decision: "continue" }

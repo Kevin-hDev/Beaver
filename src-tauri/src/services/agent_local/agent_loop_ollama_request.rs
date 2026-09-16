@@ -33,6 +33,7 @@ pub(super) struct OllamaRequestParams<'a> {
         Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
     pub enable_eager_tools: bool,
     pub journal: Option<&'a super::conversation_journal::ConversationJournal>,
+    pub interception: &'a crate::services::extensions::InterceptionSnapshot,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -139,6 +140,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             plan_active,
             params.cancel.clone(),
             params.enable_eager_tools,
+            params.interception.clone(),
         ));
     super::stream_diagnostics::mark_phase(
         params.session_id,
@@ -186,6 +188,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             permission_mode: params.permission_mode.to_string(),
             realtime_budget,
             enable_eager_tools: params.enable_eager_tools,
+            interception: params.interception.clone(),
             journal: params.journal,
             context_limit: params.configured_context,
             breakdown,

@@ -59,6 +59,16 @@ impl HostProcess {
         params: Value,
         deadline: Instant,
     ) -> Result<Value, String> {
+        self.request_until_tokio(method, params, tokio::time::Instant::from_std(deadline))
+            .await
+    }
+
+    pub(super) async fn request_until_tokio(
+        &self,
+        method: &str,
+        params: Value,
+        deadline: tokio::time::Instant,
+    ) -> Result<Value, String> {
         if !self.is_alive() {
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
@@ -79,7 +89,7 @@ impl HostProcess {
             params,
         };
         host_channel::write(&self.writer, &request).await?;
-        match tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), receiver).await {
+        match tokio::time::timeout_at(deadline, receiver).await {
             Ok(Ok(result)) => result,
             Ok(Err(_)) => Err(error_codes::HOST_UNAVAILABLE.to_string()),
             Err(_) => Err(error_codes::HOST_TIMEOUT.to_string()),

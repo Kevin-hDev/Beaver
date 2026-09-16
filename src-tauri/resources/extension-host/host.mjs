@@ -2,6 +2,7 @@ import { fatalProtocolExit, startProtocol } from "./protocol.mjs";
 import { API_VERSION, LIMITS } from "./contract.mjs";
 import {
   callExtensionTool,
+  callExtensionInterceptor,
   callExtensionUiAction,
   emitExtensionEvent,
   loadExtension,
@@ -46,6 +47,8 @@ startProtocol(async (method, params) => {
         params.context,
         params.scope,
       );
+    case "tool.intercept":
+      return callExtensionInterceptor(String(params.extensionId ?? ""), params.call);
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);
     case "ui.action":

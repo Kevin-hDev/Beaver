@@ -40,6 +40,8 @@ pub async fn run_delegate_batch(
     cancel: CancellationToken,
     plan_mode_active: bool,
     tool_call_ids: &[String],
+    mode: &str,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> Vec<DelegateBatchOutput> {
     let mut outputs = Vec::new();
     let mut pending = Vec::new();
@@ -57,6 +59,9 @@ pub async fn run_delegate_batch(
             session_id,
             plan_mode_active,
             cancel.clone(),
+            mode,
+            working_dir,
+            interception,
         )
         .await
         {
@@ -135,12 +140,8 @@ pub async fn run_delegate_batch(
         });
     }
 
-    sort_outputs_by_index(&mut outputs);
-    outputs
-}
-
-fn sort_outputs_by_index(outputs: &mut [DelegateBatchOutput]) {
     outputs.sort_by_key(|output| output.index);
+    outputs
 }
 
 pub async fn run_delegate_only_tools(
@@ -154,6 +155,8 @@ pub async fn run_delegate_only_tools(
     plan_mode_active: bool,
     tool_call_ids: &[String],
     compression: Option<&super::tool_executor_compression::ToolCompression<'_>>,
+    mode: &str,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     let items: Vec<_> = tool_calls
         .iter()
@@ -169,6 +172,8 @@ pub async fn run_delegate_only_tools(
         cancel,
         plan_mode_active,
         tool_call_ids,
+        mode,
+        interception,
     )
     .await;
     let mut outcome = ToolExecutionOutcome::default();

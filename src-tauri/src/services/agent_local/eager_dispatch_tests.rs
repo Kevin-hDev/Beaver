@@ -50,6 +50,8 @@ async fn eager_children_are_aborted_with_their_collector() {
                 std::future::pending::<ToolResult>().await
             }
         },
+        crate::services::extensions::InterceptionSnapshot::default(),
+        "auto".to_string(),
     ));
     started_rx.await.expect("eager child started");
 

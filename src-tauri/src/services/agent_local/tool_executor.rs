@@ -24,6 +24,7 @@ pub async fn run_tools(
     plan_mode_active: bool,
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     run_tools_with_eager(
         on_event,
@@ -39,6 +40,7 @@ pub async fn run_tools(
         None,
         tool_call_ids,
         compression,
+        interception,
     )
     .await
 }
@@ -57,6 +59,7 @@ pub async fn run_tools_with_eager(
     mut eager_results: Option<HashMap<usize, ToolResult>>,
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     let can_use_delegate_batch = matches!(
         super::subagent_tool_guard::profile_for_session(session_id).await,
@@ -80,6 +83,8 @@ pub async fn run_tools_with_eager(
             plan_mode_active,
             tool_call_ids,
             compression,
+            mode,
+            interception,
         )
         .await;
     }
@@ -97,6 +102,7 @@ pub async fn run_tools_with_eager(
             plan_mode_active,
             tool_call_ids,
             compression,
+            interception,
         )
         .await
     } else {
@@ -115,6 +121,7 @@ pub async fn run_tools_with_eager(
             tool_call_ids,
             compression,
             can_use_delegate_batch,
+            interception,
         )
         .await
     }

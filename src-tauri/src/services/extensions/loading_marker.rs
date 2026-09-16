@@ -56,6 +56,15 @@ pub(super) fn discard() -> Result<(), String> {
     discard_at(&path())
 }
 
+pub(super) fn clear_if_matches(extension_id: &str) -> Result<(), String> {
+    super::validation::identifier(extension_id)?;
+    match read() {
+        MarkerRead::Valid(marker) if marker.extension_id == extension_id => discard(),
+        MarkerRead::Invalid => Err(marker_error()),
+        MarkerRead::Missing | MarkerRead::Valid(_) => Ok(()),
+    }
+}
+
 pub(super) fn ui_start(extension_id: &str, attempts: u8) -> Result<(), String> {
     ui_start_at(&path(), extension_id, attempts)
 }

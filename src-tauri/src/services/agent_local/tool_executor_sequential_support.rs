@@ -42,6 +42,55 @@ pub(super) async fn initial_validation(
     Ok(summary)
 }
 
+pub(super) async fn intercept_and_publish(
+    interception: &crate::services::extensions::InterceptionSnapshot,
+    on_event: &AgentEventEmitter,
+    messages: &mut Vec<ChatMessage>,
+    name: &str,
+    args: &Value,
+    working_dir: &std::path::Path,
+    cancel: &CancellationToken,
+    session_id: &str,
+    request_id: &str,
+    summary: &Option<Value>,
+    idx: usize,
+    tool_call_ids: &[String],
+    compression: Option<&ToolCompression<'_>>,
+) -> Option<ToolExecutionOutcome> {
+    let result = crate::services::extensions::before_tool_effect(
+        interception,
+        name,
+        args,
+        working_dir,
+        "manual",
+        cancel,
+    )
+    .await
+    .err()?;
+    super::tool_executor_diagnostics::completed(
+        session_id,
+        request_id,
+        name,
+        summary.clone(),
+        &result,
+    )
+    .await;
+    Some(
+        push_and_compress(
+            on_event,
+            messages,
+            name,
+            args,
+            working_dir,
+            result,
+            idx,
+            tool_call_ids,
+            compression,
+        )
+        .await,
+    )
+}
+
 pub(super) async fn push_and_compress(
     on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,

@@ -176,7 +176,7 @@ pub(super) fn revoke_fingerprints(revocations: &BTreeMap<String, String>) -> Res
     Ok(reminder)
 }
 
-fn update(
+pub(super) fn update(
     id: &str,
     update: impl FnOnce(&mut ExtensionRecord) -> Result<(), String>,
 ) -> Result<(), String> {

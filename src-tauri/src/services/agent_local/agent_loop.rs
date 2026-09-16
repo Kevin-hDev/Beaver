@@ -66,6 +66,8 @@ pub async fn run_agent_loop(
     let outcome = async {
         for turn in 0usize.. {
             agent_loop_support::ensure_not_cancelled(&cancel)?;
+            let interception =
+                crate::services::extensions::snapshot_for_model_request(permission_mode);
             let request_output = super::agent_loop_ollama_request::run(OllamaRequestParams {
                 on_event,
                 messages,
@@ -90,13 +92,14 @@ pub async fn run_agent_loop(
                 enable_eager_tools: {
                     #[cfg(debug_assertions)]
                     {
-                        !fixture_mode
+                        !fixture_mode && interception.is_empty()
                     }
                     #[cfg(not(debug_assertions))]
                     {
-                        true
+                        interception.is_empty()
                     }
                 },
+                interception: &interception,
                 journal: journal.as_deref(),
             })
             .await?;
@@ -193,6 +196,7 @@ pub async fn run_agent_loop(
                     write_guard: &mut write_guard,
                     plan_active,
                     fixture_mode,
+                    interception: &interception,
                     breaker: &mut breaker,
                     journal: journal.as_deref_mut(),
                     tools: &mut tools,

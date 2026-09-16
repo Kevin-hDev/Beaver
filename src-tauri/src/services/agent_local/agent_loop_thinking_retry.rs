@@ -55,6 +55,7 @@ pub struct ThinkingRetryParams<'a> {
     pub journal: Option<&'a super::conversation_journal::ConversationJournal>,
     pub context_limit: u64,
     pub breakdown: super::context_usage_buckets::RequestContextUsage,
+    pub interception: crate::services::extensions::InterceptionSnapshot,
 }
 
 pub struct ThinkingRetryOutput {
@@ -129,6 +130,7 @@ pub async fn retry_if_needed(
         params.plan_active,
         params.cancel.clone(),
         params.enable_eager_tools,
+        params.interception,
     ));
     let retry_outcome = super::ollama_stream::stream_chat_with_tool_notify(
         params.on_event,

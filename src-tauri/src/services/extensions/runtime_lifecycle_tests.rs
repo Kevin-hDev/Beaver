@@ -16,6 +16,7 @@ fn runtime(work: super::super::work_supervision::ExtensionWorkServices) -> Exten
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
         ui_catalog: super::super::ui_catalog::UiCatalog::default(),
+        tool_interceptors: super::super::tool_interception::InterceptorCatalog::default(),
         install_jobs: super::super::install_jobs::InstallJobStore::new(work.clone(), None, None),
         work,
     }
@@ -94,6 +95,7 @@ async fn runtime_with_real_host() -> (tempfile::TempDir, ExtensionRuntime, Arc<H
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
         ui_catalog: super::super::ui_catalog::UiCatalog::default(),
+        tool_interceptors: super::super::tool_interception::InterceptorCatalog::default(),
         install_jobs: super::super::install_jobs::InstallJobStore::new(work.clone(), None, None),
         work,
     };
@@ -144,6 +146,7 @@ async fn prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active() {
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
         ui_catalog: super::super::ui_catalog::UiCatalog::default(),
+        tool_interceptors: super::super::tool_interception::InterceptorCatalog::default(),
         install_jobs: super::super::install_jobs::InstallJobStore::new(work.clone(), None, None),
         work,
     });
@@ -215,6 +218,7 @@ async fn spontaneous_process_exit_marks_error_without_a_user_call() {
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
         ui_catalog: super::super::ui_catalog::UiCatalog::default(),
+        tool_interceptors: super::super::tool_interception::InterceptorCatalog::default(),
         install_jobs: super::super::install_jobs::InstallJobStore::new(work.clone(), None, None),
         work,
     });
@@ -317,6 +321,7 @@ async fn a_retained_pre_bind_process_is_reaped_after_its_reader_exits() {
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
         ui_catalog: super::super::ui_catalog::UiCatalog::default(),
+        tool_interceptors: super::super::tool_interception::InterceptorCatalog::default(),
         install_jobs: super::super::install_jobs::InstallJobStore::new(work.clone(), None, None),
         work,
     });

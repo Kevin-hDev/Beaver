@@ -16,6 +16,7 @@ pub struct ExtensionRuntime {
     pub(super) sync: Mutex<()>,
     pub(super) status: RwLock<ExtensionHostStatus>,
     pub(super) ui_catalog: super::ui_catalog::UiCatalog,
+    pub(super) tool_interceptors: super::tool_interception::InterceptorCatalog,
     pub(super) install_jobs: super::install_jobs::InstallJobStore,
     pub(super) work: super::work_supervision::ExtensionWorkServices,
 }
@@ -44,6 +45,7 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
         sync: Mutex::new(()),
         status: RwLock::new(status),
         ui_catalog: super::ui_catalog::UiCatalog::with_app(app.clone()),
+        tool_interceptors: super::tool_interception::InterceptorCatalog::default(),
         install_jobs: super::install_jobs::InstallJobStore::production(work.clone(), app.clone()),
         work,
     });
@@ -128,6 +130,7 @@ impl ExtensionRuntime {
             (generation, process)
         };
         let catalog_retired = self.ui_catalog.retire(identity, snapshot.0).is_ok();
+        self.tool_interceptors.retire(identity, snapshot.0);
         if !snapshot.1.kill(deadline).await {
             self.mark_stop_unconfirmed(identity).await;
             return StopHostOutcome::Unconfirmed;

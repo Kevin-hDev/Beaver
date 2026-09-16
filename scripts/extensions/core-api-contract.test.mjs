@@ -131,8 +131,10 @@ test("le handshake n'annonce que les capacités réellement raccordées", async 
       "memory",
       "automations",
       "subagents",
+      "toolInterception",
     ]);
     assert.equal(hello.capabilities.includes("models"), true);
+    assert.equal(hello.capabilities.includes("toolInterception"), true);
   } finally {
     host.stop();
     await host.exited;

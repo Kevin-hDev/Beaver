@@ -25,6 +25,7 @@ pub fn apply(
     let mut event_subscriptions = super::runtime_sync::EventSubscriptions::new();
     let mut diagnostics = build.diagnostics.clone();
     let mut ui_updates = Vec::with_capacity(responses.len());
+    let mut interceptor_candidates = Vec::new();
     for response in responses.into_iter().take(MAX_EXTENSIONS) {
         let loaded = response.loaded;
         let spec = requested.get(loaded.id.as_str()).ok_or_else(incompatible)?;
@@ -51,6 +52,15 @@ pub fn apply(
                         .or_default()
                         .extend(validated.core.events.iter().cloned());
                     ui_entries = validated.ui;
+                    if !validated.core.interceptors.is_empty() {
+                        interceptor_candidates.push(
+                            super::tool_interception::InterceptorRegistration {
+                                extension_id: loaded.id.clone(),
+                                identity: response.identity.clone(),
+                                generation: response.generation,
+                            },
+                        );
+                    }
                     if let Some(code) = validated.ui_diagnostic {
                         push_ui_diagnostic_once(
                             &mut diagnostics,
@@ -79,12 +89,15 @@ pub fn apply(
     append_missing(&requested, &received, &mut diagnostics)?;
     let active =
         super::registry_sync::apply_results(&build.enabled_ids, successful, &build.failures)?;
+    let interceptors =
+        super::runtime_sync_interceptors::accepted(interceptor_candidates, &mut diagnostics)?;
     Ok(ApplyResult {
         active,
         diagnostics,
         completed_ids: received,
         ui_updates,
         event_subscriptions,
+        interceptors,
     })
 }
 

@@ -12,6 +12,8 @@ import { createUiApi } from "./ui-api.mjs";
 import { createEventHandlers } from "./event-handlers.mjs";
 import { activeCapabilities } from "./extension-api-capabilities.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
+import { createToolInterceptor } from "./tool-interceptor.mjs";
+import { createContextualApis } from "./extension-contextual-apis.mjs";
 import {
   unicodeScalarLength,
   validContribution,
@@ -26,6 +28,8 @@ export function createExtensionApi(specification) {
   const resources = [];
   const eventHandlers = createEventHandlers();
   const ui = createUiApi(specification);
+  const interceptor = createToolInterceptor(capabilities.includes("toolInterception"));
+  const contextual = createContextualApis(capabilities, callAtLevel, callMemoryWrite);
 
   function registerTool(definition, replacesCore = false) {
     if (
@@ -116,51 +120,12 @@ export function createExtensionApi(specification) {
     channels: Object.freeze({
       getConfig: () => callCore("channels.config.get"),
     }),
-    models: capabilities.includes("models")
-      ? Object.freeze({
-          list: (options = {}) => callAtLevel("stable", "models.list", options),
-          generate: (options) => callAtLevel("stable", "models.generate", options),
-        })
-      : undefined,
-    memory: capabilities.includes("memory")
-      ? Object.freeze({
-          list: (options) => callAtLevel("stable", "memory.list", options),
-          read: (options) => callAtLevel("stable", "memory.read", options),
-          write: (options) => callMemoryWrite(options),
-          archive: (options) => callAtLevel("stable", "memory.archive", options),
-        })
-      : undefined,
-    automations: capabilities.includes("automations")
-      ? Object.freeze({
-          list: (options = {}) => callAtLevel("stable", "automations.list", options),
-          create: (options) => callAtLevel("stable", "automations.create", options),
-          update: (automationId, revision, patch) => callAtLevel(
-            "stable",
-            "automations.update",
-            { ...patch, automationId: String(automationId), revision },
-          ),
-          setActive: (automationId, revision, active) => callAtLevel(
-            "stable",
-            "automations.setActive",
-            { automationId: String(automationId), revision, active },
-          ),
-          delete: (automationId, revision) => callAtLevel(
-            "stable",
-            "automations.delete",
-            { automationId: String(automationId), revision },
-          ),
-        })
-      : undefined,
-    subagents: capabilities.includes("subagents")
-      ? Object.freeze({
-          spawn: (type, prompt) => callAtLevel("stable", "subagents.spawn", { type, prompt }),
-          list: (options = {}) => callAtLevel("stable", "subagents.list", options),
-          get: (subagentId) => callAtLevel("stable", "subagents.get", { subagentId }),
-          send: (subagentId, prompt) => callAtLevel(
-            "stable", "subagents.send", { subagentId, prompt },
-          ),
-          cancel: (subagentId) => callAtLevel("stable", "subagents.cancel", { subagentId }),
-        })
+    models: contextual.models,
+    memory: contextual.memory,
+    automations: contextual.automations,
+    subagents: contextual.subagents,
+    interceptTool: capabilities.includes("toolInterception")
+      ? interceptor.register
       : undefined,
     secrets: Object.freeze({
       getProviderKey: (providerId) =>
@@ -202,6 +167,7 @@ export function createExtensionApi(specification) {
     resources,
     events: eventHandlers.events,
     ui,
+    interceptor,
     emit: eventHandlers.emit,
   };
 }

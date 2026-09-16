@@ -134,6 +134,7 @@ impl ExtensionRuntime {
         let mut catalogs_retired = true;
         for (identity, generation, _) in &snapshots {
             catalogs_retired &= self.ui_catalog.retire(identity, *generation).is_ok();
+            self.tool_interceptors.retire(identity, *generation);
         }
         let mut results = Vec::with_capacity(snapshots.len());
         for (_, _, process) in &snapshots {
@@ -162,6 +163,7 @@ impl ExtensionRuntime {
         // d'extension reste fermé même si le registre est lui-même illisible.
         crate::services::agent_local::permission_gate::clear_all_extensions().await;
         for (identity, generation, _) in self.hosts.lock().await.snapshots() {
+            self.tool_interceptors.retire(&identity, generation);
             if self.ui_catalog.retire(&identity, generation).is_err() {
                 ::log::warn!("[extensions] {}", error_codes::OPERATION_FAILED);
             }

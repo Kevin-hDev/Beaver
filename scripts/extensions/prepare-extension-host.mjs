@@ -82,6 +82,7 @@ async function copyHostSources(source, destination) {
     "diagnostics.mjs",
     "extension-api.mjs",
     "extension-api-capabilities.mjs",
+    "extension-contextual-apis.mjs",
     "host.mjs",
     "loader.mjs",
     "module-loader.mjs",
@@ -93,6 +94,7 @@ async function copyHostSources(source, destination) {
     "package.json",
     "protocol-output.mjs",
     "tool-result-snapshot.mjs",
+    "tool-interceptor.mjs",
     "protocol.mjs",
     "versions.mjs",
   ];

@@ -104,6 +104,12 @@ export async function callExtensionUiAction(params) {
   return invokeUiAction(extensions.get(params?.extensionId), params);
 }
 
+export async function callExtensionInterceptor(extensionId, call) {
+  const extension = extensions.get(extensionId);
+  if (!extension?.context.interceptor) throw new Error("extension_not_found");
+  return extension.context.interceptor.invoke(call);
+}
+
 export async function loadExtension(specification) {
   return loadExtensionWithApi(specification, createExtensionApi);
 }
@@ -137,6 +143,7 @@ export async function loadExtensionWithApi(specification, createApi) {
         skills: context.skills,
         resources: context.resources,
         events: [...context.events.keys()],
+        interceptors: context.interceptor?.contributions() ?? [],
         ui: context.ui.contributions,
       },
       uiDiagnostics: context.ui.diagnostics,

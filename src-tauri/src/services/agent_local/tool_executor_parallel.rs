@@ -32,6 +32,7 @@ pub async fn run_with_parallel_reads(
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
     can_use_delegate_batch: bool,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     let mut read_batch: Vec<BatchEntry> = Vec::new();
     let mut indexed_results: Vec<IndexedResult<'_>> = vec![None; tool_calls.len()];
@@ -86,6 +87,8 @@ pub async fn run_with_parallel_reads(
                     cancel.clone(),
                     plan_mode_active,
                     tool_call_ids,
+                    mode,
+                    interception,
                 )
                 .await;
                 for output in results {
@@ -135,6 +138,7 @@ pub async fn run_with_parallel_reads(
                     plan_mode_active,
                     tool_call_index: i,
                     tool_call_id: tool_call_ids.get(i).map(String::as_str),
+                    interception,
                 },
             )
             .await;
@@ -170,12 +174,24 @@ pub async fn run_with_parallel_reads(
                     indexed_results[i] = Some((name.as_str(), tr));
                 }
                 PreHookDecision::Allow => {
-                    read_batch.push(BatchEntry {
-                        global_idx: i,
-                        name: name.as_str(),
-                        effective_args: args,
-                        tool_call_id: tool_call_ids.get(i).map(String::as_str),
-                    });
+                    match crate::services::extensions::before_tool_effect(
+                        interception,
+                        name,
+                        args,
+                        working_dir,
+                        mode,
+                        &cancel,
+                    )
+                    .await
+                    {
+                        Ok(()) => read_batch.push(BatchEntry {
+                            global_idx: i,
+                            name: name.as_str(),
+                            effective_args: args,
+                            tool_call_id: tool_call_ids.get(i).map(String::as_str),
+                        }),
+                        Err(result) => indexed_results[i] = Some((name.as_str(), result)),
+                    }
                 }
             }
             i += 1;

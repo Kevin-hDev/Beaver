@@ -316,6 +316,7 @@ async fn external_instruction_cannot_mutate_another_sessions_automation_without_
             false,
             None,
             None,
+            &crate::services::extensions::InterceptionSnapshot::default(),
         )
         .await;
         assert!(result.is_error);

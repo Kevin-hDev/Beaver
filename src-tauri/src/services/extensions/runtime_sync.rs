@@ -24,6 +24,7 @@ pub struct ApplyResult {
     pub completed_ids: HashSet<String>,
     pub ui_updates: Vec<super::ui_catalog::UiCatalogUpdate>,
     pub event_subscriptions: EventSubscriptions,
+    pub interceptors: Vec<super::tool_interception::InterceptorRegistration>,
 }
 
 pub(super) use super::runtime_recovery_preflight::{filter_for_recovery, RecoveryPreflight};

@@ -18,7 +18,8 @@ fn core_api_contract_is_single_authority() {
             "models",
             "memory",
             "automations",
-            "subagents"
+            "subagents",
+            "toolInterception"
         ]
     );
     assert!(validate_negotiated_capabilities(
@@ -27,6 +28,7 @@ fn core_api_contract_is_single_authority() {
     .is_ok());
     assert!(validate_negotiated_capabilities(&["automations".to_string()]).is_ok());
     assert!(validate_negotiated_capabilities(&["subagents".to_string()]).is_ok());
+    assert!(validate_negotiated_capabilities(&["toolInterception".to_string()]).is_ok());
     assert!(validate_negotiated_capabilities(&["tools".to_string(), "tools".to_string()]).is_err());
     assert_eq!(super::types::CORE_API_METHODS.len(), 16);
     assert_eq!(super::types::CORE_API_METHODS[0].name, "models.list");

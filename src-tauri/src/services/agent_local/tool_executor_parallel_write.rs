@@ -36,6 +36,7 @@ pub async fn execute_tracked_write(
         ctx.plan_mode_active,
         Some(ctx.tool_call_index),
         ctx.tool_call_id,
+        ctx.interception,
     )
     .await;
     result
@@ -51,4 +52,5 @@ pub struct WriteExecContext<'a> {
     pub plan_mode_active: bool,
     pub tool_call_index: usize,
     pub tool_call_id: Option<&'a str>,
+    pub interception: &'a crate::services::extensions::InterceptionSnapshot,
 }

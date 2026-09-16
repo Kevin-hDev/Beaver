@@ -80,6 +80,7 @@ pub async fn run_agent_loop(
         if cancel.is_cancelled() {
             return Err("Annulé".to_string());
         }
+        let interception = crate::services::extensions::snapshot_for_model_request(permission_mode);
         let request_output = super::agent_loop_request::run(ApiRequestParams {
             on_event,
             messages,
@@ -204,6 +205,7 @@ pub async fn run_agent_loop(
             last_prompt: &mut last_prompt,
             last_eval: &mut last_eval,
             fixture_mode,
+            interception: &interception,
             #[cfg(debug_assertions)]
             fixture_run: fixture_run.as_deref_mut(),
         })

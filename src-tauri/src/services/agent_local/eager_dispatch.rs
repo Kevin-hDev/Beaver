@@ -24,6 +24,7 @@ pub fn spawn_eager_handle(
     plan_active: bool,
     cancel: CancellationToken,
     enabled: bool,
+    interception: crate::services::extensions::InterceptionSnapshot,
 ) -> super::agent_loop_thinking_retry::EagerHandle {
     tokio::spawn(async move {
         if enabled {
@@ -36,6 +37,7 @@ pub fn spawn_eager_handle(
                 permission_mode,
                 plan_active,
                 cancel,
+                interception,
             )
             .await
         } else {
@@ -64,7 +66,9 @@ pub async fn collect_eager_results(
     permission_mode: String,
     plan_active: bool,
     cancel: CancellationToken,
+    interception: crate::services::extensions::InterceptionSnapshot,
 ) -> HashMap<usize, ToolResult> {
+    let interception_mode = permission_mode.clone();
     collect_eager_results_with(
         rx,
         working_dir,
@@ -97,10 +101,16 @@ pub async fn collect_eager_results(
                 .await
             }
         },
+        interception,
+        interception_mode,
     )
     .await
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "test seam mirrors the eager orchestration authority"
+)]
 async fn collect_eager_results_with<Dispatch, DispatchFuture>(
     mut rx: mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
     working_dir: PathBuf,
@@ -109,6 +119,8 @@ async fn collect_eager_results_with<Dispatch, DispatchFuture>(
     chat_mode: bool,
     cancel: CancellationToken,
     dispatch: Dispatch,
+    interception: crate::services::extensions::InterceptionSnapshot,
+    interception_mode: String,
 ) -> HashMap<usize, ToolResult>
 where
     Dispatch: Fn(
@@ -133,6 +145,19 @@ where
             continue;
         }
         if matches!(run_pre_hooks(&name, &args), PreHookDecision::Deny(_)) {
+            continue;
+        }
+        if crate::services::extensions::before_tool_effect(
+            &interception,
+            &name,
+            &args,
+            &working_dir,
+            &interception_mode,
+            &cancel,
+        )
+        .await
+        .is_err()
+        {
             continue;
         }
         count += 1;

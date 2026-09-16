@@ -133,11 +133,17 @@ pub struct ExtensionContributions {
     pub skills: Vec<ExtensionSkill>,
     #[serde(default)]
     pub resources: Vec<ExtensionResource>,
+    #[serde(default)]
+    pub interceptors: Vec<ExtensionInterceptor>,
     /// Transport Hôte -> cœur uniquement. Le catalogue UI possède sa propre
     /// autorité mémoire et cette valeur n'est jamais sérialisée vers l'UI.
     #[serde(default, skip_serializing)]
     pub ui: Vec<Value>,
 }
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ExtensionInterceptor {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
