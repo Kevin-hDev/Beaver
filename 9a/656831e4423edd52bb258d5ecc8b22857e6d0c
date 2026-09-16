@@ -1,0 +1,11 @@
+Final review cleanup after API expansion part 2.
+
+CL-1: merged the nested disable/revocation conditions so cargo clippy --all-targets -- -D warnings is green. The behavior is unchanged: disabling still revokes extension-owned automation work first, and a persistence failure remains logged without reopening admission.
+
+CL-5: removed the unsupported promise that the UI explains the collective consent effect for the shared official Host identity. The comment now records only the behavior that exists.
+
+CL-2 and CL-3: no synthetic acceptance harness was added. The private execution plan now records the missing real scheduler virtual-time journey and the three synthetic subagent worlds as explicit acceptance debts, while retaining the targeted regression tests and the real persisted-parent permission coverage.
+
+CL-4 was intentionally not applied: AGENTS.md and CLAUDE.md are local ignored instruction files, not tracked product files. CL-7 is historical data without recoverable provenance. CL-8 is representative fixture provenance, not a product defect.
+
+Validation: cargo clippy --all-targets -- -D warnings passed. cargo test --lib passed with 5857 passed, 0 failed, 32 ignored on the confirmation run. The first full run hit the known private_store fixture availability race; that exact test passed alone and then passed in the complete confirmation run. git diff --check passed. graphify update . completed.
