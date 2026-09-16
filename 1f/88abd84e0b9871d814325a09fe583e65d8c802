@@ -1,0 +1,14 @@
+Review follow-up - extension host test handshake
+
+What changed:
+- Keeps optional capabilities closed before a valid host.hello handshake.
+- Makes every expanded-API fixture explicitly request the generated optional capability list before loading extensions.
+- Reuses one host-test helper for process-backed tests; direct API unit tests perform the same negotiation in-process.
+
+Reason:
+The earlier fail-closed handshake correction was valid in production but exposed stale tests that constructed the expanded SDK without reproducing the mandatory Rust-to-Host hello. Reopening capabilities by default would have reintroduced review finding A-4, so the harness now follows the real protocol.
+
+Validation executed:
+- npm run test:extensions-host: 143 passed, 0 failed
+- npx tsc --noEmit
+- git diff --check
