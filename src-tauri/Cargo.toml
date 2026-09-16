@@ -147,6 +147,7 @@ which = "7"
 zstd = "0.13"
 tar = "0.4"
 flate2 = "1"
+bzip2 = "0.5"
 
 # Existants
 regex = "1"
@@ -183,6 +184,10 @@ dispatch2 = "0.3"
 # précisément le paquet publié 150.0.0+150.0.10.
 cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
 
+[target.'cfg(any(target_os = "macos", windows))'.dependencies]
+cpal = "=0.18.2"
+sherpa-onnx = { version = "=1.13.8", default-features = false, features = ["static"] }
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 # Unix PTY implementation; Windows uses a lifecycle-safe ConPTY backend below.
@@ -211,6 +216,7 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Memory",
     "Win32_System_SystemServices",
     "Win32_System_Threading",
+    "Win32_System_StationsAndDesktops",
     "Win32_System_WindowsProgramming",
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Input_KeyboardAndMouse",
@@ -231,3 +237,10 @@ ts-rs = "12.0.1"
 [target.'cfg(target_os = "windows")'.dev-dependencies]
 rcgen = "0.14"
 tokio-rustls = "0.26"
+
+# Le hachage SHA-256 des modèles vocaux (652 Mo) prend ~24 s compilé sans
+# optimisations, contre ~1 s optimisé. On optimise ce seul paquet en dev pour
+# que la première dictée d'un lancement ne coûte pas 30 s pendant le
+# développement ; la release n'est pas concernée.
+[profile.dev.package.sha2]
+opt-level = 3

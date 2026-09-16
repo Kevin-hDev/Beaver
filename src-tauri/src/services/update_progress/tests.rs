@@ -19,6 +19,7 @@ fn operation(id: &str, sequence: u64, status: UpdateOperationStatus) -> UpdateOp
         can_retry: status == UpdateOperationStatus::Failed,
         is_update: None,
         error_key: None,
+        missing_bytes: None,
     }
 }
 
@@ -103,6 +104,13 @@ fn ignores_stale_sequences_and_bounds_external_fields() {
     let mut false_retry = operation("retry", 1, UpdateOperationStatus::Running);
     false_retry.can_retry = true;
     assert_eq!(store.upsert(false_retry), Err("update-progress-invalid"));
+
+    let mut false_shortfall = operation("shortfall", 1, UpdateOperationStatus::Running);
+    false_shortfall.missing_bytes = Some(42);
+    assert_eq!(
+        store.upsert(false_shortfall),
+        Err("update-progress-invalid")
+    );
 }
 
 #[test]

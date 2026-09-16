@@ -81,6 +81,7 @@ fn validate(operation: &UpdateOperationSnapshot) -> Result<(), &'static str> {
             != operation.percent.is_some()
         || (operation.status.is_terminal() && operation.can_cancel)
         || (operation.can_retry && operation.status != UpdateOperationStatus::Failed)
+        || (operation.missing_bytes.is_some() && operation.status != UpdateOperationStatus::Failed)
         || operation.queue_position.is_some() != (operation.status == UpdateOperationStatus::Queued)
         || operation
             .error_key

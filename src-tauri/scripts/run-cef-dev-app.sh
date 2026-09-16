@@ -58,10 +58,12 @@ FRAMEWORK_SOURCE="$RUNTIME/Chromium Embedded Framework.framework"
 HELPERS_SOURCE="$RUNTIME/helpers"
 PLIST_SOURCE="resources/cef/macos/dev-app/Info.plist"
 DEFAULT_SKILLS_SOURCE="$DEBUG_ROOT/default-skills"
+VOICE_CATALOG_SOURCE="$DEBUG_ROOT/resources/voice-catalog.json"
 APP_MACOS="$TARGET_ROOT/cef-dev/Beaver Dev.app/Contents/MacOS"
 APP_ROOT="$(dirname "$(dirname "$APP_MACOS")")"
 APP_FRAMEWORKS="$APP_ROOT/Contents/Frameworks"
 APP_RESOURCES="$APP_ROOT/Contents/Resources"
+VOICE_CATALOG_TARGET="$APP_RESOURCES/resources/voice-catalog.json"
 APP_EXECUTABLE="$APP_MACOS/cl-go-dash"
 HELPERS=(
   "Beaver Helper"
@@ -71,12 +73,13 @@ HELPERS=(
   "Beaver Helper (Alerts)"
 )
 if [[ ! -d "$FRAMEWORK_SOURCE" || ! -d "$HELPERS_SOURCE" \
-  || ! -f "$PLIST_SOURCE" || ! -d "$DEFAULT_SKILLS_SOURCE" ]]; then
+  || ! -f "$PLIST_SOURCE" || ! -d "$DEFAULT_SKILLS_SOURCE" \
+  || ! -f "$VOICE_CATALOG_SOURCE" ]]; then
   echo "CEF development launch failed" >&2
   exit 1
 fi
 
-mkdir -p "$APP_MACOS" "$APP_FRAMEWORKS" "$APP_RESOURCES"
+mkdir -p "$APP_MACOS" "$APP_FRAMEWORKS" "$APP_RESOURCES/resources"
 rm -rf -- "$APP_FRAMEWORKS/Chromium Embedded Framework.framework"
 for helper in "${HELPERS[@]}"; do
   rm -rf -- "$APP_FRAMEWORKS/$helper.app"
@@ -84,6 +87,7 @@ done
 ditto "$FRAMEWORK_SOURCE" "$APP_FRAMEWORKS/Chromium Embedded Framework.framework"
 ditto "$HELPERS_SOURCE" "$APP_FRAMEWORKS"
 ditto "$DEFAULT_SKILLS_SOURCE" "$APP_RESOURCES/default-skills"
+install -m 644 "$VOICE_CATALOG_SOURCE" "$VOICE_CATALOG_TARGET"
 install -m 644 "$PLIST_SOURCE" "$APP_ROOT/Contents/Info.plist"
 if ! apply_cef_bundle_version "$APP_ROOT/Contents/Info.plist"; then
   echo "CEF development launch failed" >&2

@@ -21,6 +21,7 @@ const operation = (sequence: number): UpdateOperationSnapshot => ({
   canRetry: false,
   isUpdate: null,
   errorKey: null,
+  missingBytes: null,
 });
 
 describe("useUpdateOperations", () => {

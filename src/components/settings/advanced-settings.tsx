@@ -17,6 +17,8 @@ import { notifySettingsChanged } from "@/hooks/use-setting-value";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import { ADVANCED_SETTINGS_DEFAULTS, type AdvancedSettingsState } from "./advanced-settings-state";
+import { SettingsSectionFrame } from "@/components/ui/settings-section-frame";
+import { VoiceSettingsSection } from "./voice/voice-settings-section";
 
 interface AdvancedSettingsProps {
   focusTarget?: "file-access" | null;
@@ -92,8 +94,6 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
     return result;
   }, [groups]);
 
-  const subStyle = { fontSize: "var(--text-base)", fontWeight: 600, color: "var(--ink)", marginTop: 28, marginBottom: 12 } as const;
-
   return (
     <SettingsPanel title={t("settings.tabs.advanced")}>
       <AgentImportSettings />
@@ -125,19 +125,21 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
 
       </SettingsCard>
 
-      <h3 style={subStyle}>{t("settings.advanced.compressionTitle")}</h3>
+      <SettingsSectionFrame title={t("settings.advanced.compressionTitle")}>
+        <CompressionSettingsCard defaultModel={state.default_model} />
+      </SettingsSectionFrame>
 
-      <CompressionSettingsCard defaultModel={state.default_model} />
+      <SettingsSectionFrame title={t("settings.advanced.ollamaTitle")}>
+        <OllamaSettingsSection
+          keepAlive={state.keep_alive}
+          hardwareAccel={state.hardware_accel}
+          multiModel={state.multi_model}
+          showGpuStatus={state.show_gpu_status}
+          onSave={save}
+        />
+      </SettingsSectionFrame>
 
-      <h3 style={subStyle}>{t("settings.advanced.ollamaTitle")}</h3>
-
-      <OllamaSettingsSection
-        keepAlive={state.keep_alive}
-        hardwareAccel={state.hardware_accel}
-        multiModel={state.multi_model}
-        showGpuStatus={state.show_gpu_status}
-        onSave={save}
-      />
+      <VoiceSettingsSection />
 
       <FileAccessSettings
         paths={state.allowed_paths}

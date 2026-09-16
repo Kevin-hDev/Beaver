@@ -55,6 +55,9 @@
      l'intérieur du bouton. Le facteur est le cran demandé au-dessus de la
      taille d'origine, gardé lisible plutôt que réduit à un nombre. */
   --chat-send-icon-size: calc((var(--btn-height) - 4px) * 1.2);
+  /* Microphone du composeur, légèrement sous l'icône courante pour garder le
+     tracé dense de Bootstrap Icons au même poids visuel que le niveau d'effort. */
+  --voice-mic-icon-size: calc(var(--icon-md) * 0.9);
   /* Croix de fermeture d'un panneau. Au-dessus de l'icône de sa rangée : deux
      traits croisés ne couvrent que 42 % de leur cadre, contre 67 à 100 % pour
      les autres actions posées à côté, et à cadre égal la croix rapetisse. */

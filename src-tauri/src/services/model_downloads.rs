@@ -62,7 +62,7 @@ pub async fn run_download_queue(
     shutdown: ServiceWorkCancellation,
 ) {
     loop {
-        run_one_download(
+        super::model_downloads_runner::run_one_download(
             app.clone(),
             manager.clone(),
             state,
@@ -76,36 +76,6 @@ pub async fn run_download_queue(
         state = next_state;
         cancel = next_cancel;
         emit_states(&app, manager.list().await);
-    }
-}
-
-async fn run_one_download(
-    app: AppHandle,
-    manager: ModelDownloadManager,
-    state: ModelDownloadState,
-    cancel: CancellationToken,
-    shutdown: &ServiceWorkCancellation,
-) {
-    let shutdown_cancel = cancel.clone();
-    let stop = async {
-        shutdown.cancelled().await;
-        shutdown_cancel.cancel();
-    };
-    let work = async {
-        match state.kind {
-            ModelDownloadKind::Ollama => {
-                run_ollama_download(app, manager, state, cancel).await;
-            }
-            ModelDownloadKind::Forecast => {
-                run_forecast_download(app, manager, state, cancel).await;
-            }
-        }
-    };
-    tokio::pin!(stop);
-    tokio::pin!(work);
-    tokio::select! {
-        _ = &mut stop => work.await,
-        _ = &mut work => {}
     }
 }
 
@@ -139,7 +109,7 @@ async fn finish_ollama(
             emit_states(
                 &app,
                 manager
-                    .finish(&id, ModelDownloadStatus::Completed, None)
+                    .finish(&id, ModelDownloadStatus::Completed, None, None)
                     .await,
             );
         }
@@ -153,7 +123,7 @@ async fn finish_ollama(
             emit_states(
                 &app,
                 manager
-                    .finish(&id, ModelDownloadStatus::Cancelled, None)
+                    .finish(&id, ModelDownloadStatus::Cancelled, None, None)
                     .await,
             );
         }
@@ -164,6 +134,7 @@ async fn finish_ollama(
                     &id,
                     ModelDownloadStatus::Failed,
                     Some("model-download-failed"),
+                    None,
                 )
                 .await,
         ),
@@ -208,7 +179,7 @@ async fn finish_forecast(
     };
     let _ = app.emit("forecast-models-changed", ());
     let error = (status == ModelDownloadStatus::Failed).then_some("model-download-failed");
-    emit_states(&app, manager.finish(&state.id, status, error).await);
+    emit_states(&app, manager.finish(&state.id, status, error, None).await);
 }
 
 fn progress_percent(completed: Option<u64>, total: Option<u64>) -> u8 {

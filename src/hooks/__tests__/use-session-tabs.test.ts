@@ -5,6 +5,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { useSessionTabs } from "../use-session-tabs";
 import type { CloneSessionResult, SessionTabs } from "@/types/agent";
 import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
+import {
+  applyVoiceDelivery,
+  openComposerDraft,
+  resetComposerDraftStoreForTests,
+} from "../composer-draft-store";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -45,6 +50,7 @@ function deferred<T>() {
 describe("useSessionTabs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetComposerDraftStoreForTests();
     vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
       if (command === "list_session_tabs") return Promise.resolve(rootTabs);
       if (command === "clone_agent_session") return Promise.resolve(cloneResult);
@@ -53,6 +59,35 @@ describe("useSessionTabs", () => {
       }
       return Promise.resolve(rootTabs);
     });
+  });
+
+  it("ne ferme pas le brouillon quand on change seulement d'onglet", async () => {
+    vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
+      if (command === "list_session_tabs") return Promise.resolve(cloneTabs);
+      if (command === "save_session_tabs") return Promise.resolve((args as { tabs: SessionTabs }).tabs);
+      return Promise.resolve(cloneTabs);
+    });
+    openComposerDraft("session:clone");
+    const { result } = renderHook(() => useSessionTabs("root"));
+    await waitFor(() => expect(result.current.tabs).toEqual(cloneTabs));
+    await act(async () => { await result.current.selectTab("main"); });
+
+    expect(applyVoiceDelivery({ id: "delivery", draftKey: "session:clone", text: "texte", microphoneDisconnected: false }))
+      .toBe("inserted");
+  });
+
+  it("ferme le brouillon avec son onglet", async () => {
+    vi.mocked(invoke).mockImplementation((command: string) => {
+      if (command === "list_session_tabs") return Promise.resolve(cloneTabs);
+      return Promise.resolve(rootTabs);
+    });
+    openComposerDraft("session:clone");
+    const { result } = renderHook(() => useSessionTabs("root"));
+    await waitFor(() => expect(result.current.tabs).toEqual(cloneTabs));
+    await act(async () => { await result.current.closeTab("branch-1"); });
+
+    expect(applyVoiceDelivery({ id: "delivery", draftKey: "session:clone", text: "texte", microphoneDisconnected: false }))
+      .toBe("destination-closed");
   });
 
   it("n'expose jamais les onglets de l'ancienne racine pendant le changement de session", async () => {

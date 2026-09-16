@@ -1,132 +1,59 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { SkillInfo } from "@/types/agent";
+import {
+  MAX_SKILLS_PER_DRAFT,
+  clearComposerDraft,
+  openComposerDraft,
+  readComposerDraft,
+  subscribeComposerDrafts,
+  updateComposerDraft,
+  type ComposerDraftSnapshot,
+  type ComposerDraftSkill,
+} from "./composer-draft-store";
 
-const MAX_DRAFTS = 64;
-const MAX_SKILLS_PER_DRAFT = 16;
-const MAX_LISTENERS = 64;
-
-export interface ComposerDraftSkill {
-  info: SkillInfo;
-  content: string;
-}
-
-export interface ComposerDraftSnapshot {
-  text: string;
-  skills: ComposerDraftSkill[];
-}
-
-type ComposerDraft = ComposerDraftSnapshot;
-const EMPTY_DRAFT: ComposerDraft = { text: "", skills: [] };
-
-export const WELCOME_COMPOSER_DRAFT_KEY = "welcome";
-
-/* Les brouillons restent volontairement dans la mémoire du renderer : ils
-   survivent à la navigation sans écrire du texte potentiellement sensible sur
-   disque. Les deux collections sont bornées pour garder ce cache prévisible. */
-let drafts = new Map<string, ComposerDraft>();
-let nextListenerId = 1;
-const listeners = new Map<number, () => void>();
-
-export function sessionComposerDraftKey(sessionId: string): string {
-  return `session:${sessionId}`;
-}
+export type { ComposerDraftSkill, ComposerDraftSnapshot };
+export function sessionComposerDraftKey(sessionId: string): string { return `session:${sessionId}`; }
 
 export function useComposerDraft(draftKey: string) {
-  const subscribeToDrafts = useCallback(
-    (listener: () => void) => subscribe(listener),
-    [],
-  );
-  const readDraft = useCallback(() => drafts.get(draftKey) ?? EMPTY_DRAFT, [draftKey]);
-  const draft = useSyncExternalStore(subscribeToDrafts, readDraft, readDraft);
-
-  const setText = useCallback((next: string) => {
+  useEffect(() => { openComposerDraft(draftKey); }, [draftKey]);
+  const read = useCallback(() => readComposerDraft(draftKey), [draftKey]);
+  const draft = useSyncExternalStore(subscribeComposerDrafts, read, read);
+  const setText = useCallback((text: string) => {
     updateComposerDraft(draftKey, (current) => ({
-      text: next,
-      skills: next.length === 0 ? [] : current.skills,
+      ...current, text, skills: text.length === 0 ? [] : current.skills,
     }));
   }, [draftKey]);
   const rememberSkill = useCallback((info: SkillInfo, content: string) => {
-    updateComposerDraft(draftKey, (current) => {
-      const skills = current.skills.filter((entry) => entry.info.id !== info.id);
-      skills.push({ info, content });
-      return { ...current, skills: skills.slice(-MAX_SKILLS_PER_DRAFT) };
-    });
-  }, [draftKey]);
-  const clear = useCallback(() => {
-    clearComposerDraft(draftKey);
+    updateComposerDraft(draftKey, (current) => ({
+      ...current,
+      skills: [...current.skills.filter((entry) => entry.info.id !== info.id), { info, content }]
+        .slice(-MAX_SKILLS_PER_DRAFT),
+    }));
   }, [draftKey]);
   const consume = useCallback((expected: ComposerDraftSnapshot) => {
-    consumeComposerDraft(draftKey, expected);
+    updateComposerDraft(draftKey, (current) => ({
+      ...current,
+      text: current.text === expected.text ? "" : current.text,
+      skills: sameSkills(current.skills, expected.skills) ? [] : current.skills,
+    }));
   }, [draftKey]);
   const restore = useCallback((submitted: ComposerDraftSnapshot) => {
-    restoreComposerDraft(draftKey, submitted);
+    updateComposerDraft(draftKey, (current) => ({
+      ...current,
+      text: current.text.length === 0 ? submitted.text : current.text,
+      skills: current.skills.length === 0 ? submitted.skills : current.skills,
+    }));
   }, [draftKey]);
-
-  return { ...draft, setText, rememberSkill, clear, consume, restore };
+  const clear = useCallback(() => clearComposerDraft(draftKey), [draftKey]);
+  return { ...draft, setText, rememberSkill, consume, restore, clear };
 }
 
-function consumeComposerDraft(draftKey: string, expected: ComposerDraftSnapshot) {
-  updateComposerDraft(draftKey, (current) => {
-    const sameText = current.text === expected.text;
-    const sameSkills = current.skills.length === expected.skills.length
-      && current.skills.every((entry, index) => {
-        const sent = expected.skills[index];
-        return sent?.info.id === entry.info.id && sent.content === entry.content;
-      });
-    return {
-      text: sameText ? "" : current.text,
-      skills: sameSkills ? [] : current.skills,
-    };
+function sameSkills(current: ComposerDraftSkill[], expected: ComposerDraftSkill[]): boolean {
+  return current.length === expected.length && current.every((entry, index) => {
+    const sent = expected[index];
+    return sent?.info.id === entry.info.id && sent.content === entry.content;
   });
 }
 
-function restoreComposerDraft(draftKey: string, submitted: ComposerDraftSnapshot) {
-  updateComposerDraft(draftKey, (current) => ({
-    text: current.text.length === 0 ? submitted.text : current.text,
-    skills: current.skills.length === 0 ? submitted.skills : current.skills,
-  }));
-}
-
-export function clearComposerDraft(draftKey: string) {
-  if (!drafts.has(draftKey)) return;
-  const next = new Map(drafts);
-  next.delete(draftKey);
-  drafts = next;
-  notify();
-}
-
-function updateComposerDraft(
-  draftKey: string,
-  update: (current: ComposerDraft) => ComposerDraft,
-) {
-  const draft = update(drafts.get(draftKey) ?? EMPTY_DRAFT);
-  if (draft.text.length === 0 && draft.skills.length === 0) {
-    clearComposerDraft(draftKey);
-    return;
-  }
-  const next = new Map(drafts);
-  next.delete(draftKey);
-  next.set(draftKey, draft);
-  while (next.size > MAX_DRAFTS) {
-    const oldest = next.keys().next().value;
-    if (oldest === undefined) break;
-    next.delete(oldest);
-  }
-  drafts = next;
-  notify();
-}
-
-function subscribe(listener: () => void): () => void {
-  while (listeners.size >= MAX_LISTENERS) {
-    const oldest = listeners.keys().next().value;
-    if (oldest === undefined) break;
-    listeners.delete(oldest);
-  }
-  const id = nextListenerId++;
-  listeners.set(id, listener);
-  return () => listeners.delete(id);
-}
-
-function notify() {
-  for (const listener of listeners.values()) listener();
-}
+export { clearComposerDraft } from "./composer-draft-store";
+export { WELCOME_COMPOSER_DRAFT_KEY } from "./composer-draft-store";

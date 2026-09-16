@@ -163,6 +163,11 @@ fn macos_development_runner_uses_a_real_application_bundle() {
     assert!(runner.contains("$DEBUG_ROOT/default-skills"));
     assert!(runner.contains("APP_RESOURCES=\"$APP_ROOT/Contents/Resources\""));
     assert!(runner.contains("\"$APP_RESOURCES/default-skills\""));
+    assert!(runner.contains("$DEBUG_ROOT/resources/voice-catalog.json"));
+    assert!(runner.contains("$APP_RESOURCES/resources/voice-catalog.json"));
+    let dev_plist = std::fs::read_to_string(root.join("resources/cef/macos/dev-app/Info.plist"))
+        .expect("development application plist");
+    assert!(dev_plist.contains("NSMicrophoneUsageDescription"));
     assert!(runner.contains("rm -rf -- \"$APP_FRAMEWORKS/$helper.app\""));
     assert!(runner.contains("exec \"$APP_EXECUTABLE\""));
     assert!(runner.contains("exec \"$BINARY\" \"$@\""));

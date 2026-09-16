@@ -21,9 +21,8 @@ use windows_sys::Win32::Foundation::{
     ERROR_SHARING_VIOLATION, GENERIC_WRITE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileW, FlushFileBuffers, MoveFileExW, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_DELETE,
-    FILE_SHARE_READ, FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
-    OPEN_EXISTING,
+    CreateFileW, FlushFileBuffers, MoveFileExW, FILE_SHARE_DELETE, FILE_SHARE_READ,
+    FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH, OPEN_EXISTING,
 };
 
 #[path = "durable_fs_windows_verified.rs"]
@@ -161,7 +160,8 @@ fn move_file(
 }
 
 fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
-    flush_path(path, FILE_FLAG_BACKUP_SEMANTICS)
+    crate::services::private_store::sync_directory(path)
+        .map_err(|_| OllamaFsError::new(OllamaFsErrorKind::Other))
 }
 
 fn flush_path(path: &Path, flags: u32) -> Result<(), OllamaFsError> {

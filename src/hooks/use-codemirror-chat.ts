@@ -28,6 +28,7 @@ import {
   EditorSelection,
   EditorState,
 } from "@codemirror/state";
+import type { ComposerSelection } from "./composer-draft-insertion";
 import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
 
 import { skillChipExtension, type SkillChipConfig } from "@/components/agent-local/skill-chip-extension";
@@ -44,8 +45,9 @@ interface UseCodemirrorChatOptions {
   placeholder: string;
   readOnly: boolean;
   chipConfig: SkillChipConfig;
+  selection?: ComposerSelection | null;
   /** Called whenever the document text or selection changes from inside CM. */
-  onChange: (value: string, cursorPos: number) => void;
+  onChange: (value: string, anchor: number, head: number) => void;
   /** Raw keydown forwarded from CM. Return `true` to stop CM's own handling. */
   onKeyEvent?: (event: KeyboardEvent) => boolean | void;
 }
@@ -55,6 +57,7 @@ export function useCodemirrorChat({
   placeholder,
   readOnly,
   chipConfig,
+  selection,
   onChange,
   onKeyEvent,
 }: UseCodemirrorChatOptions) {
@@ -90,6 +93,9 @@ export function useCodemirrorChat({
     const view = new EditorView({
       state: EditorState.create({
         doc: value,
+        selection: selection && selection.anchor <= value.length && selection.head <= value.length
+          ? EditorSelection.range(selection.anchor, selection.head)
+          : undefined,
         extensions: [
           EditorView.lineWrapping,
           markdownInputExtension(),
@@ -110,6 +116,7 @@ export function useCodemirrorChat({
             if (isReactSync) return;
             onChangeRef.current(
               update.state.doc.toString(),
+              update.state.selection.main.anchor,
               update.state.selection.main.head,
             );
           }),
@@ -136,9 +143,12 @@ export function useCodemirrorChat({
     if (current === value) return;
     view.dispatch({
       changes: { from: 0, to: current.length, insert: value },
+      selection: selection && selection.anchor <= value.length && selection.head <= value.length
+        ? EditorSelection.range(selection.anchor, selection.head)
+        : EditorSelection.cursor(value.length),
       annotations: REACT_VALUE_SYNC.of(true),
     });
-  }, [value]);
+  }, [selection, value]);
 
   // Reconfigure placeholder without remounting.
   useEffect(() => {

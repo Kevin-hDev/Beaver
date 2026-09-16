@@ -2,28 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import type {
+  ModelDownloadKind,
+  ModelDownloadPhase,
+  ModelDownloadState,
+} from "@/types/model-download.generated";
 
-type ModelDownloadKind = "ollama" | "forecast";
-type ModelDownloadStatus = "queued" | "running" | "cancelling" | "completed" | "failed" | "cancelled";
-export type ModelDownloadPhase =
-  | "starting"
-  | "downloading"
-  | "installing"
-  | "preparing-runtime"
-  | "completed";
-
-export interface ModelDownloadState {
-  id: string;
-  kind: ModelDownloadKind;
-  modelId: string;
-  isUpdate: boolean;
-  status: ModelDownloadStatus;
-  phase: ModelDownloadPhase;
-  percent: number;
-  downloaded: number;
-  total: number;
-  errorKey?: string | null;
-}
+export type { ModelDownloadKind, ModelDownloadPhase, ModelDownloadState };
 
 export function isModelDownloadPending(download: Pick<ModelDownloadState, "status">): boolean {
   return download.status === "queued"
@@ -71,9 +56,13 @@ export function useModelDownloads() {
     await invoke("cancel_model_download", { id });
   }, []);
 
+  const resumeDownload = useCallback(async (id: string) => {
+    return invoke<ModelDownloadState>("resume_model_download", { id });
+  }, []);
+
   const activeDownload = useMemo(
     () => downloads.find((item) => item.status !== "queued" && isModelDownloadPending(item)) ?? null,
     [downloads],
   );
-  return { downloads, activeDownload, startDownload, cancelDownload, refresh };
+  return { downloads, activeDownload, startDownload, cancelDownload, resumeDownload, refresh };
 }

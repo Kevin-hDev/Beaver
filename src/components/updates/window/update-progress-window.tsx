@@ -21,13 +21,16 @@ export function UpdateProgressWindow() {
   if (operations.length === 0) return null;
   const restarting = operations.some(({ kind, phase, status }) =>
     kind === "app-release" && phase === "restarting" && status === "running");
+  const title = operations.length === 1
+    ? t(operations[0].isUpdate === false ? "updates.window.downloadTitle" : "updates.window.title")
+    : t("updates.window.count", { count: operations.length });
 
   return (
     <div ref={contentRef} className="upw-frame">
-      <main className="upw-window relief elev-above" aria-label={t("updates.window.title")}>
+      <main className="upw-window relief elev-above" aria-label={title}>
         <header className="upw-title" data-tauri-drag-region>
           <span className="upw-title-text" data-tauri-drag-region>
-            {operations.length === 1 ? t("updates.window.title") : t("updates.window.count", { count: operations.length })}
+            {title}
           </span>
           {!restarting && (
             <button type="button" className="icon-btn" aria-label={t("updates.window.close")}

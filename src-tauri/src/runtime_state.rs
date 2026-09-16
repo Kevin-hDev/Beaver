@@ -27,6 +27,7 @@ pub struct RuntimeServices {
     pub update_progress: crate::services::update_progress::UpdateProgressRuntime,
     pub terminal: crate::services::terminal::PtyManager,
     pub background: crate::services::runtime_background::RuntimeBackgroundServices,
+    pub voice: crate::services::voice::runtime::VoiceRuntime,
 }
 
 pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
@@ -46,7 +47,10 @@ pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
         app_update: crate::services::update_handoff::AppUpdateRuntime::new(supervisor.clone()),
         update_progress: crate::services::update_progress::UpdateProgressRuntime::default(),
         terminal: crate::services::terminal::PtyManager::new(supervisor.clone()),
-        background: crate::services::runtime_background::RuntimeBackgroundServices::new(supervisor),
+        background: crate::services::runtime_background::RuntimeBackgroundServices::new(
+            supervisor.clone(),
+        ),
+        voice: crate::services::voice::runtime::new_voice_runtime(supervisor),
     }
 }
 

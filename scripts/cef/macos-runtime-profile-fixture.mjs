@@ -114,6 +114,8 @@ async function createTrackedInputs(tauriDirectory) {
     const debugRoot = join(tauriDirectory, targetRoot, "debug");
     await mkdir(join(debugRoot, "default-skills"), { recursive: true });
     await writeFile(join(debugRoot, "default-skills", "fixture.md"), "fixture\n");
+    await mkdir(join(debugRoot, "resources"), { recursive: true });
+    await writeFile(join(debugRoot, "resources", "voice-catalog.json"), "{}\n");
     await writeExecutable(join(debugRoot, "cl-go-dash"), "#!/bin/bash\nexit 0\n");
   }
 }

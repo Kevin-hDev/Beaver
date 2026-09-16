@@ -21,10 +21,13 @@ import {
   StandardPlacementAction,
   useStandardEntry,
 } from "@/features/extension-ui/standard/standard-contributions";
+import { VoiceControls } from "./voice/voice-controls";
+import { VoiceStatusLines } from "./voice/voice-status-lines";
 
 type ButtonState = "stop" | "confirmStop" | "send" | "hidden";
 
 interface ChatInputActionsRowProps {
+  draftKey?: string;
   sessionId?: string;
   modelName: string;
   providerName: string;
@@ -53,6 +56,7 @@ interface ChatInputActionsRowProps {
 }
 
 export function ChatInputActionsRow({
+  draftKey,
   sessionId,
   modelName,
   providerName,
@@ -89,6 +93,7 @@ export function ChatInputActionsRow({
     compression,
   };
   return (
+    <>
     <div className="chat-input-row3">
       <SlotRenderer
         placement="agent.composer.leading"
@@ -143,8 +148,11 @@ export function ChatInputActionsRow({
         onFastModeChange={onFastModeChange}
         align="right"
       />
+      {draftKey && <VoiceControls draftKey={draftKey} />}
       <SendStopButton state={buttonState} onSend={onSend} onStop={onStop} />
     </div>
+    {draftKey && <VoiceStatusLines draftKey={draftKey} />}
+    </>
   );
 }
 

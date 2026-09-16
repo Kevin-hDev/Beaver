@@ -1379,7 +1379,7 @@
     "window": {
       "open": "Mostrar progreso",
       "openFailed": "No se pudo mostrar la ventana de progreso.",
-      "title": "Actualización", "count": "{{count}} actualizaciones", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "cancelledResult": "Cancelado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…",
+      "title": "Actualización", "downloadTitle": "Descarga", "count": "{{count}} operaciones en curso", "downloadCompleted": "Instalación completada", "downloadFailed": "La descarga ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "insufficientSpace": "Se necesitan {{size}} adicionales de espacio en disco para continuar.", "close": "Cerrar la ventana", "remove": "Quitar esta línea", "retry": "Reintentar", "cancel": "Cancelar", "queued": "En espera · posición {{position}}", "cancelling": "Cancelando…", "completed": "Actualizado", "cancelledResult": "Cancelado", "failed": "La actualización ha fallado. Comprueba tu conexión y vuelve a intentarlo.", "restarting": "Reiniciando Beaver…",
       "phases": { "waiting": "En espera", "preparing": "Preparando", "downloading": "Descargando", "verifying": "Verificando la integridad", "extracting": "Extrayendo", "installing": "Instalando", "restarting": "Reiniciando", "recovering": "Recuperando", "rolling-back": "Restaurando", "cleaning": "Limpiando", "completed": "Completado" }
     }
   },
@@ -2643,6 +2643,99 @@
       "failed": "La instalación ha fallado. Puedes reintentarlo.",
       "insufficientSpace": "No hay suficiente espacio en disco para continuar.",
       "recoveryUnavailable": "No se puede recuperar el seguimiento guardado. Las nuevas instalaciones están bloqueadas. Los datos de recuperación requieren una intervención manual."
+    }
+  },
+  "voice": {
+    "start": "Iniciar dictado",
+    "cancel": "Cancelar inserción",
+    "validate": "Detener y transcribir",
+    "activeElsewhere": "Dictado activo en otra pestaña · Ir",
+    "tabIndicator": "Dictado activo",
+    "firstUse": {
+      "title": "Modo de voz",
+      "description": "Dicta texto directamente en el borrador.",
+      "local": "El audio se procesa localmente y nunca se envía automáticamente.",
+      "later": "Más tarde",
+      "continue": "Continuar"
+    },
+    "language": {
+      "automatic": "Detección automática"
+    },
+    "settings": {
+      "title": "Modo de voz",
+      "description": "Beaver transcribe tu voz en este dispositivo.",
+      "enabled": "Dictado por voz",
+      "enabledDescription": "Habla en el campo en lugar de escribir.",
+      "model": "Modelo de transcripción",
+      "installed": "instalado",
+      "notInstalled": "no instalado",
+      "advanced": "Configuración avanzada",
+      "advancedDescription": "Modelos, micrófono y memoria.",
+      "open": "Avanzado",
+      "languageCount": "{{count}} idiomas",
+      "lastSpeed": "≈ {{speed}}× tiempo real · última medición, sin carga",
+      "installing": "Instalando…",
+      "cancelling": "Cancelando…",
+      "remove": "Eliminar",
+      "install": "Instalar",
+      "languages": "Idiomas",
+      "device": "Dispositivo de entrada",
+      "systemDevice": "Micrófono del sistema",
+      "refreshDevice": "Actualizar",
+      "gain": "Ganancia del micrófono",
+      "gainDescription": "Aumenta las voces bajas antes de transcribir.",
+      "gainValues": { "zero-db": "0 dB", "three-db": "+3 dB", "six-db": "+6 dB", "nine-db": "+9 dB" },
+      "silence": "Silencio antes de parar",
+      "seconds": "{{count}} segundos",
+      "never": "Nunca",
+      "duration": "Duración máxima",
+      "minutes": "{{count}} minutos",
+      "language": "Idioma del dictado",
+      "followInterface": "Seguir la interfaz",
+      "unload": "Descargar modelo",
+      "try": "Probar",
+      "startTrial": "Iniciar prueba",
+      "unloadValues": {
+        "immediately": "Inmediatamente",
+        "one-minute": "Después de 1 minuto",
+        "two-minutes": "Después de 2 minutos",
+        "five-minutes": "Después de 5 minutos",
+        "fifteen-minutes": "Después de 15 minutos",
+        "on-exit": "Al cerrar Beaver"
+      },
+      "shortcut": "Atajo de teclado",
+      "noShortcut": "Ninguno",
+      "createShortcut": "Crear",
+      "modifyShortcut": "Modificar",
+      "cancelShortcut": "Cancelar",
+      "pressShortcut": "Pulsa el atajo deseado…",
+      "shortcutConflict": "Este atajo ya está en uso.",
+      "trialTiming": "Cálculo: {{compute}} s · Texto mostrado tras parar: {{delay}} s"
+    },
+    "status": {
+      "preparing": "Preparando el micrófono…",
+      "listening": "Escuchando",
+      "transcribing": "Transcribiendo…",
+      "recovering": "Preparando la recuperación…",
+      "stopping": "Deteniendo el cálculo…",
+      "delivering": "Insertando texto…",
+      "idle": "Listo"
+    },
+    "recovery": {
+      "preparing": "Preparando la recuperación…",
+      "ready": "Se puede restaurar un dictado.",
+      "failed": "La recuperación ha fallado.",
+      "restore": "Restaurar dictado ({{duration}})",
+      "delete": "Eliminar recuperación",
+      "duration": "{{minutes}} min {{seconds}} s"
+    },
+    "notice": { "microphoneDisconnected": "El micrófono se desconectó. Se transcribió el audio capturado." },
+    "error": {
+      "busy": "Hay otra operación de voz en curso.",
+      "shutting-down": "Beaver se está cerrando.",
+      "invalid-settings": "Comprueba los ajustes del modo de voz.",
+      "configuration-unavailable": "El modelo de voz necesario no está disponible.",
+      "invalid-transition": "Esta acción de voz ya no está disponible."
     }
   },
   "installer": {

@@ -1,0 +1,10 @@
+.ssf-section {
+  margin-top: var(--space-xl);
+}
+
+.ssf-title {
+  margin: 0 0 var(--space-md);
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 600;
+}

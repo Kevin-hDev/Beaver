@@ -24,6 +24,10 @@
 
 - **Agent-managed wakeups** — the Agent can now create, inspect, update, enable, disable, and delete scheduled wakeups, review their execution history and errors, and schedule work either in the current conversation or in a separate session.
 
+### Voice dictation
+
+- **Private local transcription** — macOS and Windows users can dictate prompts directly into the composer with on-device Parakeet TDT v3, Qwen3 ASR, or Cohere Transcribe models, live audio feedback, configurable language, gain, silence detection, keyboard shortcuts, resumable model downloads, and recovery for interrupted long dictations.
+
 ### Interface and previews
 
 - **Accurate code and diff previews** — syntax colors now survive multi-line tokens, fenced Markdown blocks are highlighted, changed lines keep readable text colors, and created files use the normal file presentation while additions and deletions retain their own diff colors.

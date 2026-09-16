@@ -15,6 +15,8 @@ import {
 import type { CloneMode, CloneSessionResult, SessionTab, SessionTabs } from "@/types/agent";
 import { sessionTabIndexFromShortcut } from "@/lib/app-shortcuts";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
+import { closeVoiceDraftWhile } from "@/features/voice/voice-context";
+import { sessionComposerDraftKey } from "@/hooks/use-composer-draft";
 
 interface CloneMessageOptions {
   messageId: string;
@@ -154,18 +156,22 @@ export function useSessionTabs(
   const cancelCloneSummary = useCallback(async (operationId: string) => {
     await invoke("cancel_clone_summary", { operationId });
   }, []);
-  const gitActions = useSessionTabsGitActions({ rootSessionId, setTabs, onSessionsRefresh });
+  const gitActions = useSessionTabsGitActions({ rootSessionId, tabs, setTabs, onSessionsRefresh });
 
   const closeTab = useCallback(async (tabId: string) => {
     if (!rootSessionId) return;
+    const closingSessionId = tabs?.tabs.find((tab) => tab.tab_id === tabId)?.session_id;
     setAttentionTabs((current) => removeAttentionTab(current, rootSessionId, tabId));
-    const next = await invoke<SessionTabs>("close_session_tab", {
-      sessionId: rootSessionId,
-      tabId,
-    });
+    const close = () => invoke<SessionTabs>("close_session_tab", {
+        sessionId: rootSessionId,
+        tabId,
+      });
+    const next = closingSessionId
+      ? await closeVoiceDraftWhile(sessionComposerDraftKey(closingSessionId), close)
+      : await close();
     await onSessionsRefresh?.();
     setTabs(next);
-  }, [onSessionsRefresh, rootSessionId, setTabs]);
+  }, [onSessionsRefresh, rootSessionId, setTabs, tabs]);
 
   const renameTab = useCallback(async (tabId: string, label: string) => {
     if (!rootSessionId) return;

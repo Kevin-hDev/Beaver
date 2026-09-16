@@ -25,6 +25,7 @@ const runningDownload: ModelDownloadState = {
   downloaded: 0,
   total: 0,
   errorKey: null,
+  missingBytes: null,
 };
 
 const failedDownload: ModelDownloadState = {

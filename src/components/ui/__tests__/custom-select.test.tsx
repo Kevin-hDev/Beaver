@@ -21,6 +21,13 @@ function open() {
 }
 
 describe("CustomSelect", () => {
+  it("utilise le chevron d'icône partagé", () => {
+    render(<CustomSelect options={OPTIONS} value="fr" onChange={vi.fn()} />);
+    const trigger = screen.getByRole("button");
+    expect(trigger.querySelector("svg.cs-trigger-caret")).not.toBeNull();
+    expect(trigger).not.toHaveTextContent("▾");
+  });
+
   it("porte la liste hors du conteneur du composant", () => {
     const { container } = open();
     expect(container.querySelector(".cs-dropdown")).toBeNull();

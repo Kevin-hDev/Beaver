@@ -24,6 +24,9 @@ const extensionUiCleanupSpec = "./tests/e2e/extensions-ui-cleanup.spec.ts";
 const extensionInstallBackgroundSpec = "./tests/e2e/extensions-install-background.spec.ts";
 const extensionApiExpansionSpec = "./tests/e2e/extensions-api-expansion.spec.ts";
 const updateProgressSecuritySpec = "./tests/e2e/update-progress-security.spec.ts";
+const voiceComposerSpec = "./tests/e2e/voice-composer.spec.ts";
+const voiceSettingsSpec = "./tests/e2e/voice-settings.spec.ts";
+const voiceNativeLifecycleSpec = "./tests/e2e/voice-native-lifecycle.spec.ts";
 const journeySpec = nativeCefSmoke
   ? "./tests/e2e/native-cef-shutdown.spec.ts"
   : nativeWebViewSmoke
@@ -51,6 +54,9 @@ export const config: WebdriverIO.Config = {
     extensionApiExpansionSpec,
     extensionInstallBackgroundSpec,
     updateProgressSecuritySpec,
+    voiceComposerSpec,
+    voiceSettingsSpec,
+    voiceNativeLifecycleSpec,
     journeySpec,
   ]],
   maxInstances: 1,

@@ -28,6 +28,7 @@ const runningDownload: ModelDownloadState = {
   downloaded: 42,
   total: 100,
   errorKey: null,
+  missingBytes: null,
 };
 
 const queuedDownload: ModelDownloadState = {

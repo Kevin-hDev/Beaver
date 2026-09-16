@@ -316,6 +316,15 @@ fn windows_file_flush_uses_the_same_write_access_contract() {
 }
 
 #[test]
+fn windows_sync_file_keeps_its_native_flush_implementation() {
+    let source = include_str!("durable_fs_windows.rs");
+
+    assert!(source.contains("fn sync_file(&self, path: &Path)"));
+    assert!(source.contains("flush_path(path, 0)"));
+    assert!(source.contains("fn flush_path(path: &Path, flags: u32)"));
+}
+
+#[test]
 fn native_error_evidence_preserves_the_raw_os_code() {
     let error = OllamaFsError::from_os_code(OllamaFsErrorKind::PermissionDenied, 5);
 
