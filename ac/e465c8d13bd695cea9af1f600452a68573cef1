@@ -1,0 +1,18 @@
+CI correction after native Windows run 35045720283.
+
+Both Windows jobs failed during compilation before their intended test suites. The logs showed the same root cause:
+- durable_fs_windows_verified.rs still imported the removed sync_parent_path helper.
+- durable_sync.rs kept an unused Windows-only parameter warning.
+
+Fix:
+- Verified Windows deletion now completes after the identity-checked handle deletion. Windows has no supported directory FlushFileBuffers equivalent.
+- The Windows no-op parent confirmation explicitly consumes its parameter.
+
+Validation:
+- cargo fmt --all -- --check: green
+- Ollama durable filesystem tests: 28 passed
+- private store tests: 26 passed
+- git diff --check: green
+- graphify update .: completed
+- CI logs for jobs 104635009340 and 104635009360 confirmed the same E0432 compile failure and warning.
+- Native Windows recompilation remains the CI proof boundary.
