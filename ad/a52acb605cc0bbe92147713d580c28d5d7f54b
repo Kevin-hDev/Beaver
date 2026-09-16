@@ -1,0 +1,15 @@
+CI correction after native Windows run 35048517648.
+
+The portable revision path test passed on Windows, but the same five installation-dependent tests still failed. Their only shared failing boundary was publication of the extracted staging directory.
+
+Fix:
+- Windows directory publication uses std::fs::rename for the required same-volume atomic move.
+- File publication and receipt tombstones keep the existing MoveFileExW MOVEFILE_WRITE_THROUGH path.
+- Reason: Microsoft documents WRITE_THROUGH as confirming copy/delete moves, while directory moves must stay on one volume.
+
+Validation:
+- Voice download tests: 36 passed
+- cargo clippy --all-targets -- -D warnings: green
+- git diff --check: green
+- graphify update .: completed
+- Native Windows CI remains the proof for the directory move.
