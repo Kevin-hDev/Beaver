@@ -35,7 +35,10 @@ pub(crate) fn rename_durable(_source: &Path, _destination: &Path) -> Result<(), 
 
 pub(super) fn sync_parent(parent: &Path) -> Result<(), String> {
     #[cfg(windows)]
-    return Ok(());
+    {
+        let _ = parent;
+        return Ok(());
+    }
     #[cfg(not(windows))]
     sync_directory(parent)
 }
