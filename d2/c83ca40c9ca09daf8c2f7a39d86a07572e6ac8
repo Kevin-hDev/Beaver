@@ -1,0 +1,12 @@
+Cause: the previous Linux boundary fix gated browser_contract_tests behind native_browser, so scripts/contracts/check.mjs could no longer collect its exact test on Linux.
+
+Change: compile browser event contract types for tests while keeping event counters and runtime constants behind native_browser; restore the contract test on every test target and lock the boundary with the existing build-policy test.
+
+Validation:
+- cargo fmt --all -- --check
+- cargo test services::browser::test_modules::build_policy_tests --lib -- --nocapture (6 passed)
+- npm run contracts:check (all exact Rust/TypeScript contracts passed)
+- cargo clippy --all-targets -- -D warnings
+- RUSTFMT_BASE_SHA=$(git merge-base main HEAD) node scripts/build/check-rust-format.mjs
+- git diff --check
+- graphify update . (47,410 nodes, 107,661 edges, 2,252 communities)
