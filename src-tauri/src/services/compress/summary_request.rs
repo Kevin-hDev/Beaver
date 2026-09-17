@@ -83,6 +83,11 @@ fn messages_for_summary(source: &[AgentMessage]) -> Vec<AgentMessage> {
         .cloned()
         .map(|mut message| {
             message.continuation = None;
+            if let Some(tool_calls) = &mut message.tool_calls {
+                for tool_call in tool_calls {
+                    tool_call.extra_content = None;
+                }
+            }
             for file in &mut message.files {
                 file.access_grant = None;
             }

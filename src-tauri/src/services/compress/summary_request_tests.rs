@@ -125,7 +125,7 @@ async fn user_content_is_preserved_without_changing_the_fixed_contract_or_enabli
 }
 
 #[test]
-fn provider_continuations_and_file_access_grants_stay_out_of_the_summary_request() {
+fn opaque_provider_state_and_file_access_grants_stay_out_of_the_summary_request() {
     let mut source = super::snapshot_tests::session().messages;
     source[0].files.push(
         crate::services::agent_local::types_message::FileAttachment {
@@ -155,6 +155,18 @@ fn provider_continuations_and_file_access_grants_stay_out_of_the_summary_request
             Vec::new(),
         ),
     );
+    source[1].tool_calls = Some(vec![
+        crate::services::agent_local::types_message::ToolCallRequest {
+            id: "fixture-call".into(),
+            extra_content: Some(serde_json::json!({
+                "google": {"thought_signature": "private-tool-reasoning"}
+            })),
+            function: crate::services::agent_local::types_message::ToolCallRequestFunction {
+                name: "fixture".into(),
+                arguments: serde_json::json!({"visible": "argument"}),
+            },
+        },
+    ]);
 
     let call = build_call(
         &source,
@@ -171,11 +183,16 @@ fn provider_continuations_and_file_access_grants_stay_out_of_the_summary_request
 
     assert!(!payload.contains("private-access-grant"));
     assert!(!payload.contains("private-provider-state"));
+    assert!(!payload.contains("private-tool-reasoning"));
+    assert!(payload.contains("visible"));
     assert_eq!(
         source[0].files[0].access_grant.as_deref(),
         Some("private-access-grant")
     );
     assert!(source[1].continuation.is_some());
+    assert!(source[1].tool_calls.as_ref().unwrap()[0]
+        .extra_content
+        .is_some());
 }
 
 #[tokio::test]
