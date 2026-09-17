@@ -1,0 +1,28 @@
+M21 — Simplifier le refus d'envoi pendant un flux
+
+Décision
+- Conserver la décision produit du 26 août : pendant un flux actif ou son arrêt, un nouvel envoi est refusé, le brouillon reste intact et un message clair est affiché.
+- Ne pas simuler une file d'attente que le backend n'a jamais consommée. Une file durable reste une fonctionnalité distincte.
+
+Changements
+- Remplacement de queueStreamMessage par une résolution synchrone de l'état du flux : start-new, stopping ou unavailable.
+- Refus avant toute association de projet, construction de message optimiste ou démarrage de flux.
+- Suppression de la commande IPC queue_agent_message, toujours négative, et du validateur utilisé uniquement par elle.
+- Suppression des états queuedUserMessages, du rendu de message fantôme, du gestionnaire de file et des tests qui simulaient une acceptation impossible.
+- Conservation des transitions d'arrêt, de reprise après échec d'annulation et de fin de flux.
+
+Preuves
+- Tests ciblés frontend : 7 fichiers, 79 tests passés, incluant refus actif/admission, courses d'arrêt et conservation texte + pièces jointes du brouillon.
+- Tests ciblés Rust : 13 tests subagent_read_only_command et 1 test de borne de rapports passés.
+- npm test : 634 fichiers, 3 496 tests Vitest passés ; scripts Node, CEF, hôte d'extensions, fixtures de raisonnement et contrats passés.
+- cargo test : 5 857 tests de bibliothèque passés, 32 ignorés ; 51 tests CLI passés ; intégrations et doc-tests passés.
+- npx tsc --noEmit : passé.
+- npm run lint : passé.
+- cargo check : passé.
+- cargo clippy --all-targets -- -D warnings : passé.
+- cargo fmt --check : passé.
+- graphify update . : passé.
+
+Résultat
+- Aucun changement de liberté d'utilisation : l'utilisateur peut toujours envoyer le contenu de son choix une fois le flux terminé.
+- Le brouillon et les pièces jointes restent disponibles après un refus ; aucun message n'apparaît temporairement dans la conversation.
