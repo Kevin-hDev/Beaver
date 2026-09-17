@@ -1,0 +1,14 @@
+Task: M15 validation follow-up
+
+Reason:
+The full Rust suite exposed a deterministic race in the shared stream consumer: when cancellation and a fully buffered response were both ready, tokio::select! could consume the entire response and return success instead of cancellation.
+
+Change:
+- Prioritize the cancellation branch in the existing shared stream loop with Tokio's biased selection.
+- No new abstraction or behavior outside the already-defined cancellation contract.
+
+Validation:
+- cargo fmt --check
+- cargo test services::llm::stream_consume::silent_tests::generation_is_cancelled_and_bounded_during_receive -- --nocapture (1 passed)
+- cargo clippy --all-targets -- -D warnings
+- graphify update .
