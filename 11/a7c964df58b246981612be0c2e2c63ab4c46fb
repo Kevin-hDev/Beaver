@@ -1,0 +1,27 @@
+Tâche: M15 — partager la lecture des flux interactifs et silencieux.
+
+Décision:
+- Chat Completions utilise désormais un seul analyseur/accumulateur pour les sorties interactives et silencieuses.
+- Responses utilise désormais le même StreamAccumulator et le même lecteur SSE dans les deux modes.
+- DiscardStreamEvents absorbe uniquement les événements UI du mode silencieux.
+- Les politiques restent explicites: Chat silencieux ignore le raisonnement; Responses silencieux le conserve, ignore les outils non demandés et garde sa limite locale max_output_tokens * 6.
+- Ollama local non streamé et le choix de raisonnement des résumés internes restent inchangés.
+
+Raison:
+Les anciens lecteurs silencieux dupliquaient l'analyse, l'accumulation, les délais, l'annulation et les limites. Une correction du protocole devait être reportée dans plusieurs boucles.
+
+Validations exécutées:
+- cargo fmt --check: OK
+- cargo check: OK
+- cargo clippy --all-targets -- -D warnings: OK
+- cargo test stream_consume -- --nocapture: 16 réussis
+- cargo test stream_silent -- --nocapture: 11 réussis
+- cargo test stream_accumulator -- --nocapture: 10 réussis
+- cargo test openrouter_routing -- --nocapture: 9 réussis
+- cargo test 'services::codex_client::stream' -- --nocapture: 26 réussis
+- cargo test --lib: 5859 réussis, 0 échec, 32 ignorés
+- graphify update .: 47351 nœuds, 107577 arêtes
+- git diff --cached --check: OK
+
+Couverture utile:
+fragments différentiels et cumulés, contenu, raisonnement Responses, outils complets/incomplets, raisons de fin, erreurs embarquées, limite de taille, limite locale Responses, annulation, délai d'inactivité, mesure d'usage et diagnostics OpenRouter.
