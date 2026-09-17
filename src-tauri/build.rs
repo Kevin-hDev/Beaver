@@ -51,10 +51,16 @@ fn configure_windows_test_manifest() {
 }
 
 fn configure_browser_runtime_cfg() {
+    // browser_native_api covers desktop-only contracts even in Windows tests;
+    // native_browser is reserved for builds that actually link the CEF engine.
     println!("cargo:rustc-check-cfg=cfg(native_browser)");
+    println!("cargo:rustc-check-cfg=cfg(browser_native_api)");
     println!("cargo:rerun-if-env-changed=CARGO_FEATURE_WINDOWS_TESTS");
     let target = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let windows_tests = std::env::var_os("CARGO_FEATURE_WINDOWS_TESTS").is_some();
+    if target == "macos" || target == "windows" {
+        println!("cargo:rustc-cfg=browser_native_api");
+    }
     if target == "macos" || (target == "windows" && !windows_tests) {
         println!("cargo:rustc-cfg=native_browser");
     }

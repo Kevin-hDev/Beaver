@@ -67,7 +67,7 @@ pub(super) struct PersistedBrowserTabState {
 }
 
 #[derive(Default)]
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 pub(super) struct BrowserRuntimeTabUpdate {
     pub(super) title: Option<String>,
     pub(super) url: Option<String>,

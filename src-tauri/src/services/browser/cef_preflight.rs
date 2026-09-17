@@ -25,7 +25,7 @@ impl CefPreflightError {
         }
     }
 
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(browser_native_api)]
     pub(super) const fn category(self) -> CefUnavailableCategory {
         self.category
     }
@@ -75,7 +75,7 @@ fn retryable_os_code(code: i32) -> bool {
     )
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(not(browser_native_api))]
 fn retryable_os_code(_code: i32) -> bool {
     false
 }

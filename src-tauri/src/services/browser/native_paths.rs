@@ -51,7 +51,7 @@ const WINDOWS_DEVELOPMENT_BOOTSTRAP: &str = "cl_go_dash_lib.exe";
 #[cfg(any(test, target_os = "windows"))]
 const WINDOWS_DEVELOPMENT_MODULE: &str = "cl_go_dash_lib.dll";
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(browser_native_api)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct RuntimeFiles {
     #[cfg(target_os = "macos")]

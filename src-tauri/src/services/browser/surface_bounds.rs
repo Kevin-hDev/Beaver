@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 const MAX_COORDINATE: i32 = 16_384;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 pub(super) const MAX_DIMENSION: u32 = 16_384;
 #[cfg(any(test, target_os = "windows"))]
 const MIN_SCALE_FACTOR: f64 = 0.5;
@@ -20,7 +20,7 @@ pub struct BrowserSurfaceBounds {
     pub generation: u64,
 }
 
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct NativeSurfaceRect {
     pub x: i32,
@@ -30,7 +30,7 @@ pub(super) struct NativeSurfaceRect {
 }
 
 impl BrowserSurfaceBounds {
-    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    #[cfg(any(test, browser_native_api))]
     pub(super) fn validate(&self) -> Result<(), ()> {
         if self.x < 0
             || self.y < 0
@@ -89,13 +89,13 @@ fn scaled_i32(value: i32, scale_factor: f64) -> Result<i32, ()> {
     Ok(scaled.round() as i32)
 }
 
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 #[derive(Default)]
 pub(super) struct SurfaceTracker {
     last: Option<BrowserSurfaceBounds>,
 }
 
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum SurfaceUpdate {
     Stale,
@@ -103,7 +103,7 @@ pub(super) enum SurfaceUpdate {
     Changed,
 }
 
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 impl SurfaceTracker {
     pub(super) fn reset(&mut self) {
         self.last = None;

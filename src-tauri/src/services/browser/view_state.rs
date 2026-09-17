@@ -25,7 +25,7 @@ impl ViewState {
         matches!(self.phase, ViewPhase::Creating | ViewPhase::Ready)
     }
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(browser_native_api)]
     pub(super) fn is_ready(&self) -> bool {
         self.phase == ViewPhase::Ready
     }

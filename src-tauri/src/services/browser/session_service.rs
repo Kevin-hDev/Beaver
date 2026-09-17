@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 pub struct BrowserSessionService {
     pub(super) gate: Arc<Mutex<()>>,
     pub(super) live_sessions: Arc<Mutex<LiveSessionRegistry>>,
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(browser_native_api)]
     pub(super) runtime_revisions: Arc<Mutex<super::runtime_revision::RuntimeRevisionCache>>,
 }
 

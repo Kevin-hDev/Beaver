@@ -1,10 +1,10 @@
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 use super::lifecycle::{Lifecycle, RuntimePhase};
 use serde::Serialize;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 use std::sync::{Arc, Mutex};
 
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 pub(super) const CEF_VERSION: &str = "150.0.0+150.0.10";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -31,7 +31,7 @@ pub enum BrowserCapability {
     )]
     Unavailable { restart_recommended: bool },
     #[cfg_attr(
-        all(not(test), any(target_os = "macos", target_os = "windows")),
+        all(not(test), browser_native_api),
         expect(
             dead_code,
             reason = "Linux-only capability kept in the shared IPC schema"
@@ -42,7 +42,7 @@ pub enum BrowserCapability {
 
 #[derive(Clone, Default)]
 pub struct BrowserRuntimeHandle {
-    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    #[cfg(any(test, browser_native_api))]
     lifecycle: Arc<Mutex<Lifecycle>>,
 }
 
@@ -55,7 +55,7 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
-    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    #[cfg(any(test, browser_native_api))]
     pub fn capability(&self) -> BrowserCapability {
         let Ok(lifecycle) = self.lifecycle.lock() else {
             return BrowserCapability::Unavailable {
@@ -75,7 +75,7 @@ impl BrowserRuntimeHandle {
         }
     }
 
-    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    #[cfg(any(test, browser_native_api))]
     pub(super) fn mark_application_prepared(&self) -> bool {
         self.lifecycle
             .lock()
@@ -83,7 +83,7 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
-    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    #[cfg(any(test, browser_native_api))]
     pub(super) fn mark_running(&self) -> bool {
         self.lifecycle
             .lock()
@@ -91,7 +91,7 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
-    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    #[cfg(any(test, browser_native_api))]
     pub(super) fn mark_supervised(&self) -> bool {
         self.lifecycle
             .lock()
@@ -99,7 +99,7 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(browser_native_api)]
     pub(super) fn mark_failed(&self) -> bool {
         self.lifecycle
             .lock()
@@ -107,7 +107,7 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(browser_native_api)]
     pub(super) fn begin_stopping(&self) -> bool {
         self.lifecycle
             .lock()
@@ -115,7 +115,7 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(browser_native_api)]
     pub(super) fn mark_stopped(&self) -> bool {
         self.lifecycle
             .lock()

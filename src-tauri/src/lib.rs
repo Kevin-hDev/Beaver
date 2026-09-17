@@ -33,7 +33,7 @@ mod storage_migration;
 mod storage_migration_files;
 mod tray;
 pub mod updater_worker;
-#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+#[cfg(all(native_browser, target_os = "windows"))]
 mod windows_entry;
 #[cfg(all(test, target_os = "windows", feature = "windows-tests"))]
 #[path = "windows_entry_plan.rs"]
@@ -46,7 +46,7 @@ pub use services::browser::BrowserLibraryGuard;
 pub fn run_macos_cef_helper() -> std::process::ExitCode {
     services::browser::run_macos_cef_helper()
 }
-#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+#[cfg(all(native_browser, target_os = "windows"))]
 pub use startup::launch_windows_browser_host;
 #[cfg(target_os = "macos")]
 pub use startup::prepare_macos_application;

@@ -13,6 +13,22 @@ fn build_script_never_embeds_dotenv_values_in_the_binary() {
 }
 
 #[test]
+fn build_script_names_browser_capabilities_separately() {
+    let build = normalized_source("build.rs");
+
+    assert!(build.contains("cargo:rustc-check-cfg=cfg(browser_native_api)"));
+    assert!(build.contains("cargo:rustc-check-cfg=cfg(native_browser)"));
+    assert!(build.contains(
+        r#"if target == "macos" || target == "windows" {
+        println!("cargo:rustc-cfg=browser_native_api");"#
+    ));
+    assert!(build.contains(
+        r#"if target == "macos" || (target == "windows" && !windows_tests) {
+        println!("cargo:rustc-cfg=native_browser");"#
+    ));
+}
+
+#[test]
 fn native_runtime_modules_are_not_built_in_linux_library() {
     let module = normalized_source("src/services/browser/mod.rs");
 
@@ -25,9 +41,7 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
         "view_recency",
         "view_state",
     ] {
-        let guarded = format!(
-            "#[cfg(any(test, target_os = \"macos\", target_os = \"windows\"))]\nmod {runtime_module};"
-        );
+        let guarded = format!("#[cfg(any(test, browser_native_api))]\nmod {runtime_module};");
         assert!(
             module.contains(&guarded),
             "{runtime_module} must be excluded from the Linux library build"
@@ -67,7 +81,7 @@ fn native_runtime_entrypoints_stay_out_of_linux_tests() {
     let runtime = normalized_source("src/services/browser/runtime_handle.rs");
     let module = normalized_source("src/services/browser/mod.rs");
     let sessions = normalized_source("src/services/browser/session_service_runtime.rs");
-    let native = "#[cfg(any(target_os = \"macos\", target_os = \"windows\"))]";
+    let native = "#[cfg(browser_native_api)]";
 
     for signature in [
         "pub(super) fn mark_failed",

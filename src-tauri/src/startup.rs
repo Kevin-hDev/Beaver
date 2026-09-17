@@ -111,7 +111,7 @@ pub unsafe fn configure_git_network_policy() -> bool {
     unsafe { super::services::git::network_policy::configure_before_threads().is_ok() }
 }
 
-#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+#[cfg(all(native_browser, target_os = "windows"))]
 pub fn launch_windows_browser_host() -> i32 {
     super::windows_entry::launch_development_bootstrap()
 }
