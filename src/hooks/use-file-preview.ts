@@ -12,6 +12,8 @@ import { useFilePreviewResize } from "./use-file-preview-resize";
 import { usePreviewFallbackExistence } from "./use-preview-fallback-existence";
 import { usePrunePreviewTabs } from "./use-prune-preview-tabs";
 const MAX_TABS = 6;
+const MAX_TRACKED_FALLBACK_SESSIONS = 32;
+const EMPTY_FALLBACKS: FileOperation[] = [];
 
 interface FilePreviewViewState {
   open: boolean;
@@ -35,14 +37,34 @@ export function useFilePreview(
   } = useFilePreviewPanelState(sessionId);
   const [listMode, setListMode] = useState<FilePreviewListMode>("latest");
   const [tabIds, setTabIds] = useState<string[]>(() => readStoredFilePreviewTabs(sessionId));
-  const [fallbackOps, setFallbackOps] = useState<FileOperation[]>([]);
+  const [fallbacksBySession, setFallbacksBySession] = useState<Map<string | null, FileOperation[]>>(
+    () => new Map(),
+  );
+  const fallbackOps = fallbacksBySession.get(sessionId) ?? EMPTY_FALLBACKS;
+  const setFallbackOps = useCallback((action: SetStateAction<FileOperation[]>) => {
+    setFallbacksBySession((stored) => {
+      const current = stored.get(sessionId) ?? EMPTY_FALLBACKS;
+      const next = typeof action === "function" ? action(current) : action;
+      if (next === current) return stored;
+
+      const updated = new Map(stored);
+      updated.delete(sessionId);
+      if (next.length > 0) updated.set(sessionId, next);
+      while (updated.size > MAX_TRACKED_FALLBACK_SESSIONS) {
+        const oldest = updated.keys().next();
+        if (oldest.done) break;
+        updated.delete(oldest.value);
+      }
+      return updated;
+    });
+  }, [sessionId]);
   const { resizing, startResize } = useFilePreviewResize({
     width,
     extraWidth,
     setWidth,
   });
 
-  const allOperations = useMemo(() => [...operations, ...fallbackOps], [operations, fallbackOps]);
+  const allOperations = useMemo(() => [...fallbackOps, ...operations], [operations, fallbackOps]);
   const filesystemFallbacks = useMemo(
     () => fallbackOps.filter((operation) => !operation.source && !operation.recordedStatus),
     [fallbackOps],
@@ -52,7 +74,6 @@ export function useFilePreview(
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on session change is intentional
-    setFallbackOps([]);
     setTabIds(readStoredFilePreviewTabs(sessionId));
     setListMode("latest");
   }, [sessionId]);
@@ -80,18 +101,18 @@ export function useFilePreview(
     setFallbackOps((items) => items.filter((item) => (
       !missingKeys.has(normalizeFileOperationPath(item.path))
     )));
-  }, []);
+  }, [setFallbackOps]);
   usePreviewFallbackExistence(filesystemFallbacks, baseDir, removeMissingFallbacks);
 
   const openOperation = useCallback((operation: FileOperation) => {
-    setFallbackOps((items) => operations.some((item) => item.id === operation.id) || items.some((item) => item.id === operation.id) ? items : [operation, ...items].slice(0, MAX_TABS));
+    setFallbackOps((items) => [operation, ...items.filter((item) => item.id !== operation.id)].slice(0, MAX_TABS));
     onChange?.({ previewOpen: true, previewActiveTab: operation.id });
     setTabIds((ids) => {
       const next = [operation.id, ...ids.filter((id) => id !== operation.id)];
       return next.slice(0, MAX_TABS);
     });
     return operation.id;
-  }, [onChange, operations]);
+  }, [onChange, setFallbackOps]);
 
   const openFullPath = useCallback((path: string) => {
     const fallback: FileOperation = {
@@ -105,7 +126,7 @@ export function useFilePreview(
     };
     setFallbackOps((items) => [fallback, ...items.filter((item) => item.id !== fallback.id)].slice(0, MAX_TABS));
     return openOperation(fallback);
-  }, [openOperation]);
+  }, [openOperation, setFallbackOps]);
 
   const openPath = useCallback((path: string) => {
     const operation = [...operations].reverse().find((op) => op.path === path);
@@ -128,7 +149,7 @@ export function useFilePreview(
     };
     setFallbackOps((items) => [operation, ...items.filter((item) => item.id !== operation.id)].slice(0, MAX_TABS));
     return openOperation(operation);
-  }, [openOperation]);
+  }, [openOperation, setFallbackOps]);
 
   const closeTab = useCallback((id: string) => {
     setTabIds((ids) => ids.filter((tabId) => tabId !== id));

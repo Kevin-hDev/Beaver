@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCallback, useState } from "react";
 import { checkPreviewFilesExist } from "@/services/file-preview";
 import { useFilePreview } from "../use-file-preview";
+import { useAgentSessionWorkspace } from "../use-agent-session-workspace";
 import type { FileOperation } from "@/types/file-preview";
 import { DEFAULT_AGENT_LOCAL_WORKSPACE } from "@/types/navigation";
 
@@ -65,6 +66,40 @@ describe("useFilePreview", () => {
 
     act(() => result.current.setActiveTab("operation-id"));
     expect(result.current.activeTab).toBe("operation-id");
+  });
+
+  it("restaure le fichier complet actif après un aller-retour entre sessions", async () => {
+    const path = "/repo/histoire.docx";
+    const selected = operation({ id: "operation-id", path, name: "histoire.docx" });
+    const { result, rerender } = renderHook(
+      ({ sessionId, operations }) => {
+        const { workspace, updateWorkspace } = useAgentSessionWorkspace(sessionId);
+        return useFilePreview(sessionId, operations, "/repo", {
+          open: workspace.previewOpen,
+          fullscreen: workspace.previewFullscreen,
+          activeTab: workspace.previewActiveTab,
+          onChange: updateWorkspace,
+        });
+      },
+      { initialProps: { sessionId: "session-a", operations: [selected] } },
+    );
+
+    act(() => {
+      result.current.openPath(path);
+      result.current.setFullscreen(true);
+    });
+    expect(result.current.activeTab).toBe(selected.id);
+
+    rerender({ sessionId: "session-b", operations: [] });
+    expect(result.current.activeTab).toBe("summary");
+    expect(result.current.tabs).toEqual([]);
+
+    rerender({ sessionId: "session-a", operations: [] });
+    await waitFor(() => {
+      expect(result.current.activeTab).toBe(selected.id);
+      expect(result.current.fullscreen).toBe(true);
+      expect(result.current.tabs[0]?.path).toBe(path);
+    });
   });
 
   it("ouvre le fichier complet sans réutiliser une diff du même chemin", () => {
