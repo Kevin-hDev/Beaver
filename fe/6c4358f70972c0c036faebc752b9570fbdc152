@@ -1,0 +1,21 @@
+Audit maintenance — M02
+
+Décision produit : la commande d'autorisation reste lisible. Seules les valeurs reconnues comme secrets sont remplacées dans la représentation envoyée à l'interface ; la commande exécutée conserve les arguments originaux.
+
+Implémentation : `permission_request::native` devient l'autorité unique de l'affichage natif et réutilise le masque borné existant. Suppression de la branche de masquage inatteignable dans l'exécuteur parallèle, de `requires_sensitive_bash_prompt` et de leurs tests artificiels. Le classement des commandes sensibles reste assuré par `permission_bash::is_safe`.
+
+Preuve avant correction :
+- cargo test native_request_masks_only_secret_values_without_mutating_execution_arguments --lib -- --nocapture
+- échec attendu : aucun marqueur `[REDACTED]` dans la demande native
+
+Preuves après correction :
+- cargo test services::agent_local::permission_request::tests --lib -- --nocapture : 4 réussis
+- cargo test services::agent_local::permission_ --lib -- --nocapture : 51 réussis
+- npx vitest run src/components/agent-local/__tests__/permission-dialog.test.tsx : 7 réussis
+- cargo fmt --all -- --check : réussi
+- cargo check : réussi
+- npm run lint : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- graphify update . : réussi, 47 450 nœuds / 107 838 arêtes
+
+Limite : le parcours a été vérifié par les tests du constructeur Rust et du composant React ; aucune capture visuelle manuelle de l'application n'a été nécessaire car ni le composant ni son style ne changent.
