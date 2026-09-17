@@ -20,6 +20,7 @@ const host: ExtensionHostStatus = {
   jitiVersion: "2.7.0",
   apiVersion: "1",
   activeExtensions: 0,
+  activity: { events: { queued: 0, delivered: 0, dropped: 0, timedOut: 0, activeHandlers: 0 }, activeInterceptors: 0 },
   diagnostics: [],
 };
 const recovery: ExtensionRecoveryState = {

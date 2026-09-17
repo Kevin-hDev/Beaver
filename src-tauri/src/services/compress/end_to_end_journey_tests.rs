@@ -50,7 +50,7 @@ async fn migration_profile_snapshot_and_two_atomic_compressions_survive_restart(
     .expect("reload current session");
     assert_eq!(
         reloaded.version(),
-        crate::services::agent_local::session_migration::LoadedVersion::V6
+        crate::services::agent_local::session_migration::LoadedVersion::V7
     );
 
     let fixture = reloaded.into_session();

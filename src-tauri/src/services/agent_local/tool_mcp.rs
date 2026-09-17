@@ -1,7 +1,7 @@
 use serde_json::Value;
 
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::mcp_bridge::registry;
 use crate::services::mcp_bridge::transport::McpToolDef;
 
@@ -93,10 +93,7 @@ fn search_result(sections: Vec<String>, errors: Vec<String>) -> ToolResult {
     }
 
     let total: usize = sections.iter().map(|s| s.matches("\n  - ").count()).sum();
-    let output = format!(
-        "{total} outils MCP trouvés :\n\n{}",
-        sections.join("\n\n")
-    );
+    let output = format!("{total} outils MCP trouvés :\n\n{}", sections.join("\n\n"));
     if errors.is_empty() {
         ToolResult::ok(output)
     } else {
@@ -135,7 +132,10 @@ mod tests {
         );
 
         assert_eq!(failed.status, ToolResultStatus::Error);
-        assert_eq!(failed.error.unwrap().code.as_ref(), "mcp_catalog_unavailable");
+        assert_eq!(
+            failed.error.unwrap().code.as_ref(),
+            "mcp_catalog_unavailable"
+        );
         assert_eq!(partial.status, ToolResultStatus::Partial);
         assert_eq!(partial.warnings.len(), 1);
     }

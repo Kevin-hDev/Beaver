@@ -1,4 +1,11 @@
-import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
+import {
+  HOST_EVENT_ACTIVITY_METHOD,
+  HOST_LOAD_STAGE_METHOD,
+  LIMITS,
+  LOAD_STAGES,
+  supportsEvent,
+  TIMEOUTS,
+} from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
@@ -7,25 +14,32 @@ import { snapshotToolResult } from "./tool-result-snapshot.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
 import { assertProtocolResultFits } from "./protocol-output.mjs";
 import { importExtensionModule } from "./module-loader.mjs";
+import { runWithCoreContext } from "./core-context.mjs";
+import { createEventDelivery } from "./event-delivery.mjs";
 const extensions = new Map();
 const tools = new Map();
+const eventDelivery = createEventDelivery(
+  () => extensions.values(),
+  (activity) => notifyCore(HOST_EVENT_ACTIVITY_METHOD, activity),
+);
 
 export async function resetExtensions() {
   await deactivateAll();
   return { reset: true };
 }
 
-export async function callExtensionTool(name, arguments_, context) {
+export async function callExtensionTool(name, arguments_, context, scope) {
   const entry = tools.get(name);
   if (!entry) throw new Error("tool_not_found");
   const executionContext = toolExecutionContext(context);
   let timer;
   const raw = await Promise.race([
-    Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext)),
+    runWithCoreContext(scope, () =>
+      Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext))),
     new Promise((_, reject) => {
       timer = setTimeout(
         () => reject(new Error("tool_timeout")),
-        TIMEOUTS.toolCallTimeoutMs,
+        Math.min(TIMEOUTS.toolCallTimeoutMs, scope.remainingMs),
       );
       timer.unref();
     }),
@@ -87,18 +101,17 @@ function isLowSurrogate(value) {
 
 export async function emitExtensionEvent(event, payload) {
   if (!supportsEvent(event)) throw new Error("invalid_event_name");
-  for (const extension of extensions.values()) {
-    try {
-      await extension.context.emit(event, payload);
-    } catch {
-      // One extension cannot prevent delivery to the others.
-    }
-  }
-  return { delivered: extensions.size };
+  return eventDelivery.enqueue(event, payload);
 }
 
 export async function callExtensionUiAction(params) {
   return invokeUiAction(extensions.get(params?.extensionId), params);
+}
+
+export async function callExtensionInterceptor(extensionId, call) {
+  const extension = extensions.get(extensionId);
+  if (!extension?.context.interceptor) throw new Error("extension_not_found");
+  return extension.context.interceptor.invoke(call);
 }
 
 export async function loadExtension(specification) {
@@ -112,7 +125,7 @@ export async function loadExtensionWithApi(specification, createApi) {
       throw new Error("invalid_extension_specification");
     }
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
-    const context = createApi(specification);
+    const context = createApi(specification, eventDelivery.handlerActivity);
     const module = await importExtensionModule(specification.mainPath);
     stage = LOAD_STAGES[1];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
@@ -134,6 +147,7 @@ export async function loadExtensionWithApi(specification, createApi) {
         skills: context.skills,
         resources: context.resources,
         events: [...context.events.keys()],
+        interceptors: context.interceptor?.contributions() ?? [],
         ui: context.ui.contributions,
       },
       uiDiagnostics: context.ui.diagnostics,

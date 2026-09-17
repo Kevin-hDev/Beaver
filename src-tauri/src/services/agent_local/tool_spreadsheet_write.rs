@@ -73,15 +73,20 @@ pub async fn write_spreadsheet(path: &str, operations: &Value, working_dir: &Pat
     let ops = match coerce(operations, MAX_SPREADSHEET_OPERATIONS) {
         Ok(operations) => operations,
         Err(ArrayInputError::Invalid) => {
-            return ToolResult::validation("spreadsheet_operations_invalid", format!(
-                "Le paramètre 'operations' doit être un tableau d'opérations. Reçu: {}",
-                describe_value_type(operations)
-            ))
+            return ToolResult::validation(
+                "spreadsheet_operations_invalid",
+                format!(
+                    "Le paramètre 'operations' doit être un tableau d'opérations. Reçu: {}",
+                    describe_value_type(operations)
+                ),
+            )
         }
-        Err(ArrayInputError::TooMany) => return ToolResult::validation(
-            "spreadsheet_operation_limit_exceeded",
-            format!("Trop d'opérations (maximum {MAX_SPREADSHEET_OPERATIONS})"),
-        ),
+        Err(ArrayInputError::TooMany) => {
+            return ToolResult::validation(
+                "spreadsheet_operation_limit_exceeded",
+                format!("Trop d'opérations (maximum {MAX_SPREADSHEET_OPERATIONS})"),
+            )
+        }
     };
 
     let count = ops.len();

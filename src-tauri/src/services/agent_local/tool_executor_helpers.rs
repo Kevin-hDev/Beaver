@@ -135,6 +135,10 @@ pub fn resolve_tool_path(
     resolved.to_str().map(|s| s.to_string())
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "tool orchestration keeps permission and turn context explicit"
+)]
 pub async fn dispatch_or_interactive(
     on_event: &AgentEventEmitter,
     name: &str,
@@ -142,6 +146,8 @@ pub async fn dispatch_or_interactive(
     working_dir: &std::path::Path,
     trace: super::tool_dispatch_trace::DispatchTrace<'_>,
     cancel: CancellationToken,
+    permission_mode: &str,
+    plan_active: bool,
     tool_call_index: Option<usize>,
 ) -> ToolResult {
     let session_id = trace.session_id;
@@ -164,7 +170,7 @@ pub async fn dispatch_or_interactive(
     let progress = tool_call_index
         .filter(|_| matches!(name, "bash" | "bash_control"))
         .map(|index| super::tool_bash_progress::ShellProgress::new(on_event.clone(), index));
-    super::tool_dispatcher::dispatch_with_progress(
+    super::tool_dispatcher::dispatch_authorized_with_progress(
         name,
         args,
         working_dir,
@@ -172,6 +178,11 @@ pub async fn dispatch_or_interactive(
         cancel,
         false,
         progress,
+        super::tool_dispatcher::ToolDispatchAuthority {
+            on_event: on_event.clone(),
+            permission_mode: permission_mode.to_string(),
+            plan_active,
+        },
     )
     .await
 }

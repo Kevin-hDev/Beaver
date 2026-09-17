@@ -76,6 +76,9 @@ mod session_migration_legacy_history;
 mod session_migration_tests;
 mod session_migration_v5;
 mod session_migration_v6;
+mod session_migration_v7;
+#[cfg(test)]
+mod session_migration_v7_tests;
 mod session_migration_version;
 mod session_migration_wire;
 mod session_mutations;

@@ -30,12 +30,24 @@ pub fn render(contract: &Value) -> Result<String, String> {
     output.push_str("}\n");
     super::r0_enum_renderer::render(&mut output, contract)?;
     for (name, values) in [
+        (
+            "EXTENSION_CAPABILITIES",
+            array_value(contract, "capabilities")?,
+        ),
+        (
+            "OPTIONAL_EXTENSION_CAPABILITIES",
+            array_value(contract, "optionalCapabilities")?,
+        ),
         ("PROTOCOL_ERROR_REASONS", array(errors, "protocolReasons")?),
         (
             "CORE_TO_HOST_METHODS",
             array(object(contract, "methods")?, "coreToHost")?,
         ),
         ("EXTENSION_EVENTS", array_value(contract, "events")?),
+        (
+            "MODEL_FINISH_REASONS",
+            array_value(contract, "modelFinishReasons")?,
+        ),
     ] {
         render_slice(&mut output, name, values)?;
     }
@@ -54,6 +66,14 @@ pub fn render(contract: &Value) -> Result<String, String> {
     render_slice(&mut output, "EXTENSION_EFFECT_CLASSES", effects)?;
     super::effect_renderer::render(&mut output, effects)?;
     render_host_methods(
+        &mut output,
+        array(object(contract, "methods")?, "hostToCore")?,
+    )?;
+    output.push_str(&format!(
+        "pub const CORE_CONTEXT_ENVELOPE_FIELD: &str = {:?};\n",
+        string(object(contract, "transport")?, "contextEnvelopeField")?
+    ));
+    super::core_rust_renderer::render(
         &mut output,
         array(object(contract, "methods")?, "hostToCore")?,
     )?;
@@ -85,20 +105,7 @@ fn render_host_methods(output: &mut String, methods: &[Value]) -> Result<(), Str
         "#[allow(dead_code)]\npub const HOST_TO_CORE_METHODS: &[(&str, &str, &str, Option<usize>)] = &[{}];\n",
         rendered.join(", ")
     ));
-    let notifications = methods
-        .iter()
-        .filter(|method| method["kind"] == "notification")
-        .collect::<Vec<_>>();
-    if notifications.len() != 1 {
-        return Err("expected one host load stage notification".to_string());
-    }
-    let notification = notifications[0]
-        .as_object()
-        .ok_or_else(|| "invalid host method contract".to_string())?;
-    output.push_str(&format!(
-        "#[allow(dead_code)]\npub const HOST_LOAD_STAGE_METHOD: &str = {:?};\n",
-        string(notification, "name")?
-    ));
+    output.push_str(&super::notification_renderer::render(methods)?);
     Ok(())
 }
 

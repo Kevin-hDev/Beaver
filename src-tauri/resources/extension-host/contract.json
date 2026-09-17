@@ -1,32 +1,536 @@
 {
   "apiVersion": "1",
   "capabilities": ["tools", "events", "ui"],
-  "optionalCapabilities": ["skills", "resources", "richToolResults"],
+  "optionalCapabilities": [
+    "skills",
+    "resources",
+    "richToolResults",
+    "models",
+    "memory",
+    "automations",
+    "subagents",
+    "toolInterception"
+  ],
   "contributionTypes": ["tool", "event", "ui", "skill", "resource"],
   "resultBlockTypes": ["text", "file"],
   "resultFilePurposes": ["artifact", "preview"],
   "resourceTypes": ["text", "image", "file"],
+  "modelFinishReasons": ["stop", "length", "contentFilter"],
   "methods": {
-    "coreToHost": ["host.hello", "host.reset", "host.load", "tool.call", "event.emit", "ui.action"],
+    "coreToHost": [
+      "host.hello",
+      "host.reset",
+      "host.load",
+      "tool.call",
+      "event.emit",
+      "ui.action",
+      "tool.intercept"
+    ],
     "hostToCore": [
-      { "name": "app.info", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "sessions.list", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "sessions.get", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "projects.list", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "mcp.connectors.list", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "mcp.tool.call", "level": "stable", "kind": "request", "rustBudgetMs": 25000 },
-      { "name": "channels.config.get", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "secrets.provider.get", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "secrets.mcp.oauth.get", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "secrets.mcp.env.get", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "secrets.channel.get", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
-      { "name": "host.load.stage", "level": "stable", "kind": "notification", "rustBudgetMs": null }
+      {
+        "name": "app.info",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "sessions.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "sessions.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "projects.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "mcp.connectors.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "mcp.tool.call",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 25000,
+        "idempotent": false
+      },
+      {
+        "name": "channels.config.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "secrets.provider.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "secrets.mcp.oauth.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "secrets.mcp.env.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "secrets.channel.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "idempotent": true
+      },
+      {
+        "name": "models.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "models",
+        "requiresContext": false,
+        "idempotent": true,
+        "effects": ["read-only"],
+        "params": [
+          {
+            "name": "connectionId",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          },
+          {
+            "name": "cursor",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "modelPage"
+      },
+      {
+        "name": "models.generate",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 25000,
+        "capability": "models",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["external-write", "process"],
+        "params": [
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "limit": "maxModelPromptBytes"
+          },
+          {
+            "name": "connectionId",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          },
+          {
+            "name": "modelId",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          },
+          {
+            "name": "maxOutputTokens",
+            "type": "integer",
+            "required": false,
+            "limit": "maxModelOutputTokens"
+          }
+        ],
+        "result": "modelGeneration"
+      },
+      {
+        "name": "memory.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "memory",
+        "requiresContext": true,
+        "idempotent": true,
+        "effects": ["read-only"],
+        "params": [
+          { "name": "scope", "type": "memoryScope", "required": true },
+          {
+            "name": "cursor",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "memoryPage"
+      },
+      {
+        "name": "memory.read",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "memory",
+        "requiresContext": true,
+        "idempotent": true,
+        "effects": ["read-only"],
+        "params": [
+          { "name": "scope", "type": "memoryScope", "required": true },
+          {
+            "name": "topicId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "memoryTopic"
+      },
+      {
+        "name": "memory.write",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "memory",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["local-write"],
+        "params": [
+          { "name": "scope", "type": "memoryScope", "required": true },
+          {
+            "name": "topicId",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          },
+          {
+            "name": "expectedUpdatedAt",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "limit": "maxMessageBytes"
+          }
+        ],
+        "result": "memoryMutation"
+      },
+      {
+        "name": "memory.archive",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "memory",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["local-write"],
+        "params": [
+          { "name": "scope", "type": "memoryScope", "required": true },
+          {
+            "name": "topicId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "memoryMutation"
+      },
+      {
+        "name": "automations.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "automations",
+        "requiresContext": true,
+        "idempotent": true,
+        "effects": ["read-only"],
+        "params": [
+          {
+            "name": "cursor",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "automationPage"
+      },
+      {
+        "name": "automations.create",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "automations",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["local-write"],
+        "params": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "limit": "maxExtensionNameChars"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "limit": "maxExtensionTextChars"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "limit": "maxMessageBytes"
+          },
+          { "name": "schedule", "type": "object", "required": true }
+        ],
+        "result": "automation"
+      },
+      {
+        "name": "automations.update",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "automations",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["local-write"],
+        "params": [
+          {
+            "name": "automationId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          },
+          { "name": "revision", "type": "integer", "required": true },
+          {
+            "name": "name",
+            "type": "string",
+            "required": false,
+            "limit": "maxExtensionNameChars"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "limit": "maxExtensionTextChars"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": false,
+            "limit": "maxMessageBytes"
+          },
+          { "name": "schedule", "type": "object", "required": false }
+        ],
+        "result": "automation"
+      },
+      {
+        "name": "automations.setActive",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "automations",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["local-write", "process"],
+        "params": [
+          {
+            "name": "automationId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          },
+          { "name": "revision", "type": "integer", "required": true },
+          { "name": "active", "type": "boolean", "required": true }
+        ],
+        "result": "automation"
+      },
+      {
+        "name": "automations.delete",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "automations",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["local-write", "process"],
+        "params": [
+          {
+            "name": "automationId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          },
+          { "name": "revision", "type": "integer", "required": true }
+        ],
+        "result": "automationMutation"
+      },
+      {
+        "name": "subagents.spawn",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "subagents",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["process"],
+        "params": [
+          { "name": "type", "type": "subagentType", "required": true },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "limit": "maxMessageBytes"
+          }
+        ],
+        "result": "subagent"
+      },
+      {
+        "name": "subagents.list",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "subagents",
+        "requiresContext": true,
+        "idempotent": true,
+        "effects": ["read-only"],
+        "params": [
+          {
+            "name": "cursor",
+            "type": "string",
+            "required": false,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "subagentPage"
+      },
+      {
+        "name": "subagents.get",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "subagents",
+        "requiresContext": true,
+        "idempotent": true,
+        "effects": ["read-only"],
+        "params": [
+          {
+            "name": "subagentId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "subagent"
+      },
+      {
+        "name": "subagents.send",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "subagents",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["process"],
+        "params": [
+          {
+            "name": "subagentId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          },
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "limit": "maxMessageBytes"
+          }
+        ],
+        "result": "subagentMutation"
+      },
+      {
+        "name": "subagents.cancel",
+        "level": "stable",
+        "kind": "request",
+        "rustBudgetMs": 0,
+        "capability": "subagents",
+        "requiresContext": true,
+        "idempotent": false,
+        "effects": ["process"],
+        "params": [
+          {
+            "name": "subagentId",
+            "type": "string",
+            "required": true,
+            "limit": "maxIdentifierChars"
+          }
+        ],
+        "result": "subagentMutation"
+      },
+      {
+        "name": "host.load.stage",
+        "level": "stable",
+        "kind": "notification",
+        "rustBudgetMs": null
+      },
+      {
+        "name": "host.event.activity",
+        "level": "stable",
+        "kind": "notification",
+        "rustBudgetMs": null
+      }
     ]
   },
-  "events": ["session.turn.started"],
+  "transport": {
+    "contextEnvelopeField": "__beaverContext",
+    "interceptorContributionField": "interceptors"
+  },
+  "events": [
+    "session.turn.started",
+    "session.turn.completed",
+    "session.turn.failed",
+    "session.turn.cancelled",
+    "tool.execution.started",
+    "tool.execution.finished",
+    "automation.execution.started",
+    "automation.execution.finished",
+    "subagent.status.changed"
+  ],
   "hostStates": ["stopped", "starting", "running", "error"],
   "loadStages": ["import", "activate", "register"],
-  "effectClasses": ["read-only", "local-write", "external-read", "external-write", "process", "secret", "unknown"],
+  "effectClasses": [
+    "read-only",
+    "local-write",
+    "external-read",
+    "external-write",
+    "process",
+    "secret",
+    "unknown"
+  ],
   "limits": {
     "maxExtensions": 132,
     "maxUserExtensions": 128,
@@ -65,7 +569,20 @@
     "maxProjectResults": 500,
     "maxPermissionSummaryChars": 512,
     "maxIdentifierChars": 96,
-    "maxContractCodeChars": 96
+    "maxContractCodeChars": 96,
+    "maxActiveContexts": 64,
+    "maxContextsPerHostIdentity": 8,
+    "maxCoreCallsPerHostIdentity": 8,
+    "maxModelGenerationsPerHostIdentity": 2,
+    "maxModelGenerations": 8,
+    "maxModelPromptBytes": 65536,
+    "maxModelOutputTokens": 4096,
+    "maxModelResultBytes": 262144,
+    "maxEventQueuePerHost": 32,
+    "maxEventBytes": 16384,
+    "maxInterceptors": 8,
+    "maxAutomationsPerExtension": 8,
+    "maxSdkPageResults": 50
   },
   "timeouts": {
     "coreRequestTimeoutMs": 30000,
@@ -74,12 +591,34 @@
     "uiActionTimeoutMs": 15000,
     "hostRequestTimeoutMs": 60000,
     "eventHandlerTimeoutMs": 5000,
-    "hostStopTimeoutMs": 5000
+    "hostStopTimeoutMs": 5000,
+    "modelGenerationTimeoutMs": 25000,
+    "interceptorHandlerTimeoutMs": 250,
+    "interceptorChainTimeoutMs": 1000
   },
   "validation": { "maxNumericLimit": 1073741824 },
   "diagnostics": {
-    "hostCodes": ["module_not_found", "syntax_error", "activation_failed", "registration_failed", "import_failed", "resource_unavailable", "result_invalid"],
-    "runtimeCodes": ["entry_unavailable", "load_failed", "host_missing_response", "advanced_required", "ui_manifest_legacy"]
+    "hostCodes": [
+      "module_not_found",
+      "syntax_error",
+      "activation_failed",
+      "registration_failed",
+      "import_failed",
+      "resource_unavailable",
+      "result_invalid"
+    ],
+    "runtimeCodes": [
+      "entry_unavailable",
+      "load_failed",
+      "host_missing_response",
+      "advanced_required",
+      "ui_manifest_legacy",
+      "interceptor_invalid",
+      "interceptor_failed",
+      "interceptor_timeout",
+      "interceptor_limit_exceeded",
+      "interception_budget_exhausted"
+    ]
   },
   "errors": {
     "backendCodes": [
@@ -138,8 +677,52 @@
       "extensions_result_too_large",
       "extensions_listing_unavailable",
       "extensions_inspection_invalid",
-      "extensions_inspection_unavailable"
+      "extensions_inspection_unavailable",
+      "extensions_context_required",
+      "extensions_context_invalid",
+      "extensions_context_expired",
+      "extensions_context_revoked",
+      "extensions_permission_denied",
+      "extensions_core_saturated",
+      "extensions_core_cancelled",
+      "extensions_partial_apply",
+      "extensions_model_unavailable",
+      "extensions_eager_interception_conflict",
+      "extensions_interception_individual_timeout",
+      "extensions_interception_chain_timeout"
     ],
-    "protocolReasons": ["core_busy", "core_request_timeout", "core_transport_failed", "core_method_unavailable", "core_request_failed", "extension_host_busy", "extension_host_request_failed", "extension_host_fatal"]
+    "protocolReasons": [
+      "core_busy",
+      "core_request_timeout",
+      "core_transport_failed",
+      "core_method_unavailable",
+      "core_request_failed",
+      "core_context_required",
+      "core_context_invalid",
+      "core_context_expired",
+      "core_context_revoked",
+      "core_permission_denied",
+      "core_saturated",
+      "core_cancelled",
+      "core_partial_apply",
+      "core_model_unavailable",
+      "core_memory_not_found",
+      "core_memory_stale",
+      "core_automation_not_found",
+      "core_automation_revision_conflict",
+      "core_automation_globally_paused",
+      "core_automation_consent_required",
+      "interception_individual_timeout",
+      "interception_chain_timeout",
+      "extension_host_busy",
+      "extension_host_request_failed",
+      "extension_host_fatal"
+    ],
+    "retryableReasons": [
+      "core_busy",
+      "core_request_timeout",
+      "core_transport_failed",
+      "core_saturated"
+    ]
   }
 }

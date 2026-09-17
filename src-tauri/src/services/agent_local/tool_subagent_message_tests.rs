@@ -6,8 +6,12 @@ use tokio_util::sync::CancellationToken;
 #[tokio::test]
 async fn duplicate_delivery_returns_explicit_success_without_requeueing() {
     let (parent, mut child) = running_child().await;
-    child.subagent_queued_prompts.push("Corrige le résultat".into());
-    session_store::save(&child).await.expect("save queued prompt");
+    child
+        .subagent_queued_prompts
+        .push("Corrige le résultat".into());
+    session_store::save(&child)
+        .await
+        .expect("save queued prompt");
     super::super::subagent_instruction_delivery::drain(&child.id, &mut Vec::new())
         .await
         .expect("deliver prompt");
@@ -31,23 +35,26 @@ async fn duplicate_delivery_returns_explicit_success_without_requeueing() {
 #[tokio::test]
 async fn delivered_text_is_accepted_again_for_a_new_execution() {
     let (parent, mut child) = running_child().await;
-    child.subagent_queued_prompts.push("Corrige le résultat".into());
-    session_store::save(&child).await.expect("save queued prompt");
+    child
+        .subagent_queued_prompts
+        .push("Corrige le résultat".into());
+    session_store::save(&child)
+        .await
+        .expect("save queued prompt");
     super::super::subagent_instruction_delivery::drain(&child.id, &mut Vec::new())
         .await
         .expect("deliver prompt");
     subagent_registry::unregister(&child.id).await;
-    let next = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register new execution");
+    let next =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register new execution");
     child = session_store::get(&child.id).await.expect("reload child");
     child.subagent_run_id = Some(next.run_id);
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    session_store::save(&child).await.expect("save new execution");
+    session_store::save(&child)
+        .await
+        .expect("save new execution");
 
     let result = message(
         &json!({"subagent_id": child.id, "prompt": " Corrige   le résultat "}),
@@ -58,7 +65,10 @@ async fn delivered_text_is_accepted_again_for_a_new_execution() {
 
     cleanup(&parent.id, &child.id).await;
     assert!(!result.is_error);
-    assert_eq!(saved.subagent_queued_prompts, vec![" Corrige   le résultat "]);
+    assert_eq!(
+        saved.subagent_queued_prompts,
+        vec![" Corrige   le résultat "]
+    );
 }
 
 #[tokio::test]
@@ -137,7 +147,9 @@ async fn running_child() -> (
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
     session_store::delete_one(parent_id)
         .await
         .expect("delete parent");

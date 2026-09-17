@@ -29,6 +29,7 @@ pub async fn run_sequential(
     plan_mode_active: bool,
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     let mut outcome = ToolExecutionOutcome::default();
     for (idx, (name, args)) in tool_calls.iter().enumerate() {
@@ -100,6 +101,29 @@ pub async fn run_sequential(
             PreHookDecision::Allow => {}
         }
 
+        if let Some(next) = super::tool_executor_sequential_support::intercept_and_publish(
+            interception,
+            on_event,
+            messages,
+            name,
+            args,
+            working_dir,
+            &cancel,
+            session_id,
+            request_id,
+            &arg_summary,
+            idx,
+            tool_call_ids,
+            compression,
+        )
+        .await
+        {
+            if !merge_or_stop(&mut outcome, next) {
+                return outcome;
+            }
+            continue;
+        }
+
         if let Err(msg) = check_write_guard(name, args, working_dir, write_guard) {
             let tr = super::tool_executor_errors::permission(msg, "write_guard_rejected");
             super::tool_executor_diagnostics::completed(
@@ -150,8 +174,11 @@ pub async fn run_sequential(
                     super::tool_dispatch_trace::DispatchTrace {
                         session_id,
                         request_id: Some(request_id),
+                        tool_call_id: tool_call_ids.get(idx).map(String::as_str),
                     },
                     cancel.clone(),
+                    "manual",
+                    plan_mode_active,
                     Some(idx),
                 )
                 .await

@@ -1,5 +1,9 @@
 use super::ui_types::UiActionPayload;
 
+pub(crate) fn automation_owner_is_current(owner: &crate::models::AutomationExtensionOwner) -> bool {
+    super::registry_access::automation_owner_is_current(owner)
+}
+
 pub fn discovery_preferences() -> Result<super::DiscoveryPreferences, String> {
     super::discovery_preferences::get()
 }

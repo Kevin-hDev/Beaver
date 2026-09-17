@@ -34,18 +34,10 @@ pub async fn dispatch(
     if let Some(result) = super::tool_dispatcher_mcp::dispatch_mcp(tool_name, args).await {
         return result;
     }
-    match super::tool_dispatcher_office::dispatch_office(
-        tool_name,
-        args,
-        working_dir,
-        session_id,
-    )
-    .await
+    match super::tool_dispatcher_office::dispatch_office(tool_name, args, working_dir, session_id)
+        .await
     {
         Some(result) => result,
-        None => ToolResult::validation(
-            "unknown_tool",
-            format!("Outil inconnu: {tool_name}"),
-        ),
+        None => ToolResult::validation("unknown_tool", format!("Outil inconnu: {tool_name}")),
     }
 }

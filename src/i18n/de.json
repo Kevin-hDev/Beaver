@@ -27,7 +27,7 @@
     "usage": {
       "requestMetrics": { "title": "Detaillierte Messungen", "empty": "Keine gemessene Anfrage", "unavailable": "Detaillierte Messungen nicht verfügbar", "latestRequest": "Letzte Anfrage", "routedProvider": "Tatsächlich verwendeter Anbieter", "providerRequestId": "Provider-Anfrage-ID", "finishReason": "Beendigungsgrund", "latestSession": "Letzte gemessene Sitzung", "turn": "Runde {{value}}", "attempt": "Versuch {{value}}", "headers": "Serverantwort", "firstEvent": "Erstes Ereignis", "firstUseful": "Erstes Ergebnis", "totalDuration": "Gesamtdauer", "usageIncomplete": "Token-Daten sind unvollständig", "statuses": { "completed": "Abgeschlossen", "interrupted": "Für Komprimierung unterbrochen", "cancelled": "Abgebrochen", "failed": "Fehlgeschlagen" } },
       "providerTitle": "Anbieterlimits und Guthaben", "generalLimitsTitle": "Allgemeine Nutzungslimits", "namedLimitsTitle": "Nutzungslimits für {{name}}", "localTitle": "Nutzung in Beaver", "refresh": "Aktualisieren", "remoteUnavailable": "Kontodaten sind nicht verfügbar", "remainingPercent": "{{value}} % verbleibend", "updated": "Aktualisiert", "stale": "Ältere Daten", "resetsAt": "Zurücksetzung: {{date}}", "openProviderSite": "Beim Anbieter ansehen", "periodLabel": "Zeitraum", "historyEmpty": "Keine Nutzung erfasst", "requests": "Anfragen", "inputTokens": "Eingabe-Tokens", "outputTokens": "Ausgabe-Tokens", "cachedTokens": "Aus dem Cache gelesene Tokens", "cacheWriteTokens": "In den Cache geschriebene Tokens", "cacheMissTokens": "Nicht gecachte Tokens", "reasoningTokens": "Reasoning-Tokens", "totalTokens": "Tokens gesamt", "cost": "Kosten", "byOrigin": "Nach Ursprung", "byWorkload": "Nach Arbeit",
-      "periods": { "today": "Heute", "seven_days": "7 Tage", "thirty_days": "30 Tage", "all_time": "Gesamt" }, "quality": { "exact": "Exakt", "estimated": "Geschätzt", "partial": "Teilweise", "unavailable": "Nicht verfügbar" }, "origins": { "manual_chat": "Manueller Chat", "external_channel": "Externer Kanal", "automation": "Automatisierung" }, "workloads": { "primary": "Primär", "subagent": "Unteragent", "compression": "Komprimierung" },
+      "periods": { "today": "Heute", "seven_days": "7 Tage", "thirty_days": "30 Tage", "all_time": "Gesamt" }, "quality": { "exact": "Exakt", "estimated": "Geschätzt", "partial": "Teilweise", "unavailable": "Nicht verfügbar" }, "origins": { "manual_chat": "Manueller Chat", "external_channel": "Externer Kanal", "automation": "Automatisierung" }, "workloads": { "primary": "Primär", "subagent": "Unteragent", "compression": "Komprimierung", "extension": "Erweiterung" },
       "windows": { "today": "Heute", "seven_days": "7 Tage", "thirty_days": "30 Tage", "key_limit": "Schlüssellimit", "requests_day": "Anfragen pro Tag", "tokens_minute": "Tokens pro Minute", "requests_limit": "Anfragelimit", "tokens_limit": "Tokenlimit", "rolling_five_hours": "5-Stunden-Fenster", "weekly": "Wochenlimit", "provider_limit": "Anbieterlimit" }, "balances": { "remaining_credits": "Verbleibendes Guthaben", "available_balance": "Verfügbares Guthaben", "voucher_balance": "Gutscheinguthaben", "cash_balance": "Barguthaben", "reset_credits": "Zurücksetzungsguthaben", "extra_usage_balance": "Extra-Usage-Guthaben", "extra_usage_monthly_limit": "Monatliches Extra-Usage-Limit", "extra_usage_monthly_used": "Diesen Monat genutzte Extra Usage" }, "notices": { "usage_fetch_failed": "Die Anbieterdaten konnten nicht aktualisiert werden. Aktuelle gültige Daten bleiben sichtbar.", "provider_usage_site_only": "xAI veröffentlicht keinen Zugriff auf diese Limits. Die lokale Nutzung bleibt verfügbar.", "provider_account_usage_unavailable": "Dieser Anbieter veröffentlicht für diese Verbindung keine Kontolimits.", "openrouter_account_balance_requires_management_key": "Das OpenRouter-Kontoguthaben erfordert einen Verwaltungsschlüssel. Ein für diesen Schlüssel gesetztes Limit bleibt sichtbar." }
     }
   },
@@ -713,6 +713,9 @@
     "delete": "Löschen",
     "confirmDelete": "Löschen bestätigen",
     "pausedHint": "Wakeups pausiert — Hauptschalter deaktivieren",
+    "approveExtension": "Erneut genehmigen und aktivieren",
+    "origins": { "session": "Sitzung", "external_channel": "Externer Kanal", "user_interface": "Beaver", "extension": "Erweiterung" },
+    "inactiveReasons": { "approval_required": "Diese Automatisierung muss nach der Änderung erneut genehmigt werden.", "owner_unavailable": "Die zugehörige Erweiterung ist nicht mehr verfügbar.", "owner_invalid": "Die Eigentümerinformationen sind ungültig." },
     "badges": {
       "active": "Aktiv",
       "disabled": "Deaktiviert",
@@ -730,7 +733,8 @@
       "lastRun": "Letzte Ausführung",
       "description": "Beschreibung",
       "prompt": "Prompt",
-      "target": "Sitzung"
+      "target": "Sitzung",
+      "origin": "Ursprung"
     },
     "status": {
       "ok": "Erfolgreich",
@@ -801,7 +805,7 @@
     },
     "target": { "new_session": "Neue Sitzung", "resume_session": "Bestehende Sitzung" },
     "migration": { "title": "Wakeup-Migration", "timezone": "Bestätige die Zeitzone der bestehenden Wakeups.", "conflicts": "Einige alte Wakeups benötigen eine Entscheidung.", "remove": "Altes entfernen", "import": "Als neu importieren", "continue": "Weiter" },
-    "errors": { "audit_unavailable": "Das Auditprotokoll ist nicht verfügbar. Änderungen sind blockiert.", "store_unavailable": "Wakeups sind vorübergehend nicht verfügbar.", "migration_unavailable": "Die Migration ist nicht verfügbar.", "invalid_timezone": "Die Zeitzone ist ungültig.", "invalid_schedule": "Der Zeitplan ist ungültig.", "model_unavailable": "Das Modell ist nicht verfügbar.", "provider_unavailable": "Der Anbieter ist nicht verfügbar.", "not_found": "Das Wakeup existiert nicht mehr.", "globally_paused": "Wakeups sind pausiert.", "invalid_project": "Das Projekt ist ungültig.", "invalid_input": "Ein oder mehrere Felder sind ungültig.", "pauseAll": "Alle pausieren" }
+    "errors": { "capacity_reached": "Das Automatisierungslimit wurde erreicht.", "immutable_field": "Dieses Feld kann nicht geändert werden.", "model_tools_unsupported": "Dieses Modell unterstützt die erforderlichen Werkzeuge nicht.", "cursor_expired": "Diese Seite ist abgelaufen. Laden Sie den Verlauf neu.", "audit_unavailable": "Das Auditprotokoll ist nicht verfügbar. Änderungen sind blockiert.", "store_unavailable": "Wakeups sind vorübergehend nicht verfügbar.", "migration_unavailable": "Die Migration ist nicht verfügbar.", "invalid_timezone": "Die Zeitzone ist ungültig.", "invalid_schedule": "Der Zeitplan ist ungültig.", "model_unavailable": "Das Modell ist nicht verfügbar.", "provider_unavailable": "Der Anbieter ist nicht verfügbar.", "not_found": "Das Wakeup existiert nicht mehr.", "revision_conflict": "Dieses Wakeup wurde geändert. Laden Sie es neu, bevor Sie es erneut versuchen.", "globally_paused": "Wakeups sind pausiert.", "consent_required": "Diese Änderung muss vor der Aktivierung genehmigt werden.", "invalid_project": "Das Projekt ist ungültig.", "invalid_input": "Ein oder mehrere Felder sind ungültig.", "pauseAll": "Alle pausieren" }
   },
   "personality": {
     "files": "Kern",
@@ -2033,6 +2037,10 @@
       "T": "Minute"
     },
     "errors": {
+      "capacity_reached": "Das Automatisierungslimit wurde erreicht.",
+      "immutable_field": "Dieses Feld kann nicht geändert werden.",
+      "model_tools_unsupported": "Dieses Modell unterstützt die benötigten Werkzeuge nicht.",
+      "cursor_expired": "Diese Verlaufsseite ist nicht mehr verfügbar.",
       "importFailed": "Import fehlgeschlagen. Prüfe das Dateiformat.",
       "launchFailed": "Die Berechnung ist fehlgeschlagen. Prüfe Spalten, Modell und API-Schlüssel.",
       "capacityReached": "Der Forecast-Speicher ist voll. Lösche ältere Analysen und versuche es erneut."
@@ -2462,6 +2470,7 @@
       "api": "Beaver-API",
     "active": "Aktive Erweiterungen",
     "diagnostics": "Letzte Ladefehler",
+      "activity": { "empty": "Noch keine Erweiterungsaktivität.", "interceptors": "Aktive Interzeptoren", "queued": "Empfangene Ereignisse", "delivered": "Zugestellte Ereignisse", "dropped": "Verworfene Ereignisse", "timedOut": "Abgelaufene Ereignisse", "activeHandlers": "Aktive Handler" },
       "unavailable": "Nicht verfügbar",
       "states": {
         "stopped": "Gestoppt",
@@ -2541,7 +2550,19 @@
         "extensions_result_too_large": "Das Erweiterungsergebnis ist zu groß.",
         "extensions_listing_unavailable": "Die Erweiterungsliste ist nicht verfügbar.",
         "extensions_inspection_invalid": "Die Erweiterungsprüfung ist ungültig.",
-        "extensions_inspection_unavailable": "Die Erweiterungsprüfung ist nicht verfügbar."
+        "extensions_inspection_unavailable": "Die Erweiterungsprüfung ist nicht verfügbar.",
+        "extensions_context_required": "Diese Erweiterungsaktion erfordert einen aktiven Agent-Durchlauf.",
+        "extensions_context_invalid": "Der Kontext der Erweiterungsaktion ist ungültig.",
+        "extensions_context_expired": "Der Kontext der Erweiterungsaktion ist abgelaufen.",
+        "extensions_context_revoked": "Die Erweiterungsaktion wurde widerrufen.",
+        "extensions_permission_denied": "Die Erweiterungsaktion ist nicht erlaubt.",
+        "extensions_core_saturated": "Beaver verarbeitet zu viele Erweiterungsaktionen.",
+        "extensions_core_cancelled": "Die Erweiterungsaktion wurde abgebrochen.",
+        "extensions_partial_apply": "Die Änderung wurde angewendet, aber ein Folgeschritt ist fehlgeschlagen.",
+        "extensions_model_unavailable": "Das angeforderte Modell ist nicht verfügbar.",
+        "extensions_interception_individual_timeout": "Eine Erweiterung hat zu lange für die Prüfung des Tool-Aufrufs benötigt.",
+        "extensions_interception_chain_timeout": "Die Erweiterungs-Prüfkette hat zu lange benötigt.",
+        "extensions_eager_interception_conflict": "Ein vorzeitig erzeugtes Tool-Ergebnis wurde abgelehnt, weil die Erweiterungsprüfung aktiv ist."
       }
     },
     "diagnostics": {
@@ -2559,6 +2580,11 @@
         "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
         "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich",
         "ui_manifest_legacy": "Die alte Oberflächendeklaration wurde ignoriert; die Tools bleiben verfügbar",
+        "interceptor_invalid": "Der Tool-Interzeptor ist ungültig",
+        "interceptor_failed": "Der Tool-Interzeptor ist fehlgeschlagen",
+        "interceptor_timeout": "Der Tool-Interzeptor hat zu lange benötigt",
+        "interceptor_limit_exceeded": "Zu viele Tool-Interzeptoren sind aktiv",
+        "interception_budget_exhausted": "Das Zeitbudget für die Tool-Prüfung ist erschöpft",
         "ui_contract_invalid": "Der Oberflächenvertrag ist ungültig",
         "ui_contribution_invalid": "Ein Oberflächenbeitrag ist ungültig",
         "ui_reference_missing": "Eine Oberflächenreferenz fehlt",

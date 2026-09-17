@@ -1,8 +1,6 @@
 use tokio_util::sync::CancellationToken;
 
-use super::interactive_choice_gate::{
-    InteractiveChoiceRequestError, InteractiveChoiceResponse,
-};
+use super::interactive_choice_gate::{InteractiveChoiceRequestError, InteractiveChoiceResponse};
 use super::stream_events::AgentEventEmitter;
 use super::types_interactive::{
     AgentInteractiveAnswer, AgentInteractiveChoiceKind, AgentInteractiveQuestion,

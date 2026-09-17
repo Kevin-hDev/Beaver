@@ -63,11 +63,12 @@ impl ExtensionRuntime {
                 .await);
         };
         self.set_host_version(&hello);
-        let bind =
-            self.hosts
-                .lock()
-                .await
-                .bind(reservation, api_level.clone(), Arc::clone(&process));
+        let bind = self.hosts.lock().await.bind(
+            reservation,
+            api_level.clone(),
+            Arc::clone(&process),
+            hello.capabilities.clone(),
+        );
         if let Err(reservation) = bind {
             return Err(self
                 .reject_spawn(

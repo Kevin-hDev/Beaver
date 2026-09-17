@@ -4,15 +4,13 @@ use super::protocol::HostToolResult;
 use super::types::MAX_WORKING_DIRECTORY_CHARS;
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::{json, Value};
-use std::path::Path;
 use std::sync::Arc;
-use tokio_util::sync::CancellationToken;
+use std::time::{Duration, Instant};
 
 pub async fn dispatch_tool(
     name: &str,
     arguments: &Value,
-    working_directory: &Path,
-    caller_cancel: CancellationToken,
+    agent_scope: super::core_scope::AgentCoreScope,
 ) -> Option<ToolResult> {
     let extension_id = super::registry_index::plugin_id_for_tool(name)?;
     let runtime = match super::runtime::global() {
@@ -21,15 +19,14 @@ pub async fn dispatch_tool(
     };
     let name = name.to_string();
     let arguments = arguments.clone();
-    let working_directory = working_directory.to_path_buf();
     let work = runtime.work.clone();
-    let caller_cancel = caller_cancel.clone();
+    let caller_cancel = agent_scope.cancel.clone();
     let result = work
         .run_operation(move |runtime_cancel| async move {
             tokio::select! {
                 _ = caller_cancel.cancelled() => ToolResult::cancelled("Annulé."),
                 _ = runtime_cancel.cancelled() => super::tool_result::unavailable(),
-                result = dispatch_tracked(&runtime, &extension_id, &name, &arguments, &working_directory) => result,
+                result = dispatch_tracked(&runtime, &extension_id, &name, &arguments, agent_scope) => result,
             }
         })
         .await;
@@ -41,31 +38,51 @@ async fn dispatch_tracked(
     extension_id: &str,
     name: &str,
     arguments: &Value,
-    working_directory: &Path,
+    agent_scope: super::core_scope::AgentCoreScope,
 ) -> ToolResult {
-    let host = match super::runtime_lifecycle::ensure_running(
-        extension_id,
-        super::runtime_lifecycle::new_stop_deadline(),
-    )
-    .await
+    let deadline =
+        Instant::now() + Duration::from_millis(super::types::TOOL_CALL_TIMEOUT_MS as u64);
+    if super::runtime_lifecycle::ensure_running(extension_id, deadline)
+        .await
+        .is_err()
     {
-        Ok(host) => host,
-        Err(_) => return super::tool_result::unavailable(),
-    };
-    let Some(working_directory) = working_directory.to_str() else {
+        return super::tool_result::unavailable();
+    }
+    let (identity, generation, host) =
+        match runtime.process_for_extension(extension_id, deadline).await {
+            Ok(channel) => channel,
+            Err(_) => return super::tool_result::unavailable(),
+        };
+    let Some(working_directory) = agent_scope.working_directory.to_str().map(str::to_string) else {
         return super::runtime_dispatch_result::extension_context_unavailable();
     };
     if working_directory.encode_utf16().count() > MAX_WORKING_DIRECTORY_CHARS {
         return super::runtime_dispatch_result::extension_context_unavailable();
     }
+    let tool_effect = super::registry_index::indexed_tool(name)
+        .map(|indexed| indexed.tool.effect)
+        .unwrap_or(super::types::ExtensionEffect::Unknown);
+    let lease = match runtime.work.core_scopes().admit(
+        identity,
+        generation,
+        agent_scope,
+        name.to_string(),
+        tool_effect,
+        deadline,
+    ) {
+        Ok(lease) => lease,
+        Err(_) => return core_saturated(),
+    };
     let response = host
-        .request(
+        .request_until(
             "tool.call",
             json!({
                 "name": name,
                 "arguments": arguments,
                 "context": {"workingDirectory": working_directory},
+                "scope": lease.envelope(),
             }),
+            deadline,
         )
         .await
         .and_then(super::runtime::parse::<HostToolResult>);
@@ -88,54 +105,13 @@ async fn dispatch_tracked(
     super::runtime_dispatch_result::to_tool_result(response)
 }
 
-pub async fn emit_event(name: &str, payload: Value) {
-    if super::validation::identifier(name).is_err() || super::validation::message(&payload).is_err()
-    {
-        return;
-    }
-    let Ok(runtime) = super::runtime::global().map(Arc::clone) else {
-        return;
-    };
-    let name = name.to_string();
-    let work = runtime.work.clone();
-    let _ = work
-        .run_operation(move |cancel| async move {
-            tokio::select! {
-                _ = cancel.cancelled() => {},
-                _ = emit_tracked(runtime, name, payload) => {},
-            }
-        })
-        .await;
-}
-
-async fn emit_tracked(
-    runtime: Arc<super::runtime::ExtensionRuntime>,
-    name: String,
-    payload: Value,
-) {
-    let snapshots = runtime.hosts.lock().await.usable_snapshots();
-    let mut calls = tokio::task::JoinSet::new();
-    for (identity, _, process) in snapshots {
-        let event = name.clone();
-        let body = payload.clone();
-        calls.spawn(async move {
-            let result = process
-                .request("event.emit", json!({"event": event, "payload": body}))
-                .await;
-            (identity, process, result.is_ok())
-        });
-    }
-    while let Some(Ok((identity, process, succeeded))) = calls.join_next().await {
-        if !succeeded {
-            invalidate(
-                &runtime,
-                identity,
-                process,
-                super::runtime_lifecycle::new_stop_deadline(),
-            )
-            .await;
-        }
-    }
+fn core_saturated() -> ToolResult {
+    ToolResult::error(
+        "Services d'extension temporairement occupés.",
+        super::types::backend_error_codes::CORE_SATURATED,
+        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Unavailable,
+        true,
+    )
 }
 
 async fn invalidate(

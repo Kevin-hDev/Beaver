@@ -70,9 +70,10 @@ pub(super) fn validate_output_format(path: &Path) -> Result<(), ToolResult> {
         .extension()
         .and_then(|value| value.to_str())
         .map(str::to_ascii_lowercase);
-    if extension.as_deref().is_some_and(|value| {
-        matches!(value, "jpg" | "jpeg" | "png" | "webp" | "gif" | "bmp")
-    }) {
+    if extension
+        .as_deref()
+        .is_some_and(|value| matches!(value, "jpg" | "jpeg" | "png" | "webp" | "gif" | "bmp"))
+    {
         return Ok(());
     }
     Err(ToolResult::validation(
@@ -115,9 +116,8 @@ fn bounded_coordinate(value: &Value, missing: &str) -> Result<u32, ToolResult> {
     let raw = value
         .as_u64()
         .ok_or_else(|| ToolResult::validation("image_coordinate_required", missing))?;
-    u32::try_from(raw).map_err(|_| {
-        ToolResult::validation("image_coordinate_too_large", "Coordonnée trop grande")
-    })
+    u32::try_from(raw)
+        .map_err(|_| ToolResult::validation("image_coordinate_too_large", "Coordonnée trop grande"))
 }
 
 fn ensure_pixel_budget(width: u32, height: u32) -> Result<(), ToolResult> {

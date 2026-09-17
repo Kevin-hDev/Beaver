@@ -46,15 +46,34 @@ impl SubagentToolProfile {
         if self == Self::Coder && skills_enabled {
             names.push("load_skill");
         }
+        names.extend([
+            crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
+            crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
+            super::tool_extension_resource::NAME,
+        ]);
         names
     }
 
     pub fn definitions(self, skills_enabled: bool) -> Vec<Value> {
         let allowed = self.tool_names(skills_enabled);
-        let mut definitions = super::tool_definitions::get_tool_definitions()
+        super::tool_definitions::get_tool_definitions()
             .into_iter()
-            .filter(|definition| {
-                definition_name(definition).is_some_and(|name| allowed.contains(&name))
+            .filter_map(|definition| {
+                let name = definition_name(&definition)?;
+                if let Some(indexed) = crate::services::extensions::indexed_tool(name) {
+                    if replacement_is_filtered(&definition, &allowed) {
+                        return None;
+                    }
+                    if self.allows_extension(indexed.tool.effect) {
+                        return Some(definition);
+                    }
+                    return crate::services::extensions::core_fallback(&definition)
+                        .filter(|fallback| {
+                            definition_name(fallback).is_some_and(|name| allowed.contains(&name))
+                        })
+                        .cloned();
+                }
+                allowed.contains(&name).then_some(definition)
             })
             .map(|mut definition| {
                 if let Some(name) = definition_name(&definition) {
@@ -64,17 +83,7 @@ impl SubagentToolProfile {
                 }
                 definition
             })
-            .collect::<Vec<_>>();
-        definitions.extend(
-            crate::services::extensions::extension_tool_definitions()
-                .into_iter()
-                .filter(|definition| {
-                    definition_name(definition)
-                        .and_then(crate::services::extensions::indexed_tool)
-                        .is_some_and(|indexed| self.allows_extension(indexed.tool.effect))
-                }),
-        );
-        definitions
+            .collect()
     }
 
     #[cfg(test)]
@@ -135,4 +144,28 @@ impl SubagentToolProfile {
 
 fn definition_name(definition: &Value) -> Option<&str> {
     definition.get("function")?.get("name")?.as_str()
+}
+
+fn replacement_is_filtered(definition: &Value, allowed: &[&str]) -> bool {
+    crate::services::extensions::core_fallback(definition).is_some()
+        && definition_name(definition).is_none_or(|name| !allowed.contains(&name))
+}
+
+#[cfg(test)]
+mod replacement_tests {
+    use serde_json::json;
+
+    #[test]
+    fn filtered_native_capability_cannot_return_through_a_replacement() {
+        let replacement = json!({
+            "_beaverCoreFallback": {"function": {"name": "write_file"}},
+            "function": {"name": "write_file"}
+        });
+
+        assert!(super::replacement_is_filtered(&replacement, &["read_file"]));
+        assert!(!super::replacement_is_filtered(
+            &replacement,
+            &["read_file", "write_file"]
+        ));
+    }
 }

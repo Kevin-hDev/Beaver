@@ -1,4 +1,4 @@
-use super::types::{CORE_REQUEST_TIMEOUT_MS, MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS};
+use super::types::{MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -11,10 +11,27 @@ pub enum CoreResponse {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ExtensionBridgeError {
+    Backend(&'static str),
     Denied,
     Failed,
+    MethodUnavailable,
+    Context(&'static str),
     Revoked,
     Timeout,
+}
+
+impl ExtensionBridgeError {
+    pub(super) fn reason(self) -> &'static str {
+        match self {
+            Self::Backend(reason) => reason,
+            Self::Denied => "core_permission_denied",
+            Self::Failed => "core_request_failed",
+            Self::MethodUnavailable => "core_method_unavailable",
+            Self::Context(reason) => reason,
+            Self::Revoked => "core_context_revoked",
+            Self::Timeout => "core_request_timeout",
+        }
+    }
 }
 
 pub async fn call(
@@ -50,12 +67,23 @@ async fn execute(
         return Err(ExtensionBridgeError::Denied);
     }
     let params = params.unwrap_or(&Value::Null);
-    let budget = request_budget(context, method).ok_or(ExtensionBridgeError::Denied)?;
+    let policy = super::core_api_dispatch::policy(context, method)?;
     validate_request_params(params)?;
     if context.revoked().is_cancelled() {
         return Err(ExtensionBridgeError::Revoked);
     }
-    await_unrevoked(context, budget, dispatch(method, params)).await
+    super::core_api_permissions::authorize(context, method, params, policy.effect).await?;
+    let budget = context.core_scope().map_or(policy.budget, |scope| {
+        policy.budget.min(
+            scope
+                .deadline
+                .saturating_duration_since(std::time::Instant::now()),
+        )
+    });
+    if budget.is_zero() {
+        return Err(ExtensionBridgeError::Timeout);
+    }
+    await_unrevoked(context, budget, dispatch(context, method, params)).await
 }
 
 async fn await_unrevoked<F>(
@@ -64,20 +92,50 @@ async fn await_unrevoked<F>(
     operation: F,
 ) -> Result<CoreResponse, ExtensionBridgeError>
 where
-    F: std::future::Future<Output = Result<CoreResponse, ()>>,
+    F: std::future::Future<Output = Result<CoreResponse, ExtensionBridgeError>>,
 {
     tokio::select! {
         biased;
         _ = context.revoked().cancelled() => Err(ExtensionBridgeError::Revoked),
+        _ = wait_for_turn_cancel(context) => Err(ExtensionBridgeError::Revoked),
         result = tokio::time::timeout(budget, operation) => match result {
             Ok(Ok(response)) => Ok(response),
-            Ok(Err(())) => Err(ExtensionBridgeError::Failed),
+            Ok(Err(error)) => Err(error),
             Err(_) => Err(ExtensionBridgeError::Timeout),
         },
     }
 }
 
-async fn dispatch(method: &str, params: &Value) -> Result<CoreResponse, ()> {
+async fn wait_for_turn_cancel(context: &super::call_context::ExtensionCallContext) {
+    match context.core_scope() {
+        Some(scope) => scope.agent.cancel.cancelled().await,
+        None => std::future::pending::<()>().await,
+    }
+}
+
+async fn dispatch(
+    context: &super::call_context::ExtensionCallContext,
+    method: &str,
+    params: &Value,
+) -> Result<CoreResponse, ExtensionBridgeError> {
+    if method.starts_with("models.") {
+        return super::core_models::call(context, method, params).await;
+    }
+    if method.starts_with("memory.") {
+        return super::core_memory::call(context, method, params).await;
+    }
+    if method.starts_with("automations.") {
+        return super::core_automations::call(context, method, params).await;
+    }
+    if method.starts_with("subagents.") {
+        return super::core_subagents::call(context, method, params).await;
+    }
+    dispatch_legacy(method, params)
+        .await
+        .map_err(|()| ExtensionBridgeError::Failed)
+}
+
+async fn dispatch_legacy(method: &str, params: &Value) -> Result<CoreResponse, ()> {
     match method {
         "app.info" => Ok(CoreResponse::Json(json!({
             "apiVersion": super::types::BEAVER_API_VERSION,
@@ -124,37 +182,6 @@ async fn dispatch(method: &str, params: &Value) -> Result<CoreResponse, ()> {
         "secrets.mcp.env.get" => super::core_secrets::mcp_env(params),
         "secrets.channel.get" => super::core_secrets::channel(params),
         _ => Err(()),
-    }
-}
-
-fn request_budget(
-    context: &super::call_context::ExtensionCallContext,
-    method: &str,
-) -> Option<Duration> {
-    let (_, level, kind, budget) = super::types::HOST_TO_CORE_METHODS
-        .iter()
-        .find(|(declared, _, _, _)| *declared == method)?;
-    if !method_is_allowed(context.api_level(), level, kind) {
-        return None;
-    }
-    let milliseconds = budget
-        .filter(|budget| *budget > 0)
-        .unwrap_or(CORE_REQUEST_TIMEOUT_MS);
-    Some(Duration::from_millis(milliseconds as u64))
-}
-
-fn method_is_allowed(
-    api_level: &super::types::ExtensionApiLevel,
-    declared_level: &str,
-    kind: &str,
-) -> bool {
-    if kind != "request" {
-        return false;
-    }
-    match declared_level {
-        "stable" => true,
-        "advanced" => *api_level == super::types::ExtensionApiLevel::Advanced,
-        _ => false,
     }
 }
 

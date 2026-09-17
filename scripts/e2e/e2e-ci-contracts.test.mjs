@@ -18,6 +18,7 @@ const e2eCommandSource = readSource("../../src-tauri/src/commands/e2e.rs");
 const acceptanceSource = readSource("../../tests/e2e/extensions-ui-acceptance.spec.ts");
 const hostSetupSource = readSource("../../tests/e2e/extension-host-setup.ts");
 const packagedSource = readSource("./run-packaged.mjs");
+const coreApiJourneySource = readSource("./extension-core-api-journey.ts");
 const ci = loadYaml(ciSource);
 
 test("application data stays outside the installation tree with one cleanup owner", () => {
@@ -249,6 +250,11 @@ test("the packaged journey collects the API expansion acceptance fixture", () =>
   assert.match(packagedSource, /BEAVER_E2E_API_EXPANSION_FIXTURE/u);
   assert.match(packagedSource, /api-expansion/u);
   assert.match(packagedSource, /beaver-extension\.json/u);
+  assert.match(
+    readSource("../../tests/e2e/extensions-api-expansion.spec.ts"),
+    /assertContextualCapabilityProjection/u,
+  );
+  assert.match(coreApiJourneySource, /process\.platform !== "linux"/u);
 });
 
 test("the native CEF journey uses one isolated application session", () => {

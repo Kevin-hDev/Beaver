@@ -17,7 +17,8 @@ pub(super) async fn spawn(
     let spawn_cancel = task_cancel.clone();
     let reader_cancel = reader_cancel.clone();
     let task_id = id.clone();
-    let spawn = work.spawn_core_call(move |cancel| async move {
+    let identity = context.identity().clone();
+    let spawn = work.spawn_core_call(&identity, move |cancel| async move {
         let response = tokio::select! {
             biased;
             _ = spawn_cancel.cancelled() => return,
@@ -59,15 +60,15 @@ pub(super) async fn spawn(
                 )
                 .await;
             }
-            Err(_) => {
+            Err(error) => {
                 let _ = write_unrevoked(
                     &output,
                     &RpcError {
                         jsonrpc: "2.0",
                         id: &task_id,
                         error: RpcErrorBody {
-                            code: -32601,
-                            message: "core_method_unavailable",
+                            code: error_code(error),
+                            message: error.reason(),
                         },
                     },
                     &spawn_cancel,
@@ -95,6 +96,13 @@ pub(super) async fn spawn(
         .await;
     }
     Ok(())
+}
+
+fn error_code(error: super::core_bridge::ExtensionBridgeError) -> i32 {
+    match error {
+        super::core_bridge::ExtensionBridgeError::MethodUnavailable => -32601,
+        _ => -32000,
+    }
 }
 
 async fn write_unrevoked(

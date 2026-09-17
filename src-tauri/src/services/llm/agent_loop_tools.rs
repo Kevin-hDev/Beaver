@@ -27,6 +27,7 @@ pub(super) struct ToolTurnContext<'a> {
     pub last_prompt: &'a mut Option<u32>,
     pub last_eval: &'a mut Option<u32>,
     pub fixture_mode: bool,
+    pub interception: &'a crate::services::extensions::InterceptionSnapshot,
     #[cfg(debug_assertions)]
     pub fixture_run: Option<&'a mut crate::services::reasoning_fixture_run::FixtureRunContext>,
 }
@@ -57,6 +58,7 @@ pub(super) struct ToolBatchContext<'a> {
     pub cancel: CancellationToken,
     pub write_guard: &'a mut WriteGuard,
     pub plan_active: bool,
+    pub interception: &'a crate::services::extensions::InterceptionSnapshot,
     #[cfg(debug_assertions)]
     pub fixture_run: Option<&'a mut crate::services::reasoning_fixture_run::FixtureRunContext>,
 }
@@ -87,6 +89,7 @@ pub(super) async fn execute_tool_batch(context: ToolBatchContext<'_>) -> ToolExe
         context.plan_active,
         context.tool_call_ids,
         None,
+        context.interception,
     )
     .await
 }
@@ -113,6 +116,7 @@ pub(super) async fn run_tool_turn(
         cancel: context.cancel.clone(),
         write_guard: context.write_guard,
         plan_active: context.plan_active,
+        interception: context.interception,
         #[cfg(debug_assertions)]
         fixture_run: context.fixture_run.as_deref_mut(),
     })

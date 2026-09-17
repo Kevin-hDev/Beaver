@@ -75,3 +75,83 @@ pub async fn collect_chat_with_timeout_and_limit(
     let tokens = value["eval_count"].as_u64().unwrap_or(0) as u32;
     Ok((content, tokens))
 }
+
+pub(crate) async fn collect_extension_text(
+    model: &str,
+    prompt: &str,
+    timeout: Duration,
+    num_predict: u32,
+) -> Result<(String, u32, Option<String>), String> {
+    let ollama = OllamaClient::from_global()?;
+    let base_url = ollama.base_url().await?;
+    let client = crate::services::secure_http::AuthenticatedClient::new_loopback(timeout)
+        .map_err(|_| "ollama-runtime-error".to_string())?;
+    let response = client
+        .send_success(
+            client
+                .post(format!("{base_url}/api/chat"))
+                .json(&serde_json::json!({
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": false,
+                    "truncate": false,
+                    "options": {"temperature": 0.2, "num_predict": num_predict},
+                })),
+        )
+        .await
+        .map_err(|_| "ollama_connection_lost".to_string())?;
+    let value: serde_json::Value = crate::services::secure_http::read_json_bounded(
+        response,
+        crate::services::extensions::types::MAX_MODEL_RESULT_BYTES,
+    )
+    .await
+    .map_err(|_| "provider_payload_too_large".to_string())?;
+    let content = value
+        .pointer("/message/content")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| "provider_connection_failed".to_string())?;
+    if content.len() > crate::services::extensions::types::MAX_MODEL_RESULT_BYTES {
+        return Err("provider_payload_too_large".to_string());
+    }
+    let eval_count = value
+        .get("eval_count")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|value| value.try_into().ok())
+        .unwrap_or(0);
+    let done_reason = value
+        .get("done_reason")
+        .and_then(serde_json::Value::as_str)
+        .filter(|reason| reason.len() <= 64)
+        .map(str::to_string);
+    Ok((content.to_string(), eval_count, done_reason))
+}
+
+pub(crate) async fn list_extension_models(timeout: Duration) -> Result<Vec<String>, String> {
+    let ollama = OllamaClient::from_global()?;
+    let base_url = ollama.base_url().await?;
+    let client = crate::services::secure_http::AuthenticatedClient::new_loopback(timeout)
+        .map_err(|_| "ollama-runtime-error".to_string())?;
+    let response = client
+        .send_success(client.get(format!("{base_url}/api/tags")))
+        .await
+        .map_err(|_| "ollama_connection_lost".to_string())?;
+    let value: serde_json::Value = crate::services::secure_http::read_json_bounded(
+        response,
+        crate::services::secure_http::CODEX_MODELS_BODY_LIMIT,
+    )
+    .await
+    .map_err(|_| "model_catalog_unavailable".to_string())?;
+    let mut models = value
+        .get("models")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| "model_catalog_unavailable".to_string())?
+        .iter()
+        .take(500)
+        .filter_map(|model| model.get("name").and_then(serde_json::Value::as_str))
+        .filter(|name| crate::services::llm::runtime_models::valid_model_id(name))
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    models.sort();
+    models.dedup();
+    Ok(models)
+}

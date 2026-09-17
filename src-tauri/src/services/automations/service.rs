@@ -25,13 +25,15 @@ pub async fn create(
     actor: &AutomationActor,
     input: CreateAutomation,
 ) -> Result<AutomationDetail, AutomationError> {
-    super::service_mutations::create_at(
+    let result = super::service_mutations::create_at(
         &crate::services::paths::data_dir(),
         actor,
         input,
         Utc::now(),
     )
-    .await
+    .await?;
+    crate::services::scheduler::notify_config_changed();
+    Ok(result)
 }
 
 pub async fn update(
@@ -39,18 +41,30 @@ pub async fn update(
     id: Uuid,
     patch: UpdateAutomation,
 ) -> Result<AutomationDetail, AutomationError> {
-    super::service_mutations::update_at(
+    if patch.status == Some(crate::models::AutomationStatus::Active)
+        && crate::services::config::read_config()
+            .map_err(|_| AutomationError::StoreUnavailable)?
+            .heartbeat
+            .global_paused
+    {
+        return Err(AutomationError::GloballyPaused);
+    }
+    let result = super::service_mutations::update_at(
         &crate::services::paths::data_dir(),
         actor,
         id,
         patch,
         Utc::now(),
     )
-    .await
+    .await?;
+    crate::services::scheduler::notify_config_changed();
+    Ok(result)
 }
 
 pub async fn delete(actor: &AutomationActor, id: Uuid) -> Result<(), AutomationError> {
-    super::service_mutations::delete_at(&crate::services::paths::data_dir(), actor, id).await
+    super::service_mutations::delete_at(&crate::services::paths::data_dir(), actor, id).await?;
+    crate::services::scheduler::notify_config_changed();
+    Ok(())
 }
 
 pub async fn history(

@@ -29,6 +29,7 @@ fn definition(schedule: AutomationSchedule) -> AutomationDefinition {
         status: AutomationStatus::Active,
         created_at: utc(2026, 1, 1, 0, 0),
         anchor_at: None,
+        extension_owner: None,
     }
 }
 

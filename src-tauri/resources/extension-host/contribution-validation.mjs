@@ -1,6 +1,6 @@
 import { LIMITS } from "./contract.mjs";
 
-export function validContribution(value, validIdentifier, keys) {
+export function validContribution(value, keys) {
   return value
     && typeof value === "object"
     && Object.keys(value).every((key) => keys.includes(key))
@@ -9,6 +9,12 @@ export function validContribution(value, validIdentifier, keys) {
     && validText(value.description, LIMITS.maxExtensionTextChars)
     && typeof value.path === "string"
     && Array.from(value.path).length <= LIMITS.maxPathChars;
+}
+
+export function validIdentifier(value) {
+  return typeof value === "string"
+    && value.length <= LIMITS.maxIdentifierChars
+    && /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(value);
 }
 
 export function validRelativePath(value) {

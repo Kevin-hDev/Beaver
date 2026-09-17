@@ -5,10 +5,10 @@ use super::types_todo::AgentTodoItem;
 use crate::services::agent_local::types_ollama::StreamEvent;
 use crate::services::agent_local::types_tools::ToolResult;
 
-pub(crate) use super::tool_todo_parse::parse_todos;
-pub(crate) use super::tool_todo_state::apply_todos_to_session;
 #[cfg(test)]
 pub(super) use super::tool_todo_delete::delete_run_for_args;
+pub(crate) use super::tool_todo_parse::parse_todos;
+pub(crate) use super::tool_todo_state::apply_todos_to_session;
 
 pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
     let todos = match parse_todos(args) {
@@ -26,10 +26,7 @@ pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
             emit_update(session_id, active);
             ToolResult::ok("Todo list mise à jour.")
         }
-        Err(_) => todo_save_failure(
-            "todo_update_failed",
-            "Mise à jour de la todo impossible.",
-        ),
+        Err(_) => todo_save_failure("todo_update_failed", "Mise à jour de la todo impossible."),
     }
 }
 
@@ -59,10 +56,7 @@ pub async fn execute_pause(args: &Value, session_id: &str) -> ToolResult {
             emit_update(session_id, active);
             ToolResult::ok("Todo list mise de côté.")
         }
-        Err(_) => todo_save_failure(
-            "todo_pause_failed",
-            "Mise en pause de la todo impossible.",
-        ),
+        Err(_) => todo_save_failure("todo_pause_failed", "Mise en pause de la todo impossible."),
     }
 }
 

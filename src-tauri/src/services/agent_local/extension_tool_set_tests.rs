@@ -195,3 +195,66 @@ fn discovery_tools_after_two_core_tools() -> Vec<serde_json::Value> {
 fn selected_names(tools: &[serde_json::Value]) -> Vec<&str> {
     tools.iter().filter_map(definition_name).collect()
 }
+
+#[test]
+fn child_discovery_cannot_restore_filtered_tools() {
+    let catalog = crate::services::extensions::CatalogSnapshot {
+        ordered_plugin_ids: vec!["example.mixed".into()],
+        capacity_plugin_ids: vec!["example.mixed".into()],
+        ..Default::default()
+    };
+    let mut set = masked_set(
+        "example.mixed",
+        vec![json!({"function": {"name": "plugin.read"}})],
+    );
+
+    set.apply_with_catalog(&["example.mixed".into()], &catalog, |_| {
+        Some("example.mixed".into())
+    });
+
+    assert_eq!(selected_names(set.active()), vec!["plugin.read"]);
+    assert!(!selected_names(set.active()).contains(&"plugin.write"));
+}
+
+#[test]
+fn child_and_parent_do_not_share_discovery_authority() {
+    let catalog = crate::services::extensions::CatalogSnapshot {
+        ordered_plugin_ids: vec!["example.one".into()],
+        capacity_plugin_ids: vec!["example.one".into()],
+        ..Default::default()
+    };
+    let tools = vec![json!({"function": {"name": "plugin.one"}})];
+    let mut parent = masked_set("example.one", tools.clone());
+    let mut child = masked_set("example.one", tools);
+    let discovered = vec!["example.one".to_string()];
+
+    parent.apply_with_catalog(&discovered, &catalog, |_| Some("example.one".into()));
+    child.apply_with_catalog(&[], &catalog, |_| Some("example.one".into()));
+
+    assert_eq!(selected_names(parent.active()), vec!["plugin.one"]);
+    assert!(child.active().is_empty());
+}
+
+fn masked_set(id: &str, tools: Vec<serde_json::Value>) -> ExtensionToolSet {
+    ExtensionToolSet {
+        all: tools,
+        active: Vec::new(),
+        managed: true,
+        degradation: None,
+        _native_only: None,
+        masked: true,
+        provider_tool_limit: 8,
+        plugin_tool_capacity: 8,
+        plugin_descriptors: vec![super::super::extension_tool_selection::PluginDescriptor {
+            id: id.into(),
+            tool_count: 1,
+            definition_count: 1,
+        }],
+        active_plugin_ids: Vec::new(),
+        discovered_plugin_ids: Vec::new(),
+        provider_id: String::new(),
+        omitted_plugin_ids: Vec::new(),
+        omitted_tool_names: Vec::new(),
+        additional_omitted_tools: 0,
+    }
+}

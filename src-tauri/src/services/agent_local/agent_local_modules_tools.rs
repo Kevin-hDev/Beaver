@@ -4,12 +4,13 @@ pub mod subagent_explorer_process;
 pub mod subagent_working_dir;
 pub mod subagent_worktree;
 include!("agent_local_modules_shell.rs");
-pub mod extension_skill_loader;
+include!("agent_local_modules_extensions.rs");
 #[cfg(test)]
-mod extension_skill_loader_tests;
-pub mod extension_tool_set;
+mod extension_tool_interception_paths_tests;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
+mod permission_pending;
+pub(crate) mod subagent_extension_api;
 #[cfg(test)]
 mod tool_artifact_tests;
 pub mod tool_automation;
@@ -46,6 +47,8 @@ pub mod tool_dispatcher;
 pub mod tool_dispatcher_delegate;
 mod tool_dispatcher_entry;
 mod tool_dispatcher_error;
+mod tool_dispatcher_events;
+mod tool_dispatcher_execute;
 pub mod tool_dispatcher_fallback;
 mod tool_dispatcher_finalize;
 pub mod tool_dispatcher_forecast;
@@ -70,6 +73,7 @@ pub mod tool_dispatcher_shell;
 mod tool_dispatcher_shell_error;
 #[cfg(test)]
 pub mod tool_dispatcher_tests;
+mod tool_dispatcher_validation;
 #[cfg(test)]
 pub mod tool_document_format_tests;
 pub mod tool_document_read;
@@ -106,18 +110,6 @@ pub mod tool_executor_results;
 pub mod tool_executor_sequential;
 mod tool_executor_sequential_support;
 pub mod tool_executor_write;
-mod tool_extension_catalog_diagnostics;
-pub mod tool_extension_inspect;
-pub mod tool_extension_list;
-pub mod tool_extension_resource;
-#[cfg(test)]
-mod tool_extension_resource_tests;
-#[allow(dead_code)]
-mod extension_discovery_contract {
-    include!(concat!(env!("OUT_DIR"), "/extension_discovery_contract.rs"));
-}
-#[cfg(test)]
-mod extension_discovery_contract_tests;
 pub mod tool_file_changes;
 mod tool_file_error;
 mod tool_file_write;

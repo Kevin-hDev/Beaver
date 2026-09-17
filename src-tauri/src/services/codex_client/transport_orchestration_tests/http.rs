@@ -184,7 +184,7 @@ async fn silent_compression_keeps_the_explicit_fast_capture() {
     .expect("create Standard session");
     let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Success]), None).await;
     let result = scenario
-        .scope(stream_silent::collect_chat_silent_for_compression(
+        .scope(stream_silent::collect_chat_silent(
             "gpt-5.6-sol",
             &messages(),
             &[],
@@ -193,6 +193,9 @@ async fn silent_compression_keeps_the_explicit_fast_capture() {
             Some(64),
             Some(&session.id),
             CancellationToken::new(),
+            crate::services::compress::timeouts::compression_request_timeout(),
+            crate::services::compress::timeouts::compression_idle_timeout(),
+            usize::MAX,
             None,
         ))
         .await;

@@ -34,51 +34,50 @@ pub async fn get_wakeup(automation_id: Uuid) -> Result<AutomationDetail, String>
 #[tauri::command]
 pub async fn create_wakeup(
     input: CreateWakeupInput,
-    scheduler: State<'_, Scheduler>,
+    _scheduler: State<'_, Scheduler>,
 ) -> Result<AutomationDetail, String> {
-    let result = store::create(input).await?;
-    scheduler.notify_config_changed();
-    Ok(result)
+    store::create(input).await
 }
 
 #[tauri::command]
 pub async fn update_wakeup(
     input: UpdateWakeupInput,
-    scheduler: State<'_, Scheduler>,
+    _scheduler: State<'_, Scheduler>,
 ) -> Result<AutomationDetail, String> {
-    let result = store::update(input).await?;
-    scheduler.notify_config_changed();
-    Ok(result)
+    store::update(input).await
 }
 
 #[tauri::command]
-pub async fn delete_wakeup(id: Uuid, scheduler: State<'_, Scheduler>) -> Result<(), String> {
-    store::delete(id).await?;
-    scheduler.notify_config_changed();
-    Ok(())
+pub async fn delete_wakeup(id: Uuid, _scheduler: State<'_, Scheduler>) -> Result<(), String> {
+    store::delete(id).await
 }
 
 #[tauri::command]
 pub async fn set_wakeup_active(
     id: Uuid,
     active: bool,
-    scheduler: State<'_, Scheduler>,
+    _scheduler: State<'_, Scheduler>,
 ) -> Result<AutomationDetail, String> {
-    if crate::services::config::read_config()
-        .map_err(|_| "store_unavailable")?
-        .heartbeat
-        .global_paused
-    {
-        return Err("globally_paused".into());
-    }
-    let result = store::set_active(id, active).await?;
-    scheduler.notify_config_changed();
-    Ok(result)
+    store::set_active(id, active).await
+}
+
+#[tauri::command]
+pub async fn approve_extension_wakeup(
+    id: Uuid,
+    _scheduler: State<'_, Scheduler>,
+) -> Result<AutomationDetail, String> {
+    store::approve_extension(id).await
 }
 
 #[tauri::command]
 pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Result<(), String> {
+    if paused {
+        crate::services::scheduler::cancel_all_automation_occurrences();
+    }
     store::set_global_paused(paused)?;
+    if !paused {
+        crate::services::scheduler::resume_automation_occurrences();
+    }
     scheduler.notify_config_changed();
     Ok(())
 }
@@ -87,7 +86,11 @@ pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Resul
 pub fn get_heartbeat_config() -> Result<HeartbeatConfig, String> {
     crate::services::config::read_config()
         .map(|config| config.heartbeat)
-        .map_err(|_| "store_unavailable".into())
+        .map_err(|_| {
+            crate::services::automations::AutomationError::StoreUnavailable
+                .code()
+                .into()
+        })
 }
 
 #[tauri::command]

@@ -20,9 +20,12 @@ pub(super) fn detail(
     let next_fire_at = super::next_fire::next_fire_at(&definition, now)
         .map_err(|_| AutomationError::InvalidSchedule)?
         .map(|next| next.at);
+    let (origin, inactive_reason) = extension_state(&definition);
     Ok(AutomationDetail {
         definition,
         next_fire_at,
+        origin,
+        inactive_reason,
     })
 }
 
@@ -37,6 +40,7 @@ pub(super) fn summary_with_state(
         .ok()
         .flatten()
         .map(|next| next.at);
+    let (origin, inactive_reason) = extension_state(&definition);
     AutomationSummary {
         id: definition.id,
         revision: definition.revision,
@@ -50,6 +54,38 @@ pub(super) fn summary_with_state(
         paused_by_global,
         next_fire_at,
         last_run,
+        origin,
+        inactive_reason,
+    }
+}
+
+fn extension_state(
+    definition: &AutomationDefinition,
+) -> (AutomationOrigin, Option<AutomationInactiveReason>) {
+    match definition.extension_owner.as_ref() {
+        None if definition
+            .creator_session_id
+            .as_deref()
+            .is_some_and(|id| id.starts_with("gateway:")) =>
+        {
+            (AutomationOrigin::ExternalChannel, None)
+        }
+        None if definition.creator_session_id.is_some() => (AutomationOrigin::Session, None),
+        None => (AutomationOrigin::UserInterface, None),
+        Some(crate::models::AutomationExtensionOwnership::Invalid(_)) => (
+            AutomationOrigin::Extension,
+            Some(AutomationInactiveReason::OwnerInvalid),
+        ),
+        Some(crate::models::AutomationExtensionOwnership::Valid(owner)) => {
+            let reason = if !crate::services::extensions::automation_owner_is_current(owner) {
+                Some(AutomationInactiveReason::OwnerUnavailable)
+            } else if !super::ownership::consent_is_current(definition) {
+                Some(AutomationInactiveReason::ApprovalRequired)
+            } else {
+                None
+            };
+            (AutomationOrigin::Extension, reason)
+        }
     }
 }
 
@@ -66,8 +102,11 @@ pub(super) fn new_definition(
         name: input.name,
         description: input.description,
         prompt: input.prompt,
-        creator_session_id: matches!(actor.origin, AutomationOrigin::Session)
-            .then(|| actor.session_or_channel_id.clone()),
+        creator_session_id: matches!(
+            actor.origin,
+            AutomationOrigin::Session | AutomationOrigin::ExternalChannel
+        )
+        .then(|| actor.session_or_channel_id.clone()),
         target: input.target,
         provider: input.provider,
         model: input.model,
@@ -75,6 +114,7 @@ pub(super) fn new_definition(
         status: input.status,
         created_at: now,
         anchor_at,
+        extension_owner: None,
     }
 }
 

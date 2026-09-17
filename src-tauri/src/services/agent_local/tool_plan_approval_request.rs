@@ -1,7 +1,7 @@
 use tokio_util::sync::CancellationToken;
 
-use super::stream_events::AgentEventEmitter;
 use super::interactive_choice_gate::InteractiveChoiceRequestError;
+use super::stream_events::AgentEventEmitter;
 use super::tool_plan_approval::PlanApprovalOutcome;
 use super::types_interactive::{
     AgentInteractiveChoiceKind, AgentInteractiveOption, AgentInteractiveQuestion,
@@ -43,12 +43,8 @@ pub async fn request_approval(
 
     match super::tool_plan_approval::apply_response(session_id, response, on_event).await {
         Ok(outcome) => result_for_outcome(outcome),
-        Err(error) => ToolResult::internal(
-            "plan_approval_save_failed",
-            error,
-            false,
-        )
-        .with_error_hint("Vérifier si le plan a déjà été validé avant de recommencer."),
+        Err(error) => ToolResult::internal("plan_approval_save_failed", error, false)
+            .with_error_hint("Vérifier si le plan a déjà été validé avant de recommencer."),
     }
 }
 
@@ -57,13 +53,9 @@ pub(crate) fn result_for_outcome(outcome: PlanApprovalOutcome) -> ToolResult {
         PlanApprovalOutcome::Implement => {
             ToolResult::ok("Plan approval recorded.").with_system_message(IMPLEMENT_FOLLOW_UP)
         }
-        PlanApprovalOutcome::Adjustments(text) => {
-            ToolResult::ok("Plan adjustments recorded.")
-                .with_user_message(format!("Plan adjustments from the user:\n{text}"))
-        }
-        PlanApprovalOutcome::Dismissed => {
-            ToolResult::ok("Plan approval dismissed.").stopping()
-        }
+        PlanApprovalOutcome::Adjustments(text) => ToolResult::ok("Plan adjustments recorded.")
+            .with_user_message(format!("Plan adjustments from the user:\n{text}")),
+        PlanApprovalOutcome::Dismissed => ToolResult::ok("Plan approval dismissed.").stopping(),
     }
 }
 
@@ -99,23 +91,21 @@ mod tests {
 
     #[test]
     fn outcomes_use_their_real_message_authority() {
-        let mut implement =
-            super::result_for_outcome(super::PlanApprovalOutcome::Implement);
+        let mut implement = super::result_for_outcome(super::PlanApprovalOutcome::Implement);
         assert!(matches!(
             implement.take_follow_up(),
             ToolFollowUp::SystemMessage(_)
         ));
 
-        let mut adjustments = super::result_for_outcome(
-            super::PlanApprovalOutcome::Adjustments("Change target".into()),
-        );
+        let mut adjustments = super::result_for_outcome(super::PlanApprovalOutcome::Adjustments(
+            "Change target".into(),
+        ));
         assert!(matches!(
             adjustments.take_follow_up(),
             ToolFollowUp::UserMessage(content) if content.contains("Change target")
         ));
 
-        let mut dismissed =
-            super::result_for_outcome(super::PlanApprovalOutcome::Dismissed);
+        let mut dismissed = super::result_for_outcome(super::PlanApprovalOutcome::Dismissed);
         assert_eq!(dismissed.take_follow_up(), ToolFollowUp::Stop);
     }
 }

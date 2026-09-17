@@ -1,36 +1,35 @@
 import { callCore } from "./protocol.mjs";
 import {
   LIMITS,
+  CORE_API_METHODS,
   methodKind,
   methodLevel,
   RESOURCE_TYPES,
   supportsEffect,
-  supportsEvent,
-  TIMEOUTS,
 } from "./contract.mjs";
+import { validateCoreApiParams } from "./core-api-validation.mjs";
 import { createUiApi } from "./ui-api.mjs";
-import { ACTIVE_CAPABILITIES } from "./extension-api-capabilities.mjs";
+import { createEventHandlers } from "./event-handlers.mjs";
+import { activeCapabilities } from "./extension-api-capabilities.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
+import { createToolInterceptor } from "./tool-interceptor.mjs";
+import { createContextualApis } from "./extension-contextual-apis.mjs";
 import {
   unicodeScalarLength,
   validContribution,
+  validIdentifier,
   validRelativePath,
 } from "./contribution-validation.mjs";
 
-const inFlightHandlers = new Set();
-function validIdentifier(value) {
-  return typeof value === "string"
-    && value.length <= LIMITS.maxIdentifierChars
-    && /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(value);
-}
-
-export function createExtensionApi(specification) {
+export function createExtensionApi(specification, onEventActivity) {
+  const capabilities = activeCapabilities();
   const tools = [];
   const skills = [];
   const resources = [];
-  const handlers = new Map();
+  const eventHandlers = createEventHandlers(onEventActivity);
   const ui = createUiApi(specification);
-  let handlerCount = 0;
+  const interceptor = createToolInterceptor(capabilities.includes("toolInterception"));
+  const contextual = createContextualApis(capabilities, callAtLevel, callMemoryWrite);
 
   function registerTool(definition, replacesCore = false) {
     if (
@@ -67,37 +66,11 @@ export function createExtensionApi(specification) {
     tools.push({ metadata: tool, execute: definition.execute });
   }
 
-  function on(eventName, eventHandler) {
-    if (
-      typeof eventHandler !== "function"
-      || handlerCount >= LIMITS.maxEventsPerExtension
-    ) {
-      throw new Error("invalid_event_handler");
-    }
-    const event = String(eventName);
-    if (!validIdentifier(event) || !supportsEvent(event)) {
-      throw new Error("invalid_event_name");
-    }
-    const current = handlers.get(event) ?? [];
-    current.push(eventHandler);
-    handlers.set(event, current);
-    handlerCount += 1;
-    let subscribed = true;
-    return () => {
-      if (!subscribed) return;
-      subscribed = false;
-      const next = (handlers.get(event) ?? []).filter((item) => item !== eventHandler);
-      if (next.length === 0) handlers.delete(event);
-      else handlers.set(event, next);
-      handlerCount -= 1;
-    };
-  }
-
   function registerSkill(definition) {
     const skill = snapshotContribution(definition);
     if (
       skills.length >= LIMITS.maxSkillsPerExtension
-      || !validContribution(skill, validIdentifier, ["id", "name", "description", "path"])
+      || !validContribution(skill, ["id", "name", "description", "path"])
       || !validRelativePath(skill.path)
       || !["SKILL.md", "skill.md"].includes(skill.path.split("/").at(-1))
       || skills.some((item) => item.id === skill.id)
@@ -109,7 +82,7 @@ export function createExtensionApi(specification) {
     const resource = snapshotContribution(definition);
     if (
       resources.length >= LIMITS.maxResourcesPerExtension
-      || !validContribution(resource, validIdentifier, ["id", "name", "description", "type", "path"])
+      || !validContribution(resource, ["id", "name", "description", "type", "path"])
       || !RESOURCE_TYPES.includes(resource.type)
       || !validRelativePath(resource.path)
       || resources.some((item) => item.id === resource.id)
@@ -120,13 +93,13 @@ export function createExtensionApi(specification) {
   const api = {
     id: specification.id,
     manifest: Object.freeze({ ...specification.manifest }),
-    capabilities: Object.freeze([...ACTIVE_CAPABILITIES]),
+    capabilities: Object.freeze([...capabilities]),
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
     registerSkill,
     registerResource,
     ui: ui.api,
-    on,
+    on: eventHandlers.on,
     call: (method, params = {}) => callAtLevel("stable", method, params),
     sessions: Object.freeze({
       list: () => callCore("sessions.list"),
@@ -147,6 +120,13 @@ export function createExtensionApi(specification) {
     channels: Object.freeze({
       getConfig: () => callCore("channels.config.get"),
     }),
+    models: contextual.models,
+    memory: contextual.memory,
+    automations: contextual.automations,
+    subagents: contextual.subagents,
+    interceptTool: capabilities.includes("toolInterception")
+      ? interceptor.register
+      : undefined,
     secrets: Object.freeze({
       getProviderKey: (providerId) =>
         callCore("secrets.provider.get", { providerId: String(providerId) }),
@@ -185,35 +165,11 @@ export function createExtensionApi(specification) {
     tools,
     skills,
     resources,
-    events: handlers,
+    events: eventHandlers.events,
     ui,
-    emit: async (event, payload) => {
-      for (const eventHandler of handlers.get(event) ?? []) {
-        await runEventHandler(eventHandler, payload);
-      }
-    },
+    interceptor,
+    emit: eventHandlers.emit,
   };
-}
-
-async function runEventHandler(handler, payload) {
-  if (inFlightHandlers.size >= LIMITS.maxInFlightHandlers) {
-    throw new Error("too_many_event_handlers_running");
-  }
-  const execution = Promise.resolve().then(() => handler(payload));
-  inFlightHandlers.add(execution);
-  void execution.finally(() => inFlightHandlers.delete(execution)).catch(() => {});
-  let timer;
-  try {
-    await Promise.race([
-      execution,
-      new Promise((resolve) => {
-        timer = setTimeout(resolve, TIMEOUTS.eventHandlerTimeoutMs);
-        timer.unref();
-      }),
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 function callAtLevel(level, method, params) {
@@ -221,5 +177,22 @@ function callAtLevel(level, method, params) {
   if (methodLevel(requested) !== level || methodKind(requested) !== "request") {
     return Promise.reject(new Error("core_method_unavailable"));
   }
-  return callCore(requested, params);
+  const coreMethod = CORE_API_METHODS[requested];
+  if (coreMethod && !activeCapabilities().includes(coreMethod.capability)) {
+    return Promise.reject(new Error("core_method_unavailable"));
+  }
+  return callCore(
+    requested,
+    coreMethod ? validateCoreApiParams(requested, params) : params,
+  );
+}
+
+function callMemoryWrite(options) {
+  if (
+    !options
+    || (options.topicId === undefined) !== (options.expectedUpdatedAt === undefined)
+  ) {
+    throw new Error("core_request_failed");
+  }
+  return callAtLevel("stable", "memory.write", options);
 }

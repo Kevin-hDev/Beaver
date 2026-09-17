@@ -99,6 +99,7 @@ pub fn manifest(manifest: &ExtensionManifest) -> Result<(), String> {
 pub fn contributions(contributions: &ExtensionContributions) -> Result<(), String> {
     if contributions.tools.len() > MAX_TOOLS_PER_EXTENSION
         || contributions.events.len() > MAX_EVENTS_PER_EXTENSION
+        || contributions.interceptors.len() > 1
     {
         return Err("Trop de contributions déclarées.".to_string());
     }

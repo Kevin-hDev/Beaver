@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub use super::contribution_types::{ExtensionResource, ExtensionSkill};
+pub use super::host_activity_types::{ExtensionEventActivity, ExtensionHostActivity};
 
 pub const MINIMUM_NODE_MAJOR: u64 = 20;
 include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
@@ -133,11 +134,17 @@ pub struct ExtensionContributions {
     pub skills: Vec<ExtensionSkill>,
     #[serde(default)]
     pub resources: Vec<ExtensionResource>,
+    #[serde(default)]
+    pub interceptors: Vec<ExtensionInterceptor>,
     /// Transport Hôte -> cœur uniquement. Le catalogue UI possède sa propre
     /// autorité mémoire et cette valeur n'est jamais sérialisée vers l'UI.
     #[serde(default, skip_serializing)]
     pub ui: Vec<Value>,
 }
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ExtensionInterceptor {}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -200,6 +207,7 @@ pub struct ExtensionHostStatus {
     pub active_extensions: usize,
     pub last_error: Option<String>,
     pub diagnostics: Vec<ExtensionDiagnostic>,
+    pub activity: ExtensionHostActivity,
 }
 
 impl Default for ExtensionHostStatus {
@@ -212,6 +220,7 @@ impl Default for ExtensionHostStatus {
             active_extensions: 0,
             last_error: None,
             diagnostics: Vec::new(),
+            activity: ExtensionHostActivity::default(),
         }
     }
 }

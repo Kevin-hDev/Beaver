@@ -17,7 +17,7 @@ pub(super) async fn persist_terminal(
     emitter: Option<&AgentEventEmitter>,
 ) -> Result<Option<super::subagent_task::FinalizedSubagent>, String> {
     let after_report = terminal_callback(emitter, child_id, run_id);
-    super::subagent_completion::persist_terminal_completion_inner(
+    let finalized = super::subagent_completion::persist_terminal_completion_inner(
         parent_id,
         child_id,
         subagent_type,
@@ -29,7 +29,18 @@ pub(super) async fn persist_terminal(
         || async {},
         after_report,
     )
-    .await
+    .await?;
+    if finalized.is_some()
+        && super::session_store::get(child_id)
+            .await
+            .ok()
+            .is_some_and(|child| child.subagent_extension_owner.is_some())
+    {
+        let _ = crate::services::extensions::subagent_status_event(
+            parent_id, run_id, child_id, status, false, true,
+        );
+    }
+    Ok(finalized)
 }
 
 pub(super) async fn persist_instruction_failure(

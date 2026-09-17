@@ -19,6 +19,7 @@ pub(super) async fn prepare(
     tool_calls: &[(String, serde_json::Value)],
     session_id: &str,
     breaker: &mut CircuitBreaker,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> Result<PreparedToolBatch, String> {
     if let Err(message) = breaker.check(tool_calls, session_id) {
         eager_handle.abort();
@@ -31,6 +32,25 @@ pub(super) async fn prepare(
     } else {
         eager_handle.await.unwrap_or_default()
     };
+    if !interception.is_empty() && !eager_results.is_empty() {
+        return Ok(PreparedToolBatch {
+            control_only,
+            eager_results: eager_results
+                .into_keys()
+                .map(|index| {
+                    (
+                        index,
+                        ToolResult::error(
+                            "Résultat anticipé refusé car l'inspection est active.",
+                            "extensions_eager_interception_conflict",
+                            super::tool_result_contract::ToolErrorCategory::Internal,
+                            false,
+                        ),
+                    )
+                })
+                .collect(),
+        });
+    }
     Ok(PreparedToolBatch {
         control_only,
         eager_results,
@@ -50,6 +70,7 @@ pub(super) struct ToolBatchContext<'a> {
     pub write_guard: &'a mut WriteGuard,
     pub plan_active: bool,
     pub eager_results: HashMap<usize, ToolResult>,
+    pub interception: &'a crate::services::extensions::InterceptionSnapshot,
     #[cfg(debug_assertions)]
     pub fixture_run: Option<&'a mut crate::services::reasoning_fixture_run::FixtureRunContext>,
 }
@@ -81,6 +102,7 @@ pub(super) async fn execute(context: ToolBatchContext<'_>) -> ToolExecutionOutco
         Some(context.eager_results),
         context.tool_call_ids,
         None,
+        context.interception,
     )
     .await
 }

@@ -70,13 +70,19 @@ async function copyHostSources(source, destination) {
   const rootFiles = [
     "contract-bootstrap.json",
     "contract.json",
+    "contract-core-api.mjs",
+    "core-context.mjs",
+    "event-delivery.mjs",
+    "event-handlers.mjs",
     "contract.mjs",
     "contribution-snapshot.mjs",
     "contribution-validation.mjs",
+    "core-api-validation.mjs",
     "ui-contract.mjs",
     "diagnostics.mjs",
     "extension-api.mjs",
     "extension-api-capabilities.mjs",
+    "extension-contextual-apis.mjs",
     "host.mjs",
     "loader.mjs",
     "module-loader.mjs",
@@ -88,10 +94,11 @@ async function copyHostSources(source, destination) {
     "package.json",
     "protocol-output.mjs",
     "tool-result-snapshot.mjs",
+    "tool-interceptor.mjs",
     "protocol.mjs",
     "versions.mjs",
   ];
-  const sdkFiles = ["README.md", "contract.d.ts", "ui-contract.d.ts", "index.d.ts", "index.mjs", "package.json"];
+  const sdkFiles = ["README.md", "contract.d.ts", "core-api.d.ts", "ui-contract.d.ts", "index.d.ts", "index.mjs", "package.json"];
   await mkdir(resolve(destination, "sdk"), { recursive: true, mode: 0o700 });
   await Promise.all([
     ...rootFiles.map((file) =>

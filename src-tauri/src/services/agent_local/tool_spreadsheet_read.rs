@@ -73,8 +73,7 @@ fn detect_csv_delimiter(first_line: &str) -> u8 {
 }
 
 pub fn read_csv(resolved: &Path, max_rows: usize) -> Result<Value, String> {
-    read_csv_classified(resolved, max_rows)
-        .map_err(|error| error.message().to_string())
+    read_csv_classified(resolved, max_rows).map_err(|error| error.message().to_string())
 }
 
 pub(super) fn read_csv_classified(
@@ -97,14 +96,12 @@ pub(super) fn read_csv_classified(
         .map_err(|_| SpreadsheetReadError::read("Impossible de lire le CSV"))?;
 
     let (headers, mut truncated) = {
-        let source_headers = rdr
-            .headers()
-            .map_err(|_| {
-                SpreadsheetReadError::invalid(
-                    "spreadsheet_csv_invalid",
-                    "Impossible de lire les en-têtes",
-                )
-            })?;
+        let source_headers = rdr.headers().map_err(|_| {
+            SpreadsheetReadError::invalid(
+                "spreadsheet_csv_invalid",
+                "Impossible de lire les en-têtes",
+            )
+        })?;
         let headers: Vec<String> = source_headers
             .iter()
             .take(HARD_MAX_COLS)
@@ -184,14 +181,9 @@ pub async fn read_spreadsheet(
 
     let result = match ext.as_str() {
         "csv" | "tsv" => read_csv_classified(&validated, max),
-        "xlsx" | "xls" | "ods" | "xlsm" => {
-            super::tool_spreadsheet_calamine::read_excel_classified(
-                &validated,
-                sheet,
-                range_str,
-                max,
-            )
-        }
+        "xlsx" | "xls" | "ods" | "xlsm" => super::tool_spreadsheet_calamine::read_excel_classified(
+            &validated, sheet, range_str, max,
+        ),
         _ => {
             return ToolResult::validation(
                 "spreadsheet_format_unsupported",

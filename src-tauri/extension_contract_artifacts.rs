@@ -37,6 +37,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             array_value(contract, "resourceTypes")?.to_vec(),
         ),
         (
+            "MODEL_FINISH_REASONS",
+            array_value(contract, "modelFinishReasons")?.to_vec(),
+        ),
+        (
             "CORE_TO_HOST_METHODS",
             array(methods, "coreToHost")?.to_vec(),
         ),
@@ -64,6 +68,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             array(object(contract, "errors")?, "protocolReasons")?.to_vec(),
         ),
         (
+            "RETRYABLE_PROTOCOL_ERROR_REASONS",
+            array(object(contract, "errors")?, "retryableReasons")?.to_vec(),
+        ),
+        (
             "EXTENSION_BACKEND_ERROR_CODES",
             array(object(contract, "errors")?, "backendCodes")?.to_vec(),
         ),
@@ -81,6 +89,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             json(&Value::Array(values))?
         ));
     }
+    output.push_str(&super::core_artifacts::render_typescript(
+        contract,
+        host_methods,
+    )?);
     output.push_str(&format!(
         "export const LIMITS = Object.freeze({} as const);\n",
         json(&Value::Object(object(contract, "limits")?.clone()))?
@@ -102,6 +114,7 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             "EXTENSION_RESULT_FILE_PURPOSES",
         ),
         ("ExtensionResourceType", "EXTENSION_RESOURCE_TYPES"),
+        ("ModelFinishReason", "MODEL_FINISH_REASONS"),
         ("CoreToHostMethod", "CORE_TO_HOST_METHODS"),
         (
             "StableHostToCoreRequestMethod",
@@ -136,7 +149,7 @@ pub fn render_sdk_contract(contract: &Value) -> Result<String, String> {
     let mut output =
         String::from("// Generated from Beaver's extension contract. Do not edit by hand.\n\n");
     for line in typescript.lines().skip(3) {
-        if line.starts_with("export const LIMITS") || line.starts_with("export const TIMEOUTS") {
+        if line.starts_with("export const ") && line.contains(" = Object.freeze(") {
             output.push_str(
                 &line
                     .replacen("export const ", "export declare const ", 1)

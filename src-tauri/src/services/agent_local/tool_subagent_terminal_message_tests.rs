@@ -87,7 +87,9 @@ async fn assert_redeploy_required(status: Option<&str>) {
     assert!(result.content.contains("subagent_id"));
 }
 
-async fn inactive_child(status: Option<&str>) -> (
+async fn inactive_child(
+    status: Option<&str>,
+) -> (
     crate::services::agent_local::types_session::AgentSession,
     crate::services::agent_local::types_session::AgentSession,
 ) {
@@ -106,7 +108,9 @@ async fn inactive_child(status: Option<&str>) -> (
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
     session_store::delete_one(parent_id)
         .await
         .expect("delete parent");

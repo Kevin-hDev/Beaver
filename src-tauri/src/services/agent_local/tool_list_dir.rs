@@ -154,7 +154,9 @@ fn render(
         warnings.push(format!("{read_failures} dossier(s) n'ont pas pu être lus."));
     }
     if metadata_failures > 0 {
-        warnings.push(format!("{metadata_failures} entrée(s) n'ont pas pu être identifiées."));
+        warnings.push(format!(
+            "{metadata_failures} entrée(s) n'ont pas pu être identifiées."
+        ));
     }
     if truncated {
         warnings.push(format!("Liste limitée à {MAX_LIST_ENTRIES} entrées."));

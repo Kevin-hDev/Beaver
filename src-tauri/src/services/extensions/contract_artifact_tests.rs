@@ -80,7 +80,16 @@ fn contract_declares_the_complete_v1_surface() {
     );
     assert_eq!(
         contract["optionalCapabilities"],
-        serde_json::json!(["skills", "resources", "richToolResults"])
+        serde_json::json!([
+            "skills",
+            "resources",
+            "richToolResults",
+            "models",
+            "memory",
+            "automations",
+            "subagents",
+            "toolInterception"
+        ])
     );
     assert_eq!(
         contract["contributionTypes"],
@@ -106,12 +115,23 @@ fn contract_declares_the_complete_v1_surface() {
             "host.load",
             "tool.call",
             "event.emit",
-            "ui.action"
+            "ui.action",
+            "tool.intercept"
         ])
     );
     assert_eq!(
         contract["events"],
-        serde_json::json!(["session.turn.started"])
+        serde_json::json!([
+            "session.turn.started",
+            "session.turn.completed",
+            "session.turn.failed",
+            "session.turn.cancelled",
+            "tool.execution.started",
+            "tool.execution.finished",
+            "automation.execution.started",
+            "automation.execution.finished",
+            "subagent.status.changed"
+        ])
     );
     assert_eq!(
         contract["effectClasses"],
@@ -204,6 +224,21 @@ fn contract_rejects_numeric_and_timeout_values_outside_shared_rules() {
 }
 
 #[test]
+fn contract_rejects_unknown_core_api_fields_and_limits() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let directory = root.join("resources/extension-host");
+    let contract = generator::load_contract(&directory).unwrap();
+
+    let mut unknown = contract.clone();
+    unknown["methods"]["hostToCore"][11]["unexpected"] = serde_json::json!(true);
+    assert!(generator::validate_contract(&unknown, &directory).is_err());
+
+    let mut limit = contract;
+    limit["methods"]["hostToCore"][11]["params"][0]["limit"] = serde_json::json!("missingLimit");
+    assert!(generator::validate_contract(&limit, &directory).is_err());
+}
+
+#[test]
 fn checked_in_typescript_matches_the_extension_contract() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let directory = root.join("resources/extension-host");
@@ -236,16 +271,19 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
         .find(|line| line.contains("STABLE_HOST_TO_CORE_REQUEST_METHODS"))
         .unwrap()
         .contains("host.load.stage"));
-    assert!(
-        checked_in.contains("HOST_TO_CORE_NOTIFICATION_METHODS: readonly [\"host.load.stage\"]")
-    );
+    assert!(checked_in.contains(
+        "HOST_TO_CORE_NOTIFICATION_METHODS: readonly [\"host.load.stage\",\"host.event.activity\"]"
+    ));
 }
 
 #[test]
-fn generated_rust_names_the_unique_load_stage_notification() {
+fn generated_rust_names_host_notifications() {
     let generated = include_str!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
     assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
+    assert!(
+        generated.contains("pub const HOST_EVENT_ACTIVITY_METHOD: &str = \"host.event.activity\";")
+    );
     assert!(generated.contains("pub enum HostState"));
     assert!(generated.contains("pub enum OptionalExtensionCapability"));
     assert!(generated.contains("pub enum ExtensionContributionType"));
@@ -393,7 +431,7 @@ fn fixed_bootstrap_anchors_match_the_node_reader() {
     let node_reader = include_str!("../../../resources/extension-host/contract.mjs");
 
     assert_eq!(bootstrap.as_object().unwrap().len(), 1);
-    assert_eq!(bootstrap["maxContractBytes"], 8_192);
+    assert_eq!(bootstrap["maxContractBytes"], 32_768);
     assert!(
         include_bytes!("../../../resources/extension-host/contract-bootstrap.json").len()
             <= generator::BOOTSTRAP_FILE_MAX_BYTES

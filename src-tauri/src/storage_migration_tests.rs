@@ -1,4 +1,6 @@
-use super::{init_base_structure, initialize_automations_at, write_migration_file};
+use super::{
+    init_base_structure, initialize_automations_at, legacy_imports_enabled, write_migration_file,
+};
 
 const LEGACY_MEMORY_PATHS: &[&str] = &[
     "memory/archive",
@@ -60,4 +62,10 @@ fn corrupt_config_does_not_block_startup_or_get_rewritten() {
     initialize_automations_at(root.path());
 
     assert_eq!(std::fs::read(config).unwrap(), b"{not-json");
+}
+
+#[test]
+fn cef_test_profile_never_imports_real_user_data() {
+    assert!(legacy_imports_enabled(false));
+    assert!(!legacy_imports_enabled(true));
 }

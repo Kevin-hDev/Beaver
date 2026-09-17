@@ -15,11 +15,16 @@ pub struct BuildSpecs {
     pub sensitive_access_reminder: bool,
 }
 
+pub(super) type EventSubscriptions =
+    BTreeMap<super::host_identity::HostIdentity, std::collections::BTreeSet<String>>;
+
 pub struct ApplyResult {
     pub active: usize,
     pub diagnostics: Vec<ExtensionDiagnostic>,
     pub completed_ids: HashSet<String>,
     pub ui_updates: Vec<super::ui_catalog::UiCatalogUpdate>,
+    pub event_subscriptions: EventSubscriptions,
+    pub interceptors: Vec<super::tool_interception::InterceptorRegistration>,
 }
 
 pub(super) use super::runtime_recovery_preflight::{filter_for_recovery, RecoveryPreflight};
@@ -42,6 +47,16 @@ pub async fn build_specs(
     }
     let recovered = filter_for_recovery(records, recovery);
     let verified = super::fingerprint::verify_records(recovered);
+    for extension_id in verified.revocations.keys() {
+        if crate::services::scheduler::revoke_extension_work(extension_id)
+            .await
+            .is_err()
+        {
+            // Admissions are already blocked in memory; one persistence failure must not
+            // prevent healthy extensions from starting.
+            ::log::warn!("[extensions] automation revocation persistence unavailable");
+        }
+    }
     let sensitive_access_reminder = super::registry::revoke_fingerprints(&verified.revocations)?;
     for extension_id in verified.revocations.keys() {
         crate::services::agent_local::permission_gate::clear_extension(extension_id).await;

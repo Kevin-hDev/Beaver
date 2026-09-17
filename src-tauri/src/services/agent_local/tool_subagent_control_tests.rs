@@ -130,6 +130,7 @@ fn child(status: &str) -> AgentSession {
         working_dir: String::new(),
         working_dir_managed: false,
         parent_session_id: Some("parent".into()),
+        subagent_extension_owner: None,
         subagent_type: Some("explorer".into()),
         subagent_worktree: None,
         subagent_prompt: None,

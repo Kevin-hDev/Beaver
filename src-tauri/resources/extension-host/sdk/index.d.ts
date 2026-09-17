@@ -9,9 +9,17 @@ import type {
   StableHostToCoreRequestMethod,
 } from "./contract";
 import type { ExtensionUiPlacementKey } from "./ui-contract";
+import type {
+  BeaverAutomationsApi,
+  BeaverMemoryApi,
+  BeaverModelsApi,
+  BeaverSubagentsApi,
+  BeaverToolInterceptor,
+} from "./core-api";
 
 export * from "./contract";
 export * from "./ui-contract";
+export * from "./core-api";
 
 export type JsonValue =
   | null
@@ -150,6 +158,11 @@ export interface BeaverExtensionApi {
   readonly manifest: Record<string, JsonValue>;
   /** Frozen copy of capabilities that are usable by this Host. */
   readonly capabilities?: readonly (ExtensionCapability | OptionalExtensionCapability)[];
+  readonly models?: BeaverModelsApi;
+  readonly memory?: BeaverMemoryApi;
+  readonly automations?: BeaverAutomationsApi;
+  readonly subagents?: BeaverSubagentsApi;
+  interceptTool?(handler: BeaverToolInterceptor): () => void;
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
   registerSkill?(skill: BeaverSkillContribution): void;

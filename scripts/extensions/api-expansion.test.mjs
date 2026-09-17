@@ -13,8 +13,11 @@ import {
   RESULT_BLOCK_TYPES,
 } from "../../src-tauri/resources/extension-host/contract.mjs";
 import { createExtensionApi } from "../../src-tauri/resources/extension-host/extension-api.mjs";
+import { negotiateCapabilities } from "../../src-tauri/resources/extension-host/extension-api-capabilities.mjs";
 import { loadExtensionWithApi, resetExtensions } from "../../src-tauri/resources/extension-host/loader.mjs";
 import { createLegacyHostContext } from "./fixtures/legacy-host.mjs";
+
+negotiateCapabilities(OPTIONAL_CAPABILITIES);
 
 test("oversized contributions fail at registration without publishing any tools", async () => {
   const directory = await mkdtemp(join(tmpdir(), "beaver-contribution-budget-"));
@@ -51,19 +54,48 @@ test("API 1 historique charge sans lire api.capabilities", () => {
   assert.equal("capabilities" in api, true);
 });
 
-test("api.capabilities est une copie gelée des capacités déjà utilisables", () => {
+test("api.capabilities est une copie gelée des capacités déjà utilisables", async () => {
   const { api } = createExtensionApi({
     id: "com.example.capabilities",
     manifest: { apiLevel: "stable" },
   });
 
-  assert.deepEqual(api.capabilities, [...CAPABILITIES, "skills", "resources", "richToolResults"]);
+  assert.deepEqual(api.capabilities, [
+    ...CAPABILITIES,
+    "skills",
+    "resources",
+    "richToolResults",
+    "models",
+    "memory",
+    "automations",
+    "subagents",
+    "toolInterception",
+  ]);
   assert.equal(Object.isFrozen(api.capabilities), true);
   assert.throws(() => api.capabilities.push("skills"), TypeError);
-  assert.deepEqual(OPTIONAL_CAPABILITIES, ["skills", "resources", "richToolResults"]);
+  assert.deepEqual(OPTIONAL_CAPABILITIES, [
+    "skills",
+    "resources",
+    "richToolResults",
+    "models",
+    "memory",
+    "automations",
+    "subagents",
+    "toolInterception",
+  ]);
   assert.equal(api.capabilities.includes("skills"), true);
   assert.equal(api.capabilities.includes("resources"), true);
   assert.equal(api.capabilities.includes("richToolResults"), true);
+  assert.equal(api.capabilities.includes("models"), true);
+  assert.equal(typeof api.models?.list, "function");
+  assert.equal(api.capabilities.includes("memory"), true);
+  assert.equal(typeof api.memory?.list, "function");
+  assert.equal(api.capabilities.includes("automations"), true);
+  assert.equal(typeof api.automations?.create, "function");
+  assert.equal(api.capabilities.includes("subagents"), true);
+  assert.equal(typeof api.subagents?.spawn, "function");
+  assert.equal(api.capabilities.includes("toolInterception"), true);
+  assert.equal(typeof api.interceptTool, "function");
 });
 
 test("une extension récente reste compatible avec un Hôte historique seulement si elle garde les capacités", async () => {
@@ -221,7 +253,7 @@ test("un même identifiant local reste indépendant de son extension", () => {
   assert.equal(first.skills[0].id, second.skills[0].id);
 });
 
-test("la fixture API expansion installable enregistre deux outils, son skill et ses ressources", async () => {
+test("la fixture API expansion installable enregistre ses outils, son skill et ses ressources", async () => {
   const root = resolve("src-tauri/tests/fixtures/extensions/api-expansion");
   await resetExtensions();
   try {
@@ -234,7 +266,11 @@ test("la fixture API expansion installable enregistre deux outils, son skill et 
     assert.equal(loaded.error, undefined);
     assert.deepEqual(
       loaded.contributions.tools.map(({ name }) => name),
-      ["acceptance.api.expansion.catalog_probe", "acceptance.api.expansion.produce_artifacts"],
+      [
+        "acceptance.api.expansion.catalog_probe",
+        "acceptance.api.expansion.contextual_journey",
+        "acceptance.api.expansion.produce_artifacts",
+      ],
     );
     assert.deepEqual(loaded.contributions.skills.map(({ id }) => id), ["reference-skill"]);
     assert.deepEqual(

@@ -126,6 +126,8 @@ pub struct AgentSession {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent_session_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subagent_extension_owner: Option<SubagentExtensionOwnership>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subagent_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subagent_worktree: Option<String>,
@@ -167,6 +169,30 @@ pub struct AgentSession {
     pub clone_root_session_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub git_branch: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SubagentExtensionOwner {
+    pub extension_id: String,
+    pub extension_version: String,
+    pub extension_fingerprint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SubagentExtensionOwnership {
+    Valid(SubagentExtensionOwner),
+    Invalid(serde_json::Value),
+}
+
+impl SubagentExtensionOwnership {
+    pub fn valid(&self) -> Option<&SubagentExtensionOwner> {
+        match self {
+            Self::Valid(owner) => Some(owner),
+            Self::Invalid(_) => None,
+        }
+    }
 }
 
 pub(super) fn default_provider() -> String {

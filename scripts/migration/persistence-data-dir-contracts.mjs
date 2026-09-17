@@ -66,9 +66,10 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/api_keys_registry.rs", 1],
   ["src-tauri/src/services/app_log.rs", 1],
   // Les automatisations possèdent leurs définitions, leur runtime et leur historique durables.
-  ["src-tauri/src/services/automations/mod.rs", 1],
+  ["src-tauri/src/services/automations/mod.rs", 4],
   ["src-tauri/src/services/automations/runtime_recovery.rs", 1],
   ["src-tauri/src/services/automations/service.rs", 7],
+  ["src-tauri/src/services/automations/service_owned_api.rs", 1],
   ["src-tauri/src/services/automations/store.rs", 2],
   ["src-tauri/src/services/autostart_migration.rs", 1],
   ["src-tauri/src/services/browser/cef_engine_config.rs", 1],

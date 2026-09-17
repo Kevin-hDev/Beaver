@@ -30,7 +30,7 @@
       "periods": { "today": "Aujourd’hui", "seven_days": "7 jours", "thirty_days": "30 jours", "all_time": "Total" },
       "quality": { "exact": "Exact", "estimated": "Estimé", "partial": "Partiel", "unavailable": "Indisponible" },
       "origins": { "manual_chat": "Chat manuel", "external_channel": "Canal externe", "automation": "Automatisation" },
-      "workloads": { "primary": "Principal", "subagent": "Sous-agent", "compression": "Compression" },
+      "workloads": { "primary": "Principal", "subagent": "Sous-agent", "compression": "Compression", "extension": "Extension" },
       "windows": { "today": "Aujourd’hui", "seven_days": "7 jours", "thirty_days": "30 jours", "key_limit": "Limite de la clé", "requests_day": "Requêtes par jour", "tokens_minute": "Tokens par minute", "requests_limit": "Limite de requêtes", "tokens_limit": "Limite de tokens", "rolling_five_hours": "Fenêtre de 5 heures", "weekly": "Limite hebdomadaire", "provider_limit": "Limite du fournisseur" },
       "balances": { "remaining_credits": "Crédits restants", "available_balance": "Solde disponible", "voucher_balance": "Solde bons", "cash_balance": "Solde espèces", "reset_credits": "Crédits de réinitialisation", "extra_usage_balance": "Solde Extra Usage", "extra_usage_monthly_limit": "Limite mensuelle Extra Usage", "extra_usage_monthly_used": "Extra Usage utilisé ce mois" },
       "notices": { "usage_fetch_failed": "Impossible d’actualiser les données du fournisseur. Les dernières données valides restent affichées lorsqu’elles sont récentes.", "provider_usage_site_only": "xAI ne publie pas d’accès à ces limites. La consommation locale reste disponible.", "provider_account_usage_unavailable": "Ce fournisseur ne publie pas les limites du compte avec cette connexion.", "openrouter_account_balance_requires_management_key": "Le solde global OpenRouter nécessite une clé de gestion. La limite éventuellement fixée sur cette clé reste affichée." }
@@ -720,6 +720,9 @@
     "delete": "Supprimer",
     "confirmDelete": "Confirmer la suppression",
     "pausedHint": "Réveils en veille — désactive le master switch",
+    "approveExtension": "Réapprouver et activer",
+    "origins": { "session": "Session", "external_channel": "Canal externe", "user_interface": "Beaver", "extension": "Extension" },
+    "inactiveReasons": { "approval_required": "Cette automatisation doit être réapprouvée après sa modification.", "owner_unavailable": "L’extension propriétaire n’est plus disponible.", "owner_invalid": "Les informations du propriétaire sont invalides." },
     "badges": {
       "active": "Actif",
       "disabled": "Désactivé",
@@ -737,7 +740,8 @@
       "lastRun": "Dernière exécution",
       "description": "Description",
       "prompt": "Prompt",
-      "target": "Session"
+      "target": "Session",
+      "origin": "Origine"
     },
     "status": {
       "ok": "Réussi",
@@ -819,6 +823,10 @@
       "continue": "Continuer"
     },
     "errors": {
+      "capacity_reached": "La limite d’automatisations est atteinte.",
+      "immutable_field": "Ce champ ne peut pas être modifié.",
+      "model_tools_unsupported": "Ce modèle ne prend pas en charge les outils requis.",
+      "cursor_expired": "Cette page d’historique n’est plus disponible.",
       "audit_unavailable": "Le journal d'audit est indisponible. Les modifications sont bloquées.",
       "store_unavailable": "Les réveils sont temporairement indisponibles.",
       "migration_unavailable": "La migration des réveils est indisponible.",
@@ -827,7 +835,9 @@
       "model_unavailable": "Le modèle est indisponible.",
       "provider_unavailable": "Le fournisseur est indisponible.",
       "not_found": "Ce réveil n'existe plus.",
+      "revision_conflict": "Ce réveil a été modifié. Rechargez-le avant de réessayer.",
       "globally_paused": "Les réveils sont en pause.",
+      "consent_required": "Cette modification doit être approuvée avant l'activation.",
       "invalid_project": "Le projet est invalide.",
       "invalid_input": "Un ou plusieurs champs sont invalides.",
       "pauseAll": "Tout mettre en pause"
@@ -1928,6 +1938,7 @@
       "api": "API Beaver",
     "active": "Extensions actives",
     "diagnostics": "Dernières erreurs de chargement",
+      "activity": { "empty": "Aucune activité d’extension pour le moment.", "interceptors": "Intercepteurs actifs", "queued": "Événements reçus", "delivered": "Événements livrés", "dropped": "Événements ignorés", "timedOut": "Événements expirés", "activeHandlers": "Gestionnaires actifs" },
       "unavailable": "Indisponible",
       "states": {
         "stopped": "Arrêté",
@@ -2007,7 +2018,19 @@
         "extensions_result_too_large": "Le résultat de l’extension est trop volumineux.",
         "extensions_listing_unavailable": "La liste des extensions est indisponible.",
         "extensions_inspection_invalid": "L’inspection des extensions est invalide.",
-        "extensions_inspection_unavailable": "L’inspection des extensions est indisponible."
+        "extensions_inspection_unavailable": "L’inspection des extensions est indisponible.",
+        "extensions_context_required": "Cette action d’extension nécessite un tour Agent actif.",
+        "extensions_context_invalid": "Le contexte de l’action d’extension est invalide.",
+        "extensions_context_expired": "Le contexte de l’action d’extension a expiré.",
+        "extensions_context_revoked": "L’action d’extension a été révoquée.",
+        "extensions_permission_denied": "L’action d’extension n’est pas autorisée.",
+        "extensions_core_saturated": "Beaver traite trop d’actions d’extension.",
+        "extensions_core_cancelled": "L’action d’extension a été annulée.",
+        "extensions_partial_apply": "La modification a été appliquée, mais une étape suivante a échoué.",
+        "extensions_model_unavailable": "Le modèle demandé est indisponible.",
+        "extensions_interception_individual_timeout": "Une extension a mis trop de temps à inspecter l’appel d’outil.",
+        "extensions_interception_chain_timeout": "La chaîne d’inspection des extensions a mis trop de temps.",
+        "extensions_eager_interception_conflict": "Un résultat d’outil anticipé a été refusé car l’inspection des extensions est active."
       }
     },
     "diagnostics": {
@@ -2025,6 +2048,11 @@
         "host_missing_response": "L’hôte n’a pas confirmé le chargement de cette extension",
         "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré",
         "ui_manifest_legacy": "L’ancienne déclaration d’interface a été ignorée ; les outils restent disponibles",
+        "interceptor_invalid": "L’intercepteur d’outil est invalide",
+        "interceptor_failed": "L’intercepteur d’outil a échoué",
+        "interceptor_timeout": "L’intercepteur d’outil a mis trop de temps",
+        "interceptor_limit_exceeded": "Trop d’intercepteurs d’outils sont actifs",
+        "interception_budget_exhausted": "Le temps alloué à l’inspection des outils est épuisé",
         "ui_contract_invalid": "Le contrat d’interface est invalide",
         "ui_contribution_invalid": "Une contribution d’interface est invalide",
         "ui_reference_missing": "Une référence d’interface est absente",

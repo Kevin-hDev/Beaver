@@ -53,6 +53,7 @@ pub(super) struct BoundHostChannel {
     pub(super) api_level: ExtensionApiLevel,
     pub(super) generation: Arc<HostGeneration>,
     pub(super) process: Arc<HostProcess>,
+    pub(super) capabilities: Vec<String>,
     revoked: tokio_util::sync::CancellationToken,
     _temporary_directory: tempfile::TempDir,
 }
@@ -153,6 +154,7 @@ impl BoundHostChannel {
             self.api_level.clone(),
             self.generation.number,
             self.revoked.clone(),
+            self.capabilities.clone(),
         )
     }
 }

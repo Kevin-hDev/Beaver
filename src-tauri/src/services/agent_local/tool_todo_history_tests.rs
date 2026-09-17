@@ -77,13 +77,14 @@ fn missing_resume_does_not_pause_the_current_run() {
     super::super::tool_todo_state::apply_todos_to_session(&mut session, todos);
     let active_id = session.active_todo_run_id.clone().unwrap();
 
-    let result = super::super::tool_todo_state::resume_run(
-        &mut session,
-        &uuid::Uuid::new_v4().to_string(),
-    );
+    let result =
+        super::super::tool_todo_state::resume_run(&mut session, &uuid::Uuid::new_v4().to_string());
 
     assert!(result.is_err());
-    assert_eq!(session.active_todo_run_id.as_deref(), Some(active_id.as_str()));
+    assert_eq!(
+        session.active_todo_run_id.as_deref(),
+        Some(active_id.as_str())
+    );
     assert_eq!(session.todo_runs[0].status, AgentTodoRunStatus::Active);
 }
 

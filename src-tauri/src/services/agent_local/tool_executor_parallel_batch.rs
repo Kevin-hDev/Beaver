@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
+use super::stream_events::AgentEventEmitter;
 use super::tool_executor_helpers::post_record_read;
 
 pub(crate) const MAX_PARALLEL: usize = 10;
@@ -21,9 +22,11 @@ pub(super) struct BatchEntry<'a> {
     pub global_idx: usize,
     pub name: &'a str,
     pub effective_args: &'a Value,
+    pub tool_call_id: Option<&'a str>,
 }
 
 pub(super) async fn flush_read_batch<'a>(
+    on_event: &AgentEventEmitter,
     batch: &[BatchEntry<'a>],
     indexed_results: &mut [Option<(&'a str, ToolResult)>],
     working_dir: &std::path::Path,
@@ -32,7 +35,8 @@ pub(super) async fn flush_read_batch<'a>(
     eager_results: &mut Option<&mut HashMap<usize, ToolResult>>,
     session_id: &str,
     request_id: &str,
-    chat_mode: bool,
+    permission_mode: &str,
+    plan_active: bool,
 ) {
     let mut batch_results: Vec<Option<ToolResult>> = vec![None; batch.len()];
     for (chunk_index, chunk) in batch.chunks(MAX_PARALLEL).enumerate() {
@@ -70,12 +74,14 @@ pub(super) async fn flush_read_batch<'a>(
                 .iter()
                 .map(|&pos| {
                     dispatch_pending(
+                        on_event,
                         &chunk[pos],
                         working_dir,
                         session_id,
                         request_id,
                         cancel.clone(),
-                        chat_mode,
+                        permission_mode,
+                        plan_active,
                     )
                 })
                 .collect();
@@ -143,21 +149,26 @@ pub(super) async fn flush_read_batch<'a>(
 }
 
 async fn dispatch_pending(
+    on_event: &AgentEventEmitter,
     entry: &BatchEntry<'_>,
     working_dir: &std::path::Path,
     session_id: &str,
     request_id: &str,
     cancel: CancellationToken,
-    chat_mode: bool,
+    permission_mode: &str,
+    plan_active: bool,
 ) -> ToolResult {
     super::tool_executor_parallel_dispatch::dispatch_read(
+        on_event,
         entry.name,
         entry.effective_args,
         working_dir,
         session_id,
         request_id,
+        entry.tool_call_id,
         cancel,
-        chat_mode,
+        permission_mode,
+        plan_active,
     )
     .await
 }

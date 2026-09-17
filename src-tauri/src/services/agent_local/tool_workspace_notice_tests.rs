@@ -6,8 +6,8 @@ fn successful_external_write_adds_a_non_blocking_notice() {
     let external = tempfile::tempdir().expect("external");
     let changed = external.path().join("created.txt");
     std::fs::write(&changed, "ok").expect("write");
-    let result = ToolResult::ok("created")
-        .with_affected_paths(vec![changed.to_string_lossy().to_string()]);
+    let result =
+        ToolResult::ok("created").with_affected_paths(vec![changed.to_string_lossy().to_string()]);
 
     let result = append(result, workspace.path());
 
@@ -17,7 +17,12 @@ fn successful_external_write_adds_a_non_blocking_notice() {
         .warnings
         .first()
         .expect("workspace warning")
-        .contains(dunce::canonicalize(workspace.path()).unwrap().to_string_lossy().as_ref()));
+        .contains(
+            dunce::canonicalize(workspace.path())
+                .unwrap()
+                .to_string_lossy()
+                .as_ref()
+        ));
 }
 
 #[test]
@@ -25,8 +30,8 @@ fn write_inside_workspace_does_not_add_a_notice() {
     let workspace = tempfile::tempdir().expect("workspace");
     let changed = workspace.path().join("created.txt");
     std::fs::write(&changed, "ok").expect("write");
-    let result = ToolResult::ok("created")
-        .with_affected_paths(vec![changed.to_string_lossy().to_string()]);
+    let result =
+        ToolResult::ok("created").with_affected_paths(vec![changed.to_string_lossy().to_string()]);
 
     let result = append(result, workspace.path());
 

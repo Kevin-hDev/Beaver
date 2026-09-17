@@ -12,6 +12,7 @@ pub(super) enum WireVersion {
     V4,
     V5,
     V6,
+    V7,
     Future(u16),
 }
 
@@ -25,6 +26,7 @@ pub(super) fn version(bytes: &[u8]) -> Result<WireVersion, String> {
         Some(4) => Ok(WireVersion::V4),
         Some(super::session_migration_v5::SCHEMA_VERSION) => Ok(WireVersion::V5),
         Some(super::session_migration_v6::SCHEMA_VERSION) => Ok(WireVersion::V6),
+        Some(super::session_migration_v7::SCHEMA_VERSION) => Ok(WireVersion::V7),
         Some(value) if value > super::session_limits::CURRENT_SESSION_SCHEMA_VERSION => {
             Ok(WireVersion::Future(value))
         }

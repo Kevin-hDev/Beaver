@@ -11,7 +11,7 @@ pub(super) const RUNTIME_ADMISSION_FAILED: &str = "automation_runtime_admission_
 
 pub struct ScheduledAgentResult {
     pub tokens: u32,
-    pub has_text_result: bool,
+    pub has_agent_result: bool,
 }
 
 pub async fn run(
@@ -76,41 +76,47 @@ pub async fn run(
         match crate::commands::agent_working_dir::resolve_for_session(session_id, None).await {
             Ok(directory) => directory,
             Err(error) => {
-                let _ = crate::commands::agent_chat_turn::rollback_current(
+                super::agentic_cleanup::rollback(
                     &streams,
                     session_id,
                     stream.generation,
                     &admission_rollback,
                 )
                 .await;
-                crate::commands::agent_chat_streams::finish_active_stream(
-                    &streams,
-                    session_id,
-                    stream.generation,
-                )
-                .await;
                 return Err(error);
             }
         };
-    if super::runtime::mark_running(occurrence_id, chrono::Utc::now())
-        .await
-        .is_err()
-    {
-        let _ = crate::commands::agent_chat_turn::rollback_current(
+    if cancel.is_cancelled() {
+        super::agentic_cleanup::rollback(
             &streams,
             session_id,
             stream.generation,
             &admission_rollback,
         )
         .await;
-        crate::commands::agent_chat_streams::finish_active_stream(
+        return Err("cancelled".to_string());
+    }
+    if super::runtime::mark_running(occurrence_id, chrono::Utc::now())
+        .await
+        .is_err()
+    {
+        super::agentic_cleanup::rollback(
             &streams,
             session_id,
             stream.generation,
+            &admission_rollback,
         )
         .await;
         return Err(RUNTIME_ADMISSION_FAILED.to_string());
     }
+    let _ = crate::services::extensions::automation_event(
+        session_id,
+        &stream.request_id,
+        &automation.id.to_string(),
+        true,
+        "running",
+        None,
+    );
     let emitter =
         AgentEventEmitter::with_generation(app.clone(), session_id.to_string(), stream.generation);
     let _ = emitter.send(admission_rollback.accept_execution_event());
@@ -180,12 +186,12 @@ pub async fn run(
     {
         return Err(crate::commands::agent_chat_streams::STREAM_REPLACED.to_string());
     }
-    let has_text_result = has_text_result(completed.messages());
+    let has_agent_result = has_agent_result(completed.messages());
     let tokens = generated_output_tokens(completed.messages());
     completed.emit_done(&emitter);
     Ok(ScheduledAgentResult {
         tokens,
-        has_text_result,
+        has_agent_result,
     })
 }
 
@@ -201,10 +207,11 @@ fn generated_output_tokens(messages: &[ChatMessage]) -> u32 {
         .min(u32::MAX as usize) as u32
 }
 
-pub(super) fn has_text_result(messages: &[ChatMessage]) -> bool {
-    messages
-        .iter()
-        .any(|message| message.role == "assistant" && !message.content.trim().is_empty())
+pub(super) fn has_agent_result(messages: &[ChatMessage]) -> bool {
+    messages.iter().any(|message| {
+        (message.role == "assistant" && !message.content.trim().is_empty())
+            || message.role == "tool"
+    })
 }
 
 #[cfg(test)]

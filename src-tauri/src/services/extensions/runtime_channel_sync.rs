@@ -149,6 +149,10 @@ impl ExtensionRuntime {
                 .insert(id, super::error_codes::HOST_UNAVAILABLE.to_string());
         }
         let mut applied = super::runtime_sync::apply(responses, &build)?;
+        self.configure_event_deliveries(std::mem::take(&mut applied.event_subscriptions))
+            .await?;
+        self.tool_interceptors
+            .replace(std::mem::take(&mut applied.interceptors));
         let ui_apply = self.ui_catalog.apply(applied.ui_updates)?;
         for extension_id in ui_apply.rejected_extensions {
             super::runtime_sync_apply::push_ui_diagnostic_once(

@@ -89,6 +89,7 @@ impl RuntimeHosts {
             .map(channel_snapshot)
     }
 
+    #[cfg(test)]
     pub(in crate::services::extensions) fn usable_snapshots(
         &self,
     ) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {
@@ -128,6 +129,20 @@ impl RuntimeHosts {
                 channel.generation.number == generation && !channel.revoked.is_cancelled()
             })
             .map(BoundHostChannel::call_context)
+    }
+
+    pub(in crate::services::extensions) fn event_target(
+        &self,
+        identity: &HostIdentity,
+        generation: u64,
+    ) -> Option<(Arc<HostProcess>, tokio_util::sync::CancellationToken)> {
+        self.channel(identity)
+            .filter(|channel| {
+                channel.generation.number == generation
+                    && !channel.revoked.is_cancelled()
+                    && !channel.generation.is_stopping()
+            })
+            .map(|channel| (Arc::clone(&channel.process), channel.revoked.clone()))
     }
 }
 

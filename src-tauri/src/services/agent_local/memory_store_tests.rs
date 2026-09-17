@@ -114,10 +114,32 @@ async fn settings_archive_updates_metadata_and_active_indexes() {
         .await
         .unwrap();
     assert!(archived.contains("status: archived"));
-    assert!(!scope.summary_path().exists() || !tokio::fs::read_to_string(scope.summary_path())
+    assert!(
+        !scope.summary_path().exists()
+            || !tokio::fs::read_to_string(scope.summary_path())
+                .await
+                .unwrap()
+                .contains("Interface compacte")
+    );
+}
+
+#[tokio::test]
+async fn archive_preserves_applied_but_index_failed() {
+    let root = tempfile::tempdir().unwrap();
+    let scope = MemoryLayout::at(root.path().join("memory")).global_scope();
+    let id = uuid::Uuid::new_v4().to_string();
+    let path = scope.topics_dir().join(format!("{id}.md"));
+    write_topic(&scope, &path, &topic(&id, "confirmed"))
         .await
-        .unwrap()
-        .contains("Interface compacte"));
+        .unwrap();
+    tokio::fs::remove_file(scope.summary_path()).await.unwrap();
+    tokio::fs::create_dir(scope.summary_path()).await.unwrap();
+
+    let outcome = archive_topic_result(&scope, &path).await.unwrap();
+
+    assert!(!outcome.index_updated);
+    assert!(!path.exists());
+    assert!(scope.archive_dir().join(format!("{id}.md")).exists());
 }
 
 #[tokio::test]

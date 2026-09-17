@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import readline from "node:readline";
+
+import { CAPABILITIES, OPTIONAL_CAPABILITIES } from "../../src-tauri/resources/extension-host/contract.mjs";
 
 export function createHost(hostScript, options = {}) {
   const child = spawn(options.executable ?? process.execPath, [hostScript], {
@@ -60,6 +62,16 @@ export function createHost(hostScript, options = {}) {
         return Promise.reject(new Error("too many pending host requests"));
       }
       const id = randomUUID();
+      const effectiveParams = method === "tool.call" && params?.scope === undefined
+        ? {
+            ...params,
+            scope: {
+              id: randomUUID(),
+              secret: randomBytes(32).toString("hex"),
+              remainingMs: 5_000,
+            },
+          }
+        : params;
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           pending.delete(id);
@@ -70,7 +82,7 @@ export function createHost(hostScript, options = {}) {
           jsonrpc: "2.0",
           id,
           method,
-          params,
+          params: effectiveParams,
         })}\n`);
       });
     },
@@ -88,4 +100,10 @@ export async function resetAndLoad(host, extensions) {
     loaded.push(await host.request("host.load", { extension }));
   }
   return { extensions: loaded };
+}
+
+export function negotiateExpandedApi(host) {
+  return host.request("host.hello", {
+    capabilities: [...CAPABILITIES, ...OPTIONAL_CAPABILITIES],
+  });
 }

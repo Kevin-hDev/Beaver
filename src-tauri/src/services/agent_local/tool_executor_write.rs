@@ -26,6 +26,8 @@ pub(super) async fn execute_write(
     cancel: CancellationToken,
     plan_mode_active: bool,
     tool_call_index: Option<usize>,
+    tool_call_id: Option<&str>,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolResult {
     if mode == "chat" {
         return tool_dispatcher::dispatch_for_mode(
@@ -60,6 +62,18 @@ pub(super) async fn execute_write(
             );
         }
         PreHookDecision::Allow => {}
+    }
+    if let Err(result) = crate::services::extensions::before_tool_effect(
+        interception,
+        name,
+        args,
+        working_dir,
+        mode,
+        &cancel,
+    )
+    .await
+    {
+        return result;
     }
 
     let memory_write =
@@ -151,8 +165,11 @@ pub(super) async fn execute_write(
                     super::tool_dispatch_trace::DispatchTrace {
                         session_id,
                         request_id: Some(request_id),
+                        tool_call_id,
                     },
                     cancel.clone(),
+                    mode,
+                    plan_mode_active,
                     tool_call_index,
                 )
                 .await

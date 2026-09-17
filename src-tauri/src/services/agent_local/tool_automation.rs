@@ -43,7 +43,33 @@ pub async fn execute(
         Ok(actor) => actor,
         Err(error) => return automation_failure(action_name, error),
     };
+    if restricted_mutation(&request, &session, &actor).await {
+        return failure(
+            action_name,
+            "permission_denied",
+            ToolErrorCategory::Permission,
+        );
+    }
     dispatch(request, session, actor).await
+}
+
+async fn restricted_mutation(
+    request: &Action,
+    session: &super::types_session::AgentSession,
+    actor: &AutomationActor,
+) -> bool {
+    if !matches!(request, Action::Create(_) | Action::Update(_, _)) {
+        return false;
+    }
+    if session.parent_session_id.is_some() {
+        return true;
+    }
+    match actor.current_automation_id {
+        Some(id) => crate::services::automations::is_extension_owned_automation(id)
+            .await
+            .unwrap_or(true),
+        None => false,
+    }
 }
 
 fn action_name(args: &Value) -> &'static str {
@@ -92,19 +118,13 @@ async fn dispatch(
                 status: request.status,
             };
             match crate::services::automations::create(&actor, input).await {
-                Ok(item) => {
-                    crate::services::scheduler::notify_config_changed();
-                    success("create", view::detail(item))
-                }
+                Ok(item) => success("create", view::detail(item)),
                 Err(error) => automation_failure("create", error),
             }
         }
         Action::Update(id, patch) => {
             match crate::services::automations::update(&actor, id, patch).await {
-                Ok(item) => {
-                    crate::services::scheduler::notify_config_changed();
-                    success("update", view::detail(item))
-                }
+                Ok(item) => success("update", view::detail(item)),
                 Err(error) => automation_failure("update", error),
             }
         }
@@ -115,10 +135,7 @@ async fn dispatch(
             }
         }
         Action::Delete(id) => match crate::services::automations::delete(&actor, id).await {
-            Ok(()) => {
-                crate::services::scheduler::notify_config_changed();
-                success("delete", json!({"automation_id": id}))
-            }
+            Ok(()) => success("delete", json!({"automation_id": id})),
             Err(error) => automation_failure("delete", error),
         },
     }

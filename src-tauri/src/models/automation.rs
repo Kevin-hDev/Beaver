@@ -18,6 +18,24 @@ pub struct AutomationDefinition {
     pub status: AutomationStatus,
     pub created_at: DateTime<Utc>,
     pub anchor_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing)]
+    pub extension_owner: Option<AutomationExtensionOwnership>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AutomationExtensionOwnership {
+    Valid(AutomationExtensionOwner),
+    Invalid(serde_json::Value),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AutomationExtensionOwner {
+    pub extension_id: String,
+    pub extension_version: String,
+    pub extension_fingerprint: String,
+    pub approved_content_sha256: Option<String>,
+    pub approved_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

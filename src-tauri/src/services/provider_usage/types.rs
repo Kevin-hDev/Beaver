@@ -41,6 +41,7 @@ pub enum UsageWorkload {
     Primary,
     Subagent,
     Compression,
+    Extension,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -83,10 +84,12 @@ pub struct OriginBreakdown {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct WorkloadBreakdown {
     pub primary: UsageAggregate,
     pub subagent: UsageAggregate,
     pub compression: UsageAggregate,
+    pub extension: UsageAggregate,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

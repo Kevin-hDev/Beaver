@@ -55,6 +55,7 @@ export function ChatView({
     reasoningMode,
     permMode.mode,
     permMode.refresh,
+    permissions.remove,
   );
   const subagents = useSubagents(isSubagent ? undefined : sessionId);
   const fileDrop = useFileDrop();

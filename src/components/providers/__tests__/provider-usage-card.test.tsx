@@ -43,7 +43,12 @@ function period(id: UsagePeriodId, count: number) {
     period: id,
     totals: aggregate(count),
     origins: { manual_chat: aggregate(count), external_channel: aggregate(0), automation: aggregate(0) },
-    workloads: { primary: aggregate(count), subagent: aggregate(0), compression: aggregate(0) },
+    workloads: {
+      primary: aggregate(count),
+      subagent: aggregate(0),
+      compression: aggregate(0),
+      extension: aggregate(0),
+    },
     cost_quality: "estimated" as const,
   };
 }

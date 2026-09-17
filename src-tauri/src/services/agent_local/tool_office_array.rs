@@ -23,8 +23,8 @@ fn parse_encoded(encoded: &str, max_items: usize) -> Result<Vec<Value>, ArrayInp
     if unescaped == encoded {
         return Err(ArrayInputError::Invalid);
     }
-    let parsed = serde_json::from_str::<Value>(unescaped.trim())
-        .map_err(|_| ArrayInputError::Invalid)?;
+    let parsed =
+        serde_json::from_str::<Value>(unescaped.trim()).map_err(|_| ArrayInputError::Invalid)?;
     bounded_owned(parsed, max_items)
 }
 

@@ -187,6 +187,7 @@ fn workload_name(value: UsageWorkload) -> &'static str {
         UsageWorkload::Primary => "primary",
         UsageWorkload::Subagent => "subagent",
         UsageWorkload::Compression => "compression",
+        UsageWorkload::Extension => "extension",
     }
 }
 

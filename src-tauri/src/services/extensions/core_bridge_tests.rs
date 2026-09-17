@@ -83,22 +83,22 @@ async fn stable_channel_rejects_an_advanced_alias_not_declared_by_the_contract()
 fn method_policy_rejects_advanced_and_notification_entries_for_stable_requests() {
     use super::super::types::ExtensionApiLevel;
 
-    assert!(method_is_allowed(
+    assert!(super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Stable,
         "stable",
         "request"
     ));
-    assert!(!method_is_allowed(
+    assert!(!super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Stable,
         "advanced",
         "request"
     ));
-    assert!(method_is_allowed(
+    assert!(super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Advanced,
         "advanced",
         "request"
     ));
-    assert!(!method_is_allowed(
+    assert!(!super::super::core_api_dispatch::method_is_allowed(
         &ExtensionApiLevel::Advanced,
         "stable",
         "notification"
@@ -152,6 +152,26 @@ async fn revocation_interrupts_an_in_flight_core_operation() {
 }
 
 #[tokio::test]
+async fn stop_interrupts_an_in_flight_scoped_core_operation() {
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let context = super::super::core_api_permissions_tests::scoped_context(false, cancel.clone());
+
+    let call = tokio::spawn(async move {
+        await_unrevoked(&context, std::time::Duration::from_secs(1), async {
+            std::future::pending::<Result<CoreResponse, ExtensionBridgeError>>().await
+        })
+        .await
+    });
+    tokio::task::yield_now().await;
+    cancel.cancel();
+
+    assert!(matches!(
+        call.await.unwrap(),
+        Err(ExtensionBridgeError::Revoked)
+    ));
+}
+
+#[tokio::test]
 async fn timeout_stops_waiting_without_starting_the_operation_twice() {
     let context = super::super::call_context::ExtensionCallContext::for_test(
         super::super::host_identity::HostIdentity::ThirdParty("com.example.timeout".to_string()),
@@ -162,7 +182,7 @@ async fn timeout_stops_waiting_without_starting_the_operation_twice() {
 
     let result = await_unrevoked(&context, std::time::Duration::from_millis(10), async move {
         observed.fetch_add(1, Ordering::SeqCst);
-        std::future::pending::<Result<CoreResponse, ()>>().await
+        std::future::pending::<Result<CoreResponse, ExtensionBridgeError>>().await
     })
     .await;
 

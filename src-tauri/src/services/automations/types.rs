@@ -3,12 +3,22 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub const MAX_AUTOMATIONS_PER_EXTENSION: usize = 8;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AutomationOrigin {
     Session,
     ExternalChannel,
     UserInterface,
+    Extension,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtensionActorIdentity {
+    pub id: String,
+    pub version: String,
+    pub fingerprint: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -57,6 +67,8 @@ pub struct AutomationSummary {
     pub paused_by_global: bool,
     pub next_fire_at: Option<DateTime<Utc>>,
     pub last_run: Option<AutomationLastRun>,
+    pub origin: AutomationOrigin,
+    pub inactive_reason: Option<AutomationInactiveReason>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -70,6 +82,16 @@ pub struct AutomationLastRun {
 pub struct AutomationDetail {
     pub definition: AutomationDefinition,
     pub next_fire_at: Option<DateTime<Utc>>,
+    pub origin: AutomationOrigin,
+    pub inactive_reason: Option<AutomationInactiveReason>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AutomationInactiveReason {
+    ApprovalRequired,
+    OwnerUnavailable,
+    OwnerInvalid,
 }
 
 #[derive(Debug, Clone)]
@@ -125,6 +147,12 @@ pub enum AutomationError {
     AuditUnavailable,
     StoreUnavailable,
     CursorExpired,
+    RevisionConflict,
+    GloballyPaused,
+    ConsentRequired,
+    MigrationUnavailable,
+    InvalidTimezone,
+    InvalidProject,
 }
 
 impl std::fmt::Display for AutomationError {
@@ -136,6 +164,27 @@ impl std::fmt::Display for AutomationError {
 impl std::error::Error for AutomationError {}
 
 impl AutomationError {
+    #[cfg(test)]
+    pub const ALL: [Self; 17] = [
+        Self::NotFound,
+        Self::CapacityReached,
+        Self::InvalidInput,
+        Self::ImmutableField,
+        Self::InvalidSchedule,
+        Self::ProviderUnavailable,
+        Self::ModelUnavailable,
+        Self::ModelToolsUnsupported,
+        Self::AuditUnavailable,
+        Self::StoreUnavailable,
+        Self::CursorExpired,
+        Self::RevisionConflict,
+        Self::GloballyPaused,
+        Self::ConsentRequired,
+        Self::MigrationUnavailable,
+        Self::InvalidTimezone,
+        Self::InvalidProject,
+    ];
+
     pub const fn code(self) -> &'static str {
         match self {
             Self::NotFound => "not_found",
@@ -149,6 +198,12 @@ impl AutomationError {
             Self::AuditUnavailable => "audit_unavailable",
             Self::StoreUnavailable => "store_unavailable",
             Self::CursorExpired => "cursor_expired",
+            Self::RevisionConflict => "revision_conflict",
+            Self::GloballyPaused => "globally_paused",
+            Self::ConsentRequired => "consent_required",
+            Self::MigrationUnavailable => "migration_unavailable",
+            Self::InvalidTimezone => "invalid_timezone",
+            Self::InvalidProject => "invalid_project",
         }
     }
 }

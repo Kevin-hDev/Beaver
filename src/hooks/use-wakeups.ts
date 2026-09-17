@@ -12,16 +12,13 @@ import type {
   WakeupHistoryPage,
 } from "@/types/wakeup";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { AUTOMATION_ERROR_CODES } from "@/types/automation-contract.generated";
 import { useFsEvent } from "./use-fs-event";
 
-const ERROR_CODES = new Set<AutomationErrorCode>([
-  "audit_unavailable", "store_unavailable", "migration_unavailable", "invalid_timezone",
-  "invalid_schedule", "model_unavailable", "provider_unavailable", "not_found",
-  "globally_paused", "invalid_project", "invalid_input",
-]);
+const ERROR_CODES: ReadonlySet<string> = new Set(AUTOMATION_ERROR_CODES);
 
 function errorCode(error: unknown): AutomationErrorCode {
-  return typeof error === "string" && ERROR_CODES.has(error as AutomationErrorCode)
+  return typeof error === "string" && ERROR_CODES.has(error)
     ? error as AutomationErrorCode
     : "store_unavailable";
 }
@@ -134,6 +131,14 @@ export function useWakeups() {
     } catch (cause) { reportError(cause); }
   }, [refresh, reportError]);
 
+  const approveExtension = useCallback(async (id: string) => {
+    try {
+      await invoke("approve_extension_wakeup", { id });
+      await refresh();
+      await loadDetail(id);
+    } catch (cause) { reportError(cause); }
+  }, [loadDetail, refresh, reportError]);
+
   const setPaused = useCallback(async (paused: boolean) => {
     try {
       await invoke("set_global_paused", { paused });
@@ -178,7 +183,7 @@ export function useWakeups() {
 
   return {
     wakeups, globalPaused, migration, detail, history, loading, detailLoading, error,
-    refresh, loadDetail, loadMoreHistory, create, update, remove, toggle, setPaused,
+    refresh, loadDetail, loadMoreHistory, create, update, remove, toggle, approveExtension, setPaused,
     chooseTimezone, resolveConflict,
   };
 }

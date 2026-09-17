@@ -10,6 +10,7 @@ import jaLocale from "../../src/i18n/ja.json";
 import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
 import { EXTENSION_UI_SETUP_TIMEOUT_MS } from "../../scripts/e2e/extension-setup-deadline";
+import { assertContextualCapabilityProjection } from "../../scripts/e2e/extension-core-api-journey";
 import { completeOnboarding } from "./onboarding-flow";
 import { initializeExtensionHost, waitForExtensionHost } from "./extension-host-setup";
 import { setMinimumViewport } from "./native-viewport";
@@ -60,11 +61,11 @@ describe("API expansion packaged acceptance", () => {
     await invokeTauri("remove_extension", { extensionId });
   });
 
-  it("loads Beryl with its two tools, skill and two resources", async () => {
+  it("loads Beryl with its platform capabilities, skill and resources", async () => {
     const extension = await view();
     assert.equal(extension.manifest.name, "Beryl");
     assert.equal(extension.enabled, true);
-    assert.equal(extension.contributions.tools.length, 2);
+    assertContextualCapabilityProjection(toolNames(extension));
     assert.equal(extension.contributions.skills.length, 1);
     assert.equal(extension.contributions.resources.length, 2);
   });
@@ -72,10 +73,7 @@ describe("API expansion packaged acceptance", () => {
   it("shows the complete capability unit with accessible controls", async () => {
     await setPresentation("en", "light");
     await openExtensionDetail(enLocale);
-    assert.deepEqual(await textList(".extd-tool-row code"), [
-      `${extensionId}.catalog_probe`,
-      `${extensionId}.produce_artifacts`,
-    ]);
+    assertContextualCapabilityProjection(await textList(".extd-tool-row code"));
     assert.deepEqual(await textList(".extcap-row-heading > span:first-child"), [
       "reference-skill",
       "reference",
@@ -152,7 +150,7 @@ describe("API expansion packaged acceptance", () => {
     await invokeTauri("reload_extension_host");
     await waitForExtensionHost();
     const extension = await view();
-    assert.equal(extension.contributions.tools.length, 2);
+    assertContextualCapabilityProjection(toolNames(extension));
     assert.equal(extension.contributions.skills.length, 1);
     assert.equal(extension.contributions.resources.length, 2);
   });
@@ -228,4 +226,10 @@ async function view(): Promise<ExtensionView> {
   const extension = extensions.find(({ manifest }) => manifest.id === extensionId);
   assert.ok(extension, "API expansion fixture is missing from the extension registry");
   return extension;
+}
+
+function toolNames(extension: ExtensionView): string[] {
+  return extension.contributions.tools
+    .map((tool) => (tool as { name?: unknown }).name)
+    .filter((name): name is string => typeof name === "string");
 }

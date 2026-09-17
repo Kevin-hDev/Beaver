@@ -1,10 +1,10 @@
 #[cfg(test)]
 use super::subagent_instruction_delivery::{MAX_PROMPT_SIZE, MAX_QUEUED_PROMPTS};
-#[cfg(test)]
-use super::tool_subagent_message::{build_resume_payload, enqueue_prompt};
+use super::tool_subagent_format::{format_child, format_meta};
 #[cfg(test)]
 use super::tool_subagent_message::run as message;
-use super::tool_subagent_format::{format_child, format_meta};
+#[cfg(test)]
+use super::tool_subagent_message::{build_resume_payload, enqueue_prompt};
 use super::types_session::AgentSession;
 use super::types_tools::ToolResult;
 use serde_json::Value;
@@ -76,12 +76,10 @@ async fn cancel(args: &Value, parent_id: &str) -> ToolResult {
     match super::subagent_cancellation::cancel_owned(child_id, parent_id).await {
         Ok(true) => ToolResult::ok("Sous-agent annulé.".to_string()),
         Ok(false) => ToolResult::ok("Sous-agent déjà terminé.".to_string()),
-        Err(_) => ToolResult::internal(
-            "subagent_cancel_failed",
-            "Sous-agent indisponible.",
-            false,
-        )
-        .with_error_hint("Vérifier l'état du sous-agent avant de demander une nouvelle annulation."),
+        Err(_) => ToolResult::internal("subagent_cancel_failed", "Sous-agent indisponible.", false)
+            .with_error_hint(
+                "Vérifier l'état du sous-agent avant de demander une nouvelle annulation.",
+            ),
     }
 }
 
@@ -99,12 +97,12 @@ async fn archive(args: &Value, parent_id: &str) -> ToolResult {
         Ok(super::subagent_archive::ArchiveOutcome::NotFound) => {
             ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.")
         }
-        Err(_) => ToolResult::internal(
-            "subagent_archive_failed",
-            "Sous-agent indisponible.",
-            false,
-        )
-        .with_error_hint("Vérifier l'état du sous-agent avant de demander un nouvel archivage."),
+        Err(_) => {
+            ToolResult::internal("subagent_archive_failed", "Sous-agent indisponible.", false)
+                .with_error_hint(
+                    "Vérifier l'état du sous-agent avant de demander un nouvel archivage.",
+                )
+        }
     }
 }
 
@@ -162,11 +160,11 @@ async fn child_has_pending_work(child: &AgentSession) -> bool {
 }
 
 #[cfg(test)]
-#[path = "tool_subagent_control_tests.rs"]
-mod tests;
-#[cfg(test)]
 #[path = "tool_subagent_message_tests.rs"]
 mod message_tests;
 #[cfg(test)]
 #[path = "tool_subagent_terminal_message_tests.rs"]
 mod terminal_message_tests;
+#[cfg(test)]
+#[path = "tool_subagent_control_tests.rs"]
+mod tests;

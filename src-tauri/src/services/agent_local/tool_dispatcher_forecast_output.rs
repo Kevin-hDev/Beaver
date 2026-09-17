@@ -1,7 +1,7 @@
-use crate::services::forecast::types::ForecastResult;
 use crate::services::forecast::limits::{
     MAX_TOOL_ANALYSES, MAX_TOOL_ANNOTATIONS, MAX_TOOL_PREDICTIONS,
 };
+use crate::services::forecast::types::ForecastResult;
 use serde_json::{json, Value};
 
 const MAX_TOOL_ANOMALIES: usize = 10;
@@ -55,13 +55,15 @@ pub fn analysis_payload(
     let scenarios: Vec<Value> = analysis
         .scenarios
         .iter()
-        .map(|scenario| json!({
-            "id": scenario.id,
-            "name": scenario.name,
-            "description": scenario.description,
-            "predictions_count": scenario.predictions.len(),
-            "params_modified": scenario.params_modified
-        }))
+        .map(|scenario| {
+            json!({
+                "id": scenario.id,
+                "name": scenario.name,
+                "description": scenario.description,
+                "predictions_count": scenario.predictions.len(),
+                "params_modified": scenario.params_modified
+            })
+        })
         .collect();
     to_pretty(json!({
         "analysis_id": analysis.id,
@@ -189,8 +191,7 @@ fn ensemble_summary(analysis: &ForecastResult) -> Value {
 }
 
 fn to_pretty(value: Value) -> Result<String, String> {
-    serde_json::to_string_pretty(&value)
-        .map_err(|_| "Résultat Forecast indisponible".to_string())
+    serde_json::to_string_pretty(&value).map_err(|_| "Résultat Forecast indisponible".to_string())
 }
 
 #[cfg(test)]

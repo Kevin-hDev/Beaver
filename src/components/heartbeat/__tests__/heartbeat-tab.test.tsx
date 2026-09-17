@@ -26,7 +26,7 @@ function api(migration: AutomationMigrationStatus): WakeupsApi {
     history: { entries: [], next_cursor: null }, loading: false,
     detailLoading: false, error: null, refresh: vi.fn(), loadDetail: vi.fn(),
     loadMoreHistory: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn(),
-    toggle: vi.fn(), setPaused, chooseTimezone, resolveConflict,
+    toggle: vi.fn(), approveExtension: vi.fn(), setPaused, chooseTimezone, resolveConflict,
   };
 }
 

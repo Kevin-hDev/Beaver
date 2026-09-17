@@ -14,6 +14,7 @@ pub(super) const MAX_EXTENSION_CORE_CALLS: usize = MAX_IN_FLIGHT_REQUESTS;
 type ExtensionReaderWork = ServiceWorkSupervisor<MAX_HOST_PROCESSES>;
 type ExtensionOperationWork = ServiceWorkSupervisor<MAX_EXTENSION_OPERATIONS>;
 type ExtensionCoreCallWork = ServiceWorkSupervisor<MAX_EXTENSION_CORE_CALLS>;
+type ExtensionEventWork = ServiceWorkSupervisor<MAX_HOST_PROCESSES>;
 type ExtensionLifecycleWork = ServiceWorkSupervisor<1>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -43,6 +44,10 @@ pub(super) struct ExtensionWorkServices {
     readers: ExtensionReaderWork,
     operations: ExtensionOperationWork,
     core_calls: ExtensionCoreCallWork,
+    core_call_quota: super::core_call_quota::CoreCallQuota,
+    core_scopes: super::core_scope::CoreScopeRegistry,
+    pub(super) events: ExtensionEventWork,
+    pub(super) event_router: super::event_delivery::EventRouter,
     lifecycle: ExtensionLifecycleWork,
 }
 
@@ -52,6 +57,10 @@ impl ExtensionWorkServices {
             readers: ExtensionReaderWork::new(app.clone()),
             operations: ExtensionOperationWork::new(app.clone()),
             core_calls: ExtensionCoreCallWork::new(app.clone()),
+            core_call_quota: super::core_call_quota::CoreCallQuota::default(),
+            core_scopes: super::core_scope::CoreScopeRegistry::default(),
+            events: ExtensionEventWork::new(app.clone()),
+            event_router: super::event_delivery::EventRouter::default(),
             lifecycle: ExtensionLifecycleWork::new(app),
         }
     }
@@ -110,13 +119,27 @@ impl ExtensionWorkServices {
 
     pub(super) fn spawn_core_call<Factory, Task>(
         &self,
+        identity: &super::host_identity::HostIdentity,
         work: Factory,
     ) -> Result<(), ExtensionWorkAdmissionError>
     where
         Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
         Task: Future + Send + 'static,
     {
-        self.core_calls.spawn(work).map_err(map_admission_error)
+        let lease = self
+            .core_call_quota
+            .acquire(identity)
+            .ok_or(ExtensionWorkAdmissionError::Busy)?;
+        self.core_calls
+            .spawn(move |cancel| async move {
+                let _lease = lease;
+                work(cancel).await;
+            })
+            .map_err(map_admission_error)
+    }
+
+    pub(super) fn core_scopes(&self) -> &super::core_scope::CoreScopeRegistry {
+        &self.core_scopes
     }
 
     pub(super) fn spawn_lifecycle<Factory, Task>(
@@ -136,6 +159,7 @@ impl ExtensionWorkServices {
         self.readers.begin_closing();
         self.operations.begin_closing();
         self.core_calls.begin_closing();
+        self.events.begin_closing();
         self.lifecycle.begin_closing();
     }
 
@@ -145,13 +169,14 @@ impl ExtensionWorkServices {
 
     pub(super) async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.begin_closing();
-        let (readers, operations, core_calls, lifecycle) = tokio::join!(
+        let (readers, operations, core_calls, events, lifecycle) = tokio::join!(
             self.readers.stop_and_wait(deadline),
             self.operations.stop_and_wait(deadline),
             self.core_calls.stop_and_wait(deadline),
+            self.events.stop_and_wait(deadline),
             self.lifecycle.stop_and_wait(deadline),
         );
-        readers && operations && core_calls && lifecycle
+        readers && operations && core_calls && events && lifecycle
     }
 
     #[cfg(test)]
@@ -180,7 +205,7 @@ impl ExtensionWorkServices {
     }
 }
 
-fn map_admission_error(error: ServiceWorkAdmissionError) -> ExtensionWorkAdmissionError {
+pub(super) fn map_admission_error(error: ServiceWorkAdmissionError) -> ExtensionWorkAdmissionError {
     match error {
         ServiceWorkAdmissionError::AppClosing | ServiceWorkAdmissionError::Closing => {
             ExtensionWorkAdmissionError::ShuttingDown

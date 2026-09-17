@@ -48,10 +48,7 @@ pub(super) fn resolve(
         || super::subagent_profile::clean_name(supplied_name, subagent_type),
         |definition| definition.name.clone(),
     );
-    let legacy_label = super::subagent_profile::legacy_mission_label(
-        supplied_name,
-        subagent_type,
-    );
+    let legacy_label = super::subagent_profile::legacy_mission_label(supplied_name, subagent_type);
     let description_owned = agent
         .as_ref()
         .map(|definition| definition.description.clone())

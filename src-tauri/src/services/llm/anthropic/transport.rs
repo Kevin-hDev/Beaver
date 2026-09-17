@@ -46,9 +46,19 @@ pub(in crate::services::llm) async fn stream_chat(
     .await
 }
 
+#[cfg(test)]
 pub(in crate::services::llm) async fn collect_silent(
     config: &RequestConfig<'_>,
     cancel: CancellationToken,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<StreamResult, String> {
+    collect_silent_bounded(config, cancel, usize::MAX, measurement).await
+}
+
+pub(in crate::services::llm) async fn collect_silent_bounded(
+    config: &RequestConfig<'_>,
+    cancel: CancellationToken,
+    max_text_bytes: usize,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
     let response = post(config, measurement.as_deref_mut(), None, None)
@@ -62,6 +72,7 @@ pub(in crate::services::llm) async fn collect_silent(
             model: config.model,
             api_format: crate::services::provider_usage::UsageApiFormat::AnthropicMessages,
         },
+        max_text_bytes,
         measurement,
     )
     .await

@@ -79,7 +79,6 @@ export function applyStreamEvent(
       break;
     case "toolResult": {
       if (isHiddenAgentTool(event.data.name)) {
-        next.pendingPermissions = [];
         if (event.data.name === "ask_user_choice" || event.data.name === "plan_mode") {
           next.interactiveChoice = undefined;
         }
@@ -108,7 +107,6 @@ export function applyStreamEvent(
         next.currentTools,
         applied.appliedIndex,
       );
-      next.pendingPermissions = [];
       break;
     }
     case "turnEnd":
@@ -123,6 +121,9 @@ export function applyStreamEvent(
       break;
     case "permissionRequest":
       next.pendingPermissions = addPermission(next.pendingPermissions, { ...event.data });
+      break;
+    case "permissionClosed":
+      next.pendingPermissions = next.pendingPermissions.filter(({ id }) => id !== event.data.id);
       break;
     case "sessionSnapshot":
       break;

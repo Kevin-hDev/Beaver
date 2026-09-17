@@ -48,6 +48,7 @@ function backendRecord() {
         type: string;
         path: string;
       }>,
+      interceptors: [{}],
     },
   };
 }
@@ -60,6 +61,25 @@ describe("parseExtensionRecords", () => {
     expect(record.lastError).toBeUndefined();
     expect(record.contributions.tools[0].name)
       .toBe("beaver.office.documents.create");
+  });
+
+  it("accepte l'intercepteur vide publié par le backend", () => {
+    const [record] = parseExtensionRecords([backendRecord()]);
+
+    expect(record.manifest.id).toBe("beaver.office.documents");
+  });
+
+  it("refuse les intercepteurs non bornés ou enrichis", () => {
+    const tooMany = backendRecord();
+    tooMany.contributions.interceptors = Array.from(
+      { length: LIMITS.maxInterceptors + 1 },
+      () => ({}),
+    );
+    const enriched = backendRecord();
+    enriched.contributions.interceptors = [{ unexpected: true }] as never;
+
+    expect(() => parseExtensionRecords([tooMany])).toThrow("invalid_extension_response");
+    expect(() => parseExtensionRecords([enriched])).toThrow("invalid_extension_response");
   });
 
   it("accepte les manifestes UI v2 standard et avancé", () => {

@@ -46,6 +46,7 @@ pub(super) fn parse_v2(bytes: &[u8]) -> Result<AgentSession, String> {
     super::session_migration_compression::migrate_v2_markers(&mut value)?;
     super::session_migration_v5::migrate(&mut value)?;
     super::session_migration_v6::migrate(&mut value)?;
+    super::session_migration_v7::migrate(&mut value)?;
     parse_current_value(value)
 }
 
@@ -55,6 +56,7 @@ pub(super) fn parse_v3(bytes: &[u8]) -> Result<AgentSession, String> {
     super::session_migration_compression_guard::migrate_v3(&mut value)?;
     super::session_migration_v5::migrate(&mut value)?;
     super::session_migration_v6::migrate(&mut value)?;
+    super::session_migration_v7::migrate(&mut value)?;
     parse_current_value(value)
 }
 
@@ -63,6 +65,7 @@ pub(super) fn parse_v4(bytes: &[u8]) -> Result<AgentSession, String> {
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     super::session_migration_v5::migrate(&mut value)?;
     super::session_migration_v6::migrate(&mut value)?;
+    super::session_migration_v7::migrate(&mut value)?;
     parse_current_value(value)
 }
 
@@ -70,10 +73,18 @@ pub(super) fn parse_v5(bytes: &[u8]) -> Result<AgentSession, String> {
     let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     super::session_migration_v6::migrate(&mut value)?;
+    super::session_migration_v7::migrate(&mut value)?;
     parse_current_value(value)
 }
 
 pub(super) fn parse_v6(bytes: &[u8]) -> Result<AgentSession, String> {
+    let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
+    super::session_migration_ids::validate_required_v2_fields(&value)?;
+    super::session_migration_v7::migrate(&mut value)?;
+    parse_current_value(value)
+}
+
+pub(super) fn parse_v7(bytes: &[u8]) -> Result<AgentSession, String> {
     let value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     parse_current_value(value)
@@ -212,6 +223,7 @@ fn parse_v2_value(value: Value) -> Result<AgentSession, String> {
     let mut value = value;
     super::session_migration_v5::migrate(&mut value)?;
     super::session_migration_v6::migrate(&mut value)?;
+    super::session_migration_v7::migrate(&mut value)?;
     let session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
     validate_current_writable(&session)?;
     Ok(session)

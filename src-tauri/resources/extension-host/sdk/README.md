@@ -179,6 +179,32 @@ return {
 };
 ```
 
+### Contextual core APIs
+
+The optional `models`, `memory`, `automations`, `subagents`, and
+`toolInterception` capabilities expose attributed, bounded operations. Check both
+the capability and the matching method before registering a dependent tool. These
+methods require a live Agent tool-call context; activation callbacks, event handlers,
+and standard UI actions do not have one and are refused.
+
+`models.generate` can be billable and is not idempotent. Memory writes support an
+`expectedUpdatedAt` revision. `automations.create` always creates an inactive wakeup:
+only the user can approve and activate it from Beaver. Subagents belong to the parent
+request and stop with it. An interceptor may continue or deny an action; it can never
+grant a permission that Beaver refused.
+
+The executable example in `scripts/extensions/fixtures/core-api/` demonstrates model
+generation, a memory topic, an inactive wakeup, an attributed child, event observation,
+and restrictive interception without credentials or runtime downloads.
+
+### Errors and safe retries
+
+Core calls reject with `BeaverExtensionError`. Retry only when `retryable` is true,
+with a bounded attempt count and delay. A retryable transport failure does not prove
+that a non-idempotent operation was not applied. Inspect state or ask the user before
+retrying a model generation, memory or automation mutation, or subagent operation.
+Never blindly repeat a billable generation or a write.
+
 ### Standard interface contributions
 
 Declare `ui: { "apiVersion": "1", "mode": "standard" }` in the manifest, then
@@ -353,26 +379,43 @@ The extension author and user are responsible for any secret, file, process, or 
 | Category | Values |
 |---|---|
 | Capabilities | `tools`, `events`, `ui` |
-| Core to host | `host.hello`, `host.reset`, `host.load`, `tool.call`, `event.emit`, `ui.action` |
-| Events | `session.turn.started` |
+| Core to host | `host.hello`, `host.reset`, `host.load`, `tool.call`, `event.emit`, `ui.action`, `tool.intercept` |
+| Events | `session.turn.started`, `session.turn.completed`, `session.turn.failed`, `session.turn.cancelled`, `tool.execution.started`, `tool.execution.finished`, `automation.execution.started`, `automation.execution.finished`, `subagent.status.changed` |
 | Effects | `read-only`, `local-write`, `external-read`, `external-write`, `process`, `secret`, `unknown` |
 
 ### Host to core
 
-| Method | Level | Kind | Rust budget (ms) |
-|---|---|---|---:|
-| `app.info` | `stable` | `request` | 0 |
-| `sessions.list` | `stable` | `request` | 0 |
-| `sessions.get` | `stable` | `request` | 0 |
-| `projects.list` | `stable` | `request` | 0 |
-| `mcp.connectors.list` | `stable` | `request` | 0 |
-| `mcp.tool.call` | `stable` | `request` | 25000 |
-| `channels.config.get` | `stable` | `request` | 0 |
-| `secrets.provider.get` | `stable` | `request` | 0 |
-| `secrets.mcp.oauth.get` | `stable` | `request` | 0 |
-| `secrets.mcp.env.get` | `stable` | `request` | 0 |
-| `secrets.channel.get` | `stable` | `request` | 0 |
-| `host.load.stage` | `stable` | `notification` | n/a |
+| Method | Level | Kind | Capability | Context | Idempotent | Effects | Result | Rust budget (ms) |
+|---|---|---|---|---|---|---|---|---:|
+| `app.info` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `sessions.list` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `sessions.get` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `projects.list` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `mcp.connectors.list` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `mcp.tool.call` | `stable` | `request` | `n/a` | `n/a` | `no` | `n/a` | `n/a` | 25000 |
+| `channels.config.get` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `secrets.provider.get` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `secrets.mcp.oauth.get` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `secrets.mcp.env.get` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `secrets.channel.get` | `stable` | `request` | `n/a` | `n/a` | `yes` | `n/a` | `n/a` | 0 |
+| `models.list` | `stable` | `request` | `models` | `no` | `yes` | `read-only` | `modelPage` | 0 |
+| `models.generate` | `stable` | `request` | `models` | `yes` | `no` | `external-write, process` | `modelGeneration` | 25000 |
+| `memory.list` | `stable` | `request` | `memory` | `yes` | `yes` | `read-only` | `memoryPage` | 0 |
+| `memory.read` | `stable` | `request` | `memory` | `yes` | `yes` | `read-only` | `memoryTopic` | 0 |
+| `memory.write` | `stable` | `request` | `memory` | `yes` | `no` | `local-write` | `memoryMutation` | 0 |
+| `memory.archive` | `stable` | `request` | `memory` | `yes` | `no` | `local-write` | `memoryMutation` | 0 |
+| `automations.list` | `stable` | `request` | `automations` | `yes` | `yes` | `read-only` | `automationPage` | 0 |
+| `automations.create` | `stable` | `request` | `automations` | `yes` | `no` | `local-write` | `automation` | 0 |
+| `automations.update` | `stable` | `request` | `automations` | `yes` | `no` | `local-write` | `automation` | 0 |
+| `automations.setActive` | `stable` | `request` | `automations` | `yes` | `no` | `local-write, process` | `automation` | 0 |
+| `automations.delete` | `stable` | `request` | `automations` | `yes` | `no` | `local-write, process` | `automationMutation` | 0 |
+| `subagents.spawn` | `stable` | `request` | `subagents` | `yes` | `no` | `process` | `subagent` | 0 |
+| `subagents.list` | `stable` | `request` | `subagents` | `yes` | `yes` | `read-only` | `subagentPage` | 0 |
+| `subagents.get` | `stable` | `request` | `subagents` | `yes` | `yes` | `read-only` | `subagent` | 0 |
+| `subagents.send` | `stable` | `request` | `subagents` | `yes` | `no` | `process` | `subagentMutation` | 0 |
+| `subagents.cancel` | `stable` | `request` | `subagents` | `yes` | `no` | `process` | `subagentMutation` | 0 |
+| `host.load.stage` | `stable` | `notification` | `n/a` | `n/a` | `n/a` | `n/a` | `n/a` | n/a |
+| `host.event.activity` | `stable` | `notification` | `n/a` | `n/a` | `n/a` | `n/a` | `n/a` | n/a |
 
 ### Limits
 
@@ -383,7 +426,13 @@ The extension author and user are responsible for any secret, file, process, or 
 | `fingerprintMaxFiles` | 2000 |
 | `fingerprintMaxTotalBytes` | 33554432 |
 | `hostRestartWindowSeconds` | 300 |
+| `maxActiveContexts` | 64 |
+| `maxAutomationsPerExtension` | 8 |
+| `maxContextsPerHostIdentity` | 8 |
 | `maxContractCodeChars` | 96 |
+| `maxCoreCallsPerHostIdentity` | 8 |
+| `maxEventBytes` | 16384 |
+| `maxEventQueuePerHost` | 32 |
 | `maxEventsPerExtension` | 64 |
 | `maxExtensionNameChars` | 100 |
 | `maxExtensionTextChars` | 2000 |
@@ -394,7 +443,13 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxIdentifierChars` | 96 |
 | `maxInFlightHandlers` | 64 |
 | `maxInFlightRequests` | 64 |
+| `maxInterceptors` | 8 |
 | `maxMessageBytes` | 1048576 |
+| `maxModelGenerations` | 8 |
+| `maxModelGenerationsPerHostIdentity` | 2 |
+| `maxModelOutputTokens` | 4096 |
+| `maxModelPromptBytes` | 65536 |
+| `maxModelResultBytes` | 262144 |
 | `maxMultimodalPreviewsPerContinuation` | 8 |
 | `maxNpmSpecChars` | 280 |
 | `maxParallelEphemeralArtifactBytes` | 67108864 |
@@ -408,6 +463,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxResultBytes` | 20971520 |
 | `maxResultFiles` | 8 |
 | `maxResultTextBytes` | 524288 |
+| `maxSdkPageResults` | 50 |
 | `maxSessionResults` | 500 |
 | `maxSkillsPerExtension` | 32 |
 | `maxTextResourceBytes` | 262144 |
@@ -425,7 +481,10 @@ The extension author and user are responsible for any secret, file, process, or 
 | `eventHandlerTimeoutMs` | 5000 |
 | `hostRequestTimeoutMs` | 60000 |
 | `hostStopTimeoutMs` | 5000 |
+| `interceptorChainTimeoutMs` | 1000 |
+| `interceptorHandlerTimeoutMs` | 250 |
 | `mcpToolTimeoutMs` | 25000 |
+| `modelGenerationTimeoutMs` | 25000 |
 | `toolCallTimeoutMs` | 55000 |
 | `uiActionTimeoutMs` | 15000 |
 
@@ -433,8 +492,8 @@ The extension author and user are responsible for any secret, file, process, or 
 
 | Category | Values |
 |---|---|
-| Protocol reasons | `core_busy`, `core_request_timeout`, `core_transport_failed`, `core_method_unavailable`, `core_request_failed`, `extension_host_busy`, `extension_host_request_failed`, `extension_host_fatal` |
-| Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_registry_version_unsupported`, `extensions_registry_unavailable`, `extensions_state_unavailable`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible`, `extensions_resource_unavailable`, `extensions_resource_not_found`, `extensions_resource_invalid`, `extensions_resource_too_large`, `extensions_result_invalid`, `extensions_result_too_large`, `extensions_listing_unavailable`, `extensions_inspection_invalid`, `extensions_inspection_unavailable` |
+| Protocol reasons | `core_busy`, `core_request_timeout`, `core_transport_failed`, `core_method_unavailable`, `core_request_failed`, `core_context_required`, `core_context_invalid`, `core_context_expired`, `core_context_revoked`, `core_permission_denied`, `core_saturated`, `core_cancelled`, `core_partial_apply`, `core_model_unavailable`, `core_memory_not_found`, `core_memory_stale`, `core_automation_not_found`, `core_automation_revision_conflict`, `core_automation_globally_paused`, `core_automation_consent_required`, `interception_individual_timeout`, `interception_chain_timeout`, `extension_host_busy`, `extension_host_request_failed`, `extension_host_fatal` |
+| Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_registry_version_unsupported`, `extensions_registry_unavailable`, `extensions_state_unavailable`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible`, `extensions_resource_unavailable`, `extensions_resource_not_found`, `extensions_resource_invalid`, `extensions_resource_too_large`, `extensions_result_invalid`, `extensions_result_too_large`, `extensions_listing_unavailable`, `extensions_inspection_invalid`, `extensions_inspection_unavailable`, `extensions_context_required`, `extensions_context_invalid`, `extensions_context_expired`, `extensions_context_revoked`, `extensions_permission_denied`, `extensions_core_saturated`, `extensions_core_cancelled`, `extensions_partial_apply`, `extensions_model_unavailable`, `extensions_eager_interception_conflict`, `extensions_interception_individual_timeout`, `extensions_interception_chain_timeout` |
 <!-- END GENERATED EXTENSION CONTRACT -->
 
 <!-- BEGIN GENERATED EXTENSION UI CONTRACT -->

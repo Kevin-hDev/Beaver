@@ -1,4 +1,4 @@
-use super::{sort_outputs_by_index, DelegateBatchOutput};
+use super::DelegateBatchOutput;
 use crate::services::agent_local::types_tools::ToolResult;
 
 #[test]
@@ -18,7 +18,7 @@ fn keeps_parent_tool_context_in_original_order() {
         },
     ];
 
-    sort_outputs_by_index(&mut outputs);
+    outputs.sort_by_key(|output| output.index);
 
     let contents = outputs
         .into_iter()

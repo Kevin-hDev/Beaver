@@ -1,4 +1,5 @@
 import { closeSync, openSync, readSync } from "node:fs";
+import { parseCoreApiMethods } from "./contract-core-api.mjs";
 
 export const BOOTSTRAP_FILE_MAX_BYTES = 256;
 export const MAX_BOOTSTRAPPED_CONTRACT_BYTES = 1_048_576;
@@ -88,6 +89,11 @@ function validOptionalCapability(value) {
   return /^[a-z][a-zA-Z0-9_.-]*$/.test(value);
 }
 
+function validMethodName(value) {
+  if (typeof value !== "string" || value.length > LIMITS.maxContractCodeChars) return false;
+  return /^[a-z][a-zA-Z0-9_.-]*$/.test(value);
+}
+
 function exactStrings(values, expected, validator = validProtocolCode) {
   const parsed = strings(values, expected.length, validator);
   if (parsed.length !== expected.length || parsed.some((value, index) => value !== expected[index])) {
@@ -110,9 +116,14 @@ if (
 }
 
 export const CAPABILITIES = exactStrings(contract.capabilities, ["tools", "events", "ui"]);
-export const OPTIONAL_CAPABILITIES = exactStrings(
+export const OPTIONAL_CAPABILITIES = strings(
   contract.optionalCapabilities,
-  ["skills", "resources", "richToolResults"],
+  32,
+  validOptionalCapability,
+);
+export const MODEL_FINISH_REASONS = exactStrings(
+  contract.modelFinishReasons,
+  ["stop", "length", "contentFilter"],
   validOptionalCapability,
 );
 if (OPTIONAL_CAPABILITIES.some((capability) => CAPABILITIES.includes(capability))) {
@@ -135,6 +146,10 @@ export const HOST_DIAGNOSTIC_CODES = strings(contract?.diagnostics?.hostCodes, 3
 export const RUNTIME_DIAGNOSTIC_CODES = strings(contract?.diagnostics?.runtimeCodes, 32);
 export const BACKEND_ERROR_CODES = strings(contract?.errors?.backendCodes);
 export const PROTOCOL_ERROR_REASONS = strings(contract?.errors?.protocolReasons);
+export const RETRYABLE_REASONS = strings(contract?.errors?.retryableReasons, 32);
+if (RETRYABLE_REASONS.some((reason) => !PROTOCOL_ERROR_REASONS.includes(reason))) {
+  throw new Error("invalid_extension_contract");
+}
 
 const methodLevels = {};
 const methodKinds = {};
@@ -146,7 +161,7 @@ for (const method of hostMethods) {
   if (
     !method
     || typeof method !== "object"
-    || !validProtocolCode(method.name)
+    || !validMethodName(method.name)
     || !["stable", "advanced"].includes(method.level)
     || !["request", "notification"].includes(method.kind)
     || method.name in methodLevels
@@ -169,11 +184,21 @@ for (const method of hostMethods) {
 }
 export const HOST_TO_CORE_METHOD_LEVELS = Object.freeze(methodLevels);
 export const HOST_TO_CORE_METHOD_KINDS = Object.freeze(methodKinds);
+export const CORE_API_METHODS = parseCoreApiMethods(
+  hostMethods,
+  OPTIONAL_CAPABILITIES,
+  EFFECT_CLASSES,
+  LIMITS,
+);
 const notificationMethods = Object.entries(methodKinds)
   .filter(([, kind]) => kind === "notification")
   .map(([name]) => name);
-if (notificationMethods.length !== 1) throw new Error("invalid_extension_contract");
-export const HOST_LOAD_STAGE_METHOD = notificationMethods[0];
+if (
+  !notificationMethods.includes("host.load.stage")
+  || !notificationMethods.includes("host.event.activity")
+) throw new Error("invalid_extension_contract");
+export const HOST_LOAD_STAGE_METHOD = "host.load.stage";
+export const HOST_EVENT_ACTIVITY_METHOD = "host.event.activity";
 
 const diagnosticCodes = [...HOST_DIAGNOSTIC_CODES, ...RUNTIME_DIAGNOSTIC_CODES];
 if (new Set(diagnosticCodes).size !== diagnosticCodes.length) {
@@ -197,4 +222,8 @@ export function methodLevel(method) {
 
 export function methodKind(method) {
   return HOST_TO_CORE_METHOD_KINDS[method];
+}
+
+export function methodIsIdempotent(method) {
+  return hostMethods.find((entry) => entry.name === method)?.idempotent === true;
 }

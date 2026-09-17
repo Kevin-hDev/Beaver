@@ -137,7 +137,10 @@ mod tests {
         let info = ToolErrorInfo::new("failure", ToolErrorCategory::Execution, false)
             .with_hint("🙂".repeat(MAX_HINT_CHARS + 1));
 
-        assert_eq!(info.hint.as_deref().unwrap().chars().count(), MAX_HINT_CHARS);
+        assert_eq!(
+            info.hint.as_deref().unwrap().chars().count(),
+            MAX_HINT_CHARS
+        );
     }
 
     #[test]

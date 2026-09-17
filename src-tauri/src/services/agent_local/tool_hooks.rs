@@ -85,8 +85,7 @@ pub fn run_post_hooks(tool_name: &str, _args: &Value, mut result: ToolResult) ->
         tool_name,
         "bash" | "bash_control" | "read_file" | "grep" | "glob" | "list_dir"
     ) {
-        result.content =
-            crate::services::agent_local::sensitive_data::redact_text(&result.content);
+        result.content = crate::services::agent_local::sensitive_data::redact_text(&result.content);
     }
     super::tool_dispatcher_error::enrich(result, tool_name)
 }

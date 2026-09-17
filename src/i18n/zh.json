@@ -27,7 +27,7 @@
     "usage": {
       "requestMetrics": { "title": "详细测量", "empty": "暂无已测量的请求", "unavailable": "详细测量不可用", "latestRequest": "最近请求", "routedProvider": "实际提供服务的供应商", "providerRequestId": "供应商请求 ID", "finishReason": "结束原因", "latestSession": "最近测量的会话", "turn": "第 {{value}} 轮", "attempt": "第 {{value}} 次尝试", "headers": "服务器响应", "firstEvent": "首个事件", "firstUseful": "首个结果", "totalDuration": "总耗时", "usageIncomplete": "Token 数据不完整", "statuses": { "completed": "已完成", "interrupted": "因压缩而中断", "cancelled": "已取消", "failed": "失败" } },
       "providerTitle": "提供商限制与额度", "generalLimitsTitle": "常规使用限制", "namedLimitsTitle": "{{name}} 使用限制", "localTitle": "Beaver 中的用量", "refresh": "刷新", "remoteUnavailable": "账户用量数据不可用", "remainingPercent": "剩余 {{value}}%", "updated": "已更新", "stale": "较早的数据", "resetsAt": "重置时间：{{date}}", "openProviderSite": "前往提供商查看", "periodLabel": "时间范围", "historyEmpty": "尚无用量记录", "requests": "请求次数", "inputTokens": "输入 Token", "outputTokens": "输出 Token", "cachedTokens": "缓存读取 Token", "cacheWriteTokens": "缓存写入 Token", "cacheMissTokens": "缓存未命中 Token", "reasoningTokens": "推理 Token", "totalTokens": "Token 总数", "cost": "费用", "byOrigin": "按来源", "byWorkload": "按工作类型",
-      "periods": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "all_time": "全部" }, "quality": { "exact": "精确", "estimated": "估算", "partial": "部分", "unavailable": "不可用" }, "origins": { "manual_chat": "手动聊天", "external_channel": "外部频道", "automation": "自动化" }, "workloads": { "primary": "主要", "subagent": "子代理", "compression": "压缩" },
+      "periods": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "all_time": "全部" }, "quality": { "exact": "精确", "estimated": "估算", "partial": "部分", "unavailable": "不可用" }, "origins": { "manual_chat": "手动聊天", "external_channel": "外部频道", "automation": "自动化" }, "workloads": { "primary": "主要", "subagent": "子代理", "compression": "压缩", "extension": "扩展" },
       "windows": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "key_limit": "密钥限制", "requests_day": "每日请求", "tokens_minute": "每分钟 Token", "requests_limit": "请求限制", "tokens_limit": "Token 限制", "rolling_five_hours": "5 小时窗口", "weekly": "每周限制", "provider_limit": "提供商限制" }, "balances": { "remaining_credits": "剩余额度", "available_balance": "可用余额", "voucher_balance": "代金券余额", "cash_balance": "现金余额", "reset_credits": "重置额度", "extra_usage_balance": "Extra Usage 余额", "extra_usage_monthly_limit": "Extra Usage 每月限额", "extra_usage_monthly_used": "本月已用 Extra Usage" }, "notices": { "usage_fetch_failed": "无法刷新提供商数据。近期有效数据仍会保留显示。", "provider_usage_site_only": "xAI 未公开这些限制的访问方式。本地用量仍可查看。", "provider_account_usage_unavailable": "此提供商未针对该连接公开账户限制。", "openrouter_account_balance_requires_management_key": "OpenRouter 全局余额需要管理密钥。此 API 密钥设置的限额仍会显示。" }
     }
   },
@@ -713,6 +713,9 @@
     "delete": "删除",
     "confirmDelete": "确认删除",
     "pausedHint": "唤醒已暂停 — 请关闭主开关",
+    "approveExtension": "重新批准并启用",
+    "origins": { "session": "会话", "external_channel": "外部频道", "user_interface": "Beaver", "extension": "扩展" },
+    "inactiveReasons": { "approval_required": "此自动化在更改后必须重新批准。", "owner_unavailable": "所属扩展已不可用。", "owner_invalid": "所有者信息无效。" },
     "badges": {
       "active": "活跃",
       "disabled": "已禁用",
@@ -730,7 +733,8 @@
       "lastRun": "最近执行",
       "description": "描述",
       "prompt": "提示词",
-      "target": "会话"
+      "target": "会话",
+      "origin": "来源"
     },
     "status": {
       "ok": "成功",
@@ -801,7 +805,7 @@
     },
     "target": { "new_session": "新会话", "resume_session": "现有会话" },
     "migration": { "title": "唤醒迁移", "timezone": "确认现有唤醒使用的时区。", "conflicts": "部分旧唤醒需要处理。", "remove": "删除旧项", "import": "作为新项导入", "continue": "继续" },
-    "errors": { "audit_unavailable": "审计日志不可用，修改已被阻止。", "store_unavailable": "唤醒暂时不可用。", "migration_unavailable": "唤醒迁移不可用。", "invalid_timezone": "时区无效。", "invalid_schedule": "计划无效。", "model_unavailable": "模型不可用。", "provider_unavailable": "提供商不可用。", "not_found": "唤醒已不存在。", "globally_paused": "唤醒已暂停。", "invalid_project": "项目无效。", "invalid_input": "一个或多个字段无效。", "pauseAll": "全部暂停" }
+    "errors": { "capacity_reached": "已达到自动化数量上限。", "immutable_field": "此字段无法修改。", "model_tools_unsupported": "此模型不支持所需工具。", "cursor_expired": "此页已过期，请重新加载历史记录。", "audit_unavailable": "审计日志不可用，修改已被阻止。", "store_unavailable": "唤醒暂时不可用。", "migration_unavailable": "唤醒迁移不可用。", "invalid_timezone": "时区无效。", "invalid_schedule": "计划无效。", "model_unavailable": "模型不可用。", "provider_unavailable": "提供商不可用。", "not_found": "唤醒已不存在。", "revision_conflict": "此唤醒已更改，请重新加载后再试。", "globally_paused": "唤醒已暂停。", "consent_required": "激活前必须批准此更改。", "invalid_project": "项目无效。", "invalid_input": "一个或多个字段无效。", "pauseAll": "全部暂停" }
   },
   "personality": {
     "files": "核心",
@@ -2032,6 +2036,10 @@
       "T": "分钟"
     },
     "errors": {
+      "capacity_reached": "已达到自动化数量上限。",
+      "immutable_field": "此字段无法修改。",
+      "model_tools_unsupported": "此模型不支持所需工具。",
+      "cursor_expired": "此历史记录页面已不可用。",
       "importFailed": "导入失败。请检查文件格式。",
       "launchFailed": "计算失败。请检查列、模型和 API 密钥。",
       "capacityReached": "Forecast 存储空间已满。请删除较旧的分析后重试。"
@@ -2461,6 +2469,7 @@
       "api": "Beaver API",
     "active": "活动扩展",
     "diagnostics": "最近的加载错误",
+      "activity": { "empty": "暂无扩展活动。", "interceptors": "活动拦截器", "queued": "已接收事件", "delivered": "已投递事件", "dropped": "已丢弃事件", "timedOut": "超时事件", "activeHandlers": "活动处理器" },
       "unavailable": "不可用",
       "states": {
         "stopped": "已停止",
@@ -2540,7 +2549,19 @@
         "extensions_result_too_large": "扩展结果过大。",
         "extensions_listing_unavailable": "扩展列表不可用。",
         "extensions_inspection_invalid": "扩展检查无效。",
-        "extensions_inspection_unavailable": "扩展检查不可用。"
+        "extensions_inspection_unavailable": "扩展检查不可用。",
+        "extensions_context_required": "此扩展操作需要正在进行的 Agent 回合。",
+        "extensions_context_invalid": "扩展操作上下文无效。",
+        "extensions_context_expired": "扩展操作上下文已过期。",
+        "extensions_context_revoked": "扩展操作已被撤销。",
+        "extensions_permission_denied": "不允许执行此扩展操作。",
+        "extensions_core_saturated": "Beaver 正在处理过多扩展操作。",
+        "extensions_core_cancelled": "扩展操作已取消。",
+        "extensions_partial_apply": "更改已应用，但后续步骤失败。",
+        "extensions_model_unavailable": "请求的模型不可用。",
+        "extensions_interception_individual_timeout": "某个扩展检查工具调用的时间过长。",
+        "extensions_interception_chain_timeout": "扩展检查链耗时过长。",
+        "extensions_eager_interception_conflict": "由于扩展检查已启用，提前生成的工具结果已被拒绝。"
       }
     },
     "diagnostics": {
@@ -2558,6 +2579,11 @@
         "host_missing_response": "宿主未确认此扩展已加载",
         "advanced_required": "替换内置工具需要高级模式",
         "ui_manifest_legacy": "旧版界面声明已被忽略；工具仍然可用",
+        "interceptor_invalid": "工具拦截器无效",
+        "interceptor_failed": "工具拦截器失败",
+        "interceptor_timeout": "工具拦截器耗时过长",
+        "interceptor_limit_exceeded": "启用的工具拦截器过多",
+        "interception_budget_exhausted": "工具检查时间预算已耗尽",
         "ui_contract_invalid": "界面契约无效",
         "ui_contribution_invalid": "界面扩展项无效",
         "ui_reference_missing": "缺少界面引用",

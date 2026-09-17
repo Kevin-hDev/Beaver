@@ -23,6 +23,7 @@ pub(super) struct ToolTurnContext<'a> {
     pub write_guard: &'a mut WriteGuard,
     pub plan_active: bool,
     pub fixture_mode: bool,
+    pub interception: &'a crate::services::extensions::InterceptionSnapshot,
     pub breaker: &'a mut CircuitBreaker,
     pub journal: Option<&'a mut ConversationJournal>,
     pub tools: &'a mut ExtensionToolSet,
@@ -50,6 +51,7 @@ pub(super) async fn run(mut context: ToolTurnContext<'_>) -> Result<ToolTurnOutp
         &context.result.tool_calls,
         context.session_id,
         context.breaker,
+        context.interception,
     )
     .await?;
     finish_prepared(context, prepared).await
@@ -74,6 +76,7 @@ async fn finish_prepared(
             write_guard: context.write_guard,
             plan_active: context.plan_active,
             eager_results: prepared.eager_results,
+            interception: context.interception,
             #[cfg(debug_assertions)]
             fixture_run: context.fixture_run.as_deref_mut(),
         })

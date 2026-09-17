@@ -27,6 +27,7 @@ export const EMPTY_EXTENSION_HOST: ExtensionHostStatus = {
   apiVersion: EXTENSION_API_VERSION,
   activeExtensions: 0,
   diagnostics: [],
+  activity: emptyActivity(),
 };
 
 export function parseExtensionHostStatus(value: unknown): ExtensionHostStatus {
@@ -41,6 +42,29 @@ export function parseExtensionHostStatus(value: unknown): ExtensionHostStatus {
     activeExtensions: integer(input.activeExtensions, LIMITS.maxExtensions),
     lastError: optionalOneOf(input.lastError, EXTENSION_BACKEND_ERROR_CODES),
     diagnostics: input.diagnostics.map(diagnostic),
+    activity: activity(input.activity),
+  };
+}
+
+function activity(value: unknown): ExtensionHostStatus["activity"] {
+  const input = object(value);
+  const events = object(input.events);
+  return {
+    events: {
+      queued: integer(events.queued, Number.MAX_SAFE_INTEGER),
+      delivered: integer(events.delivered, Number.MAX_SAFE_INTEGER),
+      dropped: integer(events.dropped, Number.MAX_SAFE_INTEGER),
+      timedOut: integer(events.timedOut, Number.MAX_SAFE_INTEGER),
+      activeHandlers: integer(events.activeHandlers, LIMITS.maxHostProcesses),
+    },
+    activeInterceptors: integer(input.activeInterceptors, LIMITS.maxInterceptors),
+  };
+}
+
+function emptyActivity(): ExtensionHostStatus["activity"] {
+  return {
+    events: { queued: 0, delivered: 0, dropped: 0, timedOut: 0, activeHandlers: 0 },
+    activeInterceptors: 0,
   };
 }
 

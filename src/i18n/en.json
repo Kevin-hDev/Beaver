@@ -30,7 +30,7 @@
       "periods": { "today": "Today", "seven_days": "7 days", "thirty_days": "30 days", "all_time": "All time" },
       "quality": { "exact": "Exact", "estimated": "Estimated", "partial": "Partial", "unavailable": "Unavailable" },
       "origins": { "manual_chat": "Manual chat", "external_channel": "External channel", "automation": "Automation" },
-      "workloads": { "primary": "Primary", "subagent": "Subagent", "compression": "Compression" },
+      "workloads": { "primary": "Primary", "subagent": "Subagent", "compression": "Compression", "extension": "Extension" },
       "windows": { "today": "Today", "seven_days": "7 days", "thirty_days": "30 days", "key_limit": "Key limit", "requests_day": "Requests per day", "tokens_minute": "Tokens per minute", "requests_limit": "Request limit", "tokens_limit": "Token limit", "rolling_five_hours": "5-hour window", "weekly": "Weekly limit", "provider_limit": "Provider limit" },
       "balances": { "remaining_credits": "Remaining credits", "available_balance": "Available balance", "voucher_balance": "Voucher balance", "cash_balance": "Cash balance", "reset_credits": "Reset credits", "extra_usage_balance": "Extra Usage balance", "extra_usage_monthly_limit": "Extra Usage monthly limit", "extra_usage_monthly_used": "Extra Usage used this month" },
       "notices": { "usage_fetch_failed": "Provider usage could not be refreshed. Recent valid data remains visible when available.", "provider_usage_site_only": "xAI does not publish access to these limits. Local usage remains available.", "provider_account_usage_unavailable": "This provider does not publish account limits for this connection.", "openrouter_account_balance_requires_management_key": "Your OpenRouter account balance requires a management key. Any limit set on this API key remains shown." }
@@ -720,6 +720,9 @@
     "delete": "Delete",
     "confirmDelete": "Confirm deletion",
     "pausedHint": "Wakeups paused — disable the master switch",
+    "approveExtension": "Reapprove and activate",
+    "origins": { "session": "Session", "external_channel": "External channel", "user_interface": "Beaver", "extension": "Extension" },
+    "inactiveReasons": { "approval_required": "This automation must be reapproved after its change.", "owner_unavailable": "The owning extension is no longer available.", "owner_invalid": "The owner information is invalid." },
     "badges": {
       "active": "Active",
       "disabled": "Disabled",
@@ -737,7 +740,8 @@
       "lastRun": "Last run",
       "description": "Description",
       "prompt": "Prompt",
-      "target": "Session"
+      "target": "Session",
+      "origin": "Origin"
     },
     "status": {
       "ok": "Succeeded",
@@ -819,6 +823,10 @@
       "continue": "Continue"
     },
     "errors": {
+      "capacity_reached": "The automation limit has been reached.",
+      "immutable_field": "This field cannot be changed.",
+      "model_tools_unsupported": "This model does not support the required tools.",
+      "cursor_expired": "This history page is no longer available.",
       "audit_unavailable": "The audit log is unavailable. Changes are blocked.",
       "store_unavailable": "Wakeups are temporarily unavailable.",
       "migration_unavailable": "Wakeup migration is unavailable.",
@@ -827,7 +835,9 @@
       "model_unavailable": "The model is unavailable.",
       "provider_unavailable": "The provider is unavailable.",
       "not_found": "The wakeup no longer exists.",
+      "revision_conflict": "This wakeup changed. Reload it before trying again.",
       "globally_paused": "Wakeups are paused.",
+      "consent_required": "This change must be approved before activation.",
       "invalid_project": "The project is invalid.",
       "invalid_input": "One or more fields are invalid.",
       "pauseAll": "Pause all"
@@ -1876,6 +1886,7 @@
       "api": "Beaver API",
     "active": "Active extensions",
     "diagnostics": "Latest loading errors",
+      "activity": { "empty": "No extension activity yet.", "interceptors": "Active interceptors", "queued": "Events received", "delivered": "Events delivered", "dropped": "Events dropped", "timedOut": "Events timed out", "activeHandlers": "Active handlers" },
       "unavailable": "Unavailable",
       "states": {
         "stopped": "Stopped",
@@ -1955,7 +1966,19 @@
         "extensions_result_too_large": "The extension result is too large.",
         "extensions_listing_unavailable": "The extension list is unavailable.",
         "extensions_inspection_invalid": "The extension inspection is invalid.",
-        "extensions_inspection_unavailable": "The extension inspection is unavailable."
+        "extensions_inspection_unavailable": "The extension inspection is unavailable.",
+        "extensions_context_required": "This extension action requires an active Agent turn.",
+        "extensions_context_invalid": "The extension action context is invalid.",
+        "extensions_context_expired": "The extension action context has expired.",
+        "extensions_context_revoked": "The extension action was revoked.",
+        "extensions_permission_denied": "The extension action is not permitted.",
+        "extensions_core_saturated": "Beaver is handling too many extension actions.",
+        "extensions_core_cancelled": "The extension action was cancelled.",
+        "extensions_partial_apply": "The change was applied, but a follow-up step failed.",
+        "extensions_model_unavailable": "The requested model is unavailable.",
+        "extensions_interception_individual_timeout": "An extension took too long to inspect the tool call.",
+        "extensions_interception_chain_timeout": "The extension inspection chain took too long.",
+        "extensions_eager_interception_conflict": "An early tool result was rejected because extension inspection is active."
       }
     },
     "diagnostics": {
@@ -1973,6 +1996,11 @@
         "host_missing_response": "The host did not confirm that this extension loaded",
         "advanced_required": "Advanced mode is required to replace a built-in tool",
         "ui_manifest_legacy": "The legacy interface declaration was ignored; tools remain available",
+        "interceptor_invalid": "The tool interceptor is invalid",
+        "interceptor_failed": "The tool interceptor failed",
+        "interceptor_timeout": "The tool interceptor took too long",
+        "interceptor_limit_exceeded": "Too many tool interceptors are active",
+        "interception_budget_exhausted": "The tool inspection time budget was exhausted",
         "ui_contract_invalid": "The interface contract is invalid",
         "ui_contribution_invalid": "An interface contribution is invalid",
         "ui_reference_missing": "An interface reference is missing",

@@ -2,12 +2,14 @@ import { fatalProtocolExit, startProtocol } from "./protocol.mjs";
 import { API_VERSION, LIMITS } from "./contract.mjs";
 import {
   callExtensionTool,
+  callExtensionInterceptor,
   callExtensionUiAction,
   emitExtensionEvent,
   loadExtension,
   resetExtensions,
 } from "./loader.mjs";
 import { JITI_VERSION } from "./versions.mjs";
+import { negotiateCapabilities } from "./extension-api-capabilities.mjs";
 
 for (const method of ["log", "info", "debug", "warn", "error"]) {
   console[method] = () => {};
@@ -26,6 +28,7 @@ startProtocol(async (method, params) => {
         apiVersion: API_VERSION,
         jitiVersion: JITI_VERSION,
         nodeVersion: process.version,
+        capabilities: negotiateCapabilities(params?.capabilities),
       };
     case "host.reset":
       loadedSinceReset = 0;
@@ -42,7 +45,10 @@ startProtocol(async (method, params) => {
         String(params.name ?? ""),
         params.arguments ?? {},
         params.context,
+        params.scope,
       );
+    case "tool.intercept":
+      return callExtensionInterceptor(String(params.extensionId ?? ""), params.call);
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);
     case "ui.action":

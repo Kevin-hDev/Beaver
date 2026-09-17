@@ -49,4 +49,12 @@ mod tests {
         assert!(!should_mask(&small, 0));
         assert!(should_mask(&large, 0));
     }
+
+    #[test]
+    fn child_catalog_preserves_ten_percent_rule() {
+        let definitions = vec![json!({"description": "x".repeat(4_500)})];
+
+        assert!(should_mask(&definitions, 10_000));
+        assert!(!should_mask(&definitions, 100_000));
+    }
 }

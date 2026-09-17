@@ -1,8 +1,4 @@
-pub fn available(
-    enabled_by_settings: bool,
-    dynamic: bool,
-    replacement: bool,
-) -> bool {
+pub fn available(enabled_by_settings: bool, dynamic: bool, replacement: bool) -> bool {
     enabled_by_settings || (dynamic && !replacement)
 }
 

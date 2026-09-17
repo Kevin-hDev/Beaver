@@ -85,14 +85,12 @@ pub(super) fn read_excel_classified(
         None => sheet_names[0].clone(),
     };
 
-    let range = workbook
-        .worksheet_range(&sheet_name)
-        .map_err(|_| {
-            SpreadsheetReadError::invalid(
-                "spreadsheet_content_invalid",
-                "Impossible de lire la feuille",
-            )
-        })?;
+    let range = workbook.worksheet_range(&sheet_name).map_err(|_| {
+        SpreadsheetReadError::invalid(
+            "spreadsheet_content_invalid",
+            "Impossible de lire la feuille",
+        )
+    })?;
 
     // Calamine matérialise la feuille entière en RAM sous forme de `Range<Data>`
     // dense. Une feuille malveillante peut déclarer une dimension énorme
@@ -162,7 +160,5 @@ pub(super) fn read_excel_classified(
         .collect();
 
     super::tool_spreadsheet_read::build_result(all_rows, max_rows, &sheet_name, &sheet_names)
-        .map_err(|error| {
-            SpreadsheetReadError::invalid("spreadsheet_result_invalid", error)
-        })
+        .map_err(|error| SpreadsheetReadError::invalid("spreadsheet_result_invalid", error))
 }

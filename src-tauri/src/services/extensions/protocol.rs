@@ -19,6 +19,7 @@ pub struct HelloResult {
     pub jiti_version: String,
     #[serde(rename = "nodeVersion")]
     pub node_version: String,
+    pub capabilities: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]

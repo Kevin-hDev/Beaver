@@ -3,9 +3,9 @@ use crate::models::AutomationDefinition;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-pub const AUTOMATIONS_SCHEMA_VERSION: u32 = 1;
-const MAX_AUTOMATIONS: usize = 64;
-const MAX_STORE_BYTES: u64 = 2 * 1024 * 1024;
+pub const AUTOMATIONS_SCHEMA_VERSION: u32 = 2;
+pub(crate) const MAX_AUTOMATIONS: usize = 64;
+pub(crate) const MAX_STORE_BYTES: u64 = 2 * 1024 * 1024;
 
 pub async fn read_all() -> Result<Vec<AutomationDefinition>, String> {
     read_all_at(&crate::services::paths::data_dir()).await
@@ -54,6 +54,7 @@ pub(crate) async fn write_definitions_unlocked_at(
     root: &Path,
     automations: Vec<AutomationDefinition>,
 ) -> Result<(), String> {
+    ensure_mutable_unlocked_at(root).await?;
     validate(&automations)?;
     let bytes = serde_json::to_vec_pretty(&AutomationFile::from_definitions(automations))
         .map_err(|_| store_error())?;
@@ -68,11 +69,20 @@ async fn read_file_unlocked_at(root: &Path) -> Result<Option<AutomationFile>, St
     {
         crate::services::private_store::BoundedFile::Missing => Ok(None),
         crate::services::private_store::BoundedFile::Content(bytes) => {
-            serde_json::from_slice(&bytes)
+            super::store_migration_v2::load_or_migrate(root, path(root), bytes)
+                .await
                 .map(Some)
-                .map_err(|_| store_error())
         }
     }
+}
+
+async fn ensure_mutable_unlocked_at(root: &Path) -> Result<(), String> {
+    if let Some(file) = read_file_unlocked_at(root).await? {
+        if file.schema_version != AUTOMATIONS_SCHEMA_VERSION {
+            return Err(store_error());
+        }
+    }
+    Ok(())
 }
 
 fn validate(items: &[AutomationDefinition]) -> Result<(), String> {

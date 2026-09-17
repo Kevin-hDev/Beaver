@@ -109,7 +109,10 @@ mod tests {
         let invalid = SpreadsheetWriteError::Invalid("bad operation".into()).into_tool_result();
         let failed = SpreadsheetWriteError::write("save failed").into_tool_result();
 
-        assert_eq!(invalid.error.unwrap().category, ToolErrorCategory::Validation);
+        assert_eq!(
+            invalid.error.unwrap().category,
+            ToolErrorCategory::Validation
+        );
         assert!(!failed.error.unwrap().retryable);
     }
 }

@@ -1,8 +1,16 @@
 mod agentic;
+mod agentic_cleanup;
 #[cfg(test)]
 mod agentic_modes_tests;
+mod extension_admission;
+#[cfg(test)]
+mod extension_admission_tests;
 pub mod fire;
 mod fire_actor;
+mod fire_result;
+mod occurrence_cancellation;
+#[cfg(test)]
+mod occurrence_cancellation_tests;
 mod runtime;
 mod runtime_publish;
 #[cfg(test)]
@@ -117,4 +125,41 @@ pub fn notify_config_changed() {
         let next = sender.borrow().wrapping_add(1);
         let _ = sender.send(next);
     }
+}
+
+pub(crate) async fn revoke_extension_work(extension_id: &str) -> Result<(), String> {
+    occurrence_cancellation::revoke_owner(extension_id);
+    crate::services::agent_local::subagent_registry::cancel_children_for_extension(extension_id)
+        .await;
+    crate::services::automations::revoke_extension_owner(extension_id).await?;
+    notify_config_changed();
+    Ok(())
+}
+
+pub(crate) fn allow_extension_automations(extension_id: &str) {
+    occurrence_cancellation::allow_owner(extension_id);
+}
+
+pub(crate) fn extension_automation_mutations_allowed(extension_id: &str) -> bool {
+    !occurrence_cancellation::owner_is_blocked(extension_id)
+}
+
+pub(crate) fn cancel_automation_occurrences(automation_id: uuid::Uuid) {
+    occurrence_cancellation::cancel_automation(automation_id);
+}
+
+pub(crate) fn block_automation_admission(automation_id: uuid::Uuid) {
+    occurrence_cancellation::block_automation(automation_id);
+}
+
+pub(crate) fn allow_automation_admission(automation_id: uuid::Uuid) {
+    occurrence_cancellation::allow_automation(automation_id);
+}
+
+pub(crate) fn cancel_all_automation_occurrences() {
+    occurrence_cancellation::cancel_all();
+}
+
+pub(crate) fn resume_automation_occurrences() {
+    occurrence_cancellation::resume_all();
 }

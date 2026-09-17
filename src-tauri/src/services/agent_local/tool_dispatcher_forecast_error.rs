@@ -1,5 +1,5 @@
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::forecast::selection_policy::ForecastSelectionMode;
 use serde_json::Value;
 
@@ -16,9 +16,7 @@ impl ForecastErrorKind {
         match self {
             Self::Validation(code) => (code, ToolErrorCategory::Validation, false),
             Self::NotFound(code) => (code, ToolErrorCategory::NotFound, false),
-            Self::Unavailable(code, retryable) => {
-                (code, ToolErrorCategory::Unavailable, retryable)
-            }
+            Self::Unavailable(code, retryable) => (code, ToolErrorCategory::Unavailable, retryable),
             Self::External(code, retryable) => (code, ToolErrorCategory::External, retryable),
             Self::Internal(code, retryable) => (code, ToolErrorCategory::Internal, retryable),
         }

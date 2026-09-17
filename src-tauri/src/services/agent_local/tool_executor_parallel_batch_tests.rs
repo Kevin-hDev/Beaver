@@ -23,6 +23,7 @@ async fn flushes_two_read_chunks_before_one_shared_artifact_budget() {
             global_idx,
             name,
             effective_args,
+            tool_call_id: None,
         })
         .collect();
     let mut eager = std::collections::HashMap::new();
@@ -45,7 +46,9 @@ async fn flushes_two_read_chunks_before_one_shared_artifact_budget() {
     let cancel = CancellationToken::new();
     let mut indexed_results = vec![None; calls.len()];
     let mut write_guard = WriteGuard::new();
+    let on_event = super::super::stream_events::AgentEventEmitter::test("test-session".into());
     flush_read_batch(
+        &on_event,
         &entries,
         &mut indexed_results,
         root.path(),
@@ -54,7 +57,8 @@ async fn flushes_two_read_chunks_before_one_shared_artifact_budget() {
         &mut Some(&mut eager),
         "test-session",
         "test-request",
-        true,
+        "chat",
+        false,
     )
     .await;
 

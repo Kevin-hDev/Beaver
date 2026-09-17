@@ -24,6 +24,10 @@ pub(super) fn v5_backup_path(path: &Path) -> Result<PathBuf, String> {
     backup_path_for(path, "v5")
 }
 
+pub(super) fn v6_backup_path(path: &Path) -> Result<PathBuf, String> {
+    backup_path_for(path, "v6")
+}
+
 fn backup_path_for(path: &Path, version: &str) -> Result<PathBuf, String> {
     let name = path
         .file_name()

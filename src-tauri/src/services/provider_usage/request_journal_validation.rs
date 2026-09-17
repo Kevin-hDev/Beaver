@@ -28,7 +28,7 @@ impl ProviderRequestMetric {
                 .is_none_or(|value| valid_label(value, 128))
             && matches!(
                 self.workload.as_str(),
-                "primary" | "subagent" | "compression"
+                "primary" | "subagent" | "compression" | "extension"
             )
             && matches!(
                 self.origin.as_str(),

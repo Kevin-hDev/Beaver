@@ -71,9 +71,18 @@ fn analysis_payload_exposes_compact_advanced_evidence() {
         "drift": []
     })).ok();
 
-    let payload: Value = serde_json::from_str(&analysis_payload(&analysis, 0, 100).unwrap()).unwrap();
+    let payload: Value =
+        serde_json::from_str(&analysis_payload(&analysis, 0, 100).unwrap()).unwrap();
 
-    assert_eq!(payload["advanced_analysis"]["residual_anomalies"]["count"], 1);
-    assert_eq!(payload["advanced_analysis"]["decomposition"][0]["period"], 7);
-    assert!(payload["advanced_analysis"]["decomposition"][0].get("points").is_none());
+    assert_eq!(
+        payload["advanced_analysis"]["residual_anomalies"]["count"],
+        1
+    );
+    assert_eq!(
+        payload["advanced_analysis"]["decomposition"][0]["period"],
+        7
+    );
+    assert!(payload["advanced_analysis"]["decomposition"][0]
+        .get("points")
+        .is_none());
 }

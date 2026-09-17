@@ -1,6 +1,16 @@
 use super::host_identity::HostIdentity;
 use super::types::{ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus};
 
+pub(super) fn disable_extension(id: &str, error: &str) -> Result<(), String> {
+    super::registry::update(id, |record| {
+        record.enabled = false;
+        record.status = ExtensionStatus::Error;
+        record.last_error = Some(error.to_string());
+        record.contributions = ExtensionContributions::default();
+        Ok(())
+    })
+}
+
 pub(super) fn mark_identity_error(identity: &HostIdentity) -> Vec<String> {
     mark_identity_failure(identity, identity_error_code(), false)
 }

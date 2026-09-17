@@ -61,7 +61,10 @@ async fn large_directories_report_a_bounded_partial_result() {
 
     assert_eq!(result.status, ToolResultStatus::Partial);
     assert!(result.truncated);
-    assert!(result.warnings.iter().any(|warning| warning.contains("500")));
+    assert!(result
+        .warnings
+        .iter()
+        .any(|warning| warning.contains("500")));
     assert!(result.content.lines().count() <= 500);
 }
 

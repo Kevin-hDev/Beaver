@@ -18,6 +18,10 @@ function status() {
       line: 12,
       column: 4,
     }],
+    activity: {
+      events: { queued: 4, delivered: 3, dropped: 1, timedOut: 0, activeHandlers: 0 },
+      activeInterceptors: 1,
+    },
   };
 }
 
@@ -28,6 +32,8 @@ describe("parseExtensionHostStatus", () => {
     expect(parsed.nodeVersion).toBe("v24.18.0");
     expect(parsed.lastError).toBeUndefined();
     expect(parsed.diagnostics[0].code).toBe("activation_failed");
+    expect(parsed.activity.events.delivered).toBe(3);
+    expect(parsed.activity.activeInterceptors).toBe(1);
   });
 
   it("refuse les états et codes de diagnostic hors contrat", () => {
@@ -62,6 +68,13 @@ describe("parseExtensionHostStatus", () => {
     expect(() => parseExtensionHostStatus({
       ...status(),
       diagnostics: [{ ...status().diagnostics[0], line: -1 }],
+    })).toThrow("invalid_extension_host_response");
+  });
+
+  it("refuse les compteurs d’activité non bornés", () => {
+    expect(() => parseExtensionHostStatus({
+      ...status(),
+      activity: { ...status().activity, activeInterceptors: 9 },
     })).toThrow("invalid_extension_host_response");
   });
 });

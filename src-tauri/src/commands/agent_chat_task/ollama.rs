@@ -45,7 +45,10 @@ pub(crate) async fn run(
                 provider: "ollama",
                 model: &params.model,
                 context_window: ctx.configured,
-                preserve_dynamic_tools: !params.tools.is_empty(),
+                preserve_dynamic_tools: super::api_tools::preserve_explicit_dynamic_tools(
+                    !params.tools.is_empty(),
+                    params.subagent_profile.is_some(),
+                ),
             },
         )
         .await?

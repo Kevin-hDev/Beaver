@@ -2,9 +2,8 @@ use super::host_identity::HostIdentity;
 use super::protocol::{AttributedLoadResult, HostExtensionSpec, LoadResult};
 use super::runtime_sync::{ApplyResult, BuildSpecs};
 use super::types::{
-    ExtensionDiagnostic, DIAGNOSTIC_ADVANCED_REQUIRED, DIAGNOSTIC_HOST_MISSING_RESPONSE,
-    DIAGNOSTIC_LOAD_FAILED, HOST_LOAD_STAGE_IMPORT, HOST_LOAD_STAGE_REGISTER, MAX_EXTENSIONS,
-    MAX_RUNTIME_DIAGNOSTICS,
+    ExtensionDiagnostic, DIAGNOSTIC_HOST_MISSING_RESPONSE, DIAGNOSTIC_LOAD_FAILED,
+    HOST_LOAD_STAGE_IMPORT, HOST_LOAD_STAGE_REGISTER, MAX_EXTENSIONS, MAX_RUNTIME_DIAGNOSTICS,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -23,8 +22,10 @@ pub fn apply(
         .collect();
     let mut received = HashSet::new();
     let mut successful = HashMap::new();
+    let mut event_subscriptions = super::runtime_sync::EventSubscriptions::new();
     let mut diagnostics = build.diagnostics.clone();
     let mut ui_updates = Vec::with_capacity(responses.len());
+    let mut interceptor_candidates = Vec::new();
     for response in responses.into_iter().take(MAX_EXTENSIONS) {
         let loaded = response.loaded;
         let spec = requested.get(loaded.id.as_str()).ok_or_else(incompatible)?;
@@ -33,6 +34,9 @@ pub fn apply(
             return Err(incompatible());
         }
         validate_load_shape(&loaded)?;
+        event_subscriptions
+            .entry(response.identity.clone())
+            .or_default();
         append_host_diagnostics(&loaded, &mut diagnostics)?;
         let mut ui_entries = Vec::new();
         if let Some(contributions) = loaded.contributions.filter(|_| loaded.error.is_none()) {
@@ -43,7 +47,20 @@ pub fn apply(
                 contributions,
             ) {
                 Ok(validated) => {
+                    event_subscriptions
+                        .entry(response.identity.clone())
+                        .or_default()
+                        .extend(validated.core.events.iter().cloned());
                     ui_entries = validated.ui;
+                    if !validated.core.interceptors.is_empty() {
+                        interceptor_candidates.push(
+                            super::tool_interception::InterceptorRegistration {
+                                extension_id: loaded.id.clone(),
+                                identity: response.identity.clone(),
+                                generation: response.generation,
+                            },
+                        );
+                    }
                     if let Some(code) = validated.ui_diagnostic {
                         push_ui_diagnostic_once(
                             &mut diagnostics,
@@ -57,7 +74,7 @@ pub fn apply(
                     super::runtime_sync::runtime_diagnostic(
                         &loaded.id,
                         HOST_LOAD_STAGE_REGISTER,
-                        contribution_diagnostic_code(error),
+                        super::runtime_sync_apply_diagnostics::contribution_diagnostic_code(error),
                     ),
                 )?,
             }
@@ -72,27 +89,16 @@ pub fn apply(
     append_missing(&requested, &received, &mut diagnostics)?;
     let active =
         super::registry_sync::apply_results(&build.enabled_ids, successful, &build.failures)?;
+    let interceptors =
+        super::runtime_sync_interceptors::accepted(interceptor_candidates, &mut diagnostics)?;
     Ok(ApplyResult {
         active,
         diagnostics,
         completed_ids: received,
         ui_updates,
+        event_subscriptions,
+        interceptors,
     })
-}
-
-pub(super) fn contribution_diagnostic_code(
-    error: super::runtime_sync_contributions::ValidationError,
-) -> &'static str {
-    match error {
-        super::runtime_sync_contributions::ValidationError::AdvancedRequired => {
-            DIAGNOSTIC_ADVANCED_REQUIRED
-        }
-        // La forme a été fournie par le processus Hôte : ne pas la présenter
-        // comme une demande d'autorisation avancée lorsqu'elle est invalide.
-        super::runtime_sync_contributions::ValidationError::InvalidContribution => {
-            DIAGNOSTIC_LOAD_FAILED
-        }
-    }
 }
 
 fn validate_attribution(

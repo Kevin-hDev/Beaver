@@ -49,6 +49,7 @@ macro_rules! generate {
             crate::commands::update_wakeup,
             crate::commands::delete_wakeup,
             crate::commands::set_wakeup_active,
+            crate::commands::approve_extension_wakeup,
             crate::commands::set_global_paused,
             crate::commands::get_heartbeat_config,
             crate::commands::list_wakeup_runs,

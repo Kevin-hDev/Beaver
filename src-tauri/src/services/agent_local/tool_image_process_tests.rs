@@ -132,13 +132,7 @@ mod tests {
         let tmp = working_dir();
         let input = create_test_image(tmp.path(), "input.png", 80, 60);
         let ops = serde_json::json!([]);
-        let result = transform_image(
-            input.to_str().unwrap(),
-            "",
-            &ops,
-            tmp.path(),
-        )
-        .await;
+        let result = transform_image(input.to_str().unwrap(), "", &ops, tmp.path()).await;
         assert!(!result.is_error);
         let json: serde_json::Value = serde_json::from_str(&result.content).unwrap();
         assert_eq!(json["width"], 80);
@@ -175,13 +169,7 @@ mod tests {
         let tmp = working_dir();
         let input = create_test_image(tmp.path(), "input.png", 50, 50);
         let ops = serde_json::json!([]);
-        let result = transform_image(
-            input.to_str().unwrap(),
-            "",
-            &ops,
-            tmp.path(),
-        )
-        .await;
+        let result = transform_image(input.to_str().unwrap(), "", &ops, tmp.path()).await;
         assert!(!result.is_error);
         let json: serde_json::Value = serde_json::from_str(&result.content).unwrap();
         assert!(json["file_size_bytes"].as_u64().unwrap_or(0) > 0);

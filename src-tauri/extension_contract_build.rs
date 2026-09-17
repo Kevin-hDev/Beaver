@@ -1,6 +1,12 @@
 #[path = "extension_contract_artifacts.rs"]
 #[allow(dead_code)]
 mod artifacts;
+#[path = "extension_contract_core_artifacts.rs"]
+mod core_artifacts;
+#[path = "extension_contract_core.rs"]
+mod core_contract;
+#[path = "extension_contract_core_rust.rs"]
+mod core_rust_renderer;
 #[path = "extension_contract_document.rs"]
 #[allow(dead_code)]
 mod document;
@@ -10,6 +16,8 @@ mod effect_renderer;
 mod enum_renderer;
 #[path = "extension_contract_io.rs"]
 mod io;
+#[path = "extension_contract_notifications.rs"]
+mod notification_renderer;
 #[path = "extension_contract_r0_enums.rs"]
 mod r0_enum_renderer;
 #[path = "extension_contract_rust.rs"]
@@ -57,7 +65,8 @@ pub fn load_contract(directory: &Path) -> Result<Value, String> {
 }
 
 pub fn validate_contract(contract: &Value, directory: &Path) -> Result<(), String> {
-    validation::validate(contract, directory)
+    validation::validate(contract, directory)?;
+    core_contract::validate(contract)
 }
 
 #[allow(dead_code)]

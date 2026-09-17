@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { resetAndLoad } from "./host-test-client.mjs";
+import { negotiateExpandedApi, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const fixtureRoot = join(root, "src-tauri", "tests", "fixtures", "extensions", "api-expansion");
@@ -17,6 +17,7 @@ export async function runApiExpansionSmoke({ host, workingDirectory, secondExten
     mainPath: join(fixtureRoot, manifest.main),
     manifest,
   };
+  await negotiateExpandedApi(host);
   const extensions = secondExtension ? [primary, secondExtension] : [primary];
   const loaded = await resetAndLoad(host, extensions);
   const fixture = loaded.extensions[0];

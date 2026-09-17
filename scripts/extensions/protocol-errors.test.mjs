@@ -64,7 +64,12 @@ test("extensions receive bounded structured core errors with retry guidance", as
         parameters: { type: "object" },
         async execute() {
           const errors = [];
-          for (const call of [() => api.info(), () => api.sessions.list()]) {
+          for (const call of [
+            () => api.info(),
+            () => api.sessions.list(),
+            () => api.call("sessions.get", { sessionId: "session" }),
+            () => api.call("mcp.tool.call", {}),
+          ]) {
             try {
               await call();
             } catch (error) {
@@ -85,9 +90,13 @@ test("extensions receive bounded structured core errors with retry guidance", as
   );
   const host = createHost(hostScript, {
     respondToCore(message) {
-      return message.method === "app.info"
-        ? { error: { code: -32_000, message: "core_busy" } }
-        : { error: { code: -32_601, message: "core_method_unavailable" } };
+      if (message.method === "app.info") {
+        return { error: { code: -32_000, message: "core_busy" } };
+      }
+      if (["sessions.get", "mcp.tool.call"].includes(message.method)) {
+        return { error: { code: -32_000, message: "core_request_timeout" } };
+      }
+      return { error: { code: -32_601, message: "core_method_unavailable" } };
     },
   });
 
@@ -117,6 +126,20 @@ test("extensions receive bounded structured core errors with retry guidance", as
         name: "BeaverExtensionError",
         code: -32_601,
         reason: "core_method_unavailable",
+        retryable: false,
+      },
+      {
+        valid: true,
+        name: "BeaverExtensionError",
+        code: -32_000,
+        reason: "core_request_timeout",
+        retryable: true,
+      },
+      {
+        valid: true,
+        name: "BeaverExtensionError",
+        code: -32_000,
+        reason: "core_request_timeout",
         retryable: false,
       },
     ]);

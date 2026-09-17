@@ -49,6 +49,13 @@ pub async fn configure(
         if state
             .epoch
             .as_ref()
+            .is_some_and(|current| current.catalog_version != epoch.catalog_version)
+        {
+            state.discovered_plugin_ids.clear();
+        }
+        if state
+            .epoch
+            .as_ref()
             .is_none_or(|current| !same_key(current, &epoch))
         {
             state.epoch = Some(DiscoveryEpoch {

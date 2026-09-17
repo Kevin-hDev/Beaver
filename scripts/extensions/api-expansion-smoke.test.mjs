@@ -38,6 +38,7 @@ test("la fixture API expansion exerce outils, skill, ressources et artefacts", a
     });
     assert.deepEqual(outcome.toolNames, [
       "acceptance.api.expansion.catalog_probe",
+      "acceptance.api.expansion.contextual_journey",
       "acceptance.api.expansion.produce_artifacts",
     ]);
     assert.equal(outcome.skill.id, "reference-skill");

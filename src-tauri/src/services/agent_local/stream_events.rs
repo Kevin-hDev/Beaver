@@ -133,7 +133,10 @@ impl AgentEventEmitter {
 }
 
 fn is_permission_request(event: &StreamEvent) -> bool {
-    matches!(event, StreamEvent::PermissionRequest(..))
+    matches!(
+        event,
+        StreamEvent::PermissionRequest(..) | StreamEvent::PermissionClosed { .. }
+    )
 }
 
 #[cfg(test)]
@@ -151,6 +154,9 @@ mod tests {
         )));
         assert!(!is_permission_request(&StreamEvent::Notice {
             message_key: "child-content".into(),
+        }));
+        assert!(is_permission_request(&StreamEvent::PermissionClosed {
+            id: "request".into(),
         }));
     }
 }

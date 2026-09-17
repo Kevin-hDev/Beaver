@@ -99,14 +99,21 @@ async fn receive_bound(
     let object = super::protocol::envelope(&message)?;
     if let Some(method) = object.get("method").and_then(Value::as_str) {
         if object.get("id").is_none() {
-            return receive_notification(method, object.get("params"), context.load_tracker).await;
+            return receive_notification(
+                method,
+                object.get("params"),
+                context.load_tracker,
+                work,
+                authority,
+            )
+            .await;
         }
         let id = object
             .get("id")
             .and_then(Value::as_str)
             .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
-        let params = object.get("params").cloned();
-        let call_context = context_for_call(context, authority).await?;
+        let mut params = object.get("params").cloned();
+        let call_context = context_for_call(context, authority, &mut params).await?;
         return super::host_core_call::spawn(
             id.to_string(),
             method.to_string(),
@@ -171,19 +178,35 @@ async fn receive(
 async fn context_for_call(
     _context: &HostReaderContext<'_>,
     authority: &HostAuthority,
+    params: &mut Option<Value>,
 ) -> Result<super::call_context::ExtensionCallContext, String> {
     #[cfg(test)]
     if let Some(call_context) = &_context.call_context {
         return Ok(call_context.clone());
     }
-    super::runtime::call_context(&authority.identity, authority.generation.number).await
+    let runtime = super::runtime::global()?;
+    let context = runtime
+        .call_context(&authority.identity, authority.generation.number)
+        .await?;
+    Ok(super::host_reader_scope::attach(
+        context,
+        params,
+        runtime.work.core_scopes(),
+        &authority.identity,
+        authority.generation.number,
+    ))
 }
 
 async fn receive_notification(
     method: &str,
     params: Option<&Value>,
     load_tracker: &HostLoadTracker,
+    work: &super::work_supervision::ExtensionWorkServices,
+    authority: &HostAuthority,
 ) -> Result<(), String> {
+    if method == super::types::HOST_EVENT_ACTIVITY_METHOD {
+        return super::event_activity_notification::receive(params, work, authority);
+    }
     if method != super::types::HOST_LOAD_STAGE_METHOD {
         return Err("Réponse de l'hôte d'extensions invalide.".to_string());
     }

@@ -31,6 +31,7 @@ fn definition(id: Uuid) -> AutomationDefinition {
         status: AutomationStatus::Active,
         created_at,
         anchor_at: None,
+        extension_owner: None,
     }
 }
 

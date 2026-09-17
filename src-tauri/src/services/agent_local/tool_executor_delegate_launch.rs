@@ -9,15 +9,14 @@ pub(super) async fn launch(
     session_id: &str,
     plan_mode_active: bool,
     cancel: CancellationToken,
+    mode: &str,
+    working_dir: &std::path::Path,
+    interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> Result<super::tool_dispatcher_delegate::PendingDelegate, ToolResult> {
     let tool = super::tool_executor_delegate_batch::DELEGATE_TOOL;
-    if let Err(msg) = super::tool_plan_guard::ensure_allowed_for_session(
-        tool,
-        args,
-        session_id,
-        plan_mode_active,
-    )
-    .await
+    if let Err(msg) =
+        super::tool_plan_guard::ensure_allowed_for_session(tool, args, session_id, plan_mode_active)
+            .await
     {
         return Err(ToolResult::error(
             msg,
@@ -44,6 +43,15 @@ pub(super) async fn launch(
             false,
         )),
         PreHookDecision::Allow => {
+            crate::services::extensions::before_tool_effect(
+                interception,
+                tool,
+                args,
+                working_dir,
+                mode,
+                &cancel,
+            )
+            .await?;
             super::tool_dispatcher_delegate::spawn_delegate(args, session_id, cancel)
                 .await
                 .map_err(|result| run_post_hooks(tool, args, result))

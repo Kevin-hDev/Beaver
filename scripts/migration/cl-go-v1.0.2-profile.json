@@ -614,7 +614,12 @@
       "profilePaths": [
         "config.json",
         "heartbeat-runtime.json",
-        "logs/wakeups.jsonl"
+        "automations.json",
+        "automation-runtime.json",
+        "config.pre-automations-v1.json",
+        "automations.pre-v2.json",
+        "logs/wakeups.jsonl",
+        "logs/automation-audit.jsonl"
       ],
       "contracts": [
         {
@@ -628,9 +633,37 @@
         {
           "file": "src-tauri/src/services/scheduler/log.rs",
           "snippets": [".join(\"wakeups.jsonl\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/automations/store.rs",
+          "snippets": ["root.join(\"automations.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/automations/runtime_store.rs",
+          "snippets": ["root.join(\"automation-runtime.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/automations/migration.rs",
+          "snippets": ["root.join(\"config.pre-automations-v1.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/automations/store_migration_v2.rs",
+          "snippets": ["const BACKUP_NAME: &str = \"automations.pre-v2.json\";"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/automations/audit_store.rs",
+          "snippets": ["root.join(\"logs\").join(\"automation-audit.jsonl\")"]
         }
       ],
-      "evidence": ["src-tauri/src/services/automations/next_fire_tests.rs"],
+      "evidence": [
+        "src-tauri/src/services/automations/next_fire_tests.rs",
+        "src-tauri/src/services/automations/store_migration_v2_tests.rs"
+      ],
       "manualGates": ["Laisse un réveil de test se déclencher après le redémarrage."]
     },
     {

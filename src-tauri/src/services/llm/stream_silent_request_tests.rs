@@ -56,6 +56,16 @@ fn internal_existing_models_keep_their_previous_request_selection() {
 }
 
 #[test]
+fn compression_behavior_is_unchanged() {
+    let messages = [ChatMessage::user("résume ceci".into())];
+    let cfg = config("openai", "gpt-6-astra", &messages);
+    assert_eq!(cfg.reasoning_mode, Some("low"));
+    assert_eq!(cfg.fast_mode, FastModeRequest::Standard);
+    assert_eq!(cfg.max_tokens, Some(1_234));
+    assert!(cfg.tools.is_empty());
+}
+
+#[test]
 fn internal_astra_config_reaches_the_real_responses_constructor() {
     let messages = [ChatMessage::user("résume ceci".into())];
     let cfg = config("openai", "gpt-6-astra", &messages);

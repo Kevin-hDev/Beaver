@@ -34,6 +34,7 @@ export interface UsagePeriod {
     primary: UsageAggregate;
     subagent: UsageAggregate;
     compression: UsageAggregate;
+    extension: UsageAggregate;
   };
   cost_quality: CostQuality;
 }
@@ -79,7 +80,7 @@ export interface ProviderRequestMetric {
   finish_reason: string | null;
   turn: number | null;
   attempt: number;
-  workload: "primary" | "subagent" | "compression";
+  workload: "primary" | "subagent" | "compression" | "extension";
   origin: "manual_chat" | "external_channel" | "automation";
   status: "completed" | "interrupted" | "cancelled" | "failed";
   fast_requested: boolean;

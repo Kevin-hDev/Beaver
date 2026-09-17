@@ -13,7 +13,7 @@ const wakeup: ScheduledWakeup = {
   provider: "codex-oauth", target: { mode: "new_session", project_id: null },
   schedule: { kind: "after_completion", delay_minutes: 10 }, status: "active",
   running: false, paused_by_global: false, next_fire_at: "2026-09-11T10:00:00Z",
-  last_run: null,
+  last_run: null, origin: "user_interface", inactive_reason: null,
 };
 
 const detail: WakeupDetail = {
@@ -24,6 +24,8 @@ const detail: WakeupDetail = {
     created_at: "2026-09-11T09:00:00Z", anchor_at: "2026-09-11T09:00:00Z",
   },
   next_fire_at: wakeup.next_fire_at,
+  origin: "user_interface",
+  inactive_reason: null,
 };
 
 const history: WakeupHistoryPage = { entries: [], next_cursor: "older" };
@@ -95,5 +97,15 @@ describe("useWakeups", () => {
       })).rejects.toBe("audit_unavailable");
     });
     expect(result.current.error).toBe("audit_unavailable");
+  });
+
+  it("réapprouve explicitement une automatisation d'extension puis recharge son détail", async () => {
+    const { result } = renderHook(() => useWakeups());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(() => result.current.approveExtension(wakeup.id));
+
+    expect(invoke).toHaveBeenCalledWith("approve_extension_wakeup", { id: wakeup.id });
+    expect(invoke).toHaveBeenCalledWith("get_wakeup", { automationId: wakeup.id });
   });
 });

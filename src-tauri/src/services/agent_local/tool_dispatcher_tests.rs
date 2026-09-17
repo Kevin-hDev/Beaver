@@ -1,8 +1,6 @@
 use crate::services::agent_local::tool_dispatcher::enrich_error;
 use crate::services::agent_local::tool_dispatcher_error::skill_load;
-use crate::services::agent_local::tool_result_contract::{
-    ToolErrorCategory, ToolResultStatus,
-};
+use crate::services::agent_local::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 use crate::services::agent_local::types_tools::ToolResult;
 
 #[test]
@@ -51,11 +49,7 @@ fn arbitrary_shell_output_does_not_override_the_exit_failure() {
 #[test]
 fn non_shell_command_not_found_text_is_not_reclassified() {
     let result = enrich_error(
-        ToolResult::external(
-            "extension_tool_error",
-            "command not found",
-            false,
-        ),
+        ToolResult::external("extension_tool_error", "command not found", false),
         "extension.tool",
     );
 
@@ -77,7 +71,10 @@ fn skill_identifier_and_availability_failures_are_distinct() {
     let missing = skill_load(super::tool_skill_loader::SkillLoadError::NotFound);
     let unavailable = skill_load(super::tool_skill_loader::SkillLoadError::Unavailable);
 
-    assert_eq!(invalid.error.unwrap().category, ToolErrorCategory::Validation);
+    assert_eq!(
+        invalid.error.unwrap().category,
+        ToolErrorCategory::Validation
+    );
     assert_eq!(missing.error.unwrap().category, ToolErrorCategory::NotFound);
     assert_eq!(
         unavailable.error.unwrap().category,

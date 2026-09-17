@@ -1,11 +1,7 @@
 use super::forecast_error::ForecastErrorKind;
-use crate::services::forecast::data_profiles::{
-    DataProfileHydrateError, DataProfileLoadError,
-};
+use crate::services::forecast::data_profiles::{DataProfileHydrateError, DataProfileLoadError};
 
-pub(super) fn classify(
-    error: DataProfileHydrateError,
-) -> (ForecastErrorKind, &'static str) {
+pub(super) fn classify(error: DataProfileHydrateError) -> (ForecastErrorKind, &'static str) {
     let kind = match error {
         DataProfileHydrateError::Ambiguous => {
             ForecastErrorKind::Validation("forecast_data_profile_ambiguous")

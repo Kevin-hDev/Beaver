@@ -61,23 +61,25 @@ pub fn write_allowed(session_id: &str) -> bool {
     })
 }
 
+pub fn write_defaults(session_id: &str) -> Option<(&'static str, &'static str)> {
+    policy(session_id).and_then(|policy| match policy.mode {
+        MemoryMode::Automatic => Some(("inferred", "extractor")),
+        MemoryMode::Manual if policy.write_authorized => Some(("confirmed", "user")),
+        MemoryMode::Disabled | MemoryMode::Manual => None,
+    })
+}
+
 pub fn consume_result(session_id: &str, content: &str) -> (String, bool) {
     let mut policies = lock_policies();
     let Some(policy) = policies
         .iter_mut()
         .find(|policy| policy.session_id == session_id)
     else {
-        return (
-            "[résultat mémoire omis : budget épuisé]".to_string(),
-            true,
-        );
+        return ("[résultat mémoire omis : budget épuisé]".to_string(), true);
     };
     let remaining = policy.budget_tokens.saturating_sub(policy.used_tokens);
     if remaining == 0 {
-        return (
-            "[résultat mémoire omis : budget épuisé]".to_string(),
-            true,
-        );
+        return ("[résultat mémoire omis : budget épuisé]".to_string(), true);
     }
     let tokens = estimate(content);
     let (output, truncated) = if tokens <= remaining {
@@ -175,15 +177,15 @@ fn estimate(content: &str) -> usize {
 }
 
 fn lock_policies() -> std::sync::MutexGuard<'static, VecDeque<TurnPolicy>> {
-    POLICIES.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    POLICIES
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 impl Drop for MemoryTurnGuard {
     fn drop(&mut self) {
         let mut policies = lock_policies();
-        policies.retain(|entry| {
-            entry.session_id != self.session_id || entry.nonce != self.nonce
-        });
+        policies.retain(|entry| entry.session_id != self.session_id || entry.nonce != self.nonce);
     }
 }
 
