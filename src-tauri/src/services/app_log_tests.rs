@@ -40,17 +40,41 @@ fn secrets_crossing_the_output_limit_are_redacted_before_truncation() {
 #[test]
 fn formatted_records_include_a_utc_timestamp() {
     let timestamp = Utc.with_ymd_and_hms(2026, 8, 7, 12, 34, 56).unwrap();
-    let output = format_record(
-        timestamp,
-        log::Level::Info,
-        "beaver::test",
-        &format_args!("ready"),
-    );
+    let message = format_args!("ready");
+    let record = log::Record::builder()
+        .level(log::Level::Info)
+        .target("beaver::test")
+        .args(message)
+        .build();
+    let output = format_record(timestamp, &record, &message);
 
     assert_eq!(
         output,
         "[2026-08-07T12:34:56.000Z][INFO][beaver::test] ready"
     );
+}
+
+#[test]
+fn formatted_records_include_redacted_structured_fields() {
+    let timestamp = Utc.with_ymd_and_hms(2026, 8, 7, 12, 34, 56).unwrap();
+    let message = format_args!("active_view_subscription_limit_reached");
+    let fields = [
+        ("registry", "agent-stream-session"),
+        ("size", "16"),
+        ("token", "private-value"),
+    ];
+    let record = log::Record::builder()
+        .level(log::Level::Error)
+        .target("webview")
+        .args(message)
+        .key_values(&fields)
+        .build();
+    let output = format_record(timestamp, &record, &message);
+
+    assert!(output.contains("registry=agent-stream-session"));
+    assert!(output.contains("size=16"));
+    assert!(!output.contains("private-value"));
+    assert!(output.contains("[redacted]"));
 }
 
 #[test]
