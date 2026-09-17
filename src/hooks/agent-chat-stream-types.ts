@@ -11,6 +11,7 @@ import type { ActiveStreamItem } from "./active-stream-item";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import { EMPTY_CONTEXT_USAGE_RECORD } from "./agent-token-estimate";
+import { createStreamProjection, type StreamProjectionState } from "./agent-stream-projections";
 
 export interface VisibleTurnIdentity {
   turnId: string;
@@ -63,6 +64,7 @@ export type PermissionRequestState = AgentPermissionRequest;
 
 export interface ManagedStreamState extends ChatState {
   pendingPermissions: PermissionRequestState[];
+  projection: StreamProjectionState;
   activeTurn?: VisibleTurnIdentity;
   completed: boolean; updatedAt: number; error?: string; isConnectionError?: boolean; diagnosticSummary?: string;
 }
@@ -103,6 +105,7 @@ export function createManagedStreamState(
     streamRunId: crypto.randomUUID(),
     streamStartedAt: now, segmentStartedAt: now,
     pendingPermissions: [], completed: false,
+    projection: createStreamProjection(),
     updatedAt: now,
   };
 }

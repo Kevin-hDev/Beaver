@@ -7,6 +7,7 @@ import { EMPTY_CHAT_STATE } from "../agent-chat-stream-callbacks";
 import type { AgentMessage, AgentSession, FileAttachment } from "@/types/agent";
 import type { StreamSnapshot } from "../agent-stream-manager";
 import type { TurnStart } from "@/types/agent-turn.generated";
+import { createStreamProjection } from "../agent-stream-projections";
 
 type StartStreamMock = (
   sessionId: string,
@@ -118,6 +119,7 @@ describe("useAgentChat", () => {
     };
     getStreamSnapshot.mockReturnValueOnce({
       ...EMPTY_CHAT_STATE,
+      projection: createStreamProjection(),
       pendingPermissions: [request],
       completed: false,
     });
@@ -140,11 +142,17 @@ describe("useAgentChat", () => {
     ));
     const request = { id: "permission", toolName: "plugin.tool", arguments: {} };
     act(() => {
-      subscriber?.({ ...EMPTY_CHAT_STATE, pendingPermissions: [request], completed: false });
+      subscriber?.({
+        ...EMPTY_CHAT_STATE, projection: createStreamProjection(),
+        pendingPermissions: [request], completed: false,
+      });
     });
     expect(onPermission).toHaveBeenCalledWith(request);
     act(() => {
-      subscriber?.({ ...EMPTY_CHAT_STATE, pendingPermissions: [], completed: false });
+      subscriber?.({
+        ...EMPTY_CHAT_STATE, projection: createStreamProjection(),
+        pendingPermissions: [], completed: false,
+      });
     });
     expect(onPermissionClosed).toHaveBeenCalledWith("permission");
   });
@@ -189,6 +197,7 @@ describe("useAgentChat", () => {
     await waitFor(() => expect(result.current.sessionLoading).toBe(false));
     getStreamSnapshot.mockReturnValueOnce({
       ...EMPTY_CHAT_STATE, messages: session.messages, isStreaming: true,
+      projection: createStreamProjection(),
       pendingPermissions: [], completed: false,
     });
     await act(async () => { await result.current.reload("m2"); });
@@ -340,6 +349,7 @@ describe("useAgentChat", () => {
     await waitFor(() => expect(result.current.sessionLoading).toBe(false));
     const streaming = {
       ...EMPTY_CHAT_STATE,
+      projection: createStreamProjection(),
       messages: session.messages,
       isStreaming: true,
       pendingPermissions: [],

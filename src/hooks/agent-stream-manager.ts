@@ -1,8 +1,6 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import i18n from "@/i18n";
-import {
-  applyStreamEvent,
-} from "./agent-chat-stream-callbacks";
+import { applyStreamEvent } from "./agent-chat-stream-callbacks";
 import { scheduleCleanup, clearCleanup, trimSubscribers } from "./agent-stream-cleanup";
 import {
   flushFrameNotify,
@@ -61,10 +59,11 @@ import {
   releaseStop,
 } from "./agent-stream-manager-ownership";
 import { stopStreamRecord } from "./agent-stream-stop";
+import { applyRecordProjection, markRecordSessionUpdate, removeRecordSubagent } from "./agent-stream-projection-events";
+import { notifyAgentSessionsChanged } from "./agent-session-events";
 
 export type { StreamSnapshot } from "./agent-stream-records";
 const EVENT_NAME = "agent-stream-event";
-
 interface StreamEnvelope { sessionId: string; generation?: number; event: StreamEvent }
 
 type Subscriber = (snapshot: StreamSnapshot) => void;
@@ -75,9 +74,8 @@ export const agentStreamManager = { startSession, stopSession, failSession, setS
   ownsRun, matchesRun, ownsOwner, adoptOwner,
   getDeferredStop, getOwnedRunState, claimStop, releaseStop, completeStop,
   releaseOwner,
-  clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
-  reconcileTurnAdmission,
-  subscribeActivity: subscribeStreamActivity };
+  clearPermission: clearStreamPermission, removeSubagent, getSnapshot, getActivity, isStreaming, subscribe,
+  reconcileTurnAdmission, subscribeActivity: subscribeStreamActivity };
 
 function ensureListener() {
   if (!listenPromise) {
@@ -117,6 +115,14 @@ function stopSession(sessionId: string, generation?: number | null) {
   stopStreamRecord(sessionId, record, generation);
 }
 
+function removeSubagent(sessionId: string, subagentSessionId: string) {
+  const record = getRecord(sessionId);
+  if (!record) return;
+  removeRecordSubagent(record, subagentSessionId);
+  touchSession(sessionId, record);
+  flushFrameNotify(record, notify);
+}
+
 function setSessionGeneration(sessionId: string, generation: number) {
   const pending = adoptSessionGeneration(sessionId, generation);
   if (!pending || !pending.accepted) return "rejected" as const;
@@ -154,13 +160,11 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
 
   if (!acceptsStreamEvent(record, generation, event)) return;
 
-  if (event.event === "subagentCompleted") {
-    if (isStreaming(event.data.subagentSessionId)) stopSession(event.data.subagentSessionId);
-    flushFrameNotify(record, notify);
-    return;
-  }
-
-  if (event.event === "subagentSpawned" || event.event === "todoUpdated") {
+  const completedSubagentId = applyRecordProjection(record, event);
+  if (completedSubagentId !== undefined) {
+    if (completedSubagentId && isStreaming(completedSubagentId)) stopSession(completedSubagentId);
+    if (event.event !== "todoUpdated") notifyAgentSessionsChanged();
+    touchSession(sessionId, record);
     flushFrameNotify(record, notify);
     return;
   }
@@ -201,10 +205,12 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   if (toastMessage) showToast(toastMessage, "error");
 
   if (event.event === "compressionComplete") {
+    markRecordSessionUpdate(record, event);
     handleCompressionComplete(sessionId, record, notify, notifyActivity);
     return;
   }
 
+  markRecordSessionUpdate(record, event);
   const result = applyStreamEvent(record.state, event);
   record.state = result.state;
   if (record.state.completed) markStreamCancelled(record, generation);

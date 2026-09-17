@@ -119,6 +119,52 @@ describe("agentStreamManager", () => {
     expect(mocks.invoke).toHaveBeenCalledWith("get_agent_session", { id: "s1" });
   });
 
+  it("projette todos, outils et sous-agents depuis l'unique écoute du flux", async () => {
+    await agentStreamManager.startSession("parent", [], 0);
+    emit("parent", {
+      event: "todoUpdated",
+      data: { todos: [{ content: "Tester", status: "in_progress" }] },
+    });
+    emit("parent", {
+      event: "toolCall",
+      data: { name: "edit_file", arguments: { path: "a.ts" }, toolCallIndex: 0 },
+    });
+    emit("parent", {
+      event: "subagentSpawned",
+      data: {
+        subagentSessionId: "child",
+        subagentName: "Explorer",
+        subagentType: "explorer",
+        subagentDescription: "Inspecter",
+        subagentColorKey: "geminitor",
+        promptPreview: "Cherche",
+        runId: "run-1",
+      },
+    });
+
+    const running = agentStreamManager.getSnapshot("parent");
+    expect(running?.projection.todos?.[0]?.status).toBe("in_progress");
+    expect(running?.currentTools[0]?.name).toBe("edit_file");
+    expect(running?.projection.subagents.active[0]?.sessionId).toBe("child");
+
+    emit("parent", {
+      event: "subagentCompleted",
+      data: {
+        subagentSessionId: "child",
+        success: true,
+        status: "completed",
+        summary: "Terminé",
+        runId: "run-1",
+      },
+    });
+
+    const completed = agentStreamManager.getSnapshot("parent")?.projection.subagents;
+    expect(completed?.active).toEqual([]);
+    expect(completed?.completed[0]).toMatchObject({
+      sessionId: "child", status: "completed", summary: "Terminé",
+    });
+  });
+
   it("ignore les events tardifs d'une génération annulée", async () => {
     await agentStreamManager.startSession("s1", [message("u1", "user", "Question")], 10);
     agentStreamManager.setSessionGeneration("s1", 7);

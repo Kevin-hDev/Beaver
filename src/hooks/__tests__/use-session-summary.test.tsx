@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSessionSummary } from "../use-session-summary";
 import { AGENT_SESSIONS_CHANGED } from "../agent-session-events";
+import { records } from "../agent-stream-records";
 import type { AgentMessage, AgentSession, AgentSessionMeta, StreamEvent } from "@/types/agent";
 
 const invokeMock = vi.fn();
@@ -14,12 +15,19 @@ vi.mock("@tauri-apps/api/core", () => ({
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn((eventName: string, handler: (event: { payload: unknown }) => void) => {
     listeners.set(eventName, [...(listeners.get(eventName) ?? []), handler]);
-    return Promise.resolve(() => {});
+    return Promise.resolve(() => {
+      listeners.set(eventName, (listeners.get(eventName) ?? []).filter(
+        (candidate) => candidate !== handler,
+      ));
+    });
   }),
 }));
 
 beforeEach(() => {
-  listeners.clear();
+  for (const eventName of listeners.keys()) {
+    if (eventName !== "agent-stream-event") listeners.delete(eventName);
+  }
+  records.clear();
   invokeMock.mockReset();
 });
 
@@ -41,6 +49,50 @@ describe("useSessionSummary", () => {
     expect(result.current.changes).toEqual({ additions: 2, deletions: 0, files: 1 });
   });
 
+  it("conserve la dernière session confirmée si une invalidation échoue", async () => {
+    let unavailable = false;
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "list_subagents") return Promise.resolve([]);
+      if (unavailable) return Promise.reject(new Error("indisponible"));
+      return Promise.resolve(session([
+        assistant("m1", [{ name: "write_file", summary: "a.ts", content: "a\nb" }]),
+      ]));
+    });
+
+    const { result } = renderHook(() => useSessionSummary("s1"));
+    await waitFor(() => expect(result.current.session?.id).toBe("s1"));
+
+    unavailable = true;
+    act(() => {
+      window.dispatchEvent(new Event(AGENT_SESSIONS_CHANGED));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(result.current.session?.id).toBe("s1");
+    expect(result.current.changes).toEqual({ additions: 2, deletions: 0, files: 1 });
+  });
+
+  it("recharge le document durable après une compression", async () => {
+    let current = session([
+      assistant("m1", [{ name: "write_file", summary: "a.ts", content: "a\nb" }]),
+    ]);
+    invokeMock.mockImplementation((command: string) => command === "list_subagents"
+      ? Promise.resolve([])
+      : Promise.resolve(current));
+
+    const { result } = renderHook(() => useSessionSummary("s1"));
+    await waitFor(() => expect(result.current.changes.additions).toBe(2));
+    current = session([
+      assistant("m2", [{ name: "write_file", summary: "a.ts", content: "a\nb\nc" }]),
+    ]);
+
+    act(() => emit("s1", { event: "compressionComplete", data: {} }));
+
+    await waitFor(() => expect(result.current.changes).toEqual({
+      additions: 3, deletions: 0, files: 1,
+    }));
+  });
+
   it("remplace la diff affichée en temps réel quand une nouvelle requête modifie un fichier", async () => {
     invokeMock.mockImplementation((command: string) => {
       if (command === "list_subagents") return Promise.resolve([]);
@@ -60,7 +112,7 @@ describe("useSessionSummary", () => {
     expect(result.current.changes).toEqual({ additions: 1, deletions: 2, files: 1 });
   });
 
-  it("nettoie la diff live quand la session change", async () => {
+  it("restaure la diff live quand on revient sur une session encore en flux", async () => {
     invokeMock.mockImplementation((command: string, args?: { id?: string }) => {
       if (command === "list_subagents") return Promise.resolve([]);
       if (args?.id === "s2") return Promise.resolve(session([], "s2"));
@@ -86,7 +138,7 @@ describe("useSessionSummary", () => {
     rerender({ sessionId: "s1" });
     await waitFor(() => expect(result.current.session?.id).toBe("s1"));
 
-    expect(result.current.changes).toEqual({ additions: 2, deletions: 0, files: 1 });
+    expect(result.current.changes).toEqual({ additions: 1, deletions: 2, files: 1 });
   });
 
   it("rafraîchit les sous-agents quand les sessions changent", async () => {

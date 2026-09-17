@@ -10,9 +10,11 @@ import type { AgentMessage } from "@/types/agent";
 import { assignStreamRun, type StreamRun } from "./agent-stream-run-ownership";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import { resolveContextUsage } from "./agent-token-estimate";
+import type { StreamProjectionState } from "./agent-stream-projections";
 
 export interface StreamSnapshot extends ChatState {
   pendingPermissions: PermissionRequestState[];
+  projection: StreamProjectionState;
   completed: boolean;
   error?: string;
   isConnectionError?: boolean;
@@ -85,6 +87,7 @@ export function startStreamRecord(
     contextUsageIncludesReasoning: previous.contextUsageIncludesReasoning,
     contextUsageVisible: previous.contextUsageVisible,
   } : next;
+  record.state.projection = previous.projection;
   record.started = true;
   if (awaitingAdmission && record.activeGeneration !== null) {
     record.cancelledGenerations = [
@@ -104,6 +107,15 @@ export function startStreamRecord(
 export function snapshot(state: StreamRecord["state"]): StreamSnapshot {
   return {
     ...toChatState(state), pendingPermissions: [...state.pendingPermissions],
+    projection: {
+      ...state.projection,
+      todos: state.projection.todos ? [...state.projection.todos] : null,
+      subagents: {
+        ...state.projection.subagents,
+        active: [...state.projection.subagents.active],
+        completed: [...state.projection.subagents.completed],
+      },
+    },
     completed: state.completed, error: state.error,
     isConnectionError: state.isConnectionError,
     diagnosticSummary: state.diagnosticSummary,
