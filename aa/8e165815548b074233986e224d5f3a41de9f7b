@@ -1,0 +1,19 @@
+Tâche: E01 — Arbitrer les validations aux frontières Rust/React/Node
+
+Décision:
+- conserver toutes les validations d'entrées utilisateur, disque et extension tierce aux frontières Rust/Node;
+- remplacer seulement les parseurs React qui revalident une sortie Rust interne par des types générés lors de M26;
+- conserver le routage d'événements, les limites d'erreur et les contrôles d'expérience.
+
+Preuves relues:
+- terminal/tab_store.rs et terminal-persistence.ts;
+- browser/session_types.rs, browser-types.ts, browser-events.ts et browser-favicon-events.ts;
+- contrat, validateurs Node/Rust et parseurs React des extensions.
+
+Validation:
+- rapport autonome avec tableau contrôle par contrôle et scénarios malformés;
+- git diff --cached --check: réussi;
+- aucune modification de code ni de comportement.
+
+Limite d'outillage:
+- la commande sémantique /graphify --update n'est pas disponible dans ce harnais; aucun remplacement AST n'a été utilisé pour prétendre indexer ce document.
