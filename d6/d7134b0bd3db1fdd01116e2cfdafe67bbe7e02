@@ -1,0 +1,20 @@
+Tâche E08 — Vérifier les abstractions et doublures de tests
+
+Décision : conserver la projection sensible Codex, les doublures Ollama et InstallSignal. Chaque variante porte une garantie distincte ; leur fusion créerait des modes et champs optionnels sans réduction nette.
+
+Preuves :
+- la projection Codex sélectionne sept champs sans matérialiser les prompts et résultats d'outils ignorés, borne l'entrée et zéroïse ses buffers ;
+- ScriptedFs vérifie l'ordre exact, CutpointFs l'état logique, RealCutpointFs les vraies opérations disque ;
+- FakeBackend couvre la préparation et l'ordre d'une mise à jour, CompletionHarness sa convergence après publication ;
+- InstallSignal évite de coupler les tests git/npm au magasin durable des travaux.
+
+Validation :
+- 19 tests du faux transport Codex ;
+- 28 tests du disque durable Ollama ;
+- 27 tests de reprise ;
+- 12 tests d'ordre/reprise de mise à jour ;
+- 5 tests de fin de mise à jour ;
+- 12 tests git/npm ;
+- total 103 réussis, aucun échec.
+
+Historique : deux filtres de mise à jour ont d'abord exécuté 0 test et n'ont pas été comptés ; les chemins exacts ont été relancés avec 12 réussites.
