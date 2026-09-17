@@ -20,6 +20,7 @@ pub(super) async fn consume_sse_with_accumulator(
     futures_util::pin_mut!(sse);
     loop {
         let event = tokio::select! {
+            biased;
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
             _ = tokio::time::sleep(idle_timeout) => {
                 return Err("provider_temporarily_unavailable".to_string());
