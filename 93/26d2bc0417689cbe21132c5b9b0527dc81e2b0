@@ -1,0 +1,11 @@
+Correction review 09 — journal structuré
+
+Le formateur commun conserve désormais les champs structurés fournis par le frontend, dont registry, size et limit pour les refus de saturation. Le message et les champs passent ensemble par la limite de taille et le masquage des données sensibles avant écriture.
+
+Validation exécutée sur ce commit :
+- cargo test services::app_log_tests -- --nocapture : 8 réussis, 0 échec
+- cargo check : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- cargo fmt --all -- --check : réussi
+- git diff --check : réussi
+- graphify update . : réussi
