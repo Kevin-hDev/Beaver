@@ -277,6 +277,15 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
 }
 
 #[test]
+fn checked_in_node_reader_limits_match_rust() {
+    assert_eq!(
+        include_str!("../../../resources/extension-host/contract-reader-limits.generated.mjs")
+            .replace("\r\n", "\n"),
+        generator::render_node_reader_limits()
+    );
+}
+
+#[test]
 fn generated_rust_names_host_notifications() {
     let generated = include_str!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
@@ -428,7 +437,8 @@ fn fixed_bootstrap_anchors_match_the_node_reader() {
         "../../../resources/extension-host/contract-bootstrap.json"
     ))
     .unwrap();
-    let node_reader = include_str!("../../../resources/extension-host/contract.mjs");
+    let node_reader =
+        include_str!("../../../resources/extension-host/contract-reader-limits.generated.mjs");
 
     assert_eq!(bootstrap.as_object().unwrap().len(), 1);
     assert_eq!(bootstrap["maxContractBytes"], 32_768);
@@ -444,7 +454,10 @@ fn fixed_bootstrap_anchors_match_the_node_reader() {
         node_numeric_constant(node_reader, "MAX_BOOTSTRAPPED_CONTRACT_BYTES"),
         generator::MAX_BOOTSTRAPPED_CONTRACT_BYTES
     );
-    assert!(node_reader.matches("readBounded(").count() >= 2);
+    assert!(include_str!("../../../resources/extension-host/contract.mjs")
+        .matches("readBounded(")
+        .count()
+        >= 2);
 }
 
 fn node_numeric_constant(source: &str, name: &str) -> usize {

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 const MAX_COORDINATE: i32 = 16_384;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
-const MAX_DIMENSION: u32 = 16_384;
+pub(super) const MAX_DIMENSION: u32 = 16_384;
 #[cfg(any(test, target_os = "windows"))]
 const MIN_SCALE_FACTOR: f64 = 0.5;
 #[cfg(any(test, target_os = "windows"))]

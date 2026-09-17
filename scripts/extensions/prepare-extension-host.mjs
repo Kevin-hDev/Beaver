@@ -71,6 +71,7 @@ async function copyHostSources(source, destination) {
     "contract-bootstrap.json",
     "contract.json",
     "contract-core-api.mjs",
+    "contract-reader-limits.generated.mjs",
     "core-context.mjs",
     "event-delivery.mjs",
     "event-handlers.mjs",

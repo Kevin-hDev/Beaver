@@ -66,6 +66,9 @@ mod tests;
 mod tab_store_tests;
 
 #[cfg(test)]
+mod terminal_contract_tests;
+
+#[cfg(test)]
 mod utf8_decoder_tests;
 
 #[cfg(all(test, windows))]

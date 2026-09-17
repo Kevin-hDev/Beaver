@@ -1,5 +1,8 @@
 use super::*;
 
+#[cfg(test)]
+#[path = "browser_contract_tests.rs"]
+mod browser_contract_tests;
 #[cfg(all(test, native_browser))]
 #[path = "browser_slot_tests.rs"]
 mod browser_slot_tests;

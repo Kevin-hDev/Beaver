@@ -37,6 +37,10 @@ test("bounds bootstrap and contract bytes before Node deserialization", async ()
     join(root, "src-tauri/resources/extension-host/contract-core-api.mjs"),
     join(directory, "contract-core-api.mjs"),
   );
+  await copyFile(
+    join(root, "src-tauri/resources/extension-host/contract-reader-limits.generated.mjs"),
+    join(directory, "contract-reader-limits.generated.mjs"),
+  );
   try {
     await writeFile(
       join(directory, "contract-bootstrap.json"),

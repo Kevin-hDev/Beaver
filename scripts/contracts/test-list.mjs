@@ -1,5 +1,8 @@
 // Exact Rust tests owned by contracts:check.
 export const CONTRACT_TESTS = Object.freeze([
+  "services::browser::test_modules::browser_contract_tests::checked_in_browser_contract_matches_rust",
+  "services::browser::test_modules::favicon_contract_tests::checked_in_favicon_contract_matches_rust",
+  "services::terminal::terminal_contract_tests::checked_in_terminal_contract_matches_rust",
   "services::automations::contract_export::checked_in_automation_contract_matches_rust",
   "services::extensions::install_jobs::contract_tests::checked_in_typescript_matches_rust",
   "models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract",
@@ -12,6 +15,7 @@ export const CONTRACT_TESTS = Object.freeze([
   "services::model_downloads_contract_tests::checked_in_model_download_types_match_rust",
   "services::extensions::contract_artifact_tests::checked_in_typescript_matches_the_extension_contract",
   "services::extensions::contract_artifact_tests::checked_in_sdk_contract_matches_the_extension_contract",
+  "services::extensions::contract_artifact_tests::checked_in_node_reader_limits_match_rust",
   "services::extensions::contract_artifact_tests::checked_in_sdk_readme_tables_match_the_contract",
   "services::extensions::contract_artifact_tests::checked_in_private_document_tables_match_the_contract",
   "services::extensions::contract_artifact_tests::checked_in_ui_contract_artifacts_name_the_json_authority",

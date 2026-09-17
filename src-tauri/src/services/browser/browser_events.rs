@@ -19,18 +19,22 @@ pub(super) fn next_event_generation() -> Option<u64> {
 }
 
 #[derive(Clone, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub(super) struct BrowserTabEvent {
     pub event_version: u8,
+    #[cfg_attr(test, ts(type = "number"))]
     pub generation: u64,
     pub conversation_id: String,
     pub tab_id: String,
 }
 
 #[derive(Clone, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub(super) struct PopupRequestEvent {
     pub event_version: u8,
+    #[cfg_attr(test, ts(type = "number"))]
     pub generation: u64,
     pub conversation_id: String,
     pub source_tab_id: String,
@@ -38,6 +42,7 @@ pub(super) struct PopupRequestEvent {
 }
 
 #[derive(Clone, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub(super) struct BrowserSessionEvent {
     pub event_version: u8,

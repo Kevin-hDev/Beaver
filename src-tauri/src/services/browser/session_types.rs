@@ -5,6 +5,7 @@ pub(super) const SESSION_VERSION: u8 = 1;
 pub(super) const MAX_TITLE_CHARS: usize = 80;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct BrowserTabState {
     pub id: String,
@@ -17,14 +18,17 @@ pub struct BrowserTabState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct BrowserSessionState {
     pub tabs: Vec<BrowserTabState>,
     pub active_tab_id: String,
+    #[cfg_attr(test, ts(type = "number"))]
     pub generation: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(
     tag = "status",
     rename_all = "camelCase",

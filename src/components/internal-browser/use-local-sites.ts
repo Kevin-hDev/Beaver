@@ -2,7 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { detectLocalSites } from "./browser-ipc";
-import { parseLocalSiteScan, type LocalSiteScan } from "./browser-types";
+import type { LocalSiteScan } from "./browser-types";
 
 const LOCAL_SITE_SCAN_INTERVAL_MS = 5_000;
 const LOCAL_SITES_EVENT = "browser-local-sites-changed-v1";
@@ -45,10 +45,7 @@ export function useLocalSites(homeVisible: boolean) {
 
   useEffect(() => {
     if (!homeVisible) return;
-    const unlisten = listen<unknown>(LOCAL_SITES_EVENT, (event) => {
-      const next = parseLocalSiteScan(event.payload);
-      if (next) accept(next);
-    });
+    const unlisten = listen<LocalSiteScan>(LOCAL_SITES_EVENT, (event) => accept(event.payload));
     return () => cleanupTauriListener(unlisten);
   }, [accept, homeVisible]);
 

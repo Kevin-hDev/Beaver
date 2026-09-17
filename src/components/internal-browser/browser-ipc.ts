@@ -1,16 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
-import { parseTabCreation, type BrowserTabCreation } from "./browser-events";
-import {
-  parseBrowserSession,
-  parseLocalSiteScan,
-  type BrowserSessionState,
-  type LocalSiteScan,
-} from "./browser-types";
+import type {
+  BrowserSessionState,
+  BrowserTabCreation,
+  LocalSiteScanResult,
+} from "./browser-contract.generated";
+import type { LocalSiteScan } from "./browser-types";
 
 async function sessionCommand(command: string, args: Record<string, unknown>) {
-  const session = parseBrowserSession(await invoke<unknown>(command, args));
-  if (!session) throw new Error("invalid_browser_response");
-  return session;
+  return invoke<BrowserSessionState>(command, args);
 }
 
 export function openBrowserSession(conversationId: string): Promise<BrowserSessionState> {
@@ -21,12 +18,10 @@ export async function createBrowserTab(
   conversationId: string,
   replaceTabId: string | null,
 ): Promise<BrowserTabCreation> {
-  const result = parseTabCreation(await invoke<unknown>("browser_create_tab", {
+  return invoke<BrowserTabCreation>("browser_create_tab", {
     conversationId,
     replaceTabId,
-  }));
-  if (!result) throw new Error("invalid_browser_response");
-  return result;
+  });
 }
 
 export function activateBrowserTab(conversationId: string, tabId: string) {
@@ -57,9 +52,7 @@ export async function runBrowserNavigationAction(
 }
 
 export async function detectLocalSites(homeVisible: boolean): Promise<LocalSiteScan> {
-  const result = parseLocalSiteScan(await invoke<unknown>("browser_detect_local_sites", {
+  return invoke<LocalSiteScanResult>("browser_detect_local_sites", {
     homeVisible,
-  }));
-  if (!result) throw new Error("invalid_browser_response");
-  return result;
+  });
 }
