@@ -132,11 +132,14 @@ mod runtime_integration;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod runtime_revision;
 mod session_model;
+mod session_model_persistence;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod session_model_runtime;
 mod session_order;
 mod session_persistence;
 mod session_service;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod session_service_runtime;
 mod session_store;
 mod session_types;
 mod session_validation;

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub const MAX_BROWSER_TABS: usize = 10;
-pub(super) const SESSION_VERSION: u8 = 1;
+pub(super) const SESSION_VERSION: u8 = 2;
 pub(super) const MAX_TITLE_CHARS: usize = 80;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -44,11 +44,26 @@ pub enum BrowserTabCreation {
     },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Serialize, Deserialize)]
 pub(super) struct PersistedBrowserSession {
     pub(super) version: u8,
-    pub(super) state: BrowserSessionState,
+    pub(super) state: PersistedBrowserSessionState,
     pub(super) recency: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct PersistedBrowserSessionState {
+    pub(super) tabs: Vec<PersistedBrowserTabState>,
+    pub(super) active_tab_id: String,
+    pub(super) generation: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(super) struct PersistedBrowserTabState {
+    pub(super) id: String,
+    pub(super) title: String,
+    pub(super) url: Option<String>,
 }
 
 #[derive(Default)]
@@ -59,6 +74,11 @@ pub(super) struct BrowserRuntimeTabUpdate {
     pub(super) loading: Option<bool>,
     pub(super) can_go_back: Option<bool>,
     pub(super) can_go_forward: Option<bool>,
+}
+
+pub(super) struct BrowserRuntimeUpdateResult {
+    pub(super) changed: bool,
+    pub(super) persisted_changed: bool,
 }
 
 pub(super) fn blank_tab(id: String) -> BrowserTabState {

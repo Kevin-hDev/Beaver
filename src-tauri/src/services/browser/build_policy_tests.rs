@@ -65,7 +65,8 @@ fn native_favicon_modules_are_not_built_in_linux_library() {
 #[test]
 fn native_runtime_entrypoints_stay_out_of_linux_tests() {
     let runtime = normalized_source("src/services/browser/runtime_handle.rs");
-    let sessions = normalized_source("src/services/browser/session_service.rs");
+    let module = normalized_source("src/services/browser/mod.rs");
+    let sessions = normalized_source("src/services/browser/session_service_runtime.rs");
     let native = "#[cfg(any(target_os = \"macos\", target_os = \"windows\"))]";
 
     for signature in [
@@ -75,10 +76,11 @@ fn native_runtime_entrypoints_stay_out_of_linux_tests() {
     ] {
         assert!(runtime.contains(&format!("{native}\n    {signature}")));
     }
+    assert!(module.contains(&format!("{native}\nmod session_service_runtime;")));
     for signature in [
         "pub(super) fn update_runtime",
         "pub(super) fn mark_released",
     ] {
-        assert!(sessions.contains(&format!("{native}\n    {signature}")));
+        assert!(sessions.contains(signature));
     }
 }

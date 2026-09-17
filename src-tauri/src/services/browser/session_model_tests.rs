@@ -67,8 +67,7 @@ fn restores_order_and_marks_pages_as_released() {
     model.navigate(&id(2), "https://example.com/path").unwrap();
 
     let bytes = serde_json::to_vec(&model.persisted()).unwrap();
-    let mut restored = SessionModel::restore(&bytes).unwrap();
-    restored.release_runtime().unwrap();
+    let restored = SessionModel::restore(&bytes).unwrap();
 
     assert_eq!(restored.state().tabs[0].id, id(1));
     assert_eq!(
@@ -77,6 +76,42 @@ fn restores_order_and_marks_pages_as_released() {
     );
     assert!(restored.state().tabs[1].released);
     assert!(!restored.state().tabs[1].loading);
+}
+
+#[test]
+fn persisted_document_excludes_runtime_fields_and_reads_legacy_ones() {
+    let mut model = SessionModel::new(id(1)).unwrap();
+    model.navigate(&id(1), "https://example.com/path").unwrap();
+    model
+        .update_runtime(
+            &id(1),
+            &BrowserRuntimeTabUpdate {
+                loading: Some(true),
+                can_go_back: Some(true),
+                can_go_forward: Some(true),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    let mut value = serde_json::to_value(model.persisted()).unwrap();
+    let tab = value["state"]["tabs"][0].as_object_mut().unwrap();
+    assert!(!tab.contains_key("loading"));
+    assert!(!tab.contains_key("canGoBack"));
+    assert!(!tab.contains_key("canGoForward"));
+    assert!(!tab.contains_key("released"));
+
+    tab.insert("loading".into(), serde_json::json!(true));
+    tab.insert("canGoBack".into(), serde_json::json!(true));
+    tab.insert("canGoForward".into(), serde_json::json!(true));
+    tab.insert("released".into(), serde_json::json!(false));
+    value["version"] = serde_json::json!(1);
+    let restored = SessionModel::restore(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let restored_tab = &restored.state().tabs[0];
+    assert!(!restored_tab.loading);
+    assert!(!restored_tab.can_go_back);
+    assert!(!restored_tab.can_go_forward);
+    assert!(restored_tab.released);
 }
 
 #[test]
@@ -99,7 +134,7 @@ fn rejects_unbounded_or_invalid_restored_state() {
 fn runtime_updates_change_only_the_target_tab_and_bound_its_title() {
     let mut model = SessionModel::new(id(1)).unwrap();
     model.create_tab(id(2), None).unwrap();
-    model
+    let outcome = model
         .update_runtime(
             &id(1),
             &BrowserRuntimeTabUpdate {
@@ -111,6 +146,8 @@ fn runtime_updates_change_only_the_target_tab_and_bound_its_title() {
             },
         )
         .unwrap();
+    assert!(outcome.changed);
+    assert!(outcome.persisted_changed);
 
     let first = &model.state().tabs[0];
     let second = &model.state().tabs[1];
@@ -122,6 +159,69 @@ fn runtime_updates_change_only_the_target_tab_and_bound_its_title() {
     model.mark_released(&id(1)).unwrap();
     assert!(model.state().tabs[0].released);
     assert!(!model.state().tabs[0].loading);
+}
+
+#[test]
+fn runtime_only_updates_do_not_request_a_persistent_write() {
+    let mut model = SessionModel::new(id(1)).unwrap();
+    let before = model.persisted().state.tabs.clone();
+
+    let outcome = model
+        .update_runtime(
+            &id(1),
+            &BrowserRuntimeTabUpdate {
+                loading: Some(true),
+                can_go_back: Some(true),
+                can_go_forward: Some(false),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    assert!(outcome.changed);
+    assert!(!outcome.persisted_changed);
+    assert_eq!(model.persisted().state.tabs, before);
+}
+
+#[test]
+fn one_navigation_keeps_four_runtime_updates_but_requests_two_saves() {
+    let mut model = SessionModel::new(id(1)).unwrap();
+    let updates = [
+        BrowserRuntimeTabUpdate {
+            loading: Some(true),
+            can_go_back: Some(false),
+            can_go_forward: Some(false),
+            ..Default::default()
+        },
+        BrowserRuntimeTabUpdate {
+            url: Some("https://example.com/path".into()),
+            ..Default::default()
+        },
+        BrowserRuntimeTabUpdate {
+            title: Some("Example".into()),
+            ..Default::default()
+        },
+        BrowserRuntimeTabUpdate {
+            loading: Some(false),
+            can_go_back: Some(true),
+            can_go_forward: Some(false),
+            ..Default::default()
+        },
+    ];
+
+    let outcomes: Vec<_> = updates
+        .iter()
+        .map(|update| model.update_runtime(&id(1), update).unwrap())
+        .collect();
+
+    assert_eq!(outcomes.iter().filter(|outcome| outcome.changed).count(), 4);
+    assert_eq!(
+        outcomes
+            .iter()
+            .filter(|outcome| outcome.persisted_changed)
+            .count(),
+        2
+    );
 }
 
 #[test]
