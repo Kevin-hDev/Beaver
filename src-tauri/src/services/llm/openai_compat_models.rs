@@ -29,6 +29,11 @@ fn to_model_info(
         &model.id,
         model.supports_thinking,
     );
+    let reasoning_contract = super::model_reasoning_contract::ModelReasoningContract::from_modes(
+        model.supports_thinking,
+        &reasoning_modes,
+        model.default_reasoning_mode.as_deref(),
+    );
     ModelInfo {
         id: model.id,
         display_name: None,
@@ -40,10 +45,8 @@ fn to_model_info(
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
-        reasoning_contract: None,
+        reasoning_contract,
         supports_fast_mode: model.supports_fast_mode,
-        reasoning_modes,
-        default_reasoning_mode: model.default_reasoning_mode,
         context_usage_includes_reasoning: true,
         is_free: model.is_free,
     }
@@ -74,8 +77,8 @@ mod tests {
 
         assert_eq!(models.len(), 21);
         assert_eq!(models[0].id, "glm-5.3");
-        assert_eq!(glm_53.reasoning_modes, ["low", "high", "max"]);
-        assert_eq!(glm_53.default_reasoning_mode.as_deref(), Some("max"));
+        assert_eq!(glm_53.reasoning_modes(), ["low", "high", "max"]);
+        assert_eq!(glm_53.default_reasoning_mode().as_deref(), Some("max"));
         assert_eq!(glm_47_flash.context_length, Some(200_000));
         assert_eq!(glm_52.context_length, Some(1_000_000));
         assert!(glm_52.supports_thinking);

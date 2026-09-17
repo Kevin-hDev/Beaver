@@ -14,6 +14,7 @@ import { useAgentLocalControlledPreview } from "@/hooks/use-agent-local-controll
 import { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
 import { useOwnedFileOperations } from "@/hooks/use-owned-file-operations";
 import {
+  agentNavigationSessionIds,
   terminalWorkspaceGroupKey,
   terminalWorkspaceGroupKeys,
 } from "@/hooks/agent-local-workspace-scope";
@@ -23,6 +24,7 @@ import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navig
 import { closeVoiceDraftWhile } from "@/features/voice/voice-context";
 import { sessionComposerDraftKey } from "@/hooks/use-composer-draft";
 import {
+  defaultReasoningMode,
   normalizeReasoningMode,
   reasoningModeOptions,
   type ReasoningMode,
@@ -79,7 +81,7 @@ export function useAgentLocalTab({
       const entry = availableModels.get(nextProvider)?.find((m) => m.id === nextModel) ?? null;
       const options = reasoningModeOptions(entry);
       return {
-        mode: normalizeReasoningMode(currentMode, options, entry?.default_reasoning_mode),
+        mode: normalizeReasoningMode(currentMode, options, defaultReasoningMode(entry)),
         supportsThinking: entry?.supports_thinking ?? false,
       };
     },
@@ -172,17 +174,10 @@ export function useAgentLocalTab({
     onTogglePreview: filePreview.toggleOpen,
   });
 
-  const visibleSessionIds = useMemo(() => {
-    const projectIdSet = new Set(projectsHook.projects.map((p) => p.id));
-    const visibleSessions = sessions.filter((s) => !s.parent_session_id && !s.clone_parent_session_id);
-    const byProject = projectsHook.projects.flatMap((p) =>
-      visibleSessions.filter((s) => s.project_id === p.id).map((s) => s.id),
-    );
-    const orphans = visibleSessions
-      .filter((s) => !s.project_id || !projectIdSet.has(s.project_id))
-      .map((s) => s.id);
-    return [...byProject, ...orphans];
-  }, [sessions, projectsHook.projects]);
+  const visibleSessionIds = useMemo(
+    () => agentNavigationSessionIds(sessions, projectIds),
+    [sessions, projectIds],
+  );
 
   useArrowNavigation({
     items: visibleSessionIds,

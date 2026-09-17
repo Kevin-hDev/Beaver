@@ -15,10 +15,25 @@ pub struct ResolvedModelCapabilities {
     pub supports_vision: bool,
     pub supports_thinking: bool,
     pub supports_fast_mode: bool,
-    pub reasoning_modes: Vec<String>,
-    pub default_reasoning_mode: Option<String>,
     pub reasoning_contract: Option<super::model_reasoning_contract::ModelReasoningContract>,
     pub provenance: CapabilityProvenance,
+}
+
+#[cfg(test)]
+impl ResolvedModelCapabilities {
+    pub fn reasoning_modes(&self) -> Vec<String> {
+        self.reasoning_contract
+            .as_ref()
+            .map(super::model_reasoning_contract::ModelReasoningContract::selection)
+            .map(|(modes, _)| modes)
+            .unwrap_or_default()
+    }
+
+    pub fn default_reasoning_mode(&self) -> Option<String> {
+        self.reasoning_contract
+            .as_ref()
+            .and_then(|contract| contract.selection().1)
+    }
 }
 
 pub fn resolve_local(provider_id: &str, model_id: &str) -> Option<ResolvedModelCapabilities> {
@@ -81,7 +96,8 @@ pub fn resolve_reasoning_modes(
         return Vec::new();
     }
     resolve_local(provider_id, model_id)
-        .map(|resolved| resolved.reasoning_modes)
+        .and_then(|resolved| resolved.reasoning_contract)
+        .map(|contract| contract.selection().0)
         .unwrap_or_default()
 }
 
@@ -91,62 +107,34 @@ fn from_embedded(
     model: ProviderModelConfig,
 ) -> ResolvedModelCapabilities {
     let mut resolved = from_embedded_unrestricted(model);
-    resolved.reasoning_modes = restrict_runtime(provider_id, model_id, resolved.reasoning_modes);
-    resolved.default_reasoning_mode = resolved
-        .default_reasoning_mode
-        .filter(|mode| resolved.reasoning_modes.contains(mode));
-    // Derive the contract after the runtime restriction, never before it.
     resolved.reasoning_contract =
-        super::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
-            resolved.supports_thinking,
-            &resolved.reasoning_modes,
-            resolved.default_reasoning_mode.as_deref(),
-        );
-    if let Some(contract) = &resolved.reasoning_contract {
-        (resolved.reasoning_modes, resolved.default_reasoning_mode) = contract.legacy_projection();
-    }
+        restrict_runtime(provider_id, model_id, resolved.reasoning_contract);
     resolved
 }
 
 fn from_embedded_unrestricted(model: ProviderModelConfig) -> ResolvedModelCapabilities {
-    let reasoning_contract =
-        super::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
-            model.supports_thinking,
-            &model.reasoning_modes,
-            model.default_reasoning_mode.as_deref(),
-        );
+    let reasoning_contract = super::model_reasoning_contract::ModelReasoningContract::from_modes(
+        model.supports_thinking,
+        &model.reasoning_modes,
+        model.default_reasoning_mode.as_deref(),
+    );
     ResolvedModelCapabilities {
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
         supports_fast_mode: model.supports_fast_mode,
-        reasoning_modes: model.reasoning_modes,
-        default_reasoning_mode: model.default_reasoning_mode,
         reasoning_contract,
         provenance: CapabilityProvenance::EmbeddedRegistry,
     }
 }
 
 fn from_runtime(model: super::types::ModelInfo) -> ResolvedModelCapabilities {
-    let reasoning_contract = model.reasoning_contract.or_else(|| {
-        super::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
-            model.supports_thinking,
-            &model.reasoning_modes,
-            model.default_reasoning_mode.as_deref(),
-        )
-    });
-    let (reasoning_modes, default_reasoning_mode) = reasoning_contract
-        .as_ref()
-        .map(super::model_reasoning_contract::ModelReasoningContract::legacy_projection)
-        .unwrap_or((model.reasoning_modes, model.default_reasoning_mode));
     ResolvedModelCapabilities {
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
         supports_fast_mode: model.supports_fast_mode,
-        reasoning_modes,
-        default_reasoning_mode,
-        reasoning_contract,
+        reasoning_contract: model.reasoning_contract,
         provenance: CapabilityProvenance::ValidatedRuntime,
     }
 }
@@ -159,27 +147,37 @@ fn from_litellm(
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
         supports_fast_mode: false,
-        reasoning_modes: Vec::new(),
-        default_reasoning_mode: None,
-        reasoning_contract:
-            super::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
-                model.supports_thinking,
-                &[],
-                None,
-            ),
+        reasoning_contract: super::model_reasoning_contract::ModelReasoningContract::from_modes(
+            model.supports_thinking,
+            &[],
+            None,
+        ),
         provenance: CapabilityProvenance::ValidatedRuntime,
     }
 }
 
-fn restrict_runtime(provider_id: &str, model_id: &str, modes: Vec<String>) -> Vec<String> {
+fn restrict_runtime(
+    provider_id: &str,
+    model_id: &str,
+    contract: Option<super::model_reasoning_contract::ModelReasoningContract>,
+) -> Option<super::model_reasoning_contract::ModelReasoningContract> {
+    let contract = contract?;
     let Some(runtime) = super::runtime_models::lookup(provider_id, model_id) else {
-        return modes;
+        return Some(contract);
     };
-    if runtime.reasoning_modes.is_empty() {
-        return modes;
-    }
-    modes
+    let Some(runtime_contract) = runtime.reasoning_contract else {
+        return Some(contract);
+    };
+    let (runtime_modes, _) = runtime_contract.selection();
+    let (modes, default_mode) = contract.selection();
+    let modes = modes
         .into_iter()
-        .filter(|mode| runtime.reasoning_modes.contains(mode))
-        .collect()
+        .filter(|mode| runtime_modes.contains(mode))
+        .collect::<Vec<_>>();
+    let default_mode = default_mode.filter(|mode| modes.contains(mode));
+    super::model_reasoning_contract::ModelReasoningContract::from_modes(
+        true,
+        &modes,
+        default_mode.as_deref(),
+    )
 }

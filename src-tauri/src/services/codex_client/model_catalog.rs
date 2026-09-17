@@ -164,6 +164,12 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
         .or_else(|| {
             super::model_catalog_fallback::compatible_default_reasoning_mode(&wire.slug, &modes)
         });
+    let reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_modes(
+            !modes.is_empty(),
+            &modes,
+            default_reasoning_mode.as_deref(),
+        );
     Some(CatalogModel {
         multi_agent_reasoning_effort: wire
             .multi_agent_reasoning_effort
@@ -180,10 +186,8 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             supports_tools,
             supports_vision,
             supports_thinking: !modes.is_empty(),
-            reasoning_contract: None,
+            reasoning_contract,
             supports_fast_mode,
-            reasoning_modes: modes,
-            default_reasoning_mode,
             context_usage_includes_reasoning: true,
             is_free: false,
         },

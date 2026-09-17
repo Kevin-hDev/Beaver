@@ -27,7 +27,13 @@ fn apply_ultra(request: &mut CodexRequest, models: &[CatalogModel]) -> Result<()
         .iter()
         .find(|model| model.info.id == request.model)
         .ok_or_else(super::unavailable)?;
-    let modes = &model.info.reasoning_modes;
+    let modes = model
+        .info
+        .reasoning_contract
+        .as_ref()
+        .map(crate::services::llm::model_reasoning_contract::ModelReasoningContract::selection)
+        .map(|(modes, _)| modes)
+        .unwrap_or_default();
     if !modes.iter().any(|mode| mode == "ultra") {
         return Err(super::unavailable());
     }

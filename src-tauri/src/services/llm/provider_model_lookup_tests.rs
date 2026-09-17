@@ -111,7 +111,7 @@ fn capability_resolution_reports_its_provenance() {
     let embedded = resolve_local("openai", "gpt-5.6-luna").unwrap();
     assert_eq!(embedded.provenance, CapabilityProvenance::EmbeddedRegistry);
     assert!(embedded.supports_tools);
-    assert_eq!(embedded.reasoning_modes.len(), 6);
+    assert_eq!(embedded.reasoning_modes().len(), 6);
 
     let codex = resolve_local("codex-oauth", "gpt-5.6-luna").unwrap();
     assert_eq!(codex.provenance, CapabilityProvenance::ValidatedRuntime);

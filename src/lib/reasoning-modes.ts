@@ -36,10 +36,22 @@ export function reasoningModeOptions(model: AvailableModel | null): ReasoningMod
     ? (["off", "auto"] satisfies ReasoningMode[])
     : control?.kind === "efforts"
       ? control.efforts
-      : (model.reasoning_modes ?? []);
+      : [];
   const hidesTechnicalAuto = model.provider_id === "anthropic"
     && modes.some((mode) => !["off", "auto"].includes(mode));
   return options(modes.filter((mode) => mode !== "auto" || !hidesTechnicalAuto));
+}
+
+export function defaultReasoningMode(model: AvailableModel | null): ReasoningMode | null {
+  const contract = model?.reasoning_contract;
+  if (!contract) return null;
+  const options = reasoningModeOptions(model);
+  const modes = options.map((entry) => entry.mode);
+  if (contract.default_enabled === false && modes.includes("off")) return "off";
+  if (contract.default_effort && modes.includes(contract.default_effort)) {
+    return contract.default_effort;
+  }
+  return contract.control.kind === "toggle" ? "auto" : null;
 }
 
 export function normalizeReasoningMode(

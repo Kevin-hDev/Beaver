@@ -18,10 +18,8 @@ pub struct OAuthProviderModel {
     pub supports_vision: bool,
     pub supports_thinking: bool,
     pub supports_fast_mode: bool,
-    pub reasoning_modes: Vec<String>,
     pub reasoning_contract:
         Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract>,
-    pub default_reasoning_mode: Option<String>,
     pub context_usage_includes_reasoning: bool,
     pub interactive_only: bool,
 }
@@ -84,13 +82,6 @@ async fn add_codex_models(
             .display_name
             .clone()
             .unwrap_or_else(|| model.id.clone());
-        let reasoning_contract = model.reasoning_contract.clone().or_else(|| {
-            crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
-                model.supports_thinking,
-                &model.reasoning_modes,
-                model.default_reasoning_mode.as_deref(),
-            )
-        });
         OAuthProviderModel {
             display_name,
             id: model.id,
@@ -102,9 +93,7 @@ async fn add_codex_models(
             supports_vision: model.supports_vision,
             supports_thinking: model.supports_thinking,
             supports_fast_mode: model.supports_fast_mode,
-            reasoning_modes: model.reasoning_modes,
-            reasoning_contract,
-            default_reasoning_mode: model.default_reasoning_mode,
+            reasoning_contract: model.reasoning_contract,
             context_usage_includes_reasoning:
                 crate::services::llm::context_usage_includes_reasoning("codex-oauth")
                     .unwrap_or(false),
@@ -174,13 +163,6 @@ fn oauth_model(provider_id: ProviderId, model: ModelInfo) -> OAuthProviderModel 
         .display_name
         .clone()
         .unwrap_or_else(|| model.id.clone());
-    let reasoning_contract = model.reasoning_contract.clone().or_else(|| {
-        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
-            model.supports_thinking,
-            &model.reasoning_modes,
-            model.default_reasoning_mode.as_deref(),
-        )
-    });
     OAuthProviderModel {
         display_name,
         id: model.id,
@@ -192,9 +174,7 @@ fn oauth_model(provider_id: ProviderId, model: ModelInfo) -> OAuthProviderModel 
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
         supports_fast_mode: model.supports_fast_mode,
-        reasoning_modes: model.reasoning_modes,
-        reasoning_contract,
-        default_reasoning_mode: model.default_reasoning_mode,
+        reasoning_contract: model.reasoning_contract,
         context_usage_includes_reasoning: crate::services::llm::context_usage_includes_reasoning(
             provider_id.usage_connection_id(),
         )

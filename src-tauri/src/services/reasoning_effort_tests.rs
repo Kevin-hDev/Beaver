@@ -15,10 +15,12 @@ async fn codex_catalog_default_is_validated_or_replaced_by_a_published_mode() {
         supports_tools: true,
         supports_vision: true,
         supports_thinking: true,
-        reasoning_contract: None,
+        reasoning_contract:
+            crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                &["low", "max"],
+                Some("max"),
+            ),
         supports_fast_mode: false,
-        reasoning_modes: vec!["low".into(), "max".into()],
-        default_reasoning_mode: Some("max".into()),
         context_usage_includes_reasoning: true,
         is_free: false,
     };
@@ -26,14 +28,15 @@ async fn codex_catalog_default_is_validated_or_replaced_by_a_published_mode() {
     assert_eq!(codex(&model.id, None), "max");
     assert_eq!(codex(&model.id, Some("low")), "low");
 
-    model.default_reasoning_mode = None;
+    model.reasoning_contract.as_mut().unwrap().default_effort = None;
     runtime_models::replace_provider("codex-oauth", &[model.clone()]).unwrap();
     assert!(runtime_models::lookup("codex-oauth", &model.id).is_some());
     for requested in [None, Some("off"), Some("medium")] {
         assert_eq!(codex(&model.id, requested), "low");
     }
     // Invalid defaults cannot enter the runtime registry at all.
-    model.default_reasoning_mode = Some("high".into());
+    model.reasoning_contract.as_mut().unwrap().default_effort =
+        Some(crate::services::reasoning_continuity::contract::ReasoningModeId::High);
     runtime_models::replace_provider("codex-oauth", &[model.clone()]).unwrap();
     assert!(runtime_models::lookup("codex-oauth", &model.id).is_none());
     runtime_models::replace_provider("codex-oauth", &[]).unwrap();

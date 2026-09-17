@@ -32,7 +32,19 @@ pub struct ModelReasoningContract {
 }
 
 impl ModelReasoningContract {
-    pub fn from_legacy_modes(
+    #[cfg(test)]
+    pub fn from_names(modes: &[&str], default_mode: Option<&str>) -> Option<Self> {
+        Self::from_modes(
+            true,
+            &modes
+                .iter()
+                .map(|mode| (*mode).to_string())
+                .collect::<Vec<_>>(),
+            default_mode,
+        )
+    }
+
+    pub fn from_modes(
         supports_thinking: bool,
         modes: &[String],
         default_mode: Option<&str>,
@@ -53,10 +65,9 @@ impl ModelReasoningContract {
         let control = if parsed.is_empty() {
             // Missing controls prove neither a toggle nor mandatory reasoning.
             ReasoningControl::Unknown
-        } else if parsed == [ReasoningModeId::Auto] {
-            ReasoningControl::ProviderDefault
         } else {
-            // Preserve native controls and their order, including an off-only policy.
+            // An explicit auto choice remains user-visible. ProviderDefault is reserved
+            // for provider metadata that intentionally exposes no control.
             ReasoningControl::Efforts(parsed.clone())
         };
         Some(Self {
@@ -68,7 +79,7 @@ impl ModelReasoningContract {
         })
     }
 
-    pub fn legacy_projection(&self) -> (Vec<String>, Option<String>) {
+    pub fn selection(&self) -> (Vec<String>, Option<String>) {
         let modes = match &self.control {
             ReasoningControl::Unknown | ReasoningControl::ProviderDefault => {
                 vec![ReasoningModeId::Auto]
@@ -81,26 +92,50 @@ impl ModelReasoningContract {
             .map(ReasoningModeId::as_name)
             .map(str::to_string)
             .collect();
-        let default = (self.default_enabled == Some(false)
-            && modes.iter().any(|mode| mode == "off"))
-        .then(|| "off".to_string())
-        .or_else(|| {
-            self.default_effort
-                .map(ReasoningModeId::as_name)
-                .filter(|mode| modes.iter().any(|candidate| candidate == mode))
-                .map(str::to_string)
-        })
-        .or_else(|| match self.control {
-            ReasoningControl::Unknown | ReasoningControl::ProviderDefault => {
-                Some("auto".to_string())
-            }
-            ReasoningControl::Toggle if self.default_enabled == Some(false) => {
-                Some("off".to_string())
-            }
-            ReasoningControl::Toggle => Some("auto".to_string()),
-            ReasoningControl::Efforts(_) => None,
-        });
+        let default = self.default_mode_name().map(str::to_string);
         (modes, default)
+    }
+
+    pub fn supports_mode(&self, mode: &str) -> bool {
+        match &self.control {
+            ReasoningControl::Unknown | ReasoningControl::ProviderDefault => mode == "auto",
+            ReasoningControl::Toggle => matches!(mode, "off" | "auto"),
+            ReasoningControl::Efforts(efforts) => {
+                efforts.iter().any(|effort| effort.as_name() == mode)
+            }
+        }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        let (modes, _) = self.selection();
+        super::provider_model_registry_validation::valid_reasoning_contract(
+            true,
+            &modes,
+            self.default_effort.map(ReasoningModeId::as_name),
+        )
+        .is_ok()
+    }
+
+    pub fn default_mode_name(&self) -> Option<&'static str> {
+        if self.default_enabled == Some(false) && self.supports_mode("off") {
+            return Some("off");
+        }
+        if let Some(mode) = self
+            .default_effort
+            .map(ReasoningModeId::as_name)
+            .filter(|mode| self.supports_mode(mode))
+        {
+            return Some(mode);
+        }
+        match self.control {
+            ReasoningControl::Unknown | ReasoningControl::ProviderDefault => Some("auto"),
+            ReasoningControl::Toggle => Some("auto"),
+            ReasoningControl::Efforts(_) => None,
+        }
+    }
+
+    pub const fn is_unknown(&self) -> bool {
+        matches!(self.control, ReasoningControl::Unknown)
     }
 }
 

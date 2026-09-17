@@ -21,12 +21,6 @@ pub struct ModelLimits {
     pub default_output_tokens: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ModelReasoning {
-    pub modes: Vec<String>,
-    pub default_mode: Option<String>,
-}
-
 pub async fn limits(provider_id: &str, model_id: &str) -> Option<ModelLimits> {
     if let Some(limits) = local_limits(provider_id, model_id) {
         return Some(limits);
@@ -49,12 +43,16 @@ pub fn local_limits(provider_id: &str, model_id: &str) -> Option<ModelLimits> {
     })
 }
 
-pub fn local_reasoning(provider_id: &str, model_id: &str) -> Option<ModelReasoning> {
+pub fn local_reasoning(
+    provider_id: &str,
+    model_id: &str,
+) -> Option<super::model_reasoning_contract::ModelReasoningContract> {
     let model = local_entry(provider_id, model_id)?;
-    Some(ModelReasoning {
-        modes: model.reasoning_modes,
-        default_mode: model.default_reasoning_mode,
-    })
+    super::model_reasoning_contract::ModelReasoningContract::from_modes(
+        model.supports_thinking,
+        &model.reasoning_modes,
+        model.default_reasoning_mode.as_deref(),
+    )
 }
 
 pub fn supports_fast_mode(provider_id: &str, model_id: &str) -> bool {

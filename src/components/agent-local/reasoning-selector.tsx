@@ -13,6 +13,7 @@ import {
 } from "@/hooks/use-floating-menu-position";
 import type { AvailableModel } from "@/hooks/use-available-models";
 import {
+  defaultReasoningMode,
   normalizeReasoningMode,
   reasoningModeOptions,
   type ReasoningMode,
@@ -48,7 +49,7 @@ export function ReasoningSelector({
   const selectedMode = normalizeReasoningMode(
     reasoningMode,
     options,
-    model?.default_reasoning_mode,
+    defaultReasoningMode(model),
   );
   const selectedOption = options.find((option) => option.mode === selectedMode) ?? options[0];
 

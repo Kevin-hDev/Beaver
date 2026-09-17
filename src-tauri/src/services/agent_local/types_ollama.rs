@@ -23,12 +23,28 @@ pub struct OllamaModel {
     pub is_moe: bool,
     pub context_length: u64,
     pub capabilities: Vec<String>,
-    pub reasoning_modes: Vec<String>,
-    pub default_reasoning_mode: Option<String>,
+    pub reasoning_contract:
+        Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract>,
     pub context_usage_includes_reasoning: bool,
     pub digest_short: String,
     pub aliases: Vec<String>,
     pub is_customized: bool,
+}
+
+#[cfg(test)]
+impl OllamaModel {
+    pub fn reasoning_modes(&self) -> Vec<String> {
+        self.reasoning_contract
+            .as_ref()
+            .map(|contract| contract.selection().0)
+            .unwrap_or_default()
+    }
+
+    pub fn default_reasoning_mode(&self) -> Option<String> {
+        self.reasoning_contract
+            .as_ref()
+            .and_then(|contract| contract.selection().1)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

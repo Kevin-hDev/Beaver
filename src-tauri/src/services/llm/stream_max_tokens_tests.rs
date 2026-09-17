@@ -194,10 +194,12 @@ async fn openrouter_runtime_limits_are_used_before_upstream_embedded_limits() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "high", "max"],
+                    Some("max"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
-            default_reasoning_mode: Some("max".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         }],

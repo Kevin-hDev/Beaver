@@ -43,8 +43,6 @@ fn openrouter_contract_model(
             },
         ),
         supports_fast_mode: false,
-        reasoning_modes: Vec::new(),
-        default_reasoning_mode: None,
         context_usage_includes_reasoning: true,
         is_free: false,
     }

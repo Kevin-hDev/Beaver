@@ -129,8 +129,6 @@ fn minimal_model(id: String) -> crate::services::llm::types::ModelInfo {
         supports_thinking: false,
         reasoning_contract: None,
         supports_fast_mode: false,
-        reasoning_modes: Vec::new(),
-        default_reasoning_mode: None,
         context_usage_includes_reasoning: true,
         is_free: true,
     }

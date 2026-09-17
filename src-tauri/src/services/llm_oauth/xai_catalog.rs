@@ -43,16 +43,8 @@ pub async fn model(model_id: &str) -> Result<XaiCatalogModel, LlmError> {
         .into_iter()
         .find(|model| model.id == model_id)
         .ok_or_else(configuration_error)?;
-    if let Some(local) =
-        crate::services::llm::provider_model_lookup::local_reasoning("xai", model_id)
-    {
-        if model.reasoning_modes.is_empty() {
-            model.reasoning_modes = local.modes;
-        }
-        if model.default_reasoning_mode.is_none() {
-            model.default_reasoning_mode = local.default_mode;
-        }
-    }
+    let local = crate::services::llm::provider_model_lookup::local_reasoning("xai", model_id);
+    model.reasoning_contract = merge_reasoning_contract(model.reasoning_contract, local);
     Ok(model)
 }
 
@@ -127,6 +119,9 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
         .unwrap_or_default();
     let local_reasoning =
         crate::services::llm::provider_model_lookup::local_reasoning("xai", &model.id);
+    let reasoning_contract =
+        merge_reasoning_contract(model.reasoning_contract.clone(), local_reasoning);
+    let supports_thinking = local.supports_thinking || reasoning_contract.is_some();
     ModelInfo {
         id: model.id.clone(),
         display_name: Some(model.display_name.clone()),
@@ -137,24 +132,35 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
         catalog_capabilities: Default::default(),
         supports_tools: local.supports_tools,
         supports_vision: local.supports_vision,
-        supports_thinking: local.supports_thinking || !model.reasoning_modes.is_empty(),
-        reasoning_contract: None,
+        supports_thinking,
+        reasoning_contract: reasoning_contract.or_else(|| {
+            crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_modes(
+                supports_thinking,
+                &[],
+                None,
+            )
+        }),
         supports_fast_mode: false,
-        reasoning_modes: if model.reasoning_modes.is_empty() {
-            local_reasoning
-                .as_ref()
-                .map(|reasoning| reasoning.modes.clone())
-                .unwrap_or_default()
-        } else {
-            model.reasoning_modes.clone()
-        },
-        default_reasoning_mode: model
-            .default_reasoning_mode
-            .clone()
-            .or_else(|| local_reasoning.and_then(|reasoning| reasoning.default_mode)),
         context_usage_includes_reasoning: true,
         is_free: false,
     }
+}
+
+pub(super) fn merge_reasoning_contract(
+    mut remote: Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract>,
+    local: Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract>,
+) -> Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract> {
+    let Some(contract) = remote.as_mut() else {
+        return local;
+    };
+    if contract.default_effort.is_none() {
+        let fallback = local.and_then(|value| value.default_effort);
+        contract.default_effort = fallback.filter(|mode| contract.supports_mode(mode.as_name()));
+        contract.default_enabled = contract
+            .default_enabled
+            .or(contract.default_effort.map(|mode| mode.as_name() != "off"));
+    }
+    remote
 }
 
 fn configuration_error() -> LlmError {

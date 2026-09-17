@@ -45,12 +45,14 @@ vi.mock("@/hooks/use-available-models", () => ({
     {
       id: "compatible", provider_id: "test-provider", provider_name: "Test",
       is_local: false, supports_tools: true, supports_thinking: true,
-      supports_fast_mode: true, reasoning_modes: ["off", "high"],
+      supports_fast_mode: true,
+      reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } },
     },
     {
       id: "incompatible", provider_id: "test-provider", provider_name: "Test",
       is_local: false, supports_tools: true, supports_thinking: true,
-      supports_fast_mode: false, reasoning_modes: ["off", "high"],
+      supports_fast_mode: false,
+      reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } },
     },
   ]]]) }),
 }));

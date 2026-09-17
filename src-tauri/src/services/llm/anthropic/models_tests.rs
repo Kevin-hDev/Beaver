@@ -54,7 +54,7 @@ fn catalog_keeps_every_available_claude_model_and_its_native_capabilities() {
     assert!(models[1].supports_vision);
     assert!(models[1].supports_thinking);
     assert_eq!(
-        models[1].reasoning_modes,
+        models[1].reasoning_modes(),
         ["off", "auto", "low", "medium", "high", "xhigh", "max"]
     );
 }
@@ -95,10 +95,10 @@ fn always_adaptive_claude_models_do_not_offer_an_invalid_off_mode() {
     .unwrap();
 
     assert_eq!(
-        models[0].reasoning_modes,
+        models[0].reasoning_modes(),
         ["auto", "low", "medium", "high", "xhigh"]
     );
-    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("high"));
+    assert_eq!(models[0].default_reasoning_mode().as_deref(), Some("high"));
 }
 
 #[test]

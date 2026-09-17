@@ -13,9 +13,9 @@ fn computes_the_effective_context_from_openai_metadata() {
     .unwrap();
 
     assert_eq!(models[0].info.context_length, Some(258_400));
-    assert_eq!(models[0].info.reasoning_modes, ["low", "max"]);
+    assert_eq!(models[0].info.reasoning_modes(), ["low", "max"]);
     assert_eq!(
-        models[0].info.default_reasoning_mode.as_deref(),
+        models[0].info.default_reasoning_mode().as_deref(),
         Some("low")
     );
     assert!(models[0].info.supports_vision);
@@ -39,11 +39,11 @@ fn remote_catalog_uses_only_a_compatible_fallback_reasoning_default() {
     .unwrap();
 
     assert_eq!(
-        spark[0].info.default_reasoning_mode.as_deref(),
+        spark[0].info.default_reasoning_mode().as_deref(),
         Some("high")
     );
-    assert_eq!(restricted_spark[0].info.default_reasoning_mode, None);
-    assert_eq!(runtime_only[0].info.default_reasoning_mode, None);
+    assert_eq!(restricted_spark[0].info.default_reasoning_mode(), None);
+    assert_eq!(runtime_only[0].info.default_reasoning_mode(), None);
 }
 
 #[test]
@@ -116,11 +116,11 @@ fn fallback_matches_the_current_conservative_codex_limit() {
 
     assert_eq!(sol.context_length, Some(258_400));
     assert_eq!(
-        sol.reasoning_modes,
+        sol.reasoning_modes(),
         ["low", "medium", "high", "xhigh", "max", "ultra"]
     );
     assert_eq!(
-        luna.reasoning_modes,
+        luna.reasoning_modes(),
         ["low", "medium", "high", "xhigh", "max"]
     );
     assert!(!models.iter().any(|model| model.supports_fast_mode));
@@ -138,11 +138,11 @@ fn astra_is_visible_only_when_the_authenticated_catalog_returns_it() {
     assert_eq!(astra[0].info.context_length, Some(1_050_000));
     assert!(astra[0].info.supports_vision);
     assert_eq!(
-        astra[0].info.reasoning_modes,
+        astra[0].info.reasoning_modes(),
         ["low", "medium", "high", "xhigh", "max"]
     );
     assert_eq!(
-        astra[0].info.default_reasoning_mode.as_deref(),
+        astra[0].info.default_reasoning_mode().as_deref(),
         Some("medium")
     );
     assert!(!fallback_models()

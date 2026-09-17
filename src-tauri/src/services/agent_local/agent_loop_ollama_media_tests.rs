@@ -92,8 +92,6 @@ fn install_model(supports_vision: bool) {
             supports_thinking: false,
             reasoning_contract: None,
             supports_fast_mode: false,
-            reasoning_modes: Vec::new(),
-            default_reasoning_mode: None,
             context_usage_includes_reasoning: true,
             is_free: false,
         }],

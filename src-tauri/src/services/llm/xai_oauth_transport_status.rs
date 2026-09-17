@@ -14,21 +14,10 @@ pub(super) fn catalog_reasoning_mode<'a>(
     model: &'a crate::services::llm_oauth::XaiCatalogModel,
     requested_mode: Option<&'a str>,
 ) -> Option<&'a str> {
+    let contract = model.reasoning_contract.as_ref()?;
     requested_mode
-        .filter(|mode| {
-            model
-                .reasoning_modes
-                .iter()
-                .any(|candidate| candidate == mode)
-        })
-        .or_else(|| {
-            model.default_reasoning_mode.as_deref().filter(|mode| {
-                model
-                    .reasoning_modes
-                    .iter()
-                    .any(|candidate| candidate == mode)
-            })
-        })
+        .filter(|mode| contract.supports_mode(mode))
+        .or_else(|| contract.default_mode_name())
 }
 
 pub(super) const fn backend_path(backend: crate::services::llm_oauth::XaiBackend) -> &'static str {

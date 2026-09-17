@@ -60,6 +60,12 @@ pub(crate) fn build_model_from_tags(
             .then(|| preferred.to_string())
     });
     let default_reasoning_mode = default_reasoning_mode.flatten();
+    let reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_modes(
+            supports_thinking,
+            &reasoning_modes,
+            default_reasoning_mode.as_deref(),
+        );
     OllamaModel {
         name,
         size: m["size"].as_u64().unwrap_or(0),
@@ -80,8 +86,7 @@ pub(crate) fn build_model_from_tags(
         is_moe: info.as_ref().is_some_and(|i| i.is_moe),
         context_length: info.as_ref().map_or(0, |i| i.context_length),
         capabilities: info.map_or_else(|| vec!["completion".to_string()], |i| i.capabilities),
-        reasoning_modes,
-        default_reasoning_mode,
+        reasoning_contract,
         context_usage_includes_reasoning: true,
         digest_short,
         aliases: Vec::new(),
@@ -180,8 +185,8 @@ mod tests {
             Some(thinking_info("glm-5.3-flash:cloud")),
             false,
         );
-        assert_eq!(model.reasoning_modes, ["low", "high", "max"]);
-        assert_eq!(model.default_reasoning_mode.as_deref(), Some("max"));
+        assert_eq!(model.reasoning_modes(), ["low", "high", "max"]);
+        assert_eq!(model.default_reasoning_mode().as_deref(), Some("max"));
     }
 
     #[test]
@@ -191,7 +196,7 @@ mod tests {
             Some(thinking_info("qwen3.5:4b")),
             false,
         );
-        assert_eq!(model.reasoning_modes, ["off", "auto"]);
-        assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+        assert_eq!(model.reasoning_modes(), ["off", "auto"]);
+        assert_eq!(model.default_reasoning_mode().as_deref(), Some("auto"));
     }
 }

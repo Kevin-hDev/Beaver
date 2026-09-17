@@ -43,7 +43,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
     } else if reasoning_modes.is_empty() {
         reasoning_modes = local_reasoning
             .as_ref()
-            .map(|reasoning| reasoning.modes.clone())
+            .map(|reasoning| reasoning.selection().0)
             .unwrap_or_default();
     }
     if thinking_type == Some("only") {
@@ -56,7 +56,12 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
     }
     let default_reasoning_mode = parse_default_effort(&value["think_efforts"])
         .filter(|mode| reasoning_modes.contains(mode))
-        .or_else(|| local_reasoning.and_then(|reasoning| reasoning.default_mode));
+        .or_else(|| local_reasoning.and_then(|reasoning| reasoning.selection().1));
+    let reasoning_contract = super::model_reasoning_contract::ModelReasoningContract::from_modes(
+        supports_thinking,
+        &reasoning_modes,
+        default_reasoning_mode.as_deref(),
+    );
 
     Some(Ok(ModelInfo {
         display_name: safe_display_name(&value["display_name"])
@@ -77,10 +82,8 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
             local_capabilities.supports_vision,
         ),
         supports_thinking,
-        reasoning_contract: None,
+        reasoning_contract,
         supports_fast_mode: false,
-        reasoning_modes,
-        default_reasoning_mode,
         context_usage_includes_reasoning: true,
         is_free: false,
         id,

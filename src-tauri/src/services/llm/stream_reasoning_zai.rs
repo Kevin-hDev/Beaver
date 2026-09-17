@@ -27,14 +27,14 @@ pub(super) fn apply(payload: &mut Value, model: &str, reasoning_mode: Option<&st
 
 pub(super) fn resolve_glm_53_effort(
     reasoning_mode: Option<&str>,
-    contract: Option<crate::services::llm::provider_model_lookup::ModelReasoning>,
+    contract: Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract>,
 ) -> String {
     contract
         .and_then(|contract| {
             reasoning_mode
-                .filter(|mode| contract.modes.iter().any(|candidate| candidate == mode))
+                .filter(|mode| contract.supports_mode(mode))
                 .map(str::to_string)
-                .or(contract.default_mode)
+                .or_else(|| contract.default_mode_name().map(str::to_string))
         })
         // Dernier filet : GLM 5.3 doit toujours recevoir un effort, même sans registre lisible.
         .unwrap_or_else(|| "max".to_string())

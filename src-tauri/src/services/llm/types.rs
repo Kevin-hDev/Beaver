@@ -30,14 +30,27 @@ pub struct ModelInfo {
     pub reasoning_contract: Option<ModelReasoningContract>,
     #[serde(default)]
     pub supports_fast_mode: bool,
-    #[serde(default)]
-    pub reasoning_modes: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_reasoning_mode: Option<String>,
     #[serde(default = "default_true")]
     pub context_usage_includes_reasoning: bool,
     #[serde(default)]
     pub is_free: bool,
+}
+
+#[cfg(test)]
+impl ModelInfo {
+    pub fn reasoning_modes(&self) -> Vec<String> {
+        self.reasoning_contract
+            .as_ref()
+            .map(ModelReasoningContract::selection)
+            .map(|(modes, _)| modes)
+            .unwrap_or_default()
+    }
+
+    pub fn default_reasoning_mode(&self) -> Option<String> {
+        self.reasoning_contract
+            .as_ref()
+            .and_then(|contract| contract.selection().1)
+    }
 }
 
 const fn default_true() -> bool {

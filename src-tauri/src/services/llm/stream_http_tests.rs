@@ -391,10 +391,12 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "medium", "high"],
+                    Some("medium"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
-            default_reasoning_mode: Some("medium".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },
@@ -409,10 +411,12 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "high", "max"],
+                    Some("max"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
-            default_reasoning_mode: Some("max".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },
@@ -427,16 +431,12 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "medium", "high", "xhigh", "max"],
+                    Some("medium"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec![
-                "low".into(),
-                "medium".into(),
-                "high".into(),
-                "xhigh".into(),
-                "max".into(),
-            ],
-            default_reasoning_mode: Some("medium".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },

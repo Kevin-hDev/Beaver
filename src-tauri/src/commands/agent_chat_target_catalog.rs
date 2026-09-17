@@ -19,7 +19,11 @@ pub(super) async fn ensure_reasoning_contract(
         .map_err(|_| ())?;
     crate::services::llm::provider_model_lookup::resolve_local(provider, model)
         .filter(|capabilities| {
-            capabilities.supports_thinking && !capabilities.reasoning_modes.is_empty()
+            capabilities.supports_thinking
+                && capabilities
+                    .reasoning_contract
+                    .as_ref()
+                    .is_some_and(|contract| !contract.is_unknown())
         })
         .map(|_| ())
         .ok_or(())
@@ -28,8 +32,14 @@ pub(super) async fn ensure_reasoning_contract(
 fn needs_refresh(provider: &str, model: &str, thinking_enabled: bool) -> bool {
     thinking_enabled
         && crate::services::llm::route_profile::has_dynamic_reasoning_catalog(provider)
-        && crate::services::llm::provider_model_lookup::resolve_local(provider, model)
-            .is_none_or(|capabilities| capabilities.reasoning_modes.is_empty())
+        && crate::services::llm::provider_model_lookup::resolve_local(provider, model).is_none_or(
+            |capabilities| {
+                capabilities
+                    .reasoning_contract
+                    .as_ref()
+                    .is_none_or(|contract| contract.is_unknown())
+            },
+        )
 }
 
 #[cfg(test)]
