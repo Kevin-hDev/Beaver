@@ -1,0 +1,17 @@
+Tâche E06 — Évaluer le socle commun des requêtes Responses
+
+Décision :
+- conserver les constructeurs Codex, OpenAI Responses et xAI OAuth Responses ;
+- garder communes les conversions de messages, d'outils et de continuité, les politiques de route et la clé de cache ;
+- ne pas créer de constructeur universel à options ;
+- préserver le type Codex partagé entre HTTP et WebSocket et les différences de raisonnement, médias, limites et niveau de service.
+
+Validation :
+- 20 tests OpenAI Responses réussis ;
+- 7 tests Codex request réussis ;
+- 10 tests xAI OAuth transport réussis ;
+- un premier filtre Codex avait exécuté 0 test et n'a pas été compté ; le filtre de module exact a été relancé ;
+- git diff --check réussi avant commit.
+
+Limite :
+- aucune modification de production ; réexaminer seulement avec un quatrième contrat identique ou une divergence réelle.
