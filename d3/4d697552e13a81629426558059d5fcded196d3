@@ -14,3 +14,12 @@ Validation exécutée sur ce commit :
 - cargo fmt --all -- --check : réussi
 - git diff --check : réussi
 - graphify update . : réussi
+
+Validation finale de branche exécutée sur d34d6975 :
+- cargo test --quiet -- --test-threads=1 : 5 877 réussis, 34 ignorés, 0 échec ; suites complémentaires 51/51, 1/1 et 2/2 réussies
+- npm test : 638 fichiers, 3 487 tests Vitest réussis ; toutes les suites de scripts suivantes réussies
+- npx tsc --noEmit : réussi
+- npm run lint : réussi
+- npm run contracts:check : réussi
+- npm run test:persistence-migration : 10 réussis, 0 échec
+- git diff --check : réussi
