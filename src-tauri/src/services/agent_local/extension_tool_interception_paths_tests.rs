@@ -30,6 +30,38 @@ async fn denied_interception_prevents_the_real_write_executor_effect() {
 }
 
 #[tokio::test]
+async fn every_write_mode_stops_before_effect_in_plan_mode() {
+    for mode in ["auto", "chat"] {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("must-not-exist.txt");
+        let result = super::tool_executor_write::execute_write(
+            &super::stream_events::AgentEventEmitter::test("plan-test".into()),
+            "write_file",
+            &serde_json::json!({"path":"must-not-exist.txt", "content":"forbidden"}),
+            root.path(),
+            mode,
+            &mut super::write_guard::WriteGuard::new(),
+            "plan-test",
+            "request",
+            tokio_util::sync::CancellationToken::new(),
+            true,
+            None,
+            None,
+            &crate::services::extensions::InterceptionSnapshot::default(),
+        )
+        .await;
+
+        assert!(result.is_error, "mode {mode}");
+        assert_eq!(
+            result.error.as_ref().map(|error| error.code.as_ref()),
+            Some("tool_not_allowed_in_plan"),
+            "mode {mode}"
+        );
+        assert!(!path.exists(), "mode {mode}");
+    }
+}
+
+#[tokio::test]
 async fn eager_result_is_never_replayed_when_interception_is_active() {
     let eager: EagerHandle =
         tokio::spawn(async { HashMap::from([(0, ToolResult::ok("effect already produced"))]) });

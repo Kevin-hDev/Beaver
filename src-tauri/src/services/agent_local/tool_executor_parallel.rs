@@ -102,28 +102,6 @@ pub async fn run_with_parallel_reads(
                 continue;
             }
             let (name, args) = &tool_calls[i];
-            let plan_check = super::tool_plan_guard::ensure_allowed_for_session(
-                name,
-                args,
-                session_id,
-                plan_mode_active,
-            )
-            .await;
-            if let Err(msg) = plan_check {
-                let tr = super::tool_executor_plan::denied_from_args(
-                    session_id,
-                    request_id,
-                    name,
-                    msg,
-                    args,
-                    working_dir,
-                )
-                .await;
-                indexed_results[i] = Some((name.as_str(), tr));
-                diagnostics_already_completed[i] = true;
-                i += 1;
-                continue;
-            }
             let tr = super::tool_executor_parallel_write::execute_tracked_write(
                 on_event,
                 name,

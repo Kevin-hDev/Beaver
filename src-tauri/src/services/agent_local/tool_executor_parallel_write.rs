@@ -13,16 +13,6 @@ pub async fn execute_tracked_write(
     ctx: WriteExecContext<'_>,
 ) -> ToolResult {
     super::tool_executor_diagnostics::started(ctx.session_id, name, args, ctx.working_dir).await;
-    if let Err(msg) = super::tool_plan_guard::ensure_allowed_for_session(
-        name,
-        args,
-        ctx.session_id,
-        ctx.plan_mode_active,
-    )
-    .await
-    {
-        return super::tool_executor_errors::permission(msg, "tool_not_allowed_in_plan");
-    }
     let result = execute_write(
         on_event,
         name,

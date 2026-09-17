@@ -29,6 +29,17 @@ pub(super) async fn execute_write(
     tool_call_id: Option<&str>,
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolResult {
+    if let Err(msg) =
+        super::tool_plan_guard::ensure_allowed_for_session(name, args, session_id, plan_mode_active)
+            .await
+    {
+        return ToolResult::error(
+            msg,
+            "tool_not_allowed_in_plan",
+            ToolErrorCategory::Permission,
+            false,
+        );
+    }
     if mode == "chat" {
         return tool_dispatcher::dispatch_for_mode(
             name,
@@ -40,17 +51,6 @@ pub(super) async fn execute_write(
             true,
         )
         .await;
-    }
-    if let Err(msg) =
-        super::tool_plan_guard::ensure_allowed_for_session(name, args, session_id, plan_mode_active)
-            .await
-    {
-        return ToolResult::error(
-            msg,
-            "tool_not_allowed_in_plan",
-            ToolErrorCategory::Permission,
-            false,
-        );
     }
     match run_pre_hooks(name, args) {
         PreHookDecision::Deny(msg) => {
