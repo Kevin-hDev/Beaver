@@ -1,0 +1,24 @@
+Tâche M04 — Décorréler le contexte Ollama du compteur de génération.
+
+Décision : la taille du contexte dépend de la route, du modèle et des événements de catalogue, pas du nombre de jetons déjà générés. Une erreur transitoire conserve la dernière valeur valable ; une réponse explicite sans contexte remet la valeur à zéro.
+
+Changements :
+- suppression de l'effet qui rappelait get_model_context à chaque variation de usedTokens ;
+- conservation des rafraîchissements au montage, au changement de modèle/route et aux événements modelfile-updated et ollama-models-changed ;
+- conservation de la dernière valeur valable après une erreur.
+
+Preuve avant correction :
+- le test du même changement de compteur observait 2 appels IPC au lieu de 1 ;
+- le test d'erreur observait une réinitialisation de 8192 à 0.
+
+Validation après correction :
+- npx vitest run src/hooks/__tests__/use-context-progress.test.ts src/components/settings/compression/__tests__/compression-settings-card.test.tsx : 11 réussis ;
+- le test ciblé compte 1 entrée IPC get_model_context avant/après une variation de usedTokens, contre 2 avant la correction ;
+- changement de modèle : 2 appels et nouvelle valeur appliquée ;
+- contexte absent : valeur 0 ; erreur transitoire : dernière valeur conservée ;
+- npx tsc --noEmit : réussi ;
+- npm run lint : réussi ;
+- git diff --check : réussi ;
+- graphify update . : réussi, 47 442 nœuds et 107 809 arêtes.
+
+Aucune instrumentation persistante ni contenu de requête n'a été ajouté aux journaux.
