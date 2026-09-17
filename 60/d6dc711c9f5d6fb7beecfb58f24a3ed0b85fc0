@@ -1,0 +1,27 @@
+M07 — Regrouper le dossier Agent en domaines lisibles
+
+Décision
+- 831 fichiers Rust à plat sont rangés physiquement dans neuf domaines : execution, conversations, context, tools, permissions, subagents, prompts, diagnostics et extensions.
+- mod.rs reste le seul fichier Rust à la racine.
+- Les 649 noms de modules et leurs chemins Rust publics sont conservés grâce à des inventaires inclus, sans couche d’adaptation ni changement de comportement.
+- L’inventaire tools est découpé en sept familles bornées ; aucun manifeste ne dépasse 230 lignes.
+- shell_sandbox reste un module propre et rejoint le domaine tools.
+- Les références de code, scripts, contrats et documentation vers les fichiers déplacés ont été mises à jour.
+
+Validation
+- Contrôle structurel : 649 déclarations, 649 uniques ; seul mod.rs reste à plat ; manifestes <= 230 lignes.
+- cargo check : OK
+- cargo clippy --all-targets -- -D warnings : OK
+- cargo fmt --all -- --check : OK
+- cargo test --quiet : 5 874 réussis, 34 ignorés ; CLI 51 réussis ; intégrations 1 + 2 réussies, 1 ignorée.
+- npm test : 636 fichiers, 3 485 tests frontend réussis ; scripts build/CI/fichiers/CEF/extensions/fixtures réussis.
+- npm run lint : OK
+- npx tsc --noEmit : OK
+- npm run contracts:check : tous les contrats générés réussissent.
+- Scripts de persistance : 11 tests réussis ; inventaire des chemins réussi.
+- git diff --check : OK
+- graphify update . : OK
+
+Incident de validation
+- Le premier cargo test complet a eu un échec isolé dans app_storage_repairs_the_forecast_notes_directory avec « Outil de fixture indisponible » ; le test exact a réussi immédiatement, puis la seconde suite complète a réussi. Le premier résultat rouge n’est pas compté comme validation.
+- La mise à jour sémantique /graphify --update n’est pas disponible dans ce harnais ; elle n’a pas été simulée.
