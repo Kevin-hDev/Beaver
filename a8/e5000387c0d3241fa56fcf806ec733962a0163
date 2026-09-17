@@ -1,0 +1,12 @@
+CI correction: format Rust sources loaded through include!
+
+Reason:
+The branch reorganized Agent and extension sources into domain folders that are assembled with include!. cargo fmt --all does not traverse those standalone included files, while CI intentionally runs rustfmt on every changed Rust source. The first CI run exposed 169 mechanically unformatted changed sources.
+
+Change:
+Applied the exact CI rustfmt contract (--edition 2021, skip_children=true) to all changed Rust sources. This commit contains formatting only.
+
+Validation:
+- cargo fmt --all -- --check: passed from src-tauri
+- RUSTFMT_BASE_SHA=$(git merge-base main HEAD) node scripts/build/check-rust-format.mjs: passed
+- git diff --check: passed
