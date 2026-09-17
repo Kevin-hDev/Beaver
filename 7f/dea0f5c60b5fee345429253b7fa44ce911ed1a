@@ -1,0 +1,14 @@
+CI correction: refresh exact legacy-brand inventory
+
+Reason:
+The maintenance cleanup removed one internal cl-go compatibility reference, reducing the expected count from 127 to 126. Formatting the included Rust sources changed the context fingerprint of existing visible legacy references without changing their count or classification.
+
+Change:
+- update the exact internal cl-go count to 126
+- update the visible-reference context fingerprint while retaining the count of 121
+- no compatibility path or visible text was added, removed, or reclassified by this commit
+
+Validation:
+- npm run test:brand-boundaries: 15/15 passed
+- unknown blocking references: 0
+- git diff --check: passed
