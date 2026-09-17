@@ -71,7 +71,7 @@ fn cef_child_removes_only_the_exact_valueless_parent_safe_switch() {
 
 #[test]
 fn cef_launch_authority_consumes_the_central_safe_mode_decision() {
-    let source = include_str!("../browser/cef_child_admission.rs");
+    let source = include_str!("../../browser/cef_child_admission.rs");
     assert!(source.contains("cef_child_safe_mode_action"));
     assert!(source.contains("command_line.remove_switch"));
     assert!(!source.contains("\"safe-mode\""));
@@ -155,7 +155,7 @@ fn platform_shift_paths_are_testable_without_the_current_os() {
 
 #[test]
 fn windows_shift_native_api_feature_is_explicit() {
-    let manifest = include_str!("../../../Cargo.toml");
+    let manifest = include_str!("../../../../Cargo.toml");
     assert!(manifest.contains("\"Win32_UI_Input_KeyboardAndMouse\""));
     assert!(include_str!("ui_startup_platform.rs").contains("GetAsyncKeyState(VK_SHIFT"));
 }

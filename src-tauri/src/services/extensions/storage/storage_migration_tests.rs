@@ -2,13 +2,13 @@ use super::storage;
 use serde_json::Value;
 
 const BUILTIN_V0: &[u8] =
-    include_bytes!("../../../test-fixtures/extensions/extensions-v0-array.json");
+    include_bytes!("../../../../test-fixtures/extensions/extensions-v0-array.json");
 const LOCAL_V0: &[u8] =
-    include_bytes!("../../../test-fixtures/extensions/extensions-v0-array-with-local.json");
+    include_bytes!("../../../../test-fixtures/extensions/extensions-v0-array-with-local.json");
 const REGISTRY_V1: &[u8] =
-    include_bytes!("../../../test-fixtures/extensions/extensions-v1-envelope.json");
+    include_bytes!("../../../../test-fixtures/extensions/extensions-v1-envelope.json");
 const LEGACY_UI_V1: &[u8] =
-    include_bytes!("../../../test-fixtures/extensions/extensions-v1-legacy-ui.json");
+    include_bytes!("../../../../test-fixtures/extensions/extensions-v1-legacy-ui.json");
 
 fn write_local_fixture(source: &std::path::Path) -> Vec<u8> {
     let mut value: Value = serde_json::from_slice(LOCAL_V0).unwrap();

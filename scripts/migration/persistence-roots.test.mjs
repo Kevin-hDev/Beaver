@@ -76,5 +76,6 @@ test("chaque accès Rust au dossier de données reste explicitement revu", () =>
     const count = [...boundedRustSource(file).matchAll(DATA_DIR_CALL)].length;
     if (count > 0) actual.push([file, count]);
   }
-  assert.deepEqual(actual, EXPECTED_DATA_DIR_REFERENCES);
+  const byPath = ([left], [right]) => left.localeCompare(right);
+  assert.deepEqual(actual.toSorted(byPath), EXPECTED_DATA_DIR_REFERENCES.toSorted(byPath));
 });

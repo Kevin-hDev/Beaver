@@ -559,17 +559,17 @@
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/extensions/discovery_preferences.rs",
+          "file": "src-tauri/src/services/extensions/contract/discovery_preferences.rs",
           "snippets": [".join(\"extension-discovery-preferences.json\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/extensions/discovery_usage.rs",
+          "file": "src-tauri/src/services/extensions/contract/discovery_usage.rs",
           "snippets": [".join(\"extension-tool-usage.json\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/extensions/ui_artifact_store.rs",
+          "file": "src-tauri/src/services/extensions/ui/ui_artifact_store.rs",
           "snippets": ["const DIRECTORY: &str = \"extensions-ui\";", "data_dir().join(DIRECTORY)"]
         },
         {
@@ -583,7 +583,7 @@
       ],
       "evidence": [
         "src-tauri/src/services/provider_usage/ledger_tests.rs",
-        "src-tauri/src/services/extensions/ui_artifact_tests.rs"
+        "src-tauri/src/services/extensions/ui/ui_artifact_tests.rs"
       ],
       "manualGates": []
     },

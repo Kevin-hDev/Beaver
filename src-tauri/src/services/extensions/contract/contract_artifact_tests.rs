@@ -1,9 +1,9 @@
-#[path = "../../../extension_contract_shared.rs"]
+#[path = "../../../../extension_contract_shared.rs"]
 mod extension_contract_shared;
-#[path = "../../../extension_contract_build.rs"]
+#[path = "../../../../extension_contract_build.rs"]
 #[allow(dead_code)]
 mod generator;
-#[path = "../../../extension_ui_contract_build.rs"]
+#[path = "../../../../extension_ui_contract_build.rs"]
 #[allow(dead_code)]
 mod ui_generator;
 
@@ -244,7 +244,7 @@ fn checked_in_typescript_matches_the_extension_contract() {
     let directory = root.join("resources/extension-host");
     let contract = generator::load_contract(&directory).unwrap();
     let checked_in =
-        include_str!("../../../../src/types/extension-contract.generated.ts").replace("\r\n", "\n");
+        include_str!("../../../../../src/types/extension-contract.generated.ts").replace("\r\n", "\n");
 
     assert_eq!(checked_in, generator::render_typescript(&contract).unwrap());
     assert!(checked_in.contains("export const EXTENSION_HOST_STATES"));
@@ -259,7 +259,7 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
     let directory = root.join("resources/extension-host");
     let contract = generator::load_contract(&directory).unwrap();
     let checked_in =
-        include_str!("../../../resources/extension-host/sdk/contract.d.ts").replace("\r\n", "\n");
+        include_str!("../../../../resources/extension-host/sdk/contract.d.ts").replace("\r\n", "\n");
 
     assert_eq!(
         checked_in,
@@ -279,7 +279,7 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
 #[test]
 fn checked_in_node_reader_limits_match_rust() {
     assert_eq!(
-        include_str!("../../../resources/extension-host/contract-reader-limits.generated.mjs")
+        include_str!("../../../../resources/extension-host/contract-reader-limits.generated.mjs")
             .replace("\r\n", "\n"),
         generator::render_node_reader_limits()
     );
@@ -415,7 +415,7 @@ fn generated_ui_artifacts_project_every_contract_section() {
 
 #[test]
 fn sdk_requires_new_tools_to_declare_their_effect() {
-    let sdk = include_str!("../../../resources/extension-host/sdk/index.d.ts");
+    let sdk = include_str!("../../../../resources/extension-host/sdk/index.d.ts");
 
     assert!(sdk.contains("effect: ExtensionEffectClass;"));
     assert!(!sdk.contains("effect?: ExtensionEffectClass;"));
@@ -434,16 +434,16 @@ fn absent_private_document_is_allowed_for_a_clean_clone() {
 #[test]
 fn fixed_bootstrap_anchors_match_the_node_reader() {
     let bootstrap: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../resources/extension-host/contract-bootstrap.json"
+        "../../../../resources/extension-host/contract-bootstrap.json"
     ))
     .unwrap();
     let node_reader =
-        include_str!("../../../resources/extension-host/contract-reader-limits.generated.mjs");
+        include_str!("../../../../resources/extension-host/contract-reader-limits.generated.mjs");
 
     assert_eq!(bootstrap.as_object().unwrap().len(), 1);
     assert_eq!(bootstrap["maxContractBytes"], 32_768);
     assert!(
-        include_bytes!("../../../resources/extension-host/contract-bootstrap.json").len()
+        include_bytes!("../../../../resources/extension-host/contract-bootstrap.json").len()
             <= generator::BOOTSTRAP_FILE_MAX_BYTES
     );
     assert_eq!(
@@ -454,7 +454,7 @@ fn fixed_bootstrap_anchors_match_the_node_reader() {
         node_numeric_constant(node_reader, "MAX_BOOTSTRAPPED_CONTRACT_BYTES"),
         generator::MAX_BOOTSTRAPPED_CONTRACT_BYTES
     );
-    assert!(include_str!("../../../resources/extension-host/contract.mjs")
+    assert!(include_str!("../../../../resources/extension-host/contract.mjs")
         .matches("readBounded(")
         .count()
         >= 2);
@@ -478,7 +478,7 @@ fn checked_in_sdk_readme_tables_match_the_contract() {
     let expected = generator::generated_document_section(&contract).unwrap();
     // Git extrait les fichiers texte en CRLF sur certains runners Windows ;
     // le contrat porte le contenu, pas le séparateur de lignes de la copie.
-    let sdk = include_str!("../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
+    let sdk = include_str!("../../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
 
     assert!(sdk.contains(&expected));
 }
@@ -504,27 +504,27 @@ fn replaced_local_contract_constants_do_not_return() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     for (path, forbidden) in [
         (
-            "src/services/extensions/core_bridge.rs",
+            "src/services/extensions/contract/core_bridge.rs",
             "const MAX_SESSION_RESULTS",
         ),
         (
-            "src/services/extensions/core_bridge.rs",
+            "src/services/extensions/contract/core_bridge.rs",
             "const MAX_PROJECT_RESULTS",
         ),
         (
-            "src/services/extensions/core_bridge.rs",
+            "src/services/extensions/contract/core_bridge.rs",
             "const MCP_CALL_TIMEOUT",
         ),
         (
-            "src/services/extensions/runtime_restart.rs",
+            "src/services/extensions/host/runtime_restart.rs",
             "const AUTO_RESTART_LIMIT",
         ),
         (
-            "src/services/extensions/runtime_restart.rs",
+            "src/services/extensions/host/runtime_restart.rs",
             "const AUTO_RESTART_WINDOW",
         ),
         (
-            "src/services/extensions/types.rs",
+            "src/services/extensions/contract/types.rs",
             "pub const BEAVER_API_VERSION",
         ),
         (
@@ -582,7 +582,7 @@ fn checked_in_ui_contract_artifacts_name_the_json_authority() {
 #[test]
 fn sdk_readme_has_one_bounded_ui_generated_section() {
     let readme =
-        include_str!("../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
+        include_str!("../../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let contract = ui_generator::load_contract(&root.join("resources/extension-ui")).unwrap();
     let expected = ui_generator::generated_document_section(&contract).unwrap();

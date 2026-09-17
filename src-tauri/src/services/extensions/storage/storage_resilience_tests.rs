@@ -49,7 +49,7 @@ fn unreadable_registry_is_distinct_from_invalid_json() {
 
 #[test]
 fn invalid_legacy_manifest_is_refused_before_migration_writes() {
-    let fixture = include_bytes!("../../../test-fixtures/extensions/extensions-v1-envelope.json");
+    let fixture = include_bytes!("../../../../test-fixtures/extensions/extensions-v1-envelope.json");
     let mut value: serde_json::Value = serde_json::from_slice(fixture).unwrap();
     value["extensions"][0]["manifest"]["id"] = serde_json::json!("invalid/id");
     let bytes = serde_json::to_vec(&value).unwrap();

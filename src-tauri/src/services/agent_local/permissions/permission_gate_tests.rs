@@ -245,10 +245,10 @@ fn diagnostic_entry_omits_arguments() {
 
 #[test]
 fn every_channel_revocation_clears_extension_permissions_at_the_required_boundary() {
-    let registry = include_str!("../../extensions/registry.rs");
-    let installer = include_str!("../../extensions/install_jobs/executor.rs");
-    let uninstall = include_str!("../../extensions/installer_uninstall.rs");
-    let lifecycle = include_str!("../../extensions/runtime_lifecycle.rs");
+    let registry = include_str!("../../extensions/permissions/registry.rs");
+    let installer = include_str!("../../extensions/installation/install_jobs/executor.rs");
+    let uninstall = include_str!("../../extensions/installation/installer_uninstall.rs");
+    let lifecycle = include_str!("../../extensions/host/runtime_lifecycle.rs");
 
     let disabled = registry.find("if !enabled {").expect("disable branch");
     let disable_clear = registry[disabled..]

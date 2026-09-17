@@ -400,7 +400,7 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
 
 #[test]
 fn runtime_revokes_and_clears_permissions_before_loading_or_building_specs() {
-    let source = include_str!("runtime_sync.rs");
+    let source = include_str!("../host/runtime_sync.rs");
     let recovered = source
         .find("let recovered = filter_for_recovery(records, recovery)")
         .unwrap();

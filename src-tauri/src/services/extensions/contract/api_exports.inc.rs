@@ -21,7 +21,7 @@ pub use public_api::{
     discovery_preferences, invoke_ui_action, report_ui_mount_failure, set_discovery_preferences,
     ui_catalog,
 };
-include!("registry_exports.inc.rs");
+include!("../permissions/registry_exports.inc.rs");
 pub use runtime::status;
 pub use runtime_dispatch::dispatch_tool;
 pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};

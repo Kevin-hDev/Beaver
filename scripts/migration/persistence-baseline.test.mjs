@@ -13,7 +13,7 @@ const MANIFEST_PATH = resolve(
 );
 const MAX_MANIFEST_BYTES = 128 * 1024;
 const EXPECTED_BASELINE_ATTESTATION =
-  "737aa2b543328885e163331f81fc343eb2b8cb8d62a0ae5a0a52b00c58cc8585";
+  "351f624c4aa41897734431e4a1fa9320fa5d9bbc1c016343d52d66b486953a1e";
 
 function loadManifest() {
   return JSON.parse(readRegularTextSync(MANIFEST_PATH, MAX_MANIFEST_BYTES));

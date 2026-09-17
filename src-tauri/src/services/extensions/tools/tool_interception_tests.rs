@@ -234,18 +234,18 @@ fn interceptor_activated_mid_stream_applies_next_request_without_replay() {
 #[test]
 fn all_execution_paths_are_intercepted_before_effect() {
     assert!(
-        include_str!("../agent_local/tools/tool_executor_sequential.rs")
+        include_str!("../../agent_local/tools/tool_executor_sequential.rs")
             .contains("intercept_and_publish")
     );
     assert!(
-        include_str!("../agent_local/tools/tool_executor_sequential_support.rs")
+        include_str!("../../agent_local/tools/tool_executor_sequential_support.rs")
             .contains("before_tool_effect")
     );
     for source in [
-        include_str!("../agent_local/tools/tool_executor_parallel.rs"),
-        include_str!("../agent_local/tools/tool_executor_write.rs"),
-        include_str!("../agent_local/tools/tool_executor_delegate_launch.rs"),
-        include_str!("../agent_local/execution/eager_dispatch.rs"),
+        include_str!("../../agent_local/tools/tool_executor_parallel.rs"),
+        include_str!("../../agent_local/tools/tool_executor_write.rs"),
+        include_str!("../../agent_local/tools/tool_executor_delegate_launch.rs"),
+        include_str!("../../agent_local/execution/eager_dispatch.rs"),
     ] {
         assert!(source.contains("before_tool_effect"));
     }

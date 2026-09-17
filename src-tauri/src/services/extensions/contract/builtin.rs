@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 const CATALOG: &str =
-    include_str!("../../../resources/extension-host/builtin-plugins/catalog.json");
+    include_str!("../../../../resources/extension-host/builtin-plugins/catalog.json");
 const SOURCE_LABEL: &str = "Beaver";
 
 #[derive(Deserialize)]
