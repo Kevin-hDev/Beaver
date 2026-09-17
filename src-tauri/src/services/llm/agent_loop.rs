@@ -5,9 +5,9 @@
 use super::agent_loop_compression::{LastCounts, LoopCompression};
 use super::{agent_loop_request::ApiRequestParams, agent_loop_tools};
 use crate::services::agent_local::{
-    agent_loop_finish, agent_loop_plan, circuit_breaker, context_usage_buckets::ContextUsageSeed,
-    generation_metrics::GenerationAggregate, stream_events::AgentEventEmitter,
-    subagent_orchestration, types_ollama::ChatMessage, write_guard_registry,
+    agent_loop_finish, agent_loop_plan, agent_loop_support, circuit_breaker,
+    context_usage_buckets::ContextUsageSeed, generation_metrics::GenerationAggregate,
+    stream_events::AgentEventEmitter, types_ollama::ChatMessage, write_guard_registry,
 };
 use crate::services::token_counting;
 use std::path::PathBuf;
@@ -57,11 +57,8 @@ pub async fn run_agent_loop(
     // Packaged builds have no fixture runner, but share the tool-turn context.
     #[cfg(not(debug_assertions))]
     let fixture_mode = false;
-    let mut subagents = subagent_orchestration::ParentSubagentOrchestrator::with_parent_inbox(
-        &session_id,
-        parent_message_inbox,
-    )
-    .await;
+    let mut subagents =
+        agent_loop_support::prepare_subagents(&session_id, parent_message_inbox).await;
     let compression = LoopCompression {
         on_event,
         provider_id,
@@ -75,9 +72,7 @@ pub async fn run_agent_loop(
         working_dir: &working_dir,
     };
     for turn in 0usize.. {
-        if cancel.is_cancelled() {
-            return Err("Annulé".to_string());
-        }
+        agent_loop_support::ensure_not_cancelled(&cancel)?;
         let interception = crate::services::extensions::snapshot_for_model_request(permission_mode);
         let request_output = super::agent_loop_request::run(ApiRequestParams {
             on_event,
@@ -118,7 +113,7 @@ pub async fn run_agent_loop(
         if interrupted {
             if let Some(journal) = journal.as_deref_mut() {
                 journal
-                    .persist_partial(super::agent_loop_message::build_assistant_message(&result))
+                    .persist_partial(agent_loop_support::build_assistant_message(&result))
                     .await?;
             }
             crate::services::agent_local::stream_buffer::finalize_interrupted_content(
@@ -161,7 +156,7 @@ pub async fn run_agent_loop(
         subagents
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
-        let assistant = super::agent_loop_message::build_for_plan(&result, plan_active);
+        let assistant = agent_loop_support::build_for_plan(&result, plan_active);
         if let Some(journal) = journal.as_deref_mut() {
             journal.persist_assistant_step(&assistant).await?;
         }

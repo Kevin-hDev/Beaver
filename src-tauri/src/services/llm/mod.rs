@@ -6,7 +6,6 @@
 
 pub mod agent_loop;
 mod agent_loop_compression;
-mod agent_loop_message;
 #[cfg(test)]
 mod agent_loop_native_tool_stack_tests;
 mod agent_loop_request;

@@ -1,7 +1,6 @@
 use super::common::{self, StreamMode};
 use super::params::StreamTaskParams;
 use crate::services::agent_local::agent_loop;
-use crate::services::agent_local::tool_catalog;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 
 pub(crate) async fn run(
@@ -35,28 +34,15 @@ pub(crate) async fn run(
         let settings = crate::services::agent_local::agent_settings::load().await;
         super::ollama_setup::resolve_tools(&params, &mode, &settings)
     };
-    let extension_tools = if fixture_mode || mode.is_chat {
-        crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
-    } else {
-        crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
-            final_tools,
-            crate::services::agent_local::extension_tool_set::PrepareContext {
-                session_id: &params.session_id,
-                provider: "ollama",
-                model: &params.model,
-                context_window: ctx.configured,
-                preserve_dynamic_tools: super::api_tools::preserve_explicit_dynamic_tools(
-                    !params.tools.is_empty(),
-                    params.subagent_profile.is_some(),
-                ),
-            },
-        )
-        .await?
-    };
-    let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
-    extension_tools
-        .report_prepared(&params.on_event, &params.session_id, &params.request_id)
-        .await?;
+    let (extension_tools, enabled_tool_names) = super::turn_tools::prepare_extensions(
+        &params,
+        &mode,
+        "ollama",
+        ctx.configured,
+        final_tools,
+        fixture_mode,
+    )
+    .await?;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await?;
     let ollama_think = super::ollama_thinking::resolve(&params).await?;
@@ -67,12 +53,8 @@ pub(crate) async fn run(
         });
     }
 
-    let plan_mode_active = if fixture_mode {
-        false
-    } else {
-        super::ollama_setup::resolve_plan_mode(&params).await
-            && tool_catalog::has_plan_tools(&enabled_tool_names)
-    };
+    let plan_mode_active =
+        super::turn_tools::resolve_plan_mode(&params, &enabled_tool_names, fixture_mode).await;
     let mut _memory_guard = None;
     let context_usage_seed = if fixture_mode {
         super::fixture_prompt::prepare(&mut messages);
@@ -136,7 +118,10 @@ pub(crate) async fn run(
             let skills = common::skills_tuples(
                 !mode.is_chat
                     && !mode.is_subagent
-                    && tool_catalog::has_tool(&enabled_tool_names, "load_skill"),
+                    && crate::services::agent_local::tool_catalog::has_tool(
+                        &enabled_tool_names,
+                        "load_skill",
+                    ),
             )
             .await;
             let prompt_context = common::PromptContext {
@@ -159,13 +144,13 @@ pub(crate) async fn run(
             seed
         }
     };
-    if !fixture_mode && super::ollama_setup::todo_tools_enabled(&enabled_tool_names) {
-        crate::services::agent_local::tool_todo::append_session_reminder(
-            &mut messages,
-            &params.session_id,
-        )
-        .await;
-    }
+    super::turn_tools::append_todo_reminder(
+        &mut messages,
+        &params.session_id,
+        &enabled_tool_names,
+        fixture_mode,
+    )
+    .await;
 
     #[cfg(debug_assertions)]
     let mut fixture_run = params.fixture_run.take();

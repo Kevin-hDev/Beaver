@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::agent_local::tool_catalog;
 use serde_json::json;
 
 #[test]

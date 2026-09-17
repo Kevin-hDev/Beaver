@@ -1,6 +1,5 @@
-use super::agent_loop_message;
-use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
+use crate::services::agent_local::{agent_loop_support, stream_events::AgentEventEmitter};
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
@@ -63,7 +62,7 @@ impl LoopCompression<'_> {
         counts: LastCounts<'_>,
         cancel: CancellationToken,
     ) -> Result<(), String> {
-        messages.push(agent_loop_message::build_assistant_message(result));
+        messages.push(agent_loop_support::build_assistant_message(result));
         if self
             .try_run(messages, provider_tools, cancel)
             .await

@@ -34,7 +34,8 @@ pub(super) async fn reject_if_failed(
             || !result.thinking.is_empty()
             || result.continuation.is_some()
         {
-            let mut message = super::agent_loop_message::build_assistant_message(result);
+            let mut message =
+                crate::services::agent_local::agent_loop_support::build_assistant_message(result);
             // A truncated tool must never become a runnable or replayable call.
             message.tool_calls = None;
             journal.persist_partial(message).await?;

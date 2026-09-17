@@ -19,6 +19,7 @@ mod reasoning_diagnostics;
 mod recovery;
 mod session_events;
 pub(crate) mod tool_policy;
+mod turn_tools;
 mod workspace_prompt;
 
 #[cfg(test)]
