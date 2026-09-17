@@ -54,6 +54,7 @@ fn release_blocks_late_callbacks_but_not_a_new_view_epoch() {
     let mut cache = RuntimeRevisionCache::default();
     assert!(filter_title(&mut cache, key.clone(), stamp(4, 1)));
     assert!(cache.accept_release(key.clone(), stamp(4, 2)));
+    assert!(!cache.accept_release(key.clone(), stamp(4, 2)));
     assert!(!filter_title(&mut cache, key.clone(), stamp(4, 3)));
     assert!(filter_title(&mut cache, key, stamp(5, 1)));
 }

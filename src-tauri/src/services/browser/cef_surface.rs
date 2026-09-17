@@ -1,7 +1,6 @@
 use super::{
     browser_api_types::BrowserNavigationAction,
     browser_view_key::BrowserViewKey,
-    cef_state_bridge::mark_view_released,
     cef_surface_view::CefBrowserView,
     surface_bounds::{BrowserSurfaceBounds, SurfaceTracker, SurfaceUpdate},
     url_policy::ValidatedUrl,
@@ -93,7 +92,7 @@ impl BrowserSurfaceManager {
     pub(super) fn close_view(&mut self, app: &tauri::AppHandle, key: &BrowserViewKey) {
         if let Some(index) = self.views.iter().position(|view| view.key() == key) {
             let mut view = self.views.remove(index);
-            let _ = view.close(Some(app));
+            view.close(Some(app));
         }
         self.recency.remove(key);
         if self.active.as_ref() == Some(key) {
@@ -114,7 +113,7 @@ impl BrowserSurfaceManager {
 
     pub(super) fn close(&mut self) {
         for view in &mut self.views {
-            let _ = view.close(None);
+            view.close(None);
         }
         self.views.clear();
         self.active = None;
@@ -152,9 +151,7 @@ impl BrowserSurfaceManager {
     fn evict(&mut self, app: &tauri::AppHandle, key: &BrowserViewKey) {
         if let Some(index) = self.views.iter().position(|view| view.key() == key) {
             let mut view = self.views.remove(index);
-            if let Some(stamp) = view.close(Some(app)) {
-                mark_view_released(app, key.clone(), stamp);
-            }
+            view.close(Some(app));
         }
     }
 

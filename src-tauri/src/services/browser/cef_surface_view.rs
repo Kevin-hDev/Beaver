@@ -1,7 +1,8 @@
 use super::{
     browser_api_types::BrowserNavigationAction, browser_slot::BrowserSlot,
-    browser_view_key::BrowserViewKey, cef_client::create_browser_client, native_surface,
-    surface_bounds::BrowserSurfaceBounds, url_policy::ValidatedUrl,
+    browser_view_key::BrowserViewKey, cef_client::create_browser_client,
+    cef_state_bridge::release_view, native_surface, surface_bounds::BrowserSurfaceBounds,
+    url_policy::ValidatedUrl,
 };
 use cef::*;
 
@@ -110,20 +111,13 @@ impl CefBrowserView {
         Ok(())
     }
 
-    pub(super) fn close(
-        &mut self,
-        app: Option<&tauri::AppHandle>,
-    ) -> Option<super::runtime_revision::RuntimeStamp> {
-        let stamp = self.slot.next_runtime_stamp();
-        if let Some(epoch) = self.slot.epoch() {
-            super::favicon_runtime::access(app, |state| state.release_view(&self.key, epoch));
-        }
+    pub(super) fn close(&mut self, app: Option<&tauri::AppHandle>) {
+        release_view(app, &self.key, &self.slot);
         if let Some(app) = app {
             let _ = self.hide_current(app);
         }
         self.slot.close();
         self.client = None;
-        stamp
     }
 }
 

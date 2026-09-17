@@ -5,6 +5,7 @@ use super::{
     },
     browser_slot::BrowserSlot,
     browser_view_key::BrowserViewKey,
+    cef_state_bridge::release_view,
     cef_text::validated_cef_url,
     native_surface,
 };
@@ -96,9 +97,7 @@ cef::wrap_life_span_handler! {
 
         fn on_before_close(&self, _browser: Option<&mut Browser>) {
             super::ffi_guard::unit(|| {
-                if let Some(epoch) = self.slot.epoch() {
-                    super::favicon_runtime::mutate(&self.app, |state| state.release_view(&self.key, epoch));
-                }
+                release_view(Some(&self.app), &self.key, &self.slot);
                 self.slot.mark_closed();
             });
         }

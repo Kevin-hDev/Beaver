@@ -84,3 +84,21 @@ fn native_runtime_entrypoints_stay_out_of_linux_tests() {
         assert!(sessions.contains(signature));
     }
 }
+
+#[test]
+fn native_view_release_paths_share_one_boundary() {
+    let bridge = normalized_source("src/services/browser/cef_state_bridge.rs");
+    let view = normalized_source("src/services/browser/cef_surface_view.rs");
+    let renderer = normalized_source("src/services/browser/cef_request_handler.rs");
+    let lifecycle = normalized_source("src/services/browser/cef_life_span_handler.rs");
+
+    assert!(bridge.contains("state.release_view(key, epoch)"));
+    assert!(bridge.contains("mark_view_released(app, key.clone(), stamp)"));
+    assert!(view.contains("release_view(app, &self.key, &self.slot)"));
+    assert!(renderer.contains("release_view(Some(&app), &key, &self.slot)"));
+    assert!(lifecycle.contains("release_view(Some(&self.app), &self.key, &self.slot)"));
+    for source in [&view, &renderer, &lifecycle] {
+        assert!(!source.contains("state.release_view"));
+        assert!(!source.contains("mark_view_released"));
+    }
+}
