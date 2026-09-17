@@ -4,23 +4,9 @@ use std::path::PathBuf;
 
 use zeroize::Zeroizing;
 
-use super::session_limits;
-#[cfg(test)]
-use super::session_limits::CURRENT_SESSION_SCHEMA_VERSION;
-use super::session_migration_wire::WireVersion;
+use super::session_limits::{self, CURRENT_SESSION_SCHEMA_VERSION};
+pub use super::session_migration_version::SessionVersion as LoadedVersion;
 use super::types_session::AgentSession;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LoadedVersion {
-    V1,
-    V2,
-    V3,
-    V4,
-    V5,
-    V6,
-    V7,
-    Future(u16),
-}
 
 pub struct LoadedSession {
     session: AgentSession,
@@ -48,55 +34,27 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
     session_limits::validate_serialized_size(bytes.len())
         .map_err(|_| session_limits::invalid_session())?;
     let version = super::session_migration_version::version(bytes)?;
-    let (mut session, version) = match version {
-        WireVersion::V1 => (
-            super::session_migration_wire::parse_v1(bytes)?,
-            LoadedVersion::V1,
-        ),
-        WireVersion::V2 => (
-            super::session_migration_wire::parse_v2(bytes)?,
-            LoadedVersion::V2,
-        ),
-        WireVersion::V3 => (
-            super::session_migration_wire::parse_v3(bytes)?,
-            LoadedVersion::V3,
-        ),
-        WireVersion::V4 => (
-            super::session_migration_wire::parse_v4(bytes)?,
-            LoadedVersion::V4,
-        ),
-        WireVersion::V5 => (
-            super::session_migration_wire::parse_v5(bytes)?,
-            LoadedVersion::V5,
-        ),
-        WireVersion::V6 => (
-            super::session_migration_wire::parse_v6(bytes)?,
-            LoadedVersion::V6,
-        ),
-        WireVersion::V7 => (
-            super::session_migration_wire::parse_v7(bytes)?,
-            LoadedVersion::V7,
-        ),
-        WireVersion::Future(value) => (
-            super::session_migration_wire::parse_future(bytes, value)?,
-            LoadedVersion::Future(value),
-        ),
+    let mut session = match version {
+        LoadedVersion::Legacy(1) => super::session_migration_wire::parse_v1(bytes)?,
+        LoadedVersion::Legacy(2) => super::session_migration_wire::parse_v2(bytes)?,
+        LoadedVersion::Legacy(3) => super::session_migration_wire::parse_v3(bytes)?,
+        LoadedVersion::Legacy(4) => super::session_migration_wire::parse_v4(bytes)?,
+        LoadedVersion::Legacy(5) => super::session_migration_wire::parse_v5(bytes)?,
+        LoadedVersion::Legacy(6) => super::session_migration_wire::parse_v6(bytes)?,
+        LoadedVersion::Current => super::session_migration_wire::parse_v7(bytes)?,
+        LoadedVersion::Future(value) => {
+            super::session_migration_wire::parse_future(bytes, value)?
+        }
+        LoadedVersion::Legacy(_) => return Err(session_limits::invalid_session()),
     };
     super::stream_diagnostics_history::normalize(&mut session);
     Ok(LoadedSession {
         session,
         path,
         version,
-        original: matches!(
-            version,
-            LoadedVersion::V1
-                | LoadedVersion::V2
-                | LoadedVersion::V3
-                | LoadedVersion::V4
-                | LoadedVersion::V5
-                | LoadedVersion::V6
-        )
-        .then(|| Zeroizing::new(bytes.to_vec())),
+        original: version
+            .legacy_number()
+            .map(|_| Zeroizing::new(bytes.to_vec())),
     })
 }
 
@@ -104,17 +62,7 @@ pub(super) async fn commit_migrated_bytes(
     loaded: &LoadedSession,
     bytes: Vec<u8>,
 ) -> Result<(), String> {
-    let backup = match loaded.version {
-        LoadedVersion::V1 => super::session_migration_backup::backup_path(&loaded.path)?,
-        LoadedVersion::V2 => super::session_migration_backup::v2_backup_path(&loaded.path)?,
-        LoadedVersion::V3 => super::session_migration_backup::v3_backup_path(&loaded.path)?,
-        LoadedVersion::V4 => super::session_migration_backup::v4_backup_path(&loaded.path)?,
-        LoadedVersion::V5 => super::session_migration_backup::v5_backup_path(&loaded.path)?,
-        LoadedVersion::V6 => super::session_migration_backup::v6_backup_path(&loaded.path)?,
-        LoadedVersion::V7 | LoadedVersion::Future(_) => {
-            return Err(session_limits::save_failed());
-        }
-    };
+    let backup = migration_backup_path(loaded)?;
     session_limits::validate_serialized_size(bytes.len())?;
     let original = loaded
         .original
@@ -127,17 +75,7 @@ pub(super) async fn commit_migrated_bytes(
 pub(super) async fn commit_current_fail_before_rename(
     loaded: &LoadedSession,
 ) -> Result<(), String> {
-    let backup = match loaded.version {
-        LoadedVersion::V1 => super::session_migration_backup::backup_path(&loaded.path)?,
-        LoadedVersion::V2 => super::session_migration_backup::v2_backup_path(&loaded.path)?,
-        LoadedVersion::V3 => super::session_migration_backup::v3_backup_path(&loaded.path)?,
-        LoadedVersion::V4 => super::session_migration_backup::v4_backup_path(&loaded.path)?,
-        LoadedVersion::V5 => super::session_migration_backup::v5_backup_path(&loaded.path)?,
-        LoadedVersion::V6 => super::session_migration_backup::v6_backup_path(&loaded.path)?,
-        LoadedVersion::V7 | LoadedVersion::Future(_) => {
-            return Err(session_limits::save_failed());
-        }
-    };
+    let backup = migration_backup_path(loaded)?;
     let original = loaded
         .original
         .as_deref()
@@ -153,15 +91,12 @@ pub(super) async fn commit_current_fail_before_rename(
 }
 
 pub(super) async fn acknowledge_current(loaded: &LoadedSession) -> Result<(), String> {
-    if loaded.version == LoadedVersion::V7 {
-        for backup in [
-            super::session_migration_backup::backup_path(&loaded.path)?,
-            super::session_migration_backup::v2_backup_path(&loaded.path)?,
-            super::session_migration_backup::v3_backup_path(&loaded.path)?,
-            super::session_migration_backup::v4_backup_path(&loaded.path)?,
-            super::session_migration_backup::v5_backup_path(&loaded.path)?,
-            super::session_migration_backup::v6_backup_path(&loaded.path)?,
-        ] {
+    if loaded.version == LoadedVersion::Current {
+        for version in 1..CURRENT_SESSION_SCHEMA_VERSION {
+            let backup = super::session_migration_backup::versioned_backup_path(
+                &loaded.path,
+                version,
+            )?;
             if super::session_migration_backup::acknowledge_path(
                 backup,
                 !loaded.session.messages.is_empty(),
@@ -177,23 +112,16 @@ pub(super) async fn acknowledge_current(loaded: &LoadedSession) -> Result<(), St
 }
 
 #[cfg(test)]
-pub(super) fn backup_path(path: &Path) -> Result<PathBuf, String> {
-    super::session_migration_backup::backup_path(path)
+pub(super) fn backup_path(path: &Path, version: u16) -> Result<PathBuf, String> {
+    super::session_migration_backup::versioned_backup_path(path, version)
 }
 
-#[cfg(test)]
-pub(super) fn v2_backup_path(path: &Path) -> Result<PathBuf, String> {
-    super::session_migration_backup::v2_backup_path(path)
-}
-
-#[cfg(test)]
-pub(super) fn v3_backup_path(path: &Path) -> Result<PathBuf, String> {
-    super::session_migration_backup::v3_backup_path(path)
-}
-
-#[cfg(test)]
-pub(super) fn v5_backup_path(path: &Path) -> Result<PathBuf, String> {
-    super::session_migration_backup::v5_backup_path(path)
+fn migration_backup_path(loaded: &LoadedSession) -> Result<PathBuf, String> {
+    let version = loaded
+        .version
+        .legacy_number()
+        .ok_or_else(session_limits::save_failed)?;
+    super::session_migration_backup::versioned_backup_path(&loaded.path, version)
 }
 
 #[cfg(test)]

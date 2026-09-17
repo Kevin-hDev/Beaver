@@ -54,7 +54,7 @@ async fn v5_context_fixture_migrates_to_v7_with_an_exact_backup() {
 
     assert_eq!(
         migrated.version(),
-        super::session_migration::LoadedVersion::V5
+        super::session_migration::LoadedVersion::Legacy(5)
     );
     assert_eq!(migrated.session().schema_version, 7);
     assert_eq!(migrated.session().accumulated_tokens, 45_123);
@@ -73,7 +73,7 @@ async fn v5_context_fixture_migrates_to_v7_with_an_exact_backup() {
         .await
         .expect("publish v6");
     assert_eq!(
-        std::fs::read(super::session_migration::v5_backup_path(&path).unwrap()).unwrap(),
+        std::fs::read(super::session_migration::backup_path(&path, 5).unwrap()).unwrap(),
         bytes
     );
     let current = std::fs::read(&path).unwrap();
@@ -91,7 +91,7 @@ async fn v5_context_fixture_migrates_to_v7_with_an_exact_backup() {
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V7
+        super::session_migration::LoadedVersion::Current
     );
 }
 
@@ -130,7 +130,7 @@ fn current_v7_context_record_is_not_remigrated() {
 
     assert_eq!(
         loaded.version(),
-        super::session_migration::LoadedVersion::V7
+        super::session_migration::LoadedVersion::Current
     );
     assert_eq!(loaded.session().context_usage, session.context_usage);
 }
@@ -207,7 +207,7 @@ async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup
         .expect("migrate fixture");
     assert_eq!(
         migrated.version(),
-        super::session_migration::LoadedVersion::V4
+        super::session_migration::LoadedVersion::Legacy(4)
     );
     assert!(migrated.session().messages[1]
         .tool_activities
@@ -241,7 +241,7 @@ async fn v4_migrates_to_v7_with_empty_artifacts_and_exact_backup() {
 
     assert_eq!(
         migrated.version(),
-        super::session_migration::LoadedVersion::V4
+        super::session_migration::LoadedVersion::Legacy(4)
     );
     assert_eq!(migrated.session().schema_version, 7);
     assert!(migrated.session().messages.iter().all(|message| {
@@ -300,7 +300,7 @@ async fn v3_migrates_to_v7_with_an_empty_guard_and_exact_backup() {
 
     assert_eq!(
         loaded.version(),
-        super::session_migration::LoadedVersion::V3
+        super::session_migration::LoadedVersion::Legacy(3)
     );
     assert_eq!(loaded.session().schema_version, 7);
     assert!(loaded.session().automatic_compression_guard.is_empty());
@@ -309,14 +309,14 @@ async fn v3_migrates_to_v7_with_an_empty_guard_and_exact_backup() {
     write_migrated(path.clone(), loaded)
         .await
         .expect("publish v6");
-    let backup = super::session_migration::v3_backup_path(&path).expect("v3 backup path");
+    let backup = super::session_migration::backup_path(&path, 3).expect("v3 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V3_COMPRESSION_FIXTURE);
 
     let current = std::fs::read(&path).unwrap();
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V7
+        super::session_migration::LoadedVersion::Current
     );
     assert!(reloaded.session().automatic_compression_guard.is_empty());
 }
@@ -361,7 +361,7 @@ async fn v2_compression_markers_migrate_to_v7_with_an_exact_backup() {
 
     assert_eq!(
         loaded.version(),
-        super::session_migration::LoadedVersion::V2
+        super::session_migration::LoadedVersion::Legacy(2)
     );
     assert_eq!(loaded.session().schema_version, 7);
     assert_eq!(
@@ -379,13 +379,13 @@ async fn v2_compression_markers_migrate_to_v7_with_an_exact_backup() {
     write_migrated(path.clone(), loaded)
         .await
         .expect("publish v6");
-    let backup = super::session_migration::v2_backup_path(&path).expect("v2 backup path");
+    let backup = super::session_migration::backup_path(&path, 2).expect("v2 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V2_COMPRESSION_FIXTURE);
     let current = std::fs::read(&path).unwrap();
     let reloaded = super::session_migration::read(&current, path).expect("reload v6");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V7
+        super::session_migration::LoadedVersion::Current
     );
     assert_eq!(reloaded.session().schema_version, 7);
 }
@@ -531,7 +531,7 @@ async fn empty_v2_never_acknowledges_a_nonempty_v1_backup() {
     let path = root
         .path()
         .join("00000000-0000-4000-8000-000000000010.json");
-    let backup = super::session_migration::backup_path(&path).unwrap();
+    let backup = super::session_migration::backup_path(&path, 1).unwrap();
     let mut empty_v2 = base_session();
     empty_v2.messages.clear();
     let empty_bytes = serde_json::to_vec_pretty(&empty_v2).unwrap();
@@ -728,7 +728,7 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
     write_migrated(path.clone(), loaded)
         .await
         .expect("commit v2");
-    let backup = super::session_migration::backup_path(&path).expect("backup path");
+    let backup = super::session_migration::backup_path(&path, 1).expect("backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), bytes);
     let persisted = super::session_store_document::read_from_path(path)
         .await
@@ -1026,7 +1026,7 @@ async fn injected_failure_before_rename_keeps_v1_and_exact_backup() {
             .await
             .is_err()
     );
-    let backup = super::session_migration::backup_path(&path).unwrap();
+    let backup = super::session_migration::backup_path(&path, 1).unwrap();
     assert_eq!(std::fs::read(&path).unwrap(), V1_FIXTURE);
     assert_eq!(std::fs::read(&backup).unwrap(), V1_FIXTURE);
     assert!(std::fs::read_dir(root.path()).unwrap().all(|entry| !entry
@@ -1049,7 +1049,7 @@ async fn migrated_session_backup_and_directory_are_private() {
     write_migrated(path.clone(), loaded)
         .await
         .unwrap();
-    let backup = super::session_migration::backup_path(&path).unwrap();
+    let backup = super::session_migration::backup_path(&path, 1).unwrap();
 
     assert_eq!(
         std::fs::metadata(&private).unwrap().permissions().mode() & 0o777,

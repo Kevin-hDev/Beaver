@@ -4,37 +4,16 @@ use zeroize::Zeroizing;
 
 use super::session_limits::{save_failed, MAX_SESSION_FILE_BYTES};
 
-pub(super) fn backup_path(path: &Path) -> Result<PathBuf, String> {
-    backup_path_for(path, "v1")
-}
-
-pub(super) fn v2_backup_path(path: &Path) -> Result<PathBuf, String> {
-    backup_path_for(path, "v2")
-}
-
-pub(super) fn v3_backup_path(path: &Path) -> Result<PathBuf, String> {
-    backup_path_for(path, "v3")
-}
-
-pub(super) fn v4_backup_path(path: &Path) -> Result<PathBuf, String> {
-    backup_path_for(path, "v4")
-}
-
-pub(super) fn v5_backup_path(path: &Path) -> Result<PathBuf, String> {
-    backup_path_for(path, "v5")
-}
-
-pub(super) fn v6_backup_path(path: &Path) -> Result<PathBuf, String> {
-    backup_path_for(path, "v6")
-}
-
-fn backup_path_for(path: &Path, version: &str) -> Result<PathBuf, String> {
+pub(super) fn versioned_backup_path(path: &Path, version: u16) -> Result<PathBuf, String> {
+    if !(1..super::session_limits::CURRENT_SESSION_SCHEMA_VERSION).contains(&version) {
+        return Err(save_failed());
+    }
     let name = path
         .file_name()
         .and_then(|name| name.to_str())
         .filter(|name| name.ends_with(".json"))
         .ok_or_else(save_failed)?;
-    Ok(path.with_file_name(format!("{name}.{version}.bak")))
+    Ok(path.with_file_name(format!("{name}.v{version}.bak")))
 }
 
 pub(super) fn corrupt_backup_path(path: &Path) -> Result<PathBuf, String> {

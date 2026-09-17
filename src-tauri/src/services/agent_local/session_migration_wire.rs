@@ -3,7 +3,6 @@ use serde_json::Value;
 use std::collections::HashSet;
 
 use super::session_limits::{self, CURRENT_SESSION_SCHEMA_VERSION};
-pub(super) use super::session_migration_version::WireVersion;
 use super::types_session::AgentSession;
 
 #[derive(Deserialize)]

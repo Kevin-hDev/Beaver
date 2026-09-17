@@ -1,35 +1,38 @@
 use serde::Deserialize;
 
+use super::session_limits::CURRENT_SESSION_SCHEMA_VERSION;
+
 #[derive(Deserialize)]
 struct VersionProbe {
     schema_version: Option<u16>,
 }
 
-pub(super) enum WireVersion {
-    V1,
-    V2,
-    V3,
-    V4,
-    V5,
-    V6,
-    V7,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionVersion {
+    Legacy(u16),
+    Current,
     Future(u16),
 }
 
-pub(super) fn version(bytes: &[u8]) -> Result<WireVersion, String> {
+impl SessionVersion {
+    pub(super) const fn legacy_number(self) -> Option<u16> {
+        match self {
+            Self::Legacy(version) => Some(version),
+            Self::Current | Self::Future(_) => None,
+        }
+    }
+}
+
+pub(super) fn version(bytes: &[u8]) -> Result<SessionVersion, String> {
     let probe: VersionProbe =
         serde_json::from_slice(bytes).map_err(|_| super::session_limits::invalid_session())?;
     match probe.schema_version {
-        None | Some(1) => Ok(WireVersion::V1),
-        Some(2) => Ok(WireVersion::V2),
-        Some(3) => Ok(WireVersion::V3),
-        Some(4) => Ok(WireVersion::V4),
-        Some(super::session_migration_v5::SCHEMA_VERSION) => Ok(WireVersion::V5),
-        Some(super::session_migration_v6::SCHEMA_VERSION) => Ok(WireVersion::V6),
-        Some(super::session_migration_v7::SCHEMA_VERSION) => Ok(WireVersion::V7),
-        Some(value) if value > super::session_limits::CURRENT_SESSION_SCHEMA_VERSION => {
-            Ok(WireVersion::Future(value))
+        None | Some(1) => Ok(SessionVersion::Legacy(1)),
+        Some(value) if (2..CURRENT_SESSION_SCHEMA_VERSION).contains(&value) => {
+            Ok(SessionVersion::Legacy(value))
         }
+        Some(CURRENT_SESSION_SCHEMA_VERSION) => Ok(SessionVersion::Current),
+        Some(value) if value > CURRENT_SESSION_SCHEMA_VERSION => Ok(SessionVersion::Future(value)),
         Some(_) => Err(super::session_limits::invalid_session()),
     }
 }

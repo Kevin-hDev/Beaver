@@ -115,23 +115,10 @@ pub(super) async fn write_prepared_to_path(
                 }
             };
             match loaded.version() {
-                super::session_migration::LoadedVersion::V1
-                | super::session_migration::LoadedVersion::V2 => {
+                super::session_migration::LoadedVersion::Legacy(_) => {
                     super::session_migration::commit_migrated_bytes(&loaded, data).await
                 }
-                super::session_migration::LoadedVersion::V3 => {
-                    super::session_migration::commit_migrated_bytes(&loaded, data).await
-                }
-                super::session_migration::LoadedVersion::V4 => {
-                    super::session_migration::commit_migrated_bytes(&loaded, data).await
-                }
-                super::session_migration::LoadedVersion::V5 => {
-                    super::session_migration::commit_migrated_bytes(&loaded, data).await
-                }
-                super::session_migration::LoadedVersion::V6 => {
-                    super::session_migration::commit_migrated_bytes(&loaded, data).await
-                }
-                super::session_migration::LoadedVersion::V7 => {
+                super::session_migration::LoadedVersion::Current => {
                     crate::services::private_store::atomic_write_async(path, data)
                         .await
                         .map_err(|_| super::session_limits::save_failed())
