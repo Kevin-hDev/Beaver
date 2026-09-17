@@ -66,7 +66,9 @@ async fn queued_followup_stays_active_without_terminal_report_or_signal() {
     let parent = session("Parent queued followup").await;
     let mut child = child_session(&parent.id).await;
     child.subagent_queued_prompts.push("Continue".into());
-    session_store::save(&child).await.expect("save queued child");
+    session_store::save(&child)
+        .await
+        .expect("save queued child");
     subagent_registry::register(&parent.id, &child.id, CancellationToken::new())
         .await
         .expect("register child");

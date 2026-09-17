@@ -1,5 +1,4 @@
-const PROCESS_INJECTION_ENVS: [&str; 3] =
-    ["LD_PRELOAD", "LD_AUDIT", "DYLD_INSERT_LIBRARIES"];
+const PROCESS_INJECTION_ENVS: [&str; 3] = ["LD_PRELOAD", "LD_AUDIT", "DYLD_INSERT_LIBRARIES"];
 
 pub(crate) fn is_process_injection_env(name: &str) -> bool {
     PROCESS_INJECTION_ENVS.contains(&name)

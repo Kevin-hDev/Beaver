@@ -24,10 +24,14 @@ pub async fn seed_pending_locked(
     let Some(mut meta) = super::subagent_change_store::load_optional(child_id).await? else {
         return Ok(());
     };
-    if !matches!(meta.status, SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict) {
+    if !matches!(
+        meta.status,
+        SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict
+    ) {
         return Ok(());
     }
-    let target_branch = super::subagent_git_command::text(project_path, &["branch", "--show-current"]).await?;
+    let target_branch =
+        super::subagent_git_command::text(project_path, &["branch", "--show-current"]).await?;
     if target_branch != meta.target_branch {
         return Err("Branche cible incompatible".into());
     }
@@ -78,7 +82,8 @@ pub async fn capture(
         .filter(|value| !value.is_empty() && value.chars().count() <= 128)
         .ok_or_else(|| "Projet sous-agent indisponible".to_string())?;
     let branch = super::subagent_worktree::branch_for_execution(execution_id)?;
-    let actual_branch = super::subagent_git_command::text(worktree, &["branch", "--show-current"]).await?;
+    let actual_branch =
+        super::subagent_git_command::text(worktree, &["branch", "--show-current"]).await?;
     if actual_branch != branch {
         return Err("Branche sous-agent invalide".into());
     }
@@ -89,7 +94,8 @@ pub async fn capture(
         .filter(|meta| meta.branch == branch)
         .map(|meta| meta.base_commit.clone())
         .unwrap_or(current_head);
-    let target_branch = super::subagent_git_command::text(project_path, &["branch", "--show-current"]).await?;
+    let target_branch =
+        super::subagent_git_command::text(project_path, &["branch", "--show-current"]).await?;
     if target_branch.is_empty() {
         return Err("Branche parent indisponible".into());
     }
@@ -100,7 +106,8 @@ pub async fn capture(
         return Ok(existing.filter(|meta| meta.branch == branch));
     }
     if existing.as_ref().is_some_and(|meta| meta.branch == branch)
-        && !super::subagent_git_command::success(worktree, &["reset", "--soft", &base_commit]).await?
+        && !super::subagent_git_command::success(worktree, &["reset", "--soft", &base_commit])
+            .await?
     {
         return Err("Capture du changement impossible".into());
     }
@@ -153,7 +160,9 @@ pub async fn capture(
     Ok(Some(meta))
 }
 
-pub(super) async fn changed_paths(worktree: &Path) -> Result<(Vec<SubagentChangedPath>, bool), String> {
+pub(super) async fn changed_paths(
+    worktree: &Path,
+) -> Result<(Vec<SubagentChangedPath>, bool), String> {
     let output = super::subagent_git_command::output(
         worktree,
         &["diff", "--cached", "--name-status", "--no-renames", "-z"],
@@ -168,7 +177,11 @@ pub(super) fn parse_changed_paths(
     if !output.status.success() {
         return Err("Liste des changements indisponible".into());
     }
-    let fields = output.stdout.split(|byte| *byte == 0).filter(|part| !part.is_empty()).collect::<Vec<_>>();
+    let fields = output
+        .stdout
+        .split(|byte| *byte == 0)
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>();
     let mut paths = Vec::new();
     let mut index = 0;
     while index + 1 < fields.len() && paths.len() < MAX_CHANGED_PATHS {
@@ -177,7 +190,9 @@ pub(super) fn parse_changed_paths(
         if kind.starts_with('R') || kind.starts_with('C') {
             index += 1;
         }
-        let Some(raw_path) = fields.get(index) else { break };
+        let Some(raw_path) = fields.get(index) else {
+            break;
+        };
         paths.push(SubagentChangedPath {
             path: String::from_utf8_lossy(raw_path).to_string(),
             kind: kind.chars().next().unwrap_or('M').to_string(),

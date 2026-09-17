@@ -1,6 +1,6 @@
 use super::{
-    session_store, subagent_git_actions, subagent_git_run, subagent_registry,
-    subagent_task_change, subagent_working_dir,
+    session_store, subagent_git_actions, subagent_git_run, subagent_registry, subagent_task_change,
+    subagent_working_dir,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -10,11 +10,8 @@ fn windows_directory_repository_path_stays_short() {
     let child_id = uuid::Uuid::new_v4().to_string();
     let execution_id = uuid::Uuid::new_v4().to_string();
 
-    let repository = super::subagent_directory_workspace::repository_path(
-        &child_id,
-        &execution_id,
-    )
-    .expect("repository path");
+    let repository = super::subagent_directory_workspace::repository_path(&child_id, &execution_id)
+        .expect("repository path");
 
     assert_eq!(repository.parent().unwrap().file_name().unwrap(), "sdr");
     assert_eq!(repository.file_name().unwrap().to_string_lossy().len(), 32);
@@ -27,37 +24,23 @@ async fn coder_gets_an_isolated_workspace_for_a_directory_without_git() {
     let parent = session_store::create_full("Parent", "model", "provider", false, None)
         .await
         .expect("parent");
-    let mut child = session_store::create_full(
-        "Child",
-        "model",
-        "provider",
-        false,
-        None,
-    )
-    .await
-    .expect("child");
+    let mut child = session_store::create_full("Child", "model", "provider", false, None)
+        .await
+        .expect("child");
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("coder".into());
     child.working_dir = project.path().to_string_lossy().to_string();
-    let run = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register");
+    let run =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register");
     child.subagent_run_id = Some(run.run_id.clone());
     session_store::save(&child).await.expect("save child");
 
-    let prepared = subagent_working_dir::resolve(
-        None,
-        &child.id,
-        false,
-        &run.run_id,
-        &run.execution_id,
-    )
-    .await
-    .expect("prepare non-git workspace");
+    let prepared =
+        subagent_working_dir::resolve(None, &child.id, false, &run.run_id, &run.execution_id)
+            .await
+            .expect("prepare non-git workspace");
 
     assert_ne!(prepared.path(), project.path());
     assert_eq!(
@@ -65,16 +48,16 @@ async fn coder_gets_an_isolated_workspace_for_a_directory_without_git() {
         "original\n"
     );
     subagent_registry::unregister(&child.id).await;
-    subagent_working_dir::cleanup_owned(
-        &child.id,
-        &run.execution_id,
-        prepared.worktree_path(),
-    )
-    .await;
+    subagent_working_dir::cleanup_owned(&child.id, &run.execution_id, prepared.worktree_path())
+        .await;
     subagent_task_change::delete_empty_workspace(project.path(), &child.id, &run.execution_id)
         .await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }
 
 #[tokio::test]
@@ -105,13 +88,10 @@ async fn directory_change_is_captured_and_applied_transactionally() {
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("coder".into());
     child.working_dir = project.path().to_string_lossy().to_string();
-    let run = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register");
+    let run =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register");
     child.subagent_run_id = Some(run.run_id.clone());
     session_store::save(&child).await.expect("save child");
     let prepared = subagent_working_dir::create_coder_worktree_for_test(
@@ -141,26 +121,24 @@ async fn directory_change_is_captured_and_applied_transactionally() {
     .await
     .expect("capture")
     .expect("change");
-    subagent_working_dir::cleanup_owned(
-        &child.id,
-        &run.execution_id,
-        prepared.worktree_path(),
-    )
-    .await;
-    assert_eq!(std::fs::read_to_string(project.path().join("README.md")).unwrap(), "original\n");
+    subagent_working_dir::cleanup_owned(&child.id, &run.execution_id, prepared.worktree_path())
+        .await;
+    assert_eq!(
+        std::fs::read_to_string(project.path().join("README.md")).unwrap(),
+        "original\n"
+    );
 
     std::fs::write(project.path().join("parent.txt"), "new parent state\n")
         .expect("advance directory");
     subagent_registry::unregister(&child.id).await;
-    let next_run = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register correction");
+    let next_run =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register correction");
     child.subagent_run_id = Some(next_run.run_id.clone());
-    session_store::save(&child).await.expect("save correction run");
+    session_store::save(&child)
+        .await
+        .expect("save correction run");
     let corrected = subagent_working_dir::create_coder_worktree_for_test(
         project.path(),
         &child.id,
@@ -169,8 +147,14 @@ async fn directory_change_is_captured_and_applied_transactionally() {
     )
     .await
     .expect("prepare correction");
-    assert_eq!(std::fs::read_to_string(corrected.path().join("README.md")).unwrap(), "changed\n");
-    assert_eq!(std::fs::read_to_string(corrected.path().join("parent.txt")).unwrap(), "new parent state\n");
+    assert_eq!(
+        std::fs::read_to_string(corrected.path().join("README.md")).unwrap(),
+        "changed\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(corrected.path().join("parent.txt")).unwrap(),
+        "new parent state\n"
+    );
     let change = subagent_git_run::capture(
         project.path(),
         &child.id,
@@ -192,11 +176,21 @@ async fn directory_change_is_captured_and_applied_transactionally() {
         .await
         .expect("apply directory change");
 
-    assert_eq!(std::fs::read_to_string(project.path().join("README.md")).unwrap(), "changed\n");
-    assert_eq!(std::fs::read_to_string(project.path().join("added.txt")).unwrap(), "added\n");
+    assert_eq!(
+        std::fs::read_to_string(project.path().join("README.md")).unwrap(),
+        "changed\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(project.path().join("added.txt")).unwrap(),
+        "added\n"
+    );
     assert!(!project.path().join("delete.txt").exists());
     subagent_registry::unregister(&child.id).await;
     let _ = super::subagent_change_store::remove(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }

@@ -7,10 +7,10 @@ pub mod permission_bash;
 pub mod permission_gate;
 #[cfg(test)]
 pub mod permission_gate_tests;
+mod permission_pending;
 pub mod permission_policy;
 mod permission_request;
 pub mod private_data_access;
 pub mod project_store;
 pub mod security;
 pub mod sensitive_data;
-mod permission_pending;

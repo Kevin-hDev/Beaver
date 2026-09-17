@@ -1,6 +1,6 @@
 use super::{
-    canonical_access_path, configured_roots_from_paths, decision_in_roots,
-    ensure_allowed_in_roots, is_path_in_roots, normalize_allowed_paths,
+    canonical_access_path, configured_roots_from_paths, decision_in_roots, ensure_allowed_in_roots,
+    is_path_in_roots, normalize_allowed_paths,
 };
 
 #[test]
@@ -13,10 +13,22 @@ fn allows_exact_root_and_children_but_rejects_parent_and_sibling() {
     std::fs::create_dir_all(&sibling).expect("sibling");
     let roots = vec![allowed.canonicalize().expect("allowed")];
 
-    assert!(is_path_in_roots(&allowed.canonicalize().expect("root"), &roots));
-    assert!(is_path_in_roots(&child.canonicalize().expect("child"), &roots));
-    assert!(!is_path_in_roots(&temp.path().canonicalize().expect("parent"), &roots));
-    assert!(!is_path_in_roots(&sibling.canonicalize().expect("sibling"), &roots));
+    assert!(is_path_in_roots(
+        &allowed.canonicalize().expect("root"),
+        &roots
+    ));
+    assert!(is_path_in_roots(
+        &child.canonicalize().expect("child"),
+        &roots
+    ));
+    assert!(!is_path_in_roots(
+        &temp.path().canonicalize().expect("parent"),
+        &roots
+    ));
+    assert!(!is_path_in_roots(
+        &sibling.canonicalize().expect("sibling"),
+        &roots
+    ));
 }
 
 #[test]
@@ -45,8 +57,7 @@ fn canonicalizes_missing_descendants_from_the_nearest_existing_parent() {
     let allowed = temp.path().join("allowed");
     std::fs::create_dir_all(&allowed).expect("allowed");
 
-    let candidate = canonical_access_path(&allowed.join("new").join("nested"))
-        .expect("candidate");
+    let candidate = canonical_access_path(&allowed.join("new").join("nested")).expect("candidate");
 
     assert_eq!(
         candidate,
@@ -73,11 +84,7 @@ fn normalizes_deduplicates_and_bounds_configured_roots() {
         })
         .collect::<Vec<_>>();
     assert!(normalize_allowed_paths(roots).is_ok());
-    assert!(normalize_allowed_paths(vec![
-        "/".to_string();
-        super::MAX_ALLOWED_PATHS + 1
-    ])
-    .is_err());
+    assert!(normalize_allowed_paths(vec!["/".to_string(); super::MAX_ALLOWED_PATHS + 1]).is_err());
 }
 
 #[test]
@@ -137,13 +144,21 @@ fn symlink_is_checked_against_its_real_target() {
 #[cfg(not(windows))]
 #[test]
 fn only_the_filesystem_root_disables_the_unix_sandbox() {
-    assert!(super::roots_allow_full_disk(&[std::path::PathBuf::from("/")]));
-    assert!(!super::roots_allow_full_disk(&[std::path::PathBuf::from("/work")]));
+    assert!(super::roots_allow_full_disk(&[std::path::PathBuf::from(
+        "/"
+    )]));
+    assert!(!super::roots_allow_full_disk(&[std::path::PathBuf::from(
+        "/work"
+    )]));
 }
 
 #[cfg(windows)]
 #[test]
 fn secondary_volume_roots_never_disable_the_windows_sandbox() {
-    assert!(super::roots_allow_full_disk(&[std::path::PathBuf::from("C:\\")]));
-    assert!(!super::roots_allow_full_disk(&[std::path::PathBuf::from("D:\\")]));
+    assert!(super::roots_allow_full_disk(&[std::path::PathBuf::from(
+        "C:\\"
+    )]));
+    assert!(!super::roots_allow_full_disk(&[std::path::PathBuf::from(
+        "D:\\"
+    )]));
 }

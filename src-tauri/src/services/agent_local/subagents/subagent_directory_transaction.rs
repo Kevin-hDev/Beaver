@@ -26,11 +26,7 @@ pub async fn apply(
         .map_err(|_| generic_error())?
 }
 
-fn apply_sync(
-    project: &Path,
-    stage: &Path,
-    changes: &[SubagentChangedPath],
-) -> Result<(), String> {
+fn apply_sync(project: &Path, stage: &Path, changes: &[SubagentChangedPath]) -> Result<(), String> {
     let project = project.canonicalize().map_err(|_| generic_error())?;
     let stage = stage.canonicalize().map_err(|_| generic_error())?;
     let transaction_id = uuid::Uuid::new_v4().to_string();
@@ -48,8 +44,7 @@ fn apply_sync(
         }
     }
     if std::fs::remove_dir_all(&backup_root).is_err() {
-        return rollback(&backup_root, &mut applied, &mut created_dirs)
-            .and(Err(generic_error()));
+        return rollback(&backup_root, &mut applied, &mut created_dirs).and(Err(generic_error()));
     }
     Ok(())
 }
@@ -69,7 +64,8 @@ fn plan_changes(
             None
         } else {
             let source = stage.join(relative);
-            let source_metadata = std::fs::symlink_metadata(&source).map_err(|_| generic_error())?;
+            let source_metadata =
+                std::fs::symlink_metadata(&source).map_err(|_| generic_error())?;
             if !source_metadata.is_file() || source_metadata.file_type().is_symlink() {
                 return Err(generic_error());
             }
@@ -93,7 +89,10 @@ fn apply_one(
     applied: &mut Vec<AppliedChange>,
     created_dirs: &mut Vec<PathBuf>,
 ) -> Result<(), String> {
-    ensure_parent(plan.target.parent().ok_or_else(generic_error)?, created_dirs)?;
+    ensure_parent(
+        plan.target.parent().ok_or_else(generic_error)?,
+        created_dirs,
+    )?;
     let backup = if plan.target.exists() {
         let parent = plan.backup.parent().ok_or_else(generic_error)?;
         std::fs::create_dir_all(parent).map_err(|_| generic_error())?;
@@ -107,13 +106,19 @@ fn apply_one(
         backup,
         installed: false,
     });
-    let Some(source) = plan.source.as_deref() else { return Ok(()) };
-    let tmp = plan.target.with_file_name(format!(".cl-go-{}.tmp", uuid::Uuid::new_v4()));
+    let Some(source) = plan.source.as_deref() else {
+        return Ok(());
+    };
+    let tmp = plan
+        .target
+        .with_file_name(format!(".cl-go-{}.tmp", uuid::Uuid::new_v4()));
     if std::fs::copy(source, &tmp).is_err() {
         let _ = std::fs::remove_file(&tmp);
         return Err(generic_error());
     }
-    let permissions = std::fs::metadata(source).map_err(|_| generic_error())?.permissions();
+    let permissions = std::fs::metadata(source)
+        .map_err(|_| generic_error())?
+        .permissions();
     if std::fs::set_permissions(&tmp, permissions).is_err()
         || std::fs::rename(&tmp, &plan.target).is_err()
     {
@@ -146,7 +151,9 @@ fn rollback(
         let _ = std::fs::remove_dir(dir);
     }
     let _ = std::fs::remove_dir_all(backup_root);
-    restored.then_some(()).ok_or_else(|| "Restauration du dossier impossible".into())
+    restored
+        .then_some(())
+        .ok_or_else(|| "Restauration du dossier impossible".into())
 }
 
 fn ensure_parent(parent: &Path, created: &mut Vec<PathBuf>) -> Result<(), String> {
@@ -167,7 +174,9 @@ fn validate_target(project: &Path, target: &Path) -> Result<(), String> {
     let relative = target.strip_prefix(project).map_err(|_| generic_error())?;
     for component in relative.components() {
         cursor.push(component);
-        let Ok(metadata) = std::fs::symlink_metadata(&cursor) else { break };
+        let Ok(metadata) = std::fs::symlink_metadata(&cursor) else {
+            break;
+        };
         if metadata.file_type().is_symlink() || metadata.is_dir() && cursor == target {
             return Err(generic_error());
         }
@@ -177,7 +186,11 @@ fn validate_target(project: &Path, target: &Path) -> Result<(), String> {
 
 fn safe_relative(value: &str) -> Result<&Path, String> {
     let path = Path::new(value);
-    if path.is_absolute() || path.components().any(|part| matches!(part, Component::ParentDir)) {
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
+    {
         Err(generic_error())
     } else {
         Ok(path)

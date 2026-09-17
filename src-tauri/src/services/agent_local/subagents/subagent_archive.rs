@@ -9,10 +9,7 @@ pub async fn archive(child_id: &str) -> Result<ArchiveOutcome, String> {
     archive_inner(child_id, None).await
 }
 
-pub async fn archive_owned(
-    child_id: &str,
-    parent_id: &str,
-) -> Result<ArchiveOutcome, String> {
+pub async fn archive_owned(child_id: &str, parent_id: &str) -> Result<ArchiveOutcome, String> {
     archive_inner(child_id, Some(parent_id)).await
 }
 

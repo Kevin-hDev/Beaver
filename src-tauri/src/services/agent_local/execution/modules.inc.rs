@@ -4,6 +4,7 @@ pub mod agent_loop_completion;
 mod agent_loop_compression;
 pub mod agent_loop_finish;
 mod agent_loop_interrupted;
+mod agent_loop_ollama_context;
 mod agent_loop_ollama_media;
 mod agent_loop_ollama_replay;
 mod agent_loop_ollama_request;
@@ -24,6 +25,8 @@ pub mod agent_work_supervision;
 #[cfg(test)]
 mod agent_work_supervision_tests;
 pub mod app_handle_global;
+#[cfg(test)]
+mod backend_stream_generation_tests;
 pub mod circuit_breaker;
 #[cfg(test)]
 pub mod circuit_breaker_tests;
@@ -72,19 +75,16 @@ pub mod ollama_wire;
 pub mod plan_mode_controller;
 pub mod plan_mode_debug;
 pub mod provider_tool_limits;
-mod agent_loop_ollama_context;
+pub mod types_interactive;
+pub mod types_message;
 mod types_message_continuation;
 mod types_message_ids;
 mod types_message_source;
-mod types_session_meta;
-#[cfg(test)]
-mod backend_stream_generation_tests;
-pub mod types_interactive;
-pub mod types_message;
 mod types_message_validation;
 pub mod types_ollama;
 pub mod types_plan;
 pub mod types_session;
 mod types_session_compression;
+mod types_session_meta;
 pub mod types_stream;
 pub mod types_todo;

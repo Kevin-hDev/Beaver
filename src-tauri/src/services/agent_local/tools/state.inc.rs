@@ -1,3 +1,7 @@
+pub mod tool_artifact;
+pub(crate) mod tool_artifact_preview;
+pub mod tool_artifact_record;
+pub(crate) mod tool_artifact_replay;
 #[cfg(test)]
 mod tool_artifact_tests;
 pub mod tool_file_changes;
@@ -43,7 +47,3 @@ pub mod write_guard_helpers_tests;
 pub mod write_guard_registry;
 #[cfg(test)]
 pub mod write_guard_tests;
-pub mod tool_artifact;
-pub(crate) mod tool_artifact_preview;
-pub mod tool_artifact_record;
-pub(crate) mod tool_artifact_replay;

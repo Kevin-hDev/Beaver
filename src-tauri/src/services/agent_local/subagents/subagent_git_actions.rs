@@ -23,9 +23,7 @@ pub async fn inspect(
             )
             .await?
         }
-        SubagentWorkspaceKind::Directory => {
-            super::subagent_directory_change::patch(&meta).await?
-        }
+        SubagentWorkspaceKind::Directory => super::subagent_directory_change::patch(&meta).await?,
     };
     let truncated = patch.chars().count() > MAX_PATCH_CHARS;
     let patch = patch.chars().take(MAX_PATCH_CHARS).collect();
@@ -48,7 +46,10 @@ pub async fn apply(
         super::subagent_git_command::delete_branch(project_path, &meta.branch).await?;
         return Ok(meta);
     }
-    if !matches!(meta.status, SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict) {
+    if !matches!(
+        meta.status,
+        SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict
+    ) {
         return Err("Dépôt parent non prêt".into());
     }
     let status_before = status_snapshot(project_path, &[]).await?;
@@ -57,15 +58,18 @@ pub async fn apply(
     {
         return Err("Dépôt parent non prêt".into());
     }
-    let target = super::subagent_git_command::text(project_path, &["branch", "--show-current"]).await?;
+    let target =
+        super::subagent_git_command::text(project_path, &["branch", "--show-current"]).await?;
     if target != meta.target_branch {
         return Err("Branche cible incompatible".into());
     }
     let head = super::subagent_git_command::text(project_path, &["rev-parse", "HEAD"]).await?;
     if !super::subagent_git_command::cherry_pick(project_path, &meta.commit).await? {
-        let aborted = super::subagent_git_command::success(project_path, &["cherry-pick", "--abort"]).await?;
-        let restored = super::subagent_git_command::text(project_path, &["rev-parse", "HEAD"]).await? == head
-            && status_snapshot(project_path, &[]).await? == status_before;
+        let aborted =
+            super::subagent_git_command::success(project_path, &["cherry-pick", "--abort"]).await?;
+        let restored =
+            super::subagent_git_command::text(project_path, &["rev-parse", "HEAD"]).await? == head
+                && status_snapshot(project_path, &[]).await? == status_before;
         if !aborted || !restored {
             return Err("Restauration du dépôt parent impossible".into());
         }
@@ -76,9 +80,8 @@ pub async fn apply(
     }
     meta.status = SubagentChangeStatus::Applied;
     meta.updated_at = Utc::now();
-    meta.applied_commit = Some(
-        super::subagent_git_command::text(project_path, &["rev-parse", "HEAD"]).await?,
-    );
+    meta.applied_commit =
+        Some(super::subagent_git_command::text(project_path, &["rev-parse", "HEAD"]).await?);
     super::subagent_change_store::save(&meta).await?;
     super::subagent_git_command::delete_branch(project_path, &meta.branch).await?;
     Ok(meta)
@@ -100,7 +103,10 @@ pub async fn discard(
         super::subagent_git_command::delete_branch(project_path, &meta.branch).await?;
         return Ok(meta);
     }
-    if !matches!(meta.status, SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict) {
+    if !matches!(
+        meta.status,
+        SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict
+    ) {
         return Err("Changement non abandonnable".into());
     }
     super::subagent_git_command::delete_branch(project_path, &meta.branch).await?;

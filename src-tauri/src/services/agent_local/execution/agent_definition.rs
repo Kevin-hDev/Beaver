@@ -1,6 +1,6 @@
 use super::types_tools::ToolResult;
-use std::io::Read;
 use std::collections::BTreeSet;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 const MAX_AGENT_BYTES: u64 = 32 * 1024;
@@ -34,7 +34,10 @@ fn resolve_path(relative_path: &str, working_dir: &Path) -> Result<PathBuf, Tool
         return Err(invalid_path());
     }
     let root = working_dir.canonicalize().map_err(|_| invalid_path())?;
-    let path = root.join(requested).canonicalize().map_err(|_| invalid_path())?;
+    let path = root
+        .join(requested)
+        .canonicalize()
+        .map_err(|_| invalid_path())?;
     if !path.starts_with(&root) {
         return Err(invalid_path());
     }
@@ -43,7 +46,9 @@ fn resolve_path(relative_path: &str, working_dir: &Path) -> Result<PathBuf, Tool
 
 fn parse(content: &str) -> Result<AgentDefinition, ToolResult> {
     let trimmed = content.trim();
-    let after_open = trimmed.strip_prefix("---\n").ok_or_else(invalid_definition)?;
+    let after_open = trimmed
+        .strip_prefix("---\n")
+        .ok_or_else(invalid_definition)?;
     let close = after_open.find("\n---\n").ok_or_else(invalid_definition)?;
     let (frontmatter, body_with_marker) = after_open.split_at(close);
     let body = body_with_marker.trim_start_matches("\n---\n").trim();

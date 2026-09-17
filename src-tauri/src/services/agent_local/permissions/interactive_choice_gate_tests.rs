@@ -53,6 +53,9 @@ async fn dismiss_resolves_without_fabricating_answers() {
 
     dismiss("session-a", "choice-1").await.unwrap();
 
-    assert_eq!(receiver.await.unwrap(), InteractiveChoiceResponse::Dismissed);
+    assert_eq!(
+        receiver.await.unwrap(),
+        InteractiveChoiceResponse::Dismissed
+    );
     assert_eq!(pending_len_for_test().await, 0);
 }

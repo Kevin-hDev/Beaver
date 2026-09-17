@@ -41,20 +41,14 @@ async fn duplicate_registration_never_replaces_active_execution() {
     let child = session("Child duplicate", Some(&parent.id)).await;
     let first = register(&parent.id, &child.id).await;
 
-    let duplicate = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await;
+    let duplicate =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await;
 
     assert!(duplicate.is_err());
-    assert!(subagent_registry::owns_execution(
-        &child.id,
-        &first.run_id,
-        &first.execution_id,
-    )
-    .await);
+    assert!(
+        subagent_registry::owns_execution(&child.id, &first.run_id, &first.execution_id,).await
+    );
     cleanup(&[&child.id, &parent.id]).await;
 }
 
@@ -113,9 +107,8 @@ fn parent_stream_token_reaches_delegate_registration_on_every_control_path() {
     assert!(batch.contains("tool_executor_delegate_launch::launch"));
     assert!(batch.contains("cancel.clone()"));
     assert!(dispatcher.contains("dispatch_delegate(args, session_id, cancel.clone())"));
-    assert!(fallback.contains(
-        "tool_subagent_control::dispatch(tool_name, args, session_id, cancel.clone())"
-    ));
+    assert!(fallback
+        .contains("tool_subagent_control::dispatch(tool_name, args, session_id, cancel.clone())"));
     assert!(message.contains("dispatch_delegate(&payload, parent_id, cancel)"));
     assert!(delegate.contains("register_execution_for_parent_stream"));
     assert!(delegate.contains("&parent_cancel"));
@@ -150,22 +143,23 @@ async fn stale_parent_stop_does_not_cancel_a_new_stream_child() {
 
     subagent_registry::cancel_stopped_parent_stream_children(&parent_id).await;
 
-    assert!(subagent_registry::active_run_for_child(&old_child)
-        .await
-        .expect("old child")
-        .cancelled);
-    assert!(!subagent_registry::active_run_for_child(&new_child)
-        .await
-        .expect("new child")
-        .cancelled);
+    assert!(
+        subagent_registry::active_run_for_child(&old_child)
+            .await
+            .expect("old child")
+            .cancelled
+    );
+    assert!(
+        !subagent_registry::active_run_for_child(&new_child)
+            .await
+            .expect("new child")
+            .cancelled
+    );
     subagent_registry::unregister(&old_child).await;
     subagent_registry::unregister(&new_child).await;
 }
 
-async fn session(
-    name: &str,
-    parent_id: Option<&str>,
-) -> super::types_session::AgentSession {
+async fn session(name: &str, parent_id: Option<&str>) -> super::types_session::AgentSession {
     let mut session = session_store::create_full(name, "llama3", "ollama", false, None)
         .await
         .expect("create session");

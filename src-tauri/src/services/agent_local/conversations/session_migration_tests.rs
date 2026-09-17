@@ -15,7 +15,8 @@ use super::types_session::{
 };
 
 const WRITER_COMMIT: &str = "2848a17e87fa641bff067dc4b5c9a2398bae6540";
-const V1_FIXTURE: &[u8] = include_bytes!("../../../../test-fixtures/agent-session-v1-synthetic.json");
+const V1_FIXTURE: &[u8] =
+    include_bytes!("../../../../test-fixtures/agent-session-v1-synthetic.json");
 const SYNTHETIC_TOOL_CHAIN: &[u8] =
     include_bytes!("../../../../test-fixtures/agent-session-v1-synthetic-tool-chain.json");
 const V2_COMPRESSION_FIXTURE: &[u8] =
@@ -922,10 +923,7 @@ async fn writer_preserves_conversation_and_opaque_provider_state() {
     let args = activity.args.as_ref().unwrap();
     assert_eq!(args, &controlled_collisions);
     let expected_result = controlled_collisions.to_string();
-    assert_eq!(
-        activity.result.as_deref(),
-        Some(expected_result.as_str())
-    );
+    assert_eq!(activity.result.as_deref(), Some(expected_result.as_str()));
 }
 
 #[tokio::test]
@@ -1046,9 +1044,7 @@ async fn migrated_session_backup_and_directory_are_private() {
     let path = private.join("00000000-0000-4000-8000-000000000002.json");
     crate::services::private_store::atomic_write(&path, V1_FIXTURE).expect("seed v1");
     let loaded = super::session_migration::read(V1_FIXTURE, path.clone()).expect("load v1");
-    write_migrated(path.clone(), loaded)
-        .await
-        .unwrap();
+    write_migrated(path.clone(), loaded).await.unwrap();
     let backup = super::session_migration::backup_path(&path, 1).unwrap();
 
     assert_eq!(

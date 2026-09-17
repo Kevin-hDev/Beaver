@@ -1,7 +1,7 @@
 use super::*;
+use crate::services::agent_local::memory_runtime;
 use crate::services::agent_local::memory_store::{MemoryEditError, MemoryWriteError};
 use crate::services::agent_local::memory_tool_error::{edit_error, mutation_error};
-use crate::services::agent_local::memory_runtime;
 use crate::services::agent_local::memory_types::MemoryMode;
 
 fn topic(id: &str) -> String {
@@ -38,11 +38,10 @@ fn traversal_into_memory_is_classified_for_authorization() {
     let working_dir = data.join("scratch");
     let args = serde_json::json!({"path": "../memory/global/MEMORY.md"});
 
-    assert_eq!(is_memory_operation(
-        "read_file",
-        &args,
-        Some(&working_dir)
-    ), Ok(true));
+    assert_eq!(
+        is_memory_operation("read_file", &args, Some(&working_dir)),
+        Ok(true)
+    );
 }
 
 #[test]
@@ -50,11 +49,10 @@ fn ordinary_relative_paths_are_not_classified_as_memory() {
     let working_dir = tempfile::tempdir().unwrap();
     for path in [".", "./src"] {
         let args = serde_json::json!({"path": path});
-        assert_eq!(is_memory_operation(
-            "list_dir",
-            &args,
-            Some(working_dir.path())
-        ), Ok(false));
+        assert_eq!(
+            is_memory_operation("list_dir", &args, Some(working_dir.path())),
+            Ok(false)
+        );
     }
 }
 
@@ -83,11 +81,21 @@ fn runtime_authorization_replaces_the_general_prompt_only_for_memory_writes() {
     let project_args = serde_json::json!({"path": "/tmp/project/file.md"});
 
     assert_eq!(
-        write_authorization("write_file", &memory_args, std::path::Path::new("/tmp"), &session),
+        write_authorization(
+            "write_file",
+            &memory_args,
+            std::path::Path::new("/tmp"),
+            &session
+        ),
         Ok(Some(true))
     );
     assert_eq!(
-        write_authorization("write_file", &project_args, std::path::Path::new("/tmp"), &session),
+        write_authorization(
+            "write_file",
+            &project_args,
+            std::path::Path::new("/tmp"),
+            &session
+        ),
         Ok(None)
     );
 }
@@ -101,7 +109,10 @@ fn memory_edit_errors_distinguish_stale_content_from_execution_failures() {
     )));
 
     assert_eq!(stale.error.unwrap().code.as_ref(), "memory_edit_stale");
-    assert_eq!(missing.error.unwrap().code.as_ref(), "memory_topic_not_found");
+    assert_eq!(
+        missing.error.unwrap().code.as_ref(),
+        "memory_topic_not_found"
+    );
     assert_eq!(failed.error.unwrap().code.as_ref(), "memory_write_failed");
 }
 
@@ -112,7 +123,10 @@ fn memory_mutation_errors_keep_validation_and_partial_states_distinct() {
         "index indisponible".into(),
     ));
 
-    assert_eq!(invalid.error.unwrap().code.as_ref(), "memory_content_invalid");
+    assert_eq!(
+        invalid.error.unwrap().code.as_ref(),
+        "memory_content_invalid"
+    );
     assert!(!partial.is_error);
     assert_eq!(partial.status.as_str(), "partial");
 }

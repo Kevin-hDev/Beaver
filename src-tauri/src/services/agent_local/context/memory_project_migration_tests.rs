@@ -46,10 +46,7 @@ fn current_scope(layout: &MemoryLayout, project: &Path) -> MemoryScope {
 }
 
 fn canonical_path(path: &Path) -> String {
-    path.canonicalize()
-        .unwrap()
-        .to_string_lossy()
-        .into_owned()
+    path.canonicalize().unwrap().to_string_lossy().into_owned()
 }
 
 #[tokio::test]
@@ -58,19 +55,13 @@ async fn legacy_folder_is_renamed_and_indexes_are_rebuilt() {
     let legacy = legacy_scope(&layout, &project);
     let topic_id = uuid::Uuid::new_v4().to_string();
     let topic_path = legacy.topics_dir().join(format!("{topic_id}.md"));
-    super::super::memory_store::write_topic(
-        &legacy,
-        &topic_path,
-        &project_topic(&topic_id),
-    )
-    .await
-    .unwrap();
-    assert!(
-        tokio::fs::read_to_string(legacy.summary_path())
-            .await
-            .unwrap()
-            .contains(&canonical_path(&legacy.root))
-    );
+    super::super::memory_store::write_topic(&legacy, &topic_path, &project_topic(&topic_id))
+        .await
+        .unwrap();
+    assert!(tokio::fs::read_to_string(legacy.summary_path())
+        .await
+        .unwrap()
+        .contains(&canonical_path(&legacy.root)));
 
     let resolved = resolve(&layout, &project).await.unwrap();
     let summary = tokio::fs::read_to_string(resolved.summary_path())
@@ -113,15 +104,13 @@ async fn pending_migration_is_resumed_after_an_interruption() {
     let current = current_scope(&layout, &project);
     let topic_id = uuid::Uuid::new_v4().to_string();
     let topic_path = legacy.topics_dir().join(format!("{topic_id}.md"));
-    super::super::memory_store::write_topic(
-        &legacy,
-        &topic_path,
-        &project_topic(&topic_id),
-    )
-    .await
-    .unwrap();
+    super::super::memory_store::write_topic(&legacy, &topic_path, &project_topic(&topic_id))
+        .await
+        .unwrap();
     ensure_pending_marker(&legacy).await.unwrap();
-    tokio::fs::rename(&legacy.root, &current.root).await.unwrap();
+    tokio::fs::rename(&legacy.root, &current.root)
+        .await
+        .unwrap();
 
     let resolved = resolve(&layout, &project).await.unwrap();
     let summary = tokio::fs::read_to_string(resolved.summary_path())

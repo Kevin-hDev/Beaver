@@ -48,6 +48,10 @@ async fn failed_session_save_leaves_tabs_unchanged() {
             .as_deref(),
         Some(branch)
     );
-    session_store::delete_one(&clone_id).await.expect("cleanup clone");
-    session_store::delete_one(&root_id).await.expect("cleanup root");
+    session_store::delete_one(&clone_id)
+        .await
+        .expect("cleanup clone");
+    session_store::delete_one(&root_id)
+        .await
+        .expect("cleanup root");
 }

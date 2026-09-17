@@ -9,8 +9,8 @@ fn appcontainer_writes_only_inside_the_selected_root() {
     let project = dunce::canonicalize(project.path()).expect("project canonical");
     let outside_file = outside.path().join("blocked.txt");
     let inside_file = project.join("allowed.txt");
-    let executable = super::super::super::tool_bash_platform::powershell_executable()
-        .expect("PowerShell");
+    let executable =
+        super::super::super::tool_bash_platform::powershell_executable().expect("PowerShell");
     let script = format!(
         "$ErrorActionPreference='SilentlyContinue'; Set-Content -Path '{}' -Value allowed; Set-Content -Path '{}' -Value blocked; if ((Test-Path '{}') -and -not (Test-Path '{}')) {{ exit 0 }} else {{ exit 42 }}",
         escaped(&inside_file),

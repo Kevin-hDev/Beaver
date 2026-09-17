@@ -5,9 +5,7 @@ const CHILD_ENV: &str = "BEAVER_LINUX_SANDBOX_CHILD";
 #[test]
 fn landlock_enforcement_status_fails_closed() {
     assert!(!isolation_is_unavailable(&RulesetStatus::FullyEnforced));
-    assert!(isolation_is_unavailable(
-        &RulesetStatus::PartiallyEnforced
-    ));
+    assert!(isolation_is_unavailable(&RulesetStatus::PartiallyEnforced));
     assert!(isolation_is_unavailable(&RulesetStatus::NotEnforced));
 }
 
@@ -49,8 +47,7 @@ fn landlock_writes_only_inside_the_selected_root() {
     std::fs::create_dir(&project).expect("project");
     std::fs::create_dir(&outside).expect("outside");
     std::fs::create_dir(&sandbox).expect("sandbox");
-    let specification =
-        std::env::join_paths([&project, &outside, &sandbox]).expect("path list");
+    let specification = std::env::join_paths([&project, &outside, &sandbox]).expect("path list");
     let test_name = concat!(
         "services::agent_local::shell_sandbox::linux::tests::",
         "landlock_writes_only_inside_the_selected_root"
@@ -61,7 +58,11 @@ fn landlock_writes_only_inside_the_selected_root() {
         .output()
         .expect("child test");
 
-    assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert!(project.join("allowed.txt").is_file());
     assert!(!outside.join("blocked.txt").exists());
 }

@@ -67,7 +67,12 @@ pub fn decide(plugins: &[PluginDescriptor], policy: SelectionPolicy<'_>) -> Capa
         .iter()
         .chain(policy.essential_plugin_ids)
         .chain(policy.discovered_plugin_ids)
-        .chain((!policy.masked).then_some(remaining_order).into_iter().flatten())
+        .chain(
+            (!policy.masked)
+                .then_some(remaining_order)
+                .into_iter()
+                .flatten(),
+        )
     {
         if known.contains(id.as_str()) && seen.insert(id.as_str()) {
             desired.push(id.clone());

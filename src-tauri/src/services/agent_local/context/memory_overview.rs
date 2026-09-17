@@ -90,9 +90,7 @@ async fn other_projects(
             _ => break,
         };
         let id = entry.file_name().to_string_lossy().into_owned();
-        if Some(id.as_str()) == active_id
-            || !super::memory_paths::valid_project_id(&id)
-        {
+        if Some(id.as_str()) == active_id || !super::memory_paths::valid_project_id(&id) {
             continue;
         }
         let label = labels
@@ -101,11 +99,11 @@ async fn other_projects(
             .map(|(_, name)| name.clone())
             .unwrap_or_else(|| id.clone());
         if let Some(overview) = scope_metadata(&MemoryScope {
-                id: id.clone(),
-                label,
-                root: entry.path(),
-            })
-            .await
+            id: id.clone(),
+            label,
+            root: entry.path(),
+        })
+        .await
         {
             output.push(overview);
         }
@@ -144,7 +142,10 @@ async fn scope_metadata(memory_scope: &MemoryScope) -> Option<MemoryScopeOvervie
         total_bytes = total_bytes.saturating_add(metadata.len());
         if let Ok(modified) = metadata.modified() {
             let timestamp = chrono::DateTime::<chrono::Utc>::from(modified).to_rfc3339();
-            if last_updated.as_ref().is_none_or(|current| &timestamp > current) {
+            if last_updated
+                .as_ref()
+                .is_none_or(|current| &timestamp > current)
+            {
                 last_updated = Some(timestamp);
             }
         }
@@ -173,9 +174,15 @@ fn empty_scope(memory_scope: &MemoryScope) -> MemoryScopeOverview {
 }
 
 fn legacy_detected(root: &Path) -> bool {
-    ["archive", "episodes", "hypotheses", "knowledge", "procedures"]
-        .iter()
-        .any(|name| root.join(name).exists())
+    [
+        "archive",
+        "episodes",
+        "hypotheses",
+        "knowledge",
+        "procedures",
+    ]
+    .iter()
+    .any(|name| root.join(name).exists())
 }
 
 #[cfg(test)]

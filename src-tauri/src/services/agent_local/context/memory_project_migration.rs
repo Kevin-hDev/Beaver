@@ -8,10 +8,7 @@ use tokio::sync::Mutex;
 const PENDING_MARKER: &str = ".project-folder-migration-v2";
 static PROJECT_MIGRATION_LOCK: Mutex<()> = Mutex::const_new(());
 
-pub async fn resolve(
-    layout: &MemoryLayout,
-    working_dir: &Path,
-) -> Result<MemoryScope, String> {
+pub async fn resolve(layout: &MemoryLayout, working_dir: &Path) -> Result<MemoryScope, String> {
     let identity = project_identity(working_dir)?;
     let scope = MemoryScope {
         id: identity.id.clone(),
@@ -27,8 +24,7 @@ pub async fn scope_for_tool_path(
     raw_path: &str,
     working_dir: &Path,
 ) -> Result<Option<MemoryScope>, String> {
-    let Some(classification) =
-        classify_memory_path(raw_path, Some(working_dir), layout.root())?
+    let Some(classification) = classify_memory_path(raw_path, Some(working_dir), layout.root())?
     else {
         return Ok(None);
     };

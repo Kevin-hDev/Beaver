@@ -44,12 +44,9 @@ fn record_chunks(
 ) {
     for chunk in chunks {
         match chunk {
-            FilteredChunk::Thinking(content) => super::stream_buffer::record_thinking(
-                on_event,
-                result,
-                content,
-                token_count,
-            ),
+            FilteredChunk::Thinking(content) => {
+                super::stream_buffer::record_thinking(on_event, result, content, token_count)
+            }
             FilteredChunk::Content(content) => super::stream_buffer::record_content(
                 on_event,
                 result,

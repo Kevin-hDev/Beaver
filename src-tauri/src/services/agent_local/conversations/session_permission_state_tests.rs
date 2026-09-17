@@ -28,12 +28,16 @@ async fn first_send_locks_family_and_persists_mode() {
         .expect("state");
     assert_eq!(state.permission_family, Some(PermissionFamily::Tools));
     assert_eq!(state.permission_mode, PermissionMode::Manual);
-    assert!(super::session_permission_state::set_mode(&session.id, PermissionMode::Chat)
-        .await
-        .is_err());
-    assert!(super::session_permission_state::set_mode(&session.id, PermissionMode::Auto)
-        .await
-        .is_ok());
+    assert!(
+        super::session_permission_state::set_mode(&session.id, PermissionMode::Chat)
+            .await
+            .is_err()
+    );
+    assert!(
+        super::session_permission_state::set_mode(&session.id, PermissionMode::Auto)
+            .await
+            .is_ok()
+    );
     let raw = tokio::fs::read_to_string(
         crate::services::paths::data_dir()
             .join("agent-sessions")
@@ -57,12 +61,16 @@ async fn chatbot_first_send_permanently_rejects_tool_family() {
         .await
         .expect("lock chat");
 
-    assert!(super::session_permission_state::set_mode(&session.id, PermissionMode::Manual)
-        .await
-        .is_err());
-    assert!(super::session_permission_state::prepare_send(&session.id, Some("auto"))
-        .await
-        .is_err());
+    assert!(
+        super::session_permission_state::set_mode(&session.id, PermissionMode::Manual)
+            .await
+            .is_err()
+    );
+    assert!(
+        super::session_permission_state::prepare_send(&session.id, Some("auto"))
+            .await
+            .is_err()
+    );
     super::session_store::delete_one(&session.id)
         .await
         .expect("cleanup");

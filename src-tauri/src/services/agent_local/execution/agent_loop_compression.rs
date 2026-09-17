@@ -133,5 +133,4 @@ impl LoopCompression<'_> {
         *last_prompt = None;
         *last_eval = None;
     }
-
 }

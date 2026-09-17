@@ -8,13 +8,7 @@ fn manual_mode_requires_an_explicit_request() {
     assert!(!write_allowed(&session));
 
     let session_allowed = uuid::Uuid::new_v4().to_string();
-    let _allowed = begin(
-        &session_allowed,
-        MemoryMode::Manual,
-        true,
-        3_000,
-        500,
-    );
+    let _allowed = begin(&session_allowed, MemoryMode::Manual, true, 3_000, 500);
     assert!(write_allowed(&session_allowed));
 }
 

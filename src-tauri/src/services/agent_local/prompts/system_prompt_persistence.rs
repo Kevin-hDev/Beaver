@@ -1,7 +1,5 @@
 use super::{PromptMatrix, SystemPromptSettings, MAX_MODELS, MAX_PROMPT_BYTES};
-use crate::services::agent_local::system_prompt_types::{
-    PromptMode, PromptOverride, PromptTier,
-};
+use crate::services::agent_local::system_prompt_types::{PromptMode, PromptOverride, PromptTier};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -13,8 +11,7 @@ struct LegacyStore {
     prompts: BTreeMap<String, String>,
 }
 
-pub(super) type SettingsLoad =
-    crate::services::private_store::StoreLoad<SystemPromptSettings>;
+pub(super) type SettingsLoad = crate::services::private_store::StoreLoad<SystemPromptSettings>;
 
 impl SystemPromptSettings {
     #[cfg(test)]
@@ -42,10 +39,9 @@ impl SystemPromptSettings {
         if data.len() as u64 > MAX_STORE_BYTES {
             return Err("system-prompt-store-limit".into());
         }
-        crate::services::private_store::atomic_write(path, &data)
-            .map_err(|_| {
-                crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
-            })
+        crate::services::private_store::atomic_write(path, &data).map_err(|_| {
+            crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
+        })
     }
 
     fn sanitized(self) -> Self {
@@ -69,43 +65,41 @@ impl SystemPromptSettings {
             SettingsLoad::Ready(settings) => SettingsLoad::Ready(settings),
             SettingsLoad::Unavailable(failure) => SettingsLoad::Unavailable(failure),
             SettingsLoad::Missing => match migration_archive_exists(legacy_path) {
-                Err(()) => SettingsLoad::Unavailable(
-                    crate::services::private_store::StoreFailure::Read,
-                ),
+                Err(()) => {
+                    SettingsLoad::Unavailable(crate::services::private_store::StoreFailure::Read)
+                }
                 Ok(true) => SettingsLoad::Missing,
                 Ok(false) => match migrate_legacy(legacy_path) {
-                SettingsLoad::Ready(settings) => {
-                    if settings.write_to_path(path).is_err() {
-                        return SettingsLoad::Unavailable(
-                            crate::services::private_store::StoreFailure::Write,
-                        );
+                    SettingsLoad::Ready(settings) => {
+                        if settings.write_to_path(path).is_err() {
+                            return SettingsLoad::Unavailable(
+                                crate::services::private_store::StoreFailure::Write,
+                            );
+                        }
+                        // The new settings are already durable. Archiving the source is
+                        // best-effort so a backup problem cannot disable valid settings.
+                        let _ = archive_legacy(legacy_path);
+                        SettingsLoad::Ready(settings)
                     }
-                    // The new settings are already durable. Archiving the source is
-                    // best-effort so a backup problem cannot disable valid settings.
-                    let _ = archive_legacy(legacy_path);
-                    SettingsLoad::Ready(settings)
-                }
-                other => other,
+                    other => other,
                 },
             },
         }
     }
 
     pub(super) fn load_from_path(path: &Path) -> SettingsLoad {
-        let content = match crate::services::private_store::read_bounded_regular(
-            path,
-            MAX_STORE_BYTES,
-        ) {
-            Ok(crate::services::private_store::BoundedFile::Missing) => {
-                return SettingsLoad::Missing;
-            }
-            Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
-            Err(_) => {
-                return SettingsLoad::Unavailable(
-                    crate::services::private_store::StoreFailure::Read,
-                );
-            }
-        };
+        let content =
+            match crate::services::private_store::read_bounded_regular(path, MAX_STORE_BYTES) {
+                Ok(crate::services::private_store::BoundedFile::Missing) => {
+                    return SettingsLoad::Missing;
+                }
+                Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
+                Err(_) => {
+                    return SettingsLoad::Unavailable(
+                        crate::services::private_store::StoreFailure::Read,
+                    );
+                }
+            };
         serde_json::from_slice::<Self>(&content)
             .map(Self::sanitized)
             .map(SettingsLoad::Ready)
@@ -116,21 +110,18 @@ impl SystemPromptSettings {
 }
 
 fn migrate_legacy(path: &Path) -> SettingsLoad {
-    let content = match crate::services::private_store::read_bounded_regular(path, MAX_STORE_BYTES) {
+    let content = match crate::services::private_store::read_bounded_regular(path, MAX_STORE_BYTES)
+    {
         Ok(crate::services::private_store::BoundedFile::Missing) => {
             return SettingsLoad::Missing;
         }
         Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
         Err(_) => {
-            return SettingsLoad::Unavailable(
-                crate::services::private_store::StoreFailure::Read,
-            );
+            return SettingsLoad::Unavailable(crate::services::private_store::StoreFailure::Read);
         }
     };
     let Ok(legacy) = serde_json::from_slice::<LegacyStore>(&content) else {
-        return SettingsLoad::Unavailable(
-            crate::services::private_store::StoreFailure::Read,
-        );
+        return SettingsLoad::Unavailable(crate::services::private_store::StoreFailure::Read);
     };
     let mut settings = SystemPromptSettings::default();
     for (model, prompt) in legacy.prompts.into_iter().take(MAX_MODELS) {

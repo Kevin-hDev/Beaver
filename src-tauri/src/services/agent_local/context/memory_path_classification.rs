@@ -64,10 +64,7 @@ pub fn classify_memory_path(
     }
 }
 
-fn candidate_views(
-    raw_path: &str,
-    working_dir: Option<&Path>,
-) -> Result<Vec<PathBuf>, String> {
+fn candidate_views(raw_path: &str, working_dir: Option<&Path>) -> Result<Vec<PathBuf>, String> {
     if raw_path.is_empty() || raw_path.len() > 4_096 || raw_path.contains('\0') {
         return Err("Chemin mémoire invalide.".into());
     }
@@ -118,7 +115,10 @@ fn normalize(path: &Path) -> PathBuf {
             Component::RootDir => normalized.push(component.as_os_str()),
             Component::CurDir => {}
             Component::ParentDir => {
-                if matches!(normalized.components().next_back(), Some(Component::Normal(_))) {
+                if matches!(
+                    normalized.components().next_back(),
+                    Some(Component::Normal(_))
+                ) {
                     normalized.pop();
                 } else if !path.is_absolute() {
                     normalized.push(component.as_os_str());

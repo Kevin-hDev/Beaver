@@ -34,12 +34,7 @@ impl SystemPromptSettings {
         Ok(())
     }
 
-    pub fn ollama_uses_beaver(
-        &self,
-        model: &str,
-        mode: PromptMode,
-        tier: PromptTier,
-    ) -> bool {
+    pub fn ollama_uses_beaver(&self, model: &str, mode: PromptMode, tier: PromptTier) -> bool {
         self.ollama
             .get(model)
             .is_some_and(|matrix| matrix.beaver(mode, tier))

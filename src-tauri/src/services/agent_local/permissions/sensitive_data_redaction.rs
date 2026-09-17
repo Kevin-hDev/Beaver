@@ -36,9 +36,8 @@ static TOKEN_RE: LazyLock<Regex> = LazyLock::new(|| {
     .expect("token regex")
 });
 
-static BEARER_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)Bearer\s+[^\s,}\"']+"#).expect("bearer regex")
-});
+static BEARER_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)Bearer\s+[^\s,}\"']+"#).expect("bearer regex"));
 
 static PEM_BLOCK_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?is)-----BEGIN [A-Z0-9 ]*(PRIVATE KEY|CERTIFICATE)[A-Z0-9 ]*-----.*?-----END [A-Z0-9 ]*(PRIVATE KEY|CERTIFICATE)[A-Z0-9 ]*-----")
@@ -70,7 +69,9 @@ pub fn redact_high_confidence_string(content: &mut String) {
 }
 
 fn replace_all(current: &mut Zeroizing<String>, regex: &Regex, replacement: &str) {
-    let next = regex.replace_all(current.as_str(), replacement).into_owned();
+    let next = regex
+        .replace_all(current.as_str(), replacement)
+        .into_owned();
     current.zeroize();
     **current = next;
 }

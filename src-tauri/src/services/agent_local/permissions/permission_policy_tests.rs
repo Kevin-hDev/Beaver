@@ -1,6 +1,4 @@
-use crate::services::agent_local::permission_policy::{
-    extension_effect_policy, uses_auto_bypass,
-};
+use crate::services::agent_local::permission_policy::{extension_effect_policy, uses_auto_bypass};
 use crate::services::extensions::ExtensionEffect;
 
 #[test]

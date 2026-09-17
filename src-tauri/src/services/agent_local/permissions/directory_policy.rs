@@ -36,12 +36,21 @@ pub(super) fn roots() -> Result<Vec<PathBuf>, String> {
         .ok_or_else(error)?
         .read()
         .unwrap_or_else(|failure| failure.into_inner());
-    state.as_ref().map(|policy| policy.roots.clone()).map_err(|_| error())
+    state
+        .as_ref()
+        .map(|policy| policy.roots.clone())
+        .map_err(|_| error())
 }
 
 pub(super) fn cached_paths() -> Option<Vec<String>> {
-    let state = POLICY.get()?.read().unwrap_or_else(|error| error.into_inner());
-    state.as_ref().ok().map(|policy| policy.stored_paths.clone())
+    let state = POLICY
+        .get()?
+        .read()
+        .unwrap_or_else(|error| error.into_inner());
+    state
+        .as_ref()
+        .ok()
+        .map(|policy| policy.stored_paths.clone())
 }
 
 pub(super) fn replace(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
@@ -61,7 +70,8 @@ pub(super) fn replace(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
 
 fn load() -> Result<Policy, ()> {
     let paths = crate::services::config::read_allowed_paths_strict().map_err(|_| ())?;
-    let roots = super::directory_access::configured_roots_from_paths(paths.clone()).map_err(|_| ())?;
+    let roots =
+        super::directory_access::configured_roots_from_paths(paths.clone()).map_err(|_| ())?;
     Ok(Policy {
         stored_paths: paths,
         roots,

@@ -3,9 +3,10 @@ use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
 async fn initial_save_failure_reports_one_coherent_failure_outcome() {
-    let parent = session_store::create_full("Parent event failure", "llama3", "ollama", false, None)
-        .await
-        .expect("create parent");
+    let parent =
+        session_store::create_full("Parent event failure", "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let mut child = session_store::create_full("Geminitor", "llama3", "ollama", false, None)
         .await
         .expect("create child");
@@ -44,10 +45,20 @@ async fn initial_save_failure_reports_one_coherent_failure_outcome() {
             super::subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string(),
         )
     );
-    assert_eq!(saved_child.subagent_status.as_deref(), Some(subagent_status::FAILED));
+    assert_eq!(
+        saved_child.subagent_status.as_deref(),
+        Some(subagent_status::FAILED)
+    );
     assert_eq!(reports.len(), 1);
     assert_eq!(reports[0].status, subagent_status::FAILED);
-    assert_eq!(reports[0].summary, super::subagent_completion::SUBAGENT_COMPLETION_ERROR);
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    assert_eq!(
+        reports[0].summary,
+        super::subagent_completion::SUBAGENT_COMPLETION_ERROR
+    );
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }

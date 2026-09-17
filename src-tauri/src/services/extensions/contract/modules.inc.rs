@@ -27,11 +27,21 @@ mod validation;
 mod discovery_contract {
     include!(concat!(env!("OUT_DIR"), "/extension_discovery_contract.rs"));
 }
+#[cfg(test)]
+mod builtin_tests;
+#[cfg(test)]
+mod contract_artifact_tests;
+#[cfg(test)]
+mod contribution_contract_tests;
 mod core_api_contract;
+#[cfg(test)]
+mod core_api_contract_tests;
 mod core_api_dispatch;
 mod core_api_permissions;
 #[cfg(test)]
 mod core_api_permissions_tests;
+#[cfg(test)]
+mod core_api_test_support;
 mod core_automations;
 mod core_automations_params;
 #[cfg(test)]
@@ -55,16 +65,6 @@ mod core_scope_tests;
 mod core_subagents;
 #[cfg(test)]
 mod core_subagents_tests;
-#[cfg(test)]
-mod builtin_tests;
-#[cfg(test)]
-mod contract_artifact_tests;
-#[cfg(test)]
-mod contribution_contract_tests;
-#[cfg(test)]
-mod core_api_contract_tests;
-#[cfg(test)]
-mod core_api_test_support;
 #[cfg(test)]
 mod source_validation_tests;
 #[cfg(test)]

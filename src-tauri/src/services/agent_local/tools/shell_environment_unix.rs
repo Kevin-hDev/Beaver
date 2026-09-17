@@ -34,7 +34,9 @@ fn shell_candidates() -> Vec<PathBuf> {
 }
 
 fn push_shell(candidates: &mut Vec<PathBuf>, shell: PathBuf) {
-    let Some(shell) = valid_shell(&shell) else { return };
+    let Some(shell) = valid_shell(&shell) else {
+        return;
+    };
     if candidates.len() < MAX_SHELL_CANDIDATES && !candidates.contains(&shell) {
         candidates.push(shell);
     }
@@ -54,11 +56,18 @@ fn valid_shell(shell: &Path) -> Option<PathBuf> {
     let shell = dunce::canonicalize(shell).ok()?;
     let name = shell.file_name()?.to_string_lossy();
     (shell.is_file()
-        && matches!(name.as_ref(), "zsh" | "bash" | "sh" | "dash" | "ksh" | "ksh93"))
+        && matches!(
+            name.as_ref(),
+            "zsh" | "bash" | "sh" | "dash" | "ksh" | "ksh93"
+        ))
     .then_some(shell)
 }
 
-fn capture_sandboxed(shell: &Path, base_path: &OsStr, timeout: std::time::Duration) -> Option<OsString> {
+fn capture_sandboxed(
+    shell: &Path,
+    base_path: &OsStr,
+    timeout: std::time::Duration,
+) -> Option<OsString> {
     capture_refined(base_path, timeout, |path, remaining| {
         capture_sandboxed_once(shell, path, remaining)
     })
@@ -88,37 +97,25 @@ fn capture_sandboxed_once(
     timeout: std::time::Duration,
 ) -> Option<OsString> {
     let marker = format!("__BEAVER_PATH_{}__", uuid::Uuid::new_v4().simple());
-    let script = format!(
-        "printf '%s' '{marker}'; printf '%s' \"$PATH\"; printf '%s' '{marker}'"
-    );
+    let script = format!("printf '%s' '{marker}'; printf '%s' \"$PATH\"; printf '%s' '{marker}'");
     let arguments = ["-l", "-i", "-c", &script]
         .into_iter()
         .map(OsString::from)
         .collect::<Vec<_>>();
-    let mut prepared = super::super::shell_sandbox::prepare_profile_capture(
-        shell,
-        &arguments,
-        base_path,
-    )
-    .ok()?;
+    let mut prepared =
+        super::super::shell_sandbox::prepare_profile_capture(shell, &arguments, base_path).ok()?;
     capture::run(prepared.command_mut(), marker.as_bytes(), timeout)
 }
 
 #[cfg(test)]
 fn capture_direct(shell: &Path, base_path: &OsStr) -> Option<OsString> {
     let marker = format!("__BEAVER_PATH_{}__", uuid::Uuid::new_v4().simple());
-    let script = format!(
-        "printf '%s' '{marker}'; printf '%s' \"$PATH\"; printf '%s' '{marker}'"
-    );
+    let script = format!("printf '%s' '{marker}'; printf '%s' \"$PATH\"; printf '%s' '{marker}'");
     let mut command = std::process::Command::new(shell);
     command
         .args(["-l", "-i", "-c", &script])
         .env("PATH", base_path);
-    capture::run(
-        &mut command,
-        marker.as_bytes(),
-        super::CAPTURE_TIMEOUT,
-    )
+    capture::run(&mut command, marker.as_bytes(), super::CAPTURE_TIMEOUT)
 }
 
 #[cfg(test)]

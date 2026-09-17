@@ -1,11 +1,11 @@
 pub(crate) use super::session_index_io::write_index_to;
-pub(crate) use super::session_index_meta::from_session as meta_from_session;
 use super::session_index_io::{
     index_dir, index_fingerprint, index_path, read_index_from, write_index, IndexFingerprint,
 };
-use super::session_index_reconcile::reconcile as reconcile_index;
+pub(crate) use super::session_index_meta::from_session as meta_from_session;
 #[cfg(test)]
 use super::session_index_reconcile::meta_drifted as index_meta_drifted;
+use super::session_index_reconcile::reconcile as reconcile_index;
 use crate::services::agent_local::types_session::AgentSessionMeta;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};

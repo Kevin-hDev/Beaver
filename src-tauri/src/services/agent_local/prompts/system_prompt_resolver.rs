@@ -1,5 +1,5 @@
-use super::system_prompt_store::SystemPromptSettings;
 use super::ollama_native_prompts::NativePromptLookup;
+use super::system_prompt_store::SystemPromptSettings;
 use super::system_prompt_types::{
     PromptMode, PromptOverride, PromptSelection, PromptSource, PromptTier, SystemPromptView,
 };
@@ -12,7 +12,12 @@ pub fn resolve_global(
 ) -> SystemPromptView {
     match settings.global_override(mode, tier) {
         Some(value) => from_override(value, None),
-        None => view(beaver_prompt, PromptSource::Beaver, PromptSelection::Default, None),
+        None => view(
+            beaver_prompt,
+            PromptSource::Beaver,
+            PromptSelection::Default,
+            None,
+        ),
     }
 }
 
@@ -54,7 +59,12 @@ pub fn resolve_ollama_native(
         );
     }
     if let Some(content) = native.prompt() {
-        return view(content, PromptSource::Ollama, PromptSelection::Default, Some(true));
+        return view(
+            content,
+            PromptSource::Ollama,
+            PromptSelection::Default,
+            Some(true),
+        );
     }
     match settings.global_override(mode, tier) {
         Some(PromptOverride::Custom(content)) => view(
@@ -63,9 +73,12 @@ pub fn resolve_ollama_native(
             PromptSelection::Default,
             native_available,
         ),
-        Some(PromptOverride::Disabled) => {
-            view("", PromptSource::Custom, PromptSelection::Default, native_available)
-        }
+        Some(PromptOverride::Disabled) => view(
+            "",
+            PromptSource::Custom,
+            PromptSelection::Default,
+            native_available,
+        ),
         None => view(
             beaver_prompt,
             PromptSource::Beaver,
@@ -106,9 +119,12 @@ fn from_override(
             PromptSelection::Custom,
             native_prompt_available,
         ),
-        PromptOverride::Disabled => {
-            view("", PromptSource::Custom, PromptSelection::Disabled, native_prompt_available)
-        }
+        PromptOverride::Disabled => view(
+            "",
+            PromptSource::Custom,
+            PromptSelection::Disabled,
+            native_prompt_available,
+        ),
     }
 }
 

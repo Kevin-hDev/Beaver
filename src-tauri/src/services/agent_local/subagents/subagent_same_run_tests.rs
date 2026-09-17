@@ -73,8 +73,12 @@ async fn cancelled_registry_run_refuses_message_and_drain() {
     let saved = session_store::get(&child.id).await.expect("saved child");
 
     subagent_registry::unregister(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
     assert!(result.is_error);
     assert!(result.content.contains("delegate_task"));
     assert!(result.content.contains("subagent_id"));
@@ -97,13 +101,9 @@ async fn queued_boundary_keeps_registry_run_token_and_worktree_unchanged() {
     child.subagent_status = Some(subagent_status::RUNNING.into());
     child.subagent_worktree = Some("/tmp/existing-worktree".into());
     session_store::save(&child).await.expect("save child");
-    let run_id = subagent_registry::register(
-        &parent.id,
-        &child.id,
-        original_token.clone(),
-    )
-    .await
-    .expect("register child");
+    let run_id = subagent_registry::register(&parent.id, &child.id, original_token.clone())
+        .await
+        .expect("register child");
     child.subagent_run_id = Some(run_id.clone());
     session_store::save(&child).await.expect("save run id");
 
@@ -124,10 +124,14 @@ async fn queued_boundary_keeps_registry_run_token_and_worktree_unchanged() {
         .await
     });
     started_rx.await.expect("terminal attempt started");
-    let mut queued_child = session_store::get(&child.id).await.expect("load child under lock");
+    let mut queued_child = session_store::get(&child.id)
+        .await
+        .expect("load child under lock");
     super::subagent_instruction_delivery::enqueue(&mut queued_child, "correction frontière")
         .expect("enqueue boundary correction");
-    session_store::save(&queued_child).await.expect("save boundary correction");
+    session_store::save(&queued_child)
+        .await
+        .expect("save boundary correction");
     drop(guard);
     let finalized = completion
         .await

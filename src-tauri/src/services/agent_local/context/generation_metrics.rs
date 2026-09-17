@@ -33,7 +33,8 @@ impl GenerationTracker {
         if duration_ns < MIN_LIVE_INTERVAL_NS {
             return 0.0;
         }
-        let generated = token_count.saturating_sub(self.first_counted_tokens.unwrap_or(token_count));
+        let generated =
+            token_count.saturating_sub(self.first_counted_tokens.unwrap_or(token_count));
         rate(generated as u64, duration_ns)
     }
 
@@ -45,9 +46,7 @@ impl GenerationTracker {
         let tokens = if native {
             exact_tokens.unwrap_or(estimated_tokens)
         } else {
-            estimated_tokens.saturating_sub(
-                self.first_counted_tokens.unwrap_or(estimated_tokens),
-            )
+            estimated_tokens.saturating_sub(self.first_counted_tokens.unwrap_or(estimated_tokens))
         };
         (tokens > 0).then_some(GenerationSample {
             tokens: tokens as u64,
@@ -57,7 +56,8 @@ impl GenerationTracker {
     }
 
     fn observed_duration(&self) -> Option<Duration> {
-        self.last_activity?.checked_duration_since(self.first_activity?)
+        self.last_activity?
+            .checked_duration_since(self.first_activity?)
     }
 
     fn observed_duration_ns(&self) -> Option<u64> {

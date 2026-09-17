@@ -1,4 +1,3 @@
-mod tool_subagent_changes;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
 mod tool_dispatch_trace;
@@ -17,6 +16,7 @@ mod tool_list_dir_tests;
 pub mod tool_prompt_filter;
 #[cfg(test)]
 mod tool_search_result_tests;
+mod tool_subagent_changes;
 pub mod tool_subagent_control;
 pub mod tool_subagent_format;
 mod tool_subagent_message;

@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 
-use super::types_tools::ToolFileChangeStatus;
 use super::tool_bash_change_event::{PreparedEvent, MAX_RECORDED_PATHS};
+use super::types_tools::ToolFileChangeStatus;
 
 const MAX_WORKSPACE_WATCHERS: usize = super::tool_bash_watch_roots::MAX_WATCH_ROOTS;
 const MAX_BUFFERED_EVENTS: usize = 4_096;
@@ -182,8 +182,7 @@ fn evict_inactive_hub() -> Result<(), String> {
             .iter()
             .position(|hub| Arc::strong_count(hub) == 1)
             .ok_or_else(|| "Trop de suivis de fichiers actifs.".to_string())?;
-        hubs
-            .remove(position)
+        hubs.remove(position)
             .map(|hub| hub.root.clone())
             .ok_or_else(|| "Suivi des fichiers indisponible.".to_string())?
     };

@@ -1,3 +1,6 @@
+pub(crate) mod agent_send_preflight;
+#[cfg(test)]
+mod agent_send_preflight_tests;
 pub mod chat_message;
 #[cfg(test)]
 mod chat_message_tests;
@@ -81,6 +84,9 @@ mod session_migration_wire;
 mod session_mutations;
 pub mod session_ops;
 pub mod session_order;
+pub(crate) mod session_permission_state;
+#[cfg(test)]
+mod session_permission_state_tests;
 pub mod session_pin;
 pub mod session_security;
 pub mod session_store;
@@ -90,12 +96,17 @@ mod session_store_document;
 pub(crate) mod session_store_messages;
 pub mod session_store_todos;
 mod session_store_update_gate;
+#[cfg(test)]
+mod session_store_update_race_tests;
 pub mod session_store_updates;
 pub mod session_subagents;
 pub mod session_tabs;
 pub mod session_tabs_file;
 pub mod session_tabs_git;
 pub mod session_tabs_state;
+pub(crate) mod session_user_write;
+#[cfg(test)]
+mod session_user_write_tests;
 pub mod session_view;
 #[cfg(test)]
 mod session_view_continuity_tests;
@@ -107,14 +118,3 @@ mod session_view_mutation_tests;
 #[cfg(test)]
 mod session_view_test_support;
 pub mod session_workspace;
-pub(crate) mod agent_send_preflight;
-#[cfg(test)]
-mod agent_send_preflight_tests;
-pub(crate) mod session_permission_state;
-#[cfg(test)]
-mod session_permission_state_tests;
-#[cfg(test)]
-mod session_store_update_race_tests;
-pub(crate) mod session_user_write;
-#[cfg(test)]
-mod session_user_write_tests;

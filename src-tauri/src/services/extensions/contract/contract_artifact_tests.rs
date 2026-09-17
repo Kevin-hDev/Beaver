@@ -243,8 +243,8 @@ fn checked_in_typescript_matches_the_extension_contract() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let directory = root.join("resources/extension-host");
     let contract = generator::load_contract(&directory).unwrap();
-    let checked_in =
-        include_str!("../../../../../src/types/extension-contract.generated.ts").replace("\r\n", "\n");
+    let checked_in = include_str!("../../../../../src/types/extension-contract.generated.ts")
+        .replace("\r\n", "\n");
 
     assert_eq!(checked_in, generator::render_typescript(&contract).unwrap());
     assert!(checked_in.contains("export const EXTENSION_HOST_STATES"));
@@ -258,8 +258,8 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let directory = root.join("resources/extension-host");
     let contract = generator::load_contract(&directory).unwrap();
-    let checked_in =
-        include_str!("../../../../resources/extension-host/sdk/contract.d.ts").replace("\r\n", "\n");
+    let checked_in = include_str!("../../../../resources/extension-host/sdk/contract.d.ts")
+        .replace("\r\n", "\n");
 
     assert_eq!(
         checked_in,
@@ -454,10 +454,12 @@ fn fixed_bootstrap_anchors_match_the_node_reader() {
         node_numeric_constant(node_reader, "MAX_BOOTSTRAPPED_CONTRACT_BYTES"),
         generator::MAX_BOOTSTRAPPED_CONTRACT_BYTES
     );
-    assert!(include_str!("../../../../resources/extension-host/contract.mjs")
-        .matches("readBounded(")
-        .count()
-        >= 2);
+    assert!(
+        include_str!("../../../../resources/extension-host/contract.mjs")
+            .matches("readBounded(")
+            .count()
+            >= 2
+    );
 }
 
 fn node_numeric_constant(source: &str, name: &str) -> usize {
@@ -478,7 +480,8 @@ fn checked_in_sdk_readme_tables_match_the_contract() {
     let expected = generator::generated_document_section(&contract).unwrap();
     // Git extrait les fichiers texte en CRLF sur certains runners Windows ;
     // le contrat porte le contenu, pas le séparateur de lignes de la copie.
-    let sdk = include_str!("../../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
+    let sdk =
+        include_str!("../../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
 
     assert!(sdk.contains(&expected));
 }

@@ -10,9 +10,17 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
         add_path(&mut out, field.name, args, working_dir);
     }
     match tool_name {
-        "read_file" | "write_file" | "edit_file" | "list_dir" | "read_document"
-        | "write_document" | "read_spreadsheet" | "write_spreadsheet"
-        | "transform_image" | "forecast_data_audit" | "forecast_run" => {}
+        "read_file"
+        | "write_file"
+        | "edit_file"
+        | "list_dir"
+        | "read_document"
+        | "write_document"
+        | "read_spreadsheet"
+        | "write_spreadsheet"
+        | "transform_image"
+        | "forecast_data_audit"
+        | "forecast_run" => {}
         "bash" => {
             if let Some(command) = args["command"].as_str() {
                 out.insert("command".to_string(), json!(safe_command(command)));

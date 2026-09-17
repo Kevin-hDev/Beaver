@@ -118,10 +118,7 @@ fn collect_for(
 }
 
 fn go_path(home: &Path, overrides: &CacheOverrides) -> PathBuf {
-    overrides
-        .go_path
-        .clone()
-        .unwrap_or_else(|| home.join("go"))
+    overrides.go_path.clone().unwrap_or_else(|| home.join("go"))
 }
 
 fn cargo_home(home: &Path, overrides: &CacheOverrides) -> PathBuf {

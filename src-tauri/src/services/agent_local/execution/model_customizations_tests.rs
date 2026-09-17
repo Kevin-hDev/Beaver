@@ -1,6 +1,5 @@
 use super::model_customizations::{
-    customization_kind_from, CustomizationKind, ModelCustomizationCatalog,
-    ModelCustomizationStore,
+    customization_kind_from, CustomizationKind, ModelCustomizationCatalog, ModelCustomizationStore,
 };
 use std::sync::{Arc, Barrier};
 
@@ -12,10 +11,7 @@ fn legacy_model_names_are_migrated_as_unknown_customizations() {
 
     let catalog = ModelCustomizationCatalog::read_from_path(&path).unwrap();
 
-    assert_eq!(
-        catalog.kind("gemma4:e2b"),
-        Some(CustomizationKind::Unknown)
-    );
+    assert_eq!(catalog.kind("gemma4:e2b"), Some(CustomizationKind::Unknown));
 }
 
 #[test]
@@ -263,9 +259,7 @@ fn deleted_customization_store_reports_that_the_file_is_missing() {
 #[test]
 fn invalid_model_name_is_not_reported_as_customized() {
     let directory = tempfile::tempdir().unwrap();
-    let store = ModelCustomizationStore::open(
-        directory.path().join("ollama-custom-models.json"),
-    );
+    let store = ModelCustomizationStore::open(directory.path().join("ollama-custom-models.json"));
 
     assert_eq!(customization_kind_from(&store, ""), None);
     assert_eq!(customization_kind_from(&store, "modèle:latest"), None);

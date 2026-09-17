@@ -1,7 +1,7 @@
 use super::tool_roots::{ToolRoots, MAX_READ_ROOTS, MAX_WRITE_ROOTS};
 use super::tool_roots_path::{
-    canonical_dir, canonical_file, canonical_write_dir, canonical_write_file,
-    forbidden_broad_root, has_symlink_below, overlaps_workspace,
+    canonical_dir, canonical_file, canonical_write_dir, canonical_write_file, forbidden_broad_root,
+    has_symlink_below, overlaps_workspace,
 };
 use std::path::{Path, PathBuf};
 
@@ -15,7 +15,9 @@ pub(super) fn push_read_dir(
     if scoped_home.is_some_and(|home| has_symlink_below(home, path)) {
         return;
     }
-    let Some(path) = canonical_dir(path) else { return };
+    let Some(path) = canonical_dir(path) else {
+        return;
+    };
     if scoped_home.is_some_and(|home| !path.starts_with(home))
         || forbidden_broad_root(&path, home)
         || overlaps_workspace(&path, workspace_roots)
@@ -39,7 +41,9 @@ pub(super) fn push_read_file(
     if has_symlink_below(home, path) {
         return;
     }
-    let Some(path) = canonical_file(path) else { return };
+    let Some(path) = canonical_file(path) else {
+        return;
+    };
     if !path.starts_with(home)
         || overlaps_workspace(&path, workspace_roots)
         || roots.read_files.contains(&path)
@@ -58,10 +62,10 @@ pub(super) fn push_private_read_dir(
     path: &Path,
     writable_roots: &[PathBuf],
 ) {
-    let Some(path) = canonical_write_dir(path) else { return };
-    if writable_roots.iter().any(|root| path.starts_with(root))
-        || roots.read_dirs.contains(&path)
-    {
+    let Some(path) = canonical_write_dir(path) else {
+        return;
+    };
+    if writable_roots.iter().any(|root| path.starts_with(root)) || roots.read_dirs.contains(&path) {
         return;
     }
     if read_len(roots) >= MAX_READ_ROOTS {
@@ -76,9 +80,10 @@ pub(super) fn push_private_read_file(
     path: &Path,
     writable_roots: &[PathBuf],
 ) {
-    let Some(path) = canonical_write_file(path) else { return };
-    if writable_roots.iter().any(|root| path.starts_with(root))
-        || roots.read_files.contains(&path)
+    let Some(path) = canonical_write_file(path) else {
+        return;
+    };
+    if writable_roots.iter().any(|root| path.starts_with(root)) || roots.read_files.contains(&path)
     {
         return;
     }
@@ -99,7 +104,9 @@ pub(super) fn push_write_dir(
     if has_symlink_below(home, path) {
         return;
     }
-    let Some(path) = canonical_write_dir(path) else { return };
+    let Some(path) = canonical_write_dir(path) else {
+        return;
+    };
     if !path.starts_with(home)
         || forbidden_broad_root(&path, Some(home))
         || overlaps_workspace(&path, workspace_roots)
@@ -125,7 +132,9 @@ pub(super) fn push_write_file(
     if has_symlink_below(home, path) {
         return;
     }
-    let Some(path) = canonical_write_file(path) else { return };
+    let Some(path) = canonical_write_file(path) else {
+        return;
+    };
     if !path.starts_with(home)
         || overlaps_workspace(&path, workspace_roots)
         || path_dirs
@@ -148,7 +157,9 @@ pub(super) fn push_resource_write_dir(
     workspace_roots: &[PathBuf],
     path_dirs: &[PathBuf],
 ) {
-    let Some(path) = canonical_write_dir(path) else { return };
+    let Some(path) = canonical_write_dir(path) else {
+        return;
+    };
     if forbidden_broad_root(&path, None)
         || overlaps_workspace(&path, workspace_roots)
         || path_dirs.iter().any(|bin| bin.starts_with(&path))
@@ -169,7 +180,9 @@ pub(super) fn push_resource_write_file(
     workspace_roots: &[PathBuf],
     path_dirs: &[PathBuf],
 ) {
-    let Some(path) = canonical_write_file(path) else { return };
+    let Some(path) = canonical_write_file(path) else {
+        return;
+    };
     if overlaps_workspace(&path, workspace_roots)
         || path_dirs
             .iter()

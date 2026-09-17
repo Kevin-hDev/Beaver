@@ -36,13 +36,9 @@ pub(super) async fn run_inner(
     )
     .await;
 
-    let target = crate::commands::agent_chat_target::resolve(
-        &child_session_id,
-        &provider,
-        &model,
-    )
-    .await
-    .map_err(|_| "conversation_admission_failed".to_string())?;
+    let target = crate::commands::agent_chat_target::resolve(&child_session_id, &provider, &model)
+        .await
+        .map_err(|_| "conversation_admission_failed".to_string())?;
     let active = super::subagent_registry::active_run_for_child(&child_session_id)
         .await
         .ok_or_else(|| "conversation_admission_failed".to_string())?;
@@ -73,10 +69,10 @@ pub(super) async fn run_inner(
         request_id: request_id.clone(),
         model,
         conversation: crate::commands::agent_chat_task::StreamConversation::canonical_for_subagent(
-                admitted,
-                system_prompt,
-                active.run_id,
-                active.execution_id,
+            admitted,
+            system_prompt,
+            active.run_id,
+            active.execution_id,
         ),
         continuation_target: target.continuation,
         reasoning_profile: target.reasoning.clone(),

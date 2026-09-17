@@ -40,17 +40,14 @@ fn login_shell_replaces_a_minimal_gui_path() {
         ),
     )
     .expect("shell");
-    std::fs::set_permissions(&shell, std::fs::Permissions::from_mode(0o700))
-        .expect("permissions");
+    std::fs::set_permissions(&shell, std::fs::Permissions::from_mode(0o700)).expect("permissions");
 
-    let captured = unix::capture_for_test(&shell, OsStr::new("/usr/bin:/bin"))
-        .expect("captured PATH");
+    let captured =
+        unix::capture_for_test(&shell, OsStr::new("/usr/bin:/bin")).expect("captured PATH");
     let resolved = normalize(captured, true).expect("resolved PATH");
 
     assert!(resolved.discovered);
-    assert!(resolved
-        .entries
-        .contains(&user_bin));
+    assert!(resolved.entries.contains(&user_bin));
 }
 
 #[test]
@@ -78,8 +75,7 @@ fn oversized_login_output_is_rejected() {
         "#!/bin/sh\n/usr/bin/yes x | /usr/bin/head -c 140000\n",
     )
     .expect("shell");
-    std::fs::set_permissions(&shell, std::fs::Permissions::from_mode(0o700))
-        .expect("permissions");
+    std::fs::set_permissions(&shell, std::fs::Permissions::from_mode(0o700)).expect("permissions");
 
     assert!(unix::capture_for_test(&shell, OsStr::new("/usr/bin:/bin")).is_none());
 }
@@ -92,8 +88,12 @@ fn login_path_is_refined_with_the_first_captured_entries() {
     let nvm_bin = temp.path().join("home/.nvm/current/bin");
     std::fs::create_dir_all(&local_bin).expect("local bin");
     std::fs::create_dir_all(&nvm_bin).expect("nvm bin");
-    let first_path = std::env::join_paths([local_bin.as_path(), Path::new("/usr/bin"), Path::new("/bin")])
-        .expect("first PATH");
+    let first_path = std::env::join_paths([
+        local_bin.as_path(),
+        Path::new("/usr/bin"),
+        Path::new("/bin"),
+    ])
+    .expect("first PATH");
     let refined_path = std::env::join_paths([
         nvm_bin.as_path(),
         local_bin.as_path(),

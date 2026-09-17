@@ -13,10 +13,7 @@ pub async fn ensure_scope_dir(scope: &MemoryScope) -> Result<(), String> {
     Ok(())
 }
 
-pub fn validate_in_scope(
-    scope: &MemoryScope,
-    candidate: &Path,
-) -> Result<PathBuf, String> {
+pub fn validate_in_scope(scope: &MemoryScope, candidate: &Path) -> Result<PathBuf, String> {
     let root = canonical_scope_root(scope)?;
     let resolved = if candidate.exists() {
         candidate

@@ -28,11 +28,7 @@ struct PromptPair {
 }
 
 impl SystemPromptSettings {
-    pub fn global_override(
-        &self,
-        mode: PromptMode,
-        tier: PromptTier,
-    ) -> Option<&PromptOverride> {
+    pub fn global_override(&self, mode: PromptMode, tier: PromptTier) -> Option<&PromptOverride> {
         self.global.get(mode, tier)
     }
 
@@ -142,12 +138,12 @@ fn normalize_override(prompt: &str) -> Result<PromptOverride, String> {
     }
 }
 
+#[cfg(test)]
+pub(crate) use runtime::SystemPromptSettingsStore;
 pub use runtime::{
     remove_ollama_model, restore_global, restore_ollama, restore_ollama_default, save_global,
     save_ollama, snapshot, snapshot_for_runtime,
 };
-#[cfg(test)]
-pub(crate) use runtime::SystemPromptSettingsStore;
 
 #[path = "system_prompt_persistence.rs"]
 mod persistence;

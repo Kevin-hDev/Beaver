@@ -16,12 +16,9 @@ pub async fn cleanup_parent(parent_id: &str) {
             .expect("acknowledge reports during cleanup");
     }
     if let Some(state) = super::subagent_registry::terminal_state_for_parent(parent_id).await {
-        let _ = super::subagent_registry::consume_terminal(
-            parent_id,
-            state.generation,
-            state.sequence,
-        )
-        .await;
+        let _ =
+            super::subagent_registry::consume_terminal(parent_id, state.generation, state.sequence)
+                .await;
     }
     super::session_store::delete_one(parent_id)
         .await

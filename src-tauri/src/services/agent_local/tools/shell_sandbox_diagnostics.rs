@@ -21,12 +21,7 @@ pub(super) fn record(
     cache_unavailable: bool,
     isolation_unavailable: bool,
 ) {
-    if !path_limit
-        && !read_limit
-        && !write_limit
-        && !cache_unavailable
-        && !isolation_unavailable
-    {
+    if !path_limit && !read_limit && !write_limit && !cache_unavailable && !isolation_unavailable {
         return;
     }
     let value = Diagnostic {
@@ -96,7 +91,9 @@ mod tests {
         let warning = warning(temp.path()).expect("warning");
 
         assert!(diagnostic.len() < MAX_BYTES as usize);
-        assert!(!String::from_utf8_lossy(&diagnostic).contains(temp.path().to_string_lossy().as_ref()));
+        assert!(
+            !String::from_utf8_lossy(&diagnostic).contains(temp.path().to_string_lossy().as_ref())
+        );
         assert!(warning.contains("racines d’outils"));
         assert!(warning.contains("cache d’outil"));
         assert!(warning.contains("bloquée sans élargir"));

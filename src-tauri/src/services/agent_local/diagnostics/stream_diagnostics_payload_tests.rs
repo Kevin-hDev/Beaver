@@ -39,7 +39,10 @@ async fn final_payload_is_recorded_once_without_its_content() {
     assert_eq!(events.len(), 1);
     assert!(events[0].message.contains("tool_results=50"));
     assert!(!events[0].message.contains(sample_content));
-    assert_eq!(run.safe_summary.as_deref(), Some(events[0].message.as_str()));
+    assert_eq!(
+        run.safe_summary.as_deref(),
+        Some(events[0].message.as_str())
+    );
 }
 
 #[tokio::test]

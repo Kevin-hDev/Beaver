@@ -50,9 +50,7 @@ async fn load_agent_md_with_rules(
         )
         .await;
     }
-    external_rules.sort_by(|left, right| {
-        left.source_id.cmp(&right.source_id)
-    });
+    external_rules.sort_by(|left, right| left.source_id.cmp(&right.source_id));
     for rule in external_rules {
         let label = format!("external rule · {}", rule.source_name);
         push_content(

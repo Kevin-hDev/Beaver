@@ -29,11 +29,7 @@ pub struct ParsedTopic {
     pub topic: MemoryTopic,
 }
 
-pub fn parse(
-    content: &str,
-    file_path: &Path,
-    expected_scope: &str,
-) -> Result<ParsedTopic, String> {
+pub fn parse(content: &str, file_path: &Path, expected_scope: &str) -> Result<ParsedTopic, String> {
     if content.is_empty() || content.len() > MAX_TOPIC_BYTES {
         return Err("Sujet mémoire invalide.".into());
     }
@@ -87,7 +83,9 @@ pub fn parse(
 }
 
 pub fn contains_secret(content: &str) -> bool {
-    SECRET_PATTERNS.iter().any(|pattern| pattern.is_match(content))
+    SECRET_PATTERNS
+        .iter()
+        .any(|pattern| pattern.is_match(content))
 }
 
 fn split_frontmatter(content: &str) -> Result<(&str, &str), String> {
@@ -136,11 +134,7 @@ fn required(
     Ok(value.to_string())
 }
 
-fn one_of(
-    fields: &HashMap<String, String>,
-    key: &str,
-    allowed: &[&str],
-) -> Result<String, String> {
+fn one_of(fields: &HashMap<String, String>, key: &str, allowed: &[&str]) -> Result<String, String> {
     let value = required(fields, key, 32)?;
     allowed
         .contains(&value.as_str())

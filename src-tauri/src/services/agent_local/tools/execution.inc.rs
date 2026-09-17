@@ -1,8 +1,8 @@
-mod tool_delegate_spawned;
 pub mod tool_delegate;
 pub mod tool_delegate_child;
 mod tool_delegate_identity;
 mod tool_delegate_prompt;
+mod tool_delegate_spawned;
 pub mod tool_dispatcher;
 pub mod tool_dispatcher_delegate;
 mod tool_dispatcher_entry;
@@ -31,6 +31,7 @@ pub mod tool_dispatcher_office;
 mod tool_dispatcher_route;
 pub mod tool_dispatcher_shell;
 mod tool_dispatcher_shell_error;
+pub(crate) mod tool_dispatcher_shell_runtime;
 #[cfg(test)]
 pub mod tool_dispatcher_tests;
 mod tool_dispatcher_validation;
@@ -58,4 +59,3 @@ pub mod tool_executor_write;
 pub mod tool_hooks;
 #[cfg(test)]
 pub mod tool_hooks_tests;
-pub(crate) mod tool_dispatcher_shell_runtime;

@@ -69,11 +69,8 @@ pub fn direct_snapshot(
     if !matches!(tool_name, "write_file" | "edit_file") {
         return None;
     }
-    let raw = super::tool_path_args::first_value(
-        tool_name,
-        super::tool_path_args::PathUse::Write,
-        args,
-    )?;
+    let raw =
+        super::tool_path_args::first_value(tool_name, super::tool_path_args::PathUse::Write, args)?;
     let candidate = if Path::new(raw).is_absolute() {
         PathBuf::from(raw)
     } else {

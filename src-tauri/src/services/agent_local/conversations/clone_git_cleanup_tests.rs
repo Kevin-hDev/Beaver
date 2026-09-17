@@ -1,5 +1,5 @@
-use super::*;
 use super::test_support::*;
+use super::*;
 use crate::services::git::{branch, branch_delete};
 use uuid::Uuid;
 
@@ -119,14 +119,10 @@ async fn unlink_revalidates_the_selected_branch_under_lock() {
     let (selected_tx, selected_rx) = tokio::sync::oneshot::channel();
     let (release_tx, release_rx) = tokio::sync::oneshot::channel();
     let cleanup = tokio::spawn(async move {
-        unlink_branch_from_sessions_with_before_update(
-            &selected,
-            old_branch,
-            move || async move {
-                let _ = selected_tx.send(());
-                let _ = release_rx.await;
-            },
-        )
+        unlink_branch_from_sessions_with_before_update(&selected, old_branch, move || async move {
+            let _ = selected_tx.send(());
+            let _ = release_rx.await;
+        })
         .await
     });
     selected_rx.await.expect("cleanup paused after selection");
@@ -136,21 +132,26 @@ async fn unlink_revalidates_the_selected_branch_under_lock() {
     })
     .await
     .expect("relink session");
-    super::session_tabs::set_clone_git_branch(
-        &root_id,
-        &clone_id,
-        Some(new_branch.to_string()),
-    )
-    .await
-    .expect("relink tab");
+    super::session_tabs::set_clone_git_branch(&root_id, &clone_id, Some(new_branch.to_string()))
+        .await
+        .expect("relink tab");
     let _ = release_tx.send(());
-    cleanup.await.expect("join cleanup").expect("unlink stale branch");
+    cleanup
+        .await
+        .expect("join cleanup")
+        .expect("unlink stale branch");
 
-    let saved = super::session_store::get(&clone_id).await.expect("reload clone");
-    let tabs = super::session_tabs::list(&root_id).await.expect("reload tabs");
+    let saved = super::session_store::get(&clone_id)
+        .await
+        .expect("reload clone");
+    let tabs = super::session_tabs::list(&root_id)
+        .await
+        .expect("reload tabs");
     assert_eq!(saved.git_branch.as_deref(), Some(new_branch));
-    assert!(tabs.tabs.iter().find(|tab| tab.session_id == clone_id).is_some_and(
-        |tab| tab.git_branch.as_deref() == Some(new_branch)
-    ));
+    assert!(tabs
+        .tabs
+        .iter()
+        .find(|tab| tab.session_id == clone_id)
+        .is_some_and(|tab| tab.git_branch.as_deref() == Some(new_branch)));
     cleanup_sessions(&root_id, &[clone_id]).await;
 }

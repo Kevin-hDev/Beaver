@@ -4,9 +4,9 @@ use super::subagent_runtime_context::SubagentRuntimeContext;
 use super::subagent_spawn_channel;
 use crate::app_exit::AppExitCoordinator;
 use std::future;
-use tauri::AppHandle;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
+use tauri::AppHandle;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 

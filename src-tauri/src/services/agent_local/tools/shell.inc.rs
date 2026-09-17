@@ -1,8 +1,7 @@
-mod shell_sandbox_diagnostics;
-pub mod tool_scan_timeout;
 pub mod shell_diagnostics;
 pub mod shell_environment;
 pub mod shell_sandbox;
+mod shell_sandbox_diagnostics;
 pub mod tool_bash;
 mod tool_bash_change_event;
 pub mod tool_bash_change_hub;
@@ -29,3 +28,4 @@ mod tool_bash_spawn_error;
 pub mod tool_bash_storage;
 pub mod tool_bash_wait;
 pub mod tool_bash_watch_roots;
+pub mod tool_scan_timeout;

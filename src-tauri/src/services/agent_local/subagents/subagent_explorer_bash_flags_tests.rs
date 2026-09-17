@@ -14,7 +14,10 @@ fn rejects_options_that_follow_links_recurse_or_write() {
         "git log --output=history.txt",
         "git show --output=commit.txt HEAD",
     ] {
-        assert!(validate(command, root.path()).is_err(), "commande acceptée: {command}");
+        assert!(
+            validate(command, root.path()).is_err(),
+            "commande acceptée: {command}"
+        );
     }
 }
 
@@ -32,6 +35,9 @@ fn keeps_supported_informational_options() {
         "git log -5",
         "git show --stat HEAD",
     ] {
-        assert!(validate(command, root.path()).is_ok(), "commande refusée: {command}");
+        assert!(
+            validate(command, root.path()).is_ok(),
+            "commande refusée: {command}"
+        );
     }
 }

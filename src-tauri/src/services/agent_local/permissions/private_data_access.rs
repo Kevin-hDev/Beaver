@@ -91,10 +91,22 @@ mod tests {
 
         let access = collect(temp.path());
 
-        assert!(access.files.iter().any(|path| path.ends_with("config.json")));
-        assert!(access.directories.iter().any(|path| path.ends_with("agent-sessions")));
-        assert!(!access.files.iter().any(|path| path.ends_with("secrets.enc")));
-        assert!(!access.directories.iter().any(|path| path.ends_with("shell-sandboxes")));
+        assert!(access
+            .files
+            .iter()
+            .any(|path| path.ends_with("config.json")));
+        assert!(access
+            .directories
+            .iter()
+            .any(|path| path.ends_with("agent-sessions")));
+        assert!(!access
+            .files
+            .iter()
+            .any(|path| path.ends_with("secrets.enc")));
+        assert!(!access
+            .directories
+            .iter()
+            .any(|path| path.ends_with("shell-sandboxes")));
         assert!(!access.limit_reached);
     }
 
@@ -110,7 +122,13 @@ mod tests {
 
         assert!(access.limit_reached);
         assert_eq!(access.files.len(), MAX_ENTRIES);
-        assert!(access.files.first().is_some_and(|path| path.ends_with("entry-0000.json")));
-        assert!(access.files.last().is_some_and(|path| path.ends_with("entry-0511.json")));
+        assert!(access
+            .files
+            .first()
+            .is_some_and(|path| path.ends_with("entry-0000.json")));
+        assert!(access
+            .files
+            .last()
+            .is_some_and(|path| path.ends_with("entry-0511.json")));
     }
 }

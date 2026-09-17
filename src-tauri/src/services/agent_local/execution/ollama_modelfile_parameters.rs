@@ -148,10 +148,7 @@ fn quote_source_text(value: &str) -> String {
     if value.starts_with('"') {
         return format!("\"\"\"{value}\"\"\"");
     }
-    let edge_whitespace = value
-        .chars()
-        .next()
-        .is_some_and(char::is_whitespace)
+    let edge_whitespace = value.chars().next().is_some_and(char::is_whitespace)
         || value.chars().next_back().is_some_and(char::is_whitespace);
     if !value.contains('\n') && !edge_whitespace {
         return value.to_string();

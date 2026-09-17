@@ -34,11 +34,14 @@ fn native_duration_and_exact_count_are_not_estimated() {
     let mut aggregate = GenerationAggregate::default();
     aggregate.add_result(&result);
 
-    assert_eq!(aggregate.summary(), GenerationSummary {
-        duration_ns: 2_000_000_000,
-        tps: 10.0,
-        estimated: false,
-    });
+    assert_eq!(
+        aggregate.summary(),
+        GenerationSummary {
+            duration_ns: 2_000_000_000,
+            tps: 10.0,
+            estimated: false,
+        }
+    );
 }
 
 #[test]
@@ -47,11 +50,14 @@ fn observed_duration_is_marked_as_estimated() {
     let mut aggregate = GenerationAggregate::default();
     aggregate.add_result(&result);
 
-    assert_eq!(aggregate.summary(), GenerationSummary {
-        duration_ns: 2_000_000_000,
-        tps: 10.0,
-        estimated: true,
-    });
+    assert_eq!(
+        aggregate.summary(),
+        GenerationSummary {
+            duration_ns: 2_000_000_000,
+            tps: 10.0,
+            estimated: true,
+        }
+    );
 }
 
 #[test]
@@ -89,9 +95,7 @@ fn unavailable_request_marks_an_existing_aggregate_as_estimated() {
         eval_count: Some(10),
         ..Default::default()
     };
-    unavailable
-        .generation
-        .record_activity_at(0, Instant::now());
+    unavailable.generation.record_activity_at(0, Instant::now());
     let mut aggregate = GenerationAggregate::default();
     aggregate.add_result(&exact);
     aggregate.add_result(&unavailable);

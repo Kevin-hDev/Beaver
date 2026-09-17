@@ -84,11 +84,7 @@ fn read_rejects_outside_working_dir_and_roots() {
     let target = outside.path().join("outside.txt");
     std::fs::write(&target, b"").expect("outside test file");
 
-    let result = validate_read_path_in_roots(
-        &target,
-        allowed.path(),
-        &[canonical(allowed.path())],
-    );
+    let result = validate_read_path_in_roots(&target, allowed.path(), &[canonical(allowed.path())]);
 
     assert!(
         result.is_err(),
@@ -112,11 +108,7 @@ fn read_allows_file_in_explicit_root() {
     let target = allowed.path().join("inside.txt");
     std::fs::write(&target, b"").expect("inside test file");
 
-    let result = validate_read_path_in_roots(
-        &target,
-        allowed.path(),
-        &[canonical(allowed.path())],
-    );
+    let result = validate_read_path_in_roots(&target, allowed.path(), &[canonical(allowed.path())]);
 
     assert!(
         result.is_ok(),

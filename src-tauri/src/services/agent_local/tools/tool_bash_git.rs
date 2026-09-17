@@ -2,7 +2,7 @@ use git2::{Repository, Status, StatusOptions};
 use std::collections::BTreeMap;
 use std::path::{Component, Path, PathBuf};
 
-use super::tool_file_changes::{capture, FileState, MAX_FILE_CHANGE_DIFF_BYTES, MAX_FILE_CHANGES};
+use super::tool_file_changes::{capture, FileState, MAX_FILE_CHANGES, MAX_FILE_CHANGE_DIFF_BYTES};
 use super::types_tools::ToolFileChangeStatus;
 
 const MAX_PATH_BYTES: usize = 4_096;
@@ -133,9 +133,7 @@ fn status_paths(
             continue;
         };
         let path = workdir.join(relative);
-        if !path.starts_with(root)
-            || !super::tool_bash_change_hub::is_trackable(root, &path)
-        {
+        if !path.starts_with(root) || !super::tool_bash_change_hub::is_trackable(root, &path) {
             continue;
         }
         if paths.len() >= MAX_FILE_CHANGES {

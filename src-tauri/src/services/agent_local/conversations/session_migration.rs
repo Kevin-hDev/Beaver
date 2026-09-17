@@ -42,9 +42,7 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
         LoadedVersion::Legacy(5) => super::session_migration_wire::parse_v5(bytes)?,
         LoadedVersion::Legacy(6) => super::session_migration_wire::parse_v6(bytes)?,
         LoadedVersion::Current => super::session_migration_wire::parse_v7(bytes)?,
-        LoadedVersion::Future(value) => {
-            super::session_migration_wire::parse_future(bytes, value)?
-        }
+        LoadedVersion::Future(value) => super::session_migration_wire::parse_future(bytes, value)?,
         LoadedVersion::Legacy(_) => return Err(session_limits::invalid_session()),
     };
     super::stream_diagnostics_history::normalize(&mut session);
@@ -93,10 +91,8 @@ pub(super) async fn commit_current_fail_before_rename(
 pub(super) async fn acknowledge_current(loaded: &LoadedSession) -> Result<(), String> {
     if loaded.version == LoadedVersion::Current {
         for version in 1..CURRENT_SESSION_SCHEMA_VERSION {
-            let backup = super::session_migration_backup::versioned_backup_path(
-                &loaded.path,
-                version,
-            )?;
+            let backup =
+                super::session_migration_backup::versioned_backup_path(&loaded.path, version)?;
             if super::session_migration_backup::acknowledge_path(
                 backup,
                 !loaded.session.messages.is_empty(),

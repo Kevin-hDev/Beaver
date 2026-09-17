@@ -1,22 +1,22 @@
 /* Ordre choisi à la main dans une liste de conversations — celles d'un projet,
-   celles qui n'appartiennent à aucun, et celles épinglées en tête de la barre
-   latérale.
+celles qui n'appartiennent à aucun, et celles épinglées en tête de la barre
+latérale.
 
-   Un seul fichier le porte, et les conversations elles-mêmes l'ignorent. Deux
-   raisons. L'index des conversations est reconstruit à partir de leurs
-   fichiers : un ordre écrit là-bas y serait recopié, et les deux copies
-   divergeraient au premier rebuild. Et déplacer une conversation réécrirait
-   alors chaque fichier de la liste, qui pèsent leur historique complet. */
+Un seul fichier le porte, et les conversations elles-mêmes l'ignorent. Deux
+raisons. L'index des conversations est reconstruit à partir de leurs
+fichiers : un ordre écrit là-bas y serait recopié, et les deux copies
+divergeraient au premier rebuild. Et déplacer une conversation réécrirait
+alors chaque fichier de la liste, qui pèsent leur historique complet. */
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 /* Clé de la liste des conversations hors projet. Aucune collision possible
-   avec une clé de projet, qui est un UUID. */
+avec une clé de projet, qui est un UUID. */
 pub const ORPHAN_LIST: &str = "orphan";
 /* Clé de la liste des conversations épinglées, affichées en tête de la barre
-   latérale. Même garantie d'absence de collision. */
+latérale. Même garantie d'absence de collision. */
 pub const PINNED_LIST: &str = "pinned";
 
 const VERSION: u32 = 1;
@@ -41,7 +41,7 @@ fn order_path() -> PathBuf {
 }
 
 /* Lecture tolérante : un fichier absent, tronqué ou écrit par une version plus
-   récente ne doit pas priver l'utilisateur de sa liste de conversations. */
+récente ne doit pas priver l'utilisateur de sa liste de conversations. */
 async fn read_file() -> SessionOrderFile {
     let Ok(data) = tokio::fs::read_to_string(order_path()).await else {
         return SessionOrderFile::default();
@@ -118,7 +118,7 @@ async fn write_file(mut file: SessionOrderFile) -> Result<(), String> {
 }
 
 /* Un projet supprimé laisserait sa liste ici pour toujours. Le nettoyage se
-   fait à l'écriture, seul moment où le fichier est déjà ouvert. */
+fait à l'écriture, seul moment où le fichier est déjà ouvert. */
 async fn prune_dead_lists(file: &mut SessionOrderFile) {
     let Ok(projects) = super::project_store::list().await else {
         return;

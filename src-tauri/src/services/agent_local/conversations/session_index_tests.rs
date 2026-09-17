@@ -152,10 +152,7 @@ async fn rebuild_empty_and_nonexistent() {
     let tmp = TempDir::new().unwrap();
     assert!(rebuild_index_from(tmp.path()).await.unwrap().is_empty());
     let missing = tmp.path().join("missing");
-    assert!(rebuild_index_from(&missing)
-        .await
-        .unwrap()
-        .is_empty());
+    assert!(rebuild_index_from(&missing).await.unwrap().is_empty());
     assert!(missing.join("index.json").is_file());
 }
 
@@ -257,9 +254,11 @@ async fn readers_wait_for_the_shared_index_operation() {
     let guard = INDEX_LOCK.lock().await;
     let mut reader = tokio::spawn(read_index());
 
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(20), &mut reader)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(20), &mut reader)
+            .await
+            .is_err()
+    );
     drop(guard);
 
     tokio::time::timeout(std::time::Duration::from_secs(5), reader)
@@ -277,13 +276,12 @@ async fn rebuild_preserves_a_v7_extension_owner() {
 
     let tmp = TempDir::new().unwrap();
     let mut session = test_session("extension-child", "Extension child", false);
-    session.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(
-        SubagentExtensionOwner {
+    session.subagent_extension_owner =
+        Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
             extension_id: "example.extension".into(),
             extension_version: "1.0.0".into(),
             extension_fingerprint: "fingerprint".into(),
-        },
-    ));
+        }));
     persist(tmp.path(), &session).await;
 
     rebuild_index_from(tmp.path()).await.unwrap();
@@ -293,7 +291,10 @@ async fn rebuild_preserves_a_v7_extension_owner() {
     .await
     .unwrap();
 
-    assert_eq!(loaded.subagent_extension_owner, session.subagent_extension_owner);
+    assert_eq!(
+        loaded.subagent_extension_owner,
+        session.subagent_extension_owner
+    );
 }
 
 #[tokio::test]

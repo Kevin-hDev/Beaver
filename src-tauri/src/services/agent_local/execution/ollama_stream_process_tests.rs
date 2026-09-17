@@ -17,9 +17,10 @@ fn parser_retry_never_replays_an_already_published_tool_call() {
         &result
     ));
 
-    result
-        .tool_calls
-        .push(("read_file".into(), serde_json::json!({"path":"package.json"})));
+    result.tool_calls.push((
+        "read_file".into(),
+        serde_json::json!({"path":"package.json"}),
+    ));
     assert!(!super::ollama_stream::can_retry_parser_crash(
         parser_error,
         0,
@@ -51,12 +52,8 @@ async fn buffered_ollama_stream_still_prioritizes_user_cancellation() {
         .await;
     let ollama = super::ollama_client::OllamaClient::with_base_url(&server.uri()).unwrap();
     let emitter = AgentEventEmitter::test("ollama-cancel".into());
-    let mut request = super::agent_loop_support::build_request(
-        "fixture",
-        &[],
-        &[],
-        OllamaThink::Bool(false),
-    );
+    let mut request =
+        super::agent_loop_support::build_request("fixture", &[], &[], OllamaThink::Bool(false));
     request.options = Some(ChatOptions {
         num_ctx: Some(8_192),
         num_predict: None,

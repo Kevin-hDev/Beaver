@@ -35,25 +35,22 @@ discard_subagent_changes"
 fn dynamic_context_uses_natural_guidance_without_lock_vocabulary() {
     let context = super::subagent_orchestration_context::build_gate_content(1, false);
 
-    for forbidden in ["Final answer is locked", "Keep the stream active", "blocked"] {
+    for forbidden in [
+        "Final answer is locked",
+        "Keep the stream active",
+        "blocked",
+    ] {
         assert!(!context.contains(forbidden), "forbidden text: {forbidden}");
     }
     assert!(!context.contains("final_answer_allowed"));
     assert!(context.contains("Terminal reports arrive automatically"));
-    assert!(context.contains(
-        "use it for useful independent work and defer the overall summary"
-    ));
+    assert!(context.contains("use it for useful independent work and defer the overall summary"));
     assert!(context.contains("finish this turn without a tool call"));
 }
 
 #[test]
 fn detailed_prompt_does_not_add_interactive_choice_section() {
-    let prompt = super::prompt_detailed::build_with_behavior(
-        Path::new("."),
-        false,
-        None,
-        None,
-    );
+    let prompt = super::prompt_detailed::build_with_behavior(Path::new("."), false, None, None);
 
     assert!(!prompt.contains("# Interactive choices"));
 }

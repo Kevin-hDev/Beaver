@@ -3,8 +3,8 @@ use super::modelfile_parser::parse_modelfile;
 use super::ollama_client::OllamaClient;
 use std::sync::OnceLock;
 
-pub(crate) use store::NativePromptStore;
 pub use store::NativePromptState;
+pub(crate) use store::NativePromptStore;
 
 #[path = "ollama_native_prompt_store.rs"]
 mod store;

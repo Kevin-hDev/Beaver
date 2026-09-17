@@ -1,14 +1,12 @@
 use landlock::RulesetCreatedAttr;
 use landlock::{
-    Access, AccessFs, ABI, CompatLevel, Compatible, Ruleset, RulesetAttr, RulesetStatus,
+    Access, AccessFs, CompatLevel, Compatible, Ruleset, RulesetAttr, RulesetStatus, ABI,
 };
 use std::ffi::OsString;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 
-const PLATFORM_READ_DIRS: [&str; 7] = [
-    "/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev",
-];
+const PLATFORM_READ_DIRS: [&str; 7] = ["/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev"];
 const PACKAGE_PREFIXES: [&str; 2] = ["/usr/local", "/home/linuxbrew/.linuxbrew"];
 const SYSTEM_TEMP_DIR: &str = "/tmp";
 const WRITABLE_DEVICES: [&str; 7] = [
@@ -29,7 +27,9 @@ pub(super) fn run(
 ) -> Result<i32, String> {
     match super::linux_namespace::enter()? {
         super::linux_namespace::Entered::Parent(code) => Ok(code),
-        super::linux_namespace::Entered::Child => execute(executable, arguments, scope, temp_dir, true),
+        super::linux_namespace::Entered::Child => {
+            execute(executable, arguments, scope, temp_dir, true)
+        }
         super::linux_namespace::Entered::Unavailable => {
             execute(executable, arguments, scope, temp_dir, false)
         }
@@ -44,7 +44,9 @@ fn execute(
     private_proc: bool,
 ) -> Result<i32, String> {
     apply(scope, temp_dir, private_proc)?;
-    let error = std::process::Command::new(executable).args(arguments).exec();
+    let error = std::process::Command::new(executable)
+        .args(arguments)
+        .exec();
     Err(error.to_string())
 }
 
@@ -65,12 +67,7 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Re
             None,
         )
     } else {
-        super::tool_roots::collect(
-            &scope.roots,
-            &PLATFORM_READ_DIRS,
-            &PACKAGE_PREFIXES,
-            None,
-        )
+        super::tool_roots::collect(&scope.roots, &PLATFORM_READ_DIRS, &PACKAGE_PREFIXES, None)
     };
     let workspace_mode = scope.mode == super::scope::Mode::Workspace;
     let write_dirs = scope
@@ -79,7 +76,13 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Re
         .map(PathBuf::as_path)
         .filter(|_| workspace_mode)
         .chain(std::iter::once(temp_dir))
-        .chain(tools.write_dirs.iter().map(PathBuf::as_path).filter(|_| workspace_mode))
+        .chain(
+            tools
+                .write_dirs
+                .iter()
+                .map(PathBuf::as_path)
+                .filter(|_| workspace_mode),
+        )
         .chain(
             std::iter::once(Path::new(SYSTEM_TEMP_DIR))
                 .filter(|path| workspace_mode && path.is_dir()),
@@ -132,7 +135,10 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Re
             file_read_write,
         ))
         .map_err(|_| sandbox_error())?
-        .add_rules(landlock::path_beneath_rules(writable_devices, device_read_write))
+        .add_rules(landlock::path_beneath_rules(
+            writable_devices,
+            device_read_write,
+        ))
         .map_err(|_| sandbox_error())?
         .add_rules(landlock::path_beneath_rules(
             writable_device_dirs,

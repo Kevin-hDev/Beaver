@@ -18,43 +18,23 @@ impl ToolResult {
         Self::error(content, code, ToolErrorCategory::Conflict, false)
     }
 
-    pub fn timeout(
-        code: &'static str,
-        content: impl Into<String>,
-        retryable: bool,
-    ) -> Self {
+    pub fn timeout(code: &'static str, content: impl Into<String>, retryable: bool) -> Self {
         Self::error(content, code, ToolErrorCategory::Timeout, retryable)
     }
 
-    pub fn unavailable(
-        code: &'static str,
-        content: impl Into<String>,
-        retryable: bool,
-    ) -> Self {
+    pub fn unavailable(code: &'static str, content: impl Into<String>, retryable: bool) -> Self {
         Self::error(content, code, ToolErrorCategory::Unavailable, retryable)
     }
 
-    pub fn external(
-        code: &'static str,
-        content: impl Into<String>,
-        retryable: bool,
-    ) -> Self {
+    pub fn external(code: &'static str, content: impl Into<String>, retryable: bool) -> Self {
         Self::error(content, code, ToolErrorCategory::External, retryable)
     }
 
-    pub fn execution(
-        code: &'static str,
-        content: impl Into<String>,
-        retryable: bool,
-    ) -> Self {
+    pub fn execution(code: &'static str, content: impl Into<String>, retryable: bool) -> Self {
         Self::error(content, code, ToolErrorCategory::Execution, retryable)
     }
 
-    pub fn internal(
-        code: &'static str,
-        content: impl Into<String>,
-        retryable: bool,
-    ) -> Self {
+    pub fn internal(code: &'static str, content: impl Into<String>, retryable: bool) -> Self {
         Self::error(content, code, ToolErrorCategory::Internal, retryable)
     }
 }

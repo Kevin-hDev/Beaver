@@ -42,7 +42,9 @@ pub(super) fn forbidden_broad_root(path: &Path, home: Option<&Path>) -> bool {
 
 fn private_store() -> Option<PathBuf> {
     let path = crate::services::paths::data_dir();
-    dunce::canonicalize(&path).ok().or_else(|| path.is_absolute().then_some(path))
+    dunce::canonicalize(&path)
+        .ok()
+        .or_else(|| path.is_absolute().then_some(path))
 }
 
 pub(super) fn has_symlink_below(root: &Path, path: &Path) -> bool {

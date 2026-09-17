@@ -7,9 +7,7 @@ use crate::services::agent_local::ollama_tool_parse_retry::{
     is_tool_parse_crash, MAX_PARSER_RETRIES,
 };
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::{
-    ChatRequest, StreamOutcome, StreamResult,
-};
+use crate::services::agent_local::types_ollama::{ChatRequest, StreamOutcome, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
 use crate::services::reasoning_continuity::contract::{CredentialScope, RouteId};

@@ -6,7 +6,9 @@ pub fn compact_tool_history(value: &mut serde_json::Value) {
         .and_then(serde_json::Value::as_str)
         .map(workspace_roots)
         .unwrap_or_default();
-    let Some(messages) = value.get_mut("messages").and_then(serde_json::Value::as_array_mut)
+    let Some(messages) = value
+        .get_mut("messages")
+        .and_then(serde_json::Value::as_array_mut)
     else {
         return;
     };
@@ -85,7 +87,10 @@ fn remove_duplicate(message: &mut serde_json::Map<String, serde_json::Value>) {
     let Some(activities) = message.get("tool_activities") else {
         return;
     };
-    let Some(segments) = message.get("segments").and_then(serde_json::Value::as_array) else {
+    let Some(segments) = message
+        .get("segments")
+        .and_then(serde_json::Value::as_array)
+    else {
         return;
     };
     let segmented = segments
@@ -116,7 +121,10 @@ mod tests {
         compact_tool_history(&mut session);
 
         assert!(session["messages"][0].get("tool_activities").is_none());
-        assert_eq!(session["messages"][0]["segments"][0]["tools"][0]["name"], "bash");
+        assert_eq!(
+            session["messages"][0]["segments"][0]["tools"][0]["name"],
+            "bash"
+        );
     }
 
     #[test]

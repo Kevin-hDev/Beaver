@@ -52,5 +52,8 @@ async fn inspection_error_is_never_treated_as_missing() {
 
     assert!(result.is_err(), "une erreur d'inspection doit bloquer");
     assert!(target.exists(), "la cible doit rester intacte");
-    assert!(target.join(".git").exists(), "les métadonnées Git doivent rester");
+    assert!(
+        target.join(".git").exists(),
+        "les métadonnées Git doivent rester"
+    );
 }

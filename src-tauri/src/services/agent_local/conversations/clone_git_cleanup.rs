@@ -24,11 +24,12 @@ pub async fn close_tab_with_branch_cleanup(
     };
     let linked_session_ids = linked_sessions_for_branch(&git_branch, &tab.session_id).await?;
 
-    let checkpoint = fallback_branch
-        .map(str::to_string)
-        .or(session_tabs::get_main_checkpoint_branch(root_session_id)
-            .await
-            .map_err(|_| GitActionError::InternalError)?);
+    let checkpoint =
+        fallback_branch
+            .map(str::to_string)
+            .or(session_tabs::get_main_checkpoint_branch(root_session_id)
+                .await
+                .map_err(|_| GitActionError::InternalError)?);
     let repo_path = repo_path.to_path_buf();
     let deleted_branch = git_branch.clone();
     let replacement_branch = tokio::task::spawn_blocking(move || {
@@ -148,16 +149,12 @@ fn choose_cleanup_fallback(
     checkpoint: Option<&str>,
 ) -> Result<String, GitActionError> {
     for name in ["main", "master", "develop", "dev"] {
-        if name != git_branch
-            && branch_delete::branch_exists(repo_path, name)?
-        {
+        if name != git_branch && branch_delete::branch_exists(repo_path, name)? {
             return Ok(name.to_string());
         }
     }
     if let Some(checkpoint) = checkpoint {
-        if checkpoint != git_branch
-            && branch_delete::branch_exists(repo_path, checkpoint)?
-        {
+        if checkpoint != git_branch && branch_delete::branch_exists(repo_path, checkpoint)? {
             return Ok(checkpoint.to_string());
         }
     }

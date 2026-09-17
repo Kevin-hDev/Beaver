@@ -50,8 +50,8 @@ impl SubagentReportDelivery {
     }
 
     pub async fn refresh_terminal_signal(&mut self) {
-        let current = super::subagent_registry::terminal_state_for_parent(&self.parent_session_id)
-            .await;
+        let current =
+            super::subagent_registry::terminal_state_for_parent(&self.parent_session_id).await;
         let subscribed_generation = self
             .terminal_signal
             .as_ref()
@@ -122,9 +122,7 @@ impl SubagentReportDelivery {
             } else {
                 self.refresh_terminal_signal().await;
                 if self.persistence_failed() {
-                    return Err(
-                        super::subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string(),
-                    );
+                    return Err(super::subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string());
                 }
             }
         }

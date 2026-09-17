@@ -26,7 +26,11 @@ mod tests {
         assert!(super::PRIORITY.starts_with("# Priority order"));
         assert!(super::PRIORITY.contains("visible outside this machine"));
 
-        for case in ["Killing a process", "deleting a file", "overwriting uncommitted work"] {
+        for case in [
+            "Killing a process",
+            "deleting a file",
+            "overwriting uncommitted work",
+        ] {
             assert!(super::PRIORITY.contains(case), "arbitration misses: {case}");
         }
     }

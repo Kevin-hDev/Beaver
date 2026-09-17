@@ -1,5 +1,5 @@
-use super::{add_parameters, policy, sandbox_roots, SANDBOX_EXEC};
 use super::super::scope::{Mode, Scope};
+use super::{add_parameters, policy, sandbox_roots, SANDBOX_EXEC};
 use std::process::{Command, Output};
 
 #[test]
@@ -18,10 +18,12 @@ fn seatbelt_allows_work_and_temp_inside_the_root_and_blocks_outside_data() {
     let allowed = temp.path().join("allowed");
     let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
-    let darwin_temp_probe = super::darwin_user_temp_dir().expect("Darwin temp").join(format!(
-        "beaver-sandbox-probe-{}",
-        uuid::Uuid::new_v4().simple()
-    ));
+    let darwin_temp_probe = super::darwin_user_temp_dir()
+        .expect("Darwin temp")
+        .join(format!(
+            "beaver-sandbox-probe-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
     std::fs::create_dir_all(&allowed).expect("allowed");
     std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     std::fs::write(&outside, "outside-data").expect("outside");
@@ -70,13 +72,19 @@ if printf changed > '{}'; then exit 92; fi
     let output = run_sandboxed(&allowed, &sandbox_temp, &script);
 
     assert_success(&output);
-    assert_eq!(std::fs::read_to_string(allowed.join("inside.txt")).unwrap(), "ok");
+    assert_eq!(
+        std::fs::read_to_string(allowed.join("inside.txt")).unwrap(),
+        "ok"
+    );
     assert_eq!(
         std::fs::read_to_string(allowed.join("heredoc.txt")).unwrap(),
         "line-one\nline-two\n"
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "child");
-    assert_eq!(std::fs::read_to_string(private_probe.path()).unwrap(), "private-data");
+    assert_eq!(
+        std::fs::read_to_string(private_probe.path()).unwrap(),
+        "private-data"
+    );
     assert!(!darwin_temp_probe.exists());
 }
 
@@ -87,10 +95,12 @@ fn seatbelt_supports_complete_local_development() {
     let allowed = temp.path().join("allowed");
     let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
-    let darwin_temp_probe = super::darwin_user_temp_dir().expect("Darwin temp").join(format!(
-        "beaver-sandbox-probe-{}",
-        uuid::Uuid::new_v4().simple()
-    ));
+    let darwin_temp_probe = super::darwin_user_temp_dir()
+        .expect("Darwin temp")
+        .join(format!(
+            "beaver-sandbox-probe-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
     std::fs::create_dir_all(&allowed).expect("allowed");
     std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     let allowed = dunce::canonicalize(allowed).expect("canonical allowed");
@@ -195,7 +205,10 @@ printf ok > '{}/inside'"#,
     let output = run_sandboxed_scope(&scope, &sandbox_temp, &script);
 
     assert_success(&output);
-    assert_eq!(std::fs::read_to_string(sandbox_temp.join("inside")).unwrap(), "ok");
+    assert_eq!(
+        std::fs::read_to_string(sandbox_temp.join("inside")).unwrap(),
+        "ok"
+    );
     assert!(!allowed.join("blocked").exists());
     assert!(!shared_temp_probe.exists());
     assert!(!xcrun_probe.exists());
@@ -283,7 +296,11 @@ fn interactive_profile_capture_keeps_path_but_cannot_escape() {
     assert!(!escape.exists());
 }
 
-fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, script: &str) -> Output {
+fn run_sandboxed(
+    allowed: &std::path::Path,
+    sandbox_temp: &std::path::Path,
+    script: &str,
+) -> Output {
     let scope = Scope::workspace(vec![allowed.to_path_buf()]);
     run_sandboxed_scope(&scope, sandbox_temp, script)
 }
@@ -291,7 +308,11 @@ fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, scri
 fn run_sandboxed_scope(scope: &Scope, sandbox_temp: &std::path::Path, script: &str) -> Output {
     let roots = sandbox_roots(scope, sandbox_temp);
     let working_dir = if scope.mode == Mode::Workspace {
-        scope.roots.first().map(std::path::PathBuf::as_path).unwrap_or(sandbox_temp)
+        scope
+            .roots
+            .first()
+            .map(std::path::PathBuf::as_path)
+            .unwrap_or(sandbox_temp)
     } else {
         sandbox_temp
     };

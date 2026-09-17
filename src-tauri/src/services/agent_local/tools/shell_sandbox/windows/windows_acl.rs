@@ -1,14 +1,13 @@
+use sha2::{Digest, Sha256};
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
-use sha2::{Digest, Sha256};
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE, HANDLE, LocalFree,
-    WAIT_ABANDONED, WAIT_OBJECT_0,
+    CloseHandle, LocalFree, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE, HANDLE, WAIT_ABANDONED,
+    WAIT_OBJECT_0,
 };
 use windows_sys::Win32::Security::Authorization::{
-    EXPLICIT_ACCESS_W, GetNamedSecurityInfoW, REVOKE_ACCESS, SE_FILE_OBJECT,
-    SET_ACCESS, SetEntriesInAclW, SetNamedSecurityInfoW, TRUSTEE_IS_SID,
-    TRUSTEE_IS_UNKNOWN, TRUSTEE_W,
+    GetNamedSecurityInfoW, SetEntriesInAclW, SetNamedSecurityInfoW, EXPLICIT_ACCESS_W,
+    REVOKE_ACCESS, SET_ACCESS, SE_FILE_OBJECT, TRUSTEE_IS_SID, TRUSTEE_IS_UNKNOWN, TRUSTEE_W,
 };
 use windows_sys::Win32::Security::{
     ACL, CONTAINER_INHERIT_ACE, DACL_SECURITY_INFORMATION, OBJECT_INHERIT_ACE, PSID,
@@ -22,12 +21,7 @@ struct AclMutexGuard {
     handle: HANDLE,
 }
 
-pub(super) fn grant(
-    path: &Path,
-    sid: PSID,
-    writable: bool,
-    recursive: bool,
-) -> Result<(), String> {
+pub(super) fn grant(path: &Path, sid: PSID, writable: bool, recursive: bool) -> Result<(), String> {
     update(path, sid, Some(writable), recursive)
 }
 
@@ -35,12 +29,7 @@ pub(super) fn revoke(path: &Path, sid: PSID) -> Result<(), String> {
     update(path, sid, None, false)
 }
 
-fn update(
-    path: &Path,
-    sid: PSID,
-    writable: Option<bool>,
-    recursive: bool,
-) -> Result<(), String> {
+fn update(path: &Path, sid: PSID, writable: Option<bool>, recursive: bool) -> Result<(), String> {
     if writable.is_none() {
         match path.symlink_metadata() {
             Ok(_) => {}
@@ -49,15 +38,24 @@ fn update(
         }
     }
     let _guard = lock_acl_updates()?;
-    let wide = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect::<Vec<_>>();
+    let wide = path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
     let mut old_acl: *mut ACL = std::ptr::null_mut();
     let mut descriptor = std::ptr::null_mut();
     // SAFETY: chemin NUL-terminé et sorties valides pour un objet fichier existant.
     let status = unsafe {
         GetNamedSecurityInfoW(
-            wide.as_ptr(), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-            std::ptr::null_mut(), std::ptr::null_mut(), &mut old_acl,
-            std::ptr::null_mut(), &mut descriptor,
+            wide.as_ptr(),
+            SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            &mut old_acl,
+            std::ptr::null_mut(),
+            &mut descriptor,
         )
     };
     if status != 0 {
@@ -78,7 +76,11 @@ fn update(
             (Some(false), false) => GENERIC_READ,
             (None, _) => 0,
         },
-        grfAccessMode: if writable.is_some() { SET_ACCESS } else { REVOKE_ACCESS },
+        grfAccessMode: if writable.is_some() {
+            SET_ACCESS
+        } else {
+            REVOKE_ACCESS
+        },
         grfInheritance: inheritance_flags(path.is_dir(), recursive),
         Trustee: trustee,
     };
@@ -88,8 +90,13 @@ fn update(
     let applied = if update == 0 {
         unsafe {
             SetNamedSecurityInfoW(
-                wide.as_ptr() as *mut u16, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-                std::ptr::null_mut(), std::ptr::null_mut(), new_acl, std::ptr::null(),
+                wide.as_ptr() as *mut u16,
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                new_acl,
+                std::ptr::null(),
             )
         }
     } else {
@@ -97,8 +104,12 @@ fn update(
     };
     // SAFETY: allocations retournées par les API de sécurité Windows.
     unsafe {
-        if !new_acl.is_null() { LocalFree(new_acl.cast()); }
-        if !descriptor.is_null() { LocalFree(descriptor); }
+        if !new_acl.is_null() {
+            LocalFree(new_acl.cast());
+        }
+        if !descriptor.is_null() {
+            LocalFree(descriptor);
+        }
     }
     (applied == 0).then_some(()).ok_or_else(super::error)
 }

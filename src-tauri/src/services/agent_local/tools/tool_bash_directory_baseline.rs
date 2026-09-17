@@ -111,8 +111,7 @@ fn scan(root: &Path) -> (BTreeMap<PathBuf, EntryState>, bool) {
             if file_type.is_dir() {
                 if super::tool_bash_change_hub::is_trackable(root, &path) {
                     entries.insert(path.clone(), EntryState::Directory);
-                    if pending.len().saturating_add(visited_directories)
-                        >= MAX_BASELINE_DIRECTORIES
+                    if pending.len().saturating_add(visited_directories) >= MAX_BASELINE_DIRECTORIES
                     {
                         incomplete = true;
                     } else {

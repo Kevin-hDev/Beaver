@@ -1,7 +1,5 @@
 use super::{action_result, change_failure, id_arg, APPLY_ERROR};
-use crate::services::agent_local::tool_result_contract::{
-    ToolErrorCategory, ToolResultStatus,
-};
+use crate::services::agent_local::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 use crate::services::agent_local::types_subagent_change::SubagentChangeMeta;
 
 #[test]
@@ -23,7 +21,10 @@ fn change_failures_preserve_the_actionable_cause() {
     let unknown = change_failure("échec git inattendu".into(), APPLY_ERROR, false);
 
     assert_eq!(conflict.status, ToolResultStatus::Error);
-    assert_eq!(conflict.error.unwrap().code.as_ref(), "subagent_change_conflict");
+    assert_eq!(
+        conflict.error.unwrap().code.as_ref(),
+        "subagent_change_conflict"
+    );
     assert_eq!(dirty.error.unwrap().category, ToolErrorCategory::Conflict);
     assert!(!unknown.error.unwrap().retryable);
 }
@@ -44,5 +45,8 @@ fn invalid_change_ids_are_validation_errors() {
     let args = serde_json::json!({"subagent_id": "not-a-uuid"});
     let result = id_arg(&args, "subagent_id").unwrap_err();
 
-    assert_eq!(result.error.unwrap().category, ToolErrorCategory::Validation);
+    assert_eq!(
+        result.error.unwrap().category,
+        ToolErrorCategory::Validation
+    );
 }

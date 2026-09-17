@@ -18,16 +18,12 @@ pub use super::tool_group_catalog::SUBAGENT_TOOLS;
 
 fn entries() -> impl Iterator<Item = ToolCatalogEntry> {
     super::tool_group_catalog::catalog_groups().flat_map(|group| {
-        group
-            .tool_ids
-            .iter()
-            .copied()
-            .map(|id| ToolCatalogEntry {
-                id,
-                locked: group.locked,
-                default_enabled: group.default_enabled,
-                group: group.catalog_group,
-            })
+        group.tool_ids.iter().copied().map(|id| ToolCatalogEntry {
+            id,
+            locked: group.locked,
+            default_enabled: group.default_enabled,
+            group: group.catalog_group,
+        })
     })
 }
 

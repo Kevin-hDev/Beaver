@@ -10,7 +10,11 @@ pub fn main_section(
 ) -> String {
     let automatic = mode == MemoryMode::Automatic;
     let write_allowed = automatic || explicit;
-    let source = if explicit || !automatic { "user" } else { "extractor" };
+    let source = if explicit || !automatic {
+        "user"
+    } else {
+        "extractor"
+    };
     let now = chrono::Utc::now().to_rfc3339();
     let global_id = uuid::Uuid::new_v4();
     let project_path = project
@@ -18,7 +22,11 @@ pub fn main_section(
         .unwrap_or_default();
     let project_id = uuid::Uuid::new_v4();
     let (template_id, template_scope, template_path) = if project.is_some() {
-        (project_id, "project", format!("{project_path}/topics/{project_id}.md"))
+        (
+            project_id,
+            "project",
+            format!("{project_path}/topics/{project_id}.md"),
+        )
     } else {
         (
             global_id,
@@ -76,8 +84,16 @@ pub fn format_summaries(global: &str, project: &str) -> String {
     format!(
         "<memory_summary scope=\"global\">\n{}\n</memory_summary>\n\
          <memory_summary scope=\"project\">\n{}\n</memory_summary>\n",
-        if global.trim().is_empty() { "(vide)" } else { global },
-        if project.trim().is_empty() { "(vide)" } else { project },
+        if global.trim().is_empty() {
+            "(vide)"
+        } else {
+            global
+        },
+        if project.trim().is_empty() {
+            "(vide)"
+        } else {
+            project
+        },
     )
 }
 

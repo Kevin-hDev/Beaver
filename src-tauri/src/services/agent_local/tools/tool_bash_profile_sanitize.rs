@@ -30,7 +30,9 @@ fn rejected_export(line: &str) -> bool {
         let Some(value) = line.strip_prefix(prefix) else {
             continue;
         };
-        let Some((name, _)) = value.split_once('=') else { return true };
+        let Some((name, _)) = value.split_once('=') else {
+            return true;
+        };
         let name = name.trim();
         return SANDBOX_OWNED_ENVS.contains(&name)
             || super::super::shell_sandbox::is_process_injection_env(name)

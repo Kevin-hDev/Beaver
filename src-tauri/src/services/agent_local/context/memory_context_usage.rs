@@ -61,9 +61,7 @@ mod tests {
     fn separates_real_summary_from_memory_protocol() {
         let project = "# Résumé mémoire\n\n- **Tokens CSS** — Réutiliser les tokens.\n";
         let summaries = super::super::memory_prompt::format_summaries("", project);
-        let section = format!(
-            "<memory_context>\nrules\n{summaries}</memory_context>"
-        );
+        let section = format!("<memory_context>\nrules\n{summaries}</memory_context>");
 
         let usage = MemoryContextUsage::from_section(&section);
 

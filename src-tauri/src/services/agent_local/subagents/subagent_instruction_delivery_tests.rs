@@ -12,12 +12,9 @@ async fn queued_instructions_are_drained_in_order_without_changing_run_id() {
     session_store::save(&child).await.expect("save queue");
     let mut request_messages = Vec::new();
 
-    let drained = super::subagent_instruction_delivery::drain(
-        &child.id,
-        &mut request_messages,
-    )
-    .await
-    .expect("drain live instructions");
+    let drained = super::subagent_instruction_delivery::drain(&child.id, &mut request_messages)
+        .await
+        .expect("drain live instructions");
     let saved = session_store::get(&child.id).await.expect("saved child");
 
     cleanup(&parent.id, &child.id).await;
@@ -40,11 +37,8 @@ async fn run_id_mismatch_fails_closed_with_queue_and_context_untouched() {
     session_store::save(&child).await.expect("save stale run");
     let mut request_messages = Vec::new();
 
-    let result = super::subagent_instruction_delivery::drain(
-        &child.id,
-        &mut request_messages,
-    )
-    .await;
+    let result =
+        super::subagent_instruction_delivery::drain(&child.id, &mut request_messages).await;
     let saved = session_store::get(&child.id).await.expect("saved child");
 
     cleanup(&parent.id, &child.id).await;
@@ -56,7 +50,9 @@ async fn run_id_mismatch_fails_closed_with_queue_and_context_untouched() {
 #[tokio::test]
 async fn save_failure_keeps_queue_and_terminalizes_without_registry_ghost() {
     let (parent, mut child, _) = active_child().await;
-    child.subagent_queued_prompts.push("correction durable".into());
+    child
+        .subagent_queued_prompts
+        .push("correction durable".into());
     session_store::save(&child).await.expect("save queue");
     let child_path = session_path(&child.id);
     let backup_path = child_path.with_extension("json.live-correction-backup");
@@ -98,9 +94,7 @@ async fn save_failure_keeps_queue_and_terminalizes_without_registry_ghost() {
     )
     .await;
     super::subagent_completion::persist_instruction_delivery_failure(
-        &parent.id,
-        &child.id,
-        "coder",
+        &parent.id, &child.id, "coder",
     )
     .await
     .expect("terminalize delivery failure");
@@ -113,14 +107,19 @@ async fn save_failure_keeps_queue_and_terminalizes_without_registry_ghost() {
     let mut parent_messages = Vec::new();
     let mut orchestrator =
         super::subagent_orchestration::ParentSubagentOrchestrator::new(&parent.id).await;
-    let injected = orchestrator.inject_pending_reports(&mut parent_messages).await;
+    let injected = orchestrator
+        .inject_pending_reports(&mut parent_messages)
+        .await;
     remove_failed_save_temps(&child.id).await;
     cleanup(&parent.id, &child.id).await;
 
     assert!(result.is_err());
     assert!(!marked_after_failed_save);
     assert_eq!(saved.subagent_queued_prompts, vec!["correction durable"]);
-    assert_eq!(saved.subagent_status.as_deref(), Some(subagent_status::FAILED));
+    assert_eq!(
+        saved.subagent_status.as_deref(),
+        Some(subagent_status::FAILED)
+    );
     assert!(active.is_empty());
     assert_eq!(reports.len(), 1);
     assert_eq!(reports[0].status, subagent_status::FAILED);
@@ -170,7 +169,9 @@ fn chat_user_contents(messages: &[super::types_ollama::ChatMessage]) -> Vec<Stri
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
     session_store::delete_one(parent_id)
         .await
         .expect("delete parent");

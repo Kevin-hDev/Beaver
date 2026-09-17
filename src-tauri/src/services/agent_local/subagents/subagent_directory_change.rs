@@ -18,8 +18,7 @@ pub async fn capture(
     let child = validate_child(child_id).await?;
     let project_id = child.project_id.unwrap_or_else(|| DIRECTORY_PROJECT.into());
     let branch = super::subagent_worktree::branch_for_execution(execution_id)?;
-    if super::subagent_directory_git::text(worktree, &["branch", "--show-current"]).await?
-        != branch
+    if super::subagent_directory_git::text(worktree, &["branch", "--show-current"]).await? != branch
     {
         return Err(generic_error());
     }
@@ -38,17 +37,12 @@ pub async fn capture(
     if !super::subagent_directory_git::success(worktree, &["add", "-A"]).await? {
         return Err(generic_error());
     }
-    if super::subagent_directory_git::success(worktree, &["diff", "--cached", "--quiet"])
-        .await?
-    {
+    if super::subagent_directory_git::success(worktree, &["diff", "--cached", "--quiet"]).await? {
         return Ok(existing);
     }
     if existing.is_some()
-        && !super::subagent_directory_git::success(
-            worktree,
-            &["reset", "--soft", &base_commit],
-        )
-        .await?
+        && !super::subagent_directory_git::success(worktree, &["reset", "--soft", &base_commit])
+            .await?
     {
         return Err(generic_error());
     }
@@ -113,7 +107,9 @@ pub fn execution_id(meta: &SubagentChangeMeta) -> Result<&str, String> {
 
 async fn validate_child(child_id: &str) -> Result<super::types_session::AgentSession, String> {
     super::types_subagent_change::validate_uuid(child_id)?;
-    let child = super::session_store::get(child_id).await.map_err(|_| generic_error())?;
+    let child = super::session_store::get(child_id)
+        .await
+        .map_err(|_| generic_error())?;
     if child.subagent_type.as_deref() != Some("coder") {
         return Err(generic_error());
     }
@@ -130,7 +126,9 @@ async fn commit_snapshot(worktree: &Path, id: &str) -> Result<(), String> {
             crate::services::brand::GIT_AUTHOR_NAME_CONFIG,
             "-c",
             crate::services::brand::GIT_AUTHOR_EMAIL_CONFIG,
-            "commit", "--no-verify", "-m",
+            "commit",
+            "--no-verify",
+            "-m",
         ])
         .arg(message)
         .stdout(Stdio::null())

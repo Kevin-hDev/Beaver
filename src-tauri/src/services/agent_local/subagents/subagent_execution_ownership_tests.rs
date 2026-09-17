@@ -56,9 +56,16 @@ async fn assert_new_execution_untouched(
     expected: &subagent_registry::RegisteredSubagent,
 ) {
     let saved = session_store::get(child_id).await.expect("saved child");
-    assert_eq!(saved.subagent_status.as_deref(), Some(subagent_status::RUNNING));
-    assert!(subagent_registry::owns_execution(child_id, &expected.run_id, &expected.execution_id).await);
-    assert!(subagent_hidden_reports::peek_reports(parent_id).await.is_empty());
+    assert_eq!(
+        saved.subagent_status.as_deref(),
+        Some(subagent_status::RUNNING)
+    );
+    assert!(
+        subagent_registry::owns_execution(child_id, &expected.run_id, &expected.execution_id).await
+    );
+    assert!(subagent_hidden_reports::peek_reports(parent_id)
+        .await
+        .is_empty());
 }
 
 async fn sessions(
@@ -68,15 +75,10 @@ async fn sessions(
     super::types_session::AgentSession,
     super::types_session::AgentSession,
 ) {
-    let parent = session_store::create_full(
-        &format!("Parent {suffix}"),
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent =
+        session_store::create_full(&format!("Parent {suffix}"), "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let child = create_child(&parent.id, &format!("Child {suffix}")).await;
     let sibling = create_child(&parent.id, &format!("Sibling {suffix}")).await;
     (parent, child, sibling)

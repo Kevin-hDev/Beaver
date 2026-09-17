@@ -94,14 +94,11 @@ fn drop_capabilities() -> Result<(), String> {
         version: LINUX_CAPABILITY_VERSION_3,
         pid: 0,
     };
-    let mut data = [
-        Data {
-            effective: 0,
-            permitted: 0,
-            inheritable: 0,
-        };
-        2
-    ];
+    let mut data = [Data {
+        effective: 0,
+        permitted: 0,
+        inheritable: 0,
+    }; 2];
     // Le namespace donne temporairement CAP_SYS_ADMIN pour monter /proc.
     // Les capacités sont retirées avant d'appliquer Landlock et d'exécuter l'outil.
     let result = unsafe {

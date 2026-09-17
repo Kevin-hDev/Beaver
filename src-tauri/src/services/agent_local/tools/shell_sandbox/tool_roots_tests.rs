@@ -75,19 +75,17 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
         .all(|root| root.parent().is_some() && root != Path::new("/")));
     let path_dirs = [tool.join("bin"), home.join("bin")]
         .map(|path| dunce::canonicalize(path).expect("path directory"));
-    assert!(roots.write_dirs.iter().all(|root| {
-        path_dirs
-            .iter()
-            .all(|path_dir| !path_dir.starts_with(root))
-    }));
-    assert!(roots.write_files.iter().all(|root| {
-        path_dirs
-            .iter()
-            .all(|path_dir| !root.starts_with(path_dir))
-    }));
+    assert!(roots
+        .write_dirs
+        .iter()
+        .all(|root| { path_dirs.iter().all(|path_dir| !path_dir.starts_with(root)) }));
+    assert!(roots
+        .write_files
+        .iter()
+        .all(|root| { path_dirs.iter().all(|path_dir| !root.starts_with(path_dir)) }));
     let broad_cache = dunce::canonicalize(home.join(".cache")).expect("cache");
-    let executable_cache = dunce::canonicalize(home.join(".cache/ms-playwright"))
-        .expect("executable cache");
+    let executable_cache =
+        dunce::canonicalize(home.join(".cache/ms-playwright")).expect("executable cache");
     assert!(!roots.write_dirs.contains(&broad_cache));
     assert!(!roots.write_dirs.contains(&executable_cache));
     assert_eq!(roots.write_dirs.len(), 9);
@@ -230,11 +228,7 @@ fn writable_tool_exceptions_reject_redirecting_symlinks() {
     }
     make_executable(&path_dir.join("tool"));
     symlink(&redirected, home.join(".cache")).expect("cache link");
-    symlink(
-        path_dir.join("tool"),
-        home.join(".rustup/settings.toml"),
-    )
-    .expect("settings link");
+    symlink(path_dir.join("tool"), home.join(".rustup/settings.toml")).expect("settings link");
 
     let roots = collect_from(
         std::slice::from_ref(&workspace),
@@ -246,9 +240,9 @@ fn writable_tool_exceptions_reject_redirecting_symlinks() {
         &[home.join(".cache/pip")],
     );
 
-    assert!(!roots.write_dirs.contains(
-        &dunce::canonicalize(redirected.join("pip")).expect("redirected cache")
-    ));
+    assert!(!roots
+        .write_dirs
+        .contains(&dunce::canonicalize(redirected.join("pip")).expect("redirected cache")));
     assert!(roots.write_files.is_empty());
 }
 
@@ -321,14 +315,12 @@ fn current_machine_package_prefixes_are_included_when_present() {
     let packages = ["/opt/homebrew", "/usr/local"];
     #[cfg(target_os = "linux")]
     let packages = ["/usr/local", "/home/linuxbrew/.linuxbrew"];
-    let roots = collect(
-        std::slice::from_ref(&workspace),
-        &[],
-        &packages,
-        None,
-    );
+    let roots = collect(std::slice::from_ref(&workspace), &[], &packages, None);
 
-    for prefix in packages.iter().filter_map(|path| canonical_dir(Path::new(path))) {
+    for prefix in packages
+        .iter()
+        .filter_map(|path| canonical_dir(Path::new(path)))
+    {
         assert!(roots.read_dirs.contains(&prefix));
     }
     assert!(roots.read_dirs.iter().all(|root| root != Path::new("/")));
@@ -390,7 +382,9 @@ fn local_user_tools_keep_their_precise_runtime_directories() {
         &[],
     );
 
-    assert!(roots.read_dirs.contains(&dunce::canonicalize(bin).expect("bin")));
+    assert!(roots
+        .read_dirs
+        .contains(&dunce::canonicalize(bin).expect("bin")));
     assert!(roots
         .read_dirs
         .contains(&dunce::canonicalize(pipx).expect("pipx")));
@@ -404,7 +398,9 @@ fn path_parent_never_exposes_the_private_application_store() {
     let private_store = dunce::canonicalize(private_store).expect("private store");
 
     for ancestor in private_store.ancestors().skip(1) {
-        assert!(super::super::tool_roots_path::forbidden_broad_root(ancestor, None));
+        assert!(super::super::tool_roots_path::forbidden_broad_root(
+            ancestor, None
+        ));
     }
 }
 
@@ -419,11 +415,7 @@ fn private_store_is_read_only_unless_a_configured_root_covers_it() {
     let workspace = dunce::canonicalize(workspace).expect("workspace");
     let mut restricted = ToolRoots::default();
 
-    push_private_read_dir(
-        &mut restricted,
-        &private,
-        std::slice::from_ref(&workspace),
-    );
+    push_private_read_dir(&mut restricted, &private, std::slice::from_ref(&workspace));
 
     assert!(restricted.read_dirs.contains(&private));
     assert!(!restricted.write_dirs.contains(&private));
@@ -513,8 +505,7 @@ fn make_executable(path: &Path) {
     use std::os::unix::fs::PermissionsExt;
 
     std::fs::write(path, "#!/bin/sh\n").expect("executable");
-    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))
-        .expect("permissions");
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).expect("permissions");
 }
 
 #[cfg(windows)]

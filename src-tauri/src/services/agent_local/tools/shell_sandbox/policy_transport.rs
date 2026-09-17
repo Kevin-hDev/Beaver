@@ -41,7 +41,9 @@ fn store(temp_dir: &Path, roots: &[PathBuf]) -> Result<String, String> {
 
 pub(super) fn take(temp_dir: &Path) -> Result<Vec<PathBuf>, String> {
     let path = temp_dir.join(FILE_NAME);
-    let metadata = path.symlink_metadata().map_err(|_| super::launch::sandbox_error())?;
+    let metadata = path
+        .symlink_metadata()
+        .map_err(|_| super::launch::sandbox_error())?;
     if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_BYTES {
         return Err(super::launch::sandbox_error());
     }
@@ -73,8 +75,9 @@ fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
     let mut difference = left.len() ^ right.len();
     let max = left.len().max(right.len());
     for index in 0..max {
-        difference |= usize::from(left.get(index).copied().unwrap_or(0)
-            ^ right.get(index).copied().unwrap_or(0));
+        difference |= usize::from(
+            left.get(index).copied().unwrap_or(0) ^ right.get(index).copied().unwrap_or(0),
+        );
     }
     difference == 0
 }

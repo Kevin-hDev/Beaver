@@ -11,12 +11,9 @@ pub fn check_write_guard(
     working_dir: &std::path::Path,
     write_guard: &mut WriteGuard,
 ) -> Result<(), String> {
-    let path_str = super::tool_path_args::first_value(
-        name,
-        super::tool_path_args::PathUse::Write,
-        args,
-    )
-    .unwrap_or("");
+    let path_str =
+        super::tool_path_args::first_value(name, super::tool_path_args::PathUse::Write, args)
+            .unwrap_or("");
     if !path_str.is_empty() {
         let p = std::path::Path::new(path_str);
         let resolved = if p.is_absolute() {
@@ -44,20 +41,16 @@ pub fn post_record_read(
     }
     match name {
         "read_file" | "read_document" | "read_spreadsheet" => {
-            if let Some(path_str) = super::tool_path_args::first_value(
-                name,
-                super::tool_path_args::PathUse::Read,
-                args,
-            ) {
+            if let Some(path_str) =
+                super::tool_path_args::first_value(name, super::tool_path_args::PathUse::Read, args)
+            {
                 record_path(write_guard, path_str, working_dir);
             }
         }
         "transform_image" => {
-            if let Some(path_str) = super::tool_path_args::first_value(
-                name,
-                super::tool_path_args::PathUse::Read,
-                args,
-            ) {
+            if let Some(path_str) =
+                super::tool_path_args::first_value(name, super::tool_path_args::PathUse::Read, args)
+            {
                 record_path(write_guard, path_str, working_dir);
             }
         }
@@ -97,11 +90,8 @@ pub fn post_record_write(
         write_guard.record_reads(&paths);
         return;
     }
-    let path_str = super::tool_path_args::first_value(
-        name,
-        super::tool_path_args::PathUse::Write,
-        args,
-    );
+    let path_str =
+        super::tool_path_args::first_value(name, super::tool_path_args::PathUse::Write, args);
     if let Some(path_str) = path_str {
         record_path(write_guard, path_str, working_dir);
     }

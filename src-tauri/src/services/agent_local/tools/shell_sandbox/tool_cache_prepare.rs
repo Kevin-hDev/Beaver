@@ -17,10 +17,7 @@ pub(super) fn ensure_defaults(
     }
     let mut failed = false;
     for ((kind, selected), default) in kinds.iter().zip(selected).zip(defaults) {
-        if selected == default
-            && tool_available(*kind, path_dirs)
-            && !ensure_dir(home, selected)
-        {
+        if selected == default && tool_available(*kind, path_dirs) && !ensure_dir(home, selected) {
             failed = true;
         }
     }

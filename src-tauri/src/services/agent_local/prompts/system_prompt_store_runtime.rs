@@ -80,10 +80,7 @@ impl SystemPromptSettingsStore {
     }
 
     pub(crate) fn snapshot(&self) -> Result<SystemPromptSettings, String> {
-        let mut current = self
-            .settings
-            .lock()
-            .map_err(|_| store_unavailable())?;
+        let mut current = self.settings.lock().map_err(|_| store_unavailable())?;
         current
             .value_or_reload(
                 || SystemPromptSettings::load_from_path(&self.path),
@@ -118,10 +115,7 @@ impl SystemPromptSettingsStore {
         &self,
         update: impl FnOnce(&mut SystemPromptSettings) -> Result<(), String>,
     ) -> Result<(), String> {
-        let mut current = self
-            .settings
-            .lock()
-            .map_err(|_| store_unavailable())?;
+        let mut current = self.settings.lock().map_err(|_| store_unavailable())?;
         let mut candidate = current.candidate_for_write(
             || SystemPromptSettings::load_from_path(&self.path),
             &STORE_ERRORS,

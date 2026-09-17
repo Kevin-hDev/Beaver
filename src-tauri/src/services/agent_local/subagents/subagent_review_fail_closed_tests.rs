@@ -4,7 +4,9 @@ use tokio_util::sync::CancellationToken;
 #[tokio::test]
 async fn orphan_child_without_registry_fails_closed() {
     let (parent, mut child) = child_session(subagent_status::RUNNING).await;
-    child.subagent_queued_prompts.push("orphan correction".into());
+    child
+        .subagent_queued_prompts
+        .push("orphan correction".into());
     session_store::save(&child).await.expect("save orphan");
     let mut context = Vec::new();
 
@@ -25,7 +27,9 @@ async fn persisted_queue_over_capacity_is_rejected_before_injection() {
         .await
         .expect("register child");
     child.subagent_run_id = Some(run_id);
-    session_store::save(&child).await.expect("save corrupt queue");
+    session_store::save(&child)
+        .await
+        .expect("save corrupt queue");
     let mut context = Vec::new();
 
     let result = subagent_instruction_delivery::drain(&child.id, &mut context).await;
@@ -50,7 +54,10 @@ async fn normalized_duplicate_queue_is_rejected_without_injection() {
     cleanup(&parent.id, &child.id).await;
     assert!(result.is_err());
     assert!(context.is_empty());
-    assert_eq!(saved.subagent_queued_prompts, vec!["corrige", "  corrige  "]);
+    assert_eq!(
+        saved.subagent_queued_prompts,
+        vec!["corrige", "  corrige  "]
+    );
 }
 
 #[tokio::test]
@@ -97,7 +104,9 @@ async fn completed_child_with_invalid_type_never_defaults_to_explorer() {
     for invalid_type in [None, Some("corrupted")] {
         let (parent, mut child) = child_session(subagent_status::COMPLETED).await;
         child.subagent_type = invalid_type.map(str::to_string);
-        session_store::save(&child).await.expect("save invalid type");
+        session_store::save(&child)
+            .await
+            .expect("save invalid type");
 
         let result = super::tool_subagent_message::run(
             &serde_json::json!({"subagent_id": child.id, "prompt": "reprends"}),
@@ -112,7 +121,9 @@ async fn completed_child_with_invalid_type_never_defaults_to_explorer() {
     }
 }
 
-async fn child_session(status: &str) -> (
+async fn child_session(
+    status: &str,
+) -> (
     super::types_session::AgentSession,
     super::types_session::AgentSession,
 ) {
@@ -131,8 +142,12 @@ async fn child_session(status: &str) -> (
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }
 
 async fn activate(parent_id: &str, child: &mut super::types_session::AgentSession) {

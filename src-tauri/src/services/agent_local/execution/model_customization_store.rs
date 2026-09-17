@@ -48,12 +48,9 @@ impl ModelCustomizationStore {
 
     pub(crate) fn kind(&self, name: &str) -> Result<Option<CustomizationKind>, String> {
         validate_model_name(name)?;
-        let mut current = self
-            .catalog
-            .lock()
-            .map_err(|_| {
-                crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE.to_string()
-            })?;
+        let mut current = self.catalog.lock().map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE.to_string()
+        })?;
         Ok(current
             .value_or_reload(|| load_catalog(&self.path), &STORE_ERRORS)?
             .kind(name))
@@ -79,16 +76,11 @@ impl ModelCustomizationStore {
         &self,
         update: impl FnOnce(&mut ModelCustomizationCatalog) -> Result<(), String>,
     ) -> Result<(), String> {
-        let mut current = self
-            .catalog
-            .lock()
-            .map_err(|_| {
-                crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
-            })?;
-        let mut candidate = current.candidate_for_write(
-            || load_catalog(&self.path),
-            &STORE_ERRORS,
-        )?;
+        let mut current = self.catalog.lock().map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
+        })?;
+        let mut candidate =
+            current.candidate_for_write(|| load_catalog(&self.path), &STORE_ERRORS)?;
         update(&mut candidate)?;
         candidate.write_to_path(&self.path)?;
         current.commit(candidate);
@@ -133,10 +125,9 @@ impl ModelCustomizationCatalog {
         match load_catalog(path) {
             crate::services::private_store::StoreLoad::Missing => Ok(Self::default()),
             crate::services::private_store::StoreLoad::Ready(catalog) => Ok(catalog),
-            crate::services::private_store::StoreLoad::Unavailable(_) => {
-                Err(crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE
-                    .to_string())
-            }
+            crate::services::private_store::StoreLoad::Unavailable(_) => Err(
+                crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE.to_string(),
+            ),
         }
     }
 
@@ -147,23 +138,20 @@ impl ModelCustomizationCatalog {
         if data.len() as u64 > MAX_STORE_BYTES {
             return Err("ollama-custom-store-limit".to_string());
         }
-        crate::services::private_store::atomic_write(path, &data)
-            .map_err(|_| {
-                crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
-            })
+        crate::services::private_store::atomic_write(path, &data).map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
+        })
     }
 
     fn read_with_format(path: &Path) -> CatalogLoad {
-        let content = match crate::services::private_store::read_bounded_regular(
-            path,
-            MAX_STORE_BYTES,
-        ) {
-            Ok(crate::services::private_store::BoundedFile::Missing) => {
-                return CatalogLoad::Missing;
-            }
-            Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
-            Err(_) => return CatalogLoad::Unavailable,
-        };
+        let content =
+            match crate::services::private_store::read_bounded_regular(path, MAX_STORE_BYTES) {
+                Ok(crate::services::private_store::BoundedFile::Missing) => {
+                    return CatalogLoad::Missing;
+                }
+                Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
+                Err(_) => return CatalogLoad::Unavailable,
+            };
         if let Ok(catalog) = serde_json::from_slice::<Self>(&content) {
             return CatalogLoad::Ready {
                 catalog: catalog.validated(),

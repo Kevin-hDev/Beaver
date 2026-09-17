@@ -131,7 +131,8 @@ fn write_record(temp_dir: &Path, profile_name: &str, roots: &[PathBuf]) -> Resul
 
 fn read_record(path: &Path) -> Option<CleanupRecord> {
     let metadata = path.symlink_metadata().ok()?;
-    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_RECORD_BYTES {
+    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_RECORD_BYTES
+    {
         return None;
     }
     let record: CleanupRecord = serde_json::from_slice(&std::fs::read(path).ok()?).ok()?;
@@ -153,7 +154,9 @@ fn valid_root(path: &Path) -> bool {
     path.is_absolute()
         && path.as_os_str().to_string_lossy().chars().count()
             <= super::super::directory_access::MAX_PATH_CHARS
-        && !path.components().any(|part| matches!(part, Component::ParentDir))
+        && !path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
 }
 
 fn error() -> String {

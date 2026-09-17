@@ -1,9 +1,6 @@
 use super::types_session::AgentSession;
 
-pub(super) async fn loaded(
-    child: &AgentSession,
-    expected_owner: Option<(&str, &str)>,
-) -> bool {
+pub(super) async fn loaded(child: &AgentSession, expected_owner: Option<(&str, &str)>) -> bool {
     let Some((run_id, execution_id)) = expected_owner else {
         return true;
     };
@@ -11,10 +8,7 @@ pub(super) async fn loaded(
         && super::subagent_registry::owns_execution(&child.id, run_id, execution_id).await
 }
 
-pub(super) async fn missing(
-    child_id: &str,
-    expected_owner: Option<(&str, &str)>,
-) -> bool {
+pub(super) async fn missing(child_id: &str, expected_owner: Option<(&str, &str)>) -> bool {
     let Some((run_id, execution_id)) = expected_owner else {
         return true;
     };

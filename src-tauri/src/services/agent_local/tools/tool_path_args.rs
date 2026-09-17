@@ -39,11 +39,7 @@ pub fn fields(tool_name: &str) -> &'static [PathField] {
     }
 }
 
-pub fn first_value<'a>(
-    tool_name: &str,
-    usage: PathUse,
-    args: &'a Value,
-) -> Option<&'a str> {
+pub fn first_value<'a>(tool_name: &str, usage: PathUse, args: &'a Value) -> Option<&'a str> {
     value(tool_name, usage, args).and_then(Value::as_str)
 }
 

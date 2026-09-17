@@ -33,11 +33,14 @@ pub(super) fn mutation_error(error: MemoryWriteError) -> ToolResult {
         MemoryWriteError::SourceUnavailable(message) => {
             ToolResult::unavailable("memory_source_unavailable", message, true)
         }
-        MemoryWriteError::StorageFailed(message) => {
-            ToolResult::execution("memory_write_failed", message, false).with_error_hint(
-                "Relire la mémoire concernée avant une nouvelle écriture : son état peut avoir changé.",
-            )
-        }
+        MemoryWriteError::StorageFailed(message) => ToolResult::execution(
+            "memory_write_failed",
+            message,
+            false,
+        )
+        .with_error_hint(
+            "Relire la mémoire concernée avant une nouvelle écriture : son état peut avoir changé.",
+        ),
         MemoryWriteError::AppliedButIndexFailed(message) => ToolResult::partial(
             "Mémoire enregistrée, mais son index n'a pas pu être mis à jour.",
             [

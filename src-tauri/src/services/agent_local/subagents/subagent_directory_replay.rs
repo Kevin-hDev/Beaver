@@ -11,7 +11,10 @@ pub async fn seed_pending(
     let Some(mut meta) = super::subagent_change_store::load_optional(child_id).await? else {
         return Ok(());
     };
-    if !matches!(meta.status, SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict) {
+    if !matches!(
+        meta.status,
+        SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict
+    ) {
         return Ok(());
     }
     if meta.workspace_kind != SubagentWorkspaceKind::Directory {
@@ -22,8 +25,7 @@ pub async fn seed_pending(
         return Ok(());
     }
     let old_repository = super::subagent_directory_change::repository(&meta)?;
-    let base_commit =
-        super::subagent_directory_git::text(worktree, &["rev-parse", "HEAD"]).await?;
+    let base_commit = super::subagent_directory_git::text(worktree, &["rev-parse", "HEAD"]).await?;
     let fetched = super::subagent_directory_git::command()
         .args(["-C"])
         .arg(worktree)
@@ -39,8 +41,7 @@ pub async fn seed_pending(
     if !fetched.success()
         || !super::subagent_directory_git::cherry_pick(worktree, &meta.commit).await?
     {
-        let _ =
-            super::subagent_directory_git::success(worktree, &["cherry-pick", "--abort"]).await;
+        let _ = super::subagent_directory_git::success(worktree, &["cherry-pick", "--abort"]).await;
         return Err("Le changement précédent entre en conflit".into());
     }
     meta.branch = super::subagent_worktree::branch_for_execution(execution_id)?;

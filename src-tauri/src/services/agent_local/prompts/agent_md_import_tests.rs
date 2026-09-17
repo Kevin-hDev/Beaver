@@ -134,8 +134,7 @@ async fn external_rules_are_injected_in_stable_source_order() {
     .unwrap();
 
     assert!(
-        content.find("Claude external rule").unwrap()
-            < content.find("Qwen external rule").unwrap()
+        content.find("Claude external rule").unwrap() < content.find("Qwen external rule").unwrap()
     );
     assert!(!content.contains("/Users/"));
     assert!(!content.contains("\\Users\\"));

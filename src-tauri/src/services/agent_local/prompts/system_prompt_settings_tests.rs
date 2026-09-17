@@ -1,7 +1,7 @@
+use super::ollama_native_prompts::NativePromptLookup;
 use super::system_prompt_resolver::{
     resolve_global, resolve_ollama, resolve_ollama_native, resolve_ollama_without_native,
 };
-use super::ollama_native_prompts::NativePromptLookup;
 use super::system_prompt_store::{SystemPromptSettings, SystemPromptSettingsStore};
 use super::system_prompt_types::{
     PromptMode, PromptOverride, PromptSelection, PromptSource, PromptTier,
@@ -123,12 +123,9 @@ fn ollama_can_switch_from_native_to_beaver_and_back_to_default() {
     assert_eq!(beaver_view.source, PromptSource::Beaver);
     assert_eq!(beaver_view.selection, PromptSelection::Beaver);
 
-    settings.restore_ollama_default(
-        "gemma4:e2b",
-        PromptMode::Chatbot,
-        PromptTier::Compact,
-    )
-    .unwrap();
+    settings
+        .restore_ollama_default("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact)
+        .unwrap();
     let native_view = resolve_ollama(
         &settings,
         "gemma4:e2b",
@@ -190,11 +187,7 @@ fn selecting_beaver_respects_the_model_collection_limit() {
     }
 
     assert!(settings
-        .select_ollama_beaver(
-            "model-over-limit",
-            PromptMode::Chatbot,
-            PromptTier::Compact,
-        )
+        .select_ollama_beaver("model-over-limit", PromptMode::Chatbot, PromptTier::Compact,)
         .is_err());
 }
 
@@ -270,12 +263,7 @@ fn explicit_empty_ollama_prompt_blocks_every_inherited_prompt() {
         .set_global(PromptMode::Agentic, PromptTier::Compact, "global")
         .unwrap();
     settings
-        .set_ollama(
-            "gemma4:e2b",
-            PromptMode::Agentic,
-            PromptTier::Compact,
-            "",
-        )
+        .set_ollama("gemma4:e2b", PromptMode::Agentic, PromptTier::Compact, "")
         .unwrap();
 
     let view = resolve_ollama(
@@ -601,16 +589,10 @@ fn successful_legacy_migration_is_retired_before_a_later_restart() {
 
     let first = SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
     assert_eq!(
-        first.ollama_override(
-            "gemma4:e2b",
-            PromptMode::Chatbot,
-            PromptTier::Compact,
-        ),
+        first.ollama_override("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact,),
         Some(&PromptOverride::Custom("legacy prompt".to_string()))
     );
-    let archive_path = directory
-        .path()
-        .join("ollama-system-prompts.json.migrated");
+    let archive_path = directory.path().join("ollama-system-prompts.json.migrated");
     assert!(!legacy_path.exists());
     assert_eq!(
         std::fs::read(&archive_path).unwrap(),
@@ -620,14 +602,11 @@ fn successful_legacy_migration_is_retired_before_a_later_restart() {
     std::fs::remove_file(&path).unwrap();
     let restarted = SystemPromptSettingsStore::open(path, legacy_path.clone());
     assert_eq!(
-        restarted
-            .snapshot()
-            .unwrap()
-            .ollama_override(
-                "gemma4:e2b",
-                PromptMode::Chatbot,
-                PromptTier::Compact,
-            ),
+        restarted.snapshot().unwrap().ollama_override(
+            "gemma4:e2b",
+            PromptMode::Chatbot,
+            PromptTier::Compact,
+        ),
         None
     );
     assert!(!legacy_path.exists());
@@ -704,11 +683,7 @@ fn archived_legacy_source_is_not_reimported_when_a_backup_is_restored() {
     let restarted = SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
 
     assert_eq!(
-        restarted.ollama_override(
-            "gemma4:e2b",
-            PromptMode::Chatbot,
-            PromptTier::Compact,
-        ),
+        restarted.ollama_override("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact,),
         None
     );
     assert_eq!(
@@ -728,12 +703,7 @@ fn migration_archive_keeps_entries_rejected_by_the_new_format() {
     SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
 
     assert_eq!(
-        std::fs::read(
-            directory
-                .path()
-                .join("ollama-system-prompts.json.migrated")
-        )
-        .unwrap(),
+        std::fs::read(directory.path().join("ollama-system-prompts.json.migrated")).unwrap(),
         legacy
     );
 }
@@ -746,9 +716,7 @@ fn invalid_migration_archive_blocks_legacy_reimport() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("system-prompt-settings.json");
     let legacy_path = directory.path().join("ollama-system-prompts.json");
-    let archive_path = directory
-        .path()
-        .join("ollama-system-prompts.json.migrated");
+    let archive_path = directory.path().join("ollama-system-prompts.json.migrated");
     let target = directory.path().join("archive-target");
     std::fs::write(
         &legacy_path,

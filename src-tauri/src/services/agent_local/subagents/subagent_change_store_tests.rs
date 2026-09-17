@@ -31,7 +31,11 @@ async fn rejects_new_change_when_all_retained_changes_are_active() {
     assert!(!entry(dir.path(), &incoming).exists());
 }
 
-async fn save(meta: &SubagentChangeMeta, dir: &std::path::Path, limit: usize) -> Result<(), String> {
+async fn save(
+    meta: &SubagentChangeMeta,
+    dir: &std::path::Path,
+    limit: usize,
+) -> Result<(), String> {
     super::subagent_change_store::save_in_dir_for_test(meta, dir, limit).await
 }
 

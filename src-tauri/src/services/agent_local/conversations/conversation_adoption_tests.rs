@@ -79,7 +79,8 @@ fn every_internal_entry_point_adopts_a_canonical_conversation() {
         "new stream entry point needs canonical adoption"
     );
     assert!(
-        !include_str!("../../../commands/agent_chat_task/conversation.rs").contains("InternalLegacy")
+        !include_str!("../../../commands/agent_chat_task/conversation.rs")
+            .contains("InternalLegacy")
     );
 }
 

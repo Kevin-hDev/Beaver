@@ -1,7 +1,7 @@
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use std::collections::BTreeMap;
 #[cfg(any(target_os = "linux", test))]
 use std::collections::VecDeque;
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
@@ -9,8 +9,7 @@ use std::sync::{LazyLock, Mutex};
 const MAX_WATCH_DIRECTORIES: usize = 4_096;
 pub(super) const MAX_WATCH_ROOTS: usize = 64;
 
-static SHARED_WATCHER: LazyLock<Mutex<Option<SharedWatcher>>> =
-    LazyLock::new(|| Mutex::new(None));
+static SHARED_WATCHER: LazyLock<Mutex<Option<SharedWatcher>>> = LazyLock::new(|| Mutex::new(None));
 
 struct SharedWatcher {
     watcher: RecommendedWatcher,

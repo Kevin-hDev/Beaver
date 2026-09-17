@@ -21,8 +21,7 @@ pub async fn prepare(
     is_subagent: bool,
 ) -> PreparedMemory {
     let settings = super::memory_settings::load().await;
-    let explicit = latest_user_message(messages)
-        .is_some_and(memory_runtime::has_explicit_request);
+    let explicit = latest_user_message(messages).is_some_and(memory_runtime::has_explicit_request);
     if !settings.mode.is_active() {
         return inactive(session_id);
     }
@@ -32,13 +31,7 @@ pub async fn prepare(
     let (section, usage, total_budget) =
         build_section(&settings, session_id, working_dir, context_window, explicit).await;
     let tokens = usage.total();
-    let guard = memory_runtime::begin(
-        session_id,
-        settings.mode,
-        explicit,
-        total_budget,
-        tokens,
-    );
+    let guard = memory_runtime::begin(session_id, settings.mode, explicit, total_budget, tokens);
     PreparedMemory {
         section: (!section.is_empty()).then_some(section),
         tokens,
@@ -55,19 +48,10 @@ async fn prepare_subagent(
     let total_budget = memory_budget(context_window, settings.context_budget_tokens);
     let layout = MemoryLayout::production();
     let project = layout.project_scope_ready(working_dir).await.ok();
-    let section = super::memory_prompt::subagent_section(
-        &layout.global_scope(),
-        project.as_ref(),
-    );
+    let section = super::memory_prompt::subagent_section(&layout.global_scope(), project.as_ref());
     let section = memory_runtime::truncate_to_tokens(&section, total_budget.min(256));
     let tokens = estimate(&section);
-    let guard = memory_runtime::begin(
-        session_id,
-        MemoryMode::Manual,
-        false,
-        total_budget,
-        tokens,
-    );
+    let guard = memory_runtime::begin(session_id, MemoryMode::Manual, false, total_budget, tokens);
     PreparedMemory {
         section: Some(section),
         tokens,
@@ -83,9 +67,14 @@ pub async fn estimate_usage(
     if !settings.mode.is_active() {
         return Default::default();
     }
-    let (_, usage, _) =
-        build_section(&settings, "00000000-0000-4000-8000-000000000000", working_dir, context_window, false)
-            .await;
+    let (_, usage, _) = build_section(
+        &settings,
+        "00000000-0000-4000-8000-000000000000",
+        working_dir,
+        context_window,
+        false,
+    )
+    .await;
     usage
 }
 
@@ -125,10 +114,8 @@ async fn build_section(
         summary_budget,
     );
     let section = format!("{rules}{summaries}</memory_context>");
-    let section = memory_runtime::truncate_to_tokens(
-        &section,
-        SUMMARY_CONTEXT_MAX.min(total_budget),
-    );
+    let section =
+        memory_runtime::truncate_to_tokens(&section, SUMMARY_CONTEXT_MAX.min(total_budget));
     let usage = super::memory_context_usage::MemoryContextUsage::from_section(&section);
     (section, usage, total_budget)
 }

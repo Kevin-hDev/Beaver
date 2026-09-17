@@ -1,5 +1,5 @@
-use super::types_tools::ToolResult;
 use super::tool_result_contract::ToolErrorCategory;
+use super::types_tools::ToolResult;
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -29,21 +29,18 @@ pub async fn dispatch(
     };
     let result = match tool_name {
         "inspect_subagent_changes" => {
-            match super::subagent_git_actions::inspect(
-                working_dir,
-                parent_id,
-                child_id,
-                change_id,
-            )
-            .await
+            match super::subagent_git_actions::inspect(working_dir, parent_id, child_id, change_id)
+                .await
             {
                 Ok((change, patch, truncated)) => {
-                    let mut result = ToolResult::ok(json!({
-                        "change": change,
-                        "patch": patch,
-                        "patch_truncated": truncated
-                    })
-                    .to_string());
+                    let mut result = ToolResult::ok(
+                        json!({
+                            "change": change,
+                            "patch": patch,
+                            "patch_truncated": truncated
+                        })
+                        .to_string(),
+                    );
                     result.mark_truncated(truncated);
                     result
                 }
@@ -149,7 +146,9 @@ fn change_failure(cause: String, fallback: &str, read_only: bool) -> ToolResult 
             ToolErrorCategory::Internal,
             false,
         )
-        .with_error_hint("Inspecter manuellement le dépôt parent avant toute nouvelle opération Git.");
+        .with_error_hint(
+            "Inspecter manuellement le dépôt parent avant toute nouvelle opération Git.",
+        );
     }
     if lower.contains("indisponible") {
         let result = ToolResult::error(

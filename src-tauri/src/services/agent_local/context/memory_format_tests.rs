@@ -86,10 +86,8 @@ fn rejects_json_web_tokens() {
 #[test]
 fn rejects_unbounded_tags() {
     let id = uuid::Uuid::new_v4().to_string();
-    let content = valid_topic(&id).replace(
-        "tags: [ui, boutons]",
-        "tags: [a, b, c, d, e, f, g, h, i]",
-    );
+    let content =
+        valid_topic(&id).replace("tags: [ui, boutons]", "tags: [a, b, c, d, e, f, g, h, i]");
 
     assert!(parse(
         &content,

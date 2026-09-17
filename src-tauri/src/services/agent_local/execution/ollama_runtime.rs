@@ -58,9 +58,9 @@ mod tests {
             "name": "too-large",
             "context_length": MAX_CONTEXT_LENGTH + 1
         })];
-        models.extend((0..MAX_RUNNING_MODELS).map(|index| {
-            serde_json::json!({"name": format!("model-{index}"), "context_length": 4096})
-        }));
+        models.extend((0..MAX_RUNNING_MODELS).map(
+            |index| serde_json::json!({"name": format!("model-{index}"), "context_length": 4096}),
+        ));
         models.push(serde_json::json!({
             "name": "outside-limit",
             "context_length": 8192

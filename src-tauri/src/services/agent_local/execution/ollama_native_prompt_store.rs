@@ -42,13 +42,10 @@ impl NativePromptStore {
     }
 
     pub(crate) fn cached(&self, model: &str) -> Result<Option<NativePromptState>, String> {
-        let mut current = self
-            .catalog
-            .lock()
-            .map_err(|_| {
-                crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
-                    .to_string()
-            })?;
+        let mut current = self.catalog.lock().map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
+                .to_string()
+        })?;
         Ok(current
             .value_or_reload(
                 || NativePromptCatalog::load_from_path(&self.path),
@@ -73,13 +70,10 @@ impl NativePromptStore {
         &self,
         update: impl FnOnce(&mut NativePromptCatalog) -> Result<(), String>,
     ) -> Result<(), String> {
-        let mut current = self
-            .catalog
-            .lock()
-            .map_err(|_| {
-                crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
-                    .to_string()
-            })?;
+        let mut current = self.catalog.lock().map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
+                .to_string()
+        })?;
         let mut candidate = current.candidate_for_write(
             || NativePromptCatalog::load_from_path(&self.path),
             &STORE_ERRORS,
@@ -101,7 +95,8 @@ impl NativePromptCatalog {
         if self.models.len() >= MAX_MODELS && !self.models.contains_key(model) {
             return Err("ollama-native-prompt-limit".into());
         }
-        let state = sanitize_state(state).ok_or_else(|| "ollama-native-prompt-invalid".to_string())?;
+        let state =
+            sanitize_state(state).ok_or_else(|| "ollama-native-prompt-invalid".to_string())?;
         self.models.insert(model.to_string(), state);
         Ok(())
     }
@@ -128,10 +123,9 @@ impl NativePromptCatalog {
         if data.len() as u64 > MAX_STORE_BYTES {
             return Err("ollama-native-prompt-limit".into());
         }
-        crate::services::private_store::atomic_write(path, &data)
-            .map_err(|_| {
-                crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_WRITE.to_string()
-            })
+        crate::services::private_store::atomic_write(path, &data).map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_WRITE.to_string()
+        })
     }
 
     fn sanitized(self) -> Self {
@@ -150,20 +144,18 @@ impl NativePromptCatalog {
     fn load_from_path(
         path: &Path,
     ) -> crate::services::private_store::StoreLoad<NativePromptCatalog> {
-        let content = match crate::services::private_store::read_bounded_regular(
-            path,
-            MAX_STORE_BYTES,
-        ) {
-            Ok(crate::services::private_store::BoundedFile::Missing) => {
-                return crate::services::private_store::StoreLoad::Missing;
-            }
-            Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
-            Err(_) => {
-                return crate::services::private_store::StoreLoad::Unavailable(
-                    crate::services::private_store::StoreFailure::Read,
-                );
-            }
-        };
+        let content =
+            match crate::services::private_store::read_bounded_regular(path, MAX_STORE_BYTES) {
+                Ok(crate::services::private_store::BoundedFile::Missing) => {
+                    return crate::services::private_store::StoreLoad::Missing;
+                }
+                Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
+                Err(_) => {
+                    return crate::services::private_store::StoreLoad::Unavailable(
+                        crate::services::private_store::StoreFailure::Read,
+                    );
+                }
+            };
         serde_json::from_slice::<Self>(&content)
             .map(Self::sanitized)
             .map(crate::services::private_store::StoreLoad::Ready)

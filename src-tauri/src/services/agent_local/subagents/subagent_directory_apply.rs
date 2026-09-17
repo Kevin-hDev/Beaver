@@ -13,7 +13,12 @@ pub async fn apply(
         cleanup_repository(&meta).await;
         return Ok(meta);
     }
-    if meta.paths_truncated || !matches!(meta.status, SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict) {
+    if meta.paths_truncated
+        || !matches!(
+            meta.status,
+            SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict
+        )
+    {
         return Err(generic_error());
     }
     let repository = super::subagent_directory_change::repository(&meta)?;
@@ -26,7 +31,8 @@ pub async fn apply(
     let stage_id = uuid::Uuid::new_v4().to_string();
     let stage = super::subagent_worktree::path_for_execution(&meta.child_session_id, &stage_id)?;
     checkout(&repository, &meta.commit, &stage).await?;
-    let applied = super::subagent_directory_transaction::apply(project, &stage, &meta.changed_paths).await;
+    let applied =
+        super::subagent_directory_transaction::apply(project, &stage, &meta.changed_paths).await;
     let cleanup = super::subagent_worktree::remove_owned(
         &stage.to_string_lossy(),
         &meta.child_session_id,
@@ -49,7 +55,10 @@ pub async fn discard(mut meta: SubagentChangeMeta) -> Result<SubagentChangeMeta,
         cleanup_repository(&meta).await;
         return Ok(meta);
     }
-    if !matches!(meta.status, SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict) {
+    if !matches!(
+        meta.status,
+        SubagentChangeStatus::Pending | SubagentChangeStatus::Conflict
+    ) {
         return Err(generic_error());
     }
     meta.status = SubagentChangeStatus::Discarded;
@@ -113,7 +122,10 @@ async fn current_oid(path: &Path) -> Result<Option<String>, String> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
         Err(_) => return Err(generic_error()),
     };
-    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_CURRENT_FILE_BYTES {
+    if !metadata.is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() > MAX_CURRENT_FILE_BYTES
+    {
         return Err(generic_error());
     }
     let output = super::subagent_directory_git::command()
@@ -149,7 +161,9 @@ async fn checkout(repository: &Path, commit: &str, stage: &Path) -> Result<(), S
 }
 
 async fn cleanup_repository(meta: &SubagentChangeMeta) {
-    let Ok(execution) = super::subagent_directory_change::execution_id(meta) else { return };
+    let Ok(execution) = super::subagent_directory_change::execution_id(meta) else {
+        return;
+    };
     if super::subagent_directory_workspace::remove_repository(&meta.child_session_id, execution)
         .await
         .is_err()

@@ -7,8 +7,12 @@ async fn drain_rechecks_execution_after_waiting_for_child_lock() {
     let old = register(&parent.id, &child.id).await;
     let _sibling = register(&parent.id, &sibling.id).await;
     child.subagent_run_id = Some(old.run_id.clone());
-    child.subagent_queued_prompts.push("ancienne correction".into());
-    session_store::save(&child).await.expect("save old execution");
+    child
+        .subagent_queued_prompts
+        .push("ancienne correction".into());
+    session_store::save(&child)
+        .await
+        .expect("save old execution");
     let child_lock = session_store::lock_session(&child.id).await;
     let guard = child_lock.lock().await;
     let (read_tx, read_rx) = tokio::sync::oneshot::channel();
@@ -30,7 +34,9 @@ async fn drain_rechecks_execution_after_waiting_for_child_lock() {
     let new = register(&parent.id, &child.id).await;
     assert_eq!(new.run_id, old.run_id);
     child.subagent_run_id = Some(new.run_id.clone());
-    session_store::save(&child).await.expect("save new execution");
+    session_store::save(&child)
+        .await
+        .expect("save new execution");
     drop(guard);
 
     let (result, context) = drain.await.expect("join drain");
@@ -47,18 +53,19 @@ async fn queued_prompt_save_rejects_replaced_execution() {
     let old = register(&parent.id, &child.id).await;
     let _sibling = register(&parent.id, &sibling.id).await;
     child.subagent_run_id = Some(old.run_id.clone());
-    session_store::save(&child).await.expect("save old execution");
+    session_store::save(&child)
+        .await
+        .expect("save old execution");
     let mut stale = child.clone();
-    stale.subagent_queued_prompts.push("message obsolète".into());
+    stale
+        .subagent_queued_prompts
+        .push("message obsolète".into());
     subagent_registry::unregister(&child.id).await;
     let new = register(&parent.id, &child.id).await;
     assert_eq!(new.run_id, old.run_id);
 
-    let result = subagent_registry::save_queued_prompt_for_execution(
-        &stale,
-        &old.execution_id,
-    )
-    .await;
+    let result =
+        subagent_registry::save_queued_prompt_for_execution(&stale, &old.execution_id).await;
     let saved = session_store::get(&child.id).await.expect("saved child");
     assert!(result.is_err());
     assert!(saved.subagent_queued_prompts.is_empty());
@@ -72,15 +79,10 @@ async fn sessions(
     super::types_session::AgentSession,
     super::types_session::AgentSession,
 ) {
-    let parent = session_store::create_full(
-        &format!("Parent {suffix}"),
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent =
+        session_store::create_full(&format!("Parent {suffix}"), "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let child = create_child(&parent.id, "Child").await;
     let sibling = create_child(&parent.id, "Sibling").await;
     (parent, child, sibling)

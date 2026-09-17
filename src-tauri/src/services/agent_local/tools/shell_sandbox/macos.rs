@@ -1,6 +1,6 @@
 use std::ffi::{OsStr, OsString};
-use std::os::unix::process::CommandExt;
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 
 // API Apple dépréciée : son absence doit continuer à bloquer la limite de dossiers du shell.
@@ -73,12 +73,7 @@ fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
             None,
         )
     } else {
-        super::tool_roots::collect(
-            &scope.roots,
-            &PLATFORM_READ_DIRS,
-            &PACKAGE_PREFIXES,
-            None,
-        )
+        super::tool_roots::collect(&scope.roots, &PLATFORM_READ_DIRS, &PACKAGE_PREFIXES, None)
     };
     super::super::shell_sandbox_diagnostics::record(
         temp_dir,
@@ -123,25 +118,19 @@ fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
     }
 }
 
-fn add_parameters(
-    command: &mut std::process::Command,
-    prefix: &str,
-    paths: &[PathBuf],
-) {
+fn add_parameters(command: &mut std::process::Command, prefix: &str, paths: &[PathBuf]) {
     for (index, path) in paths.iter().enumerate() {
         add_parameter(command, prefix, index, path.as_os_str());
     }
 }
 
 fn add_parameter(command: &mut std::process::Command, prefix: &str, index: usize, value: &OsStr) {
-    command.arg("-D").arg(format!("{prefix}_{index}={}", value.to_string_lossy()));
+    command
+        .arg("-D")
+        .arg(format!("{prefix}_{index}={}", value.to_string_lossy()));
 }
 
-fn policy(
-    roots: &SandboxRoots,
-    mode: super::scope::Mode,
-    xcrun_rule: Option<&str>,
-) -> String {
+fn policy(roots: &SandboxRoots, mode: super::scope::Mode, xcrun_rule: Option<&str>) -> String {
     let mut policy = include_str!("macos_seatbelt_base.sbpl").to_string();
     policy.push_str(include_str!("macos_platform.sbpl"));
     if mode == super::scope::Mode::Workspace {
@@ -150,10 +139,34 @@ fn policy(
             policy.push_str(rule);
         }
     }
-    append_rules(&mut policy, "BEAVER_RW_DIR", roots.write_dirs.len(), true, false);
-    append_rules(&mut policy, "BEAVER_RW_FILE", roots.write_files.len(), true, true);
-    append_rules(&mut policy, "BEAVER_RO_DIR", roots.read_dirs.len(), false, false);
-    append_rules(&mut policy, "BEAVER_RO_FILE", roots.read_files.len(), false, true);
+    append_rules(
+        &mut policy,
+        "BEAVER_RW_DIR",
+        roots.write_dirs.len(),
+        true,
+        false,
+    );
+    append_rules(
+        &mut policy,
+        "BEAVER_RW_FILE",
+        roots.write_files.len(),
+        true,
+        true,
+    );
+    append_rules(
+        &mut policy,
+        "BEAVER_RO_DIR",
+        roots.read_dirs.len(),
+        false,
+        false,
+    );
+    append_rules(
+        &mut policy,
+        "BEAVER_RO_FILE",
+        roots.read_files.len(),
+        false,
+        true,
+    );
     append_list_rules(&mut policy, roots.list_dirs.len());
     policy
 }

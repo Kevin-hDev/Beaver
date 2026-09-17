@@ -1,7 +1,5 @@
 use super::tool_roots::{ToolRoots, MAX_READ_ROOTS, MAX_WRITE_ROOTS};
-use super::tool_roots_entries::{
-    push_read_dir, push_read_file, push_write_dir, push_write_file,
-};
+use super::tool_roots_entries::{push_read_dir, push_read_file, push_write_dir, push_write_file};
 use super::tool_roots_path::{canonical_dir, contains_executable, is_tool_directory};
 use std::path::{Path, PathBuf};
 
@@ -38,7 +36,10 @@ pub(super) fn collect_from(
     roots
 }
 
-#[expect(clippy::too_many_arguments, reason = "boundary parameters remain explicit and locally audited")]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 pub(super) fn collect_into(
     roots: &mut ToolRoots,
     workspace_roots: &[PathBuf],
@@ -63,13 +64,13 @@ pub(super) fn collect_into(
             workspace_roots,
             Some(home),
         );
-        push_read_file(
+        push_read_file(roots, &home.join(".gitconfig"), workspace_roots, home);
+        push_read_dir(
             roots,
-            &home.join(".gitconfig"),
+            &home.join(".config/git"),
             workspace_roots,
-            home,
+            Some(home),
         );
-        push_read_dir(roots, &home.join(".config/git"), workspace_roots, Some(home));
         push_read_file(
             roots,
             &home.join(".gitignore_global"),
@@ -78,12 +79,7 @@ pub(super) fn collect_into(
         );
         push_read_file(roots, &home.join(".npmrc"), workspace_roots, home);
         for relative in USER_TOOL_READ_DIRS {
-            push_read_dir(
-                roots,
-                &home.join(relative),
-                workspace_roots,
-                Some(home),
-            );
+            push_read_dir(roots, &home.join(relative), workspace_roots, Some(home));
         }
     }
 
@@ -113,13 +109,7 @@ pub(super) fn collect_into(
                 .and_then(|input| path.strip_prefix(input).ok())
                 .map(|relative| home.join(relative))
                 .unwrap_or_else(|| path.clone());
-            push_write_dir(
-                roots,
-                &path,
-                workspace_roots,
-                &canonical_path_dirs,
-                home,
-            );
+            push_write_dir(roots, &path, workspace_roots, &canonical_path_dirs, home);
         }
         push_write_file(
             roots,

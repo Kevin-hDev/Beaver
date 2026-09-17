@@ -44,12 +44,8 @@ pub fn run_pre_hooks(tool_name: &str, args: &Value) -> PreHookDecision {
         }
     }
 
-    if super::tool_path_args::first_value(
-        tool_name,
-        super::tool_path_args::PathUse::Write,
-        args,
-    )
-    .is_some_and(is_protected_app_file)
+    if super::tool_path_args::first_value(tool_name, super::tool_path_args::PathUse::Write, args)
+        .is_some_and(is_protected_app_file)
     {
         return PreHookDecision::Deny(
             "Écriture interdite sur les fichiers de configuration de l'application".into(),

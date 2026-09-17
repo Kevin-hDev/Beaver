@@ -58,13 +58,7 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
         &["manage_automation"],
         "automation",
     ),
-    group(
-        "user_choice",
-        false,
-        true,
-        &["ask_user_choice"],
-        "workflow",
-    ),
+    group("user_choice", false, true, &["ask_user_choice"], "workflow"),
     group("subagents", false, true, SUBAGENT_TOOLS, "subagents"),
     group("plan_mode", false, true, &["plan_mode"], "workflow"),
     group(

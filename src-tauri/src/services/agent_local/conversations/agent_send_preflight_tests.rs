@@ -15,9 +15,10 @@ fn forbidden_response_keeps_the_frontend_contract() {
 async fn missing_directory_returns_nearest_existing_parent() {
     let root = tempfile::tempdir().expect("root");
     let missing = root.path().join("deleted/nested");
-    let mut session = super::session_store::create_full("Missing", "model", "provider", false, None)
-        .await
-        .expect("session");
+    let mut session =
+        super::session_store::create_full("Missing", "model", "provider", false, None)
+            .await
+            .expect("session");
     session.working_dir = missing.to_string_lossy().to_string();
     super::session_store::save(&session).await.expect("save");
 
@@ -35,16 +36,19 @@ async fn missing_directory_returns_nearest_existing_parent() {
                 .to_string(),
         }
     );
-    super::session_store::delete_one(&session.id).await.expect("cleanup");
+    super::session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup");
 }
 
 #[tokio::test]
 async fn create_rebuilds_only_empty_path_and_switch_updates_session() {
     let root = tempfile::tempdir().expect("root");
     let missing = root.path().join("gone/path");
-    let mut session = super::session_store::create_full("Recover", "model", "provider", false, None)
-        .await
-        .expect("session");
+    let mut session =
+        super::session_store::create_full("Recover", "model", "provider", false, None)
+            .await
+            .expect("session");
     session.project_id = Some("deleted-project".into());
     session.working_dir = missing.to_string_lossy().to_string();
     super::session_store::save(&session).await.expect("save");
@@ -89,5 +93,7 @@ async fn create_rebuilds_only_empty_path_and_switch_updates_session() {
         .find(|project| project.id == project_id)
         .expect("registered parent project");
     assert_eq!(switched_project.path, switched);
-    super::session_store::delete_one(&session.id).await.expect("cleanup");
+    super::session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup");
 }

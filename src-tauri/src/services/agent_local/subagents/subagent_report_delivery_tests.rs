@@ -4,9 +4,15 @@ use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
 async fn terminal_failure_blocks_before_provider_preparation() {
-    let parent = session_store::create_full("Parent pre-provider failure", "llama3", "ollama", false, None)
-        .await
-        .expect("create parent");
+    let parent = session_store::create_full(
+        "Parent pre-provider failure",
+        "llama3",
+        "ollama",
+        false,
+        None,
+    )
+    .await
+    .expect("create parent");
     let child_id = uuid::Uuid::new_v4().to_string();
     subagent_registry::register(&parent.id, &child_id, CancellationToken::new())
         .await
@@ -32,9 +38,15 @@ async fn terminal_failure_blocks_before_provider_preparation() {
 
 #[tokio::test]
 async fn terminal_failure_blocks_completion_without_pending_report_ids() {
-    let parent = session_store::create_full("Parent empty failed delivery", "llama3", "ollama", false, None)
-        .await
-        .expect("create parent");
+    let parent = session_store::create_full(
+        "Parent empty failed delivery",
+        "llama3",
+        "ollama",
+        false,
+        None,
+    )
+    .await
+    .expect("create parent");
     let child_id = uuid::Uuid::new_v4().to_string();
     subagent_registry::register(&parent.id, &child_id, CancellationToken::new())
         .await
@@ -60,9 +72,10 @@ async fn terminal_failure_blocks_completion_without_pending_report_ids() {
 
 #[tokio::test]
 async fn persistence_failure_is_never_acknowledged_as_a_successful_report() {
-    let parent = session_store::create_full("Parent failed delivery", "llama3", "ollama", false, None)
-        .await
-        .expect("create parent");
+    let parent =
+        session_store::create_full("Parent failed delivery", "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let child_id = uuid::Uuid::new_v4().to_string();
     subagent_registry::register(&parent.id, &child_id, CancellationToken::new())
         .await
@@ -93,7 +106,12 @@ async fn persistence_failure_is_never_acknowledged_as_a_successful_report() {
         .complete_model_request(true, &CancellationToken::new(), &messages)
         .await
         .is_err());
-    assert_eq!(subagent_hidden_reports::peek_reports(&parent.id).await.len(), 1);
+    assert_eq!(
+        subagent_hidden_reports::peek_reports(&parent.id)
+            .await
+            .len(),
+        1
+    );
     assert!(
         subagent_registry::terminal_state_for_parent(&parent.id)
             .await

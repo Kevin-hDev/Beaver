@@ -15,7 +15,8 @@ pub(super) async fn measure_rebuild_then_read(dir: &Path) -> Result<(usize, usiz
     let _guard = super::INDEX_LOCK.lock().await;
     DOCUMENT_READS
         .scope(Cell::new(0), async {
-            let revision = super::SESSION_SOURCE_REVISION.load(std::sync::atomic::Ordering::Acquire);
+            let revision =
+                super::SESSION_SOURCE_REVISION.load(std::sync::atomic::Ordering::Acquire);
             super::rebuild_index_from(dir).await?;
             let rebuild_reads = DOCUMENT_READS.with(Cell::get);
             let path = dir.join("index.json");

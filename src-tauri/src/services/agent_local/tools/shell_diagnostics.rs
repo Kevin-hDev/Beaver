@@ -50,8 +50,7 @@ fn record(file: &str, status: Status) {
 
 fn write_at(path: &Path, status: Status) -> Result<(), String> {
     let entry = Entry {
-        timestamp: chrono::Utc::now()
-            .to_rfc3339_opts(chrono::SecondsFormat::Nanos, true),
+        timestamp: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Nanos, true),
         status: status_name(status).to_string(),
     };
     let bytes = serde_json::to_vec(&entry).map_err(|_| "diagnostic unavailable".to_string())?;

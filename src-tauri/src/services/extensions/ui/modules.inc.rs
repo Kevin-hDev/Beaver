@@ -24,12 +24,6 @@ mod view;
 mod ui_contract {
     include!(concat!(env!("OUT_DIR"), "/extension_ui_contract.rs"));
 }
-mod ui_startup;
-mod ui_startup_ack;
-mod ui_startup_platform;
-mod ui_startup_state;
-#[cfg(test)]
-mod ui_startup_tests;
 #[cfg(test)]
 mod ui_artifact_tests;
 #[cfg(test)]
@@ -42,6 +36,12 @@ mod ui_dispatch_tests;
 mod ui_limit_tests;
 #[cfg(test)]
 mod ui_protocol_tests;
+mod ui_startup;
+mod ui_startup_ack;
+mod ui_startup_platform;
+mod ui_startup_state;
+#[cfg(test)]
+mod ui_startup_tests;
 #[cfg(test)]
 mod ui_validation_tests;
 #[cfg(test)]

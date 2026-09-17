@@ -39,7 +39,12 @@ fn collect(
             }
         }
     }
-    append_imported(&mut directories, imported.directories, MAX_RESOURCE_DIRS, true);
+    append_imported(
+        &mut directories,
+        imported.directories,
+        MAX_RESOURCE_DIRS,
+        true,
+    );
     if let Some(data_root) = data_root.as_deref() {
         let instruction_files = std::iter::once("AGENTS.md".to_string()).chain(
             crate::services::agent_import::enabled_hidden_documents(data_dir),
@@ -80,7 +85,11 @@ fn stable_canonical(path: &Path) -> Option<PathBuf> {
 }
 
 fn expected_kind(path: &Path, directory: bool) -> bool {
-    if directory { path.is_dir() } else { path.is_file() }
+    if directory {
+        path.is_dir()
+    } else {
+        path.is_file()
+    }
 }
 
 fn append_imported(
@@ -115,7 +124,10 @@ mod tests {
         let data = dunce::canonicalize(data).expect("data");
 
         assert_eq!(access.directories.len(), 2);
-        assert!(access.directories.iter().all(|path| path.starts_with(&data)));
+        assert!(access
+            .directories
+            .iter()
+            .all(|path| path.starts_with(&data)));
         assert!(access.directories.iter().all(|path| path != &data));
         assert_eq!(access.files, vec![data.join("AGENTS.md")]);
         assert!(canonical_local(temp.path(), &data, true).is_none());

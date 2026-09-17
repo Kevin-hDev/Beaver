@@ -35,15 +35,14 @@ async fn archived_child_cannot_be_redeployed() {
 #[tokio::test]
 async fn active_child_cannot_be_archived() {
     let (parent, mut child) = sessions("active", subagent_status::RUNNING).await;
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register child");
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
-    session_store::save(&child).await.expect("save active child");
+    session_store::save(&child)
+        .await
+        .expect("save active child");
 
     let outcome = subagent_archive::archive_owned(&child.id, &parent.id)
         .await
@@ -55,12 +54,10 @@ async fn active_child_cannot_be_archived() {
         .expect("load child")
         .archived_at
         .is_none());
-    assert!(subagent_registry::owns_execution(
-        &child.id,
-        &registered.run_id,
-        &registered.execution_id,
-    )
-    .await);
+    assert!(
+        subagent_registry::owns_execution(&child.id, &registered.run_id, &registered.execution_id,)
+            .await
+    );
     cleanup(&parent.id, &child.id).await;
 }
 
@@ -71,15 +68,10 @@ async fn sessions(
     super::types_session::AgentSession,
     super::types_session::AgentSession,
 ) {
-    let parent = session_store::create_full(
-        &format!("Parent {suffix}"),
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent =
+        session_store::create_full(&format!("Parent {suffix}"), "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let mut child = session_store::create_full("Geminitor", "llama3", "ollama", false, None)
         .await
         .expect("create child");
@@ -92,6 +84,10 @@ async fn sessions(
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }

@@ -179,7 +179,8 @@ fn chat_entrypoint_does_not_inject_reports_before_the_model_loop() {
 }
 
 fn assert_shared_model_outcomes(source: &str) {
-    assert!(source.contains("complete_model_request(!interrupted, &completion_cancel, params.messages)"));
+    assert!(source
+        .contains("complete_model_request(!interrupted, &completion_cancel, params.messages)"));
     let model_result = source
         .find("record_model_result")
         .expect("model result is recorded");

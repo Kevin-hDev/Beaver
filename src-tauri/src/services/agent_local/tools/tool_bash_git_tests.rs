@@ -48,12 +48,8 @@ fn baseline_uses_the_exact_dirty_worktree_content() {
         .expect("existing file");
     let mut remaining = super::MAX_FILE_CHANGE_DIFF_BYTES;
     let after = super::capture(&file, &mut remaining).expect("after state");
-    let change = super::super::tool_file_changes::build_change(
-        &file,
-        Some(&before),
-        Some(&after),
-    )
-    .expect("change");
+    let change = super::super::tool_file_changes::build_change(&file, Some(&before), Some(&after))
+        .expect("change");
 
     let diff = change.diff.expect("diff");
     let lines = diff
@@ -62,7 +58,9 @@ fn baseline_uses_the_exact_dirty_worktree_content() {
         .flat_map(|hunk| &hunk.lines)
         .map(|line| line.content.as_str())
         .collect::<Vec<_>>();
-    assert!(lines.iter().any(|line| line.contains("dirty before command")));
+    assert!(lines
+        .iter()
+        .any(|line| line.contains("dirty before command")));
     assert!(lines.iter().any(|line| line.contains("after command")));
 }
 

@@ -55,7 +55,7 @@ async fn desepingler_une_session_non_epinglee_ne_fait_rien() {
 }
 
 /* Épinglée, la session quitte sa liste d'origine : son rang là-bas doit
-   disparaître, sinon elle garderait deux rangs. */
+disparaître, sinon elle garderait deux rangs. */
 #[tokio::test]
 async fn epingler_oublie_le_rang_de_la_liste_d_origine() {
     let _g = guard().await;
@@ -86,7 +86,7 @@ async fn un_identifiant_invalide_est_refuse() {
 }
 
 /* L'index visible filtre les archivées avant tout : une épinglée archivée
-   disparaît de la liste, et son épingle reste pour la restauration. */
+disparaît de la liste, et son épingle reste pour la restauration. */
 #[tokio::test]
 async fn une_epinglee_archivee_garde_son_epingle_hors_de_la_liste_active() {
     let _g = guard().await;

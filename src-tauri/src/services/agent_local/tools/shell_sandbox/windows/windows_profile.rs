@@ -1,6 +1,5 @@
 use windows_sys::Win32::Security::Isolation::{
-    CreateAppContainerProfile, DeleteAppContainerProfile,
-    DeriveAppContainerSidFromAppContainerName,
+    CreateAppContainerProfile, DeleteAppContainerProfile, DeriveAppContainerSidFromAppContainerName,
 };
 use windows_sys::Win32::Security::{FreeSid, PSID};
 
@@ -56,9 +55,15 @@ impl Profile {
         })
     }
 
-    pub fn name(&self) -> &str { &self.name }
-    pub fn sid(&self) -> PSID { self.sid }
-    pub fn persist_for_cleanup(&mut self) { self.delete_on_drop = false; }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn sid(&self) -> PSID {
+        self.sid
+    }
+    pub fn persist_for_cleanup(&mut self) {
+        self.delete_on_drop = false;
+    }
 }
 
 impl Drop for Profile {
@@ -83,7 +88,9 @@ pub(super) fn delete(name: &str) -> Result<(), String> {
 pub(super) fn valid_name(name: &str) -> bool {
     name.len() == PREFIX.len() + 32
         && name.starts_with(PREFIX)
-        && name[PREFIX.len()..].bytes().all(|byte| byte.is_ascii_hexdigit())
+        && name[PREFIX.len()..]
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit())
 }
 
 fn wide(value: &str) -> Vec<u16> {

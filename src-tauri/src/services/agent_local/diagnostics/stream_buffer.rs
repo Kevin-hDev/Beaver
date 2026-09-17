@@ -56,10 +56,7 @@ pub fn record_thinking(
     });
 }
 
-pub fn record_generation_started(
-    on_event: &impl StreamEventSink,
-    result: &mut StreamResult,
-) {
+pub fn record_generation_started(on_event: &impl StreamEventSink, result: &mut StreamResult) {
     if result.generation.start_activity() {
         let _ = on_event.send_event(StreamEvent::GenerationStarted {});
     }
@@ -90,7 +87,13 @@ pub fn emit_buffered_content(
         units = units.saturating_add(crate::services::token_counting::text_units(chunk));
         let token_count = crate::services::token_counting::token_count_from_units(units)
             .min(u32::MAX as usize) as u32;
-        emit_token(on_event, chunk.clone(), token_count, tps, Some(phase.clone()));
+        emit_token(
+            on_event,
+            chunk.clone(),
+            token_count,
+            tps,
+            Some(phase.clone()),
+        );
     }
 }
 

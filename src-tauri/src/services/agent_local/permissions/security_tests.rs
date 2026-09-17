@@ -108,7 +108,10 @@ mod tests {
         let data = PathBuf::from("/private/data/config.json");
         let mut roots = vec![data.clone()];
 
-        append_unique(&mut roots, [data.clone(), PathBuf::from("/private/data/projects.json")]);
+        append_unique(
+            &mut roots,
+            [data.clone(), PathBuf::from("/private/data/projects.json")],
+        );
 
         assert_eq!(roots.iter().filter(|path| *path == &data).count(), 1);
         assert_eq!(roots.len(), 2);

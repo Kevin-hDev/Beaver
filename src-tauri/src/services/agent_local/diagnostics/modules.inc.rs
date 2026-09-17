@@ -44,7 +44,7 @@ pub(crate) mod stream_recovery_store;
 mod stream_recovery_store_discovery;
 #[cfg(test)]
 mod stream_recovery_store_tests;
+pub mod types_diagnostics;
 #[cfg(test)]
 mod types_diagnostics_contract_tests;
-pub mod types_diagnostics;
 mod types_diagnostics_deserialize;

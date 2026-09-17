@@ -36,10 +36,7 @@ impl MemoryLayout {
         }
     }
 
-    pub async fn project_scope_ready(
-        &self,
-        working_dir: &Path,
-    ) -> Result<MemoryScope, String> {
+    pub async fn project_scope_ready(&self, working_dir: &Path) -> Result<MemoryScope, String> {
         super::memory_project_migration::resolve(self, working_dir).await
     }
 
@@ -51,10 +48,7 @@ impl MemoryLayout {
         super::memory_project_migration::scope_for_tool_path(self, raw_path, working_dir).await
     }
 
-    pub fn management_topic(
-        &self,
-        raw_path: &str,
-    ) -> Result<(MemoryScope, PathBuf), String> {
+    pub fn management_topic(&self, raw_path: &str) -> Result<(MemoryScope, PathBuf), String> {
         if !Path::new(raw_path).is_absolute() {
             return Err("Chemin mémoire invalide.".into());
         }
@@ -108,7 +102,8 @@ impl MemoryScope {
 
     pub async fn ensure(&self) -> Result<(), String> {
         super::memory_path_security::ensure_scope_dir(self).await?;
-        super::memory_store::write_if_missing(&self.registry_path(), "# Registre mémoire\n").await?;
+        super::memory_store::write_if_missing(&self.registry_path(), "# Registre mémoire\n")
+            .await?;
         super::memory_store::write_if_missing(&self.summary_path(), "# Résumé mémoire\n").await
     }
 }
@@ -148,8 +143,7 @@ pub fn command_mentions_memory(command: &str) -> bool {
         .to_string_lossy()
         .replace('\\', "/")
         .to_lowercase();
-    normalized.contains(&root)
-        || normalized.contains(".local/share/cl-go-dash/memory")
+    normalized.contains(&root) || normalized.contains(".local/share/cl-go-dash/memory")
 }
 
 #[cfg(test)]

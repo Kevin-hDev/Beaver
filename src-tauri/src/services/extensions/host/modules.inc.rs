@@ -22,12 +22,15 @@ mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
 mod runtime_dispatch_result;
+mod runtime_event_sync;
 mod runtime_exit_monitor;
 mod runtime_failed_spawn;
 mod runtime_host_generation;
 mod runtime_host_load;
 mod runtime_host_storage;
 mod runtime_hosts;
+#[cfg(test)]
+mod runtime_hosts_tests;
 mod runtime_lifecycle;
 mod runtime_plan;
 mod runtime_recovery_preflight;
@@ -35,22 +38,19 @@ mod runtime_restart;
 mod runtime_status;
 mod runtime_sync;
 mod runtime_sync_apply;
+mod runtime_sync_apply_diagnostics;
 #[cfg(test)]
 mod runtime_sync_apply_tests;
 mod runtime_sync_contributions;
+#[cfg(test)]
+mod runtime_sync_contributions_tests;
 mod runtime_sync_interceptors;
+#[cfg(test)]
+mod runtime_sync_tests;
 mod runtime_ui_diagnostics;
 mod runtime_version;
 mod startup;
-mod runtime_event_sync;
-mod runtime_sync_apply_diagnostics;
 mod work_supervision;
 mod work_supervision_events;
 #[cfg(test)]
 mod work_supervision_tests;
-#[cfg(test)]
-mod runtime_hosts_tests;
-#[cfg(test)]
-mod runtime_sync_contributions_tests;
-#[cfg(test)]
-mod runtime_sync_tests;

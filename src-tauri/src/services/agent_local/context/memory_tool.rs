@@ -1,5 +1,5 @@
-use super::memory_paths::{lexical_path, path_arg, validate_in_scope, MemoryLayout, MemoryScope};
 use super::memory_path_classification::classify_memory_path;
+use super::memory_paths::{lexical_path, path_arg, validate_in_scope, MemoryLayout, MemoryScope};
 use super::types_tools::ToolResult;
 use serde_json::Value;
 use std::path::Path;
@@ -12,15 +12,7 @@ pub async fn dispatch_if_memory(
 ) -> Option<ToolResult> {
     let raw_path = path_arg(tool_name, args)?;
     let layout = MemoryLayout::production();
-    dispatch_with_layout(
-        tool_name,
-        args,
-        working_dir,
-        session_id,
-        raw_path,
-        &layout,
-    )
-    .await
+    dispatch_with_layout(tool_name, args, working_dir, session_id, raw_path, &layout).await
 }
 
 async fn dispatch_with_layout(
@@ -126,9 +118,15 @@ async fn dispatch_memory_tool(
             let offset = args["offset"].as_u64().unwrap_or(0) as usize;
             let limit = args["limit"]
                 .as_u64()
-                .unwrap_or(super::tool_files::DEFAULT_LIMIT as u64) as usize;
-            super::tool_files::read_file(path.to_string_lossy().as_ref(), working_dir, offset, limit)
-                .await
+                .unwrap_or(super::tool_files::DEFAULT_LIMIT as u64)
+                as usize;
+            super::tool_files::read_file(
+                path.to_string_lossy().as_ref(),
+                working_dir,
+                offset,
+                limit,
+            )
+            .await
         }
         "grep" if searchable_path(scope, path) => {
             super::tool_grep::grep(
@@ -194,8 +192,7 @@ fn bound_result(session_id: &str, mut result: ToolResult) -> ToolResult {
     if result.is_error {
         return result;
     }
-    let (content, truncated) =
-        super::memory_runtime::consume_result(session_id, &result.content);
+    let (content, truncated) = super::memory_runtime::consume_result(session_id, &result.content);
     result.content = content;
     result.mark_truncated(truncated);
     result

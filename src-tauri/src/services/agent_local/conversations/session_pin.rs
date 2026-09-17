@@ -1,10 +1,10 @@
 /* Épingler une conversation en tête de la barre latérale.
 
-   Calqué sur session_archive : l'état vit dans la session, sous son verrou,
-   et l'ordre manuel vit ailleurs (session_order). Après chaque bascule la
-   conversation oublie son rang : elle change de liste, et une conversation
-   sans rang passe en tête de sa liste d'arrivée, par activité — c'est
-   exactement là qu'on veut la voir. */
+Calqué sur session_archive : l'état vit dans la session, sous son verrou,
+et l'ordre manuel vit ailleurs (session_order). Après chaque bascule la
+conversation oublie son rang : elle change de liste, et une conversation
+sans rang passe en tête de sa liste d'arrivée, par activité — c'est
+exactement là qu'on veut la voir. */
 
 use chrono::Utc;
 

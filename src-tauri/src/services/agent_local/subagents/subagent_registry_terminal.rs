@@ -18,10 +18,7 @@ fn parent_has_entries(state: &RegistryState, parent_id: &str) -> bool {
         .any(|entry| entry.parent_session_id == parent_id)
 }
 
-fn ensure_parent_signal_locked(
-    state: &mut RegistryState,
-    parent_id: &str,
-) -> Result<(), String> {
+fn ensure_parent_signal_locked(state: &mut RegistryState, parent_id: &str) -> Result<(), String> {
     if let Some(signal) = state.terminal_signals.get(parent_id) {
         if !parent_has_entries(state, parent_id)
             && signal.state().sequence > 0
@@ -59,10 +56,7 @@ fn cleanup_parent_locked(state: &mut RegistryState, parent_id: &str, drop_idle_s
 }
 
 #[cfg(test)]
-pub async fn complete_child(
-    child_id: &str,
-    kind: SubagentTerminalKind,
-) -> Result<(), String> {
+pub async fn complete_child(child_id: &str, kind: SubagentTerminalKind) -> Result<(), String> {
     let mut state = REGISTRY.lock().await;
     let parent_id = state
         .entries

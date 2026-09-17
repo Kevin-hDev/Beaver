@@ -46,7 +46,8 @@ impl GitRemoveRunner for CommandGitRemoveRunner {
 
 #[cfg(test)]
 pub async fn remove(worktree_path: &str) -> Result<(), String> {
-    let identity = super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree_path)?;
+    let identity =
+        super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree_path)?;
     remove_identity(identity).await
 }
 
@@ -55,13 +56,15 @@ pub async fn remove_owned(
     child_id: &str,
     execution_id: &str,
 ) -> Result<(), String> {
-    let identity = super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree_path)?;
+    let identity =
+        super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree_path)?;
     identity.require_owner(child_id, execution_id)?;
     remove_identity(identity).await
 }
 
 pub async fn remove_for_child(worktree_path: &str, child_id: &str) -> Result<(), String> {
-    let identity = super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree_path)?;
+    let identity =
+        super::subagent_worktree_identity::ManagedWorktreeIdentity::parse(worktree_path)?;
     identity.require_child(child_id)?;
     remove_identity(identity).await
 }
@@ -185,9 +188,7 @@ enum ManagedPathState {
 async fn path_state(path: &Path) -> Result<ManagedPathState, String> {
     match tokio::fs::symlink_metadata(path).await {
         Ok(_) => Ok(ManagedPathState::Present),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            Ok(ManagedPathState::Missing)
-        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(ManagedPathState::Missing),
         Err(_) => Err("Suppression du worktree impossible".to_string()),
     }
 }

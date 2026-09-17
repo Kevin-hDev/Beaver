@@ -1,10 +1,6 @@
 use std::path::Path;
 
-pub fn agentic_environment(
-    working_dir: &Path,
-    is_git: bool,
-    git_root: Option<&Path>,
-) -> String {
+pub fn agentic_environment(working_dir: &Path, is_git: bool, git_root: Option<&Path>) -> String {
     let git_root_line = match git_root {
         Some(root) if root != working_dir => format!("\n - Git root: {}", root.display()),
         _ => String::new(),
