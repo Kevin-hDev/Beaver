@@ -1,0 +1,19 @@
+Task: Fix Windows CEF Clippy failures exposed after removing broad dead-code allowances.
+
+Root cause:
+- Unix-only constants and helpers were still compiled on Windows.
+- Several test helpers were compiled for every test target although their callers exist only in Unix tests.
+- WindowsOllamaDurableFs::cancel had no caller and was dead code.
+
+Change:
+- Gate platform-specific constants and helper methods at their real platform/test boundaries.
+- Remove the unused Windows cancellation method.
+- Keep the shared test helpers available on the targets that execute them.
+
+Validation:
+- cargo fmt --all -- --check: pass
+- cargo clippy --all-targets -- -D warnings: pass
+- node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager: 346 passed, 0 failed, 1 ignored
+- git diff --check: pass
+- graphify update .: pass
+- Local Windows cross-Clippy could not reach Beaver because aws-lc-sys requires Windows SDK headers unavailable on macOS; GitHub Windows CI is the authoritative platform validation.
