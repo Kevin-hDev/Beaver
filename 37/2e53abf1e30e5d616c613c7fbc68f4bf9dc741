@@ -1,0 +1,23 @@
+M31 — Centraliser les mécanismes communs des versions de conversations
+
+Décision
+- SessionVersion est l’unique classification des documents : Legacy(n), Current ou Future(n).
+- Les transformations v1 à v7 restent propres à chaque format ; v3 est conservé conformément à E10.
+- versioned_backup_path est l’unique générateur de sauvegardes .vN.bak.
+- Les deux chemins de publication partagent la même résolution de sauvegarde et l’écriture partage une seule branche Legacy.
+- Le nettoyage des sauvegardes parcourt toutes les versions historiques depuis CURRENT_SESSION_SCHEMA_VERSION.
+- Les migrations d’automatisations v2 restent séparées et n’ont pas été modifiées.
+
+Validation
+- cargo fmt --all -- --check : OK
+- cargo test session_migration --lib : 35 réussis, 0 échec
+- cargo test migration_profile_snapshot_and_two_atomic_compressions_survive_restart --lib : 1 réussi, 0 échec
+- cargo clippy --all-targets -- -D warnings : OK
+- git diff --check : OK
+- graphify update . : OK
+
+Couverture notable
+- Sauvegardes exactes v1 à v6, interruption avant renommage, lecture seule des versions futures.
+- Nouveau test de publication v6 vers v7 avec sauvegarde exacte .v6.bak.
+- Migration v6 vers v7 et conservation de SubagentExtensionOwnership::Invalid(raw) restent deux tests distincts.
+- Le filtre cargo test end_to_end_journey --lib a exécuté 0 test ; il n’est pas compté comme preuve et a été remplacé par le nom exact du test ci-dessus.
