@@ -91,7 +91,7 @@ Ces lignes sont des diagnostics différés, pas des preuves d'indisponibilité. 
     title on welcome: src/hooks/use-session-actions.ts:74-96 (local first 40 chars)
     title after first send: src/hooks/use-chat-actions.ts:61-64 (local first 40 chars)
     compression summary: src-tauri/src/services/compress/orchestrator_summary.rs:30-40
-    clone summary: src-tauri/src/services/agent_local/clone_session.rs:136-156
+    clone summary: src-tauri/src/services/agent_local/conversations/clone_session.rs:136-156
     silent request config: src-tauri/src/services/llm/stream_silent.rs:141-163
     silent current state: tools=[], think=false, reasoning_mode=None
 

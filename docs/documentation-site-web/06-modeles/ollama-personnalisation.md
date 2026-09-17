@@ -2,7 +2,7 @@
 
 **Emplacement site** — Modèles › Personnalisation
 **Répond à** — « Puis-je régler la créativité d'un modèle, lui donner des instructions permanentes, en créer une version à moi ? »
-**Sources** — `src/components/ollama/model-parameter-catalog.ts`, `parameter-editor-state.ts`, `modelfile-editor.tsx`, `services/agent_local/ollama_modelfile_create.rs`, `ollama_modelfile_parameters.rs`, `services/agent_local/model_customizations.rs`, `system_prompt_types.rs`
+**Sources** — `src/components/ollama/model-parameter-catalog.ts`, `parameter-editor-state.ts`, `modelfile-editor.tsx`, `services/agent_local/execution/ollama_modelfile_create.rs`, `ollama_modelfile_parameters.rs`, `services/agent_local/execution/model_customizations.rs`, `system_prompt_types.rs`
 **Vérification** — Vérifié dans le code
 
 ---

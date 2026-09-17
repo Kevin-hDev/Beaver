@@ -56,13 +56,13 @@ La partie « skills » du fichier est exacte. La partie « automatisations » d�
 
 > Brief : « l'automatisation fige […] **la liste exacte des outils** dont elle a besoin — au plus **12** ; **la liste exacte des skills** à charger — au plus **8** ».
 
-**Réalité** : ces champs n'existent plus. La structure enregistrée sur le disque ne contient que `id`, `name`, `model`, `provider`, `prompt`, `schedule`, `description`, `project_id`, `active`, `paused_by_global`, `created_at` — `src-tauri/src/models/config.rs:134-149`. La définition de l'outil n'expose que `action`, `id`, `name`, `description`, `prompt`, `schedule`, `active`, `confirm` — `src-tauri/src/services/agent_local/tool_definitions_automation.rs:7-27`.
+**Réalité** : ces champs n'existent plus. La structure enregistrée sur le disque ne contient que `id`, `name`, `model`, `provider`, `prompt`, `schedule`, `description`, `project_id`, `active`, `paused_by_global`, `created_at` — `src-tauri/src/models/config.rs:134-149`. La définition de l'outil n'expose que `action`, `id`, `name`, `description`, `prompt`, `schedule`, `active`, `confirm` — `src-tauri/src/services/agent_local/tools/tool_definitions_automation.rs:7-27`.
 
 ### Écart 2 — Une automatisation s'exécute désormais en accès complet, avec tous les outils activés
 
 > Brief : « **une automatisation ne dispose que des outils qui lui ont été explicitement donnés**. […] c'est une tâche à portée réduite, décidée à l'avance. »
 
-**Réalité, exactement l'inverse.** La description de l'outil l'énonce noir sur blanc : « Every automation runs through the complete Agent Local engine in **full-access mode, with all currently enabled tools and skills** » — `src-tauri/src/services/agent_local/tool_definitions_automation.rs:6`. C'est confirmé à l'exécution : le planificateur lance la conversation avec `StreamPermissionMode::FullAccess` — `src-tauri/src/services/scheduler/agentic.rs:112`.
+**Réalité, exactement l'inverse.** La description de l'outil l'énonce noir sur blanc : « Every automation runs through the complete Agent Local engine in **full-access mode, with all currently enabled tools and skills** » — `src-tauri/src/services/agent_local/tools/tool_definitions_automation.rs:6`. C'est confirmé à l'exécution : le planificateur lance la conversation avec `StreamPermissionMode::FullAccess` — `src-tauri/src/services/scheduler/agentic.rs:112`.
 
 **C'est le point le plus important de tout cet audit.** Une tâche programmée s'exécute sans aucune demande d'approbation, avec la totalité des outils activés dans l'application, y compris ceux qui écrivent des fichiers et lancent des commandes. Le site doit le dire ; le brief affirme aujourd'hui le contraire.
 
@@ -70,7 +70,7 @@ La partie « skills » du fichier est exacte. La partie « automatisations » d�
 
 > Brief : « **Douze outils sont refusés** dans une automatisation », avec un tableau les listant (choix interactif, mode Plan, gestion d'automatisations, délégation et les huit outils de sous-agents).
 
-**Réalité** : aucune liste de refus n'existe dans le code. `src-tauri/src/services/agent_local/tool_automation_validation.rs` ne contient que trois fonctions — analyse du déclencheur, lecture d'un champ texte, erreur interne (lignes 5-19). Le fichier entier fait 34 lignes, tests compris. Le tableau « Les outils refusés dans une automatisation » du brief est à supprimer.
+**Réalité** : aucune liste de refus n'existe dans le code. `src-tauri/src/services/agent_local/tools/tool_automation_validation.rs` ne contient que trois fonctions — analyse du déclencheur, lecture d'un champ texte, erreur interne (lignes 5-19). Le fichier entier fait 34 lignes, tests compris. Le tableau « Les outils refusés dans une automatisation » du brief est à supprimer.
 
 ### Écart 4 — La règle anti-récursion a disparu
 
@@ -104,7 +104,7 @@ C'est la page la plus sensible du site ; deux de ces écarts touchent à ce que 
 
 > Brief, tableau des trois modes : « **Chatbot** | `chat` | Aucun outil : réponses en texte uniquement ».
 
-**Réalité** : en mode Chatbot, l'agent reçoit **deux outils** — `web_search` et `web_fetch`. Le catalogue envoyé au modèle est réduit aux définitions web (`src-tauri/src/services/agent_local/tool_definitions_chat.rs:3-5`, avec un test nommé `chat_exposes_only_web_search_and_fetch` ligne 12), aussi bien pour les fournisseurs distants (`src-tauri/src/commands/agent_chat_task/api_tools.rs:15-16`) que pour Ollama (`src-tauri/src/commands/agent_chat_task/ollama_setup.rs:26-27`). Tout autre outil appelé est refusé à l'exécution avec « Outil indisponible dans ce mode. » (`src-tauri/src/services/agent_local/tool_dispatcher_entry.rs:66-70`), la liste des outils autorisés étant `web_search` et `web_fetch` (`src-tauri/src/services/agent_local/tool_dispatcher_route.rs:15-17`).
+**Réalité** : en mode Chatbot, l'agent reçoit **deux outils** — `web_search` et `web_fetch`. Le catalogue envoyé au modèle est réduit aux définitions web (`src-tauri/src/services/agent_local/tools/tool_definitions_chat.rs:3-5`, avec un test nommé `chat_exposes_only_web_search_and_fetch` ligne 12), aussi bien pour les fournisseurs distants (`src-tauri/src/commands/agent_chat_task/api_tools.rs:15-16`) que pour Ollama (`src-tauri/src/commands/agent_chat_task/ollama_setup.rs:26-27`). Tout autre outil appelé est refusé à l'exécution avec « Outil indisponible dans ce mode. » (`src-tauri/src/services/agent_local/tools/tool_dispatcher_entry.rs:66-70`), la liste des outils autorisés étant `web_search` et `web_fetch` (`src-tauri/src/services/agent_local/tools/tool_dispatcher_route.rs:15-17`).
 
 Formulation juste pour le site : *en mode Chatbot, l'agent ne peut ni lire ni écrire sur la machine ; il garde l'accès à la recherche web et à la lecture d'une page.*
 
@@ -114,13 +114,13 @@ Second effet, non mentionné par le brief : en mode Chatbot, ni `AGENTS.md` ni l
 
 > Brief : « **Les motifs reconnus comme sûrs** — vingt et un au total ».
 
-**Réalité** : la liste compte **vingt expressions** — `src-tauri/src/services/agent_local/permission_bash.rs:4-30`. Le contenu du tableau du brief est exact (`ls`, `cat`, `head`, `tail`, `wc`, `grep`, `find`, `git status|log|diff|show|remote|tag`, `git branch` seul, `pwd`, `echo`, `which`, `cargo check|test|clippy|build`, `npx tsc`, `npm run|test`, `tree`, `file`, `stat`, `du`, `df`) ; seul le décompte est faux. Le plus sûr est d'écrire « une vingtaine de familles de commandes » plutôt qu'un chiffre exact, puisque cette liste est appelée à bouger.
+**Réalité** : la liste compte **vingt expressions** — `src-tauri/src/services/agent_local/permissions/permission_bash.rs:4-30`. Le contenu du tableau du brief est exact (`ls`, `cat`, `head`, `tail`, `wc`, `grep`, `find`, `git status|log|diff|show|remote|tag`, `git branch` seul, `pwd`, `echo`, `which`, `cargo check|test|clippy|build`, `npx tsc`, `npm run|test`, `tree`, `file`, `stat`, `du`, `df`) ; seul le décompte est faux. Le plus sûr est d'écrire « une vingtaine de familles de commandes » plutôt qu'un chiffre exact, puisque cette liste est appelée à bouger.
 
 ### Écart 3 — Les outils fournis par une extension échappent aux deux listes
 
 > Brief : « **Tous les autres outils passent sans confirmation**, y compris en mode Demande d'approbation ».
 
-**Réalité** : un outil venant d'une extension ne passe ni par la liste des douze, ni par les quatre conditionnels. Sa nécessité de confirmation est décidée par la politique de son effet déclaré — `src-tauri/src/services/agent_local/permission_gate.rs:84-89`. Un commentaire du code précise même que l'effet « external-read » réutilise la décision et le dialogue de `web_fetch`. La phrase du brief est donc trop absolue depuis que les extensions sont livrées.
+**Réalité** : un outil venant d'une extension ne passe ni par la liste des douze, ni par les quatre conditionnels. Sa nécessité de confirmation est décidée par la politique de son effet déclaré — `src-tauri/src/services/agent_local/permissions/permission_gate.rs:84-89`. Un commentaire du code précise même que l'effet « external-read » réutilise la décision et le dialogue de `web_fetch`. La phrase du brief est donc trop absolue depuis que les extensions sont livrées.
 
 ### Écart 4 — Deux caractères de contrôle manquent à la liste
 
@@ -132,7 +132,7 @@ Second effet, non mentionné par le brief : en mode Chatbot, ni `AGENTS.md` ni l
 
 - **« `git branch` seul est sûr, mais `git branch -d` ? »** → **Tranché : `git branch -d` déclenche une confirmation.** Le motif est `^git\s+branch\s*$`, ancré en fin de chaîne : toute option le fait échouer — `permission_bash.rs:14`.
 - **« Le comportement en mode Chatbot : les outils sont-ils absents du catalogue ou refusés à l'exécution ? »** → **Tranché : les deux.** Le catalogue est réduit à `web_search` et `web_fetch` avant l'envoi (`tool_definitions_chat.rs:3-5`), et un appel hors de ces deux outils est refusé à l'exécution (`tool_dispatcher_entry.rs:66-70`).
-- **« Le mode par défaut est-il bien Accès complet ? »** → **Tranché : oui.** `default_permission_mode()` renvoie `"auto"`, y compris quand le fichier de réglages est absent, illisible ou porte une valeur inconnue — `src-tauri/src/services/agent_local/agent_settings.rs:37-40, 67-69, 75-85`.
+- **« Le mode par défaut est-il bien Accès complet ? »** → **Tranché : oui.** `default_permission_mode()` renvoie `"auto"`, y compris quand le fichier de réglages est absent, illisible ou porte une valeur inconnue — `src-tauri/src/services/agent_local/execution/agent_settings.rs:37-40, 67-69, 75-85`.
 
 ### Points restant ouverts
 
@@ -148,7 +148,7 @@ Le fichier est remarquablement exact sur les chiffres. Ce qui a bougé, ce sont 
 
 > Brief, dans les points à confirmer : « **Un douzième outil essentiel existe dans le catalogue mais n'appartient à aucun groupe** : `search_extension_tools`. »
 
-**Réalité** : `search_extension_tools` **n'existe plus**. Trois outils d'extension le remplacent, tous verrouillés et tous absents de l'écran des réglages : `list_extensions`, `inspect_extensions` et `load_extension_resource` — déclarés dans `src-tauri/src/services/agent_local/tool_catalog.rs:41-49`, nommés dans le contrat généré `DISCOVERY_TOOL_NAMES` et dans `src-tauri/src/services/agent_local/tool_extension_resource.rs:5`.
+**Réalité** : `search_extension_tools` **n'existe plus**. Trois outils d'extension le remplacent, tous verrouillés et tous absents de l'écran des réglages : `list_extensions`, `inspect_extensions` et `load_extension_resource` — déclarés dans `src-tauri/src/services/agent_local/tools/tool_catalog.rs:41-49`, nommés dans le contrat généré `DISCOVERY_TOOL_NAMES` et dans `src-tauri/src/services/agent_local/tools/tool_extension_resource.rs:5`.
 
 Le décompte exact aujourd'hui : **14 outils verrouillés** — les 11 répartis dans les 5 groupes essentiels, plus ces 3 outils d'extension hors groupe.
 
@@ -156,17 +156,17 @@ Le décompte exact aujourd'hui : **14 outils verrouillés** — les 11 répartis
 
 > Brief : « Le comportement quand une extension remplace un outil natif désactivé est implémenté […] mais relève du chantier gelé Extensions. Ne pas documenter maintenant. »
 
-**Réalité** : le filtrage tient compte des outils dynamiques et des remplacements en production — `src-tauri/src/services/agent_local/tool_catalog_filter.rs:13-21`, qui appelle `tool_availability::available` avec `is_dynamic_tool` et `is_replacement`. Les extensions étant livrées, la consigne « ne pas documenter » est à réexaminer avec le propriétaire.
+**Réalité** : le filtrage tient compte des outils dynamiques et des remplacements en production — `src-tauri/src/services/agent_local/tools/tool_catalog_filter.rs:13-21`, qui appelle `tool_availability::available` avec `is_dynamic_tool` et `is_replacement`. Les extensions étant livrées, la consigne « ne pas documenter » est à réexaminer avec le propriétaire.
 
 ### Ce qui reste exact — et c'est l'essentiel du fichier
 
-- 5 groupes essentiels / 11 outils, 11 groupes optionnels / 32 outils, 5 groupes actifs par défaut — `src-tauri/src/services/agent_local/tool_group_catalog.rs:12-81`.
+- 5 groupes essentiels / 11 outils, 11 groupes optionnels / 32 outils, 5 groupes actifs par défaut — `src-tauri/src/services/agent_local/tools/tool_group_catalog.rs:12-81`.
 - Les listes d'outils de chaque groupe, une par une, sont exactes — même fichier.
 - La dépendance du groupe Sous-agents à `delegate_task` — `tool_catalog.rs:81-85`.
 - `MAX_OPTIONAL_TOOLS = 32`, égal au nombre d'outils optionnels, avec troncature silencieuse par `.take(32)` — `tool_catalog.rs:16` et `:89`. **L'avertissement du brief à l'équipe produit reste entièrement valable.**
-- Tous les plafonds de troncature : `web_fetch` 50 000, `bash`/`bash_control` 30 000, `grep`/`web_search`/`list_dir` 10 000, `glob` 5 000, erreurs 30 000, aperçu 2 000 — `src-tauri/src/services/agent_local/tool_result_truncate.rs:4-11`.
-- Budget cumulé 100 000 caractères et nettoyage à 24 heures — `src-tauri/src/services/agent_local/tool_result_budget.rs:3` et `:9-14`.
-- Le filtrage du prompt système, y compris le retrait des deux sections entières — `src-tauri/src/services/agent_local/tool_prompt_filter.rs:9-18, 37`.
+- Tous les plafonds de troncature : `web_fetch` 50 000, `bash`/`bash_control` 30 000, `grep`/`web_search`/`list_dir` 10 000, `glob` 5 000, erreurs 30 000, aperçu 2 000 — `src-tauri/src/services/agent_local/tools/tool_result_truncate.rs:4-11`.
+- Budget cumulé 100 000 caractères et nettoyage à 24 heures — `src-tauri/src/services/agent_local/tools/tool_result_budget.rs:3` et `:9-14`.
+- Le filtrage du prompt système, y compris le retrait des deux sections entières — `src-tauri/src/services/agent_local/tools/tool_prompt_filter.rs:9-18, 37`.
 - `plan_mode` est bien un outil optionnel actif par défaut — `tool_catalog.rs:65`.
 
 ---
@@ -193,7 +193,7 @@ Le brief ne le mentionne pas : ni `AGENTS.md`, ni la personnalité ne sont injec
 
 ### Ce qui reste exact
 
-L'ordre d'assemblage des six sources est **exactement** celui du brief — `src-tauri/src/services/agent_local/agent_md.rs:33-111` : global, documents importés activés, règles externes triées par source, `AGENTS.md` du projet, `.cl-go/AGENTS.md`, puis `.cl-go/rules/*.md` triés par nom. La limite de 200 Ko (`agent_md.rs:3`), le message d'omission mot pour mot (`agent_md.rs:4-5`), l'en-tête annonçant que les instructions de projet sont plus spécifiques (`agent_md.rs:75-77`) et le filtrage sur l'extension `.md` (`agent_md.rs:103`) sont tous exacts.
+L'ordre d'assemblage des six sources est **exactement** celui du brief — `src-tauri/src/services/agent_local/prompts/agent_md.rs:33-111` : global, documents importés activés, règles externes triées par source, `AGENTS.md` du projet, `.cl-go/AGENTS.md`, puis `.cl-go/rules/*.md` triés par nom. La limite de 200 Ko (`agent_md.rs:3`), le message d'omission mot pour mot (`agent_md.rs:4-5`), l'en-tête annonçant que les instructions de projet sont plus spécifiques (`agent_md.rs:75-77`) et le filtrage sur l'extension `.md` (`agent_md.rs:103`) sont tous exacts.
 
 ---
 
@@ -205,7 +205,7 @@ Toutes les valeurs chiffrées de ce fichier sont justes — c'est un fichier sol
 
 > Brief : « la cascade est interdite explicitement (`tool_delegate.rs:55-60`) ».
 
-**Réalité** : le refus est aujourd'hui aux lignes **45-50** de `src-tauri/src/services/agent_local/tool_delegate.rs`, avec le message inchangé : « Les sous-agents ne peuvent pas lancer d'autres sous-agents. » Le fait est confirmé, seule la référence a glissé.
+**Réalité** : le refus est aujourd'hui aux lignes **45-50** de `src-tauri/src/services/agent_local/tools/tool_delegate.rs`, avec le message inchangé : « Les sous-agents ne peuvent pas lancer d'autres sous-agents. » Le fait est confirmé, seule la référence a glissé.
 
 ### Écart 2 — Une restriction manque à la section « Ce qu'un sous-agent ne peut pas faire »
 
@@ -213,8 +213,8 @@ Le brief liste quatre restrictions. Il en manque une, vérifiée : **un sous-age
 
 ### Points tranchés
 
-- **« La portée d'accès disque d'un sous-agent — celle du parent, ou restreinte à son espace isolé ? »** → **Tranché : restreinte à son espace isolé.** Chaque chemin passé à un outil est vérifié comme confiné dans le répertoire de travail du sous-agent, avec refus explicite de tout `..` — `src-tauri/src/services/agent_local/subagent_tool_guard.rs:107-115` (chemins des outils fichiers), `:131-140` (`validate_confined_path`), `:175-177` (le `workdir` d'une commande shell). Message de refus : « Chemin hors du dossier autorisé. »
-- **« La liste complète des types de sous-agents et de leurs profils d'outils »** → **Tranché.** Deux types seulement, `explorer` et `coder` ; tout autre valeur est refusée avec « Type de sous-agent invalide. » — `tool_delegate.rs:22-36` et `src-tauri/src/services/agent_local/subagent_tool_profile.rs:14-20`. Les profils exacts sont donnés au point 6 ci-dessous.
+- **« La portée d'accès disque d'un sous-agent — celle du parent, ou restreinte à son espace isolé ? »** → **Tranché : restreinte à son espace isolé.** Chaque chemin passé à un outil est vérifié comme confiné dans le répertoire de travail du sous-agent, avec refus explicite de tout `..` — `src-tauri/src/services/agent_local/subagents/subagent_tool_guard.rs:107-115` (chemins des outils fichiers), `:131-140` (`validate_confined_path`), `:175-177` (le `workdir` d'une commande shell). Message de refus : « Chemin hors du dossier autorisé. »
+- **« La liste complète des types de sous-agents et de leurs profils d'outils »** → **Tranché.** Deux types seulement, `explorer` et `coder` ; tout autre valeur est refusée avec « Type de sous-agent invalide. » — `tool_delegate.rs:22-36` et `src-tauri/src/services/agent_local/subagents/subagent_tool_profile.rs:14-20`. Les profils exacts sont donnés au point 6 ci-dessous.
 - **« Un sous-agent peut-il écrire en mémoire ? »** → **Tranché : non, et le message est explicite** : « Les sous-agents peuvent seulement lire une mémoire sélectionnée et suggérer une modification au parent. » — `subagent_tool_guard.rs:96-104`. Seul `read_file` passe sur un fichier de mémoire.
 
 ---
@@ -225,12 +225,12 @@ Le brief liste quatre restrictions. Il en manque une, vérifiée : **un sous-age
 
 > Brief, tableau « Les outils par type de sous-agent » : Explorateur = lire un fichier, lister un dossier, chercher par motif, chercher par nom, chercher sur le web, ouvrir une page. Codeur = lire un fichier, créer un fichier, modifier un fichier, travailler dans un espace Git isolé.
 
-**Réalité** — `src-tauri/src/services/agent_local/subagent_tool_profile.rs:22-50` :
+**Réalité** — `src-tauri/src/services/agent_local/subagents/subagent_tool_profile.rs:22-50` :
 
 - **Explorateur** : `bash`, `read_file`, `list_dir`, `grep`, `glob`, `web_search`, `web_fetch` — **sept outils**. Le brief en oublie un, et pas le moindre : **l'explorateur dispose de `bash`.**
 - **Codeur** : `bash`, `bash_control`, `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `glob`, `web_search`, `web_fetch`, plus `load_skill` si le groupe Skills est activé — **dix ou onze outils**. Le brief en cite quatre.
 
-**Nuance importante à ne pas perdre** : le `bash` de l'explorateur n'est pas le `bash` ordinaire. C'est une liste blanche stricte de commandes de lecture — `pwd`, `ls`, `tree` (avec `-L` obligatoire, profondeur 1 à 8), `file`, `stat`, `wc`, `du`, `df`, `git` — sans aucun opérateur de shell (`;`, `|`, `>`, `<`, backtick, `$(`, `&&`, `||`, guillemets, antislash tous refusés), au plus 32 mots, et tous les chemins confinés au dossier de travail — `src-tauri/src/services/agent_local/subagent_explorer_bash.rs:45-110`.
+**Nuance importante à ne pas perdre** : le `bash` de l'explorateur n'est pas le `bash` ordinaire. C'est une liste blanche stricte de commandes de lecture — `pwd`, `ls`, `tree` (avec `-L` obligatoire, profondeur 1 à 8), `file`, `stat`, `wc`, `du`, `df`, `git` — sans aucun opérateur de shell (`;`, `|`, `>`, `<`, backtick, `$(`, `&&`, `||`, guillemets, antislash tous refusés), au plus 32 mots, et tous les chemins confinés au dossier de travail — `src-tauri/src/services/agent_local/subagents/subagent_explorer_bash.rs:45-110`.
 
 La phrase du brief « Explorateur — Écrit dans le projet : **Non** » reste donc **vraie**. Mais le tableau doit dire que l'explorateur peut lancer des commandes d'exploration, sans quoi le lecteur croit qu'il n'a aucun accès au shell.
 
@@ -240,8 +240,8 @@ Le brief n'en parle pas : `load_skill` n'est ajouté au profil du codeur **que s
 
 ### Points tranchés
 
-- **« Les sous-agents portent-ils des noms visibles fixes — "Claudiator", "Geminitor" ? »** → **Tranché : oui, ces noms sont toujours dans le code**, et ils sont imposés : `default_name("coder")` renvoie `"Claudiator"`, `default_name("explorer")` renvoie `"Geminitor"` — `src-tauri/src/services/agent_local/subagent_profile.rs:1-2, 10, 70-72`. Mieux : un nom fourni par l'agent est **écrasé** par ces noms par défaut (`clean_name`, testé lignes 78-82). **La question posée par le brief à l'équipe produit reste entièrement ouverte et devient plus urgente : ces noms sont bien affichés, et ils évoquent deux produits concurrents.**
-- **« Le nombre maximal de projets isolés simultanés »** → **Tranché indirectement** : la borne réelle est le nombre de sous-agents actifs, 4 par conversation et 8 au total — `src-tauri/src/services/agent_local/subagent_registry.rs:9-10, 162-166` et `agent_work_supervision.rs:6`. Il n'existe pas de plafond distinct de « projets isolés ».
+- **« Les sous-agents portent-ils des noms visibles fixes — "Claudiator", "Geminitor" ? »** → **Tranché : oui, ces noms sont toujours dans le code**, et ils sont imposés : `default_name("coder")` renvoie `"Claudiator"`, `default_name("explorer")` renvoie `"Geminitor"` — `src-tauri/src/services/agent_local/subagents/subagent_profile.rs:1-2, 10, 70-72`. Mieux : un nom fourni par l'agent est **écrasé** par ces noms par défaut (`clean_name`, testé lignes 78-82). **La question posée par le brief à l'équipe produit reste entièrement ouverte et devient plus urgente : ces noms sont bien affichés, et ils évoquent deux produits concurrents.**
+- **« Le nombre maximal de projets isolés simultanés »** → **Tranché indirectement** : la borne réelle est le nombre de sous-agents actifs, 4 par conversation et 8 au total — `src-tauri/src/services/agent_local/subagents/subagent_registry.rs:9-10, 162-166` et `agent_work_supervision.rs:6`. Il n'existe pas de plafond distinct de « projets isolés ».
 
 ### Ce qui reste exact
 
@@ -255,7 +255,7 @@ Les trois valeurs de la page sont exactes : 200 tours (`src-tauri/src/services/a
 
 ### Écart 1 — Le message du garde-fou anti-boucle n'est pas traduit
 
-Le brief le range dans les points à confirmer. Le voici, en dur dans le code : **« Circuit breaker : {N} appels identiques consécutifs détectés. Boucle probable, arrêt. »** — `src-tauri/src/services/agent_local/circuit_breaker.rs:22-25`.
+Le brief le range dans les points à confirmer. Le voici, en dur dans le code : **« Circuit breaker : {N} appels identiques consécutifs détectés. Boucle probable, arrêt. »** — `src-tauri/src/services/agent_local/execution/circuit_breaker.rs:22-25`.
 
 Deux remarques pour le site. D'abord, ce message n'est pas une clé de traduction : un utilisateur en espagnol ou en japonais lira du français mêlé d'anglais. **C'est un manquement à la règle i18n du projet, à remonter à l'équipe.** Ensuite, le terme « circuit breaker » n'est pas compréhensible sans explication ; la page doit décrire le comportement plutôt que de citer le message tel quel.
 
@@ -263,13 +263,13 @@ Deux remarques pour le site. D'abord, ce message n'est pas une clé de traductio
 
 > Brief : « **La décharge du GPU en fin de boucle.** Une fonction s'en occupe pour les modèles locaux. »
 
-**Réalité** : aucune fonction de déchargement n'existe côté agent. Le mécanisme est le paramètre `keep_alive` envoyé à Ollama **à chaque requête** — `src-tauri/src/services/agent_local/agent_loop_support.rs:29-36` et `ollama_wire.rs:48`. Il vient des réglages avancés, vaut **5 minutes par défaut**, et la valeur « forever » est traduite en `-1m`, ce qui demande à Ollama de ne jamais décharger le modèle.
+**Réalité** : aucune fonction de déchargement n'existe côté agent. Le mécanisme est le paramètre `keep_alive` envoyé à Ollama **à chaque requête** — `src-tauri/src/services/agent_local/execution/agent_loop_support.rs:29-36` et `ollama_wire.rs:48`. Il vient des réglages avancés, vaut **5 minutes par défaut**, et la valeur « forever » est traduite en `-1m`, ce qui demande à Ollama de ne jamais décharger le modèle.
 
 Réponse à la question du brief : **oui, le modèle est libéré de la mémoire vidéo**, mais après cinq minutes d'inactivité, pas en fin de boucle — et le message suivant paie alors le temps de rechargement. C'est un réglage utilisateur, à documenter comme tel.
 
 ### Points tranchés
 
-- **« Le mécanisme de pré-dispatch »** → **Tranché : il existe et il fait bien ce que le brief soupçonnait.** Les outils **en lecture seule** demandés par le modèle sont lancés **pendant que sa réponse est encore en train d'arriver**, sans attendre la fin du flux — `src-tauri/src/services/agent_local/eager_dispatch.rs:1-40`, avec le même plafond de dix appels simultanés que le traitement par lots (`eager_dispatch.rs:11`). Le mécanisme est activé en production et désactivé seulement dans les rejeux de test (`agent_loop.rs:53-62`). **C'est effectivement un point de performance à documenter** : sur une exploration, la lecture des fichiers commence avant que le modèle ait fini d'écrire.
+- **« Le mécanisme de pré-dispatch »** → **Tranché : il existe et il fait bien ce que le brief soupçonnait.** Les outils **en lecture seule** demandés par le modèle sont lancés **pendant que sa réponse est encore en train d'arriver**, sans attendre la fin du flux — `src-tauri/src/services/agent_local/execution/eager_dispatch.rs:1-40`, avec le même plafond de dix appels simultanés que le traitement par lots (`eager_dispatch.rs:11`). Le mécanisme est activé en production et désactivé seulement dans les rejeux de test (`agent_loop.rs:53-62`). **C'est effectivement un point de performance à documenter** : sur une exploration, la lecture des fichiers commence avant que le modèle ait fini d'écrire.
 - **« Le comportement en mode Chatbot : la boucle se réduit-elle à un seul tour ? »** → **Tranché : non.** La boucle est la même ; c'est le catalogue d'outils qui est réduit à `web_search` et `web_fetch` (voir le point 2 de ce rapport). Un tour de Chatbot peut donc enchaîner une recherche, la lecture d'une page, puis la réponse.
 - **« Le message affiché à 200 tours »** → non trouvé sous forme de message dédié ; la boucle est un `for turn in 0..MAX_TURNS` (`agent_loop.rs:30`) et la fin de parcours est signalée au modèle avant le dernier tour. À vérifier à l'écran avec le reste de la passe d'interface.
 - **La taille de la file d'attente de messages** reste ouverte.
@@ -282,7 +282,7 @@ Toutes les limites sont exactes : 2 048 skills (`skill_catalog.rs:9`), 256 Ko (`
 
 ### Écart — Une quatrième source de skills existe désormais
 
-Le brief décrit deux sources : les skills locaux et les skills importés d'un autre assistant. Le code en connaît une troisième : les **skills d'extension**, dont l'identifiant est préfixé par `extension:`. Ils sont **délibérément retirés du catalogue global** — « This namespace is session-authorized and must never enter the global catalog » — `src-tauri/src/services/agent_local/skill_catalog.rs:22-23, 35-42`. Ils sont autorisés session par session.
+Le brief décrit deux sources : les skills locaux et les skills importés d'un autre assistant. Le code en connaît une troisième : les **skills d'extension**, dont l'identifiant est préfixé par `extension:`. Ils sont **délibérément retirés du catalogue global** — « This namespace is session-authorized and must never enter the global catalog » — `src-tauri/src/services/agent_local/context/skill_catalog.rs:22-23, 35-42`. Ils sont autorisés session par session.
 
 Sans conséquence directe pour l'utilisateur aujourd'hui, mais la page « Les skills importés » est incomplète.
 

@@ -2,7 +2,7 @@
 
 **Emplacement site** — Extensions › *Réécrire le prompt système* dans le sommaire du mockup. **Cet emplacement est contesté** : voir l'encadré « Décision à prendre » ci-dessous.
 **Répond à** — « Une extension peut-elle changer les instructions que Beaver donne au modèle ? »
-**Sources** — `EXTENSIONS.md` (racine du dépôt), `src-tauri/resources/extension-host/contract.json`, `contract.mjs`, `extension-api.mjs`, `src-tauri/build.rs` + `extension_contract_build.rs`, `src-tauri/src/services/extensions/core_bridge.rs` et `types.rs`, `src-tauri/src/services/agent_local/system_prompt_resolver.rs`, `chat_prompts.rs`, `chat_prompt_sections.rs`, `extension_discovery_prompt.rs`, `extension_skill_loader.rs`, `extension_tool_set_native_only.rs`, `skill_catalog.rs`, `src-tauri/src/commands/agent_chat_task/common.rs`
+**Sources** — `EXTENSIONS.md` (racine du dépôt), `src-tauri/resources/extension-host/contract.json`, `contract.mjs`, `extension-api.mjs`, `src-tauri/build.rs` + `extension_contract_build.rs`, `src-tauri/src/services/extensions/core_bridge.rs` et `types.rs`, `src-tauri/src/services/agent_local/prompts/system_prompt_resolver.rs`, `chat_prompts.rs`, `chat_prompt_sections.rs`, `extension_discovery_prompt.rs`, `extension_skill_loader.rs`, `extension_tool_set_native_only.rs`, `skill_catalog.rs`, `src-tauri/src/commands/agent_chat_task/common.rs`
 **Vérification** — Vérifié dans le code, y compris par recherches négatives explicitement listées (section « Comment le verdict a été établi »). Rien n'a été vérifié à l'écran.
 
 ---

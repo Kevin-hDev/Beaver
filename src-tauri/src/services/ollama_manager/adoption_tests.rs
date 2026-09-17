@@ -43,11 +43,11 @@ async fn manager_exposes_one_decision_for_all_start_results() {
 #[test]
 fn all_consumers_use_injected_manager_and_do_not_own_runtime_actions() {
     let sources = [
-        include_str!("../agent_local/ollama_client.rs"),
-        include_str!("../agent_local/ollama_stream_request.rs"),
-        include_str!("../agent_local/ollama_collect.rs"),
-        include_str!("../agent_local/ollama_registry.rs"),
-        include_str!("../agent_local/ollama_modelfile_create.rs"),
+        include_str!("../agent_local/execution/ollama_client.rs"),
+        include_str!("../agent_local/execution/ollama_stream_request.rs"),
+        include_str!("../agent_local/execution/ollama_collect.rs"),
+        include_str!("../agent_local/execution/ollama_registry.rs"),
+        include_str!("../agent_local/execution/ollama_modelfile_create.rs"),
         include_str!("../../commands/ollama_version.rs"),
         include_str!("../../commands/agent_ollama.rs"),
         include_str!("../../commands/ollama_setup.rs"),

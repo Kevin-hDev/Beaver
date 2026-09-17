@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Sous-agents
 **Répond à** — « L'agent peut-il déléguer, et comment je garde le contrôle de ce que font ses enfants ? »
-**Sources** — `src-tauri/src/services/agent_local/tool_catalog.rs` (lignes 17-27), `tool_delegate.rs` (lignes 22-37 pour les types, 59-64 pour la cascade, 65-70 pour la contrainte du codeur), `subagent_tool_profile.rs` (lignes 14-20), `subagent_tool_guard.rs` (lignes 93-104 pour la mémoire, 107-145 pour le confinement des chemins), `commands/agent_chat_task/common.rs` (lignes 104-107), `subagent_instruction_delivery.rs` (lignes 5-7), `types_subagent_change.rs` (lignes 4-22), `subagent_change_store.rs` (lignes 6-7), `subagent_directory_limits.rs` (lignes 4-6), `subagent_archive.rs`, `subagent_cancellation.rs`, `subagent_directory_git.rs`, `permission_policy.rs`
+**Sources** — `src-tauri/src/services/agent_local/tools/tool_catalog.rs` (lignes 17-27), `tool_delegate.rs` (lignes 22-37 pour les types, 59-64 pour la cascade, 65-70 pour la contrainte du codeur), `subagent_tool_profile.rs` (lignes 14-20), `subagent_tool_guard.rs` (lignes 93-104 pour la mémoire, 107-145 pour le confinement des chemins), `commands/agent_chat_task/common.rs` (lignes 104-107), `subagent_instruction_delivery.rs` (lignes 5-7), `types_subagent_change.rs` (lignes 4-22), `subagent_change_store.rs` (lignes 6-7), `subagent_directory_limits.rs` (lignes 4-6), `subagent_archive.rs`, `subagent_cancellation.rs`, `subagent_directory_git.rs`, `permission_policy.rs`
 **Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : les neuf outils, les limites, les états, les deux types d'espace de travail et le confinement disque
 
 ---

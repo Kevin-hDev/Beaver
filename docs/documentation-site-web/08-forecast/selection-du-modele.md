@@ -2,7 +2,7 @@
 
 **Emplacement site** — Forecast › Choisir le modèle
 **Répond à** — « Dois-je choisir le modèle moi-même ou laisser Beaver le faire, et sur quoi le mode Auto se décide-t-il vraiment ? »
-**Sources** — `src-tauri/src/services/forecast/selection_policy.rs`, `selected_model.rs`, `auto_selection.rs`, `auto_selection_candidate.rs`, `auto_selection_rank.rs`, `auto_selection_ui.rs`, `selection_tickets.rs`, `validation_selection.rs`, `hardware_profile.rs`, `limits.rs`, `catalog.rs`, `interval_capability.rs` ; `src-tauri/src/commands/forecast.rs`, `commands/forecast_models.rs` ; `src-tauri/src/services/agent_local/tool_dispatcher_forecast_models.rs`, `tool_definitions_forecast.rs` ; `src/components/forecast/widgets/forecast-model-selector.tsx`, `forecast-selection-mode-control.tsx`, `src/components/forecast/model-selection/use-forecast-selection-policy.ts`, `src/components/forecast/forecast-panel.tsx`, `use-forecast-config-models.ts`, `forecast-model-meta.ts` ; `src/i18n/fr.json`
+**Sources** — `src-tauri/src/services/forecast/selection_policy.rs`, `selected_model.rs`, `auto_selection.rs`, `auto_selection_candidate.rs`, `auto_selection_rank.rs`, `auto_selection_ui.rs`, `selection_tickets.rs`, `validation_selection.rs`, `hardware_profile.rs`, `limits.rs`, `catalog.rs`, `interval_capability.rs` ; `src-tauri/src/commands/forecast.rs`, `commands/forecast_models.rs` ; `src-tauri/src/services/agent_local/tools/tool_dispatcher_forecast_models.rs`, `tool_definitions_forecast.rs` ; `src/components/forecast/widgets/forecast-model-selector.tsx`, `forecast-selection-mode-control.tsx`, `src/components/forecast/model-selection/use-forecast-selection-policy.ts`, `src/components/forecast/forecast-panel.tsx`, `use-forecast-config-models.ts`, `forecast-model-meta.ts` ; `src/i18n/fr.json`
 **Vérification** — Vérifié dans le code le 10 septembre 2026, critère par critère. Aucun écran n'a été observé ; les points d'affichage sont listés en fin de fichier.
 
 > **Cette page décrit le mécanisme de choix, pas les modèles.** Le catalogue, leurs tailles et leur installation sont dans `08-forecast/modeles-locaux.md` et `08-forecast/modele-cloud-timegpt.md`.
@@ -54,7 +54,7 @@ Un modèle est retenu, et c'est celui-là qui sert. Le contrôle est strict des 
 - **Aucun modèle n'est retenu ?** Le calcul s'arrête : « Aucun modèle Forecast sélectionné ».
 - **Un modèle différent demandé ?** Refus : « Le modèle demandé ne correspond pas à la sélection manuelle ».
 
-Ce dernier point mérite d'être dit sur le site : en mode Manuel, **l'agent ne peut pas changer de modèle de sa propre initiative**. L'outil `forecast_models` lui renvoie le modèle imposé et son état, avec la consigne de ne pas en sortir (`services/agent_local/tool_dispatcher_forecast_models.rs:49-63`).
+Ce dernier point mérite d'être dit sur le site : en mode Manuel, **l'agent ne peut pas changer de modèle de sa propre initiative**. L'outil `forecast_models` lui renvoie le modèle imposé et son état, avec la consigne de ne pas en sortir (`services/agent_local/tools/tool_dispatcher_forecast_models.rs:49-63`).
 
 Une commodité côté écran : quand le mode est Manuel et que le modèle retenu n'existe plus ou n'est plus utilisable, l'interface en choisit un autre dans la liste plutôt que de rester sur un choix mort (`forecast-model-selector.tsx:75-84`).
 

@@ -403,9 +403,9 @@ Les chemins exacts peuvent évoluer si le découpage à 230 lignes l'exige, mais
 
 ### Backend
 
-- `src-tauri/src/services/agent_local/types_session.rs` : préférence durable.
-- `src-tauri/src/services/agent_local/session_index.rs` : projection fidèle dans les métadonnées.
-- `src-tauri/src/services/agent_local/session_store_updates.rs` et commande IPC dédiée : mutation atomique.
+- `src-tauri/src/services/agent_local/execution/types_session.rs` : préférence durable.
+- `src-tauri/src/services/agent_local/conversations/session_index.rs` : projection fidèle dans les métadonnées.
+- `src-tauri/src/services/agent_local/conversations/session_store_updates.rs` et commande IPC dédiée : mutation atomique.
 - voies de création/clone/sous-agent/heartbeat/gateway : valeur initiale `false`.
 - `src-tauri/src/services/llm/types.rs` : capacité normalisée du modèle.
 - `src-tauri/resources/provider-models/openai.json` : capacité explicite de l'API.

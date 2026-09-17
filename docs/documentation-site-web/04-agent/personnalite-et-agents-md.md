@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Instructions permanentes
 **Répond à** — « Comment je donne à l'agent des consignes qu'il applique à chaque conversation, sans les répéter ? »
-**Sources** — `src-tauri/src/services/agent_local/agent_md.rs` (lignes 3-4, 26-112), `src-tauri/src/services/personality_injection.rs`, `src-tauri/src/storage_migration.rs` (lignes 88-114, défauts d'injection et fichiers créés), `src-tauri/src/commands/agent_md.rs`, `src-tauri/src/commands/personality.rs` (lignes 30-42), `src-tauri/src/commands/agent_chat_task/common.rs` (lignes 104-107), `src/components/personality/`
+**Sources** — `src-tauri/src/services/agent_local/prompts/agent_md.rs` (lignes 3-4, 26-112), `src-tauri/src/services/personality_injection.rs`, `src-tauri/src/storage_migration.rs` (lignes 88-114, défauts d'injection et fichiers créés), `src-tauri/src/commands/agent_md.rs`, `src-tauri/src/commands/personality.rs` (lignes 30-42), `src-tauri/src/commands/agent_chat_task/common.rs` (lignes 104-107), `src/components/personality/`
 **Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : ordre d'assemblage, limite globale, sources prises en compte, emplacement réel des fichiers
 
 ---

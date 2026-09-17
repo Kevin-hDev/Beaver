@@ -2,7 +2,7 @@
 
 **Emplacement site** — Interface › Conversations
 **Répond à** — « Comment je passe d'une conversation à l'autre, et comment je les organise ? »
-**Sources** — `src-tauri/src/commands/agent_sessions.rs:13-212`, `src-tauri/src/services/agent_local/session_order.rs:40`, `session_limits.rs:8-10`, `conversation_admission.rs:151-153`, `session_tabs.rs`, `session_tabs_state.rs:6`, `types_session.rs`, `src-tauri/src/services/llm/fast_mode.rs`, `src/hooks/use-session-tabs.ts`, `use-archived-agent-sessions.ts`, `src/components/layout/search-dialog.tsx:36` et `:41-51`, `CLAUDE.md`
+**Sources** — `src-tauri/src/commands/agent_sessions.rs:13-212`, `src-tauri/src/services/agent_local/conversations/session_order.rs:40`, `session_limits.rs:8-10`, `conversation_admission.rs:151-153`, `session_tabs.rs`, `session_tabs_state.rs:6`, `types_session.rs`, `src-tauri/src/services/llm/fast_mode.rs`, `src/hooks/use-session-tabs.ts`, `use-archived-agent-sessions.ts`, `src/components/layout/search-dialog.tsx:36` et `:41-51`, `CLAUDE.md`
 **Vérification** — Vérifié dans le code pour la navigation, l'ordre manuel, l'épinglage, le renommage, la suppression, le désarchivage, l'export Markdown, le mode rapide, la portée de la recherche et toutes les limites ; plusieurs gestes d'interface restent à relever à l'écran
 
 ---
@@ -51,7 +51,7 @@ C'est le point structurant : changer de conversation change l'environnement de t
 - La **barre latérale** liste les conversations. C'est le seul moyen de passer de l'une à l'autre.
 - Nouvelle conversation : **⌥⌘N** (Alt+Ctrl+N).
 - La barre latérale se masque avec **⌘B** (Ctrl+B).
-- **L'ordre de la liste est manuel**, pas calculé à partir d'une date. Il est décidé par l'utilisateur (`reorder_agent_sessions`, `agent_sessions.rs:13`) et conservé dans `session-order.json`, qui en est l'**autorité unique** (`src-tauri/src/services/agent_local/session_order.rs:40`) : les conversations elles-mêmes ne portent pas leur rang.
+- **L'ordre de la liste est manuel**, pas calculé à partir d'une date. Il est décidé par l'utilisateur (`reorder_agent_sessions`, `agent_sessions.rs:13`) et conservé dans `session-order.json`, qui en est l'**autorité unique** (`src-tauri/src/services/agent_local/conversations/session_order.rs:40`) : les conversations elles-mêmes ne portent pas leur rang.
 - **Une conversation peut être épinglée** pour rester en tête de liste — `pin_agent_session` et `unpin_agent_session` (`agent_sessions.rs:197` et `:202`) — avec un ordre propre aux conversations épinglées (`reorder_pinned_agent_sessions`, `:23`). C'est la fonction que le README appelle « favoris ».
 
 ### 3. Les onglets de clones
@@ -114,10 +114,10 @@ Une conversation s'exporte en Markdown (`export_agent_session_markdown`, `agent_
 
 | | Valeur | Source |
 |---|---|---|
-| Messages par conversation | **2 000** | `agent_local/session_limits.rs:10` |
+| Messages par conversation | **2 000** | `agent_local/conversations/session_limits.rs:10` |
 | Fichiers de conversation | **4 096** | `session_limits.rs:9` |
 | Taille d'un fichier de conversation | **32 Mo** | `session_limits.rs:8` |
-| Onglets par groupe de clones | **3** | `agent_local/session_tabs_state.rs:6` |
+| Onglets par groupe de clones | **3** | `agent_local/conversations/session_tabs_state.rs:6` |
 | Onglets de navigateur par conversation | **10** | `services/browser/session_types.rs:3` |
 | Terminaux simultanés | **16**, globalement | `services/terminal/manager.rs:35` |
 
@@ -162,8 +162,8 @@ Une conversation s'exporte en Markdown (`export_agent_session_markdown`, `agent_
 - ~~Supprimer définitivement une conversation.~~ **Tranché** : possible (`agent_sessions.rs:170`), en plus de l'archivage (`:177`).
 - ~~Désarchiver.~~ **Tranché** : possible (`restore_agent_session`, `agent_sessions.rs:192`).
 - ~~Les favoris.~~ **Tranché** : la fonction existe sous le nom d'**épinglage** (`pin_agent_session` / `unpin_agent_session`, `agent_sessions.rs:197` et `:202`).
-- ~~Le comportement au-delà de 2 000 messages.~~ **Tranché** : **refus d'envoi**, ni troncature ni compression (`agent_local/conversation_admission.rs:151-153`).
-- ~~Le tri de la barre latérale.~~ **Tranché** : manuel, autorité unique `session-order.json` (`agent_local/session_order.rs:40`).
+- ~~Le comportement au-delà de 2 000 messages.~~ **Tranché** : **refus d'envoi**, ni troncature ni compression (`agent_local/conversations/conversation_admission.rs:151-153`).
+- ~~Le tri de la barre latérale.~~ **Tranché** : manuel, autorité unique `session-order.json` (`agent_local/conversations/session_order.rs:40`).
 - **La restauration au lancement** — quelle conversation est rouverte, et dans quel état. Reste ouvert.
 - **Ce que change exactement le mode rapide côté utilisateur.** Le code demande un niveau de service prioritaire aux fournisseurs qui l'acceptent (`services/llm/fast_mode.rs`) ; établir la liste des fournisseurs concernés et l'effet observable avant d'en faire une promesse sur le site.
 - **La présentation à l'écran de l'épinglage et de l'export Markdown** — où sont les commandes, et sous quel libellé. À relever pendant la passe d'interface.

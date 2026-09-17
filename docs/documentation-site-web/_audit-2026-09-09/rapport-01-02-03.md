@@ -50,7 +50,7 @@
 
 ### Ce qui reste exact
 
-La section Licence est confirmée mot pour mot : bascule AGPL v3 à partir de la v1.1.3, versions **jusqu'à 1.1.2 incluse** restées sous Apache 2.0 (`CHANGELOG.md:322`, `README.md:423`), licence commerciale disponible (`README.md:417`). Les libellés des trois modes de permission sont confirmés (`services/agent_local/agent_settings.rs`, modes `auto` / `manual` / `chat`).
+La section Licence est confirmée mot pour mot : bascule AGPL v3 à partir de la v1.1.3, versions **jusqu'à 1.1.2 incluse** restées sous Apache 2.0 (`CHANGELOG.md:322`, `README.md:423`), licence commerciale disponible (`README.md:417`). Les libellés des trois modes de permission sont confirmés (`services/agent_local/execution/agent_settings.rs`, modes `auto` / `manual` / `chat`).
 
 ---
 
@@ -61,7 +61,7 @@ C'est le fichier le plus touché de la section 01 : la façon dont les outils so
 ### Écart 1 — la liste des groupes d'outils est entièrement fausse
 
 - **Le brief dit** : « Groupes réels : `terminal`, `files`, `file_search`, `web`, `mcp`, `skills`, `automations`, `user_choice`, `subagents`, `plan_mode`, `todo_list`, `git_branches`, `forecast`, `spreadsheet`, `document`, `images`. » (seize groupes)
-- **Le code dit** (`src-tauri/src/services/agent_local/tool_catalog.rs:29-85`) : **onze groupes**, et sept des seize noms cités n'existent plus.
+- **Le code dit** (`src-tauri/src/services/agent_local/tools/tool_catalog.rs:29-85`) : **onze groupes**, et sept des seize noms cités n'existent plus.
   - Groupes verrouillés : `core`, `web`, `mcp`, `extensions`
   - Groupes optionnels : `workflow`, `automation`, `subagents`, `todo`, `git`, `forecast`, `office`
 
@@ -87,7 +87,7 @@ C'est le fichier le plus touché de la section 01 : la façon dont les outils so
 
 ### Ce qui reste exact
 
-Neuf outils de sous-agent (`tool_catalog.rs:17-27`), cinq outils de todos (`tool_catalog.rs:66-70`), les trois modes de permission plus `subagent`, les plans dans `plans/<session_id>/` (`services/agent_local/tool_plan_storage.rs:14`), les worktrees dans `subagent-worktrees/` (`services/agent_local/subagent_worktree.rs:36`), la mémoire en portée `global` et `projects` (`services/agent_local/memory_paths.rs:33-35`, `memory_prompt.rs:112`), les trois types de réveil `once`/`daily`/`weekly` (`src-tauri/src/models/config.rs:152-155`), les trois canaux Telegram/Slack/Discord (`services/gateway/service_channels.rs:97-99`), deux jeux de prompts système en variantes compacte et détaillée (`services/agent_local/system_prompt_defaults.rs:7-16`), le coffre XChaCha20-Poly1305 et `secrets.enc`.
+Neuf outils de sous-agent (`tool_catalog.rs:17-27`), cinq outils de todos (`tool_catalog.rs:66-70`), les trois modes de permission plus `subagent`, les plans dans `plans/<session_id>/` (`services/agent_local/tools/tool_plan_storage.rs:14`), les worktrees dans `subagent-worktrees/` (`services/agent_local/subagents/subagent_worktree.rs:36`), la mémoire en portée `global` et `projects` (`services/agent_local/context/memory_paths.rs:33-35`, `memory_prompt.rs:112`), les trois types de réveil `once`/`daily`/`weekly` (`src-tauri/src/models/config.rs:152-155`), les trois canaux Telegram/Slack/Discord (`services/gateway/service_channels.rs:97-99`), deux jeux de prompts système en variantes compacte et détaillée (`services/agent_local/prompts/system_prompt_defaults.rs:7-16`), le coffre XChaCha20-Poly1305 et `secrets.enc`.
 
 ---
 
@@ -251,8 +251,8 @@ Le fond du fichier est juste — les conversations ne s'ouvrent plus en onglets,
 - **Renommer une conversation** — **possible** : `rename_agent_session` (`agent_sessions.rs:102`), refusée sur une session enfant.
 - **Supprimer définitivement** — **possible** : `delete_agent_session` (`agent_sessions.rs:170`), en plus de l'archivage (`archive_agent_session`, `:177`).
 - **Désarchiver** — **possible** : `restore_agent_session` (`agent_sessions.rs:192`).
-- **Le tri de la barre latérale** — **manuel, et c'est une autorité unique**. `reorder_agent_sessions` (`agent_sessions.rs:13`) écrit dans `session-order.json` (`src-tauri/src/services/agent_local/session_order.rs:40`) ; les conversations elles-mêmes ne portent pas leur rang.
-- **Le comportement au-delà de 2 000 messages** — **refus d'envoi**, ni troncature ni compression : `src-tauri/src/services/agent_local/conversation_admission.rs:151-153` retourne une erreur dès que `session.messages.len() >= MAX_MESSAGES_PER_SESSION`. La valeur 2 000 est confirmée (`src-tauri/src/services/agent_local/session_limits.rs:10`).
+- **Le tri de la barre latérale** — **manuel, et c'est une autorité unique**. `reorder_agent_sessions` (`agent_sessions.rs:13`) écrit dans `session-order.json` (`src-tauri/src/services/agent_local/conversations/session_order.rs:40`) ; les conversations elles-mêmes ne portent pas leur rang.
+- **Le comportement au-delà de 2 000 messages** — **refus d'envoi**, ni troncature ni compression : `src-tauri/src/services/agent_local/conversations/conversation_admission.rs:151-153` retourne une erreur dès que `session.messages.len() >= MAX_MESSAGES_PER_SESSION`. La valeur 2 000 est confirmée (`src-tauri/src/services/agent_local/conversations/session_limits.rs:10`).
 - **Les limites du tableau** — toutes confirmées : 2 000 messages (`session_limits.rs:10`), 3 onglets par groupe de clones (`session_tabs_state.rs:6`), 10 onglets de navigateur par conversation (`services/browser/session_types.rs:3`), 16 terminaux (`services/terminal/manager.rs:35`). S'y ajoutent deux bornes non citées : 4 096 fichiers de conversation et 32 Mo par fichier (`session_limits.rs:8-9`).
 
 ---
@@ -264,7 +264,7 @@ Le mécanisme décrit est exact ; un seul chiffre du tableau des limites ne corr
 ### Écart 1 — le délai de 180 secondes n'est pas ce que le brief décrit
 
 - **Le brief dit** (§7, tableau) : « Délai de génération du résumé (modèle local) | **180 secondes** ».
-- **Le code dit** : le résumé ne passe plus par un chemin Ollama avec son propre délai. Il passe par le transport LLM commun (`src-tauri/src/services/agent_local/clone_session.rs:145-151` : `llm::stream::collect_chat_silent_for_compression`), qui applique **180 secondes d'inactivité et 180 secondes de requête à tous les fournisseurs**, locaux comme distants (`src-tauri/src/services/llm/timeouts.rs:3-4`). Le nombre survit, sa portée a changé : ce n'est plus une particularité des modèles locaux. Aucune constante de 180 secondes propre au clonage n'existe plus dans le code.
+- **Le code dit** : le résumé ne passe plus par un chemin Ollama avec son propre délai. Il passe par le transport LLM commun (`src-tauri/src/services/agent_local/conversations/clone_session.rs:145-151` : `llm::stream::collect_chat_silent_for_compression`), qui applique **180 secondes d'inactivité et 180 secondes de requête à tous les fournisseurs**, locaux comme distants (`src-tauri/src/services/llm/timeouts.rs:3-4`). Le nombre survit, sa portée a changé : ce n'est plus une particularité des modèles locaux. Aucune constante de 180 secondes propre au clonage n'existe plus dans le code.
 
 ### Ce qui reste exact
 
@@ -455,7 +455,7 @@ Les trois tableaux sont exacts. Six thèmes plus l'option Système, avec leur cl
 | conversations | Supprimer définitivement ? | Oui | `commands/agent_sessions.rs:170` |
 | conversations | Désarchiver ? | Oui | `commands/agent_sessions.rs:192` |
 | conversations | Les favoris existent-ils encore ? | Oui, sous forme d'épinglage | `commands/agent_sessions.rs:197`, `:202` |
-| conversations | Tri de la barre latérale | Manuel, autorité `session-order.json` | `agent_local/session_order.rs:40` |
+| conversations | Tri de la barre latérale | Manuel, autorité `session-order.json` | `agent_local/conversations/session_order.rs:40` |
 | conversations | Au-delà de 2 000 messages ? | Envoi refusé | `conversation_admission.rs:151-153` |
 | raccourcis | Personnalisables ? | Non, table figée | `app-shortcuts.ts:28`, `shortcuts-settings.tsx:22` |
 | raccourcis | D'autres raccourcis non recensés ? | Oui, treize | `app-shortcuts.ts:36-48` |

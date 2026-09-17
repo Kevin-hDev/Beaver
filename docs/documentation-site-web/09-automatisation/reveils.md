@@ -2,7 +2,7 @@
 
 **Emplacement site** — Automatisation › Les réveils
 **Répond à** — « Comment faire travailler Beaver à heure fixe, et que se passe-t-il si mon ordinateur est éteint à ce moment-là ? »
-**Sources** — `src-tauri/src/models/config.rs` ; `src-tauri/src/commands/heartbeat.rs`, `commands/heartbeat_validation.rs` ; `src-tauri/src/services/scheduler/` (`mod.rs`, `runtime.rs`, `runtime_decisions.rs`, `next_fire.rs`, `due.rs`, `fire.rs`, `fire_once.rs`, `in_flight.rs`, `agentic.rs`, `state.rs`, `work_supervision.rs`) ; `src-tauri/src/runtime_state.rs`, `src-tauri/src/app_events.rs`, `src-tauri/src/app_exit/cleanup.rs` ; `src-tauri/src/services/file_watcher.rs` ; `src-tauri/src/services/agent_local/session_store_create.rs`, `services/agent_local/session_index.rs` ; `src-tauri/src/services/provider_usage/types.rs` ; `src/hooks/use-wakeups.ts` ; `src/components/heartbeat/` (`heartbeat-tab.tsx`, `wakeup-list.tsx`, `wakeup-row.tsx`, `wakeup-details.tsx`, `new-wakeup-dialog.tsx`, `schedule-picker.tsx`, `wakeup-form-fields.tsx`, `badges.tsx`) ; `src/lib/wakeup-format.ts` ; `src/i18n/fr.json`
+**Sources** — `src-tauri/src/models/config.rs` ; `src-tauri/src/commands/heartbeat.rs`, `commands/heartbeat_validation.rs` ; `src-tauri/src/services/scheduler/` (`mod.rs`, `runtime.rs`, `runtime_decisions.rs`, `next_fire.rs`, `due.rs`, `fire.rs`, `fire_once.rs`, `in_flight.rs`, `agentic.rs`, `state.rs`, `work_supervision.rs`) ; `src-tauri/src/runtime_state.rs`, `src-tauri/src/app_events.rs`, `src-tauri/src/app_exit/cleanup.rs` ; `src-tauri/src/services/file_watcher.rs` ; `src-tauri/src/services/agent_local/conversations/session_store_create.rs`, `services/agent_local/conversations/session_index.rs` ; `src-tauri/src/services/provider_usage/types.rs` ; `src/hooks/use-wakeups.ts` ; `src/components/heartbeat/` (`heartbeat-tab.tsx`, `wakeup-list.tsx`, `wakeup-row.tsx`, `wakeup-details.tsx`, `new-wakeup-dialog.tsx`, `schedule-picker.tsx`, `wakeup-form-fields.tsx`, `badges.tsx`) ; `src/lib/wakeup-format.ts` ; `src/i18n/fr.json`
 **Vérification** — Vérifié dans le code, ligne par ligne, le 10 septembre 2026. Rien n'a été observé à l'écran : la passe d'interface reste à faire, sa liste de contrôle est en fin de fichier.
 
 > **Cette page décrit le mécanisme et le formulaire.** La lecture des résultats passés est dans `09-automatisation/historique-des-reveils.md`.
@@ -105,7 +105,7 @@ Chaque déclenchement **crée une conversation neuve** — il ne réutilise jama
 | Ollama | `Heartbeat • <nom du réveil> • <modèle>` |
 | Tout autre | `Heartbeat • <nom du réveil> • <fournisseur> • <modèle>` |
 
-**Elle est marquée comme issue d'un réveil** par un drapeau enregistré dans le fichier de la conversation (`fire.rs:114-121` → `services/agent_local/session_store_create.rs:88`). Ce drapeau sert au comptage de la consommation : tout ce qu'un réveil dépense est rangé sous l'origine **« Automatisation »** dans l'écran de consommation (`services/provider_usage/types.rs:181-183` ; libellé `src/i18n/fr.json:32`).
+**Elle est marquée comme issue d'un réveil** par un drapeau enregistré dans le fichier de la conversation (`fire.rs:114-121` → `services/agent_local/conversations/session_store_create.rs:88`). Ce drapeau sert au comptage de la consommation : tout ce qu'un réveil dépense est rangé sous l'origine **« Automatisation »** dans l'écran de consommation (`services/provider_usage/types.rs:181-183` ; libellé `src/i18n/fr.json:32`).
 
 **Le réveil travaille en accès complet.** Le mode de permission est fixé en dur à « accès complet » (`services/scheduler/agentic.rs:108`), avec le commentaire d'explication en `fire.rs:81-82`. **C'est le point le plus important de la page pour l'utilisateur** : un réveil ne demande jamais d'approbation, puisqu'il n'y a personne devant l'écran pour répondre. La consigne qu'on lui confie est exécutée telle quelle, outils compris.
 
@@ -193,7 +193,7 @@ Deux réglages avancés servent précisément ce besoin : **« Lancer au démarr
 | Définition des réveils et veille générale | `~/.local/share/cl-go-dash/config.json`, champs `scheduled_wakeups[]` et `heartbeat.global_paused` | `src-tauri/src/models/config.rs:7-9`, `:129-130` |
 | Date du dernier passage du planificateur | `~/.local/share/cl-go-dash/heartbeat-runtime.json` | `services/scheduler/state.rs:10-12` |
 | Journal des exécutions | `~/.local/share/cl-go-dash/logs/wakeups.jsonl` | `services/scheduler/log.rs:15-19` |
-| Conversations créées par les réveils | `~/.local/share/cl-go-dash/agent-sessions/*.json` | `services/agent_local/session_store_create.rs:88` |
+| Conversations créées par les réveils | `~/.local/share/cl-go-dash/agent-sessions/*.json` | `services/agent_local/conversations/session_store_create.rs:88` |
 
 ### Ce que chaque statut veut dire
 
@@ -271,7 +271,7 @@ Constatées dans le code, non corrigées.
 
 2. **Les messages d'erreur du moteur ne remontent pas jusqu'à l'utilisateur.** Le moteur produit des motifs précis, écrits en français dans le code : « Maximum 64 réveils » (`heartbeat_validation.rs:13`), « Provider non supporté » (`:56`), « Champ prompt trop long » (`:66`), « Date ponctuelle déjà passée » (`:83`), « Heure invalide » (`:100`), « Réveil introuvable » (`commands/heartbeat.rs:85`, `:124`), « Réveils en veille » (`:118`). Le formulaire les remplace tous par un message unique, `t("errors.operationFailed")` (`new-wakeup-dialog.tsx:104`). L'utilisateur ne sait donc jamais **quel** champ pose problème. Ces chaînes ne sont par ailleurs pas des clés de traduction : elles sont en dur, en français, dans le code Rust.
 
-3. **Le drapeau « issu d'un réveil » traverse la frontière et n'est jamais lu.** Il est calculé (`services/agent_local/session_index.rs:180`), déclaré dans le type transmis à l'interface (`src/types/agent-session.generated.ts:50`), et **aucun composant ne le consulte** — recherche faite sur tout `src/`. Dans la liste des conversations, une conversation créée par un réveil ne se distingue donc que par son nom, qui commence par `Heartbeat •`.
+3. **Le drapeau « issu d'un réveil » traverse la frontière et n'est jamais lu.** Il est calculé (`services/agent_local/conversations/session_index.rs:180`), déclaré dans le type transmis à l'interface (`src/types/agent-session.generated.ts:50`), et **aucun composant ne le consulte** — recherche faite sur tout `src/`. Dans la liste des conversations, une conversation créée par un réveil ne se distingue donc que par son nom, qui commence par `Heartbeat •`.
 
 4. **Le panneau latéral n'affiche que les réveils actifs** (`src/components/heartbeat/heartbeat-tab.tsx:50-51`). Un réveil désactivé disparaît de ce panneau tout en restant dans la liste principale. Un réveil ponctuel déjà exécuté disparaît donc du panneau latéral juste après son exécution — au moment précis où l'utilisateur va le chercher.
 

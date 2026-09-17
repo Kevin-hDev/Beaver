@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Diagnostics et erreurs (ou Dépannage › Agent et outils)
 **Répond à** — « Quelque chose a échoué. Comment je comprends quoi, et est-ce que je peux réessayer ? »
-**Sources** — `src-tauri/src/services/agent_local/tool_result_contract.rs` (lignes 36-56), `types_diagnostics.rs`, `diagnostic_args.rs` (lignes 4-5), `diagnostic_redaction.rs` (lignes 3-4), `circuit_breaker.rs`, `permission_gate.rs` (journal), `services/app_log.rs`
+**Sources** — `src-tauri/src/services/agent_local/tools/tool_result_contract.rs` (lignes 36-56), `types_diagnostics.rs`, `diagnostic_args.rs` (lignes 4-5), `diagnostic_redaction.rs` (lignes 3-4), `circuit_breaker.rs`, `permission_gate.rs` (journal), `services/app_log.rs`
 **Vérification** — Vérifié dans le code : catégories d'erreurs, indicateur de reprise, mécanisme de masquage
 
 ---

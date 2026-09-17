@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Fonctionnement (première page de la section Agent)
 **Répond à** — « Que se passe-t-il quand j'envoie un message, et pourquoi ça s'arrête parfois tout seul ? »
-**Sources** — `src-tauri/src/services/agent_local/agent_loop.rs` (lignes 69, 92-100), `agent_loop_limits.rs` (ligne 1), `circuit_breaker.rs` (lignes 1, 21-25), `agent_loop_support.rs` (lignes 23-36), `agent_loop_thinking_retry.rs`, `agent_loop_completion.rs`, `eager_dispatch.rs` (lignes 11, 71-78), `tool_executor_parallel_batch.rs` (ligne 17), `ollama_wire.rs`, `agent_chat_queue.rs`
+**Sources** — `src-tauri/src/services/agent_local/execution/agent_loop.rs` (lignes 69, 92-100), `agent_loop_limits.rs` (ligne 1), `circuit_breaker.rs` (lignes 1, 21-25), `agent_loop_support.rs` (lignes 23-36), `agent_loop_thinking_retry.rs`, `agent_loop_completion.rs`, `eager_dispatch.rs` (lignes 11, 71-78), `tool_executor_parallel_batch.rs` (ligne 17), `ollama_wire.rs`, `agent_chat_queue.rs`
 **Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : la boucle, les limites, les conditions d'arrêt, le pré-dispatch et la libération de la mémoire vidéo
 
 ---

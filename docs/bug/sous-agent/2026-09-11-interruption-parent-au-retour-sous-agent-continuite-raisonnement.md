@@ -67,7 +67,7 @@ subagent_report_context::append_context
   -> ChatMessage::assistant(..., continuation=None)
 ```
 
-Le constructeur partagé se trouve dans `src-tauri/src/services/agent_local/subagent_report_context.rs`. À l'état historique `e457053f`, la ligne fautive était :
+Le constructeur partagé se trouve dans `src-tauri/src/services/agent_local/subagents/subagent_report_context.rs`. À l'état historique `e457053f`, la ligne fautive était :
 
 ```rust
 ChatMessage::assistant(report_batch_content(reports), None, None, None, None)
@@ -237,11 +237,11 @@ Les premières tentatives utilisant un filtre `--exact` incomplet avaient exécu
 ## Autorités utilisées
 
 - Session persistée : `~/.local/share/cl-go-dash/agent-sessions/2b92ba1e-1622-4860-bf06-838fe93b44f3.json`
-- Construction du rapport : `src-tauri/src/services/agent_local/subagent_report_context.rs`
-- Reconstruction durable : `src-tauri/src/services/agent_local/conversation_history_build.rs`
+- Construction du rapport : `src-tauri/src/services/agent_local/subagents/subagent_report_context.rs`
+- Reconstruction durable : `src-tauri/src/services/agent_local/conversations/conversation_history_build.rs`
 - Validation Responses : `src-tauri/src/services/llm/reasoning_wire/responses.rs`
 - Validation Chat : `src-tauri/src/services/llm/reasoning_wire/chat_text.rs`
 - Validation Anthropic : `src-tauri/src/services/llm/reasoning_wire/replay_apply_anthropic.rs`
-- Adaptateur Ollama : `src-tauri/src/services/agent_local/ollama_wire.rs`
+- Adaptateur Ollama : `src-tauri/src/services/agent_local/execution/ollama_wire.rs`
 - Inventaire actif : `src-tauri/src/services/reasoning_continuity/registry_tests.rs`
-- Classification des erreurs : `src-tauri/src/services/agent_local/stream_diagnostics_failure.rs`
+- Classification des erreurs : `src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure.rs`

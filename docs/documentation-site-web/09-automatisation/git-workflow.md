@@ -2,7 +2,7 @@
 
 **Emplacement site** — Automatisation › Git
 **Répond à** — « Que puis-je faire avec Git sans quitter Beaver, et qu'est-ce qui reste au terminal ? »
-**Sources** — `src-tauri/src/services/git/` (`repo.rs`, `branch.rs`, `branch_create.rs`, `branch_commit.rs`, `branch_index_backup.rs`, `branch_delete.rs`, `branch_merge.rs`, `branch_merge_error.rs`, `status.rs`, `commit_files.rs`, `history.rs`, `diff_preview.rs`, `diff_preview_model.rs`, `diff_preview_serialize.rs`, `blob_preview.rs`, `remote.rs`, `remote_status.rs`, `remote_target.rs`, `remote_credentials.rs`, `network_policy.rs`, `github_auth.rs`, `watcher.rs`, `worktree_list.rs`, `worktree_delete.rs`, `action_error.rs`) et leurs fichiers de tests ; `src-tauri/src/commands/git.rs`, `git_mutations.rs`, `git_history.rs` ; `src-tauri/src/invoke_handler_tail.rs` ; `src-tauri/src/services/agent_local/project_store.rs` ; `src/components/agent-local/` (sélecteur de branches, dialogues de commit, fusion, suppression, historique) ; `src/hooks/use-git-branch.ts`, `git-refresh.ts`, `use-git-mutations.ts`, `use-git-history.ts`, `use-git-watcher.ts` ; `src/lib/branch-name.ts`, `src/lib/app-error.ts` ; `src/i18n/fr.json`
+**Sources** — `src-tauri/src/services/git/` (`repo.rs`, `branch.rs`, `branch_create.rs`, `branch_commit.rs`, `branch_index_backup.rs`, `branch_delete.rs`, `branch_merge.rs`, `branch_merge_error.rs`, `status.rs`, `commit_files.rs`, `history.rs`, `diff_preview.rs`, `diff_preview_model.rs`, `diff_preview_serialize.rs`, `blob_preview.rs`, `remote.rs`, `remote_status.rs`, `remote_target.rs`, `remote_credentials.rs`, `network_policy.rs`, `github_auth.rs`, `watcher.rs`, `worktree_list.rs`, `worktree_delete.rs`, `action_error.rs`) et leurs fichiers de tests ; `src-tauri/src/commands/git.rs`, `git_mutations.rs`, `git_history.rs` ; `src-tauri/src/invoke_handler_tail.rs` ; `src-tauri/src/services/agent_local/permissions/project_store.rs` ; `src/components/agent-local/` (sélecteur de branches, dialogues de commit, fusion, suppression, historique) ; `src/hooks/use-git-branch.ts`, `git-refresh.ts`, `use-git-mutations.ts`, `use-git-history.ts`, `use-git-watcher.ts` ; `src/lib/branch-name.ts`, `src/lib/app-error.ts` ; `src/i18n/fr.json`
 **Vérification** — Vérifié dans le code, ligne par ligne, le 10 septembre 2026. Aucun affichage observé à l'écran.
 
 ---
@@ -68,7 +68,7 @@ Git apparaît à **deux endroits**, avec des rôles différents.
 
 ### 3. La condition d'entrée : un projet enregistré
 
-**Toutes** les opérations Git passent par un même contrôle : le dossier doit exister **et** se trouver à l'intérieur d'un projet enregistré dans Beaver (`commands/git.rs:7-13` → `services/agent_local/project_store.rs:125-135`). Un dépôt ouvert autrement est refusé avec le message technique « Projet non autorisé » (`project_store.rs:134`).
+**Toutes** les opérations Git passent par un même contrôle : le dossier doit exister **et** se trouver à l'intérieur d'un projet enregistré dans Beaver (`commands/git.rs:7-13` → `services/agent_local/permissions/project_store.rs:125-135`). Un dépôt ouvert autrement est refusé avec le message technique « Projet non autorisé » (`project_store.rs:134`).
 
 **Un sous-dossier d'un dépôt fonctionne** : la détection remonte l'arborescence jusqu'au dépôt parent (`services/git/repo.rs:4-6`, test `:47-59`).
 
@@ -321,7 +321,7 @@ Constatées dans le code, non corrigées.
 
 2. **Un champ du statut distant est calculé et jamais utilisé.** Le moteur renvoie six champs, dont l'indication qu'une branche amont est configurée (`services/git/remote_status.rs:6-14`) ; le type recopié à la main côté interface n'en déclare que cinq (`src/hooks/git-refresh.ts:15-21`), et ce champ n'apparaît nulle part. La distinction entre « branche amont configurée » et « référence distante en cache » est donc perdue à la frontière.
 
-3. **Un code d'erreur traduit ne peut jamais être produit par ce domaine.** Le message **« La branche principale est protégée et ne peut pas être nettoyée. »** (`src/i18n/fr.json:219`) est associé au code `protected_branch` (`src/lib/app-error.ts:61`), mais aucun fichier de `services/git/` ne renvoie ce code : il ne vient que du nettoyage de clone de conversation (`services/agent_local/clone_git_cleanup.rs:126`). Ce message ne peut donc pas apparaître lors d'une suppression depuis le sélecteur de branches.
+3. **Un code d'erreur traduit ne peut jamais être produit par ce domaine.** Le message **« La branche principale est protégée et ne peut pas être nettoyée. »** (`src/i18n/fr.json:219`) est associé au code `protected_branch` (`src/lib/app-error.ts:61`), mais aucun fichier de `services/git/` ne renvoie ce code : il ne vient que du nettoyage de clone de conversation (`services/agent_local/conversations/clone_git_cleanup.rs:126`). Ce message ne peut donc pas apparaître lors d'une suppression depuis le sélecteur de branches.
 
 4. **Deux clés de traduction existent dans les sept langues et ne sont utilisées nulle part** : **« La branche active a changé. Relance le Merge. »** et **« De nouvelles modifications sont apparues. Vérifie-les avant le Merge. »** (`src/i18n/fr.json:383-384`). Les erreurs correspondantes existent bien côté moteur (`services/git/branch_merge_error.rs:9-12`), mais elles sont traduites par d'autres clés.
 

@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Cloner une conversation
 **Répond à** — « Je veux repartir d'un point précis de la conversation sans perdre ce qui a été appris. Comment ? »
-**Sources** — `src-tauri/src/services/agent_local/clone_session.rs` (lignes 12, 55-160, dont `:145-151` pour le résumé), `clone_session_build.rs`, `clone_summary.rs:5-7`, `clone_roots.rs:4`, `types_session.rs` (lignes 35-38, 121-133), `session_tabs_state.rs:6`, `src-tauri/src/services/llm/timeouts.rs:3-4`, `src-tauri/src/commands/agent_clone.rs`
+**Sources** — `src-tauri/src/services/agent_local/conversations/clone_session.rs` (lignes 12, 55-160, dont `:145-151` pour le résumé), `clone_session_build.rs`, `clone_summary.rs:5-7`, `clone_roots.rs:4`, `types_session.rs` (lignes 35-38, 121-133), `session_tabs_state.rs:6`, `src-tauri/src/services/llm/timeouts.rs:3-4`, `src-tauri/src/commands/agent_clone.rs`
 **Vérification** — Vérifié dans le code : les deux modes, ce qui est copié, ce qui est réinitialisé, les limites et le comportement en cas d'échec
 
 ---
@@ -116,7 +116,7 @@ Le dépôt doit être un **projet enregistré** : les chemins non autorisés son
 
 Le résumé est généré par **le modèle de la conversation clonée**, pas par un modèle dédié. Un modèle local lent allonge donc l'opération.
 
-**Précision sur ce délai** : il n'appartient pas au clonage et ne concerne pas seulement les modèles locaux. Le résumé passe par le transport LLM commun (`src-tauri/src/services/agent_local/clone_session.rs:145-151`), qui applique les mêmes 180 secondes à tous les fournisseurs, locaux comme distants (`src-tauri/src/services/llm/timeouts.rs:3-4`). Aucune constante de délai propre au clonage n'existe.
+**Précision sur ce délai** : il n'appartient pas au clonage et ne concerne pas seulement les modèles locaux. Le résumé passe par le transport LLM commun (`src-tauri/src/services/agent_local/conversations/clone_session.rs:145-151`), qui applique les mêmes 180 secondes à tous les fournisseurs, locaux comme distants (`src-tauri/src/services/llm/timeouts.rs:3-4`). Aucune constante de délai propre au clonage n'existe.
 
 **En cas d'échec du résumé**, le clone est supprimé et son onglet retiré : on ne se retrouve pas avec une conversation à moitié construite.
 

@@ -1,7 +1,7 @@
 #[test]
 fn manifest_budget_has_one_shared_authority() {
     let import_limits = include_str!("agent_import/limits.rs");
-    let local_limits = include_str!("agent_local/skill_limits.rs");
+    let local_limits = include_str!("agent_local/context/skill_limits.rs");
     let default_skills = include_str!("../storage_default_skills.rs");
     let shared_path = "crate::services::skill_manifest_policy::MAX_SKILL_MANIFEST_BYTES";
 

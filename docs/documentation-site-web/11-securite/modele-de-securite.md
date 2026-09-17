@@ -2,7 +2,7 @@
 
 **Emplacement site** — Sécurité › Modèle de sécurité (page d'entrée de la section Sécurité)
 **Répond à** — « Qu'est-ce qui sort de ma machine, qu'est-ce qui n'en sort jamais, qu'est-ce qui me protège, et où sont les limites ? »
-**Sources** — `SECURITY.md` (racine) ; `src-tauri/src/storage_migration.rs` ; `src-tauri/src/models/config.rs` ; `src-tauri/src/services/agent_local/directory_access.rs`, `directory_access_scope.rs` ; `src-tauri/src/services/agent_local/shell_sandbox/` (`launch.rs`, `macos.rs`, `linux.rs`, `windows.rs`, `windows/windows_profile.rs`) ; `src-tauri/src/services/vault.rs` ; `src-tauri/src/services/api_keys.rs` ; `src-tauri/src/commands/api_keys.rs` ; `src-tauri/src/services/provider_connections/qwen.rs` ; `src-tauri/src/services/secure_http.rs` ; `src-tauri/src/services/llm/mod.rs`, `services/llm/litellm_catalog_refresh.rs` ; `src-tauri/src/commands/agent_chat_task/common.rs` ; `src-tauri/src/services/agent_local/stream_events.rs` ; `src-tauri/src/services/gateway/agent_bridge.rs`, `agent_bridge_run.rs`, `security/audit.rs`, `security/allowlist.rs`, `security/rate_limit.rs` ; `src-tauri/src/services/scheduler/agentic.rs` ; `src-tauri/src/services/mcp_bridge/stdio_cmd.rs`, `process_spawn.rs` ; `src-tauri/src/services/agent_local/agent_work_supervision.rs`, `session_limits.rs`, `session_store_document.rs`, `chat_message.rs` ; `src-tauri/src/services/terminal/manager.rs` ; `src-tauri/src/services/private_store.rs` ; `src-tauri/src/commands/app_update_source.rs` ; `src-tauri/src/services/brand.rs` ; `src-tauri/src/services/ollama_manager/spawn_gate_unix_support.rs`, `port.rs` ; `src-tauri/src/services/searxng/process.rs`, `lifecycle.rs`
+**Sources** — `SECURITY.md` (racine) ; `src-tauri/src/storage_migration.rs` ; `src-tauri/src/models/config.rs` ; `src-tauri/src/services/agent_local/permissions/directory_access.rs`, `directory_access_scope.rs` ; `src-tauri/src/services/agent_local/shell_sandbox/` (`launch.rs`, `macos.rs`, `linux.rs`, `windows.rs`, `windows/windows_profile.rs`) ; `src-tauri/src/services/vault.rs` ; `src-tauri/src/services/api_keys.rs` ; `src-tauri/src/commands/api_keys.rs` ; `src-tauri/src/services/provider_connections/qwen.rs` ; `src-tauri/src/services/secure_http.rs` ; `src-tauri/src/services/llm/mod.rs`, `services/llm/litellm_catalog_refresh.rs` ; `src-tauri/src/commands/agent_chat_task/common.rs` ; `src-tauri/src/services/agent_local/diagnostics/stream_events.rs` ; `src-tauri/src/services/gateway/agent_bridge.rs`, `agent_bridge_run.rs`, `security/audit.rs`, `security/allowlist.rs`, `security/rate_limit.rs` ; `src-tauri/src/services/scheduler/agentic.rs` ; `src-tauri/src/services/mcp_bridge/stdio_cmd.rs`, `process_spawn.rs` ; `src-tauri/src/services/agent_local/execution/agent_work_supervision.rs`, `session_limits.rs`, `session_store_document.rs`, `chat_message.rs` ; `src-tauri/src/services/terminal/manager.rs` ; `src-tauri/src/services/private_store.rs` ; `src-tauri/src/commands/app_update_source.rs` ; `src-tauri/src/services/brand.rs` ; `src-tauri/src/services/ollama_manager/spawn_gate_unix_support.rs`, `port.rs` ; `src-tauri/src/services/searxng/process.rs`, `lifecycle.rs`
 **Vérification** — Vérifié dans le code, ligne par ligne, le 9 septembre 2026, sur la version **1.2.2**. Les points d'affichage et les décisions de rédaction sont en fin de fichier. Deux écarts avec `SECURITY.md` et un écart avec les notes d'audit internes sont signalés dans « Points à confirmer ».
 
 ---
@@ -55,7 +55,7 @@ Le méta-moteur de recherche **SearXNG**, quand il est utilisé, est lui aussi l
 
 C'est la question à laquelle la page doit répondre **en premier**, avec un tableau (voir la section Tableaux). Les points à développer en prose :
 
-**Ce que voit un fournisseur de modèle cloud.** Quand vous choisissez un modèle cloud, la conversation entière part chez son fournisseur : vos messages, mais aussi **le contenu que les outils ont rapporté**. Un fichier lu par l'agent devient un message de rôle `tool` dans la conversation (`services/agent_local/chat_message.rs:37`), et cette conversation est ce qui est envoyé au modèle à chaque tour. Formulation juste pour le site : *ce que l'agent lit, le fournisseur le lit aussi.*
+**Ce que voit un fournisseur de modèle cloud.** Quand vous choisissez un modèle cloud, la conversation entière part chez son fournisseur : vos messages, mais aussi **le contenu que les outils ont rapporté**. Un fichier lu par l'agent devient un message de rôle `tool` dans la conversation (`services/agent_local/conversations/chat_message.rs:37`), et cette conversation est ce qui est envoyé au modèle à chaque tour. Formulation juste pour le site : *ce que l'agent lit, le fournisseur le lit aussi.*
 
 **Ce que voit un modèle local.** Rien ne sort. Ollama tourne sur votre machine et n'écoute que la boucle locale (section 1). C'est la réponse à donner à qui manipule des données confidentielles.
 
@@ -103,7 +103,7 @@ Le détail vit dans *Agent › Modes de permission*. Ici, seulement ce qui compt
 
 **Un plafond protège les canaux externes.** Quand une conversation arrive de Telegram, Slack ou Discord, le pont demande le mode `auto` (`services/gateway/agent_bridge_run.rs:110-112`), mais cette demande est **plafonnée par votre réglage** : si le mode demandé est plus permissif que le vôtre, c'est le vôtre qui est retenu (`commands/agent_chat_task/common.rs:49-58`, avec la comparaison en `:202-204`). Un canal externe ne peut donc jamais obtenir plus de droits que ceux que vous avez consentis dans l'application.
 
-**Et personne ne peut approuver à distance.** Le pont gateway ne fournit aucun émetteur de permission (`agent_bridge_run.rs:113`). Sans émetteur, une demande d'approbation est publiée dans la fenêtre de l'application (`services/agent_local/stream_events.rs:78-93`). Conséquence à écrire noir sur blanc : **une action sensible demandée depuis une messagerie attend devant votre écran** ; elle ne s'approuve pas depuis le téléphone.
+**Et personne ne peut approuver à distance.** Le pont gateway ne fournit aucun émetteur de permission (`agent_bridge_run.rs:113`). Sans émetteur, une demande d'approbation est publiée dans la fenêtre de l'application (`services/agent_local/diagnostics/stream_events.rs:78-93`). Conséquence à écrire noir sur blanc : **une action sensible demandée depuis une messagerie attend devant votre écran** ; elle ne s'approuve pas depuis le téléphone.
 
 **L'exception à connaître : les réveils programmés.** Une exécution déclenchée par un réveil demande le mode `FullAccess` (`services/scheduler/agentic.rs:112`), et ce mode-là **n'est pas plafonné** par votre réglage (`commands/agent_chat_task/common.rs:48`). Un commentaire du code assume ce choix : un réveil est traité comme une session manuelle en accès complet (`:46-47`). **Décision produit confirmée le 9 septembre 2026**, et la raison se donne telle quelle sur la page : un réveil s'exécute par définition sans personne devant l'écran ; en Demande d'approbation, la demande s'afficherait dans une fenêtre que personne ne regarde et l'exécution resterait bloquée — la fonctionnalité n'existerait pas. Le consentement est donné en amont, au moment où vous créez le réveil et écrivez la tâche qu'il exécutera. À dire clairement : **si vous programmez des réveils, ils s'exécutent en Accès complet même si vos conversations sont en Demande d'approbation — c'est ce qui leur permet de travailler en votre absence.**
 
@@ -124,13 +124,13 @@ C'est le seul réglage de Beaver dont l'effet **ne dépend pas du bon fonctionne
 **La condition, à énoncer immédiatement après.** Ce mécanisme ne s'active que si l'accès disque est effectivement restreint. Le code teste d'abord si la portée configurée autorise le disque entier ; si oui, il lance la commande **sans aucune isolation** (`shell_sandbox/launch.rs:42-49`). Or :
 
 - la portée par défaut est **la racine du disque** — `/` sur macOS et Linux, `C:\` sur Windows (`models/config.rs:116-125`, valeur posée par défaut en `:46`) ;
-- une portée est considérée comme non restreinte dès qu'une de ses racines est une racine de système de fichiers (`services/agent_local/directory_access_scope.rs:25-32`, variante Windows en `:34-44`).
+- une portée est considérée comme non restreinte dès qu'une de ses racines est une racine de système de fichiers (`services/agent_local/permissions/directory_access_scope.rs:25-32`, variante Windows en `:34-44`).
 
 **Donc, avec les réglages d'origine, il n'y a pas de bac à sable.** La phrase à écrire sur le site, sans l'adoucir : *tant que l'agent a accès à tout le disque, ses commandes s'exécutent sans isolation ; dès que vous réduisez sa portée à vos dossiers de travail, le système d'exploitation lui-même les enferme.*
 
 C'est le meilleur argument pour restreindre la portée : ce n'est pas seulement une limite déclarative, cela **allume** une protection.
 
-**Ce que la restriction contrôle par ailleurs.** Tout chemin venant de l'interface est résolu puis comparé aux racines autorisées : validation de forme d'abord — chemin absolu, sans caractère de contrôle, **sans segment `..`**, au plus 4 096 caractères (`services/agent_local/directory_access.rs:156-170`) — puis résolution des liens symboliques et des raccourcis (`:99-118`), puis appartenance à une racine autorisée (`:94-97`). Au plus **70 dossiers** peuvent être déclarés (`:7`).
+**Ce que la restriction contrôle par ailleurs.** Tout chemin venant de l'interface est résolu puis comparé aux racines autorisées : validation de forme d'abord — chemin absolu, sans caractère de contrôle, **sans segment `..`**, au plus 4 096 caractères (`services/agent_local/permissions/directory_access.rs:156-170`) — puis résolution des liens symboliques et des raccourcis (`:99-118`), puis appartenance à une racine autorisée (`:94-97`). Au plus **70 dossiers** peuvent être déclarés (`:7`).
 
 ### 7. Couche 3 — Le coffre des clés
 
@@ -140,7 +140,7 @@ Vos clés d'API sont rangées dans un fichier chiffré, `secrets.enc`, en **XCha
 
 **L'interface ne peut pas lire une clé.** Les commandes exposées au frontend sont : enregistrer, supprimer, vérifier la présence, lister les fournisseurs configurés, lire les paramètres de connexion, tester (`commands/api_keys.rs:15`, `:62`, `:75`, `:80`, `:85`, `:100`, `:105`). **Aucune ne renvoie une clé** — et celle qui renvoie des paramètres de connexion ne transporte que la région, le mode de point d'accès et un identifiant d'espace de travail (`services/provider_connections/qwen.rs:35-41`). Le code JavaScript de l'application n'a donc jamais une clé entre les mains.
 
-**Ce que le coffre ne couvre pas, à dire dans le même souffle :** il protège vos clés, **pas vos conversations**. Les fichiers `agent-sessions/*.json` sont du JSON en clair (`services/agent_local/session_store_document.rs:75`). Ils sont protégés par les permissions du système de fichiers — `0600` pour les fichiers, `0700` pour les dossiers sur macOS et Linux, une liste d'accès restreinte sur Windows (`services/private_store.rs:169-179`) — mais pas chiffrés. Ce qui veut dire : lisibles par tout programme lancé sous votre compte.
+**Ce que le coffre ne couvre pas, à dire dans le même souffle :** il protège vos clés, **pas vos conversations**. Les fichiers `agent-sessions/*.json` sont du JSON en clair (`services/agent_local/conversations/session_store_document.rs:75`). Ils sont protégés par les permissions du système de fichiers — `0600` pour les fichiers, `0700` pour les dossiers sur macOS et Linux, une liste d'accès restreinte sur Windows (`services/private_store.rs:169-179`) — mais pas chiffrés. Ce qui veut dire : lisibles par tout programme lancé sous votre compte.
 
 ### 8. Couche 4 — Les bornes
 
@@ -214,13 +214,13 @@ Terminer par de l'actionnable. Cinq gestes, dans l'ordre d'effet décroissant, c
 
 | Ressource | Limite | Source |
 |---|---|---|
-| Conversations d'agent en cours | **32** | `agent_local/agent_work_supervision.rs:5` |
-| Sous-agents simultanés | **8** | `agent_local/agent_work_supervision.rs:6` |
-| Commandes shell simultanées | **64** | `agent_local/agent_work_supervision.rs:7` |
+| Conversations d'agent en cours | **32** | `agent_local/execution/agent_work_supervision.rs:5` |
+| Sous-agents simultanés | **8** | `agent_local/execution/agent_work_supervision.rs:6` |
+| Commandes shell simultanées | **64** | `agent_local/execution/agent_work_supervision.rs:7` |
 | Sessions de terminal | **16** | `services/terminal/manager.rs:35` |
-| Messages par conversation | **2 000** | `agent_local/session_limits.rs:10` |
-| Dossiers autorisés déclarables | **70** | `agent_local/directory_access.rs:7` |
-| Longueur d'un chemin | **4 096** caractères | `agent_local/directory_access.rs:9` |
+| Messages par conversation | **2 000** | `agent_local/conversations/session_limits.rs:10` |
+| Dossiers autorisés déclarables | **70** | `agent_local/permissions/directory_access.rs:7` |
+| Longueur d'un chemin | **4 096** caractères | `agent_local/permissions/directory_access.rs:9` |
 | Corps de réponse authentifiée | **32 Mio** | `services/secure_http.rs:19` |
 | Réponse de vérification de mise à jour | **512 Kio** | `commands/app_update_source.rs:20` |
 | Corps de fournisseur écrit dans les traces | **200 caractères**, après masquage | `services/llm/mod.rs:146-154` |

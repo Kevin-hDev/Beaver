@@ -52,7 +52,7 @@ Deux propriétés à énoncer d'entrée :
 
 Deux déclencheurs, et un seul moteur derrière (`services/compress/profile_types.rs:17-20` ; `orchestrator.rs:28`).
 
-**Automatique.** Beaver vérifie après chaque réponse et après chaque série d'outils si la conversation a atteint le **seuil** du profil actif (`services/agent_local/agent_loop_compression.rs:97-128` pour les modèles locaux, `services/agent_local/tool_executor_compression.rs:38` et `:60` pour les deux familles). La condition exacte est « jetons estimés ≥ fenêtre × seuil ÷ 100 » (`token_estimate.rs:73-79`).
+**Automatique.** Beaver vérifie après chaque réponse et après chaque série d'outils si la conversation a atteint le **seuil** du profil actif (`services/agent_local/execution/agent_loop_compression.rs:97-128` pour les modèles locaux, `services/agent_local/tool_executor_compression.rs:38` et `:60` pour les deux familles). La condition exacte est « jetons estimés ≥ fenêtre × seuil ÷ 100 » (`token_estimate.rs:73-79`).
 
 **Le seuil du profil livré avec Beaver est de 90 %** (`profile_defaults.rs:13`). Il est réglable de **1 % à 90 %** (`profile_limits.rs:14-15`), et le moteur le replafonne à 90 % à l'exécution quoi qu'il arrive (`orchestrator.rs:170`).
 

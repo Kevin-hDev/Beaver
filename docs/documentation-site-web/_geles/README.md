@@ -38,7 +38,7 @@ La fiche Extensions reste dans ce fichier pour garder la trace du gel et de sa l
 
 - `EXTENSIONS.md`, à la racine, fait autorité sur le sujet et **doit être la source principale** des quatre briefs ;
 - le module `services/extensions/` existe et est largement couvert de tests ;
-- les deux outils de découverte d'extensions sont publiés et **intégrés au mode Plan** (`services/extensions/mod.rs`, repris dans `agent_local/tool_plan_guard.rs`) ;
+- les deux outils de découverte d'extensions sont publiés et **intégrés au mode Plan** (`services/extensions/mod.rs`, repris dans `agent_local/tools/tool_plan_guard.rs`) ;
 - la politique de permission **par effet d'extension** est en place et testée : en mode Plan, seuls les outils d'extension en lecture seule sont autorisés.
 
 **Fait le 9 septembre 2026** : les quatre briefs sont écrits (voir `07-integrations/`). Attention au troisième : la page « prompt système par une extension » a été **recadrée** — l'enquête dans le code a montré qu'aucune API d'extension ne touche au prompt système ; le brief documente ce qui est réellement possible et porte en tête une décision produit à trancher.

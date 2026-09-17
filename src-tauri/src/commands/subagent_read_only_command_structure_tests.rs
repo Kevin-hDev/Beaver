@@ -54,7 +54,7 @@ fn child_guard_runs_before_each_user_session_mutation() {
 
 #[test]
 fn child_guard_runs_before_preflight_path_validation_and_disk_access() {
-    let source = include_str!("../services/agent_local/agent_send_preflight.rs");
+    let source = include_str!("../services/agent_local/conversations/agent_send_preflight.rs");
     assert_guard_precedes(
         command_body(source, "pub async fn prepare"),
         "session_store::get",

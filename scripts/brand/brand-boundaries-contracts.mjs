@@ -109,20 +109,20 @@ export const COMPATIBILITY_CONTRACTS = Object.freeze([
     "src-tauri/src/services/autostart_migration.rs",
     ['const LEGACY_ENTRY_NAME: &str = "CL-GO";'],
   ),
-  contract("règles projet", "src-tauri/src/services/agent_local/agent_md.rs", [
+  contract("règles projet", "src-tauri/src/services/agent_local/prompts/agent_md.rs", [
     '.join(".cl-go")',
   ]),
   contract(
     "branches de sous-agents",
-    "src-tauri/src/services/agent_local/subagent_directory_change.rs",
+    "src-tauri/src/services/agent_local/subagents/subagent_directory_change.rs",
     ['"cl-go/directory"', '"cl-go/subagent/"'],
   ),
-  contract("worktrees de sous-agents", "src-tauri/src/services/agent_local/subagent_worktree.rs", [
+  contract("worktrees de sous-agents", "src-tauri/src/services/agent_local/subagents/subagent_worktree.rs", [
     '"cl-go/subagent/{execution_id}"',
   ]),
   contract(
     "transactions de sous-agents",
-    "src-tauri/src/services/agent_local/subagent_directory_transaction.rs",
+    "src-tauri/src/services/agent_local/subagents/subagent_directory_transaction.rs",
     ['".cl-go-transaction-{transaction_id}"', '".cl-go-{}.tmp"'],
   ),
   contract("mascotte Rust", "src-tauri/src/models/mascot.rs", ['"cl-go-beaver"']),

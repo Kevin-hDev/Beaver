@@ -2,7 +2,7 @@
 
 **Emplacement site** — Démarrage › Concepts clés (et source du glossaire de référence)
 **Répond à** — « Qu'est-ce que ça veut dire ? » pour chaque terme employé ailleurs dans la documentation
-**Sources** — `README.md`, `CLAUDE.md`, `src-tauri/src/services/agent_local/`, `src-tauri/src/services/agent_local/tool_catalog.rs:16-85`, `src-tauri/src/services/llm/route_profile/catalog_api.rs:42-191`, `src-tauri/src/services/extensions/`, `src/components/settings/settings-sections.ts`, `src/features/extension-ui/core-occupants.tsx`, `src/lib/app-themes.ts`
+**Sources** — `README.md`, `CLAUDE.md`, `src-tauri/src/services/agent_local/`, `src-tauri/src/services/agent_local/tools/tool_catalog.rs:16-85`, `src-tauri/src/services/llm/route_profile/catalog_api.rs:42-191`, `src-tauri/src/services/extensions/`, `src/components/settings/settings-sections.ts`, `src/features/extension-ui/core-occupants.tsx`, `src/lib/app-themes.ts`
 **Vérification** — Vérifié dans le code pour les termes techniques marqués ✓ ; issu du README pour les autres
 
 ---
