@@ -21,3 +21,11 @@ Validation exécutée
 
 Limite de validation
 - La vérification visuelle clair/sombre reste à faire : le Mac était verrouillé. Le serveur Vite seul ne peut pas rendre l’application complète car les API Tauri natives sont absentes. Aucun changement CSS n’est inclus dans ce commit.
+
+Validation visuelle complémentaire — 17 septembre 2026
+- Beaver Dev lancé avec les API Tauri natives.
+- Thème sombre : changement de session, disparition de l’état propre à l’autre session, restauration du panneau Preview au retour, fermeture puis réouverture du panneau de fichiers, ouverture du terminal et fermeture explicite de son dernier onglet.
+- Plein écran : entrée observée avec disparition des contrôles de fenêtre, interface et panneau Preview conservés ; retour en fenêtre via Affichage > Toggle Full Screen.
+- Thème clair : réglage activé et observé dans les paramètres puis dans une session avec Preview ; changement de session et restauration du panneau confirmés.
+- Le thème sombre initial a été rétabli.
+- Aucun défaut visuel ou comportemental constaté.
