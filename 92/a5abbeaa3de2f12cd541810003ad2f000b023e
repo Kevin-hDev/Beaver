@@ -1,0 +1,27 @@
+Tâche M18 — rendre obligatoires les données toujours présentes et retirer les arguments ignorés.
+
+Raison :
+Le flux relayait depuis React des indicateurs de capacités et un mode de raisonnement que le backend ignorait, tandis que la conversation, la cible de continuation et le profil de raisonnement étaient optionnels alors que tous les producteurs réels les fournissent. Ces faux choix multipliaient les branches et les risques de divergence.
+
+Changement :
+- suppression des relais frontend inutilisés (capacités, think, reasoningMode) et de l'attente savingRef inactive ;
+- suppression de StreamCapabilityHints et des paramètres ignorés côté Rust ;
+- conversation, continuation et profil de raisonnement requis dans StreamTaskParams ;
+- résolution des capacités depuis le catalogue backend, autorité unique ;
+- journal de conversation requis pour les boucles réelles après traitement préalable de /compress ;
+- conservation du journal optionnel uniquement au niveau interne des boucles pour les tests isolés, afin d'éviter une fausse infrastructure de session.
+
+Validation :
+- npx tsc --noEmit : OK
+- npm run lint : OK
+- npm test : 637 fichiers, 3528 tests, OK
+- cargo check : OK
+- cargo clippy --all-targets -- -D warnings : OK
+- cargo fmt --all -- --check : OK
+- cargo test agent_chat_task --lib : 28 OK
+- cargo test agent_chat_target --lib : 17 OK
+- cargo test agent_loop_unbounded --lib : 4 OK
+- cargo test stream_recovery_process --lib : 2 OK
+- cargo test -- --test-threads=8 : 5865 tests backend + 51 CLI + intégration, 0 échec
+- git diff --check : OK
+- graphify update . : OK
