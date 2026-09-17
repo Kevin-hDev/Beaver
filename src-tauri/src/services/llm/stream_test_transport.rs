@@ -110,7 +110,6 @@ pub(super) async fn dispatch(
             Some(Err(super::stream_http::classify_error(
                 400,
                 r#"{"error":{"param":"service_tier","code":"invalid_request_error"}}"#,
-                "OpenAI",
                 super::route_profile::ErrorPolicy::Responses,
                 false,
                 false,

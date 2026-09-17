@@ -32,7 +32,6 @@ pub struct LlmRoute {
     pub canonical_provider_id: &'static str,
     pub base_url: Cow<'static, str>,
     pub models_endpoint: Cow<'static, str>,
-    pub display_name: &'static str,
     pub auto_max_tokens: bool,
     pub fallback_max_tokens: Option<u32>,
     pub usage_scope: UsageScope,
@@ -139,7 +138,6 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
         canonical_provider_id: profile.canonical_provider.as_str(),
         base_url,
         models_endpoint,
-        display_name: profile.display_name,
         auto_max_tokens: profile.output_limits.automatic,
         fallback_max_tokens: profile.output_limits.fallback,
         usage_scope: if profile.availability.silent {

@@ -2,13 +2,11 @@ use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamOutcome;
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
-use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
+use crate::services::secure_http::AuthenticatedClient;
 use tokio_util::sync::CancellationToken;
 
 pub(super) use super::xai_oauth_chat::prepare as prepare_chat_request;
-pub(super) use super::xai_oauth_transport_status::{
-    backend_path, catalog_reasoning_mode, classify_status,
-};
+pub(super) use super::xai_oauth_transport_status::{backend_path, catalog_reasoning_mode};
 
 pub(super) struct StreamContext<'a> {
     pub on_event: &'a AgentEventEmitter,
@@ -183,36 +181,27 @@ async fn post_responses(
                 .json(payload)
         })
         .await
-        .map_err(|error| match error {
-            super::route::RouteError::Unauthorized => "oauth_reauthentication_required".to_owned(),
-            super::route::RouteError::Forbidden => "provider_access_unavailable".to_owned(),
-            super::route::RouteError::Network => "provider_connection_failed".to_owned(),
-            #[cfg(debug_assertions)]
-            super::route::RouteError::FixtureBudget(message) => message,
-        })?;
+        .map_err(|error| super::stream_http::request_error_for_route(error, true).to_string())?;
     if response.status().is_success() {
         return Ok(response);
     }
-    let status = response.status().as_u16();
-    let has_retry_after = response.headers().contains_key("retry-after");
-    let diagnostic_context =
-        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, payload)
-            .with_retry_after(response.headers());
     let request_bytes = serde_json::to_vec(payload)
         .map(zeroize::Zeroizing::new)
         .map_or(0, |bytes| bytes.len());
-    let body = read_bounded(response, PROVIDER_ERROR_LIMIT)
-        .await
-        .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
-        .unwrap_or_default();
-    super::provider_diagnostics::record_http_failure(
-        "xai-oauth",
-        &model.id,
-        status,
-        super::provider_error::safe_details(&body),
-        request_bytes,
-        tool_count,
-        diagnostic_context,
-    );
-    Err(classify_status(route.error_policy, status, &body, has_retry_after).to_string())
+    Err(super::stream_http::reject_response(
+        response,
+        super::stream_http::RejectedResponseContext {
+            provider_id: "xai-oauth",
+            model: &model.id,
+            error_policy: route.error_policy,
+            oauth: true,
+            request_bytes,
+            tool_count,
+            diagnostic: super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+                request_id, payload,
+            ),
+        },
+    )
+    .await
+    .to_string())
 }

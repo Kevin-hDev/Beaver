@@ -180,7 +180,9 @@ async fn post(
             },
         )
         .await
-        .map_err(super::transport_error::map_route_error)?;
+        .map_err(|error| {
+            crate::services::llm::stream_http::request_error_for_route(error, route.is_oauth())
+        })?;
     if let Some(measurement) = measurement.as_mut() {
         measurement.mark_headers();
     }
@@ -193,13 +195,21 @@ async fn post(
     if response.status().is_success() {
         return Ok(response);
     }
-    super::transport_error::classify_response(
+    Err(crate::services::llm::stream_http::reject_response(
         response,
-        &route,
-        config,
-        request_bytes,
-        request_id,
-        &prepared.payload,
+        crate::services::llm::stream_http::RejectedResponseContext {
+            provider_id: config.provider_id,
+            model: config.model,
+            error_policy: route.error_policy,
+            oauth: route.is_oauth(),
+            request_bytes,
+            tool_count: config.tools.len(),
+            diagnostic:
+                crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+                    request_id,
+                    &prepared.payload,
+                ),
+        },
     )
-    .await
+    .await)
 }
