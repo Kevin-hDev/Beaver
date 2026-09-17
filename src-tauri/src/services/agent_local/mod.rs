@@ -1,4 +1,5 @@
-// Physical domains keep navigation readable while preserving the existing Rust module paths.
+// Navigation-only domains preserve the existing Rust paths and behavior.
+// Use real submodules only if repeated cross-domain defects justify stricter boundaries.
 include!("execution/modules.inc.rs");
 include!("conversations/modules.inc.rs");
 include!("context/modules.inc.rs");

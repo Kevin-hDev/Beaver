@@ -1,4 +1,5 @@
-// Physical domains keep extension boundaries readable while preserving public module paths.
+// Navigation-only domains preserve the existing Rust paths and behavior.
+// Use real submodules only if repeated cross-domain defects justify stricter boundaries.
 include!("contract/modules.inc.rs");
 include!("installation/modules.inc.rs");
 include!("host/modules.inc.rs");
