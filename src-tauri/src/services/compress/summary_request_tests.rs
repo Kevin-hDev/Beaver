@@ -125,7 +125,7 @@ async fn user_content_is_preserved_without_changing_the_fixed_contract_or_enabli
 }
 
 #[test]
-fn opaque_provider_state_and_file_access_grants_stay_out_of_the_summary_request() {
+fn private_metadata_and_file_access_grants_stay_out_of_the_summary_request() {
     let mut source = super::snapshot_tests::session().messages;
     source[0].files.push(
         crate::services::agent_local::types_message::FileAttachment {
@@ -155,6 +155,11 @@ fn opaque_provider_state_and_file_access_grants_stay_out_of_the_summary_request(
             Vec::new(),
         ),
     );
+    let mut replay_source = source[1].continuation.as_ref().unwrap().source.clone();
+    replay_source.model_id = "private-replay-model".into();
+    source[1].replay_source = Some(replay_source);
+    source[1].skill_names = Some(vec!["Readable skill".into()]);
+    source[1].skill_ids = Some(vec!["private:skill:id".into()]);
     source[1].tool_calls = Some(vec![
         crate::services::agent_local::types_message::ToolCallRequest {
             id: "fixture-call".into(),
@@ -184,12 +189,20 @@ fn opaque_provider_state_and_file_access_grants_stay_out_of_the_summary_request(
     assert!(!payload.contains("private-access-grant"));
     assert!(!payload.contains("private-provider-state"));
     assert!(!payload.contains("private-tool-reasoning"));
+    assert!(!payload.contains("private-replay-model"));
+    assert!(!payload.contains("private:skill:id"));
+    assert!(payload.contains("Readable skill"));
     assert!(payload.contains("visible"));
     assert_eq!(
         source[0].files[0].access_grant.as_deref(),
         Some("private-access-grant")
     );
     assert!(source[1].continuation.is_some());
+    assert_eq!(
+        source[1].replay_source.as_ref().unwrap().model_id,
+        "private-replay-model"
+    );
+    assert_eq!(source[1].skill_ids.as_ref().unwrap()[0], "private:skill:id");
     assert!(source[1].tool_calls.as_ref().unwrap()[0]
         .extra_content
         .is_some());

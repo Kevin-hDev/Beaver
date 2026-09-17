@@ -83,6 +83,8 @@ fn messages_for_summary(source: &[AgentMessage]) -> Vec<AgentMessage> {
         .cloned()
         .map(|mut message| {
             message.continuation = None;
+            message.replay_source = None;
+            message.skill_ids = None;
             if let Some(tool_calls) = &mut message.tool_calls {
                 for tool_call in tool_calls {
                     tool_call.extra_content = None;
