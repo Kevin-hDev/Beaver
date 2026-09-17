@@ -25,3 +25,9 @@ Validation
 Incident de validation
 - Le premier cargo test complet a eu un échec isolé dans app_storage_repairs_the_forecast_notes_directory avec « Outil de fixture indisponible » ; le test exact a réussi immédiatement, puis la seconde suite complète a réussi. Le premier résultat rouge n’est pas compté comme validation.
 - La mise à jour sémantique /graphify --update n’est pas disponible dans ce harnais ; elle n’a pas été simulée.
+
+Correction Review 08 — attribution de la preuve de persistance
+- La ligne « Scripts de persistance : 11 tests réussis » ne décrit pas l’état exact de ce commit.
+- À 60d6dc71, l’inventaire de persistance était encore désynchronisé ; cette validation ne doit pas être considérée verte ici.
+- La preuve valide appartient au commit d602c79c : npm run test:persistence-migration y réussit avec 10 tests.
+- Cette correction annote l’historique sans le réécrire ; les autres validations M07 restent inchangées.
