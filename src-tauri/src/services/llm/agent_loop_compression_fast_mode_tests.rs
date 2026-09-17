@@ -110,7 +110,6 @@ async fn loop_compression_reaches_the_payload_with_the_generation_capture() {
         model: "gpt-5.6-luna",
         session_id: &session.id,
         request_id: "request-loop-compression",
-        native_context: 100_000,
         configured_context: 100_000,
         chatbot: false,
         plan_mode_active: false,
@@ -119,13 +118,7 @@ async fn loop_compression_reaches_the_payload_with_the_generation_capture() {
     let mut messages = runtime_messages();
 
     let result = compression
-        .try_run(
-            &mut messages,
-            &[],
-            Some(90_000),
-            Some(0),
-            CancellationToken::new(),
-        )
+        .try_run(&mut messages, &[], CancellationToken::new())
         .await;
     let payloads = scenario.payloads();
     crate::services::agent_local::session_store::delete_one(&session.id)
@@ -155,9 +148,7 @@ async fn tool_executor_compression_reaches_the_payload_with_the_generation_captu
         },
         session_id: &session.id,
         request_id: "request-tool-compression",
-        native_context: 100_000,
         configured_context: 100_000,
-        last_context_tokens: Some(90_000),
         provider_tools: &[],
         chatbot: false,
         plan_mode_active: false,

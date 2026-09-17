@@ -82,7 +82,6 @@ fn run_native_tools() {
                 None,
                 CancellationToken::new(),
                 1_000_000,
-                1_000_000,
                 "auto",
                 false,
                 ContextUsageSeed::default(),

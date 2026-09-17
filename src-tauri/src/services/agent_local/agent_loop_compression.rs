@@ -1,10 +1,7 @@
 use super::agent_loop_support;
-use super::compress_hook;
 use super::stream_events::AgentEventEmitter;
 use super::tool_executor_compression::{ToolCompression, ToolCompressionProvider};
 use super::types_ollama::{ChatMessage, StreamResult};
-use crate::services::compress::token_estimate;
-use crate::services::token_counting;
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
@@ -13,7 +10,6 @@ pub(super) struct LoopCompression<'a> {
     pub model: &'a str,
     pub session_id: &'a str,
     pub request_id: &'a str,
-    pub native_context: u64,
     pub configured_context: u64,
     pub chatbot: bool,
     pub plan_mode_active: bool,
@@ -36,40 +32,24 @@ impl LoopCompression<'_> {
         &self,
         messages: &mut Vec<ChatMessage>,
         provider_tools: &[serde_json::Value],
-        last_prompt: Option<u32>,
-        last_eval: Option<u32>,
         cancel: CancellationToken,
     ) -> Option<u32> {
-        self.try_run_context(
-            messages,
-            provider_tools,
-            token_counting::sum_real_counts(last_prompt, last_eval),
-            cancel,
-        )
-        .await
-    }
-
-    async fn try_run_context(
-        &self,
-        messages: &mut Vec<ChatMessage>,
-        provider_tools: &[serde_json::Value],
-        last_context_tokens: Option<u32>,
-        cancel: CancellationToken,
-    ) -> Option<u32> {
-        compress_hook::try_auto_compress(
-            self.on_event,
-            messages,
-            self.model,
-            self.session_id,
-            self.request_id,
-            self.native_context,
-            self.configured_context,
-            last_context_tokens,
-            provider_tools,
-            self.chatbot,
-            self.plan_mode_active,
-            self.working_dir,
-            cancel,
+        crate::services::compress::automatic_run::try_run(
+            crate::services::compress::automatic_run::AutomaticCompressionRequest {
+                on_event: self.on_event,
+                provider_id: "ollama",
+                fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+                model: self.model,
+                messages,
+                session_id: self.session_id,
+                request_id: self.request_id,
+                configured_context: self.configured_context,
+                provider_tools,
+                chatbot: self.chatbot,
+                plan_mode_active: self.plan_mode_active,
+                working_dir: self.working_dir,
+                cancel,
+            },
         )
         .await
     }
@@ -83,11 +63,8 @@ impl LoopCompression<'_> {
         cancel: CancellationToken,
     ) -> Result<(), String> {
         messages.push(agent_loop_support::build_assistant_message(result));
-        let context = token_estimate::estimate_tokens_for_provider("ollama", messages)
-            .saturating_add(result.content_chunks.len())
-            .min(u32::MAX as usize) as u32;
         if self
-            .try_run_context(messages, provider_tools, Some(context), cancel)
+            .try_run(messages, provider_tools, cancel)
             .await
             .is_none()
         {
@@ -106,7 +83,7 @@ impl LoopCompression<'_> {
         cancel: CancellationToken,
     ) -> bool {
         let compressed = self
-            .try_run(messages, provider_tools, *last_prompt, *last_eval, cancel)
+            .try_run(messages, provider_tools, cancel)
             .await
             .is_some();
         if compressed {
@@ -164,7 +141,6 @@ impl LoopCompression<'_> {
     )]
     pub fn tool_compression<'a>(
         &'a self,
-        last_context_tokens: Option<u32>,
         provider_tools: &'a [serde_json::Value],
         cancel: CancellationToken,
     ) -> ToolCompression<'a> {
@@ -173,9 +149,7 @@ impl LoopCompression<'_> {
             provider: ToolCompressionProvider::Ollama { model: self.model },
             session_id: self.session_id,
             request_id: self.request_id,
-            native_context: self.native_context,
             configured_context: self.configured_context,
-            last_context_tokens,
             provider_tools,
             chatbot: self.chatbot,
             plan_mode_active: self.plan_mode_active,

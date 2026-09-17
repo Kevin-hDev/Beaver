@@ -110,7 +110,6 @@ async fn emit_stream() {
         None,
         cancel,
         1_000_000,
-        1_000_000,
         "manual",
         false,
         ContextUsageSeed::default(),

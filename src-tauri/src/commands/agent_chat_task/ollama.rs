@@ -193,7 +193,6 @@ pub(crate) async fn run(
         params.request_id.clone(),
         params.parent_message_inbox.clone(),
         params.cancel.clone(),
-        ctx.native,
         ctx.configured,
         &mode.mode,
         plan_mode_active,

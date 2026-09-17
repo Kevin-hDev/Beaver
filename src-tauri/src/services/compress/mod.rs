@@ -1,4 +1,5 @@
 pub(crate) mod automatic_guard;
+pub(crate) mod automatic_run;
 pub mod checkpoint_attachments;
 pub(crate) mod checkpoint_boundary;
 pub mod checkpoint_candidate;

@@ -25,7 +25,6 @@ pub(crate) mod api_key_probe;
 mod api_key_probe_tests;
 pub mod catalog;
 pub(crate) mod catalog_limits;
-pub mod compress_hook;
 mod endpoint_policy;
 #[cfg(test)]
 mod endpoint_policy_tests;

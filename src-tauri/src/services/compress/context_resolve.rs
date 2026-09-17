@@ -3,7 +3,6 @@ use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::agent_local::system_prompt_types::PromptTier;
 
 pub struct ContextWindows {
-    pub native: u64,
     pub configured: u64,
     pub prompt_tier: Option<PromptTier>,
 }
@@ -26,17 +25,14 @@ pub async fn resolve_ollama_with_client(ollama: &OllamaClient, model: &str) -> C
         u64::from(crate::services::gpu_detect::compute_default_num_ctx()),
     );
     ContextWindows {
-        native,
         configured,
         prompt_tier: Some(info.prompt_tier),
     }
 }
 
 pub async fn resolve_api(provider: &str, model: &str) -> ContextWindows {
-    let native = lookup_api_context(provider, model).await;
     ContextWindows {
-        native,
-        configured: native,
+        configured: lookup_api_context(provider, model).await,
         prompt_tier: None,
     }
 }
@@ -118,7 +114,6 @@ pub(crate) fn select_ollama_context(
 fn unavailable_ollama_context(model: &str) -> ContextWindows {
     let info = unavailable_ollama_info(model);
     ContextWindows {
-        native: 0,
         configured: 0,
         prompt_tier: Some(info.prompt_tier),
     }
@@ -141,17 +136,6 @@ async fn lookup_api_context(provider: &str, model: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn default_context_windows() {
-        let ctx = ContextWindows {
-            native: 131_072,
-            configured: 32_768,
-            prompt_tier: None,
-        };
-        assert_eq!(ctx.native, 131_072);
-        assert_eq!(ctx.configured, 32_768);
-    }
 
     #[test]
     fn next_ollama_request_uses_loaded_then_modelfile_then_safe_native_limit() {

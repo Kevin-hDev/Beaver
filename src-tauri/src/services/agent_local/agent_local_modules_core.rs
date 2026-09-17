@@ -41,7 +41,6 @@ pub mod clone_session_build;
 pub mod clone_summary;
 pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
-pub mod compress_hook;
 pub mod diagnostic_args;
 #[cfg(test)]
 mod diagnostic_args_tests;

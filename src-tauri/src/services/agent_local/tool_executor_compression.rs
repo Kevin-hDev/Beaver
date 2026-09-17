@@ -21,9 +21,7 @@ pub struct ToolCompression<'a> {
     pub provider: ToolCompressionProvider<'a>,
     pub session_id: &'a str,
     pub request_id: &'a str,
-    pub native_context: u64,
     pub configured_context: u64,
-    pub last_context_tokens: Option<u32>,
     pub provider_tools: &'a [serde_json::Value],
     pub chatbot: bool,
     pub plan_mode_active: bool,
@@ -33,49 +31,36 @@ pub struct ToolCompression<'a> {
 
 impl ToolCompression<'_> {
     pub async fn try_run(&self, messages: &mut Vec<ChatMessage>) -> bool {
-        match self.provider {
-            ToolCompressionProvider::Ollama { model } => {
-                crate::services::agent_local::compress_hook::try_auto_compress(
-                    self.on_event,
-                    messages,
-                    model,
-                    self.session_id,
-                    self.request_id,
-                    self.native_context,
-                    self.configured_context,
-                    self.last_context_tokens,
-                    self.provider_tools,
-                    self.chatbot,
-                    self.plan_mode_active,
-                    self.working_dir,
-                    self.cancel.clone(),
-                )
-                .await
-                .is_some()
-            }
+        let (provider_id, model, fast_mode) = match self.provider {
+            ToolCompressionProvider::Ollama { model } => (
+                "ollama",
+                model,
+                crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+            ),
             ToolCompressionProvider::Cloud {
                 provider_id,
                 model,
                 fast_mode,
-            } => crate::services::llm::compress_hook::try_auto_compress(
-                self.on_event,
+            } => (provider_id, model, fast_mode),
+        };
+        crate::services::compress::automatic_run::try_run(
+            crate::services::compress::automatic_run::AutomaticCompressionRequest {
+                on_event: self.on_event,
                 provider_id,
                 fast_mode,
                 model,
                 messages,
-                self.session_id,
-                self.request_id,
-                self.native_context,
-                self.configured_context,
-                self.last_context_tokens,
-                self.provider_tools,
-                self.chatbot,
-                self.plan_mode_active,
-                self.working_dir,
-                self.cancel.clone(),
-            )
-            .await
-            .is_some(),
-        }
+                session_id: self.session_id,
+                request_id: self.request_id,
+                configured_context: self.configured_context,
+                provider_tools: self.provider_tools,
+                chatbot: self.chatbot,
+                plan_mode_active: self.plan_mode_active,
+                working_dir: self.working_dir,
+                cancel: self.cancel.clone(),
+            },
+        )
+        .await
+        .is_some()
     }
 }
