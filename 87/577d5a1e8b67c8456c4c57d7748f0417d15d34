@@ -1,0 +1,20 @@
+M23 — Centraliser la réception du flux et ses projections communes
+
+Décision
+- agentStreamManager devient l’unique écouteur React de agent-stream-event et l’autorité des projections en direct pour les tâches, sous-agents et invalidations de session.
+- Raison : supprimer trois reconstructions concurrentes du même flux tout en conservant les documents durables comme autorité après fin ou compression.
+
+Changements
+- Ajout d’une projection bornée au registre de flux existant ; aucun nouveau bus ni cache global de sessions.
+- useTodos et useSubagents s’abonnent au gestionnaire commun et conservent leur rechargement durable.
+- useSessionSummary dérive les changements depuis les outils déjà suivis par le gestionnaire et conserve la dernière donnée confirmée lors d’une erreur transitoire.
+- useAgentSessions réutilise l’événement de session existant pour les transitions de sous-agents.
+- Les permissions concurrentes et le routage parent/enfant existants restent inchangés.
+
+Validation exécutée
+- 157 tests ciblés : vues multiples, navigation pendant un flux, fin, compression, archivage, annulation, erreur transitoire et routage des sous-agents.
+- npm test : 634 fichiers et 3 499 tests Vitest, puis toutes les suites build, CI, fichiers, CEF, e2e, extensions et raisonnement réussies.
+- npx tsc --noEmit : réussi.
+- npm run lint : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.
