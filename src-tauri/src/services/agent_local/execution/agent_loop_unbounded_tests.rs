@@ -127,7 +127,10 @@ fn run_native_tool() {
                     StreamResult {
                         tool_calls: vec![(
                             "bash".into(),
-                            json!({ "command": "printf stack-proof-shell" }),
+                            json!({
+                                "command": "printf stack-proof-shell",
+                                "yield_time_ms": 30_000,
+                            }),
                         )],
                         tool_call_ids: vec!["call-bash".into()],
                         ..Default::default()
