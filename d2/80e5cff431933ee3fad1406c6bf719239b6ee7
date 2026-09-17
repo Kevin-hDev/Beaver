@@ -1,0 +1,21 @@
+Tâche: application du nettoyage interne autorisé par E02
+
+Changement:
+- retrait des IPC install_git_extension, install_npm_extension et update_extension, remplacés par start_extension_install;
+- retrait de list_agent_tool_catalog et set_agent_tool_enabled, l'interface utilisant les groupes;
+- retrait de get_registry_model et de son service sans appelant;
+- suppression des wrappers, variantes d'erreur et doublures devenus morts.
+
+Invariants:
+- add_local_extension et les travaux durables d'installation restent actifs;
+- les réglages par groupe et les autres commandes du registre restent actifs;
+- @beaver/sdk, unstable.call et toute la surface publique d'extensions sont inchangés.
+
+Validation:
+- recherche globale: aucun ancien nom dans le code source;
+- Rust complet: 5860 réussites, 0 échec, 32 ignorés;
+- frontend complet: 636 fichiers, 3506 tests réussis;
+- TypeScript, lint, cargo check, Clippy strict, cargo fmt, contracts:check et graphify update réussis.
+
+Incident de validation utile:
+- le premier passage Rust a détecté un ancien compte d'inventaire fixé à 22; corrigé à 19 puis suite complète relancée verte.
