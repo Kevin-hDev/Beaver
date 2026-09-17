@@ -1,0 +1,19 @@
+Tâche: E02 — Déterminer les obligations de compatibilité des commandes et du SDK
+
+Décision:
+- les IPC Tauri non documentés sont internes et six commandes sans appelant peuvent être retirées;
+- beaver.unstable.call et toute la surface @beaver/sdk restent publics et inchangés;
+- une liste avancée vide ne prouve pas que l'entrée publique peut disparaître.
+
+Preuves:
+- recherche d'appelants dans Rust, React, Node, scripts et tests;
+- publication vérifiée dans package.json, index.d.ts, sdk/README.md, EXTENSIONS.md, README.md et CHANGELOG.md;
+- les installations courantes passent par start_extension_install.
+
+Validation:
+- rapport autonome avec statut, usages et politique par surface;
+- git diff --cached --check: réussi;
+- aucune modification de code ni de comportement.
+
+Limite d'outillage:
+- /graphify --update n'est pas disponible dans ce harnais.
