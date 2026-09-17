@@ -1,0 +1,22 @@
+Tâche M09 — Dériver les catalogues d'outils depuis une seule définition.
+
+Raison
+Les propriétés locked et default_enabled étaient écrites une fois par outil puis une seconde fois par groupe. Un test devait maintenir manuellement l'accord entre les deux tables.
+
+Changement
+- Les groupes sont l'autorité des outils natifs, de leur verrouillage et de leur activation par défaut.
+- Le catalogue plat IPC est calculé depuis cette autorité.
+- Les trois outils internes d'extensions restent dans le catalogue d'exécution sans apparaître comme un groupe dans l'écran.
+- Les 46 outils, l'ordre, les valeurs par défaut et les anciens libellés de groupe du catalogue plat sont conservés.
+- Les commandes IPC list_agent_tool_catalog et set_agent_tool_enabled restent enregistrées : leur éventuel retrait public relève d'E02.
+
+Validation
+- cargo test tool_catalog --lib : 10 réussis, 0 échec.
+- cargo test tool_group_catalog --lib : 6 réussis, 0 échec.
+- cargo test agent_settings --lib : 11 réussis, 0 échec.
+- npx vitest run src/components/settings/__tests__/settings-tab-report.test.tsx : 16 réussis, 0 échec.
+- cargo check : réussi sans avertissement.
+- cargo clippy --all-targets -- -D warnings : réussi.
+- cargo fmt --all -- --check : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.
