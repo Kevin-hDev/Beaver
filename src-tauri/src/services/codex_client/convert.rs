@@ -15,6 +15,7 @@ pub fn convert_messages_with_tools(
         .expect("a payload without a continuation target cannot be rejected")
 }
 
+#[cfg(test)]
 pub(crate) fn convert_messages_with_tools_and_continuity(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],

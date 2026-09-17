@@ -120,13 +120,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.messages,
     )
     .await;
-    super::stream_diagnostics_payload::record_ollama_payload(
-        params.session_id,
-        params.request_id,
-        params.turn,
-        &request,
-    )
-    .await;
     let (tool_tx, tool_rx) = tokio::sync::mpsc::unbounded_channel();
     let mut eager_handle = EagerHandleGuard::new(super::eager_dispatch::spawn_eager_handle(
         tool_rx,

@@ -1,6 +1,7 @@
 use super::types_ollama::{ChatMessage, ChatRequest};
 use serde_json::{json, Map, Value};
 
+#[cfg(test)]
 pub fn chat_request(
     request: &ChatRequest,
     messages: &[ChatMessage],

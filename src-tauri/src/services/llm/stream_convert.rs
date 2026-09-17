@@ -113,6 +113,7 @@ fn extra_content_for_policy(
     Some(filtered)
 }
 
+#[cfg(test)]
 pub fn messages_to_openai(
     messages: &[ChatMessage],
     policy: super::route_profile::MessageWirePolicy,

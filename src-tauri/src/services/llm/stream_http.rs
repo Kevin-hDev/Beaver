@@ -141,6 +141,14 @@ async fn post_chat_request_with_timeout_and_policy(
     }
     super::reasoning_wire::replay::record_evidence(cfg.session_id, request_id, &prepared.replayed)
         .await;
+    crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+        cfg.session_id,
+        request_id,
+        cfg.provider_id,
+        "chat_completions",
+        &payload,
+    )
+    .await;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(cfg, &payload).await {
         return response;

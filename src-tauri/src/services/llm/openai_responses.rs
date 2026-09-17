@@ -99,6 +99,14 @@ pub(super) async fn post(
         &prepared.replayed,
     )
     .await;
+    crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+        config.session_id,
+        request_id,
+        config.provider_id,
+        "responses",
+        &body,
+    )
+    .await;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(config, &body).await {
         return response;

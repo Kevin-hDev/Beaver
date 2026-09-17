@@ -81,6 +81,14 @@ pub(super) async fn stream_chat(
                 &prepared.replayed,
             )
             .await;
+            crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+                request.session_id,
+                Some(request_id),
+                "xai-oauth",
+                "responses",
+                &prepared.payload,
+            )
+            .await;
             let response = post_responses(
                 catalog_model,
                 &prepared.payload,

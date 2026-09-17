@@ -70,6 +70,14 @@ pub async fn open_chat_response(
     let context_count = prepared.context_count;
     let wire_request = prepared.payload;
     persist_verified_context(&context_count, diagnostics.preparation).await?;
+    super::stream_diagnostics_payload::record_provider_payload(
+        Some(diagnostics.session_id),
+        Some(diagnostics.request_id),
+        "ollama",
+        "ollama_chat",
+        &wire_request,
+    )
+    .await;
     #[cfg(debug_assertions)]
     crate::services::reasoning_fixture_budget::authorize_payload(&wire_request)?;
 

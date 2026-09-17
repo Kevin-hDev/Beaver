@@ -1,194 +1,126 @@
-use super::super::types_ollama::{ChatMessage, ChatRequest};
 use super::PayloadStats;
 use serde_json::Value;
 
-pub(super) fn anthropic_payload_stats(
-    messages: &[ChatMessage],
-    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
-) -> PayloadStats {
-    let mut stats = PayloadStats::default();
-    let mut in_tool_group = false;
-    for message in messages {
-        match message.role.as_str() {
-            "system" | "developer" => {
-                stats.instructions_chars += char_count(&message.content);
-                in_tool_group = false;
-            }
-            "tool" => {
-                stats.tool_results += 1;
-                if !in_tool_group {
-                    stats.items += 1;
-                    in_tool_group = true;
-                }
-            }
-            "assistant" => {
-                in_tool_group = false;
-                stats.items += 1;
-                stats.assistant_items += 1;
-                let approved = message.continuation.as_ref().filter(|envelope| {
-                    target.is_some_and(|target| {
-                        crate::services::llm::reasoning_wire::replay::approval_for_target(
-                            target, envelope,
-                        )
-                        .is_ok()
-                    })
-                });
-                if let Some(envelope) = approved {
-                    let crate::services::reasoning_continuity::envelope::ContinuationState::AnthropicBlocks { blocks } = &envelope.continuation else {
-                        continue;
-                    };
-                    for block in blocks {
-                        match block["type"].as_str() {
-                            Some("thinking" | "redacted_thinking") => {
-                                stats.reasoning_fields += 1;
-                                stats.reasoning_chars += json_chars(block);
-                            }
-                            Some("text") => {
-                                stats.assistant_content_chars += value_text_chars(&block["text"])
-                            }
-                            Some("tool_use") => stats.tool_calls += 1,
-                            _ => {}
-                        }
-                    }
-                } else {
-                    stats.assistant_content_chars += char_count(&message.content);
-                    stats.tool_calls += message.tool_calls.as_ref().map_or(0, Vec::len);
-                }
-            }
-            "user" => {
-                in_tool_group = false;
-                stats.items += 1;
-            }
-            _ => {}
-        }
+pub(super) fn payload_stats(kind: &str, payload: &Value) -> PayloadStats {
+    let mut stats = PayloadStats {
+        available_tools: payload["tools"].as_array().map_or(0, Vec::len),
+        ..Default::default()
+    };
+    match kind {
+        "responses" => responses(payload, &mut stats),
+        "anthropic_messages" => anthropic(payload, &mut stats),
+        "ollama_chat" => chat(payload, &mut stats, true),
+        _ => chat(payload, &mut stats, false),
     }
     stats
 }
 
-pub(super) fn responses_payload_stats(
-    messages: &[ChatMessage],
-    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
-) -> PayloadStats {
-    let Ok((instructions, input)) =
-        crate::services::codex_client::convert::convert_messages_with_tools_and_continuity(
-            messages,
-            &[],
-            target,
-        )
-    else {
-        return PayloadStats::default();
+fn responses(payload: &Value, stats: &mut PayloadStats) {
+    stats.instructions_chars = text_chars(&payload["instructions"]);
+    let Some(input) = payload["input"].as_array() else {
+        return;
     };
-    let mut stats = PayloadStats {
-        items: input.len(),
-        instructions_chars: char_count(&instructions),
-        ..Default::default()
-    };
+    stats.items = input.len();
     for item in input {
         match item["type"].as_str() {
             Some("reasoning") => {
                 stats.reasoning_fields += 1;
-                stats.reasoning_chars += json_chars(&item);
+                stats.reasoning_chars += json_chars(item);
             }
             Some("function_call") => stats.tool_calls += 1,
             Some("function_call_output") => stats.tool_results += 1,
             _ if item["role"].as_str() == Some("assistant") => {
                 stats.assistant_items += 1;
-                stats.assistant_content_chars += value_text_chars(&item["content"]);
+                stats.assistant_content_chars += text_chars(&item["content"]);
             }
             _ => {}
         }
     }
-    stats
 }
 
-pub(super) fn chat_payload_stats(
-    provider_id: &str,
-    messages: &[ChatMessage],
-    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
-) -> PayloadStats {
-    let Some(policy) = crate::services::llm::route_profile::payload_policy(provider_id, "") else {
-        return PayloadStats::default();
-    };
-    let converted =
-        crate::services::llm::stream_convert::messages_to_openai(messages, policy.message);
-    let mut payload = serde_json::json!({"messages": converted});
-    if crate::services::llm::reasoning_wire::chat_text::apply_continuity(
-        messages,
-        target,
-        &mut payload,
-    )
-    .is_err()
-    {
-        return PayloadStats::default();
-    }
-    let converted = payload["messages"].as_array().cloned().unwrap_or_default();
-    let mut stats = PayloadStats {
-        items: converted.len(),
-        ..Default::default()
-    };
-    for item in converted {
-        if item["role"].as_str() == Some("assistant") {
-            stats.assistant_items += 1;
-            if let Some(reasoning) = item
-                .get("reasoning_content")
-                .or_else(|| item.get("reasoning"))
-            {
-                stats.reasoning_fields += 1;
-                stats.reasoning_chars += value_text_chars(reasoning);
-            } else if let Some(details) = item.get("reasoning_details") {
-                stats.reasoning_fields += 1;
-                stats.reasoning_chars += json_chars(details);
-            }
-            if item["content"].is_null() {
-                stats.assistant_content_nulls += 1;
-            } else {
-                stats.assistant_content_chars += value_text_chars(&item["content"]);
-            }
-            stats.tool_calls += item["tool_calls"].as_array().map_or(0, Vec::len);
-        } else if item["role"].as_str() == Some("tool") {
-            stats.tool_results += 1;
-        }
-    }
-    stats
-}
-
-pub(super) fn ollama_payload_stats(request: &ChatRequest) -> PayloadStats {
-    let Ok(payload) = super::super::ollama_wire::chat_request(request, &request.messages) else {
-        return PayloadStats::default();
-    };
+fn anthropic(payload: &Value, stats: &mut PayloadStats) {
+    stats.instructions_chars = text_chars(&payload["system"]);
     let Some(messages) = payload["messages"].as_array() else {
-        return PayloadStats::default();
+        return;
     };
-    let mut stats = PayloadStats {
-        items: messages.len(),
-        ..Default::default()
-    };
+    stats.items = messages.len();
     for message in messages {
-        if message["role"].as_str() == Some("assistant") {
+        let assistant = message["role"].as_str() == Some("assistant");
+        if assistant {
             stats.assistant_items += 1;
-            stats.assistant_content_chars += value_text_chars(&message["content"]);
-            stats.tool_calls += message["tool_calls"].as_array().map_or(0, Vec::len);
-            if message.get("thinking").is_some() {
-                stats.reasoning_fields += 1;
-                stats.reasoning_chars += value_text_chars(&message["thinking"]);
+        }
+        for block in message["content"].as_array().into_iter().flatten() {
+            match block["type"].as_str() {
+                Some("thinking" | "redacted_thinking") if assistant => {
+                    stats.reasoning_fields += 1;
+                    stats.reasoning_chars += json_chars(block);
+                }
+                Some("text") if assistant => {
+                    stats.assistant_content_chars += text_chars(&block["text"])
+                }
+                Some("tool_use") if assistant => stats.tool_calls += 1,
+                Some("tool_result") => stats.tool_results += 1,
+                _ => {}
             }
-        } else if message["role"].as_str() == Some("tool") {
-            stats.tool_results += 1;
         }
     }
-    stats
 }
 
-fn value_text_chars(value: &Value) -> usize {
-    value.as_str().map_or(0, char_count)
+fn chat(payload: &Value, stats: &mut PayloadStats, ollama: bool) {
+    let Some(messages) = payload["messages"].as_array() else {
+        return;
+    };
+    stats.items = messages.len();
+    for message in messages {
+        match message["role"].as_str() {
+            Some("system" | "developer") => {
+                stats.instructions_chars += text_chars(&message["content"])
+            }
+            Some("assistant") => {
+                stats.assistant_items += 1;
+                if message["content"].is_null() {
+                    stats.assistant_content_nulls += 1;
+                } else {
+                    stats.assistant_content_chars += text_chars(&message["content"]);
+                }
+                stats.tool_calls += message["tool_calls"].as_array().map_or(0, Vec::len);
+                let reasoning = if ollama {
+                    message.get("thinking")
+                } else {
+                    message
+                        .get("reasoning_content")
+                        .or_else(|| message.get("reasoning"))
+                        .or_else(|| message.get("reasoning_details"))
+                };
+                if let Some(reasoning) = reasoning {
+                    stats.reasoning_fields += 1;
+                    stats.reasoning_chars += if reasoning.is_string() {
+                        text_chars(reasoning)
+                    } else {
+                        json_chars(reasoning)
+                    };
+                }
+            }
+            Some("tool") => stats.tool_results += 1,
+            _ => {}
+        }
+    }
+}
+
+fn text_chars(value: &Value) -> usize {
+    match value {
+        Value::String(text) => text.chars().count(),
+        Value::Array(values) => values.iter().map(text_chars).sum(),
+        Value::Object(map) => map
+            .get("text")
+            .or_else(|| map.get("content"))
+            .map_or(0, text_chars),
+        _ => 0,
+    }
 }
 
 fn json_chars(value: &Value) -> usize {
-    serde_json::to_string(value).map_or(0, |value| char_count(&value))
-}
-
-fn char_count(value: &str) -> usize {
-    value.chars().count()
+    serde_json::to_string(value).map_or(0, |value| value.chars().count())
 }
 
 #[cfg(test)]

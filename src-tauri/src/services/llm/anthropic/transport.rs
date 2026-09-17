@@ -140,6 +140,14 @@ async fn post(
         &prepared.replayed,
     )
     .await;
+    crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+        config.session_id,
+        request_id,
+        config.provider_id,
+        "anthropic_messages",
+        &prepared.payload,
+    )
+    .await;
     #[cfg(test)]
     if let Some(response) =
         crate::services::llm::stream_test_transport::dispatch(config, &prepared.payload).await
