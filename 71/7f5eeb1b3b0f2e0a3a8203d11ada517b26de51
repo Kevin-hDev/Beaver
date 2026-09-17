@@ -1,0 +1,12 @@
+Tâche E10 — Décider de la compatibilité des formats historiques
+
+Décision : conserver profils de compression v1, sessions v3 et journaux Ollama avec rejected_target nul.
+
+Raisons :
+- les deux formats applicatifs n'ont pas été publiés mais ont pu être écrits par des builds de développement ; leurs migrations conservent les données et créent une sauvegarde exacte ;
+- le relevé local ne contient aucune v3, mais 4 sauvegardes v2 et 9 v4 prouvent que les migrations de développement sont réellement exercées ;
+- un journal Ollama sans identité rejetée ne reprend que deux dispositions prouvées et bloque toutes les autres ; le rendre illisible n'améliore pas la sûreté.
+
+Validation : 13 tests profils, 34 migrations de sessions, 10 documents Ollama et 42 décisions de reprise, soit 99 réussites et aucun échec.
+
+Politique : continuer à lire les formats acceptés, écrire seulement le courant, sauvegarder avant migration et préserver les versions futures en lecture seule.
