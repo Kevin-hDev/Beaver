@@ -57,13 +57,18 @@ async fn cancelled_wait_releases_the_owned_listener_before_returning() {
 
     assert_eq!(wait.await.unwrap(), Err(OAuthFailure::Cancelled));
     let mut response = Vec::new();
-    tokio::time::timeout(
+    let closed = tokio::time::timeout(
         Duration::from_secs(1),
         incomplete.read_to_end(&mut response),
     )
     .await
-    .expect("cancellation must close incomplete connections")
-    .unwrap();
+    .expect("cancellation must close incomplete connections");
+    if let Err(error) = closed {
+        assert!(matches!(
+            error.kind(),
+            std::io::ErrorKind::ConnectionReset | std::io::ErrorKind::ConnectionAborted
+        ));
+    }
     assert!(response.is_empty());
     let rebound = tokio::net::TcpListener::bind(address).await.unwrap();
     drop(rebound);
