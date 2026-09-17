@@ -1,0 +1,17 @@
+Tâche E03 — Délimiter le partage entre supervision CEF et processus possédés
+
+Décision :
+- conserver des propriétaires séparés : Chromium crée les helpers avant leur adoption, tandis qu'OwnedProcess possède les processus lancés ou explicitement adoptés par Beaver ;
+- ne partager à l'avenir que des lectures natives pures si un besoin concret permet une suppression nette ;
+- conserver côté CEF les marqueurs, générations, délais, limites, objets IPC, emplacements d'urgence et séquence d'arrêt ;
+- ne pas remplacer le Job CEF par le Job global ni fusionner les suivis macOS/Windows.
+
+Validation :
+- parcours macOS et Windows relus de la réservation à l'arrêt ;
+- comparaison avec owned_process_unix.rs, owned_process_macos.rs, owned_process_windows.rs et owned_process_windows_support.rs ;
+- constat 07-C1 confirmé pour les appels natifs, recommandation de fusion réduite ;
+- constat 07-C7 jugé insuffisant pour justifier une abstraction ;
+- git diff --check réussi avant commit.
+
+Limite :
+- l'étude est statique ; les preuves Windows natives restent à exécuter en CI lors d'une future modification de ce code.
