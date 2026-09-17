@@ -27,6 +27,71 @@ fn parser_retry_never_replays_an_already_published_tool_call() {
     ));
 }
 
+#[tokio::test]
+async fn buffered_ollama_stream_still_prioritizes_user_cancellation() {
+    use crate::services::agent_local::types_ollama::{ChatOptions, OllamaThink};
+    use std::sync::Arc;
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let server = MockServer::start().await;
+    let requested = Arc::new(tokio::sync::Notify::new());
+    let request_notice = Arc::clone(&requested);
+    Mock::given(wiremock::matchers::method("POST"))
+        .and(wiremock::matchers::path("/api/chat"))
+        .respond_with(move |_: &wiremock::Request| {
+            request_notice.notify_one();
+            ResponseTemplate::new(200)
+                .set_delay(std::time::Duration::from_millis(50))
+                .set_body_string(
+                    r#"{"message":{"role":"assistant","content":"ready"},"done":true,"eval_count":1}
+"#,
+                )
+        })
+        .mount(&server)
+        .await;
+    let ollama = super::ollama_client::OllamaClient::with_base_url(&server.uri()).unwrap();
+    let emitter = AgentEventEmitter::test("ollama-cancel".into());
+    let mut request = super::agent_loop_support::build_request(
+        "fixture",
+        &[],
+        &[],
+        OllamaThink::Bool(false),
+    );
+    request.options = Some(ChatOptions {
+        num_ctx: Some(8_192),
+        num_predict: None,
+    });
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let future = super::ollama_stream::stream_chat_inner(
+        &ollama,
+        &emitter,
+        &request,
+        cancel.clone(),
+        super::ollama_stream_request::ReplayDiagnosticContext {
+            session_id: "ollama-cancel",
+            request_id: "ollama-cancel",
+            preparation: None,
+        },
+        super::ollama_stream_request::StreamChatOptions {
+            tool_tx: None,
+            buffer_content: true,
+            realtime_budget: None,
+            retry_counts: super::ollama_stream_request::RetryCounts {
+                parser_retries: 0,
+                server_retries: 0,
+            },
+        },
+    );
+    tokio::pin!(future);
+    tokio::select! {
+        result = &mut future => panic!("stream ended before cancellation: {result:?}"),
+        _ = requested.notified() => {}
+    }
+    cancel.cancel();
+
+    assert_eq!(future.await.unwrap_err(), "Annulé");
+}
+
 fn replay_text_fragments(
     mut fragments: crate::services::llm::stream_fragments::StreamFragmentState,
     chunks: &[&str],

@@ -50,7 +50,7 @@ pub async fn stream_chat_with_tool_notify(
     .await
 }
 
-async fn stream_chat_inner(
+pub(super) async fn stream_chat_inner(
     ollama: &OllamaClient,
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
@@ -120,6 +120,7 @@ async fn stream_chat_inner(
 
     loop {
         tokio::select! {
+            biased;
             _ = cancel.cancelled() => {
                 return Err("Annulé".to_string());
             }

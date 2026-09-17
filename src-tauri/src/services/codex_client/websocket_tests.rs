@@ -135,3 +135,55 @@ async fn invalid_routing_configuration_never_disables_websocket_or_falls_back() 
     assert_eq!(error, "provider_configuration_invalid");
     assert!(should_attempt());
 }
+
+#[tokio::test]
+async fn buffered_websocket_still_prioritizes_user_cancellation() {
+    use futures_util::SinkExt;
+    use tokio_tungstenite::tungstenite::Message;
+
+    let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+        .await
+        .unwrap();
+    let address = listener.local_addr().unwrap();
+    let ready = std::sync::Arc::new(tokio::sync::Notify::new());
+    let server_ready = std::sync::Arc::clone(&ready);
+    let server = tokio::spawn(async move {
+        let (stream, _) = listener.accept().await.unwrap();
+        let mut socket = tokio_tungstenite::accept_async(stream).await.unwrap();
+        socket
+            .send(Message::Text(
+                r#"{"type":"response.completed","response":{}}"#.into(),
+            ))
+            .await
+            .unwrap();
+        server_ready.notify_one();
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    });
+    let (mut socket, _) = tokio_tungstenite::connect_async(format!("ws://{address}"))
+        .await
+        .unwrap();
+    ready.notified().await;
+    let cancel = tokio_util::sync::CancellationToken::new();
+    cancel.cancel();
+    let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
+        "websocket-cancel".into(),
+    );
+    let mut measurement =
+        crate::services::codex_client::stream_measurement::StreamMeasurement::new(None);
+
+    let error = receive_response(
+        &mut socket,
+        &emitter,
+        "gpt-5.6-sol",
+        &[],
+        cancel,
+        false,
+        None,
+        &mut measurement,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(error, WebSocketFailure::Cancelled);
+    server.await.unwrap();
+}

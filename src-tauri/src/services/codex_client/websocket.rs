@@ -136,6 +136,7 @@ async fn receive_response(
     let mut partial = false;
     loop {
         let message = tokio::select! {
+            biased;
             _ = cancel.cancelled() => return Err(WebSocketFailure::Cancelled),
             _ = tokio::time::sleep_until(deadline) => {
                 return Err(WebSocketFailure::Unavailable { partial });
