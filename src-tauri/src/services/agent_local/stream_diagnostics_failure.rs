@@ -112,6 +112,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "provider_empty_response"
             | "provider_output_limit"
             | "provider_content_filtered"
+            | "provider_response_invalid"
             | "auth_failed"
             | "oauth_reauthentication_required"
             | "provider_access_unavailable"
@@ -130,6 +131,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "compression_disabled_under_64k"
             | "compression_automatic_suspended"
             | "compression_failed"
+            | "ollama_server_error"
             | "circuit_breaker"
     ) {
         return lower;
@@ -157,7 +159,8 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     }
     if lower.contains("http")
         || lower.contains("api")
-        || lower.contains("rate")
+        || lower.contains("rate limit")
+        || lower.contains("rate-limit")
         || lower.contains("auth")
         || lower.contains("internal server error")
         || lower.contains("bad request")

@@ -40,6 +40,9 @@ describe("error", () => {
     expect(applyStreamEvent(makeState(), {
       event: "error", data: { message: "ollama_server_error" },
     }).state.error).toBe("errors.ollamaServerError");
+    expect(applyStreamEvent(makeState(), {
+      event: "error", data: { message: "provider_response_invalid" },
+    }).state.error).toBe("errors.providerResponseInvalid");
   });
 
   it("affiche le budget réellement calculé sans rapport de sous-agent", () => {

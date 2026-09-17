@@ -41,6 +41,8 @@ fn completion_failures_keep_their_specific_diagnostic_codes() {
         "provider_empty_response",
         "provider_output_limit",
         "provider_content_filtered",
+        "provider_response_invalid",
+        "ollama_server_error",
     ] {
         assert_eq!(classify_error(code, false), code);
         assert_eq!(safe_code(code), code);
@@ -124,6 +126,18 @@ fn historical_circuit_breaker_sentence_is_classified() {
             false,
         ),
         "circuit_breaker"
+    );
+}
+
+#[test]
+fn historical_rate_limit_sentence_does_not_match_unrelated_words() {
+    assert_eq!(
+        classify_error("HTTP 429 rate limit exceeded", false),
+        "provider_error"
+    );
+    assert_eq!(
+        classify_error("unable to generate response", false),
+        "unknown"
     );
 }
 

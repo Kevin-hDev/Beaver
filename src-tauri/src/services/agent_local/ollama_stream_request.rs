@@ -15,7 +15,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 #[path = "ollama_stream_request_error.rs"]
-mod request_error;
+pub(super) mod request_error;
 
 #[derive(Debug, Clone, Copy)]
 pub struct RetryCounts {
@@ -82,7 +82,7 @@ pub async fn open_chat_response(
         .await
     {
         Ok(response) => response,
-        Err(error) => return request_error::connection(on_event, error),
+        Err(error) => return request_error::connection(error),
     };
 
     if resp.status().is_success() {
@@ -182,14 +182,7 @@ async fn handle_http_failure(
         "[ollama-stream] HTTP {status}: {}",
         crate::services::llm::sanitize_log_body(&body)
     );
-    let msg = "ollama_server_error".to_string();
-    let _ = on_event.send(StreamEvent::Error {
-        message: msg.clone(),
-        is_connection: false,
-        context_capacity: None,
-        diagnostic: None,
-    });
-    Err(msg)
+    Err(request_error::SERVER.to_string())
 }
 
 fn maybe_send_retry_indicator(
