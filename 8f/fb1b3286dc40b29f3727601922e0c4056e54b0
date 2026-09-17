@@ -5,7 +5,7 @@ Décision
 - Raison : une éviction silencieuse figeait une vue encore affichée et rendait le défaut impossible à diagnostiquer.
 
 Changements
-- Une admission bornée commune remplace les évictions et refuss silencieux dans les flux, indicateurs de session, résumés clonés, brouillons et voix.
+- Une admission bornée commune remplace les évictions et refus silencieux dans les flux, indicateurs de session, résumés clonés, brouillons et voix.
 - Les limites existantes restent inchangées et les collections de données restent bornées.
 - Le démontage libère immédiatement une place ; les paramètres inutilisés du suivi d’activité sont supprimés.
 
