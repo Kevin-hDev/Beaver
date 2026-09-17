@@ -10,3 +10,6 @@ Validation:
 - cargo fmt --all -- --check: passed from src-tauri
 - RUSTFMT_BASE_SHA=$(git merge-base main HEAD) node scripts/build/check-rust-format.mjs: passed
 - git diff --check: passed
+
+Post-change maintenance:
+- graphify update . passed (47,410 nodes, 107,661 edges)
