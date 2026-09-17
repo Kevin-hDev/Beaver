@@ -1,0 +1,12 @@
+Tâche E09 — Évaluer les diagnostics et limites des favicons
+
+Décision : conserver le watchdog, la réparation du verrou empoisonné et la saturation à 2^53 - 1.
+
+Raisons :
+- le watchdog signale le blocage pendant qu'il existe ; un log au Drop arriverait seulement après sa résolution ; au plus quatre tâches peuvent vivre ;
+- la garde FFI contient la panique, tandis que FaviconStore remet l'état à zéro et publie des invalidations bornées ;
+- la révision terminale évite un retour à une valeur ambiguë pour JavaScript et rejette les rappels périmés.
+
+Validation : cargo test --lib favicon : 23 réussis, 0 échec, 1 générateur explicitement ignoré.
+
+Aucune modification de production : aucune réduction nette n'a été démontrée sans perdre un diagnostic ou une réparation utile.
