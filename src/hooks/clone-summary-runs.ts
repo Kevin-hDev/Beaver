@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 export interface CloneSummaryRun {
   sessionId: string;
@@ -54,14 +55,8 @@ export function finishCloneSummaryRun(sessionId: string, operationId: string) {
 }
 
 function subscribe(listener: () => void): () => void {
-  while (listeners.size >= 64) {
-    const first = listeners.keys().next().value;
-    if (first === undefined) break;
-    listeners.delete(first);
-  }
   const id = nextListenerId++;
-  listeners.set(id, listener);
-  return () => listeners.delete(id);
+  return addBoundedSubscriber(listeners, id, listener, 64);
 }
 
 function notify() {

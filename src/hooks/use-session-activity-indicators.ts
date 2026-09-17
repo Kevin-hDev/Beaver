@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { agentStreamManager } from "./agent-stream-manager";
 import type { StreamActivity } from "./agent-stream-activity";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 export interface SessionActivityState {
   runningIds: Set<string>;
@@ -23,7 +24,6 @@ export function reduceSessionActivity(
   state: SessionActivityState,
   activity: StreamActivity,
   selectedId: string | null,
-  _visibleIds: Set<string>,
 ): SessionActivityState {
   const runningIds = new Set(state.runningIds);
   const unreadIds = new Set(state.unreadIds);
@@ -45,7 +45,6 @@ export function reduceSessionActivity(
 export function cleanupSessionActivity(
   state: SessionActivityState,
   visibleIds: Set<string>,
-  _selectedId: string | null,
 ): SessionActivityState {
   const runningIds = filterVisible(state.runningIds, visibleIds);
   const unreadIds = trimSet(state.unreadIds);
@@ -57,12 +56,12 @@ export function useSessionActivityIndicators(sessionIds: string[], selectedId: s
 
   useEffect(() => {
     currentSelectedId = selectedId;
-    updateStore((current) => cleanupSessionActivity(current, visibleIds, selectedId));
+    updateStore((current) => cleanupSessionActivity(current, visibleIds));
     for (const id of visibleIds) {
       const activity = agentStreamManager.getActivity(id);
       if (activity) {
         updateStore((current) =>
-          reduceSessionActivity(current, activity, selectedId, visibleIds));
+          reduceSessionActivity(current, activity, selectedId));
       }
     }
   }, [selectedId, visibleIds]);
@@ -122,16 +121,8 @@ function filterVisible(ids: Set<string>, visibleIds: Set<string>): Set<string> {
 
 function subscribeStore(listener: () => void): () => void {
   ensureActivitySubscription();
-  while (listeners.size >= 16) {
-    const first = listeners.keys().next().value;
-    if (first === undefined) break;
-    listeners.delete(first);
-  }
   const id = nextListenerId++;
-  listeners.set(id, listener);
-  return () => {
-    listeners.delete(id);
-  };
+  return addBoundedSubscriber(listeners, id, listener, 16);
 }
 
 function getStoreState(): SessionActivityState {
@@ -142,7 +133,7 @@ function ensureActivitySubscription() {
   if (managerUnsubscribe) return;
   managerUnsubscribe = agentStreamManager.subscribeActivity((activity) => {
     updateStore((current) =>
-      reduceSessionActivity(current, activity, currentSelectedId, new Set([activity.sessionId])));
+      reduceSessionActivity(current, activity, currentSelectedId));
   });
 }
 

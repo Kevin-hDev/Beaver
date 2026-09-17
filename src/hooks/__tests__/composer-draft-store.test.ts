@@ -72,11 +72,16 @@ describe("composer draft store", () => {
   it("conserve les abonnements existants quand la limite est atteinte", () => {
     const first = vi.fn();
     const cleanups = [subscribeComposerDrafts(first)];
-    for (let index = 1; index <= 64; index += 1) {
+    for (let index = 1; index < 64; index += 1) {
       cleanups.push(subscribeComposerDrafts(vi.fn()));
     }
+    expect(() => subscribeComposerDrafts(vi.fn()))
+      .toThrow("Active view subscription limit reached");
     openComposerDraft("listener-test");
     expect(first).toHaveBeenCalledOnce();
+    cleanups.pop()?.();
+    const replacement = subscribeComposerDrafts(vi.fn());
+    replacement();
     cleanups.forEach((cleanup) => cleanup());
   });
 });

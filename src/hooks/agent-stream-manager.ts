@@ -1,7 +1,7 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import i18n from "@/i18n";
 import { applyStreamEvent } from "./agent-chat-stream-callbacks";
-import { scheduleCleanup, clearCleanup, trimSubscribers } from "./agent-stream-cleanup";
+import { scheduleCleanup, clearCleanup } from "./agent-stream-cleanup";
 import {
   flushFrameNotify,
   scheduleFrameNotify,
@@ -61,11 +61,12 @@ import {
 import { stopStreamRecord } from "./agent-stream-stop";
 import { applyRecordProjection, markRecordSessionUpdate, removeRecordSubagent } from "./agent-stream-projection-events";
 import { notifyAgentSessionsChanged } from "./agent-session-events";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 export type { StreamSnapshot } from "./agent-stream-records";
 const EVENT_NAME = "agent-stream-event";
+const MAX_SUBSCRIBERS_PER_SESSION = 32;
 interface StreamEnvelope { sessionId: string; generation?: number; event: StreamEvent }
-
 type Subscriber = (snapshot: StreamSnapshot) => void;
 
 let listenPromise: Promise<UnlistenFn> | null = null;
@@ -141,11 +142,12 @@ function subscribe(sessionId: string, subscriber: Subscriber): () => void {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
   const id = record.nextSubscriberId++;
-  record.subscribers.set(id, subscriber as (s: unknown) => void);
-  trimSubscribers(record);
+  const unsubscribe = addBoundedSubscriber(
+    record.subscribers, id, subscriber as (s: unknown) => void, MAX_SUBSCRIBERS_PER_SESSION,
+  );
   if (record.started) subscriber(snapshot(record.state));
   return () => {
-    record.subscribers.delete(id);
+    unsubscribe();
     if (record.state.completed && record.subscribers.size === 0) {
       scheduleCleanup(sessionId, record, records);
     }

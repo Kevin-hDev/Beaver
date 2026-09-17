@@ -165,6 +165,24 @@ describe("agentStreamManager", () => {
     });
   });
 
+  it("refuse explicitement un 33e abonné sans évincer les vues actives", async () => {
+    const first = vi.fn();
+    const cleanups = [agentStreamManager.subscribe("subscribers", first)];
+    for (let index = 1; index < 32; index += 1) {
+      cleanups.push(agentStreamManager.subscribe("subscribers", vi.fn()));
+    }
+
+    expect(() => agentStreamManager.subscribe("subscribers", vi.fn()))
+      .toThrow("Active view subscription limit reached");
+
+    await agentStreamManager.startSession("subscribers", [], 0);
+    expect(first).toHaveBeenCalled();
+    cleanups.pop()?.();
+    const replacement = agentStreamManager.subscribe("subscribers", vi.fn());
+    replacement();
+    cleanups.forEach((cleanup) => cleanup());
+  });
+
   it("ignore les events tardifs d'une génération annulée", async () => {
     await agentStreamManager.startSession("s1", [message("u1", "user", "Question")], 10);
     agentStreamManager.setSessionGeneration("s1", 7);

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { VoiceSnapshot } from "@/types/voice.generated";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 const MAX_LISTENERS = 64;
 let snapshot: VoiceSnapshot | null = null;
@@ -16,13 +17,8 @@ export function acceptVoiceSnapshot(next: VoiceSnapshot): boolean {
 export function readVoiceSnapshot(): VoiceSnapshot | null { return snapshot; }
 
 export function subscribeVoiceSnapshots(listener: () => void): () => void {
-  if (listeners.size >= MAX_LISTENERS) {
-    console.error("[voice] listener limit reached");
-    return () => undefined;
-  }
   const id = nextListenerId++;
-  listeners.set(id, listener);
-  return () => { listeners.delete(id); };
+  return addBoundedSubscriber(listeners, id, listener, MAX_LISTENERS);
 }
 
 export function useVoiceSnapshot(): VoiceSnapshot | null {

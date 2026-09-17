@@ -4,7 +4,6 @@ import type { StreamEvent } from "@/types/agent";
 const CLEANUP_DELAY_MS = 5 * 60 * 1000;
 
 const MAX_SESSIONS = 64;
-const MAX_SUBSCRIBERS_PER_SESSION = 32;
 export const MAX_CANCELLED_GENERATIONS = 16;
 
 export interface PendingAdmissionBucket {
@@ -69,12 +68,4 @@ export function clearCleanup(record: StreamRecord) {
 export function clearScheduledNotify(record: StreamRecord) {
   record.notifyHandle?.cancel();
   record.notifyHandle = null;
-}
-
-export function trimSubscribers(record: StreamRecord) {
-  while (record.subscribers.size > MAX_SUBSCRIBERS_PER_SESSION) {
-    const first = record.subscribers.keys().next().value;
-    if (first === undefined) break;
-    record.subscribers.delete(first);
-  }
 }
