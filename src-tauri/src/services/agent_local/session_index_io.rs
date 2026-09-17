@@ -72,7 +72,7 @@ pub(crate) async fn write_index_to(dir: &Path, entries: &[AgentSessionMeta]) -> 
         .map_err(|_| "index indisponible".to_string())?;
     let path = dir.join("index.json");
     let mut value = serde_json::to_value(entries).map_err(|_| "index invalide".to_string())?;
-    session_security::sanitize_session_value(&mut value);
+    session_security::sanitize_index_value(&mut value);
     let data = serde_json::to_vec_pretty(&value).map_err(|_| "index invalide".to_string())?;
     crate::services::private_store::atomic_write_async(path, data).await
 }

@@ -396,16 +396,18 @@ async fn failed_edit_write_is_generic_and_preserves_previous_bytes() {
 }
 
 #[tokio::test]
-async fn successful_edit_returns_the_exact_sanitized_document_history() {
+async fn successful_edit_returns_the_exact_persisted_document_history() {
     let mut session = create_session().await;
     session.messages = complete_turn("edit-sanitized", "answer", None);
     super::super::session_store::save(&session).await.unwrap();
+    let credential = ["gsk", "_", &"A".repeat(24)].concat();
+    let content = format!("use {credential}");
 
     let history = conversation_admission::edit_user_message(
         &session.id,
         EditUserMessageInput {
             message_id: "user-edit-sanitized".into(),
-            new_content: "use gsk_1234567890abcdefghijkl".into(),
+            new_content: content.clone(),
         },
         &target("model-a"),
     )
@@ -417,9 +419,7 @@ async fn successful_edit_returns_the_exact_sanitized_document_history() {
         history.messages.last().unwrap().content,
         persisted.messages[0].content
     );
-    assert!(!persisted.messages[0]
-        .content
-        .contains("gsk_1234567890abcdefghijkl"));
+    assert_eq!(persisted.messages[0].content, content);
     cleanup(&session.id).await;
 }
 

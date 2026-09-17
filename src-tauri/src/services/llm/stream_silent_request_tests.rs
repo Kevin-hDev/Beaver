@@ -66,6 +66,22 @@ fn compression_behavior_is_unchanged() {
 }
 
 #[test]
+fn cloud_payloads_preserve_content_voluntarily_provided_by_the_user() {
+    let credential = ["xai", "-", &"A".repeat(24)].concat();
+    let messages = [ChatMessage::user(format!("Utilise : {credential}"))];
+
+    let google = config("google", "gemini-3.8-flash", &messages);
+    let google_route = route::resolve("google").expect("Google route");
+    let google_body = build_chat_payload_for_test(&google, &google_route, google.max_tokens)
+        .expect("Google payload");
+    assert!(google_body.to_string().contains(&credential));
+
+    let openai = config("openai", "gpt-6-astra", &messages);
+    let responses_body = crate::services::llm::openai_responses::build_request(&openai);
+    assert!(responses_body.to_string().contains(&credential));
+}
+
+#[test]
 fn internal_astra_config_reaches_the_real_responses_constructor() {
     let messages = [ChatMessage::user("résume ceci".into())];
     let cfg = config("openai", "gpt-6-astra", &messages);

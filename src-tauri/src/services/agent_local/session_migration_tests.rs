@@ -833,7 +833,7 @@ async fn v2_round_trip_keeps_order_tool_ids_and_opaque_envelope() {
 }
 
 #[tokio::test]
-async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_ids() {
+async fn writer_preserves_conversation_and_opaque_provider_state() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root.path().join("session.json");
     let mut session = base_session();
@@ -890,7 +890,7 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
         .await
         .expect("read v2");
 
-    assert_eq!(restored.messages[1].content, "[REDACTED]");
+    assert_eq!(restored.messages[1].content, "sk-visible-content-12345678");
     assert_eq!(restored.messages[1].id, "sk-message-id-12345678");
     assert_eq!(restored.messages[1].turn_id, "sk-turn-id-12345678");
     assert_eq!(
@@ -903,30 +903,21 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
     );
     assert_eq!(
         restored.messages[1].tool_calls.as_ref().unwrap()[0].extra_content,
-        Some(serde_json::json!({ "google": tool_extra["google"].clone() }))
+        Some(tool_extra)
     );
     assert_eq!(restored.messages[1].continuation, Some(opaque));
     let arguments = &restored.messages[1].tool_calls.as_ref().unwrap()[0]
         .function
         .arguments;
-    for key in ["id", "continuation", "extra_content", "provider_id"] {
-        assert_eq!(arguments[key], "[REDACTED]");
-    }
+    assert_eq!(arguments, &controlled_collisions);
     let activity = &restored.messages[1].tool_activities.as_ref().unwrap()[0];
     let args = activity.args.as_ref().unwrap();
-    for key in ["id", "continuation", "extra_content", "provider_id"] {
-        assert_eq!(args[key], "[REDACTED]");
-    }
-    let result = activity.result.as_deref().unwrap();
-    for secret in [
-        "sk-controlled-id-12345678",
-        "controlled-continuation-12345678",
-        "aaaaaaaaaaaaaaaaaaaa.bbbbb.cccccccccccccccccccc",
-        "sk-controlled-provider-id-12345678",
-    ] {
-        assert!(!result.contains(secret));
-    }
-    assert!(result.contains("[REDACTED]"));
+    assert_eq!(args, &controlled_collisions);
+    let expected_result = controlled_collisions.to_string();
+    assert_eq!(
+        activity.result.as_deref(),
+        Some(expected_result.as_str())
+    );
 }
 
 #[tokio::test]

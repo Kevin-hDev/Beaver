@@ -70,7 +70,8 @@ pub(super) async fn prepare(session: &AgentSession) -> Result<PreparedSessionDoc
     let mut value = serde_json::to_value(session)
         .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_permission_state::merge_into_serialized(&session.id, &mut value).await;
-    super::session_security::sanitize_session_value(&mut value);
+    // The user owns conversation content; persistence may bound metadata but must not rewrite it.
+    super::session_security::bound_context_snapshot(&mut value);
     super::session_store_compaction::compact_tool_history(&mut value);
     let data = serde_json::to_vec_pretty(&value)
         .map_err(|_| "Sauvegarde de session impossible".to_string())?;

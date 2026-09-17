@@ -10,6 +10,51 @@ use super::support::{cleanup, create_session, message, target, ERROR};
 const KEY: [u8; 32] = [73; 32];
 
 #[tokio::test]
+async fn next_turn_preserves_sensitive_content_voluntarily_saved_by_the_user() {
+    let mut session = create_session().await;
+    let credential = ["xai", "-", &"A".repeat(24)].concat();
+    let content = format!("Utilise cette valeur telle quelle : {credential}");
+    let turn_id = "00000000-0000-4000-8000-000000000090";
+    session.messages.extend([
+        message(
+            "00000000-0000-4000-8000-000000000091",
+            turn_id,
+            "user",
+            &content,
+        ),
+        message(
+            "00000000-0000-4000-8000-000000000092",
+            turn_id,
+            "assistant",
+            "Compris.",
+        ),
+    ]);
+    super::super::session_store::save(&session).await.unwrap();
+
+    let next = conversation_input::resolve_with_key(
+        NewUserTurnInput {
+            content: "Continue".into(),
+            files: vec![],
+            skills: vec![],
+        },
+        &KEY,
+    )
+    .await
+    .unwrap();
+    let admitted =
+        conversation_admission::new_turn_with_key(&session.id, next, target("model-a"), &KEY)
+            .await
+            .expect("admit second turn");
+
+    assert!(admitted
+        .history
+        .messages
+        .iter()
+        .any(|item| item.content == content));
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn next_turn_rebuilds_prior_text_image_and_skill_context_from_rust_authorities() {
     let session = create_session().await;
     let fixture = install_context_fixture("history-rebuild");

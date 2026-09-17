@@ -203,7 +203,7 @@ async fn current_provider_snapshot_keeps_resolved_content_images_and_ordered_ski
         .await
         .expect("reload durable only");
     assert_eq!(persisted.messages.len(), 1);
-    assert_ne!(persisted.messages[0].content, redactable);
+    assert_eq!(persisted.messages[0].content, redactable);
     let raw = std::fs::read_to_string(session_path(&session.id)).unwrap();
     assert!(!raw.contains("resolved exact"));
     assert!(!raw.contains("first exact body"));

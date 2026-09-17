@@ -108,6 +108,16 @@ fn chat_payload_disables_ollama_truncation() {
 }
 
 #[test]
+fn ollama_payload_preserves_content_voluntarily_provided_by_the_user() {
+    let credential = ["xai", "-", &"A".repeat(24)].concat();
+    let messages = [ChatMessage::user(format!("Utilise : {credential}"))];
+
+    let value = chat_request(&request(), &messages).unwrap();
+
+    assert!(value.to_string().contains(&credential));
+}
+
+#[test]
 fn recovered_display_thinking_is_not_sent_to_ollama() {
     let messages = [ChatMessage::assistant(
         "visible checkpoint".into(),

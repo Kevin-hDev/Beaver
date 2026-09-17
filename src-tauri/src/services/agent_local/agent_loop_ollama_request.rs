@@ -62,7 +62,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     {
         return Ok(output);
     }
-    super::session_security::sanitize_chat_messages(params.messages);
     super::tool_result_budget::apply_budget(params.messages);
     let report = super::context_budget::prepare_for_request(
         params.messages,
