@@ -1,7 +1,7 @@
 use super::ModelInfo;
 
 #[test]
-fn empty_reasoning_modes_cross_the_model_info_serialization_boundary() {
+fn unknown_reasoning_crosses_the_model_info_serialization_boundary_once() {
     let model = ModelInfo {
         id: "grok-4.6".to_string(),
         display_name: None,
@@ -13,16 +13,22 @@ fn empty_reasoning_modes_cross_the_model_info_serialization_boundary() {
         supports_tools: false,
         supports_vision: false,
         supports_thinking: true,
-        reasoning_contract: None,
+        reasoning_contract:
+            crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                &[],
+                None,
+            ),
         supports_fast_mode: false,
-        reasoning_modes: Vec::new(),
-        default_reasoning_mode: None,
         context_usage_includes_reasoning: true,
         is_free: false,
     };
 
     let serialized = serde_json::to_value(model).expect("serializable ModelInfo");
 
-    assert_eq!(serialized["reasoning_modes"], serde_json::json!([]));
-    assert!(serialized.get("reasoning_contract").is_none());
+    assert_eq!(
+        serialized["reasoning_contract"]["control"]["kind"],
+        "unknown"
+    );
+    assert!(serialized.get("reasoning_modes").is_none());
+    assert!(serialized.get("default_reasoning_mode").is_none());
 }

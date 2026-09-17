@@ -1,8 +1,11 @@
 import { closeSync, openSync, readSync } from "node:fs";
 import { parseCoreApiMethods } from "./contract-core-api.mjs";
+import {
+  BOOTSTRAP_FILE_MAX_BYTES,
+  MAX_BOOTSTRAPPED_CONTRACT_BYTES,
+} from "./contract-reader-limits.generated.mjs";
 
-export const BOOTSTRAP_FILE_MAX_BYTES = 256;
-export const MAX_BOOTSTRAPPED_CONTRACT_BYTES = 1_048_576;
+export { BOOTSTRAP_FILE_MAX_BYTES, MAX_BOOTSTRAPPED_CONTRACT_BYTES };
 function readBounded(url, maximum) {
   const descriptor = openSync(url, "r");
   const bytes = Buffer.allocUnsafe(maximum + 1);

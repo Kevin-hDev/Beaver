@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::install::{self, InstallOutcome, InstallRequest};
 use super::manager::OllamaManager;

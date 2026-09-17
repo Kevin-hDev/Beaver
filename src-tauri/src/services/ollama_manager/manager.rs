@@ -1,12 +1,13 @@
 // Le gestionnaire pose l'autorité avant l'adoption des consommateurs des tâches suivantes.
-#![allow(dead_code)]
 use super::constants::OLLAMA_WORK_CAPACITY;
 use super::error::OllamaErrorCode;
 use super::progress::{OllamaProgressReporter, OllamaProgressUpdate};
 use super::retry::OllamaRecoveryRetry;
 use super::startup::OllamaStartupBarrier;
 use super::types::{OllamaRuntimeStatus, OperationState};
-use crate::app_exit::{AppEmergencyPublisher, AppWorkSupervisor};
+use crate::app_exit::AppEmergencyPublisher;
+#[cfg(test)]
+use crate::app_exit::AppWorkSupervisor;
 #[cfg(test)]
 use crate::services::work_registry::ServiceWorkDiagnostics;
 use crate::services::work_registry::{
@@ -42,13 +43,13 @@ struct OllamaManagerState {
 pub(crate) struct OllamaOperationGuard<'a> {
     manager: &'a OllamaManagerInner,
     admission: ServiceWorkAdmission<OLLAMA_WORK_CAPACITY>,
-    #[allow(dead_code)]
     operation_lock: MutexGuard<'a, ()>,
     generation: u64,
     previous_bundle: super::types::BundleState,
 }
 
 impl OllamaManager {
+    #[cfg(test)]
     pub fn new(app_work: AppWorkSupervisor) -> Self {
         Self::new_inner(app_work, None)
     }
@@ -123,10 +124,6 @@ impl OllamaManager {
         &self.0
     }
 
-    fn release_generation(&self, generation: u64, cancelled: bool) {
-        self.inner().release_generation(generation, cancelled);
-    }
-
     pub(crate) fn progress_reporter_for_generation(
         &self,
         generation: u64,
@@ -172,7 +169,7 @@ impl OllamaManager {
 
     #[cfg(test)]
     pub(crate) fn release_generation_for_test(&self, generation: u64) {
-        self.release_generation(generation, false);
+        self.inner().release_generation(generation, false);
     }
 }
 

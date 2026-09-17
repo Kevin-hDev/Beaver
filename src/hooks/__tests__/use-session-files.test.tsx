@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { checkPreviewFilesExist } from "@/services/file-preview";
-import { useSessionFileGroups, useSessionFiles } from "../use-session-files";
+import { useSessionFileGroups } from "../use-session-files";
 import type { AgentMessage, ToolActivityRecord } from "@/types/agent";
 import type { ToolActivity } from "../agent-chat-utils";
 
@@ -17,20 +17,20 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("useSessionFiles", () => {
+describe("useSessionFileGroups", () => {
   it("retire les fichiers que le disque ne contient plus", async () => {
     vi.mocked(checkPreviewFilesExist).mockResolvedValue([
       { path: "/repo/keep.ts", exists: true },
       { path: "/repo/deleted.ts", exists: false },
     ]);
 
-    const { result } = renderHook(() => useSessionFiles([
+    const { result } = renderHook(() => useSessionFileGroups([
       message("m1", [tool({ summary: "/repo/keep.ts", content: "a" })]),
       message("m2", [tool({ summary: "/repo/deleted.ts", content: "b" })]),
     ], [], [], "/repo"));
 
     await waitFor(() => {
-      expect(result.current.map((operation) => operation.path)).toEqual(["/repo/keep.ts"]);
+      expect(result.current.all.map((operation) => operation.path)).toEqual(["/repo/keep.ts"]);
     });
   });
 
@@ -42,17 +42,17 @@ describe("useSessionFiles", () => {
     const done: ToolActivity = { ...pending, result: "ok" };
 
     const { result, rerender } = renderHook(
-      ({ currentTools }) => useSessionFiles([], [], currentTools, "/repo"),
+      ({ currentTools }) => useSessionFileGroups([], [], currentTools, "/repo"),
       { initialProps: { currentTools: [pending] } },
     );
 
-    expect(result.current).toEqual([]);
+    expect(result.current.all).toEqual([]);
 
     rerender({ currentTools: [done] });
 
     await waitFor(() => {
-      expect(result.current).toHaveLength(1);
-      expect(result.current[0].path).toBe("/repo/live.ts");
+      expect(result.current.all).toHaveLength(1);
+      expect(result.current.all[0].path).toBe("/repo/live.ts");
     });
   });
 
@@ -64,13 +64,13 @@ describe("useSessionFiles", () => {
       .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve; }));
 
     const { result, rerender } = renderHook(
-      ({ messages }) => useSessionFiles(messages, [], [], "/repo"),
+      ({ messages }) => useSessionFileGroups(messages, [], [], "/repo"),
       { initialProps: { messages: [message("old", [tool({ summary: "/repo/old.ts" })])] } },
     );
 
     resolveFirst([{ path: "/repo/old.ts", exists: true }]);
     await waitFor(() => {
-      expect(result.current.map((operation) => operation.path)).toEqual(["/repo/old.ts"]);
+      expect(result.current.all.map((operation) => operation.path)).toEqual(["/repo/old.ts"]);
     });
 
     rerender({ messages: [message("new", [tool({ summary: "/repo/new.ts" })])] });
@@ -78,11 +78,11 @@ describe("useSessionFiles", () => {
     await waitFor(() => {
       expect(checkPreviewFilesExist).toHaveBeenCalledTimes(2);
     });
-    expect(result.current).toEqual([]);
+    expect(result.current.all).toEqual([]);
 
     resolveSecond([{ path: "/repo/new.ts", exists: true }]);
     await waitFor(() => {
-      expect(result.current.map((operation) => operation.path)).toEqual(["/repo/new.ts"]);
+      expect(result.current.all.map((operation) => operation.path)).toEqual(["/repo/new.ts"]);
     });
   });
 

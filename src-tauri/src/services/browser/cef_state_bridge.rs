@@ -1,5 +1,6 @@
 use super::{
     browser_events::{BrowserSessionEvent, EVENT_VERSION, TAB_STATE_CHANGED_EVENT},
+    browser_slot::BrowserSlot,
     browser_view_key::BrowserViewKey,
     runtime_revision::RuntimeStamp,
     session_service::BrowserSessionService,
@@ -35,7 +36,21 @@ pub(super) fn submit_runtime_update(
     });
 }
 
-pub(super) fn mark_view_released(app: &tauri::AppHandle, key: BrowserViewKey, stamp: RuntimeStamp) {
+pub(super) fn release_view(
+    app: Option<&tauri::AppHandle>,
+    key: &BrowserViewKey,
+    slot: &BrowserSlot,
+) {
+    let stamp = slot.next_runtime_stamp();
+    if let Some(epoch) = slot.epoch() {
+        super::favicon_runtime::access(app, |state| state.release_view(key, epoch));
+    }
+    if let (Some(app), Some(stamp)) = (app, stamp) {
+        mark_view_released(app, key.clone(), stamp);
+    }
+}
+
+fn mark_view_released(app: &tauri::AppHandle, key: BrowserViewKey, stamp: RuntimeStamp) {
     let service = app.state::<BrowserSessionService>().inner().clone();
     let event_app = app.clone();
     tauri::async_runtime::spawn(async move {

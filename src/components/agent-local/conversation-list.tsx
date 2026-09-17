@@ -7,7 +7,7 @@ import { useSessionMenuItems } from "./use-session-menu-items";
 import { ProjectSection } from "./project-section";
 import { ConversationSessionSection } from "./conversation-session-section";
 import { ConversationEmptyNote } from "./conversation-empty-note";
-import { CollapsePanel } from "./collapse-panel";
+import { Collapsible } from "@/components/ui/collapsible";
 import { ConversationSectionToggle } from "./conversation-section-toggle";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useMinuteNow } from "@/hooks/use-minute-now";
@@ -152,7 +152,11 @@ export function ConversationList({
         >
           {t("projects.title", "Projets")}
         </ConversationSectionToggle>
-        <CollapsePanel open={!collapse.projectsCollapsed}>
+        <Collapsible
+          open={!collapse.projectsCollapsed}
+          className="conv-collapse-panel"
+          innerClassName="conv-collapse-content"
+        >
           {projects.length === 0 && <ConversationEmptyNote>{t("projects.noProject")}</ConversationEmptyNote>}
           {drag.order.map((id) => {
             const p = projectMap.get(id);
@@ -183,7 +187,7 @@ export function ConversationList({
               />
             );
           })}
-        </CollapsePanel>
+        </Collapsible>
 
         <ConversationSessionSection
           {...sessionSectionProps}

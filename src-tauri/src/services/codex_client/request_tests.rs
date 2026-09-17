@@ -40,16 +40,12 @@ async fn astra_request_uses_catalog_effort_and_responses_media_contract() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "medium", "high", "xhigh", "max"],
+                    Some("medium"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec![
-                "low".into(),
-                "medium".into(),
-                "high".into(),
-                "xhigh".into(),
-                "max".into(),
-            ],
-            default_reasoning_mode: Some("medium".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         }],

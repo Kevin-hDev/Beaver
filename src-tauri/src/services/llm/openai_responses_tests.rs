@@ -591,26 +591,22 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     let messages = [ChatMessage::user("bonjour".into())];
     let previews =
         crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Fast);
+    config.session_id = Some(session_id);
+    config.tool_result_previews = Some(&previews);
 
     crate::services::llm::stream::stream_chat_no_done(
-        &emitter,
-        session_id,
-        "request-responses-runtime",
-        0,
+        crate::services::llm::stream::InteractiveStreamRequest {
+            on_event: &emitter,
+            request_id: "request-responses-runtime",
+            turn: 0,
+            request: config,
+            cancel: tokio_util::sync::CancellationToken::new(),
+            buffer_content: false,
+            realtime_budget: None,
+            preparation: None,
+        },
         1,
-        "openai",
-        FastModeRequest::Fast,
-        RequestPurpose::ManualChat,
-        "gpt-5.6-luna",
-        &messages,
-        &[],
-        true,
-        Some("medium"),
-        &previews,
-        tokio_util::sync::CancellationToken::new(),
-        false,
-        None,
-        None,
         None,
         None,
     )
@@ -671,28 +667,24 @@ async fn runtime_persists_the_count_of_the_captured_responses_payload() {
     let messages = [ChatMessage::user("bonjour".into())];
     let previews =
         crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
+    let mut config = request(&messages, &[], None, FastModeRequest::Standard);
+    config.session_id = Some(&session.id);
+    config.tool_result_previews = Some(&previews);
 
     crate::services::llm::stream::stream_chat_no_done(
-        &emitter,
-        &session.id,
-        &request_id,
-        0,
+        crate::services::llm::stream::InteractiveStreamRequest {
+            on_event: &emitter,
+            request_id: &request_id,
+            turn: 0,
+            request: config,
+            cancel: tokio_util::sync::CancellationToken::new(),
+            buffer_content: false,
+            realtime_budget: None,
+            preparation: Some(&preparation),
+        },
         1,
-        "openai",
-        FastModeRequest::Standard,
-        RequestPurpose::ManualChat,
-        "gpt-5.6-luna",
-        &messages,
-        &[],
-        false,
-        None,
-        &previews,
-        tokio_util::sync::CancellationToken::new(),
-        false,
         None,
         None,
-        None,
-        Some(&preparation),
     )
     .await
     .unwrap();
@@ -725,26 +717,22 @@ async fn xai_runtime_dispatch_cannot_fall_back_to_chat_completions() {
     let messages = [ChatMessage::user("bonjour".into())];
     let previews =
         crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
+    let mut config = xai_request(&messages, &[]);
+    config.session_id = Some(session_id);
+    config.tool_result_previews = Some(&previews);
 
     crate::services::llm::stream::stream_chat_no_done(
-        &emitter,
-        session_id,
-        "request-xai-responses-runtime",
-        0,
+        crate::services::llm::stream::InteractiveStreamRequest {
+            on_event: &emitter,
+            request_id: "request-xai-responses-runtime",
+            turn: 0,
+            request: config,
+            cancel: tokio_util::sync::CancellationToken::new(),
+            buffer_content: false,
+            realtime_budget: None,
+            preparation: None,
+        },
         1,
-        "xai",
-        FastModeRequest::Unsupported,
-        RequestPurpose::ManualChat,
-        "grok-4.6",
-        &messages,
-        &[],
-        true,
-        Some("high"),
-        &previews,
-        tokio_util::sync::CancellationToken::new(),
-        false,
-        None,
-        None,
         None,
         None,
     )

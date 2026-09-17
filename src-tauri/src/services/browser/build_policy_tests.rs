@@ -13,8 +13,26 @@ fn build_script_never_embeds_dotenv_values_in_the_binary() {
 }
 
 #[test]
+fn build_script_names_browser_capabilities_separately() {
+    let build = normalized_source("build.rs");
+
+    assert!(build.contains("cargo:rustc-check-cfg=cfg(browser_native_api)"));
+    assert!(build.contains("cargo:rustc-check-cfg=cfg(native_browser)"));
+    assert!(build.contains(
+        r#"if target == "macos" || target == "windows" {
+        println!("cargo:rustc-cfg=browser_native_api");"#
+    ));
+    assert!(build.contains(
+        r#"if target == "macos" || (target == "windows" && !windows_tests) {
+        println!("cargo:rustc-cfg=native_browser");"#
+    ));
+}
+
+#[test]
 fn native_runtime_modules_are_not_built_in_linux_library() {
     let module = normalized_source("src/services/browser/mod.rs");
+    let session_types = normalized_source("src/services/browser/session_types.rs");
+    let test_modules = normalized_source("src/services/browser/test_modules.rs");
 
     for runtime_module in [
         "lifecycle",
@@ -25,9 +43,7 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
         "view_recency",
         "view_state",
     ] {
-        let guarded = format!(
-            "#[cfg(any(test, target_os = \"macos\", target_os = \"windows\"))]\nmod {runtime_module};"
-        );
+        let guarded = format!("#[cfg(any(test, browser_native_api))]\nmod {runtime_module};");
         assert!(
             module.contains(&guarded),
             "{runtime_module} must be excluded from the Linux library build"
@@ -35,6 +51,11 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
     }
 
     assert!(module.contains("#[cfg(any(test, target_os = \"macos\"))]\nmod cookie_store_probe;"));
+    assert!(session_types.contains(
+        "#[cfg(any(test, browser_native_api))]\npub(super) struct BrowserRuntimeUpdateResult"
+    ));
+    assert!(module.contains("#[cfg(any(test, native_browser))]\nmod browser_events;"));
+    assert!(test_modules.contains("#[cfg(test)]\n#[path = \"browser_contract_tests.rs\"]"));
 }
 
 #[test]
@@ -65,8 +86,9 @@ fn native_favicon_modules_are_not_built_in_linux_library() {
 #[test]
 fn native_runtime_entrypoints_stay_out_of_linux_tests() {
     let runtime = normalized_source("src/services/browser/runtime_handle.rs");
-    let sessions = normalized_source("src/services/browser/session_service.rs");
-    let native = "#[cfg(any(target_os = \"macos\", target_os = \"windows\"))]";
+    let module = normalized_source("src/services/browser/mod.rs");
+    let sessions = normalized_source("src/services/browser/session_service_runtime.rs");
+    let native = "#[cfg(browser_native_api)]";
 
     for signature in [
         "pub(super) fn mark_failed",
@@ -75,10 +97,29 @@ fn native_runtime_entrypoints_stay_out_of_linux_tests() {
     ] {
         assert!(runtime.contains(&format!("{native}\n    {signature}")));
     }
+    assert!(module.contains(&format!("{native}\nmod session_service_runtime;")));
     for signature in [
         "pub(super) fn update_runtime",
         "pub(super) fn mark_released",
     ] {
-        assert!(sessions.contains(&format!("{native}\n    {signature}")));
+        assert!(sessions.contains(signature));
+    }
+}
+
+#[test]
+fn native_view_release_paths_share_one_boundary() {
+    let bridge = normalized_source("src/services/browser/cef_state_bridge.rs");
+    let view = normalized_source("src/services/browser/cef_surface_view.rs");
+    let renderer = normalized_source("src/services/browser/cef_request_handler.rs");
+    let lifecycle = normalized_source("src/services/browser/cef_life_span_handler.rs");
+
+    assert!(bridge.contains("state.release_view(key, epoch)"));
+    assert!(bridge.contains("mark_view_released(app, key.clone(), stamp)"));
+    assert!(view.contains("release_view(app, &self.key, &self.slot)"));
+    assert!(renderer.contains("release_view(Some(&app), &key, &self.slot)"));
+    assert!(lifecycle.contains("release_view(Some(&self.app), &self.key, &self.slot)"));
+    for source in [&view, &renderer, &lifecycle] {
+        assert!(!source.contains("state.release_view"));
+        assert!(!source.contains("mark_view_released"));
     }
 }

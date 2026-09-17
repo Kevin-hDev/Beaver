@@ -15,6 +15,15 @@ vi.mock("react-i18next", () => ({
 }));
 
 describe("PermissionDialog", () => {
+  it("shows the complete native command prepared by Rust", () => {
+    const command = "curl --header 'Authorization: [REDACTED]' https://api.example.test/v1";
+    render(<PermissionDialog request={{
+      id: "request", toolName: "bash", arguments: { command },
+    }} onDecide={vi.fn()} />);
+
+    expect(screen.getByText(command)).toBeTruthy();
+  });
+
   it("uses only the extension display prepared by Rust", () => {
     render(<PermissionDialog request={{
       id: "request", toolName: "misleading.read_file", arguments: {},

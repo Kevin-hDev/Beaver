@@ -47,7 +47,16 @@ impl<'a> StreamMeasurement<'a> {
         self.observe_response_metadata(event);
         let useful_before = accumulator.has_useful_output();
         let outcome = accumulator.apply(on_event, event)?;
-        if !useful_before && accumulator.has_useful_output() {
+        let completed_useful = outcome.as_ref().is_some_and(|outcome| {
+            let result = match outcome {
+                StreamOutcome::Completed(result)
+                | StreamOutcome::InterruptedForCompression(result) => result,
+            };
+            !result.content.is_empty()
+                || !result.thinking.is_empty()
+                || !result.tool_calls.is_empty()
+        });
+        if !useful_before && (accumulator.has_useful_output() || completed_useful) {
             self.mark_first_useful();
         }
         Ok(outcome)

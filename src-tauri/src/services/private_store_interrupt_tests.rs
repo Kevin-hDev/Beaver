@@ -145,31 +145,31 @@ fn user_profile_writers_share_the_atomic_store_authority() {
         ),
         (
             "agent_settings",
-            include_str!("agent_local/agent_settings.rs"),
+            include_str!("agent_local/execution/agent_settings.rs"),
         ),
         (
             "project_store",
-            include_str!("agent_local/project_store.rs"),
+            include_str!("agent_local/permissions/project_store.rs"),
         ),
         (
             "session_permission_state",
-            include_str!("agent_local/session_permission_state.rs"),
+            include_str!("agent_local/conversations/session_permission_state.rs"),
         ),
         (
             "session_tabs",
-            include_str!("agent_local/session_tabs_file.rs"),
+            include_str!("agent_local/conversations/session_tabs_file.rs"),
         ),
         (
             "subagent_change_store",
-            include_str!("agent_local/subagent_change_store.rs"),
+            include_str!("agent_local/subagents/subagent_change_store.rs"),
         ),
         (
             "tool_plan",
-            include_str!("agent_local/tool_plan_storage.rs"),
+            include_str!("agent_local/tools/tool_plan_storage.rs"),
         ),
         (
             "translation_cache",
-            include_str!("agent_local/translation_cache.rs"),
+            include_str!("agent_local/tools/translation_cache.rs"),
         ),
     ];
     for (name, source) in sources {
@@ -179,7 +179,7 @@ fn user_profile_writers_share_the_atomic_store_authority() {
         );
     }
     assert!(
-        include_str!("agent_local/subagent_startup_cleanup.rs")
+        include_str!("agent_local/subagents/subagent_startup_cleanup.rs")
             .contains("session_store::write_to_dir"),
         "session cleanup must use the session document authority"
     );
@@ -205,13 +205,13 @@ fn user_profile_writers_share_the_atomic_store_authority() {
         ),
         (
             "agent",
-            include_str!("agent_local/agent_settings.rs"),
+            include_str!("agent_local/execution/agent_settings.rs"),
             "SETTINGS_LOCK",
             "fn save(",
         ),
         (
             "projects",
-            include_str!("agent_local/project_store.rs"),
+            include_str!("agent_local/permissions/project_store.rs"),
             "PROJECT_STORE_LOCK",
             "fn write_atomic(",
         ),

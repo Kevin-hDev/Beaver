@@ -49,7 +49,7 @@
 - `src-tauri/src/services/llm/openai_responses.rs` — payload, authentification par clé et transport Responses OpenAI API; aucun jeton OAuth.
 - `src-tauri/src/services/codex_client/model_catalog_fast.rs` — lecture bornée des tiers Fast/Priority du catalogue Codex, séparée de `model_catalog.rs` déjà proche de 230 lignes.
 - `src-tauri/src/services/codex_client/routing_hint.rs` — valeur validée de `x-codex-routing-hint`, dérivée uniquement de `CodexRequest`.
-- `src-tauri/src/services/agent_local/session_fast_mode_tests.rs` — persistance, indépendance, concurrence et sérialisation de la préférence.
+- `src-tauri/src/services/agent_local/conversations/session_fast_mode_tests.rs` — persistance, indépendance, concurrence et sérialisation de la préférence.
 - `src/hooks/use-session-fast-mode.ts` — mutation IPC bornée, état en vol et rechargement confirmé.
 - `src/components/ui/fast-mode-icon.tsx` — tracé tiers unique rendu par la primitive `InlineIcon`.
 - `src/i18n/openai-fast-translations.test.ts` — présence des textes Fast et des erreurs dans les sept langues.
@@ -58,7 +58,7 @@
 
 ### Autorités modifiées
 
-- `src-tauri/src/services/agent_local/types_session.rs` — préférence durable.
+- `src-tauri/src/services/agent_local/execution/types_session.rs` — préférence durable.
 - `src-tauri/src/services/llm/types.rs` — capacité modèle normalisée.
 - `src-tauri/src/services/llm/provider_model_registry.rs` et `src-tauri/resources/provider-models/openai.json` — capacité API exacte.
 - `src-tauri/src/services/codex_client/model_catalog_wire.rs` — forme bornée du catalogue OAuth.
@@ -109,8 +109,8 @@ AgentSession.fast_mode_enabled ───→ FastModeRequest capturé
 - Modify: `src-tauri/src/services/codex_client/mod.rs`
 - Modify: `src-tauri/src/commands/oauth_provider_models.rs:7`
 - Modify: `src-tauri/src/services/llm_oauth/xai_catalog.rs`
-- Modify: `src-tauri/src/services/agent_local/ollama_model_helpers.rs`
-- Modify: `src-tauri/src/services/agent_local/types_ollama.rs`
+- Modify: `src-tauri/src/services/agent_local/execution/ollama_model_helpers.rs`
+- Modify: `src-tauri/src/services/agent_local/execution/types_ollama.rs`
 - Modify: `src-tauri/src/services/reasoning_tests.rs`
 - Modify: `src/hooks/available-model-types.ts`
 - Modify: `src/hooks/oauth-models.ts`
@@ -317,17 +317,17 @@ git commit -m "feat(openai): publier la capacité du mode rapide"
 ### Task 2: Persister une préférence indépendante par session
 
 **Files:**
-- Modify: `src-tauri/src/services/agent_local/types_session.rs:43`
-- Modify: `src-tauri/src/services/agent_local/session_store.rs:23`
-- Modify: `src-tauri/src/services/agent_local/session_store_updates.rs:1`
-- Modify: `src-tauri/src/services/agent_local/session_store_update_race_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/session_index.rs:53`
-- Modify: `src-tauri/src/services/agent_local/session_index_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/session_index_reconcile_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/clone_session_build.rs:12`
-- Modify: `src-tauri/src/services/agent_local/clone_session_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/subagent_inheritance_tests.rs`
-- Create: `src-tauri/src/services/agent_local/session_fast_mode_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/execution/types_session.rs:43`
+- Modify: `src-tauri/src/services/agent_local/conversations/session_store.rs:23`
+- Modify: `src-tauri/src/services/agent_local/conversations/session_store_updates.rs:1`
+- Modify: `src-tauri/src/services/agent_local/conversations/session_store_update_race_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/conversations/session_index.rs:53`
+- Modify: `src-tauri/src/services/agent_local/conversations/session_index_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/conversations/session_index_reconcile_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/conversations/clone_session_build.rs:12`
+- Modify: `src-tauri/src/services/agent_local/conversations/clone_session_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/subagents/subagent_inheritance_tests.rs`
+- Create: `src-tauri/src/services/agent_local/conversations/session_fast_mode_tests.rs`
 - Modify: `src-tauri/src/services/agent_local/agent_local_modules_sessions.rs`
 - Modify: `src-tauri/src/commands/agent_sessions.rs:37`
 - Modify: `src-tauri/src/invoke_handler.rs:76`
@@ -553,7 +553,7 @@ git commit -m "feat(sessions): persister le mode rapide par conversation"
 - Modify: `src-tauri/src/services/llm/compress_hook.rs:12`
 - Modify: `src-tauri/src/services/agent_local/tool_executor_compression.rs:5`
 - Modify: `src-tauri/src/commands/agent_chat_task/compress.rs:89`
-- Modify: `src-tauri/src/services/agent_local/clone_session.rs:150`
+- Modify: `src-tauri/src/services/agent_local/conversations/clone_session.rs:150`
 
 **Interfaces:**
 - Consumes: préférence persistée et capacité backend.
@@ -701,7 +701,7 @@ Tester le résumé de clone et tout appel silencieux sans génération utilisate
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src-tauri/src/services/llm src-tauri/src/services/agent_local/tool_executor_compression.rs src-tauri/src/commands/agent_chat_task src-tauri/src/services/agent_local/clone_session.rs
+git add src-tauri/src/services/llm src-tauri/src/services/agent_local/tool_executor_compression.rs src-tauri/src/commands/agent_chat_task src-tauri/src/services/agent_local/conversations/clone_session.rs
 git commit -m "feat(openai): capturer et envoyer Fast par clé API"
 ```
 

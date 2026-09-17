@@ -44,11 +44,11 @@ fn openrouter_models_use_supported_parameters_for_reasoning() {
     assert!(reasoning.supports_thinking);
     assert!(reasoning.is_free);
     assert_eq!(reasoning.max_output_tokens, Some(65_535));
-    assert!(reasoning.reasoning_modes.is_empty());
+    assert!(reasoning.reasoning_modes().is_empty());
     assert!(!plain.supports_thinking);
     assert_eq!(plain.supported_parameters.as_deref().unwrap(), ["tools"]);
     assert!(!plain.is_free);
-    assert!(plain.reasoning_modes.is_empty());
+    assert!(plain.reasoning_modes().is_empty());
 }
 
 #[test]
@@ -141,8 +141,8 @@ fn feature_flags_do_not_invent_dynamic_reasoning_levels() {
     let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
 
     assert!(model.supports_thinking);
-    assert!(model.reasoning_modes.is_empty());
-    assert!(model.default_reasoning_mode.is_none());
+    assert!(model.reasoning_modes().is_empty());
+    assert!(model.default_reasoning_mode().is_none());
 }
 
 #[tokio::test]
@@ -185,8 +185,8 @@ fn disabled_dynamic_reasoning_never_publishes_a_static_default() {
     let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
 
     assert!(!model.supports_thinking);
-    assert!(model.reasoning_modes.is_empty());
-    assert!(model.default_reasoning_mode.is_none());
+    assert!(model.reasoning_modes().is_empty());
+    assert!(model.default_reasoning_mode().is_none());
 }
 
 #[test]
@@ -311,8 +311,8 @@ fn generic_google_catalog_does_not_invent_reasoning_modes() {
     let gemini_35 = models.iter().find(|m| m.id == "gemini-3.5-flash").unwrap();
     let gemini_25 = models.iter().find(|m| m.id == "gemini-2.5-flash").unwrap();
 
-    assert!(gemini_35.reasoning_modes.is_empty());
-    assert!(gemini_25.reasoning_modes.is_empty());
+    assert!(gemini_35.reasoning_modes().is_empty());
+    assert!(gemini_25.reasoning_modes().is_empty());
 }
 
 #[test]
@@ -334,7 +334,7 @@ fn openai_gpt_56_models_receive_official_capabilities() {
         assert!(model.supports_tools);
         assert!(model.supports_vision);
         assert!(model.supports_thinking);
-        assert!(model.reasoning_modes.is_empty());
+        assert!(model.reasoning_modes().is_empty());
     }
 }
 
@@ -371,9 +371,9 @@ fn openrouter_feature_flags_do_not_duplicate_static_reasoning_modes() {
         .find(|model| model.id == "openai/gpt-5.6-terra")
         .unwrap();
 
-    assert!(sol.reasoning_modes.is_empty());
-    assert!(grok.reasoning_modes.is_empty());
-    assert!(terra.reasoning_modes.is_empty());
+    assert!(sol.reasoning_modes().is_empty());
+    assert!(grok.reasoning_modes().is_empty());
+    assert!(terra.reasoning_modes().is_empty());
 }
 
 #[test]
@@ -401,8 +401,8 @@ fn openrouter_reasoning_metadata_and_effective_limits_are_preserved() {
     assert_eq!(model.max_output_tokens, Some(131072));
     assert!(model.supports_thinking);
     assert!(model.reasoning_contract.is_some());
-    assert_eq!(model.reasoning_modes, ["max", "high", "low"]);
-    assert_eq!(model.default_reasoning_mode.as_deref(), Some("max"));
+    assert_eq!(model.reasoning_modes(), ["max", "high", "low"]);
+    assert_eq!(model.default_reasoning_mode().as_deref(), Some("max"));
 }
 
 #[test]
@@ -418,8 +418,8 @@ fn openrouter_empty_efforts_use_the_provider_default_without_inventing_a_level()
     let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
 
     assert!(model.supports_thinking);
-    assert_eq!(model.reasoning_modes, ["auto"]);
-    assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(model.reasoning_modes(), ["auto"]);
+    assert_eq!(model.default_reasoning_mode().as_deref(), Some("auto"));
     assert!(model.reasoning_contract.is_some());
 }
 
@@ -441,8 +441,8 @@ fn openrouter_unknown_effort_keeps_the_model_on_provider_default() {
         .first()
         .expect("the usable model must remain visible");
     assert!(model.supports_thinking);
-    assert_eq!(model.reasoning_modes, ["auto"]);
-    assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(model.reasoning_modes(), ["auto"]);
+    assert_eq!(model.default_reasoning_mode().as_deref(), Some("auto"));
     assert!(matches!(
         model
             .reasoning_contract
@@ -486,8 +486,8 @@ fn openrouter_documented_optional_reasoning_projects_a_toggle_without_efforts() 
     let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
 
     assert!(model.supports_thinking);
-    assert_eq!(model.reasoning_modes, ["off", "auto"]);
-    assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(model.reasoning_modes(), ["off", "auto"]);
+    assert_eq!(model.default_reasoning_mode().as_deref(), Some("auto"));
     assert!(model.reasoning_contract.is_some());
 }
 

@@ -1,14 +1,13 @@
 use super::durable_fs::platform_fs;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
-#[cfg(unix)]
-use super::process::DefaultOllamaProcessLauncher;
 use super::process_receipt::{
-    ProcessReceipt, ProcessReceiptError, ProcessReceiptRecovery, ProcessReceiptStore, RecoveryProbe,
+    ProcessReceipt, ProcessReceiptError, ProcessReceiptRecovery, ProcessReceiptStore,
 };
 use crate::services::paths::ollama_paths;
 use std::sync::Arc;
 #[cfg(unix)]
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
 
 fn receipt() -> ProcessReceipt {
     ProcessReceipt::new(
@@ -84,7 +83,7 @@ fn process_receipt_rejects_zero_identity_fields() {
 }
 
 #[test]
-fn process_receipt_recovery_is_fail_closed_and_keeps_exact_proof() {
+fn production_recovery_handles_missing_and_invalid_receipts() {
     let root = tempfile::tempdir().expect("tempdir");
     let paths = ollama_paths(root.path());
     let path = paths.process_receipt.clone();
@@ -93,127 +92,58 @@ fn process_receipt_recovery_is_fail_closed_and_keeps_exact_proof() {
         path.clone(),
         path.with_extension("tmp"),
     );
-    let expected = receipt();
-    let identity = crate::services::owned_process::OwnedProcessIdentity {
-        pid: expected.pid,
-        native_scope: expected.native_scope,
-        native_start_time: expected.native_start_time,
-        executable: 0x1234,
-    };
-    store.write_new(&expected).expect("write");
-    assert!(matches!(
-        store
-            .recover_identity(&expected.bundle, 0x1234, |_| Ok(identity))
-            .expect("exact recovery"),
-        ProcessReceiptRecovery::Exact(_)
-    ));
-    assert!(store.read().expect("retained proof").is_some());
-    let exact = match store
-        .recover_identity(&expected.bundle, 0x1234, |_| Ok(identity))
-        .expect("exact recovery")
-    {
-        ProcessReceiptRecovery::Exact(receipt) => receipt,
-        other => panic!("unexpected recovery state: {other:?}"),
-    };
-    assert!(store
-        .reap_exact(&exact, |_| Err(ProcessReceiptError::Storage))
-        .is_err());
-    assert!(store.read().expect("kept after failed reap").is_some());
-    store
-        .reap_exact(&exact, |receipt| {
-            assert_eq!(receipt.pid, expected.pid);
-            Ok(())
-        })
-        .expect("reap cleanup");
-
-    store.write_new(&expected).expect("write stale");
-    let reused = crate::services::owned_process::OwnedProcessIdentity {
-        native_start_time: expected.native_start_time + 1,
-        ..identity
-    };
     assert_eq!(
         store
-            .recover_identity(&expected.bundle, 0x1234, |_| Ok(reused))
-            .expect("pid reuse"),
+            .recover_active(&receipt().bundle, 1, Instant::now())
+            .expect("missing receipt"),
+        ProcessReceiptRecovery::Missing
+    );
+
+    std::fs::write(&path, b"invalid receipt").expect("invalid receipt");
+    assert_eq!(
+        store.recover_active(&receipt().bundle, 1, Instant::now()),
+        Err(ProcessReceiptError::Invalid)
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn production_recovery_removes_a_terminated_process_receipt() {
+    let root = tempfile::tempdir().expect("root");
+    let paths = ollama_paths(root.path());
+    let path = paths.process_receipt.clone();
+    let store = ProcessReceiptStore::new(
+        Arc::new(platform_fs()),
+        path.clone(),
+        path.with_extension("tmp"),
+    );
+    let mut command = std::process::Command::new("/bin/sleep");
+    command.arg("30");
+    let mut child = crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        crate::services::process_tree::ProcessKind::Ollama,
+    )
+    .expect("child");
+    let identity =
+        crate::services::owned_process::OwnedProcess::identity(child.id()).expect("identity");
+    child.kill().expect("terminate child");
+    child.wait().expect("reap child");
+    let terminated = ProcessReceipt::new(
+        identity.pid,
+        identity.native_start_time,
+        identity.native_scope,
+        receipt().bundle,
+    )
+    .expect("receipt");
+    store.write_new(&terminated).expect("write terminated");
+    assert_eq!(
+        store
+            .recover_active(&terminated.bundle, identity.executable, Instant::now())
+            .expect("terminated process"),
         ProcessReceiptRecovery::StaleRemoved
     );
-    assert!(store.read().expect("removed").is_none());
-
-    store.write_new(&expected).expect("write wrong scope");
-    let wrong_scope = crate::services::owned_process::OwnedProcessIdentity {
-        native_scope: expected.native_scope + 1,
-        ..identity
-    };
-    assert_eq!(
-        store
-            .recover_identity(&expected.bundle, 0x1234, |_| Ok(wrong_scope))
-            .expect("scope mismatch"),
-        ProcessReceiptRecovery::StaleRemoved
-    );
-
-    store.write_new(&expected).expect("write wrong executable");
-    let wrong_executable = crate::services::owned_process::OwnedProcessIdentity {
-        executable: 0x5678,
-        ..identity
-    };
-    assert_eq!(
-        store
-            .recover_identity(&expected.bundle, 0x1234, |_| Ok(wrong_executable))
-            .expect("executable mismatch"),
-        ProcessReceiptRecovery::StaleRemoved
-    );
-
-    store.write_new(&expected).expect("write ambiguous");
-    assert_eq!(
-        store
-            .recover(&expected.bundle, |_| RecoveryProbe::Ambiguous)
-            .expect("ambiguous recovery"),
-        ProcessReceiptRecovery::RecoveryRequired
-    );
-    assert!(store.read().expect("kept ambiguous").is_some());
-    store.remove().expect("cleanup");
-
-    store.write_new(&expected).expect("write missing");
-    assert_eq!(
-        store
-            .recover_identity(&expected.bundle, 0x1234, |_| Err(RecoveryProbe::Missing))
-            .expect("missing recovery"),
-        ProcessReceiptRecovery::StaleRemoved
-    );
-    assert!(store.read().expect("removed missing").is_none());
-
-    store.write_new(&expected).expect("write wrong bundle");
-    let other = BundleFingerprint {
-        version: OllamaVersion::parse("9.9.9").expect("version"),
-        executable_sha256: expected.bundle.executable_sha256.clone(),
-    };
-    let inspected = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let inspected_by_probe = std::sync::Arc::clone(&inspected);
-    assert_eq!(
-        store
-            .recover(&other, |_| {
-                inspected_by_probe.store(true, std::sync::atomic::Ordering::SeqCst);
-                RecoveryProbe::Ambiguous
-            })
-            .expect("stale bundle"),
-        ProcessReceiptRecovery::RecoveryRequired
-    );
-    assert!(inspected.load(std::sync::atomic::Ordering::SeqCst));
-    store.remove().expect("cleanup ambiguous stale receipt");
-
-    store.write_new(&expected).expect("write wrong hash");
-    let other_hash = BundleFingerprint {
-        version: expected.bundle.version.clone(),
-        executable_sha256: Sha256Digest::from_hex(&"cd".repeat(32)).expect("digest"),
-    };
-    assert_eq!(
-        store
-            .recover(&other_hash, |_| RecoveryProbe::Ambiguous)
-            .expect("stale hash"),
-        ProcessReceiptRecovery::RecoveryRequired
-    );
-    assert!(store.read().expect("retained hash mismatch").is_some());
-    store.remove().expect("cleanup hash mismatch");
+    assert!(store.read().expect("removed terminated receipt").is_none());
+    crate::services::owned_process::release(identity.pid);
 }
 
 #[cfg(unix)]
@@ -248,11 +178,10 @@ fn production_recovery_reaps_exact_process_before_removing_receipt() {
     )
     .expect("receipt");
     store.write_new(&expected).expect("write");
-    let launcher = DefaultOllamaProcessLauncher::new(expected.bundle.clone());
     assert_eq!(
-        launcher
-            .recover_receipt(
-                &store,
+        store
+            .recover_active(
+                &expected.bundle,
                 identity.executable,
                 Instant::now() + Duration::from_secs(2),
             )
@@ -303,10 +232,9 @@ fn production_recovery_inspects_exact_process_before_bundle_mismatch_removal() {
         version: OllamaVersion::parse("9.9.9").expect("version"),
         executable_sha256: recorded.bundle.executable_sha256.clone(),
     };
-    let launcher = DefaultOllamaProcessLauncher::new(active);
     assert_eq!(
-        launcher
-            .recover_receipt(&store, identity.executable, Instant::now())
+        store
+            .recover_active(&active, identity.executable, Instant::now())
             .expect("inspect"),
         ProcessReceiptRecovery::RecoveryRequired
     );

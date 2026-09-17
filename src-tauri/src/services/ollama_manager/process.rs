@@ -1,6 +1,6 @@
 use super::constants::PROCESS_REAP_FALLBACK_TIMEOUT;
 use super::fingerprint::BundleFingerprint;
-use super::process_receipt::{ProcessReceipt, ProcessReceiptRecovery, ProcessReceiptStore};
+use super::process_receipt::{ProcessReceipt, ProcessReceiptStore};
 use super::spawn_profile::OllamaSpawnAttempt;
 #[path = "process_lifecycle.rs"]
 mod lifecycle;
@@ -25,13 +25,6 @@ pub(crate) enum OllamaProcessError {
     InvalidState,
 }
 
-pub(crate) trait OllamaProcessLauncher: Send + Sync {
-    fn create_gated(
-        &self,
-        attempt: &OllamaSpawnAttempt<'_>,
-    ) -> Result<GatedOllamaProcess, OllamaProcessError>;
-}
-
 pub(crate) struct DefaultOllamaProcessLauncher {
     bundle: BundleFingerprint,
 }
@@ -41,29 +34,7 @@ impl DefaultOllamaProcessLauncher {
         Self { bundle }
     }
 
-    pub(crate) fn recover_receipt(
-        &self,
-        store: &ProcessReceiptStore,
-        expected_executable: u128,
-        deadline: Instant,
-    ) -> Result<ProcessReceiptRecovery, OllamaProcessError> {
-        store
-            .recover_active(&self.bundle, expected_executable, deadline)
-            .map_err(|_| OllamaProcessError::Receipt)
-    }
-}
-
-pub(crate) struct GatedOllamaProcess {
-    native: Option<NativeGatedProcess>,
-    identity: OwnedProcessIdentity,
-    executable: u128,
-    bundle: BundleFingerprint,
-}
-
-pub(crate) use super::process_owned::OwnedOllamaProcess;
-
-impl OllamaProcessLauncher for DefaultOllamaProcessLauncher {
-    fn create_gated(
+    pub(crate) fn create_gated(
         &self,
         attempt: &OllamaSpawnAttempt<'_>,
     ) -> Result<GatedOllamaProcess, OllamaProcessError> {
@@ -83,7 +54,17 @@ impl OllamaProcessLauncher for DefaultOllamaProcessLauncher {
     }
 }
 
+pub(crate) struct GatedOllamaProcess {
+    native: Option<NativeGatedProcess>,
+    identity: OwnedProcessIdentity,
+    executable: u128,
+    bundle: BundleFingerprint,
+}
+
+pub(crate) use super::process_owned::OwnedOllamaProcess;
+
 impl GatedOllamaProcess {
+    #[cfg(all(test, unix))]
     pub(crate) fn identity(&self) -> Result<OwnedProcessIdentity, OllamaProcessError> {
         self.native
             .as_ref()
@@ -100,17 +81,7 @@ impl GatedOllamaProcess {
         self.publish_inner(receipt, emergency, |_| {})
     }
 
-    #[cfg(test)]
-    pub(crate) fn publish_with_cutpoint(
-        self,
-        receipt: &ProcessReceiptStore,
-        emergency: &AppEmergencyPublisher,
-        after_receipt: impl FnOnce(),
-    ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
-        self.publish_inner(receipt, emergency, |_| after_receipt())
-    }
-
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn force_reap_failure_for_test(&mut self) {
         #[cfg(unix)]
         if let Some(native) = self.native.as_mut() {
@@ -118,7 +89,7 @@ impl GatedOllamaProcess {
         }
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn open_gate_and_wait_for_test(&mut self) -> Result<(), OllamaProcessError> {
         let native = self
             .native
@@ -209,14 +180,14 @@ impl GatedOllamaProcess {
 }
 
 #[cfg(unix)]
-fn platform_create(
+pub(crate) fn platform_create(
     attempt: &OllamaSpawnAttempt<'_>,
 ) -> Result<NativeGatedProcess, OllamaProcessError> {
     super::spawn_gate_unix::create(attempt)
 }
 
 #[cfg(windows)]
-fn platform_create(
+pub(crate) fn platform_create(
     attempt: &OllamaSpawnAttempt<'_>,
 ) -> Result<NativeGatedProcess, OllamaProcessError> {
     super::spawn_gate_windows::create(attempt)

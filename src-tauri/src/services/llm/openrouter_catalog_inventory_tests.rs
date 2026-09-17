@@ -96,7 +96,7 @@ async fn public_snapshots_produce_one_resolved_verdict_per_text_model() {
             model.supports_tools,
             model.supports_vision,
             control,
-            model.default_reasoning_mode.as_deref().unwrap_or("none"),
+            model.default_reasoning_mode().as_deref().unwrap_or("none"),
         );
     }
     assert_eq!(verdict_ids.len(), 582);

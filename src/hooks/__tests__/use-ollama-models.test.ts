@@ -48,8 +48,10 @@ describe("useOllamaModels", () => {
       is_moe: false,
       context_length: 1048576,
       capabilities: ["thinking", "tools"] as const,
-      reasoning_modes: ["low", "high", "max"] as const,
-      default_reasoning_mode: "max" as const,
+      reasoning_contract: {
+        default_effort: "max" as const,
+        control: { kind: "efforts" as const, efforts: ["low", "high", "max"] as const },
+      },
       context_usage_includes_reasoning: true,
       digest_short: "fixture",
       aliases: [],
@@ -59,8 +61,10 @@ describe("useOllamaModels", () => {
 
     const { result } = renderHook(() => useOllamaModels({ enabled: true }));
     await waitFor(() => expect(result.current.models[0]?.name).toBe("glm-5.3-flash:cloud"));
-    expect(result.current.models[0]?.reasoning_modes).toEqual(["low", "high", "max"]);
-    expect(result.current.models[0]?.default_reasoning_mode).toBe("max");
+    expect(result.current.models[0]?.reasoning_contract).toEqual({
+      default_effort: "max",
+      control: { kind: "efforts", efforts: ["low", "high", "max"] },
+    });
 
     vi.mocked(invoke).mockResolvedValueOnce([]);
     await act(async () => { await result.current.refresh(); });

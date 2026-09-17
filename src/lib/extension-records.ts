@@ -211,7 +211,3 @@ export function parseExtensionRecords(value: unknown): ExtensionRecord[] {
   if (identifiers.size !== records.length) invalid();
   return records;
 }
-
-export function parseExtensionRecord(value: unknown): ExtensionRecord {
-  return record(value);
-}

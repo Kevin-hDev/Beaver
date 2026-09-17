@@ -18,10 +18,12 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "high"],
+                    Some("high"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["low".to_string(), "high".to_string()],
-            default_reasoning_mode: Some("high".to_string()),
             context_usage_includes_reasoning: false,
             is_free: false,
         }],
@@ -35,7 +37,7 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
     assert!(resolved.supports_tools);
     assert!(resolved.supports_vision);
     assert!(resolved.supports_thinking);
-    assert_eq!(resolved.reasoning_modes, ["low", "high"]);
+    assert_eq!(resolved.reasoning_modes(), ["low", "high"]);
 }
 
 #[tokio::test]
@@ -62,8 +64,6 @@ async fn openrouter_provider_default_contract_reaches_backend_normalization() {
                 control: super::model_reasoning_contract::ReasoningControl::ProviderDefault,
             }),
             supports_fast_mode: false,
-            reasoning_modes: Vec::new(),
-            default_reasoning_mode: None,
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
@@ -95,14 +95,10 @@ async fn normalized_native_contract_preserves_runtime_restrictions() {
     .unwrap();
     let mut model = parsed.into_iter().next().unwrap();
     model.supports_thinking = true;
-    model.reasoning_modes = vec!["low".into()];
-    model.default_reasoning_mode = Some("low".into());
+    model.reasoning_contract =
+        super::model_reasoning_contract::ModelReasoningContract::from_names(&["low"], Some("low"));
     super::runtime_models::replace_provider("qwen", &[model]).unwrap();
     let resolved = resolve_local("qwen", "qwen3.8-flash").unwrap();
-    assert_eq!(resolved.reasoning_modes, ["low"]);
-    assert_eq!(
-        resolved.reasoning_contract.unwrap().legacy_projection().0,
-        resolved.reasoning_modes
-    );
+    assert_eq!(resolved.reasoning_contract.unwrap().selection().0, ["low"]);
     super::runtime_models::replace_provider("qwen", &[]).unwrap();
 }

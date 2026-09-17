@@ -44,7 +44,7 @@ pub(super) fn remove_orphan_backups(directory: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub(super) fn sanitize_documents(directory: &Path) -> Result<(), String> {
+pub(super) fn harden_documents(directory: &Path) -> Result<(), String> {
     let Some(entries) = read_entries(directory)? else {
         return Ok(());
     };
@@ -64,12 +64,12 @@ pub(super) fn sanitize_documents(directory: &Path) -> Result<(), String> {
         if !file_type.is_file() {
             continue;
         }
-        sanitize_document(&path)?;
+        harden_document(&path)?;
     }
     Ok(())
 }
 
-fn sanitize_document(path: &Path) -> Result<(), String> {
+fn harden_document(path: &Path) -> Result<(), String> {
     let bytes =
         match crate::services::private_store::read_bounded_regular(path, MAX_SESSION_FILE_BYTES)
             .map_err(|_| failed())?
@@ -79,12 +79,12 @@ fn sanitize_document(path: &Path) -> Result<(), String> {
         };
     let mut value: serde_json::Value =
         serde_json::from_slice(bytes.as_slice()).map_err(|_| failed())?;
-    crate::services::agent_local::session_security::sanitize_session_value(&mut value);
-    let sanitized = serde_json::to_vec_pretty(&value).map_err(|_| failed())?;
-    if sanitized.len() as u64 > MAX_SESSION_FILE_BYTES {
+    crate::services::agent_local::session_security::bound_context_snapshot(&mut value);
+    let hardened = serde_json::to_vec_pretty(&value).map_err(|_| failed())?;
+    if hardened.len() as u64 > MAX_SESSION_FILE_BYTES {
         return Err(failed());
     }
-    crate::services::private_store::atomic_write(path, &sanitized).map_err(|_| failed())
+    crate::services::private_store::atomic_write(path, &hardened).map_err(|_| failed())
 }
 
 fn read_entries(directory: &Path) -> Result<Option<std::fs::ReadDir>, String> {

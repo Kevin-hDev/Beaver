@@ -26,6 +26,7 @@ impl PartialEq for CanonicalDirectory {
 impl Eq for CanonicalDirectory {}
 
 impl CanonicalDirectory {
+    #[cfg(test)]
     pub(crate) fn synthetic(path: PathBuf, identity: Option<NativeDirectoryIdentity>) -> Self {
         #[cfg(any(unix, windows))]
         return Self::from_native(path, identity, None);
@@ -60,7 +61,7 @@ impl CanonicalDirectory {
         self.handle.as_ref().map(|handle| handle.0.as_ref())
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn has_stable_handle(&self) -> bool {
         #[cfg(any(unix, windows))]
         return self.handle.is_some();

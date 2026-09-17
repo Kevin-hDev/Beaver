@@ -1,4 +1,3 @@
-import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { ModelReasoningContract } from "@/types/model-reasoning-contract";
 
 export interface AvailableModel {
@@ -13,9 +12,7 @@ export interface AvailableModel {
   supports_vision?: boolean;
   supports_thinking?: boolean;
   supports_fast_mode?: boolean;
-  reasoning_modes?: ReasoningMode[];
   reasoning_contract?: ModelReasoningContract;
-  default_reasoning_mode?: ReasoningMode;
   context_length?: number;
   context_usage_includes_reasoning: boolean;
   is_free?: boolean;
@@ -35,9 +32,7 @@ export interface LlmModelInfo {
   supports_vision?: boolean;
   supports_thinking?: boolean;
   supports_fast_mode: boolean;
-  reasoning_modes?: ReasoningMode[];
   reasoning_contract?: ModelReasoningContract;
-  default_reasoning_mode?: ReasoningMode;
   context_usage_includes_reasoning: boolean;
   is_free?: boolean;
 }

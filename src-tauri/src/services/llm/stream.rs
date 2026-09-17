@@ -1,98 +1,101 @@
-#![expect(
-    clippy::too_many_arguments,
-    reason = "orchestration boundary keeps related runtime context explicit"
-)]
 use super::stream_consume::consume_stream;
 use super::stream_http::{RequestConfig, RequestError};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::{ChatMessage, StreamOutcome};
+use crate::services::agent_local::types_ollama::StreamOutcome;
 use crate::services::compress::realtime_budget::RealtimeBudget;
-use crate::services::llm::request_purpose::RequestPurpose;
 use tokio_util::sync::CancellationToken;
+
+pub struct InteractiveStreamRequest<'a> {
+    pub on_event: &'a AgentEventEmitter,
+    pub request_id: &'a str,
+    pub turn: u32,
+    pub request: RequestConfig<'a>,
+    pub cancel: CancellationToken,
+    pub buffer_content: bool,
+    pub realtime_budget: Option<RealtimeBudget>,
+    pub preparation:
+        Option<&'a crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'a>>,
+}
+
 pub async fn stream_chat_no_done(
-    on_event: &AgentEventEmitter,
-    session_id: &str,
-    request_id: &str,
-    turn: u32,
+    context: InteractiveStreamRequest<'_>,
     attempt: u32,
-    provider_id: &str,
-    fast_mode: super::fast_mode::FastModeRequest,
-    purpose: RequestPurpose,
-    model: &str,
-    messages: &[ChatMessage],
-    tools: &[serde_json::Value],
-    think: bool,
-    reasoning_mode: Option<&str>,
-    tool_result_previews: &crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch,
-    cancel: CancellationToken,
-    buffer_content: bool,
-    realtime_budget: Option<RealtimeBudget>,
     reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     continuation_target: Option<
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
-    preparation: Option<
-        &crate::services::agent_local::context_usage_runtime::PreparedContextAttempt<'_>,
-    >,
 ) -> Result<StreamOutcome, String> {
+    let InteractiveStreamRequest {
+        on_event,
+        request_id,
+        turn,
+        request,
+        cancel,
+        buffer_content,
+        realtime_budget,
+        preparation,
+    } = context;
+    let session_id = request
+        .session_id
+        .ok_or_else(|| "provider_configuration_invalid".to_string())?;
     #[cfg(debug_assertions)]
     let transport = if continuation_target.is_some_and(|target| target.is_fixture_candidate()) {
         super::stream_dispatch::resolve_fixture_transport(
-            provider_id,
-            model,
+            request.provider_id,
+            request.model,
             continuation_target.expect("fixture target"),
-            purpose,
+            request.purpose,
         )
         .await
     } else {
         super::stream_dispatch::resolve_transport(
-            provider_id,
-            model,
+            request.provider_id,
+            request.model,
             super::stream_dispatch::InvocationKind::Interactive,
-            purpose,
+            request.purpose,
         )
         .await
     }
     .map_err(super::stream_dispatch::RouteSelectionError::code)?;
     #[cfg(not(debug_assertions))]
     let transport = super::stream_dispatch::resolve_transport(
-        provider_id,
-        model,
+        request.provider_id,
+        request.model,
         super::stream_dispatch::InvocationKind::Interactive,
-        purpose,
+        request.purpose,
     )
     .await
     .map_err(super::stream_dispatch::RouteSelectionError::code)?;
     let mut measurement = super::stream_metrics::start(
         &transport,
-        provider_id,
-        model,
+        request.provider_id,
+        request.model,
         Some(session_id),
         request_id,
         Some(turn),
         attempt,
         crate::services::provider_usage::UsageWorkload::Primary,
-        fast_mode,
+        request.fast_mode,
     );
     // Every HTTP family receives the same bounded continuation state; the
     // route profile alone decides whether preview bytes enter its payload.
     let request_config = |request_think| RequestConfig {
-        provider_id,
-        model,
-        messages,
-        tools,
+        provider_id: request.provider_id,
+        model: request.model,
+        messages: request.messages,
+        tools: request.tools,
         think: request_think,
-        reasoning_mode,
-        max_tokens: None,
-        purpose,
+        reasoning_mode: request.reasoning_mode,
+        max_tokens: request.max_tokens,
+        purpose: request.purpose,
         session_id: Some(session_id),
-        fast_mode,
-        tool_result_previews: Some(tool_result_previews),
+        fast_mode: request.fast_mode,
+        tool_result_previews: request.tool_result_previews,
         continuation_target,
     };
     let result = match transport.client {
         super::stream_dispatch::ClientKind::Anthropic => {
-            let config = request_config(think);
+            let config = request_config(request.think);
             super::anthropic::stream_chat(
                 on_event,
                 &config,
@@ -111,11 +114,11 @@ pub async fn stream_chat_no_done(
                 on_event,
                 session_id,
                 request_id,
-                model,
-                messages,
-                tools,
-                reasoning_mode,
-                fast_mode,
+                request.model,
+                request.messages,
+                request.tools,
+                request.reasoning_mode,
+                request.fast_mode,
                 cancel,
                 buffer_content,
                 realtime_budget,
@@ -127,7 +130,7 @@ pub async fn stream_chat_no_done(
             .await
         }
         super::stream_dispatch::ClientKind::Responses => {
-            let config = request_config(think);
+            let config = request_config(request.think);
             // Les API publiques OpenAI et xAI utilisent Responses avec leur propre authentification.
             super::openai_responses::stream_chat(
                 on_event,
@@ -166,7 +169,7 @@ pub async fn stream_chat_no_done(
             .await
         }
         super::stream_dispatch::ClientKind::ChatCompletions => {
-            let cfg = request_config(think);
+            let cfg = request_config(request.think);
             match super::stream_http::post_chat_request_measured(
                 &cfg,
                 measurement.as_mut(),
@@ -182,8 +185,8 @@ pub async fn stream_chat_no_done(
                         cancel,
                         buffer_content,
                         realtime_budget,
-                        tools,
-                        transport.usage_context(model),
+                        request.tools,
+                        transport.usage_context(request.model),
                         transport.fragment_mode,
                         transport.error_policy,
                         reasoning_capture,

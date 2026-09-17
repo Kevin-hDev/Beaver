@@ -6,7 +6,6 @@
 
 pub mod agent_loop;
 mod agent_loop_compression;
-mod agent_loop_message;
 #[cfg(test)]
 mod agent_loop_native_tool_stack_tests;
 mod agent_loop_request;
@@ -25,10 +24,6 @@ pub(crate) mod api_key_probe;
 mod api_key_probe_tests;
 pub mod catalog;
 pub(crate) mod catalog_limits;
-pub mod compress_hook;
-mod endpoint_policy;
-#[cfg(test)]
-mod endpoint_policy_tests;
 pub mod fast_mode;
 #[cfg(all(test, debug_assertions))]
 mod fixture_tool_error_tests;
@@ -88,26 +83,26 @@ mod request_auth;
 #[cfg(test)]
 mod request_auth_tests;
 pub(crate) mod request_purpose;
-mod retry;
 pub mod route;
 #[cfg(test)]
 mod route_behavior_baseline_tests;
 pub(crate) mod route_profile;
 pub mod runtime_models;
 pub mod stream;
+mod stream_chat_accumulator;
 mod stream_chunk;
 #[cfg(test)]
 mod stream_chunk_tests;
 mod stream_completion;
 mod stream_consume;
 mod stream_consume_budget;
-mod stream_consume_record;
 pub mod stream_convert;
 pub(crate) mod stream_dispatch;
 #[cfg(test)]
 mod stream_dispatch_tests;
 pub(crate) mod stream_fragments;
-mod stream_http;
+pub(crate) mod stream_http;
+mod stream_once;
 #[cfg(test)]
 pub(crate) use stream_http::RequestConfig as RequestConfigForTest;
 mod stream_http_error;
@@ -126,7 +121,6 @@ pub(crate) mod stream_reasoning;
 mod stream_reasoning_tests;
 mod stream_reasoning_zai;
 mod stream_silent;
-mod stream_silent_consume;
 pub(crate) mod stream_sse;
 #[cfg(test)]
 pub(crate) mod stream_test_transport;

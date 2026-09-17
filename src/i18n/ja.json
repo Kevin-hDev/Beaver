@@ -1339,6 +1339,7 @@
     "providerConnectionFailed": "プロバイダーに接続できませんでした。",
     "providerTemporarilyUnavailable": "プロバイダーは一時的に利用できません。しばらくしてからもう一度お試しください。",
     "providerRequestRejected": "プロバイダーがリクエストを拒否しました。",
+    "providerResponseInvalid": "プロバイダーから無効な応答が返されました。",
     "providerEmptyResponse": "プロバイダーから回答もツール呼び出しも返されませんでした。再試行するか、別のモデルを選択できます。",
     "providerOutputLimit": "回答が完了する前にモデルの生成上限に達しました。リクエストを短くするか、推論設定を変更してください。",
     "providerContentFiltered": "プロバイダーのコンテンツフィルターが回答を中断しました。リクエストの表現を変更できます。",

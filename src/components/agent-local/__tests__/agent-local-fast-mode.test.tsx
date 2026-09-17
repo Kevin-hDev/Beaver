@@ -11,7 +11,6 @@ vi.mock("@/hooks/use-agent-local-tab", () => ({ useAgentLocalTab: vi.fn() }));
 vi.mock("@/hooks/use-session-tabs", () => ({ useSessionTabs: vi.fn() }));
 vi.mock("@/hooks/use-file-tree", () => ({ useFileTree: vi.fn(() => ({})) }));
 vi.mock("@/hooks/use-forecast-panel", () => ({ useForecastPanel: vi.fn(() => ({})) }));
-vi.mock("@/hooks/use-agent-local-panel-nav", () => ({ useAgentLocalPanelNav: vi.fn() }));
 vi.mock("@/hooks/use-agent-local-controlled-panels", () => ({
   useAgentLocalControlledPanels: vi.fn(() => ({
     fileTreeNav: {},
@@ -141,7 +140,8 @@ vi.mock("@/hooks/use-available-models", () => ({
   useAvailableModels: () => ({ groups: new Map([["codex-oauth", [{
     id: "gpt-5.6-sol", provider_id: "codex-oauth", provider_name: "OpenAI",
     is_local: false, supports_tools: true, supports_thinking: true,
-    supports_fast_mode: true, reasoning_modes: ["off", "high"],
+    supports_fast_mode: true,
+    reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } },
   }]]]) }),
 }));
 

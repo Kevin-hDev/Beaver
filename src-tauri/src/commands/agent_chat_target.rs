@@ -16,8 +16,6 @@ pub(crate) async fn resolve(
     session_id: &str,
     provider: &str,
     model: &str,
-    _reasoning_mode_hint: Option<&str>,
-    _supports_thinking_hint: Option<bool>,
 ) -> Result<ResolvedChatTarget, ChatTargetError> {
     let session = crate::services::agent_local::session_store::get(session_id)
         .await
@@ -49,7 +47,7 @@ pub(crate) async fn resolve(
         None
     } else {
         Some(
-            super::agent_chat_task::api_capabilities::resolve(provider, model, &Default::default())
+            super::agent_chat_task::api_capabilities::resolve(provider, model)
                 .await
                 .thinking,
         )

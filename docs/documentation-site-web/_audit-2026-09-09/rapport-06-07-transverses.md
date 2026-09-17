@@ -129,7 +129,7 @@ Le brief donne treize réglages (`ollama-runtime.md:104-117`). Le code n'en appl
 
 **Ne figurent nulle part dans le code** : l'attention optimisée, la compression du cache, « une seule requête à la fois », le délai de chargement de dix minutes, l'accélération Vulkan sous Windows, et **le gigaoctet de mémoire vidéo réservé au système**. Une recherche sur `FLASH_ATTENTION`, `KV_CACHE_TYPE`, `NUM_PARALLEL`, `LOAD_TIMEOUT`, `GPU_OVERHEAD` et `VULKAN` dans tout `src-tauri/src/` ne renvoie aucun résultat en dehors des tests.
 
-Le seul de ces réglages qui subsiste sous une autre forme est la **persistance en mémoire** : elle n'est plus imposée au moteur mais transmise requête par requête, dans le corps de l'appel (`src-tauri/src/services/agent_local/ollama_wire.rs:48`), depuis la configuration (`src-tauri/src/models/config.rs:22` et `:45`, valeur par défaut `"5m"`), avec le cas « indéfiniment » traité à `src-tauri/src/services/agent_local/agent_loop_support.rs:29-32`.
+Le seul de ces réglages qui subsiste sous une autre forme est la **persistance en mémoire** : elle n'est plus imposée au moteur mais transmise requête par requête, dans le corps de l'appel (`src-tauri/src/services/agent_local/execution/ollama_wire.rs:48`), depuis la configuration (`src-tauri/src/models/config.rs:22` et `:45`, valeur par défaut `"5m"`), avec le cas « indéfiniment » traité à `src-tauri/src/services/agent_local/execution/agent_loop_support.rs:29-32`.
 
 ### Écart 4 — Le gigaoctet de mémoire vidéo réservé n'est pas dans le code
 
@@ -216,7 +216,7 @@ Les paliers de contexte (`materiel-et-vram.md:81-85`) sont exacts : `src-tauri/s
 
 ### Écart 1 — Un fichier source cité n'existe plus
 
-`services/ollama_lifecycle.rs` (`ollama-modeles.md:5`). Voir l'écart 1 de `ollama-runtime.md`. Toutes les autres sources existent : `commands/ollama_setup.rs`, `commands/ollama_updates.rs`, `services/agent_local/ollama_registry_details.rs`, et les composants d'interface cités.
+`services/ollama_lifecycle.rs` (`ollama-modeles.md:5`). Voir l'écart 1 de `ollama-runtime.md`. Toutes les autres sources existent : `commands/ollama_setup.rs`, `commands/ollama_updates.rs`, `services/agent_local/execution/ollama_registry_details.rs`, et les composants d'interface cités.
 
 ### Points à confirmer tranchés
 
@@ -286,7 +286,7 @@ Ce n'est plus le cas au 9 septembre 2026. Les extensions sont implémentées et 
 - `EXTENSIONS.md` à la racine du dépôt (56,6 Ko) fait autorité sur le sujet ;
 - le module `src-tauri/src/services/extensions/` existe et est largement couvert de tests ;
 - les outils de découverte d'extensions sont intégrés au mode Plan, avec leurs constantes publiées : `src-tauri/src/services/extensions/mod.rs:192-193` (`LIST_EXTENSIONS_TOOL_NAME`, `INSPECT_EXTENSIONS_TOOL_NAME`) ;
-- la politique de permission par effet d'extension est en place et testée : `src-tauri/src/services/agent_local/tool_plan_guard.rs:46-48` et son test `:89-98` (seules les extensions en lecture seule passent en mode Plan).
+- la politique de permission par effet d'extension est en place et testée : `src-tauri/src/services/agent_local/tools/tool_plan_guard.rs:46-48` et son test `:89-98` (seules les extensions en lecture seule passent en mode Plan).
 
 **Les quatre briefs Extensions sont donc à sortir de la liste des gels** et à écrire, avec `EXTENSIONS.md` comme source principale. La note du README sur le niveau d'exigence attendu reste entièrement valable.
 
@@ -303,7 +303,7 @@ Le brief a été gelé exactement pour la bonne raison : la liste d'outils a bou
 
 ### Écart 1 — Dix-neuf outils autorisés → vingt et un
 
-Le brief annonce **dix-neuf** outils (`plan-mode.md.gele:35`). La liste actuelle en compte **vingt et un** : `src-tauri/src/services/agent_local/tool_plan_guard.rs:3-25`.
+Le brief annonce **dix-neuf** outils (`plan-mode.md.gele:35`). La liste actuelle en compte **vingt et un** : `src-tauri/src/services/agent_local/tools/tool_plan_guard.rs:3-25`.
 
 ### Écart 2 — `search_extension_tools` a disparu, remplacé par trois entrées
 
@@ -323,11 +323,11 @@ En plus des trois outils conditionnels que le brief décrit correctement (`bash`
 
 | Affirmation du brief | Vérification |
 |---|---|
-| Sept états du parcours | `src-tauri/src/services/agent_local/types_plan.rs:18-24` — `NeedsContext`, `CollectingQuestions`, `PlanPublished`, `AwaitingApproval`, `Approved`, `Rejected`, `Cancelled` |
-| Quatre corrections automatiques avant échec | `src-tauri/src/services/agent_local/plan_mode_controller.rs:5` — `MAX_REPAIRS: usize = 4` |
-| Titre limité à 120 caractères | `src-tauri/src/services/agent_local/tool_plan.rs:12` |
-| Contenu limité à 40 000 caractères | `src-tauri/src/services/agent_local/tool_plan.rs:13` |
-| Vingt plans conservés par conversation | `src-tauri/src/services/agent_local/types_plan.rs:45` et `tool_plan.rs:95` |
+| Sept états du parcours | `src-tauri/src/services/agent_local/execution/types_plan.rs:18-24` — `NeedsContext`, `CollectingQuestions`, `PlanPublished`, `AwaitingApproval`, `Approved`, `Rejected`, `Cancelled` |
+| Quatre corrections automatiques avant échec | `src-tauri/src/services/agent_local/execution/plan_mode_controller.rs:5` — `MAX_REPAIRS: usize = 4` |
+| Titre limité à 120 caractères | `src-tauri/src/services/agent_local/tools/tool_plan.rs:12` |
+| Contenu limité à 40 000 caractères | `src-tauri/src/services/agent_local/tools/tool_plan.rs:13` |
+| Vingt plans conservés par conversation | `src-tauri/src/services/agent_local/execution/types_plan.rs:45` et `tool_plan.rs:95` |
 | Tests et compilation autorisés | `tool_plan_guard.rs:161-171` — `git status`, `cargo test`, `cargo check`, `npm run build`, `npm test`, `npx tsc --noEmit` passent ; `rm file` est refusé |
 | `write_file`, `edit_file`, `todo_write`, `create_branch`, `delegate_task` interdits | `tool_plan_guard.rs:81-87` |
 | Le mode Plan protège même en Accès complet | `tool_plan_guard.rs:50-55` — la garde ne consulte pas le mode de permission |
@@ -363,7 +363,7 @@ Résumé de tous les points que le code permet de trancher, avec leur référenc
 | `materiel-et-vram.md:102` / `ollama-runtime.md:186` | Mac Intel : mémoire non mesurée, contexte minimal | **Confirmé** | `services/gpu_vram/macos.rs:4-5` + `gpu_vram.rs:180` |
 | `ollama-modeles.md:129` | La limite de 100 familles est-elle silencieuse ? | **Oui** | `commands/ollama_updates.rs:26` et `:36` |
 | `ollama-personnalisation.md` (tableau des onze paramètres) | Les onze paramètres et leurs valeurs par défaut | **Exacts, un à un** | `src/components/ollama/model-parameter-catalog.ts:43-53` |
-| `ollama-personnalisation.md:69-70` | Recette limitée à 2 Mo, création abandonnée à 10 minutes | **Confirmé** | `services/agent_local/ollama_modelfile_create.rs:4-5` |
+| `ollama-personnalisation.md:69-70` | Recette limitée à 2 Mo, création abandonnée à 10 minutes | **Confirmé** | `services/agent_local/execution/ollama_modelfile_create.rs:4-5` |
 | `providers-api.md:174` | Les paliers gratuits Google et Mistral sont-ils encore publiés ? | **Réglé côté produit** : les textes ne portent plus de chiffres | `src/i18n/fr.json:41-42` |
 | `providers-api.md:177` | Z.ai GLM a-t-il une configuration particulière ? | **Oui** : son point d'entrée n'a pas de chemin de catalogue (`""`) | `route_profile/catalog_api.rs:157` |
 | `providers-comptes-web.md` (limites) | 15 minutes, 4 096 caractères, marge d'une minute | **Confirmés** | `llm_oauth/device_flow.rs:10` (900 s), `llm_oauth/store.rs:8` (4 096), `llm_oauth/types.rs:51` (60 s) |
@@ -376,7 +376,7 @@ Résumé de tous les points que le code permet de trancher, avec leur référenc
 | `channels-gateway.md` (tableau des limites) | 16 / 100 / 1 000 / 12 000 / 10 000 / 365 / 128 | **Tous confirmés** | `gateway/work_supervision.rs:11` (16) ; `gateway/config_validation.rs:7-12` (les six autres) |
 | `channels-gateway.md:116` | Les connexions par compte sont-elles refusées au gateway ? | **Oui**, refus explicite | `services/gateway/agent_bridge.rs:97` |
 | `mcp-connecteurs.md` (les dix-huit connecteurs) | 13 distants + 5 locaux | **Confirmés, nom par nom** | `mcp_bridge/trusted.rs:2-14` (13) ; `mcp_bridge/stdio_catalog.rs:14-21` + `:1-3` (5) |
-| `mcp-connecteurs.md` (tableau des limites) | 32 / 8 / 10 min / 128 / 250 / 64 / 15 | **Tous confirmés** | `mcp_bridge/config.rs:9` (32) ; `work_supervision.rs:10` (8) ; `process_manager.rs:13` (600 s) ; `transport.rs:13-15` (128/250/64) ; `agent_local/tool_mcp.rs:8` (15) |
+| `mcp-connecteurs.md` (tableau des limites) | 32 / 8 / 10 min / 128 / 250 / 64 / 15 | **Tous confirmés** | `mcp_bridge/config.rs:9` (32) ; `work_supervision.rs:10` (8) ; `process_manager.rs:13` (600 s) ; `transport.rs:13-15` (128/250/64) ; `agent_local/tools/tool_mcp.rs:8` (15) |
 | `mcp-connecteurs.md:118` | Trois programmes autorisés seulement | **Confirmé** : `npx`, `uvx`, `deno` | `mcp_bridge/stdio_catalog.rs:3` et `:15-18` |
 | `mcp-connecteurs.md:223` | Les connecteurs locaux se mettent-ils à jour ? | **Non** : versions figées au caractère près | `mcp_bridge/stdio_catalog.rs:3,15-18` (`@2.2.5`, `@0.3.13`, `==0.1.0`, `@1.4.5`, `@0.4.2`) |
 | `mcp-oauth.md` (tableau des limites) | 5 min / 5 / 30 s / 4 Ko / 15 s | **Tous confirmés** | `mcp_oauth/callback_server.rs:11` (300 s), `:13` (4 096) ; `mcp_oauth/flow.rs:16` (5) ; `mcp_oauth/storage.rs:46-55` (30 s) ; `mcp_oauth/discovery.rs:6` (15 s) |
@@ -392,7 +392,7 @@ C'était le point le plus important à trancher du périmètre (`channels-gatewa
 2. **Mais cette demande est plafonnée par le réglage de l'utilisateur** : `src-tauri/src/commands/agent_chat_task/common.rs:49-56` — si le mode demandé est plus permissif que celui enregistré, c'est le mode enregistré qui l'emporte. Un utilisateur en « Demande d'approbation » n'est donc **pas** basculé en « Accès complet » par un message Telegram.
 3. **En revanche, le mode par défaut de l'application est « Accès complet »** : `src-tauri/src/storage_migration.rs:83` crée `agent-settings.json` avec `{"permissionMode":"auto"}`. Sur une installation où l'utilisateur n'a rien changé, un message reçu par messagerie déclenche donc un agent en accès complet.
 4. **Le mode Plan est explicitement désactivé** pour ces conversations : `agent_bridge_run.rs:116` passe `plan_mode: Some(false)`.
-5. **Aucune demande d'approbation ne part vers la messagerie** : `agent_bridge_run.rs:113` passe `permission_emitter: None`, et sans émetteur dédié, la demande retombe sur l'émission d'événement ordinaire de l'application (`src-tauri/src/services/agent_local/stream_events.rs:78-95`). Autrement dit, **une approbation demandée par un message Telegram s'affiche dans la fenêtre de Beaver sur la machine**, pas dans la messagerie.
+5. **Aucune demande d'approbation ne part vers la messagerie** : `agent_bridge_run.rs:113` passe `permission_emitter: None`, et sans émetteur dédié, la demande retombe sur l'émission d'événement ordinaire de l'application (`src-tauri/src/services/agent_local/diagnostics/stream_events.rs:78-95`). Autrement dit, **une approbation demandée par un message Telegram s'affiche dans la fenêtre de Beaver sur la machine**, pas dans la messagerie.
 
 **Formulation proposée pour le site** : *un message reçu par messagerie lance un agent avec le mode de permission que vous avez réglé dans Beaver — jamais plus permissif. Mais si ce mode demande des approbations, celles-ci s'affichent sur votre ordinateur, pas dans la messagerie : personne ne peut y répondre à distance.* L'encadré existant de `channels-gateway.md:170-171` reste juste et devient plus fort ainsi complété.
 
@@ -426,14 +426,14 @@ C'était le point le plus important à trancher du périmètre (`channels-gatewa
 | **`CROSS-PLATFORM.md` annonce un support Fedora/RHEL que `install.sh` n'implémente pas** | Toujours vrai. `install.sh:153` n'appelle que `apt-get`, et `:169` ne construit que le suffixe `_amd64.deb` |
 | **Le mode de permission par défaut est « Accès complet »** | Toujours vrai. `src-tauri/src/storage_migration.rs:83` — `{"permissionMode":"auto"}`. Devient d'autant plus important avec le point gateway tranché ci-dessus |
 | **Deux dossiers créés au premier lancement ne sont documentés nulle part** | Toujours vrai. `storage_migration.rs:70` (`inbox`), `:74` (`translations`), `:87` (`inbox/pending.json`), et un fichier supplémentaire non mentionné dans le brief : `:110` (`inbox/idea-discovery.md`) |
-| **Le journal `logs/permission-diagnostics.jsonl` n'est documenté nulle part** | Toujours vrai. `services/agent_local/permission_gate.rs:116`, avec rotation vers `.jsonl.1` au-delà de `MAX_DIAGNOSTIC_LOG_BYTES` (`:117-123`) |
-| **Les onglets de clones sont limités à 3 par groupe** | Toujours vrai. `services/agent_local/session_tabs_state.rs:6` — `MAX_TABS_PER_SESSION: usize = 3`, appliqué à `:40` et `:88` |
-| **`read_document` annonce un filtrage par pages qu'il n'applique pas** | Toujours vrai. `services/agent_local/tool_document_read.rs:12` reçoit toujours le paramètre sous le nom `_pages` et ne s'en sert pas |
-| **La limite d'outils optionnels vaut exactement le nombre d'outils optionnels** | Toujours vrai, et au chiffre près. `services/agent_local/tool_catalog.rs:16` — `MAX_OPTIONAL_TOOLS = 32` ; la liste `OPTIONAL_TOOLS` (`:52-84`) compte exactement **32** entrées (13 activées par défaut, 19 désactivées). La troncature reste silencieuse (`:140`, `.take(MAX_OPTIONAL_TOOLS)`) |
+| **Le journal `logs/permission-diagnostics.jsonl` n'est documenté nulle part** | Toujours vrai. `services/agent_local/permissions/permission_gate.rs:116`, avec rotation vers `.jsonl.1` au-delà de `MAX_DIAGNOSTIC_LOG_BYTES` (`:117-123`) |
+| **Les onglets de clones sont limités à 3 par groupe** | Toujours vrai. `services/agent_local/conversations/session_tabs_state.rs:6` — `MAX_TABS_PER_SESSION: usize = 3`, appliqué à `:40` et `:88` |
+| **`read_document` annonce un filtrage par pages qu'il n'applique pas** | Toujours vrai. `services/agent_local/tools/tool_document_read.rs:12` reçoit toujours le paramètre sous le nom `_pages` et ne s'en sert pas |
+| **La limite d'outils optionnels vaut exactement le nombre d'outils optionnels** | Toujours vrai, et au chiffre près. `services/agent_local/tools/tool_catalog.rs:16` — `MAX_OPTIONAL_TOOLS = 32` ; la liste `OPTIONAL_TOOLS` (`:52-84`) compte exactement **32** entrées (13 activées par défaut, 19 désactivées). La troncature reste silencieuse (`:140`, `.take(MAX_OPTIONAL_TOOLS)`) |
 | **L'écran des outils dit « Tools essentiels » et « Tools optionnels »** | Toujours vrai en français. `src/i18n/fr.json:977-978` |
-| **Les sous-agents portent des noms visibles fixes « Claudiator » et « Geminitor »** | Toujours vrai. `services/agent_local/tool_definitions_subagent.rs:38` |
+| **Les sous-agents portent des noms visibles fixes « Claudiator » et « Geminitor »** | Toujours vrai. `services/agent_local/tools/tool_definitions_subagent.rs:38` |
 | **Deux paramètres de `delegate_task` sont marqués « legacy »** | Toujours vrai. Même ligne, `tool_definitions_subagent.rs:38` (« Legacy mission label ») |
-| **La limite de 15 outils MCP par connecteur dans une recherche est silencieuse** | Toujours vrai. `services/agent_local/tool_mcp.rs:8` et `:61` |
+| **La limite de 15 outils MCP par connecteur dans une recherche est silencieuse** | Toujours vrai. `services/agent_local/tools/tool_mcp.rs:8` et `:61` |
 | **Aucune borne sur le nombre de modèles favoris** | Toujours vrai. `services/favorite_models.rs` |
 | **La vérification des mises à jour de modèles s'arrête à 100 familles sans le signaler** | Toujours vrai. `commands/ollama_updates.rs:26` et `:36` |
 | **Sur Mac Intel la mémoire n'est pas mesurée** | Toujours vrai. `services/gpu_vram/macos.rs:4-5` |

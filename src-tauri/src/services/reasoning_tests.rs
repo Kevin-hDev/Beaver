@@ -228,10 +228,12 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         supports_tools: true,
         supports_vision: false,
         supports_thinking: true,
-        reasoning_contract: None,
+        reasoning_contract:
+            crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                &["auto"],
+                Some("auto"),
+            ),
         supports_fast_mode: false,
-        reasoning_modes: vec!["auto".into()],
-        default_reasoning_mode: Some("auto".into()),
         context_usage_includes_reasoning: true,
         is_free: false,
     };

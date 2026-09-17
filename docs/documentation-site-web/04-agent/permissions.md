@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Modes de permission (page centrale de la section Agent)
 **Répond à** — « Qu'est-ce que l'agent peut faire sans me demander, et comment je change ça ? »
-**Sources** — `src-tauri/src/services/agent_local/permission_gate.rs` (lignes 68-89), `permission_policy.rs`, `permission_bash.rs` (lignes 4-58), `permission_allow_cache.rs`, `sensitive_data.rs` (lignes 1-25, 98-111), `agent_settings.rs` (lignes 37-40, 67-69, 75-85), `tool_definitions_chat.rs`, `tool_dispatcher_route.rs` (lignes 15-17), `tool_dispatcher_entry.rs` (lignes 66-70), `commands/agent_chat_task/common.rs` (lignes 104-107), `src/components/agent-local/permission-mode-selector.tsx`, `src/hooks/use-permission-mode.ts`
+**Sources** — `src-tauri/src/services/agent_local/permissions/permission_gate.rs` (lignes 68-89), `permission_policy.rs`, `permission_bash.rs` (lignes 4-58), `permission_allow_cache.rs`, `sensitive_data.rs` (lignes 1-25, 98-111), `agent_settings.rs` (lignes 37-40, 67-69, 75-85), `tool_definitions_chat.rs`, `tool_dispatcher_route.rs` (lignes 15-17), `tool_dispatcher_entry.rs` (lignes 66-70), `commands/agent_chat_task/common.rs` (lignes 104-107), `src/components/agent-local/permission-mode-selector.tsx`, `src/hooks/use-permission-mode.ts`
 **Vérification** — Vérifié dans le code, ligne par ligne, revérifié le 9 septembre 2026. C'est la page la plus sensible de la documentation : chaque affirmation ici engage la sécurité de l'utilisateur.
 
 ---

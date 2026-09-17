@@ -47,21 +47,6 @@ export function useAgentSessions() {
     };
   }, [refresh]);
 
-  useEffect(() => {
-    const unlisten = listen<{ sessionId: string; event: { event: string } }>(
-      "agent-stream-event",
-      (event) => {
-        const e = event.payload?.event?.event;
-        if (e === "subagentSpawned" || e === "subagentCompleted") {
-          void refresh();
-        }
-      },
-    );
-    return () => {
-      cleanupTauriListener(unlisten);
-    };
-  }, [refresh]);
-
   const create = useCallback(
     async (
       name: string,

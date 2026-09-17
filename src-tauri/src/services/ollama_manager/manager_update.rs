@@ -1,11 +1,13 @@
 impl OllamaManager {
+    #[cfg(test)]
     pub async fn update(
         &self,
         request: super::update::UpdateRequest,
     ) -> Result<super::update::UpdateOutcome, OllamaErrorCode> {
         let guard = self.begin_operation(OperationState::Updating).await?;
         let original_bundle = guard.previous_bundle();
-        self.run_admitted_update(request, guard, original_bundle).await
+        self.run_admitted_update(request, guard, original_bundle)
+            .await
     }
 
     pub async fn update_from_release(
@@ -40,6 +42,7 @@ impl OllamaManager {
             .await
     }
 
+    #[cfg(test)]
     async fn run_admitted_update(
         &self,
         mut request: super::update::UpdateRequest,
@@ -50,7 +53,8 @@ impl OllamaManager {
             self.progress_reporter_for_generation(guard.generation(), request.progress.take()),
         );
         self.set_operation_cancellation(request.cancellation.clone());
-        self.run_prepared_update(request, guard, original_bundle).await
+        self.run_prepared_update(request, guard, original_bundle)
+            .await
     }
 
     async fn run_prepared_update(

@@ -2,7 +2,7 @@
 
 **Emplacement site** — Outils › Vue d'ensemble (page d'entrée de la section)
 **Répond à** — « Qu'est-ce que l'agent sait faire, et comment je décide de ce qu'il a le droit de faire ? »
-**Sources** — `src-tauri/src/services/agent_local/tool_group_catalog.rs`, `tool_catalog.rs` (lignes 29-50 pour les outils verrouillés), `tool_catalog_filter.rs`, `tool_availability.rs`, `tool_definitions.rs`, `tool_extension_resource.rs`, `src-tauri/src/services/extensions/mod.rs`, `tool_prompt_filter.rs`, `tool_result_truncate.rs`, `tool_result_budget.rs`, `tool_validate.rs`, `src/components/settings/tools-settings.tsx`, `src/i18n/fr.json` (clé `settings.tools`)
+**Sources** — `src-tauri/src/services/agent_local/tools/tool_group_catalog.rs`, `tool_catalog.rs` (lignes 29-50 pour les outils verrouillés), `tool_catalog_filter.rs`, `tool_availability.rs`, `tool_definitions.rs`, `tool_extension_resource.rs`, `src-tauri/src/services/extensions/mod.rs`, `tool_prompt_filter.rs`, `tool_result_truncate.rs`, `tool_result_budget.rs`, `tool_validate.rs`, `src/components/settings/tools-settings.tsx`, `src/i18n/fr.json` (clé `settings.tools`)
 **Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026, sauf les points listés en fin de fiche
 
 ---

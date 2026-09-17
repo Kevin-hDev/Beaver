@@ -87,12 +87,12 @@ mod tests {
         assert_eq!(terra.context_length, Some(258_400));
         assert_eq!(luna.context_length, Some(258_400));
         assert_eq!(
-            sol.reasoning_modes,
+            sol.reasoning_modes(),
             ["low", "medium", "high", "xhigh", "max", "ultra"]
         );
-        assert_eq!(terra.reasoning_modes, sol.reasoning_modes);
+        assert_eq!(terra.reasoning_modes(), sol.reasoning_modes());
         assert_eq!(
-            luna.reasoning_modes,
+            luna.reasoning_modes(),
             ["low", "medium", "high", "xhigh", "max"]
         );
     }
@@ -109,6 +109,6 @@ mod tests {
         assert!(spark.supports_tools);
         assert!(!spark.supports_vision);
         assert!(spark.supports_thinking);
-        assert_eq!(spark.reasoning_modes, ["low", "medium", "high", "xhigh"]);
+        assert_eq!(spark.reasoning_modes(), ["low", "medium", "high", "xhigh"]);
     }
 }

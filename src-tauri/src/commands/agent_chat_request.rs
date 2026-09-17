@@ -1,4 +1,3 @@
-use super::super::agent_chat_task::StreamCapabilityHints;
 use crate::models::agent_turn_contract::TurnStart;
 
 pub(crate) struct ChatStreamRequest {
@@ -9,7 +8,6 @@ pub(crate) struct ChatStreamRequest {
     pub think: bool,
     pub provider: String,
     pub working_dir: Option<String>,
-    pub capability_hints: StreamCapabilityHints,
     pub reasoning_mode: Option<String>,
     pub permission_mode: Option<String>,
     pub plan_mode: Option<bool>,
@@ -29,7 +27,6 @@ impl ChatStreamRequest {
             think: false,
             provider: input.provider,
             working_dir: input.working_dir,
-            capability_hints: StreamCapabilityHints::default(),
             reasoning_mode: None,
             permission_mode: input.permission_mode,
             plan_mode: input.plan_mode,

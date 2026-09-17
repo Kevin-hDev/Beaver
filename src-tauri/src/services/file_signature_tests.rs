@@ -18,7 +18,7 @@ fn classifies_every_supported_signature_and_keeps_zip_ambiguous() {
 
 #[test]
 fn attachment_and_vision_delegate_their_signature_tables() {
-    let attachment = include_str!("agent_local/conversation_attachment_format.rs");
+    let attachment = include_str!("agent_local/conversations/conversation_attachment_format.rs");
     let vision = include_str!("llm/vision.rs");
 
     for marker in ["\\x89PNG", "GIF87a", "RIFF", "iVBOR", "R0lGO", "UklGR"] {

@@ -14,7 +14,7 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   // Les thèmes d'extension, leurs parcours, les tests d'aperçus de liens et les guides rejouent ces clés.
   clgo: 164,
   // Les guides et leurs pages générées citent le nom exact de l'ancien paquet Linux.
-  "cl-go": 127,
+  "cl-go": 126,
   // Les deux branches main et la CLI appellent explicitement la bibliothèque Rust.
   cl_go_dash: 78,
 });
@@ -109,20 +109,20 @@ export const COMPATIBILITY_CONTRACTS = Object.freeze([
     "src-tauri/src/services/autostart_migration.rs",
     ['const LEGACY_ENTRY_NAME: &str = "CL-GO";'],
   ),
-  contract("règles projet", "src-tauri/src/services/agent_local/agent_md.rs", [
+  contract("règles projet", "src-tauri/src/services/agent_local/prompts/agent_md.rs", [
     '.join(".cl-go")',
   ]),
   contract(
     "branches de sous-agents",
-    "src-tauri/src/services/agent_local/subagent_directory_change.rs",
+    "src-tauri/src/services/agent_local/subagents/subagent_directory_change.rs",
     ['"cl-go/directory"', '"cl-go/subagent/"'],
   ),
-  contract("worktrees de sous-agents", "src-tauri/src/services/agent_local/subagent_worktree.rs", [
+  contract("worktrees de sous-agents", "src-tauri/src/services/agent_local/subagents/subagent_worktree.rs", [
     '"cl-go/subagent/{execution_id}"',
   ]),
   contract(
     "transactions de sous-agents",
-    "src-tauri/src/services/agent_local/subagent_directory_transaction.rs",
+    "src-tauri/src/services/agent_local/subagents/subagent_directory_transaction.rs",
     ['".cl-go-transaction-{transaction_id}"', '".cl-go-{}.tmp"'],
   ),
   contract("mascotte Rust", "src-tauri/src/models/mascot.rs", ['"cl-go-beaver"']),

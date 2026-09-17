@@ -2,11 +2,11 @@ mod authority_slot;
 #[cfg(windows)]
 mod bootstrap;
 mod constants;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(browser_native_api)]
 pub(super) mod emergency;
 mod gate;
 mod ipc_names;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(browser_native_api)]
 mod launch_ticket;
 #[cfg(any(test, target_os = "macos"))]
 #[path = "cef_supervision/macos/failure.rs"]
@@ -35,7 +35,7 @@ pub(super) use constants::CEF_SLOT_CAPACITY;
 #[cfg(test)]
 pub(super) use gate::CefLaunchGate;
 pub(super) use ipc_names::CefIpcNames;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(browser_native_api)]
 pub(super) use launch_ticket::CefLaunchTicket;
 #[cfg(target_os = "macos")]
 pub(super) use macos::{parse_helper_marker, MacHelperBootstrap};

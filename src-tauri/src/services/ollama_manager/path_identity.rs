@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::canonical_executable::CanonicalExecutable;
 use super::error::OllamaErrorCode;
 use std::ffi::OsString;
@@ -26,6 +24,7 @@ pub struct NativeDirectoryIdentity {
 }
 
 impl NativeDirectoryIdentity {
+    #[cfg(test)]
     pub(crate) fn synthetic(value: u64) -> Self {
         Self {
             value: value as u128,
@@ -64,6 +63,7 @@ pub struct CanonicalDirectory {
 pub struct ValidatedPathComponent(OsString);
 
 impl ValidatedPathComponent {
+    #[cfg(test)]
     pub(crate) fn new(value: &str) -> Self {
         Self(OsString::from(value))
     }
@@ -103,6 +103,7 @@ impl VerifiedDirectoryLocation {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn existing(directory: CanonicalDirectory) -> Self {
         let identity = directory.identity.clone();
         Self {
@@ -155,5 +156,4 @@ pub trait PathIdentityResolver: Send + Sync {
     ) -> Result<bool, OllamaError>;
 }
 
-#[allow(unused_imports)]
 pub(crate) use super::path_identity_resolver::NativePathIdentityResolver;

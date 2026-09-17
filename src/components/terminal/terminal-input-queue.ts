@@ -1,4 +1,6 @@
-export const MAX_WRITE_BYTES = 65_536;
+import { MAX_WRITE_BYTES } from "@/types/terminal-contract.generated";
+
+export { MAX_WRITE_BYTES } from "@/types/terminal-contract.generated";
 export const MAX_PENDING_INPUT_BYTES = 256 * 1024;
 
 const RAW_SLICE_BYTES = MAX_WRITE_BYTES - 4;

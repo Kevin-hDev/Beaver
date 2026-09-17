@@ -1,4 +1,5 @@
 pub(crate) mod automatic_guard;
+pub(crate) mod automatic_run;
 pub mod checkpoint_attachments;
 pub(crate) mod checkpoint_boundary;
 pub mod checkpoint_candidate;
@@ -25,7 +26,6 @@ pub mod checkpoint_tools;
 pub mod checkpoint_transaction;
 pub mod checkpoint_units;
 pub mod command;
-pub mod compression_redaction;
 mod context_capsules_disk_collect;
 pub mod context_resolve;
 pub mod metrics;
@@ -117,9 +117,6 @@ mod orchestrator_tests;
 
 #[cfg(test)]
 mod checkpoint_candidate_runtime_tests;
-
-#[cfg(test)]
-mod compression_redaction_tests;
 
 #[cfg(test)]
 mod summary_contract_tests;

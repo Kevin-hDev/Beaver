@@ -1,31 +1,3 @@
-pub(super) fn classify_status(
-    policy: crate::services::llm::route_profile::ErrorPolicy,
-    status: u16,
-    body: &str,
-    has_retry_after: bool,
-) -> &'static str {
-    if policy != crate::services::llm::route_profile::ErrorPolicy::XaiOauth {
-        return "provider_request_rejected";
-    }
-    match status {
-        401 => "oauth_reauthentication_required",
-        // OAuth also returns 402: preserve the shared distinction without guessing a balance.
-        402 => super::provider_error::classify_http(policy, status, body).as_str(),
-        403 => "provider_access_unavailable",
-        429 if !has_retry_after
-            && crate::services::llm::provider_error::safe_details(body)
-                .error_code
-                .as_deref()
-                == Some("resource-exhausted") =>
-        {
-            "provider_quota_exhausted"
-        }
-        429 => "rate_limit",
-        500..=599 => "provider_temporarily_unavailable",
-        _ => "provider_request_rejected",
-    }
-}
-
 pub(super) fn requires_responses_backend(request: &super::stream_http::RequestConfig<'_>) -> bool {
     use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 
@@ -42,21 +14,10 @@ pub(super) fn catalog_reasoning_mode<'a>(
     model: &'a crate::services::llm_oauth::XaiCatalogModel,
     requested_mode: Option<&'a str>,
 ) -> Option<&'a str> {
+    let contract = model.reasoning_contract.as_ref()?;
     requested_mode
-        .filter(|mode| {
-            model
-                .reasoning_modes
-                .iter()
-                .any(|candidate| candidate == mode)
-        })
-        .or_else(|| {
-            model.default_reasoning_mode.as_deref().filter(|mode| {
-                model
-                    .reasoning_modes
-                    .iter()
-                    .any(|candidate| candidate == mode)
-            })
-        })
+        .filter(|mode| contract.supports_mode(mode))
+        .or_else(|| contract.default_mode_name())
 }
 
 pub(super) const fn backend_path(backend: crate::services::llm_oauth::XaiBackend) -> &'static str {

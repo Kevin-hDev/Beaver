@@ -3,7 +3,7 @@ pub(super) struct CefCookieGatePolicy {
     pub(super) verify_store_on_disk: bool,
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(browser_native_api)]
 pub(super) fn cef_cookie_gate_policy() -> CefCookieGatePolicy {
     cef_cookie_gate_policy_for_platform(cfg!(target_os = "windows"))
 }

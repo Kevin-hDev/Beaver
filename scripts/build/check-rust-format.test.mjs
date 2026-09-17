@@ -8,7 +8,7 @@ import {
 
 test("changed Rust files are limited to backend source files", () => {
   const changed = [
-    "src-tauri/src/services/agent_local/session_store_updates.rs",
+    "src-tauri/src/services/agent_local/conversations/session_store_updates.rs",
     "src-tauri/src/lib.rs",
     "src-tauri/tests/example.rs",
     "scripts/example.rs",
@@ -16,7 +16,7 @@ test("changed Rust files are limited to backend source files", () => {
   ].join("\0");
 
   assert.deepEqual(parseChangedRustFiles(`${changed}\0`), [
-    "src-tauri/src/services/agent_local/session_store_updates.rs",
+    "src-tauri/src/services/agent_local/conversations/session_store_updates.rs",
     "src-tauri/src/lib.rs",
   ]);
 });

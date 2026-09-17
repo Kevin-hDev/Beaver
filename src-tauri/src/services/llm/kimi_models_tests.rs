@@ -36,13 +36,13 @@ fn parses_official_k3_and_k27_metadata() {
     assert_eq!(k3.display_name.as_deref(), Some("K3"));
     assert_eq!(k3.context_length, Some(1_048_576));
     assert!(k3.supports_tools && k3.supports_vision && k3.supports_thinking);
-    assert_eq!(k3.reasoning_modes, ["low", "high", "max"]);
-    assert_eq!(k3.default_reasoning_mode.as_deref(), Some("max"));
+    assert_eq!(k3.reasoning_modes(), ["low", "high", "max"]);
+    assert_eq!(k3.default_reasoning_mode().as_deref(), Some("max"));
 
     let k27 = &models[1];
     assert_eq!(k27.display_name.as_deref(), Some("K2.7 Coding"));
-    assert_eq!(k27.reasoning_modes, ["auto"]);
-    assert_eq!(k27.default_reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(k27.reasoning_modes(), ["auto"]);
+    assert_eq!(k27.default_reasoning_mode().as_deref(), Some("auto"));
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn uses_known_registry_entries_without_guessing_unknown_models() {
     assert_eq!(models[0].display_name.as_deref(), Some("K3"));
     assert!(models[0].supports_tools);
     assert!(models[0].supports_vision);
-    assert_eq!(models[0].reasoning_modes, ["low", "high", "max"]);
+    assert_eq!(models[0].reasoning_modes(), ["low", "high", "max"]);
     assert!(!models[1].supports_tools);
     assert!(!models[1].supports_vision);
     assert!(!models[1].supports_thinking);
@@ -85,8 +85,8 @@ fn bounds_and_validates_provider_metadata() {
 
     assert_eq!(models[0].display_name.as_deref(), Some("K3"));
     assert!(!models[0].supports_tools);
-    assert_eq!(models[0].reasoning_modes, ["low", "high", "max"]);
-    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("max"));
+    assert_eq!(models[0].reasoning_modes(), ["low", "high", "max"]);
+    assert_eq!(models[0].default_reasoning_mode().as_deref(), Some("max"));
     assert!(parse_models_list(&json!({ "data": [{ "id": "k3" }] })).is_err());
     assert!(parse_models_list(&json!({ "models": [] })).is_err());
 }

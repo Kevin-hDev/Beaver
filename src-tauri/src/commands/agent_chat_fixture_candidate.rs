@@ -9,8 +9,6 @@ pub(crate) async fn resolve(
     session_id: &str,
     provider: &str,
     model: &str,
-    reasoning_mode_hint: Option<&str>,
-    supports_thinking_hint: Option<bool>,
     fixture_run: &crate::services::reasoning_fixture_run::FixtureRunContext,
 ) -> Result<
     super::agent_chat_target::ResolvedChatTarget,
@@ -19,14 +17,7 @@ pub(crate) async fn resolve(
     // La possession du contexte, créé seulement par l'IPC de fixture debug,
     // est la capacité qui empêche ce chemin d'exister pour le chat normal.
     let _ = fixture_run;
-    let mut resolved = super::agent_chat_target::resolve(
-        session_id,
-        provider,
-        model,
-        reasoning_mode_hint,
-        supports_thinking_hint,
-    )
-    .await?;
+    let mut resolved = super::agent_chat_target::resolve(session_id, provider, model).await?;
     if resolved.continuation.replay().is_some() {
         return Ok(resolved);
     }

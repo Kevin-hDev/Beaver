@@ -1,9 +1,7 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import i18n from "@/i18n";
-import {
-  applyStreamEvent,
-} from "./agent-chat-stream-callbacks";
-import { scheduleCleanup, clearCleanup, trimSubscribers } from "./agent-stream-cleanup";
+import { applyStreamEvent } from "./agent-chat-stream-callbacks";
+import { scheduleCleanup, clearCleanup } from "./agent-stream-cleanup";
 import {
   flushFrameNotify,
   scheduleFrameNotify,
@@ -15,31 +13,25 @@ import {
 } from "./agent-stream-generations";
 import {
   getOrCreateRecord,
+  getActivity,
   getRecord,
+  getSnapshot,
+  isStreaming,
   records,
+  setSessionGeneration as adoptSessionGeneration,
   snapshot,
   startStreamRecord,
   touchSession,
+  clearStreamPermission,
   type StreamSnapshot,
 } from "./agent-stream-records";
 import { subscribeStreamActivity } from "./agent-stream-activity";
-import {
-  getActivity,
-  getSnapshot,
-  isStreaming,
-  setSessionGeneration as adoptSessionGeneration,
-} from "./agent-stream-access";
 import { handleCompressionComplete } from "./agent-stream-compression-complete";
 import { applySessionSnapshot } from "./agent-stream-snapshot";
-import {
-  notifyRecord as notify,
-  notifyRecordActivity as notifyActivity,
-} from "./agent-stream-notify-dispatch";
+import { notifyRecord as notify, notifyRecordActivity as notifyActivity } from "./agent-stream-notify";
 import { showToast } from "@/lib/toast-emitter";
-import { clearStreamPermission } from "./agent-stream-permissions";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
 import { webToolErrorToastMessage } from "./web-tool-error-toast";
-import { queueUserMessage, removeQueuedUserMessage } from "./agent-stream-user-queue";
 import { failSession } from "./agent-stream-failure";
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
@@ -62,12 +54,14 @@ import {
   releaseStop,
 } from "./agent-stream-manager-ownership";
 import { stopStreamRecord } from "./agent-stream-stop";
+import { applyRecordProjection, markRecordSessionUpdate, removeRecordSubagent } from "./agent-stream-projection-events";
+import { notifyAgentSessionsChanged } from "./agent-session-events";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 export type { StreamSnapshot } from "./agent-stream-records";
 const EVENT_NAME = "agent-stream-event";
-
+const MAX_SUBSCRIBERS_PER_SESSION = 32;
 interface StreamEnvelope { sessionId: string; generation?: number; event: StreamEvent }
-
 type Subscriber = (snapshot: StreamSnapshot) => void;
 
 let listenPromise: Promise<UnlistenFn> | null = null;
@@ -76,9 +70,8 @@ export const agentStreamManager = { startSession, stopSession, failSession, setS
   ownsRun, matchesRun, ownsOwner, adoptOwner,
   getDeferredStop, getOwnedRunState, claimStop, releaseStop, completeStop,
   releaseOwner,
-  clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
-  queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
-  subscribeActivity: subscribeStreamActivity };
+  clearPermission: clearStreamPermission, removeSubagent, getSnapshot, getActivity, isStreaming, subscribe,
+  reconcileTurnAdmission, subscribeActivity: subscribeStreamActivity };
 
 function ensureListener() {
   if (!listenPromise) {
@@ -118,6 +111,14 @@ function stopSession(sessionId: string, generation?: number | null) {
   stopStreamRecord(sessionId, record, generation);
 }
 
+function removeSubagent(sessionId: string, subagentSessionId: string) {
+  const record = getRecord(sessionId);
+  if (!record) return;
+  removeRecordSubagent(record, subagentSessionId);
+  touchSession(sessionId, record);
+  flushFrameNotify(record, notify);
+}
+
 function setSessionGeneration(sessionId: string, generation: number) {
   const pending = adoptSessionGeneration(sessionId, generation);
   if (!pending || !pending.accepted) return "rejected" as const;
@@ -136,11 +137,16 @@ function subscribe(sessionId: string, subscriber: Subscriber): () => void {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
   const id = record.nextSubscriberId++;
-  record.subscribers.set(id, subscriber as (s: unknown) => void);
-  trimSubscribers(record);
+  const unsubscribe = addBoundedSubscriber(
+    record.subscribers,
+    id,
+    subscriber as (s: unknown) => void,
+    MAX_SUBSCRIBERS_PER_SESSION,
+    "agent-stream-session",
+  );
   if (record.started) subscriber(snapshot(record.state));
   return () => {
-    record.subscribers.delete(id);
+    unsubscribe();
     if (record.state.completed && record.subscribers.size === 0) {
       scheduleCleanup(sessionId, record, records);
     }
@@ -155,13 +161,11 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
 
   if (!acceptsStreamEvent(record, generation, event)) return;
 
-  if (event.event === "subagentCompleted") {
-    if (isStreaming(event.data.subagentSessionId)) stopSession(event.data.subagentSessionId);
-    flushFrameNotify(record, notify);
-    return;
-  }
-
-  if (event.event === "subagentSpawned" || event.event === "todoUpdated") {
+  const completedSubagentId = applyRecordProjection(record, event);
+  if (completedSubagentId !== undefined) {
+    if (completedSubagentId && isStreaming(completedSubagentId)) stopSession(completedSubagentId);
+    if (event.event !== "todoUpdated") notifyAgentSessionsChanged();
+    touchSession(sessionId, record);
     flushFrameNotify(record, notify);
     return;
   }
@@ -202,10 +206,12 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   if (toastMessage) showToast(toastMessage, "error");
 
   if (event.event === "compressionComplete") {
+    markRecordSessionUpdate(record, event);
     handleCompressionComplete(sessionId, record, notify, notifyActivity);
     return;
   }
 
+  markRecordSessionUpdate(record, event);
   const result = applyStreamEvent(record.state, event);
   record.state = result.state;
   if (record.state.completed) markStreamCancelled(record, generation);

@@ -1,5 +1,8 @@
 use super::*;
 
+#[cfg(test)]
+#[path = "browser_contract_tests.rs"]
+mod browser_contract_tests;
 #[cfg(all(test, native_browser))]
 #[path = "browser_slot_tests.rs"]
 mod browser_slot_tests;
@@ -21,7 +24,7 @@ mod cef_preflight_tests;
 #[cfg(test)]
 #[path = "cookie_store_probe_tests.rs"]
 mod cookie_store_probe_tests;
-#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
+#[cfg(all(test, browser_native_api))]
 #[path = "ffi_guard_tests.rs"]
 mod ffi_guard_tests;
 #[cfg(test)]
@@ -75,7 +78,7 @@ mod session_order_tests;
 #[cfg(test)]
 #[path = "session_store_tests.rs"]
 mod session_store_tests;
-#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
+#[cfg(all(test, browser_native_api))]
 #[path = "settings_tests.rs"]
 mod settings_tests;
 #[cfg(test)]

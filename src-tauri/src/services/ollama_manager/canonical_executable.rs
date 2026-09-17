@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -9,10 +7,12 @@ pub struct NativeFileIdentity {
 }
 
 impl NativeFileIdentity {
+    #[cfg(unix)]
     pub(crate) fn value(&self) -> u128 {
         self.value
     }
 
+    #[cfg(test)]
     pub(crate) fn synthetic(value: u64) -> Self {
         Self {
             value: value as u128,
@@ -65,6 +65,7 @@ impl PartialEq for CanonicalExecutable {
 impl Eq for CanonicalExecutable {}
 
 impl CanonicalExecutable {
+    #[cfg(test)]
     pub(crate) fn synthetic(path: PathBuf, identity: NativeFileIdentity) -> Self {
         #[cfg(any(unix, windows))]
         return Self {
@@ -93,11 +94,12 @@ impl CanonicalExecutable {
         &self.path
     }
 
-    #[allow(dead_code)]
+    #[cfg(unix)]
     pub(crate) fn identity(&self) -> &NativeFileIdentity {
         &self.identity
     }
 
+    #[cfg(not(windows))]
     pub(crate) fn value(&self) -> u128 {
         self.identity.value
     }

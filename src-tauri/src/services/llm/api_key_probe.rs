@@ -52,12 +52,7 @@ pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
                 route.models_endpoint.into_owned(),
             )
         }
-        EndpointPolicy::ConnectionConfigured
-        | EndpointPolicy::OllamaLocal
-        | EndpointPolicy::RegionAllowlist { .. }
-        | EndpointPolicy::Workspace { .. }
-        | EndpointPolicy::ValidatedHttps
-        | EndpointPolicy::PinnedBackend { .. } => {
+        EndpointPolicy::ConnectionConfigured | EndpointPolicy::OllamaLocal => {
             return Err("provider_configuration_invalid");
         }
     };

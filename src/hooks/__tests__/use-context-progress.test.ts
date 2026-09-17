@@ -43,8 +43,22 @@ describe("useContextProgress", () => {
     expect(result.current.max).toBe(0);
   });
 
-  it("rafraîchit le contexte après une nouvelle consommation", async () => {
+  it("relit le contexte quand le modèle change", async () => {
     vi.mocked(invoke).mockResolvedValueOnce(8192).mockResolvedValueOnce(16384);
+    const { result, rerender } = renderHook(
+      ({ model }) => useContextProgress(model, 0, "ollama"),
+      { initialProps: { model: "local-a" } },
+    );
+    await waitFor(() => expect(result.current.max).toBe(8192));
+
+    rerender({ model: "local-b" });
+
+    await waitFor(() => expect(result.current.max).toBe(16384));
+    expect(invoke).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne relit pas le contexte quand seul le compteur de génération change", async () => {
+    vi.mocked(invoke).mockResolvedValue(8192);
     const { result, rerender } = renderHook(
       ({ used }) => useContextProgress("modele-test", used, "route-test"),
       { initialProps: { used: 0 } },
@@ -53,7 +67,21 @@ describe("useContextProgress", () => {
 
     rerender({ used: 10 });
 
-    await waitFor(() => expect(result.current.max).toBe(16384));
+    expect(result.current.max).toBe(8192);
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it("conserve la dernière valeur valable après une erreur de lecture", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce(8192).mockRejectedValueOnce(new Error("indisponible"));
+    const { result } = renderHook(() =>
+      useContextProgress("local", 0, "ollama"),
+    );
+    await waitFor(() => expect(result.current.max).toBe(8192));
+
+    eventListeners.get("modelfile-updated")?.();
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+    expect(result.current.max).toBe(8192);
   });
 
   it("relit la fenêtre effective après une modification du Modelfile", async () => {

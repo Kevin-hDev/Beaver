@@ -112,15 +112,12 @@
   transform: rotate(90deg);
 }
 
-.bcd-description-panel {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 300ms ease, opacity 300ms ease;
+.cps-region.bcd-description-panel {
+  transition: height 300ms ease, opacity 300ms ease;
   opacity: 0;
 }
 
-.bcd-description-panel.is-open {
-  grid-template-rows: 1fr;
+.cps-region.bcd-description-panel[data-open="true"] {
   opacity: 1;
 }
 
@@ -148,4 +145,3 @@
 
 /* La rangée d'actions (.bcd-actions) vit dans
    branch-conflict-dialog-controls.css, importé après ce fichier. */
-

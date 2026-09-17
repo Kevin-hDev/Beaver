@@ -1340,6 +1340,7 @@
     "providerConnectionFailed": "Verbindung zum Anbieter nicht möglich.",
     "providerTemporarilyUnavailable": "Der Anbieter ist vorübergehend nicht verfügbar. Versuche es gleich noch einmal.",
     "providerRequestRejected": "Der Anbieter hat die Anfrage abgelehnt.",
+    "providerResponseInvalid": "Der Anbieter hat eine ungültige Antwort zurückgegeben.",
     "providerEmptyResponse": "Der Anbieter hat weder eine Antwort noch einen Werkzeugaufruf zurückgegeben. Du kannst es erneut versuchen oder ein anderes Modell wählen.",
     "providerOutputLimit": "Das Modell hat sein Generierungslimit erreicht, bevor die Antwort vollständig war. Kürze deine Anfrage oder wähle eine andere Denkeinstellung.",
     "providerContentFiltered": "Der Inhaltsfilter des Anbieters hat die Antwort unterbrochen. Du kannst deine Anfrage umformulieren.",

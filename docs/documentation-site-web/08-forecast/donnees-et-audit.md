@@ -2,7 +2,7 @@
 
 **Emplacement site** — Forecast › Les données
 **Répond à** — « À quoi doit ressembler mon fichier, qu'est-ce que Beaver vérifie avant de calculer, et que faire quand il refuse ? »
-**Sources** — `src-tauri/src/services/forecast/file_input.rs`, `spreadsheet_mapping.rs`, `limits.rs`, `input_dates.rs`, `input_parse_utils.rs`, `input_series.rs` ; `services/forecast/data_quality/` (`audit.rs`, `audit_helpers.rs`, `profile.rs`, `sequences.rs`, `stats.rs`, `types.rs`) ; `services/forecast/data_profiles.rs`, `data_profiles_load.rs`, `data_profile_migration.rs`, `data_fingerprint.rs` ; `src-tauri/src/commands/forecast.rs` ; `src-tauri/src/services/agent_local/tool_definitions_forecast_audit.rs` ; `src/components/forecast/forecast-data.ts`, `forecast-limits.ts`, `forecast-config.tsx` ; `src/components/forecast/workbench/forecast-workbench-data.tsx`, `forecast-workbench-data-utils.ts` ; `src/components/forecast/sections/forecast-view-data.ts` ; `src/i18n/fr.json`
+**Sources** — `src-tauri/src/services/forecast/file_input.rs`, `spreadsheet_mapping.rs`, `limits.rs`, `input_dates.rs`, `input_parse_utils.rs`, `input_series.rs` ; `services/forecast/data_quality/` (`audit.rs`, `audit_helpers.rs`, `profile.rs`, `sequences.rs`, `stats.rs`, `types.rs`) ; `services/forecast/data_profiles.rs`, `data_profiles_load.rs`, `data_profile_migration.rs`, `data_fingerprint.rs` ; `src-tauri/src/commands/forecast.rs` ; `src-tauri/src/services/agent_local/tools/tool_definitions_forecast_audit.rs` ; `src/components/forecast/forecast-data.ts`, `forecast-limits.ts`, `forecast-config.tsx` ; `src/components/forecast/workbench/forecast-workbench-data.tsx`, `forecast-workbench-data-utils.ts` ; `src/components/forecast/sections/forecast-view-data.ts` ; `src/i18n/fr.json`
 **Vérification** — Vérifié dans le code le 10 septembre 2026, contrôle par contrôle. Aucun écran n'a été observé ; les points d'affichage sont listés en fin de fichier.
 
 ---
@@ -209,7 +209,7 @@ Dans la vue principale du panneau, les alertes de qualité apparaissent aussi co
 
 ### 10. La durée de vie d'un profil
 
-Un profil validé est enregistré et **réutilisable** : il évite de renvoyer les données à chaque prévision. C'est ce que fait l'agent, qui reçoit un identifiant de profil et le repasse à l'outil de calcul (`services/agent_local/tool_definitions_forecast_audit.rs:9`).
+Un profil validé est enregistré et **réutilisable** : il évite de renvoyer les données à chaque prévision. C'est ce que fait l'agent, qui reçoit un identifiant de profil et le repasse à l'outil de calcul (`services/agent_local/tools/tool_definitions_forecast_audit.rs:9`).
 
 | Règle | Valeur | Source |
 |---|---|---|

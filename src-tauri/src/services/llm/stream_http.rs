@@ -1,6 +1,11 @@
 use super::provider_error::ProviderErrorCode;
+#[cfg(test)]
+pub(crate) use super::stream_http_error::classify_error;
+#[cfg(test)]
+pub(super) use super::stream_http_error::read_provider_error;
+pub(crate) use super::stream_http_error::{reject_response, RejectedResponseContext};
 pub(super) use super::stream_http_error::{
-    classify_error, read_provider_error, request_error_for_limit, RequestError,
+    request_error_for_limit, request_error_for_route, RequestError,
 };
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -141,6 +146,14 @@ async fn post_chat_request_with_timeout_and_policy(
     }
     super::reasoning_wire::replay::record_evidence(cfg.session_id, request_id, &prepared.replayed)
         .await;
+    crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+        cfg.session_id,
+        request_id,
+        cfg.provider_id,
+        "chat_completions",
+        &payload,
+    )
+    .await;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(cfg, &payload).await {
         return response;
@@ -187,33 +200,21 @@ async fn post_chat_request_with_timeout_and_policy(
 
     let status = resp.status();
     if !status.is_success() {
-        let has_retry_after = resp.headers().contains_key("retry-after");
-        let diagnostic_context =
-            super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
-                request_id, &payload,
-            )
-            .with_retry_after(resp.headers());
-        let body = read_provider_error(resp).await;
-        let log_code =
-            super::provider_error::safe_log_code(route.error_policy, status.as_u16(), &body);
-        super::provider_diagnostics::record_http_failure(
-            route.chat_provider_id,
-            cfg.model,
-            status.as_u16(),
-            super::provider_error::safe_details(&body),
-            request_bytes,
-            cfg.tools.len(),
-            diagnostic_context,
-        );
-        ::log::warn!("[llm stream] HTTP {status} code={log_code}");
-        return Err(classify_error(
-            status.as_u16(),
-            &body,
-            route.display_name,
-            route.error_policy,
-            route.is_oauth(),
-            has_retry_after,
-        ));
+        return Err(reject_response(
+            resp,
+            RejectedResponseContext {
+                provider_id: route.chat_provider_id,
+                model: cfg.model,
+                error_policy: route.error_policy,
+                oauth: route.is_oauth(),
+                request_bytes,
+                tool_count: cfg.tools.len(),
+                diagnostic: super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+                    request_id, &payload,
+                ),
+            },
+        )
+        .await);
     }
     Ok(resp)
 }

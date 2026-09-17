@@ -53,8 +53,8 @@
 
 **Files:**
 
-- Modify: `src-tauri/src/services/agent_local/subagent_hidden_reports_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/subagent_report_context.rs`
+- Modify: `src-tauri/src/services/agent_local/subagents/subagent_hidden_reports_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/subagents/subagent_report_context.rs`
 
 **Interfaces:**
 
@@ -94,11 +94,11 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter multiple_ready_reports_shar
 - [x] Vérifier que les deux commandes exécutent un test et se terminent avec le code 0. Relire tous les appelants de `append_context`; le diff de production attendu est une ligne. Commit ciblé :
 
 ```bash
-git add src-tauri/src/services/agent_local/subagent_report_context.rs \
-  src-tauri/src/services/agent_local/subagent_hidden_reports_tests.rs
+git add src-tauri/src/services/agent_local/subagents/subagent_report_context.rs \
+  src-tauri/src/services/agent_local/subagents/subagent_hidden_reports_tests.rs
 git commit --only -m "fix(agent): classify subagent reports as user input" -- \
-  src-tauri/src/services/agent_local/subagent_report_context.rs \
-  src-tauri/src/services/agent_local/subagent_hidden_reports_tests.rs
+  src-tauri/src/services/agent_local/subagents/subagent_report_context.rs \
+  src-tauri/src/services/agent_local/subagents/subagent_hidden_reports_tests.rs
 git notes add -m "Cause: Beaver-generated subagent reports were mislabeled as provider assistant output. Validation: report role and batching tests passed."
 ```
 
@@ -113,12 +113,12 @@ git notes add -m "Cause: Beaver-generated subagent reports were mislabeled as pr
 - Modify: `src-tauri/src/services/llm/reasoning_wire/chat_contract_tests.rs`
 - Modify: `src-tauri/src/services/llm/reasoning_wire/anthropic_contract_tests.rs`
 - Modify: `src-tauri/src/services/codex_client/reasoning_continuity_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/ollama_wire_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/execution/ollama_wire_tests.rs`
 - Read for contract verification: `src-tauri/src/services/reasoning_continuity/registry.rs`
 - Read for contract verification: `src-tauri/src/services/llm/reasoning_wire/responses.rs`
 - Read for contract verification: `src-tauri/src/services/llm/reasoning_wire/chat_text.rs`
 - Read for contract verification: `src-tauri/src/services/llm/reasoning_wire/replay_apply_anthropic.rs`
-- Read for contract verification: `src-tauri/src/services/agent_local/ollama_wire.rs`
+- Read for contract verification: `src-tauri/src/services/agent_local/execution/ollama_wire.rs`
 
 **Interfaces:**
 
@@ -443,14 +443,14 @@ git add src-tauri/src/services/llm/reasoning_wire/subagent_report_contract_tests
   src-tauri/src/services/llm/reasoning_wire/chat_contract_tests.rs \
   src-tauri/src/services/llm/reasoning_wire/anthropic_contract_tests.rs \
   src-tauri/src/services/codex_client/reasoning_continuity_tests.rs \
-  src-tauri/src/services/agent_local/ollama_wire_tests.rs
+  src-tauri/src/services/agent_local/execution/ollama_wire_tests.rs
 git commit --only -m "test(agent): cover subagent reports across reasoning providers" -- \
   src-tauri/src/services/llm/reasoning_wire/subagent_report_contract_tests.rs \
   src-tauri/src/services/llm/reasoning_wire/mod.rs \
   src-tauri/src/services/llm/reasoning_wire/chat_contract_tests.rs \
   src-tauri/src/services/llm/reasoning_wire/anthropic_contract_tests.rs \
   src-tauri/src/services/codex_client/reasoning_continuity_tests.rs \
-  src-tauri/src/services/agent_local/ollama_wire_tests.rs
+  src-tauri/src/services/agent_local/execution/ollama_wire_tests.rs
 git notes add -m "Coverage: active registry matrix plus native assistant and subagent report scenarios for Responses, Chat, Anthropic and Ollama."
 ```
 
@@ -460,13 +460,13 @@ git notes add -m "Coverage: active registry matrix plus native assistant and sub
 
 **Files:**
 
-- Modify: `src-tauri/src/services/agent_local/subagent_orchestration_race_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/subagent_terminal_wait_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/context_budget_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/conversation_history_continuity_tests.rs`
-- Read for contract verification: `src-tauri/src/services/agent_local/subagent_orchestration.rs`
-- Read for contract verification: `src-tauri/src/services/agent_local/subagent_report_delivery.rs`
-- Read for contract verification: `src-tauri/src/services/agent_local/context_budget_prune.rs`
+- Modify: `src-tauri/src/services/agent_local/subagents/subagent_orchestration_race_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/subagents/subagent_terminal_wait_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/context/context_budget_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/conversations/conversation_history_continuity_tests.rs`
+- Read for contract verification: `src-tauri/src/services/agent_local/subagents/subagent_orchestration.rs`
+- Read for contract verification: `src-tauri/src/services/agent_local/subagents/subagent_report_delivery.rs`
+- Read for contract verification: `src-tauri/src/services/agent_local/context/context_budget_prune.rs`
 - Read for compression verification: `src-tauri/src/services/compress/checkpoint_subagents.rs`
 
 **Interfaces:**
@@ -539,15 +539,15 @@ node ../scripts/ci/run-rust-test-filter.mjs --filter active_subagents_keep_missi
 - [x] Vérifier dans chaque sortie qu'au moins un test a réellement été exécuté. Commit ciblé :
 
 ```bash
-git add src-tauri/src/services/agent_local/subagent_orchestration_race_tests.rs \
-  src-tauri/src/services/agent_local/subagent_terminal_wait_tests.rs \
-  src-tauri/src/services/agent_local/context_budget_tests.rs \
-  src-tauri/src/services/agent_local/conversation_history_continuity_tests.rs
+git add src-tauri/src/services/agent_local/subagents/subagent_orchestration_race_tests.rs \
+  src-tauri/src/services/agent_local/subagents/subagent_terminal_wait_tests.rs \
+  src-tauri/src/services/agent_local/context/context_budget_tests.rs \
+  src-tauri/src/services/agent_local/conversations/conversation_history_continuity_tests.rs
 git commit --only -m "test(agent): preserve subagent report delivery across context paths" -- \
-  src-tauri/src/services/agent_local/subagent_orchestration_race_tests.rs \
-  src-tauri/src/services/agent_local/subagent_terminal_wait_tests.rs \
-  src-tauri/src/services/agent_local/context_budget_tests.rs \
-  src-tauri/src/services/agent_local/conversation_history_continuity_tests.rs
+  src-tauri/src/services/agent_local/subagents/subagent_orchestration_race_tests.rs \
+  src-tauri/src/services/agent_local/subagents/subagent_terminal_wait_tests.rs \
+  src-tauri/src/services/agent_local/context/context_budget_tests.rs \
+  src-tauri/src/services/agent_local/conversations/conversation_history_continuity_tests.rs
 git notes add -m "Coverage: direct and reloaded report roles, two-child wakeup ordering, acknowledgement failures and context-budget preservation."
 ```
 
@@ -557,8 +557,8 @@ git notes add -m "Coverage: direct and reloaded report roles, two-child wakeup o
 
 **Files:**
 
-- Modify: `src-tauri/src/services/agent_local/stream_diagnostics_failure_tests.rs`
-- Modify: `src-tauri/src/services/agent_local/stream_diagnostics_failure.rs`
+- Modify: `src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure_tests.rs`
+- Modify: `src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure.rs`
 - Read for UI contract verification: `src/lib/agent-error-codes.ts`
 - Read for translation verification: `src/lib/agent-error-codes.test.ts`
 
@@ -570,8 +570,8 @@ git notes add -m "Coverage: direct and reloaded report roles, two-child wakeup o
 - [x] Avant toute modification, exécuter depuis la racine :
 
 ```bash
-git diff -- src-tauri/src/services/agent_local/stream_diagnostics_failure.rs \
-  src-tauri/src/services/agent_local/stream_diagnostics_failure_tests.rs \
+git diff -- src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure.rs \
+  src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure_tests.rs \
   src/lib/agent-error-codes.ts \
   src/lib/agent-error-codes.test.ts
 ```
@@ -643,11 +643,11 @@ cd .. && npx vitest run src/lib/agent-error-codes.test.ts
 - [x] Vérifier que chaque commande exécute au moins un test et se termine avec le code 0. Refaire `git diff --` sur les quatre fichiers de précondition, puis indexer uniquement les deux fichiers Rust si la précondition est toujours satisfaite :
 
 ```bash
-git add src-tauri/src/services/agent_local/stream_diagnostics_failure.rs \
-  src-tauri/src/services/agent_local/stream_diagnostics_failure_tests.rs
+git add src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure.rs \
+  src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure_tests.rs
 git commit --only -m "fix(agent): preserve reasoning continuity diagnostics" -- \
-  src-tauri/src/services/agent_local/stream_diagnostics_failure.rs \
-  src-tauri/src/services/agent_local/stream_diagnostics_failure_tests.rs
+  src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure.rs \
+  src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure_tests.rs
 git notes add -m "Cause: reasoning_continuity_invalid fell through to generic diagnostics. Validation: exact code, exact safe summary and seven existing translations."
 ```
 
@@ -670,7 +670,7 @@ git notes add -m "Cause: reasoning_continuity_invalid fell through to generic di
 
 ```bash
 rg -n 'report_context_is_assistant|SUBAGENT_REPORT_CONTEXT_PREFIX.*assistant|ChatMessage::assistant\(report_batch_content' src-tauri/src
-rg -n 'reasoning_continuity_invalid' src-tauri/src/services/agent_local/stream_diagnostics_failure.rs src/lib/agent-error-codes.ts
+rg -n 'reasoning_continuity_invalid' src-tauri/src/services/agent_local/diagnostics/stream_diagnostics_failure.rs src/lib/agent-error-codes.ts
 ```
 
 Résultat attendu : la première commande ne trouve rien ; la seconde trouve le code dans les deux autorités de diagnostic backend et frontend.

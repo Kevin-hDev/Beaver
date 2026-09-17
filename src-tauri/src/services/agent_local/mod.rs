@@ -1,5 +1,11 @@
-include!("agent_local_modules_core.rs");
-include!("agent_local_modules_prompts.rs");
-include!("agent_local_modules_sessions.rs");
-include!("agent_local_modules_subagent_hardening.rs");
-include!("agent_local_modules_tools.rs");
+// Navigation-only domains preserve the existing Rust paths and behavior.
+// Use real submodules only if repeated cross-domain defects justify stricter boundaries.
+include!("execution/modules.inc.rs");
+include!("conversations/modules.inc.rs");
+include!("context/modules.inc.rs");
+include!("tools/modules.inc.rs");
+include!("permissions/modules.inc.rs");
+include!("subagents/modules.inc.rs");
+include!("prompts/modules.inc.rs");
+include!("diagnostics/modules.inc.rs");
+include!("extensions/modules.inc.rs");

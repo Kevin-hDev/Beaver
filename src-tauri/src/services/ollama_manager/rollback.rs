@@ -1,18 +1,15 @@
-#![allow(dead_code)]
-
 use super::cleanup;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::journal_store::OllamaJournalStore;
 use super::path_identity::CanonicalDirectory;
-use super::recovery_decision::{DirectoryEvidence, JournalPresence, OllamaLayoutSnapshot};
+use super::recovery_decision::{JournalPresence, OllamaLayoutSnapshot};
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum RollbackTransition {
-    PersistRollbackPending,
     MoveRejectedToFailed,
     RestorePrevious,
     PersistRollbackCleanupPending,
@@ -24,10 +21,10 @@ pub(crate) enum RollbackTransition {
 pub(crate) fn choose(
     snapshot: &OllamaLayoutSnapshot,
 ) -> Result<RollbackTransition, OllamaErrorCode> {
-    let active = present(&snapshot.active);
-    let backup = present(&snapshot.backup);
-    let failed = present(&snapshot.failed);
-    let failed_delete = present(&snapshot.failed_delete);
+    let active = super::recovery_helpers::is_present_or_incomplete(&snapshot.active);
+    let backup = super::recovery_helpers::is_present_or_incomplete(&snapshot.backup);
+    let failed = super::recovery_helpers::is_present_or_incomplete(&snapshot.failed);
+    let failed_delete = super::recovery_helpers::is_present_or_incomplete(&snapshot.failed_delete);
     if failed && failed_delete {
         return Err(OllamaErrorCode::OllamaRecoveryDeferred);
     }
@@ -112,13 +109,5 @@ where
             cleanup::remove_trash(fs, &paths.failed_delete, paths, models).await
         }
         RollbackTransition::RemoveJournal => journal.remove().await,
-        RollbackTransition::PersistRollbackPending => Ok(()),
     }
-}
-
-fn present(evidence: &DirectoryEvidence) -> bool {
-    matches!(
-        evidence,
-        DirectoryEvidence::Present(_) | DirectoryEvidence::Incomplete
-    )
 }

@@ -102,7 +102,7 @@ fn fallback_refuses_bytes_without_vision_or_supported_wire() {
         ),
         (
             true,
-            crate::services::llm::route_profile::ImageFormat::Unsupported,
+            crate::services::llm::route_profile::ImageFormat::OllamaNative,
         ),
     ] {
         let mut messages = vec![serde_json::json!({"role":"tool","content":"tool"})];
@@ -132,7 +132,7 @@ fn unsupported_wire_does_not_emit_a_text_only_follow_up_for_replay_notes() {
         Some(&batch),
         crate::services::llm::route_profile::ToolResultMedia::FollowUpUserMessage,
         true,
-        crate::services::llm::route_profile::ImageFormat::Unsupported,
+        crate::services::llm::route_profile::ImageFormat::OllamaNative,
     );
     assert_eq!(messages.len(), 1);
 }

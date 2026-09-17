@@ -18,7 +18,9 @@ function model(
     is_local: false,
     supports_tools: false,
     supports_thinking: true,
-    reasoning_modes: modes,
+    reasoning_contract: modes.length > 0
+      ? { control: { kind: "efforts", efforts: modes } }
+      : undefined,
     context_usage_includes_reasoning: true,
     ...overrides,
   };
@@ -36,7 +38,7 @@ describe("reasoning modes", () => {
       control: { kind: "efforts", efforts: ["minimal", "high"] },
     };
 
-    expect(reasoningModeOptions(model(["low"], { reasoning_contract })).map((entry) => entry.mode))
+    expect(reasoningModeOptions(model([], { reasoning_contract })).map((entry) => entry.mode))
       .toEqual(["minimal", "high"]);
   });
 
@@ -46,7 +48,7 @@ describe("reasoning modes", () => {
       control: { kind: "provider_default" },
     };
 
-    expect(reasoningModeOptions(model(["auto"], { reasoning_contract }))).toEqual([]);
+    expect(reasoningModeOptions(model([], { reasoning_contract }))).toEqual([]);
   });
 
   it("ne présente pas le mode technique auto comme un niveau d'effort", () => {
@@ -64,7 +66,7 @@ describe("reasoning modes", () => {
 
   it("n’invente aucun mode quand la liste est absente ou vide", () => {
     expect(reasoningModeOptions(model([]))).toEqual([]);
-    expect(reasoningModeOptions(model([], { reasoning_modes: undefined }))).toEqual([]);
+    expect(reasoningModeOptions(model([], { reasoning_contract: undefined }))).toEqual([]);
   });
 
   it("masque les modes si le modèle ne prend pas le thinking en charge", () => {

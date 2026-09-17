@@ -10,8 +10,7 @@ type StartStreamMock = (
   model: string,
   provider: string,
   turn: TurnStart,
-  think?: boolean,
-  startState?: Record<string, unknown>,
+  startState: Record<string, unknown>,
   workingDir?: string,
   ...rest: unknown[]
 ) => void | Promise<void>;
@@ -74,7 +73,7 @@ vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
 
 function expectLastWorkingDir(workingDir: string | undefined) {
   const calls = startStream.mock.calls;
-  expect(calls[calls.length - 1]?.[6]).toBe(workingDir);
+  expect(calls[calls.length - 1]?.[5]).toBe(workingDir);
 }
 
 describe("useAgentChat working directory", () => {

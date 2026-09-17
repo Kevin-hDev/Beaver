@@ -113,20 +113,32 @@ describe("useAgentLocalControlledTerminal", () => {
     expect(result.current.activeTabId).toBe("runtime-tab");
   });
 
-  it("referme une navigation restaurée tant que le document durable n'est pas chargé", async () => {
+  it("masque une navigation restaurée jusqu'au chargement durable sans la réécrire", () => {
     const onNavChange = vi.fn();
     const terminalState = terminalFixture({ loaded: false, persistenceStatus: "loading" });
 
-    renderHook(() => useAgentLocalControlledTerminal({
+    const { result } = renderHook(() => useAgentLocalControlledTerminal({
       navState: { ...DEFAULT_AGENT_LOCAL_NAV, terminalOpen: true },
       terminalState,
       terminalCwd: "/project",
       onNavChange,
     }));
 
-    await waitFor(() => {
-      expect(onNavChange).toHaveBeenCalledWith({ terminalOpen: false });
-    });
+    expect(result.current.isOpen).toBe(false);
+    expect(onNavChange).not.toHaveBeenCalled();
+  });
+
+  it("restaure le terminal chargé quand son groupe contient un onglet", () => {
+    const onNavChange = vi.fn();
+    const { result } = renderHook(() => useAgentLocalControlledTerminal({
+      navState: { ...DEFAULT_AGENT_LOCAL_NAV, terminalOpen: true },
+      terminalState: terminalFixture({ tabs: [tab("one")] }),
+      terminalCwd: "/project",
+      onNavChange,
+    }));
+
+    expect(result.current.isOpen).toBe(true);
+    expect(onNavChange).not.toHaveBeenCalled();
   });
 
   it("fermer le dernier onglet ferme aussi la navigation après le rendu", async () => {

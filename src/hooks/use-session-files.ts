@@ -8,15 +8,6 @@ import { toolsToRecords, type StreamSegment, type ToolActivity } from "./agent-c
 import type { AgentMessage } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
 
-export function useSessionFiles(
-  messages: AgentMessage[],
-  completedSegments: StreamSegment[] = [],
-  currentTools: ToolActivity[] = [],
-  baseDir?: string,
-) {
-  return useSessionFileGroups(messages, completedSegments, currentTools, baseDir).all;
-}
-
 export function useSessionFileGroups(
   messages: AgentMessage[],
   completedSegments: StreamSegment[] = [],

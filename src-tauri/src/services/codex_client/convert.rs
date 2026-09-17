@@ -15,6 +15,7 @@ pub fn convert_messages_with_tools(
         .expect("a payload without a continuation target cannot be rejected")
 }
 
+#[cfg(test)]
 pub(crate) fn convert_messages_with_tools_and_continuity(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
@@ -123,22 +124,6 @@ pub(crate) fn convert_messages_with_tools_and_continuity_evidence(
 /// Autorité unique de la forme Responses pour toute sortie d'appel d'outil.
 pub(crate) fn function_call_output(call_id: &str, output: &str) -> serde_json::Value {
     serde_json::json!({"type":"function_call_output", "call_id":call_id, "output":output})
-}
-
-/// Les transports Responses (Codex, OpenAI API et xAI OAuth) réutiliseront
-/// cette conversion unique lorsqu'une politique sera validée réel.
-#[allow(
-    dead_code,
-    reason = "Task 19 connects this only after a live-validated Responses policy"
-)]
-pub(crate) fn convert_continuity(
-    messages: &[ChatMessage],
-    approval: &crate::services::llm::reasoning_wire::replay::ReplayApproval<'_>,
-    input: &mut Vec<serde_json::Value>,
-) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
-    crate::services::llm::reasoning_wire::replay::apply_responses_continuity(
-        messages, approval, input,
-    )
 }
 
 fn user_message_to_responses(msg: &ChatMessage) -> serde_json::Value {

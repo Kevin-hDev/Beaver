@@ -1,8 +1,6 @@
-use reqwest::{Response, StatusCode};
-use zeroize::Zeroizing;
+use reqwest::Response;
 
 use crate::services::llm::provider_error::ProviderErrorCode;
-use crate::services::secure_http::{read_bounded, PROVIDER_ERROR_LIMIT};
 
 pub async fn require_success(
     response: Response,
@@ -17,25 +15,24 @@ pub async fn require_success(
         return Ok(response);
     }
 
-    let diagnostic_context =
-        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_serialized(
-            request_id,
-            serialized_request,
-        )
-        .with_retry_after(response.headers());
-    let body = read_error_body(response).await;
-    crate::services::llm::provider_diagnostics::record_http_failure(
-        "codex-oauth",
-        model,
-        status.as_u16(),
-        crate::services::llm::provider_error::safe_details(&body),
-        request_bytes,
-        tool_count,
-        diagnostic_context,
-    );
-    let safe_code = safe_status_code(status);
-    ::log::warn!("[codex stream] HTTP {status} code={safe_code}");
-    Err(status_error(status, &body))
+    Err(crate::services::llm::stream_http::reject_response(
+        response,
+        crate::services::llm::stream_http::RejectedResponseContext {
+            provider_id: "codex-oauth",
+            model,
+            error_policy: crate::services::llm::route_profile::ErrorPolicy::Codex,
+            oauth: true,
+            request_bytes,
+            tool_count,
+            diagnostic:
+                crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_serialized(
+                    request_id,
+                    serialized_request,
+                ),
+        },
+    )
+    .await
+    .to_string())
 }
 
 pub fn stream_failure(event: &serde_json::Value) -> String {
@@ -56,28 +53,6 @@ pub fn stream_failure(event: &serde_json::Value) -> String {
     "provider_request_rejected".to_string()
 }
 
-async fn read_error_body(response: Response) -> Zeroizing<String> {
-    match read_bounded(response, PROVIDER_ERROR_LIMIT).await {
-        Ok(bytes) => Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()),
-        Err(_) => Zeroizing::new(String::new()),
-    }
-}
-
-fn status_error(status: StatusCode, body: &str) -> String {
-    if crate::services::llm::provider_error::is_service_tier_rejection(body) {
-        return service_tier_unavailable();
-    }
-    match status.as_u16() {
-        401 => "oauth_reauthentication_required".to_string(),
-        403 => "provider_access_unavailable".to_string(),
-        429 => "rate_limit".to_string(),
-        413 => "provider_payload_too_large".to_string(),
-        500..=599 => temporarily_unavailable(),
-        _ if body_has_temporary_code(body) => temporarily_unavailable(),
-        _ => "provider_request_rejected".to_string(),
-    }
-}
-
 fn service_tier_unavailable() -> String {
     ProviderErrorCode::ServiceTierUnavailable
         .as_str()
@@ -90,16 +65,6 @@ fn temporarily_unavailable() -> String {
         .to_string()
 }
 
-fn safe_status_code(status: StatusCode) -> &'static str {
-    match status.as_u16() {
-        401 => "authentication_required",
-        403 => "provider_access_unavailable",
-        429 => "rate_limit",
-        500..=599 => "provider_temporarily_unavailable",
-        _ => "provider_request_rejected",
-    }
-}
-
 fn is_temporary_provider_code(value: &str) -> bool {
     matches!(
         value,
@@ -109,13 +74,6 @@ fn is_temporary_provider_code(value: &str) -> bool {
             | "overloaded"
             | "circuit_open"
     )
-}
-
-fn body_has_temporary_code(body: &str) -> bool {
-    crate::services::llm::provider_error::safe_details(body)
-        .error_code
-        .as_deref()
-        .is_some_and(is_temporary_provider_code)
 }
 
 #[cfg(test)]

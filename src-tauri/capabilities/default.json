@@ -54,6 +54,7 @@
       ]
     },
     "dialog:default",
+    "log:allow-log",
     "shell:default",
     {
       "identifier": "shell:allow-execute",

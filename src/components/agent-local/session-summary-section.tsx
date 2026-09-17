@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CaretDown } from "@/components/ui/icons";
+import { Collapsible } from "@/components/ui/collapsible";
 
 interface SessionSummarySectionProps {
   icon: ReactNode;
@@ -30,9 +31,9 @@ export function SessionSummarySection({
           size="var(--icon-sm)"
         />
       </button>
-      <div className={`ssb-accordion ${open ? "ssb-accordion-open" : ""}`}>
-        <div className="ssb-accordion-inner">{children}</div>
-      </div>
+      <Collapsible open={open} className="ssb-accordion" innerClassName="ssb-accordion-inner">
+        {children}
+      </Collapsible>
     </section>
   );
 }

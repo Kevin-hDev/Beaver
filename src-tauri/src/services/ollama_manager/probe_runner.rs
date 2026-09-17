@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::time::Instant;
 use tokio_util::sync::CancellationToken;
 
@@ -19,7 +17,7 @@ pub(crate) async fn probe_endpoint(
         return (result, false);
     }
     let attempt = super::spawn_profile::OllamaSpawnAttempt::new(profile, endpoint.clone());
-    let mut process = match super::probe_support::launch_gated(&attempt) {
+    let mut process = match super::process::platform_create(&attempt) {
         Ok(process) => process,
         Err(_) => {
             super::probe_ownership::cleanup_models(profile);

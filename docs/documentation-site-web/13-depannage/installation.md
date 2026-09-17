@@ -216,7 +216,7 @@ Beaver y pose des droits stricts : **dossiers en `0700`, fichiers en `0600`** su
 3. **Cas particulier du dossier personnel sur un disque réseau ou un volume chiffré** : les droits `0700`/`0600` ne peuvent pas toujours y être posés. Déplacer le dossier personnel n'est pas une option raisonnable pour un utilisateur ; c'est un cas à signaler au projet.
 4. **Si le dossier de données a été copié depuis une autre machine ou restauré depuis une sauvegarde**, ses propriétaires peuvent être faux. Sur macOS et Linux : `sudo chown -R "$USER" ~/.local/share/cl-go-dash`.
 
-⚠️ **Beaver ne vérifie pas l'espace disque disponible avant de télécharger Ollama.** Le seul contrôle d'espace libre du dépôt concerne l'installation des extensions (`src-tauri/src/services/extensions/install_jobs/disk_control.rs:4`). Un disque plein pendant le téléchargement se manifeste donc par un message générique d'échec, pas par un message d'espace insuffisant. Le dire dans un encadré.
+⚠️ **Beaver ne vérifie pas l'espace disque disponible avant de télécharger Ollama.** Le seul contrôle d'espace libre du dépôt concerne l'installation des extensions (`src-tauri/src/services/extensions/installation/install_jobs/disk_control.rs:4`). Un disque plein pendant le téléchargement se manifeste donc par un message générique d'échec, pas par un message d'espace insuffisant. Le dire dans un encadré.
 
 ### 12. Le GPU n'est pas détecté
 

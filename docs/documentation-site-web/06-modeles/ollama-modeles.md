@@ -2,7 +2,7 @@
 
 **Emplacement site** — Modèles › Modèles locaux
 **Répond à** — « Comment j'installe un modèle sur ma machine, et comment je choisis ? »
-**Sources** — `commands/ollama_setup.rs`, `commands/ollama_updates.rs`, `services/agent_local/ollama_registry_details.rs`, `services/agent_local/ollama_client.rs`, `src/components/ollama/` (`model-search.tsx`, `model-variants-list.tsx`, `model-profile.tsx`, `model-profile-specs.ts`, `model-install-button.tsx`), `services/ollama_manager/` (cycle de vie du moteur), `services/ollama_manager/spawn_profile_paths.rs` (dossier des modèles)
+**Sources** — `commands/ollama_setup.rs`, `commands/ollama_updates.rs`, `services/agent_local/execution/ollama_registry_details.rs`, `services/agent_local/execution/ollama_client.rs`, `src/components/ollama/` (`model-search.tsx`, `model-variants-list.tsx`, `model-profile.tsx`, `model-profile-specs.ts`, `model-install-button.tsx`), `services/ollama_manager/` (cycle de vie du moteur), `services/ollama_manager/spawn_profile_paths.rs` (dossier des modèles)
 **Vérification** — Vérifié dans le code pour les mécanismes (sources relues le 9 septembre 2026) ; parcours d'interface à confirmer
 
 ---

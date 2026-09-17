@@ -43,7 +43,9 @@
 - **Unified thread panels** — subagent activity, task lists, changed-file summaries, and end-of-response summaries now share the same accessible panel structure, keyboard behavior, left-aligned parent-chat action, reduced-motion handling, and animated status icons.
 - **Complete file-change accounting** — line totals follow Git semantics, use the complete diff instead of its bounded preview, combine repeated edits per file, omit unfinished or zero-value noise, and stay consistent across tool rows, conversation summaries, Git lists, and final response bubbles.
 - **Reliable file history** — Last run and All files restore committed changes from saved sessions, expose each recorded change as a smoothly collapsible diff, and retain the complete per-file total.
-- **More usable file previews** — the full path can be copied, long breadcrumbs scroll without moving the copy control or diff total, short files keep a continuous numbered gutter, file-tab close controls stay centered, and preview mode labels remain on one line.
+- **More usable file previews** — the full path can be copied, long breadcrumbs scroll without moving the copy control or diff total, short files keep a continuous numbered gutter, file-tab close controls stay centered, preview mode labels remain on one line, and the active file and full-screen state return after switching conversations.
+- **Session-scoped panels and live state** — Preview, file-tree, terminal, task, subagent, and summary views now follow one bounded state per conversation, restore without leaking into another conversation, and immediately show the latest known state when reopening an active stream.
+- **More durable browser sessions** — transient loading and navigation state stays in bounded memory instead of rewriting encrypted session storage on every event, while explicit closure, eviction, and renderer failure share one idempotent native-view release path.
 
 ### Documentation
 
@@ -51,6 +53,7 @@
 
 ### Security hardening
 
+- **Safer approvals and xAI sign-in** — manual approvals keep the exact command readable while masking recognized secret values only in the displayed copy, and incomplete xAI callback connections are time-limited and bounded so a valid sign-in cannot be blocked indefinitely.
 - **Race-resistant file validation** — release metadata, migration documents, extension runtime manifests, and other bounded files are now opened once and verified before and after reading, preventing symbolic links or path replacement from changing the validated file during an operation.
 - **Safer operational logs** — Agent, Ollama, plan-mode, and subagent logs retain fixed diagnostic categories and bounded counters without recording session IDs, request IDs, model or tool names, user-derived content, or free-form failure details.
 - **Strict MCP icon sanitization** — connector SVGs are parsed as bounded XML and reduced to inert drawing elements with local references; scripts, event handlers, external URLs, unsupported elements, and editor metadata are removed before rendering.
@@ -60,10 +63,14 @@
 
 ### Quality and correctness
 
+- **Faithful user-provided context** — content deliberately supplied or requested by the user reaches the selected cloud or Ollama model without silent rewriting, while compression excludes provider-owned reasoning state and Beaver's private session metadata from summary requests.
+- **Consistent Agent execution** — cloud and Ollama routes now share request preparation, automatic-compression entry, stream consumption, HTTP rejection handling, and reasoning contracts where their behavior is identical, while provider-specific recovery and transport rules remain separate.
+- **Single-source tool and desktop contracts** — tool catalogs, schemas, path arguments, terminal limits, browser types, and extension boundary artifacts are derived from their authoritative definitions, preventing duplicated copies from drifting apart.
+- **Lower Ollama overhead and clearer failures** — context capacity is refreshed only when its model or route can change, stream failures are emitted once from the common boundary, and parser retries cannot replay an eagerly detected tool call.
 - **Uninterrupted long-running Agent work** — cloud, Ollama, subagent, and heartbeat sessions are no longer stopped solely for crossing an arbitrary 200-turn ceiling. Natural completion, cancellation, provider failures, the repetitive-action circuit breaker, and the bounded 2,000-message conversation capacity remain enforced.
 - **Safer Agent failure handling** — legitimate passive terminal polling no longer trips the repetitive-action circuit breaker, historical stop diagnostics are restored accurately, full conversations return a clear translated error, and speculative read-only tool work is cancelled when an Ollama request fails.
 - **Durable crash recovery** — in-progress reasoning, messages, tool activity, and results are recorded in bounded recovery journals and restored idempotently after an application or process crash; uncaptured subagent worktrees are preserved, and macOS Agent shells stop when their Beaver parent exits.
-- **Reliable cancellation and retry** — cancelled streams can resume from early user-only tails or completed tool turns, edited-message retries no longer create phantom assistant messages, and superseded runs cannot append late results to a newer turn.
+- **Reliable cancellation and retry** — cancellation now wins consistently across HTTP, WebSocket, Codex, and Ollama stream readers; cancelled streams can resume from early user-only tails or completed tool turns, edited-message retries no longer create phantom assistant messages, and superseded runs cannot append late results to a newer turn.
 - **Faithful context-window decisions** — the context panel, capacity checks, and automatic or manual compression now consume the same prepared-request total and model limit, while provider measurements remain attached to the request that produced them and invalid historical records degrade safely.
 - **Bounded large file results** — successful `read_file` output is capped at 200,000 Unicode characters before entering model context, while the complete result remains available for bounded follow-up reads.
 - **Reliable subagent handoffs** — returned subagent reports are now classified as new user context, preserving provider reasoning continuity across Codex, OpenAI-compatible, Anthropic, and Ollama routes without weakening native response validation or context compression; continuity failures also retain their precise diagnostic instead of blaming the last successful tool.
@@ -73,6 +80,7 @@
 - **Honest multimodal context accounting** — inline image transport data no longer masquerades as text tokens, preventing false automatic compression while keeping image estimates aligned between capacity decisions and the context panel.
 - **Stable message layout tests** — `jsdom` 30 typography fixtures now declare their expected font metrics instead of depending on the simulator's browser defaults.
 - **Consistent compatibility checks** — brand, persistence, installer, release, and generated-document contracts recognize only their exact approved legacy references and continue to reject unclassified historical names.
+- **Leaner maintenance paths** — obsolete Ollama recovery code, unused internal commands, empty relay layers, duplicated session-version machinery, and other proven dead paths were removed; Agent and extension sources are grouped by domain without changing their public behavior.
 
 ### Dependency updates
 

@@ -14,10 +14,7 @@ function dependencies() {
       setOpen: vi.fn(),
       setFullscreen: vi.fn(),
     } as unknown as ReturnType<typeof useFilePreview>,
-    fileTree: {
-      setOpen: vi.fn(),
-      closeTree: vi.fn(),
-    } as unknown as ReturnType<typeof useFileTree>,
+    fileTree: {} as ReturnType<typeof useFileTree>,
     forecast: {
       setPanelMode: vi.fn(),
       setSection: vi.fn(),
@@ -43,9 +40,7 @@ describe("useAgentLocalControlledPanels", () => {
 
     expect(deps.filePreview.setFullscreen).toHaveBeenCalledWith(false);
     expect(deps.forecast.setPanelMode).toHaveBeenCalledWith("forecast");
-    expect(onNavChange).toHaveBeenCalledWith({
-      previewFullscreen: false,
-    });
+    expect(onNavChange).not.toHaveBeenCalled();
   });
 
   it.each(["preview", "browser"] as const)(
@@ -63,10 +58,9 @@ describe("useAgentLocalControlledPanels", () => {
       act(() => result.current.forecastNav.loadAnalysis("analysis-id"));
 
       expect(deps.forecast.loadAnalysis).toHaveBeenCalledWith("analysis-id");
-      expect(onNavChange).toHaveBeenCalledWith({
-        previewOpen: true,
-        previewFullscreen: false,
-      });
+      expect(deps.filePreview.setOpen).toHaveBeenCalledWith(true);
+      expect(deps.filePreview.setFullscreen).toHaveBeenCalledWith(false);
+      expect(onNavChange).not.toHaveBeenCalled();
     },
   );
 

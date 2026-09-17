@@ -26,8 +26,6 @@ vi.mock("../agent-stream-manager", () => ({
     subscribe: vi.fn(),
     getSnapshot: vi.fn(),
     isStreaming: vi.fn(),
-    queueUserMessage: vi.fn(),
-    removeQueuedUserMessage: vi.fn(),
     discardPendingAdmission: vi.fn(),
     ownsRun: vi.fn().mockReturnValue(true),
     matchesRun: vi.fn().mockReturnValue(true),
@@ -70,7 +68,6 @@ describe("useAgentStream compression", () => {
         "model",
         "provider",
         { type: "new", input: { content: command.content, files: [], skills: [] } },
-        false,
         { displayMessages: [command], baseTokenCount: 123 },
       );
     });
@@ -96,7 +93,6 @@ describe("useAgentStream compression", () => {
         "model",
         "provider",
         { type: "new", input: { content: message.content, files: [], skills: [] } },
-        false,
         { displayMessages: [message], baseTokenCount: 123 },
       );
     });

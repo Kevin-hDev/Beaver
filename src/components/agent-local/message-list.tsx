@@ -19,7 +19,6 @@ import "./messages.css";
 
 interface MessageListProps {
   messages: AgentMessage[];
-  queuedUserMessages?: AgentMessage[];
   completedSegments: StreamSegment[];
   currentContent: string;
   currentContentPhase?: TokenPhase;
@@ -54,7 +53,7 @@ interface MessageListProps {
 }
 
 export function MessageList({
-  messages, queuedUserMessages = [], completedSegments, currentContent,
+  messages, completedSegments, currentContent,
   currentContentPhase, currentThinking,
   currentTools, activeStreamItem = null, isStreaming, isWorking, tps, tpsEstimated = false, totalElapsedMs, segmentStartedAt,
   isCompressing, liveTokenCount, onReload, onEdit, onCloneMessage, onFileClick, onFilePreview, onFileReview,
@@ -148,16 +147,6 @@ export function MessageList({
           projectPath={projectPath}
         />
       )}
-      {queuedUserMessages.map((message) => (
-        <UserMessage
-          key={message.id}
-          content={message.content}
-          files={message.files}
-          skillNames={message.skill_names}
-          isStreaming
-          onFileClick={onFileClick}
-        />
-      ))}
       {planPreview && <PlanPreviewBubble plan={planPreview} />}
       {isWorking && !isCompressing && streamStartedAt != null && (
         <LoadingIndicator startedAt={streamStartedAt} liveTokenCount={liveTokenCount} />

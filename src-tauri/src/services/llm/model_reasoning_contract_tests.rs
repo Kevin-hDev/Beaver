@@ -40,22 +40,27 @@ fn effort_control_serializes_as_a_bounded_tagged_choice() {
 }
 
 #[test]
-fn unknown_legacy_controls_do_not_invent_a_toggle_or_an_obligation() {
-    let contract = ModelReasoningContract::from_legacy_modes(true, &[], None).unwrap();
+fn unknown_controls_do_not_invent_a_toggle_or_an_obligation() {
+    let contract = ModelReasoningContract::from_modes(true, &[], None).unwrap();
     assert_eq!(contract.control, ReasoningControl::Unknown);
     assert_eq!(contract.mandatory, None);
     assert_eq!(
-        contract.legacy_projection(),
+        contract.selection(),
         (vec!["auto".into()], Some("auto".into()))
     );
 }
 
 #[test]
-fn legacy_projection_preserves_exact_controls_and_defaults() {
-    for names in [vec!["off"], vec!["auto", "off"], vec!["low", "high"]] {
+fn selection_preserves_exact_controls_and_defaults() {
+    for names in [
+        vec!["off"],
+        vec!["auto"],
+        vec!["auto", "off"],
+        vec!["low", "high"],
+    ] {
         let modes: Vec<String> = names.into_iter().map(str::to_owned).collect();
-        let contract = ModelReasoningContract::from_legacy_modes(true, &modes, None).unwrap();
-        assert_eq!(contract.legacy_projection(), (modes, None));
+        let contract = ModelReasoningContract::from_modes(true, &modes, None).unwrap();
+        assert_eq!(contract.selection(), (modes, None));
     }
 }
 

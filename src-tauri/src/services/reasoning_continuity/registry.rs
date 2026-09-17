@@ -222,8 +222,8 @@ fn model_advertises_mode(
         .is_some_and(|capabilities| {
             capabilities.supports_thinking
                 && capabilities
-                    .reasoning_modes
-                    .iter()
-                    .any(|mode| ReasoningModeId::from_name(Some(mode)) == Some(reasoning_mode))
+                    .reasoning_contract
+                    .as_ref()
+                    .is_some_and(|contract| contract.supports_mode(reasoning_mode.as_name()))
         })
 }

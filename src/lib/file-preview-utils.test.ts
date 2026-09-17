@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  collectMessageFileOperations,
   collectFileOperations,
   countLines,
   fileNameFromPath,
@@ -213,12 +212,12 @@ describe("collectFileOperations", () => {
   });
 
   it("donne un identifiant différent au même fichier dans deux requêtes", () => {
-    const first = collectMessageFileOperations(message("first", [
+    const first = collectFileOperations([message("first", [
       tool({ summary: "/repo/a.ts", content: "first" }),
-    ]));
-    const second = collectMessageFileOperations(message("second", [
+    ])]);
+    const second = collectFileOperations([message("second", [
       tool({ summary: "/repo/a.ts", content: "second" }),
-    ]));
+    ])]);
 
     expect(first[0].id).not.toBe(second[0].id);
   });
@@ -263,28 +262,6 @@ describe("collectFileOperations", () => {
       additions: 10,
       deletions: 8,
     }));
-  });
-});
-
-describe("collectMessageFileOperations", () => {
-  it("retourne uniquement les fichiers du message donné", () => {
-    const oldMessage = message("old", [tool({ summary: "/repo/old.ts", content: "old" })]);
-    const currentMessage = message("current", [tool({ summary: "/repo/current.ts", content: "new" })]);
-
-    expect(collectMessageFileOperations(currentMessage).map((operation) => operation.path)).toEqual([
-      "/repo/current.ts",
-    ]);
-    expect(collectMessageFileOperations(oldMessage).map((operation) => operation.path)).toEqual([
-      "/repo/old.ts",
-    ]);
-  });
-
-  it("retourne une liste vide si ce message ne modifie rien", () => {
-    const operations = collectMessageFileOperations(message("read", [
-      tool({ name: "read_file", summary: "/repo/current.ts", result: "ok" }),
-    ]));
-
-    expect(operations).toEqual([]);
   });
 });
 

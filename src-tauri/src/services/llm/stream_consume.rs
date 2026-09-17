@@ -1,21 +1,100 @@
 #![expect(clippy::too_many_arguments, reason = "explicit stream context")]
 use super::{
-    stream_chunk::{self, ParsedChunk},
+    stream_chat_accumulator::{ChatStreamAccumulator, OutputMode},
     stream_sse::is_done_marker,
-    stream_tools::ToolCallAccumulator,
 };
-use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome, StreamResult};
-use crate::services::stream_utils::ThinkTagFilter;
+use crate::services::agent_local::stream_buffer::{DiscardStreamEvents, StreamEventSink};
+use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
+use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
 pub(super) async fn consume_stream(
-    on_event: &AgentEventEmitter,
-    mut resp: reqwest::Response,
+    on_event: &impl StreamEventSink,
+    resp: reqwest::Response,
     cancel: CancellationToken,
     buffer_content: bool,
+    realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
+    tools: &[serde_json::Value],
+    usage_context: crate::services::provider_usage::UsageContext<'_>,
+    fragment_mode: super::route_profile::FragmentMode,
+    error_policy: super::route_profile::ErrorPolicy,
+    reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<StreamOutcome, String> {
+    consume(
+        on_event,
+        resp,
+        cancel,
+        realtime_budget,
+        tools,
+        usage_context,
+        fragment_mode,
+        error_policy,
+        reasoning_capture,
+        measurement,
+        super::timeouts::idle_timeout_for(usage_context.canonical_provider_id),
+        OutputMode::Interactive { buffer_content },
+    )
+    .await
+}
+
+#[cfg(test)]
+pub(super) async fn consume_silent(
+    resp: reqwest::Response,
+    cancel: CancellationToken,
+    idle_timeout: Duration,
+    usage_context: crate::services::provider_usage::UsageContext<'_>,
+    fragment_mode: super::route_profile::FragmentMode,
+    error_policy: super::route_profile::ErrorPolicy,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<StreamResult, String> {
+    consume_silent_bounded(
+        resp,
+        cancel,
+        idle_timeout,
+        usage_context,
+        fragment_mode,
+        error_policy,
+        usize::MAX,
+        measurement,
+    )
+    .await
+}
+
+pub(super) async fn consume_silent_bounded(
+    resp: reqwest::Response,
+    cancel: CancellationToken,
+    idle_timeout: Duration,
+    usage_context: crate::services::provider_usage::UsageContext<'_>,
+    fragment_mode: super::route_profile::FragmentMode,
+    error_policy: super::route_profile::ErrorPolicy,
+    max_text_bytes: usize,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<StreamResult, String> {
+    consume(
+        &DiscardStreamEvents,
+        resp,
+        cancel,
+        None,
+        &[],
+        usage_context,
+        fragment_mode,
+        error_policy,
+        None,
+        measurement,
+        idle_timeout,
+        OutputMode::Silent { max_text_bytes },
+    )
+    .await
+    .map(StreamOutcome::into_result)
+}
+
+async fn consume(
+    on_event: &impl StreamEventSink,
+    mut resp: reqwest::Response,
+    cancel: CancellationToken,
     mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
     tools: &[serde_json::Value],
     usage_context: crate::services::provider_usage::UsageContext<'_>,
@@ -23,23 +102,20 @@ pub(super) async fn consume_stream(
     error_policy: super::route_profile::ErrorPolicy,
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    idle_timeout: Duration,
+    output_mode: OutputMode,
 ) -> Result<StreamOutcome, String> {
     let mut routing = super::provider_diagnostics::openrouter::take(&mut resp);
     let stream = super::stream_sse::bounded_response(resp).eventsource();
     futures_util::pin_mut!(stream);
-    let mut result = StreamResult::default();
-    let mut token_count = 0;
-    let mut acc = ToolCallAccumulator::new();
-    let mut think_filter = ThinkTagFilter::new();
+    let mut accumulator = ChatStreamAccumulator::new(fragment_mode, output_mode);
     let mut interrupted = false;
-    let mut fragments = super::stream_fragments::StreamFragmentState::new(fragment_mode);
 
     loop {
         tokio::select! {
+            biased;
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
-            _ = tokio::time::sleep(super::timeouts::idle_timeout_for(
-                usage_context.canonical_provider_id,
-            )) => {
+            _ = tokio::time::sleep(idle_timeout) => {
                 return Err("provider_temporarily_unavailable".to_string());
             }
             event = stream.next() => {
@@ -65,11 +141,7 @@ pub(super) async fn consume_stream(
                     capture.observe_json(&value);
                     capture.observe_done(&value);
                 }
-                let useful = process_chunk(
-                    &value, on_event, &mut token_count, &mut result,
-                    &mut acc, &mut think_filter, &mut fragments, buffer_content, usage_context,
-                    error_policy,
-                )?;
+                let useful = accumulator.apply(on_event, &value, usage_context, error_policy)?;
                 if useful {
                     if let Some(measurement) = measurement.as_mut() {
                         measurement.mark_first_useful();
@@ -77,8 +149,8 @@ pub(super) async fn consume_stream(
                 }
                 if super::stream_consume_budget::should_interrupt(
                     &mut realtime_budget,
-                    token_count,
-                    acc.has_pending(),
+                    accumulator.output_tokens(),
+                    accumulator.has_pending_tools(),
                 ) {
                     interrupted = true;
                     break;
@@ -87,52 +159,12 @@ pub(super) async fn consume_stream(
         }
     }
 
-    for chunk in think_filter.flush() {
-        super::stream_consume_record::record_filtered(
-            chunk,
-            on_event,
-            &mut result,
-            &mut token_count,
-            buffer_content,
-        );
-    }
-
-    if super::stream_completion::terminal_error(&result).is_some() {
-        acc = ToolCallAccumulator::new();
-    }
-    let (tool_calls, ids, extra_content) = acc.finalize();
-    for (index, (wire_name, arguments)) in tool_calls.iter().enumerate() {
-        let name = super::tool_schema::restore_tool_name_for_provider(
-            usage_context.canonical_provider_id,
-            wire_name,
-            tools,
-        );
-        crate::services::agent_local::stream_buffer::record_tool_call_generation(
-            on_event,
-            &mut result,
-            &name,
-            arguments,
-            &mut token_count,
-        );
-        let _ = on_event.send(StreamEvent::ToolCall {
-            name: name.clone(),
-            arguments: arguments.clone(),
-            tool_call_index: index,
-            tool_call_id: ids.get(index).cloned(),
-            domain: crate::services::agent_local::memory_tool::event_domain(&name, arguments),
-            extra_content: extra_content.get(index).cloned().flatten(),
-        });
-        result.tool_calls.push((name, arguments.clone()));
-        if let Some(id) = ids.get(index) {
-            result.tool_call_ids.push(id.clone());
-        }
-        result
-            .tool_call_extra_content
-            .push(extra_content.get(index).cloned().flatten());
-    }
-    if !interrupted {
-        super::stream_completion::finish(&mut result);
-    }
+    let mut result = accumulator.finish(
+        on_event,
+        usage_context.canonical_provider_id,
+        tools,
+        interrupted,
+    )?;
     result.continuation = reasoning_capture.and_then(|mut capture| {
         if interrupted || result.completion_error.is_some() {
             capture.finish_partial()
@@ -141,7 +173,6 @@ pub(super) async fn consume_stream(
             capture.finish_complete()
         }
     });
-
     Ok(if interrupted {
         StreamOutcome::InterruptedForCompression(result)
     } else {
@@ -149,79 +180,10 @@ pub(super) async fn consume_stream(
     })
 }
 
-fn process_chunk(
-    value: &serde_json::Value,
-    on_event: &AgentEventEmitter,
-    token_count: &mut u32,
-    result: &mut StreamResult,
-    acc: &mut ToolCallAccumulator,
-    think_filter: &mut ThinkTagFilter,
-    fragments: &mut super::stream_fragments::StreamFragmentState,
-    buffer_content: bool,
-    usage_context: crate::services::provider_usage::UsageContext<'_>,
-    error_policy: super::route_profile::ErrorPolicy,
-) -> Result<bool, String> {
-    let mut useful = false;
-    for chunk in stream_chunk::parse_value_with_context(value, usage_context) {
-        match chunk {
-            ParsedChunk::Thinking(thinking) => {
-                let thinking = fragments.thinking(&thinking)?;
-                if thinking.is_empty() {
-                    continue;
-                }
-                useful = true;
-                crate::services::agent_local::stream_buffer::record_thinking(
-                    on_event,
-                    result,
-                    thinking,
-                    token_count,
-                );
-            }
-            ParsedChunk::Content(content) => {
-                let content = fragments.content(&content)?;
-                if content.is_empty() {
-                    continue;
-                }
-                useful = true;
-                crate::services::agent_local::stream_buffer::record_generation_started(
-                    on_event, result,
-                );
-                for filtered in think_filter.feed(&content) {
-                    super::stream_consume_record::record_filtered(
-                        filtered,
-                        on_event,
-                        result,
-                        token_count,
-                        buffer_content,
-                    );
-                }
-            }
-            ParsedChunk::ToolCalls(tool_calls) => {
-                if !tool_calls.is_empty() {
-                    useful = true;
-                    crate::services::agent_local::stream_buffer::record_generation_started(
-                        on_event, result,
-                    );
-                }
-                acc.ingest(&tool_calls);
-            }
-            ParsedChunk::Usage(usage) => {
-                result.eval_count = usage.output_tokens.and_then(|value| value.try_into().ok());
-                result.prompt_tokens = usage.context_input_tokens(usage_context.api_format);
-                result.usage = Some(usage);
-            }
-            ParsedChunk::GenerationDuration(duration_ns) => {
-                result.generation.record_native_duration(duration_ns);
-            }
-            ParsedChunk::FinishReason(reason) => result.done_reason = Some(reason.into()),
-            ParsedChunk::ProviderError(status) => {
-                return Err(stream_chunk::provider_error_code(error_policy, status).to_string());
-            }
-        }
-    }
-    Ok(useful)
-}
-
 #[cfg(test)]
 #[path = "stream_consume_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "stream_silent_consume_tests.rs"]
+mod silent_tests;

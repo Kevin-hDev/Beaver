@@ -19,8 +19,24 @@ pub struct XaiCatalogModel {
     pub backend: XaiBackend,
     pub context_window: u32,
     pub max_output_tokens: Option<u32>,
-    pub reasoning_modes: Vec<String>,
-    pub default_reasoning_mode: Option<String>,
+    pub reasoning_contract:
+        Option<crate::services::llm::model_reasoning_contract::ModelReasoningContract>,
+}
+
+#[cfg(test)]
+impl XaiCatalogModel {
+    pub fn reasoning_modes(&self) -> Vec<String> {
+        self.reasoning_contract
+            .as_ref()
+            .map(|contract| contract.selection().0)
+            .unwrap_or_default()
+    }
+
+    pub fn default_reasoning_mode(&self) -> Option<String> {
+        self.reasoning_contract
+            .as_ref()
+            .and_then(|contract| contract.selection().1)
+    }
 }
 
 pub fn parse_catalog(body: &Value) -> Result<Vec<XaiCatalogModel>, &'static str> {
@@ -137,14 +153,19 @@ fn parse_model(object: &Map<String, Value>, id: &str) -> Result<XaiCatalogModel,
     {
         return Err("reasoning_default");
     }
+    let reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_modes(
+            !reasoning_modes.is_empty(),
+            &reasoning_modes,
+            default_reasoning_mode.as_deref(),
+        );
     Ok(XaiCatalogModel {
         id: id.to_string(),
         display_name: display_name.to_string(),
         backend,
         context_window,
         max_output_tokens,
-        reasoning_modes,
-        default_reasoning_mode,
+        reasoning_contract,
     })
 }
 

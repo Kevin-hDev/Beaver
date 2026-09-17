@@ -110,6 +110,25 @@ describe("ModelSelector", () => {
     expect(container.querySelector(".ms-dropdown")).toBeNull();
   });
 
+  it("replie les fournisseurs avec la primitive commune", () => {
+    groups = new Map([["ollama", [model({ id: "llama3" })]]]);
+    render(
+      <ModelSelector
+        groups={groups}
+        selectedModel="llama3"
+        selectedProvider="ollama"
+        onSelect={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("llama3"));
+    const region = document.querySelector(".ms-provider-body");
+    expect(region).toHaveClass("cps-region");
+    expect(region).toHaveAttribute("data-open", "false");
+    fireEvent.click(screen.getByText("Ollama"));
+    expect(region).toHaveAttribute("data-open", "true");
+  });
+
   it("affiche le motif traduit d'un catalogue API indisponible", () => {
     render(
       <ModelSelector

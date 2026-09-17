@@ -19,15 +19,6 @@ fn child_guard_runs_before_stream_replacement_and_permission_mutation() {
 }
 
 #[test]
-fn child_guard_runs_before_queue_stream_lookup() {
-    let source = include_str!("agent_chat_queue.rs");
-    assert_guard_precedes(
-        command_body(source, "pub async fn queue_agent_message"),
-        "streams.0.lock",
-    );
-}
-
-#[test]
 fn child_guard_runs_before_each_user_session_mutation() {
     let source = include_str!("agent_sessions.rs");
     for (command, boundary) in [
@@ -63,7 +54,7 @@ fn child_guard_runs_before_each_user_session_mutation() {
 
 #[test]
 fn child_guard_runs_before_preflight_path_validation_and_disk_access() {
-    let source = include_str!("../services/agent_local/agent_send_preflight.rs");
+    let source = include_str!("../services/agent_local/conversations/agent_send_preflight.rs");
     assert_guard_precedes(
         command_body(source, "pub async fn prepare"),
         "session_store::get",

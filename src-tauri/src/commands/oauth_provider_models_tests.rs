@@ -29,8 +29,6 @@ fn oauth_model_transports_public_metadata_without_recalculating_it() {
                 },
             ),
             supports_fast_mode: true,
-            reasoning_modes: vec!["high".to_string()],
-            default_reasoning_mode: Some("high".to_string()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },

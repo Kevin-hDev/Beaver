@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::release_source::{
     allowlisted_redirect_policy, parse_sha256_manifest, AllowlistedArchiveName, OllamaArchive,
     OllamaReleaseManifest, ValidatedHttpsUrl,

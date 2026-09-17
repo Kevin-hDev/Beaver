@@ -2,7 +2,7 @@
 
 **Emplacement site** — Extensions › *Réécrire le prompt système* dans le sommaire du mockup. **Cet emplacement est contesté** : voir l'encadré « Décision à prendre » ci-dessous.
 **Répond à** — « Une extension peut-elle changer les instructions que Beaver donne au modèle ? »
-**Sources** — `EXTENSIONS.md` (racine du dépôt), `src-tauri/resources/extension-host/contract.json`, `contract.mjs`, `extension-api.mjs`, `src-tauri/build.rs` + `extension_contract_build.rs`, `src-tauri/src/services/extensions/core_bridge.rs` et `types.rs`, `src-tauri/src/services/agent_local/system_prompt_resolver.rs`, `chat_prompts.rs`, `chat_prompt_sections.rs`, `extension_discovery_prompt.rs`, `extension_skill_loader.rs`, `extension_tool_set_native_only.rs`, `skill_catalog.rs`, `src-tauri/src/commands/agent_chat_task/common.rs`
+**Sources** — `EXTENSIONS.md` (racine du dépôt), `src-tauri/resources/extension-host/contract.json`, `contract.mjs`, `extension-api.mjs`, `src-tauri/build.rs` + `extension_contract_build.rs`, `src-tauri/src/services/extensions/contract/core_bridge.rs` et `contract/types.rs`, `src-tauri/src/services/agent_local/prompts/system_prompt_resolver.rs`, `chat_prompts.rs`, `chat_prompt_sections.rs`, `extension_discovery_prompt.rs`, `extension_skill_loader.rs`, `extension_tool_set_native_only.rs`, `skill_catalog.rs`, `src-tauri/src/commands/agent_chat_task/common.rs`
 **Vérification** — Vérifié dans le code, y compris par recherches négatives explicitement listées (section « Comment le verdict a été établi »). Rien n'a été vérifié à l'écran.
 
 ---
@@ -99,7 +99,7 @@ C'est le point important pour la sécurité, et il ne passe pas par le prompt sy
 Voir le tableau ci-dessous. Toutes les valeurs viennent de `contract.json`, et ce fichier est réellement la source unique — ce n'est pas une convention, c'est vérifiable :
 
 - côté extension, le contrat est lu au démarrage depuis `contract.json` (`contract.mjs:46-49`) ;
-- côté Beaver, les constantes Rust ne sont pas recopiées à la main : elles sont **produites à la compilation** à partir du même fichier (`src-tauri/build.rs:9`, `extension_contract_build::generate()`), puis intégrées au code (`services/extensions/types.rs:7`).
+- côté Beaver, les constantes Rust ne sont pas recopiées à la main : elles sont **produites à la compilation** à partir du même fichier (`src-tauri/build.rs:9`, `extension_contract_build::generate()`), puis intégrées au code (`services/extensions/contract/types.rs:7`).
 
 C'est ce qui donne son poids au constat de cette page : la liste des méthodes autorisées n'existe qu'à un seul endroit, et elle ne contient rien qui touche au prompt système.
 
@@ -219,7 +219,7 @@ Cette section n'est pas destinée au site. Elle est là pour qu'un relecteur pui
 ## Points à confirmer
 
 1. **La décision de l'encadré liminaire** — retirer la page, la conserver recadrée, ou construire la capacité. C'est le point bloquant : tout le reste en dépend. À trancher par le propriétaire du produit.
-2. **Le contenu exact renvoyé par les outils `list_extensions` et `inspect_extensions`.** Le paragraphe de découverte annonce que la liste complète fournit « les descriptions » (`extension_discovery_prompt.rs:23-24`), ce qui implique que du texte rédigé par l'auteur de l'extension entre dans la conversation par ce chemin. Le contenu précis de la réponse n'a pas été lu — il vit dans `src-tauri/src/services/extensions/discovery_listing.rs` et `discovery_inspection.rs`. À vérifier avant d'affirmer quoi que ce soit de précis sur ce chemin.
+2. **Le contenu exact renvoyé par les outils `list_extensions` et `inspect_extensions`.** Le paragraphe de découverte annonce que la liste complète fournit « les descriptions » (`extension_discovery_prompt.rs:23-24`), ce qui implique que du texte rédigé par l'auteur de l'extension entre dans la conversation par ce chemin. Le contenu précis de la réponse n'a pas été lu — il vit dans `src-tauri/src/services/extensions/contract/discovery_listing.rs` et `discovery_inspection.rs`. À vérifier avant d'affirmer quoi que ce soit de précis sur ce chemin.
 3. **Ce qui déclenche le mode « natif seul » d'une session.** Le mécanisme qui écarte les extensions d'une session a été lu (`extension_tool_set_native_only.rs`), mais pas ce qui le met en marche ni comment l'utilisateur le déclenche. À couvrir plutôt dans le brief *Extensions › Centre des extensions*.
 4. **Rien n'a été vérifié à l'écran.** Aucune capture, aucune vérification des libellés d'interface. À reprendre dans la passe d'interface de fin de parcours, si la page est conservée.
 5. **La date de validité de ce constat.** Il porte sur l'état du dépôt au **9 septembre 2026**, version **1.2.2**. Le contrat des extensions est un fichier qui évolue : si une méthode de niveau « avancé » y apparaît un jour, le verdict de cette page change. Le point de contrôle est court — la liste `methods.hostToCore` de `contract.json` et la liste `events` de la ligne `26`.

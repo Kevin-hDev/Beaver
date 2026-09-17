@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CaretDown, CaretLeft } from "@/components/ui/icons";
 import { CommitIcon } from "@/components/ui/session-summary-icons";
 import { FileIcon } from "@/components/file-preview/file-icon";
+import { Collapsible } from "@/components/ui/collapsible";
 import type { GitCommitFile, GitCommitSummary } from "@/hooks/git-types";
 import type { SessionSummaryGitState } from "./session-summary-git-types";
 import "./session-summary-commits.css";
@@ -104,8 +105,7 @@ export function SessionSummaryCommits({ git, onOpenFile }: SessionSummaryCommits
         <span className="ssb-row-label">{t("agentLocal.sessionSummary.commits.title")}</span>
         <CaretDown className={`ssb-section-caret ${open ? "ssb-section-caret-open" : ""}`} size="var(--icon-sm)" />
       </button>
-      <div className={`ssb-accordion ${open ? "ssb-accordion-open" : ""}`}>
-        <div className="ssb-accordion-inner">
+      <Collapsible open={open} className="ssb-accordion" innerClassName="ssb-accordion-inner">
           <div className="ssbc-panel">
             {selected ? (
               <CommitFiles
@@ -130,8 +130,7 @@ export function SessionSummaryCommits({ git, onOpenFile }: SessionSummaryCommits
               />
             )}
           </div>
-        </div>
-      </div>
+      </Collapsible>
     </>
   );
 }

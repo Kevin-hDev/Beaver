@@ -1,8 +1,10 @@
+import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   cleanupSessionActivity,
   reduceSessionActivity,
   type SessionActivityState,
+  useSessionActivityIndicators,
 } from "../use-session-activity-indicators";
 import type { StreamActivity } from "../agent-stream-activity";
 
@@ -22,7 +24,6 @@ describe("reduceSessionActivity", () => {
       state([], ["s1"]),
       activity("s1", true),
       null,
-      visibleIds,
     );
 
     expect(result.runningIds.has("s1")).toBe(true);
@@ -34,7 +35,6 @@ describe("reduceSessionActivity", () => {
       state(["s1"]),
       activity("s1", false, true),
       "s2",
-      visibleIds,
     );
 
     expect(result.runningIds.has("s1")).toBe(false);
@@ -46,7 +46,6 @@ describe("reduceSessionActivity", () => {
       state(["s1"]),
       activity("s1", false, true),
       "s1",
-      visibleIds,
     );
 
     expect(result.runningIds.has("s1")).toBe(false);
@@ -57,7 +56,6 @@ describe("reduceSessionActivity", () => {
     const result = cleanupSessionActivity(
       state(["s1", "hidden"], ["s2", "hidden"]),
       visibleIds,
-      "s2",
     );
 
     expect([...result.runningIds]).toEqual(["s1"]);
@@ -68,9 +66,22 @@ describe("reduceSessionActivity", () => {
     const result = cleanupSessionActivity(
       state([], ["s1"]),
       new Set(),
-      null,
     );
 
     expect([...result.unreadIds]).toEqual(["s1"]);
+  });
+
+  it("refuse explicitement la vue surnuméraire et libère sa place au démontage", () => {
+    const sessionIds = ["s1"];
+    const views = Array.from({ length: 16 }, () =>
+      renderHook(() => useSessionActivityIndicators(sessionIds, null)));
+
+    expect(() => renderHook(() => useSessionActivityIndicators(sessionIds, null)))
+      .toThrow("active_view_subscription_limit_reached");
+
+    views.pop()?.unmount();
+    const replacement = renderHook(() => useSessionActivityIndicators(sessionIds, null));
+    replacement.unmount();
+    views.forEach(({ unmount }) => unmount());
   });
 });

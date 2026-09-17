@@ -41,18 +41,6 @@ export function collectFileOperations(
   return collectFileOperationGroups(messages, options).all;
 }
 
-export function collectMessageFileOperations(
-  message: AgentMessage,
-  baseDir?: string,
-): FileOperation[] {
-  return collectLatestToolOperations(
-    toolsFromMessage(message),
-    message.id,
-    message.timestamp,
-    baseDir,
-  );
-}
-
 export function collectFileOperationGroups(
   messages: AgentMessage[],
   options: CollectFileOperationsOptions = {},

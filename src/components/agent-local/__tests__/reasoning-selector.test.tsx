@@ -33,7 +33,9 @@ function model(overrides: Partial<AvailableModel> = {}): AvailableModel {
     is_local: false,
     supports_tools: true,
     supports_thinking: true,
-    reasoning_modes: ["off", "low", "medium", "high"],
+    reasoning_contract: {
+      control: { kind: "efforts", efforts: ["off", "low", "medium", "high"] },
+    },
     context_usage_includes_reasoning: true,
     ...overrides,
   };
@@ -68,7 +70,7 @@ describe("ReasoningSelector", () => {
   });
 
   it("reste masqué lorsque le catalogue n'autorise aucun niveau", () => {
-    const { container } = renderSelector({ reasoning_modes: [] });
+    const { container } = renderSelector({ reasoning_contract: undefined });
 
     expect(container.firstChild).toBeNull();
   });
@@ -76,7 +78,6 @@ describe("ReasoningSelector", () => {
   it("reste masqué lorsque le provider garde le contrôle", () => {
     const { container } = renderSelector({
       reasoning_contract: { control: { kind: "provider_default" } },
-      reasoning_modes: ["high"],
     });
 
     expect(container.firstChild).toBeNull();
@@ -85,7 +86,6 @@ describe("ReasoningSelector", () => {
   it("projette uniquement la bascule documentée", () => {
     renderSelector({
       reasoning_contract: { control: { kind: "toggle" } },
-      reasoning_modes: ["high"],
     }, "auto");
 
     fireEvent.click(screen.getByRole("button", { name: /Activée/ }));
@@ -101,7 +101,6 @@ describe("ReasoningSelector", () => {
         default_effort: "minimal",
         control: { kind: "efforts", efforts: ["minimal", "high"] },
       },
-      reasoning_modes: ["low"],
     }, "minimal");
 
     fireEvent.click(screen.getByRole("button", { name: /Minimale/ }));
@@ -118,7 +117,7 @@ describe("ReasoningSelector", () => {
   });
 
   it("propose uniquement les niveaux acceptés par le modèle", () => {
-    renderSelector({ reasoning_modes: ["off", "high"] });
+    renderSelector({ reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } } });
 
     fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
 
@@ -129,7 +128,7 @@ describe("ReasoningSelector", () => {
 
   it("transmet le nouveau niveau choisi", () => {
     const onChange = vi.fn();
-    renderSelector({ reasoning_modes: ["off", "high"] }, "high", onChange);
+    renderSelector({ reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } } }, "high", onChange);
 
     fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
     fireEvent.click(screen.getByRole("button", { name: "Désactivée" }));
@@ -138,7 +137,7 @@ describe("ReasoningSelector", () => {
   });
 
   it("place Rapide en tête sans prix ni promesse de vitesse", () => {
-    renderSelector({ supports_fast_mode: true, reasoning_modes: ["off", "high"] });
+    renderSelector({ supports_fast_mode: true, reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } } });
 
     fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
 

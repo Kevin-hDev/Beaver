@@ -3,7 +3,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::Serialize;
 
 use super::checkpoint_messages::SelectedCheckpointMessage;
-use super::compression_redaction::redact_checkpoint_text;
 use crate::services::agent_local::types_message::{AgentMessage, AgentMessageKind};
 
 const CHECKPOINT_FORMAT_VERSION: u16 = 1;
@@ -142,12 +141,11 @@ fn checkpoint_turn(
     sections: &[CheckpointSection],
 ) -> Result<Vec<AgentMessage>, &'static str> {
     let checkpoint_id = uuid::Uuid::new_v4().to_string();
-    let sections = sanitized_sections(sections)?;
-    let summary = summary.map(redact_checkpoint_text);
+    let sections = validated_sections(sections)?;
     let body = CheckpointBody {
         format_version: CHECKPOINT_FORMAT_VERSION,
         checkpoint_id: &checkpoint_id,
-        summary: summary.as_deref(),
+        summary,
         sections: &sections,
     };
     let content =
@@ -168,7 +166,7 @@ fn checkpoint_turn(
     Ok(vec![user, assistant])
 }
 
-fn sanitized_sections(
+fn validated_sections(
     sections: &[CheckpointSection],
 ) -> Result<BTreeMap<String, String>, &'static str> {
     if sections.len() > MAX_SECTIONS {
@@ -185,7 +183,7 @@ fn sanitized_sections(
         {
             return Err("compression_candidate_invalid");
         }
-        output.insert(name.to_string(), redact_checkpoint_text(&section.content));
+        output.insert(name.to_string(), section.content.clone());
     }
     Ok(output)
 }

@@ -43,7 +43,6 @@ vi.mock("../plan-preview-bubble", () => ({ PlanPreviewBubble: () => null }));
 vi.mock("../file-change-bubble", () => ({ FileChangeBubble: () => null }));
 vi.mock("@/lib/file-preview-utils", () => ({
   collectFileOperations: () => [],
-  collectMessageFileOperations: () => [],
 }));
 vi.mock("../chat.css", () => ({}));
 vi.mock("../messages.css", () => ({}));
@@ -144,31 +143,4 @@ describe("MessageList loading indicator", () => {
     expect(view.queryByTestId("loading-indicator")).toBeNull();
   });
 
-  it("affiche le message en attente après le travail courant", () => {
-    const view = renderStreaming({ currentContent: "travail visible" });
-    view.rerender(
-      <MessageList
-        messages={[]}
-        queuedUserMessages={[{
-          id: "u2", role: "user", content: "nouvelle précision", files: [], timestamp: "2026-07-12",
-        }]}
-        completedSegments={[]}
-        currentContent="travail visible"
-        currentThinking=""
-        currentTools={[]}
-        isStreaming
-        isWorking
-        isCompressing={false}
-        tps={0}
-        totalElapsedMs={0}
-        segmentStartedAt={123}
-        liveTokenCount={7}
-      />,
-    );
-
-    const timeline = view.getByTestId("stream-timeline");
-    const user = view.getByTestId("user-message");
-    expect(timeline.compareDocumentPosition(user) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(user.textContent).toBe("nouvelle précision");
-  });
 });

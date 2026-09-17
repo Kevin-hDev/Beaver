@@ -120,7 +120,7 @@ On coche au fur et à mesure.
 > `EXTENSIONS.md` fait autorité sur le sujet, le module `services/extensions/`
 > est implémenté et couvert de tests, les deux outils de découverte sont
 > intégrés au mode Plan, et la politique de permission par effet d'extension est
-> en place et testée (`agent_local/tool_plan_guard.rs:46-48`).
+> en place et testée (`agent_local/tools/tool_plan_guard.rs:46-48`).
 > **Les quatre briefs restent à écrire**, avec `EXTENSIONS.md` comme source
 > principale.
 >
@@ -313,7 +313,7 @@ code. Rangés du plus au moins urgent.
   dans `src-tauri/src/`. Il a été remplacé par deux outils de découverte
   distincts, `list_extensions` et `inspect_extensions`
   (`services/extensions/mod.rs:192-193`), tous deux autorisés en mode Plan
-  (`agent_local/tool_plan_guard.rs:10-11`). Le chantier Extensions est par
+  (`agent_local/tools/tool_plan_guard.rs:10-11`). Le chantier Extensions est par
   ailleurs dégelé.
 - **L'écran des outils dit « Tools essentiels » et « Tools optionnels ».** Le
   mot anglais apparaît dans une interface française, alors que le reste de la
@@ -608,11 +608,11 @@ La passe de traduction (7 agents, 98 pages) a mis au jour des textes que l'utili
 | `install.sh:175` | Impossible de récupérer la version. | "Could not retrieve the version" |
 | `install.sh:152` | Paquet d'installation invalide. | "Invalid installation package" |
 | `install.ps1:185` | ERREUR Installation impossible. | (non citée) |
-| `services/agent_local/tool_skill_loader.rs:22` | Identifiant de skill invalide | "Invalid skill identifier" |
-| `services/agent_local/tool_skill_loader.rs:23` | Skill introuvable | "Skill not found" |
-| `services/agent_local/tool_skill_loader.rs:24` | Skill indisponible | (non citée) |
-| `services/agent_local/subagent_explorer_bash.rs:52,66,76` | Commande d'exploration refusée. | "Exploration command refused." |
-| `services/agent_local/subagent_explorer_bash_options.rs:1` | Option d'exploration refusée. | "Exploration option refused." |
+| `services/agent_local/tools/tool_skill_loader.rs:22` | Identifiant de skill invalide | "Invalid skill identifier" |
+| `services/agent_local/tools/tool_skill_loader.rs:23` | Skill introuvable | "Skill not found" |
+| `services/agent_local/tools/tool_skill_loader.rs:24` | Skill indisponible | (non citée) |
+| `services/agent_local/subagents/subagent_explorer_bash.rs:52,66,76` | Commande d'exploration refusée. | "Exploration command refused." |
+| `services/agent_local/subagents/subagent_explorer_bash_options.rs:1` | Option d'exploration refusée. | "Exploration option refused." |
 
 **Le constat qui compte plus que la liste — mécanisme exact, lu dans le code de rendu** (`src/lib/tool-error-message.ts` + `components/agent-local/tool-detail-row.tsx:149-163`) : une erreur d'outil s'affiche en deux parties. Le **titre** passe par `toolErrorMessage()` et ses `CATEGORY_KEYS` (dix catégories, complétude garantie par TypeScript) — toujours traduit. Le **détail** en dessous vaut la chaîne brute du backend, SAUF si le code d'erreur figure dans `ERROR_CODE_KEYS` — qui ne contient **qu'un seul code** (`web_search_runtime_unavailable`). Conséquence : **~252 littéraux français sur 69 fichiers** de `services/agent_local/` (chemin `ToolResult`) s'affichent tels quels en détail d'erreur sur une interface anglaise — titre « Not found » en anglais, « Skill introuvable » en français juste dessous. Échantillon : « requête vide », « requête trop longue », « aucun provider configuré », « limite de requêtes », « délai dépassé », « réponse invalide ».
 
@@ -644,8 +644,8 @@ Visibilité **non tracée jusqu'à la ligne de rendu** (leçon de méthode ci-de
 
 | Chaîne française en dur | Source |
 |---|---|
-| « Ce groupe d'outils est verrouillé. » | `services/agent_local/tool_group_catalog.rs:107` |
-| « Ce tool est verrouillé. » | `services/agent_local/tool_catalog.rs:147` |
+| « Ce groupe d'outils est verrouillé. » | `services/agent_local/tools/tool_group_catalog.rs:107` |
+| « Ce tool est verrouillé. » | `services/agent_local/tools/tool_catalog.rs:147` |
 | « Dossier de sortie invalide. » | `commands/config.rs:71` |
 | Toute la table d'erreurs d'audit Forecast | `services/forecast/data_quality/types.rs:55-108` |
 | Les deux refus de ressources | `services/forecast/hardware_profile.rs:108-110` |

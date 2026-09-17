@@ -1,10 +1,9 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RecoveryReason {
     Startup,
+    #[cfg(test)]
     Retry,
     Manual,
 }

@@ -13,23 +13,9 @@ pub async fn set_permission_mode(mode: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn list_agent_tool_catalog(
-) -> Result<Vec<crate::services::agent_local::tool_catalog::ToolCatalogEntry>, String> {
-    Ok(crate::services::agent_local::tool_catalog::catalog())
-}
-
-#[tauri::command]
 pub async fn list_agent_tool_groups(
 ) -> Result<Vec<crate::services::agent_local::tool_group_catalog::ToolGroupEntry>, String> {
     Ok(crate::services::agent_local::tool_group_catalog::groups())
-}
-
-#[tauri::command]
-pub async fn set_agent_tool_enabled(
-    tool_id: String,
-    enabled: bool,
-) -> Result<AgentSettings, String> {
-    agent_settings::set_optional_tool_enabled(tool_id, enabled).await
 }
 
 #[tauri::command]

@@ -18,10 +18,6 @@ export function useAgentChat(
   model: string,
   provider: string,
   onPermissionRequest?: (request: PermissionRequestState) => void,
-  supportsTools?: boolean,
-  supportsThinking?: boolean,
-  supportsVision?: boolean,
-  reasoningMode?: string | null,
   permissionMode?: string,
   onStreamStarted?: () => void | Promise<void>,
   onPermissionClosed?: (id: string) => void,
@@ -45,17 +41,13 @@ export function useAgentChat(
     setEnabled: setPlanModeEnabled,
   } = planMode;
   const [sessionLoading, setSessionLoading] = useState(true);
-  const savingRef = useRef(false);
   const sessionRef = useRef(sessionId);
   const permissions = useAgentPermissionDelivery(onPermissionRequest, onPermissionClosed);
   const {
-    startStream, queueStreamMessage, stopStream, subscribeToStream, getStreamSnapshot,
+    startStream, resolveStreamSend, stopStream, subscribeToStream, getStreamSnapshot,
   } = useAgentStream();
   // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable closures
   sessionRef.current = sessionId;
-  const reasoningModeRef = useRef(reasoningMode);
-  // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable closures
-  reasoningModeRef.current = reasoningMode;
   const permModeRef = useRef(permissionMode);
   // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable closures
   permModeRef.current = permissionMode;
@@ -127,31 +119,25 @@ export function useAgentChat(
       model,
       provider,
       turn,
-      reasoningModeRef.current !== "off" && !!reasoningModeRef.current,
       {
         displayMessages: displayMsgs,
         baseTokenCount: baseTokenCountOverride ?? state.sessionTokenCount,
         contextUsageRecord: state.contextUsageRecord,
       },
       workingDir,
-      supportsTools,
-      supportsThinking,
-      supportsVision,
-      reasoningModeRef.current,
       permissionMode,
       planModeEnabled,
       optimisticUserMessageId,
     );
     await onStreamStarted?.();
-  }, [model, onStreamStarted, planModeEnabled, provider, startStream, state.contextUsageRecord, state.sessionTokenCount, supportsTools, supportsThinking, supportsVision]);
+  }, [model, onStreamStarted, planModeEnabled, provider, startStream, state.contextUsageRecord, state.sessionTokenCount]);
   const sendMessage = useAgentMessageSend({
     sessionId,
     messages: state.messages,
     permissionModeRef: permModeRef,
-    savingRef,
     runOrDefer,
     doStream,
-    queueStreamMessage,
+    resolveStreamSend,
   });
   const syncTokenCount = useCallback(async (): Promise<number> => {
     if (!sessionId) return state.sessionTokenCount;

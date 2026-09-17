@@ -26,7 +26,7 @@ fn run_in(root: &Path) -> Result<(), String> {
     remove_legacy_file(&root.join("secrets.enc.bak-corrupted"))?;
     remove_legacy_file(&root.join("oauth-providers/moonshot/credentials/kimi-code.json"))?;
     remove_legacy_file(&root.join("oauth-providers/xai/auth.json"))?;
-    crate::services::security_cleanup_sessions::sanitize_documents(&root.join("agent-sessions"))?;
+    crate::services::security_cleanup_sessions::harden_documents(&root.join("agent-sessions"))?;
     crate::services::private_store::atomic_write(&marker, b"ok")
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { CaretDown, X } from "@/components/ui/icons";
+import { Collapsible } from "@/components/ui/collapsible";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { GitDirtyFileList } from "./git-dirty-file-list";
 import "./branch-conflict-dialog.css";
@@ -76,16 +77,18 @@ export function BranchConflictDialog({
             <CaretDown size="var(--icon-xs)" className={descriptionOpen ? "bcd-chevron-open" : ""} />
             <span>{t("branches.commitDescription")}</span>
           </button>
-          <div className={`bcd-description-panel ${descriptionOpen ? "is-open" : ""}`}>
-            <div className="bcd-description-panel-inner">
+          <Collapsible
+            open={descriptionOpen}
+            className="bcd-description-panel"
+            innerClassName="bcd-description-panel-inner"
+          >
               <textarea
                 className="field field-multiline bcd-description-input"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
               />
-            </div>
-          </div>
+          </Collapsible>
         </div>
 
         <div className="bcd-hint">{t("branches.commitRequired")}</div>

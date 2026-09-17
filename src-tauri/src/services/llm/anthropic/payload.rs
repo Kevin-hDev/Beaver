@@ -76,24 +76,29 @@ fn apply_thinking(
     mode: Option<&str>,
     max_tokens: u32,
 ) -> Result<(), BuildError> {
-    let contract = crate::services::llm::provider_model_lookup::resolve_local("anthropic", model);
+    let capabilities =
+        crate::services::llm::provider_model_lookup::resolve_local("anthropic", model);
+    let contract = capabilities
+        .as_ref()
+        .and_then(|value| value.reasoning_contract.as_ref());
     let selected = mode.map(str::to_string).or_else(|| {
         think.then(|| {
             contract
-                .as_ref()
-                .and_then(|value| value.default_reasoning_mode.clone())
+                .and_then(|value| value.default_mode_name())
+                .map(str::to_string)
                 .unwrap_or_else(|| "medium".to_string())
         })
     });
     let mut selected = selected.unwrap_or_else(|| "off".to_string());
     if selected == "off"
-        && contract.as_ref().is_some_and(|value| {
-            value.supports_thinking && !value.reasoning_modes.iter().any(|mode| mode == "off")
-        })
+        && capabilities
+            .as_ref()
+            .is_some_and(|value| value.supports_thinking)
+        && contract.is_some_and(|value| !value.supports_mode("off"))
     {
         selected = contract
-            .as_ref()
-            .and_then(|value| value.default_reasoning_mode.clone())
+            .and_then(|value| value.default_mode_name())
+            .map(str::to_string)
             .ok_or(BuildError::InvalidReasoningMode)?;
     }
     let mode = crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(
@@ -110,14 +115,9 @@ fn apply_thinking(
         payload["thinking"] = json!({"type": "disabled"});
         return Ok(());
     }
-    let adaptive = contract
-        .as_ref()
-        .is_some_and(|value| value.reasoning_modes.iter().any(|mode| mode == "auto"));
+    let adaptive = contract.is_some_and(|value| value.supports_mode("auto"));
     if adaptive {
-        if !contract
-            .as_ref()
-            .is_some_and(|value| value.reasoning_modes.iter().any(|mode| mode == &selected))
-        {
+        if !contract.is_some_and(|value| value.supports_mode(&selected)) {
             return Err(BuildError::InvalidReasoningMode);
         }
         // Les Claude 5 et les modèles adaptatifs récents omettent sinon le texte

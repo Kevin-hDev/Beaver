@@ -38,10 +38,10 @@ fn apply_qwen(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
     }
     let selected_mode = contract.as_ref().and_then(|contract| {
         reasoning_mode
-            .filter(|mode| contract.modes.iter().any(|candidate| candidate == mode))
+            .filter(|mode| contract.supports_mode(mode))
             .or_else(|| {
-                (!contract.modes.iter().any(|mode| mode == "off"))
-                    .then_some(contract.default_mode.as_deref())
+                (!contract.supports_mode("off"))
+                    .then(|| contract.default_mode_name())
                     .flatten()
             })
     });

@@ -53,13 +53,6 @@ export function draftMatchesSource(
     && sameIds(draft.documentIds, saved.documentIds);
 }
 
-export function toggleDraftId(current: Set<string>, id: string): Set<string> {
-  const next = new Set(current);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
-}
-
 export function allItemIds(items: AgentImportItem[]): Set<string> {
   return new Set(items.filter((item) => item.available).map((item) => item.id));
 }

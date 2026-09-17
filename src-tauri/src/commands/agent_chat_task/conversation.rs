@@ -2,17 +2,15 @@ use crate::services::agent_local::conversation_admission::AdmittedTurn;
 use crate::services::agent_local::conversation_history::{ProviderMessage, ProviderRole};
 use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};
 
-pub(crate) enum StreamConversation {
-    Canonical {
-        admitted: AdmittedTurn,
-        system_prompt: Option<String>,
-        subagent_owner: Option<(String, String)>,
-    },
+pub(crate) struct StreamConversation {
+    admitted: AdmittedTurn,
+    system_prompt: Option<String>,
+    subagent_owner: Option<(String, String)>,
 }
 
 impl StreamConversation {
     pub(crate) fn canonical(admitted: AdmittedTurn) -> Self {
-        Self::Canonical {
+        Self {
             admitted,
             system_prompt: None,
             subagent_owner: None,
@@ -28,7 +26,7 @@ impl StreamConversation {
             crate::models::AutomationTarget::NewSession { .. } => "new_session",
             crate::models::AutomationTarget::ResumeSession { .. } => "resume_session",
         };
-        Self::Canonical {
+        Self {
             admitted,
             system_prompt: Some(format!(
                 "Automatisation active : id={automation_id}, mode={target_mode}. L'outil manage_automation permet de la consulter, la modifier ou la supprimer."
@@ -43,36 +41,30 @@ impl StreamConversation {
         run_id: String,
         execution_id: String,
     ) -> Self {
-        Self::Canonical {
+        Self {
             admitted,
             system_prompt: Some(system_prompt),
             subagent_owner: Some((run_id, execution_id)),
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn into_messages(self) -> Result<Vec<ChatMessage>, String> {
-        match self {
-            Self::Canonical {
-                admitted,
-                system_prompt,
-                ..
-            } => {
-                let mut messages = admitted
-                    .history
-                    .messages
-                    .into_iter()
-                    .map(convert)
-                    .collect::<Result<Vec<_>, _>>()?;
-                if let Some(system_prompt) = system_prompt {
-                    messages.insert(0, ChatMessage::system(system_prompt));
-                }
-                Ok(messages)
-            }
+        let mut messages = self
+            .admitted
+            .history
+            .messages
+            .into_iter()
+            .map(convert)
+            .collect::<Result<Vec<_>, _>>()?;
+        if let Some(system_prompt) = self.system_prompt {
+            messages.insert(0, ChatMessage::system(system_prompt));
         }
+        Ok(messages)
     }
 
-    pub(crate) fn into_messages_and_journal(
-        self,
+    pub(crate) fn take_messages_and_journal(
+        &mut self,
         session_id: String,
         request_id: String,
     ) -> Result<
@@ -82,50 +74,48 @@ impl StreamConversation {
         ),
         String,
     > {
-        match self {
-            Self::Canonical {
-                admitted,
-                system_prompt,
-                subagent_owner,
-            } => {
-                let is_compress_command = admitted.history.messages.last().is_some_and(|message| {
-                    message.role == ProviderRole::User
-                        && crate::services::compress::command::is_explicit_compression_command(
-                            &message.content,
-                        )
-                });
-                let journal = if is_compress_command {
-                    None
-                } else if let Some((run_id, execution_id)) = subagent_owner {
-                    Some(crate::services::agent_local::conversation_journal::ConversationJournal::new_for_subagent(
+        let is_compress_command = self
+            .admitted
+            .history
+            .messages
+            .last()
+            .is_some_and(|message| {
+                message.role == ProviderRole::User
+                    && crate::services::compress::command::is_explicit_compression_command(
+                        &message.content,
+                    )
+            });
+        let journal = if is_compress_command {
+            None
+        } else if let Some((run_id, execution_id)) = self.subagent_owner.as_ref() {
+            Some(crate::services::agent_local::conversation_journal::ConversationJournal::new_for_subagent(
                         session_id,
-                        admitted.turn_id.clone(),
-                        admitted.user_message_id.clone(),
-                        admitted.assistant_message_id.clone(),
+                        self.admitted.turn_id.clone(),
+                        self.admitted.user_message_id.clone(),
+                        self.admitted.assistant_message_id.clone(),
                         request_id,
-                        run_id,
-                        execution_id,
+                        run_id.clone(),
+                        execution_id.clone(),
                     )?)
-                } else {
-                    Some(crate::services::agent_local::conversation_journal::ConversationJournal::new(
-                        session_id,
-                        admitted.turn_id.clone(),
-                        admitted.user_message_id.clone(),
-                        admitted.assistant_message_id.clone(),
-                        request_id,
-                    )?)
-                };
-                Ok((
-                    Self::Canonical {
-                        admitted,
-                        system_prompt,
-                        subagent_owner: None,
-                    }
-                    .into_messages()?,
-                    journal,
-                ))
-            }
+        } else {
+            Some(
+                crate::services::agent_local::conversation_journal::ConversationJournal::new(
+                    session_id,
+                    self.admitted.turn_id.clone(),
+                    self.admitted.user_message_id.clone(),
+                    self.admitted.assistant_message_id.clone(),
+                    request_id,
+                )?,
+            )
+        };
+        let mut messages = std::mem::take(&mut self.admitted.history.messages)
+            .into_iter()
+            .map(convert)
+            .collect::<Result<Vec<_>, _>>()?;
+        if let Some(system_prompt) = self.system_prompt.take() {
+            messages.insert(0, ChatMessage::system(system_prompt));
         }
+        Ok((messages, journal))
     }
 }
 

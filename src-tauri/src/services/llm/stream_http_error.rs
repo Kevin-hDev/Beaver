@@ -26,6 +26,44 @@ pub(super) async fn read_provider_error(
     body
 }
 
+pub(crate) struct RejectedResponseContext<'a> {
+    pub provider_id: &'a str,
+    pub model: &'a str,
+    pub error_policy: super::route_profile::ErrorPolicy,
+    pub oauth: bool,
+    pub request_bytes: usize,
+    pub tool_count: usize,
+    pub diagnostic: super::provider_diagnostics::ProviderDiagnosticContext,
+}
+
+pub(crate) async fn reject_response(
+    response: reqwest::Response,
+    context: RejectedResponseContext<'_>,
+) -> RequestError {
+    let status = response.status();
+    let has_retry_after = response.headers().contains_key("retry-after");
+    let diagnostic = context.diagnostic.with_retry_after(response.headers());
+    let body = read_provider_error(response).await;
+    let error = classify_error(
+        status.as_u16(),
+        &body,
+        context.error_policy,
+        context.oauth,
+        has_retry_after,
+    );
+    super::provider_diagnostics::record_http_failure(
+        context.provider_id,
+        context.model,
+        status.as_u16(),
+        super::provider_error::safe_details(&body),
+        context.request_bytes,
+        context.tool_count,
+        diagnostic,
+    );
+    ::log::warn!("[llm] provider HTTP {status} code={error}");
+    error
+}
+
 impl std::fmt::Display for RequestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -36,10 +74,9 @@ impl std::fmt::Display for RequestError {
     }
 }
 
-pub(super) fn classify_error(
+pub(crate) fn classify_error(
     status: u16,
     body: &str,
-    _provider_name: &str,
     error_policy: super::route_profile::ErrorPolicy,
     oauth: bool,
     has_retry_after: bool,
@@ -79,12 +116,59 @@ pub(super) fn classify_error(
                 .as_str()
                 .to_string(),
         ),
+        _ if error_policy == super::route_profile::ErrorPolicy::Codex
+            && body_has_temporary_code(body) =>
+        {
+            RequestError::Fatal(
+                super::provider_error::ProviderErrorCode::ProviderTemporarilyUnavailable
+                    .as_str()
+                    .to_string(),
+            )
+        }
         _ => RequestError::Fatal(
             super::provider_error::ProviderErrorCode::ProviderRequestRejected
                 .as_str()
                 .to_string(),
         ),
     }
+}
+
+pub(super) fn request_error_for_route(
+    error: super::route::RouteError,
+    oauth: bool,
+) -> RequestError {
+    match error {
+        super::route::RouteError::Unauthorized if oauth => {
+            RequestError::Fatal("oauth_reauthentication_required".into())
+        }
+        super::route::RouteError::Unauthorized => RequestError::Fatal("auth_failed".into()),
+        super::route::RouteError::Forbidden => {
+            RequestError::Fatal("provider_access_unavailable".into())
+        }
+        super::route::RouteError::Network => RequestError::Fatal(
+            super::provider_error::ProviderErrorCode::ProviderConnectionFailed
+                .as_str()
+                .into(),
+        ),
+        #[cfg(debug_assertions)]
+        super::route::RouteError::FixtureBudget(message) => RequestError::Fatal(message),
+    }
+}
+
+fn body_has_temporary_code(body: &str) -> bool {
+    super::provider_error::safe_details(body)
+        .error_code
+        .as_deref()
+        .is_some_and(|code| {
+            matches!(
+                code,
+                "server_error"
+                    | "service_unavailable"
+                    | "temporarily_unavailable"
+                    | "overloaded"
+                    | "circuit_open"
+            )
+        })
 }
 
 pub(super) fn request_error_for_limit(

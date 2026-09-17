@@ -3,7 +3,6 @@ pub(crate) mod agent_chat_admission;
 pub mod agent_chat_cancel;
 #[cfg(debug_assertions)]
 pub(crate) mod agent_chat_fixture_candidate;
-pub mod agent_chat_queue;
 pub(crate) mod agent_chat_recovery;
 #[cfg(test)]
 mod agent_chat_request_runtime_tests;
@@ -150,7 +149,6 @@ mod voice_tests;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
-pub use agent_chat_queue::*;
 pub use agent_clone::*;
 pub use agent_import::*;
 pub use agent_md::*;

@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Liste de tâches
 **Répond à** — « C'est quoi cette liste qui apparaît quand l'agent travaille, et est-ce que je peux la piloter ? »
-**Sources** — `src-tauri/src/services/agent_local/types_todo.rs`, `tool_todo.rs`, `tool_todo_state.rs` (ligne 9), `tool_todo_neglect.rs` (lignes 7-9), `tool_todo_summary.rs`, `tool_todo_delete.rs`, `tool_todo_parse.rs`
+**Sources** — `src-tauri/src/services/agent_local/execution/types_todo.rs`, `tool_todo.rs`, `tool_todo_state.rs` (ligne 9), `tool_todo_neglect.rs` (lignes 7-9), `tool_todo_summary.rs`, `tool_todo_delete.rs`, `tool_todo_parse.rs`
 **Vérification** — Vérifié dans le code : statuts, limites et mécanisme de relance
 
 ---

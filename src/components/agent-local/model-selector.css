@@ -89,17 +89,10 @@
   flex-shrink: 0;
 }
 
-.ms-provider-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  overflow: hidden;
+.cps-region.ms-provider-body {
   min-width: 0;
   max-width: 100%;
-  transition: grid-template-rows 200ms ease;
-}
-
-.ms-provider-body.open {
-  grid-template-rows: 1fr;
+  transition: height 200ms ease;
 }
 
 .ms-provider-body-inner {

@@ -1,16 +1,13 @@
-.conv-collapse-panel {
-  display: grid;
-  grid-template-rows: 0fr;
+.cps-region.conv-collapse-panel {
   opacity: 0;
   transform: translateY(-2px);
   transition:
-    grid-template-rows 400ms ease,
+    height 400ms ease,
     opacity 400ms ease,
     transform 400ms ease;
 }
 
-.conv-collapse-panel-open {
-  grid-template-rows: 1fr;
+.cps-region.conv-collapse-panel[data-open="true"] {
   opacity: 1;
   transform: translateY(0);
 }

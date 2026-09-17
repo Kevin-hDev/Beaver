@@ -1,4 +1,16 @@
 use super::*;
+use reqwest::StatusCode;
+
+fn status_error(status: StatusCode, body: &str) -> String {
+    crate::services::llm::stream_http::classify_error(
+        status.as_u16(),
+        body,
+        crate::services::llm::route_profile::ErrorPolicy::Codex,
+        true,
+        false,
+    )
+    .to_string()
+}
 
 #[test]
 fn codex_503_is_retryable_without_exposing_provider_details() {
@@ -55,6 +67,14 @@ fn codex_payload_too_large_is_not_mislabeled_as_rate_limit() {
     assert_eq!(
         status_error(StatusCode::PAYLOAD_TOO_LARGE, ""),
         "provider_payload_too_large"
+    );
+}
+
+#[test]
+fn codex_payment_refusal_uses_the_shared_access_code() {
+    assert_eq!(
+        status_error(StatusCode::PAYMENT_REQUIRED, "{}"),
+        "provider_access_unavailable"
     );
 }
 

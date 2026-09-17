@@ -18,8 +18,7 @@ fn xai_model(backend: XaiBackend) -> XaiCatalogModel {
         backend,
         context_window: 128_000,
         max_output_tokens: None,
-        reasoning_modes: vec![],
-        default_reasoning_mode: None,
+        reasoning_contract: None,
     }
 }
 
@@ -80,7 +79,7 @@ async fn openrouter_common_and_silent_transport_keep_the_final_catalog_object() 
         .expect("final OpenRouter catalog model");
     assert!(!model.supports_tools);
     assert!(!model.supports_vision);
-    assert_eq!(model.default_reasoning_mode.as_deref(), Some("off"));
+    assert_eq!(model.default_reasoning_mode().as_deref(), Some("off"));
     assert_eq!(
         model
             .reasoning_contract
@@ -136,7 +135,7 @@ async fn openrouter_debug_fixture_transport_keeps_the_final_catalog_object() {
         .expect("final OpenRouter catalog model");
     assert!(!model.supports_tools);
     assert!(!model.supports_vision);
-    assert_eq!(model.default_reasoning_mode.as_deref(), Some("off"));
+    assert_eq!(model.default_reasoning_mode().as_deref(), Some("off"));
     assert_eq!(
         model
             .reasoning_contract
@@ -358,8 +357,11 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
 async fn xai_fixture_transport_uses_the_backend_from_its_real_catalog_resolution() {
     let mut catalog_model = xai_model(XaiBackend::Responses);
     catalog_model.id = "grok-4.6".into();
-    catalog_model.reasoning_modes = vec!["high".into()];
-    catalog_model.default_reasoning_mode = Some("high".into());
+    catalog_model.reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+            &["high"],
+            Some("high"),
+        );
     crate::services::llm_oauth::seed_xai_catalog_for_test(catalog_model).await;
     let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
         route_id: RouteId::XaiOauth,

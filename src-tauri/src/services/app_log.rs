@@ -41,10 +41,28 @@ impl Write for BoundedMessage {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn format_message(message: &Arguments<'_>) -> String {
     let mut bounded = BoundedMessage::new(MAX_REDACTION_INPUT_CHARS);
     let _ = bounded.write_fmt(*message);
-    crate::services::agent_local::diagnostic_redaction::redact_text(&bounded.value)
+    sanitize(&bounded.value)
+}
+
+struct KeyValueWriter<'a>(&'a mut BoundedMessage);
+
+impl<'kvs> log::kv::VisitSource<'kvs> for KeyValueWriter<'_> {
+    fn visit_pair(
+        &mut self,
+        key: log::kv::Key<'kvs>,
+        value: log::kv::Value<'kvs>,
+    ) -> Result<(), log::kv::Error> {
+        let _ = write!(self.0, " {key}={value}");
+        Ok(())
+    }
+}
+
+fn sanitize(value: &str) -> String {
+    crate::services::agent_local::diagnostic_redaction::redact_text(value)
         .replace(['\n', '\r', '\t'], " ")
         .chars()
         .take(MAX_LOG_CHARS)
@@ -53,14 +71,18 @@ pub(crate) fn format_message(message: &Arguments<'_>) -> String {
 
 pub(crate) fn format_record(
     timestamp: chrono::DateTime<chrono::Utc>,
-    level: log::Level,
-    target: &str,
+    record: &log::Record<'_>,
     message: &Arguments<'_>,
 ) -> String {
+    let mut bounded = BoundedMessage::new(MAX_REDACTION_INPUT_CHARS);
+    let _ = bounded.write_fmt(*message);
+    let _ = record.key_values().visit(&mut KeyValueWriter(&mut bounded));
     let timestamp = timestamp.to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
     format!(
-        "[{timestamp}][{level}][{target}] {}",
-        format_message(message)
+        "[{timestamp}][{}][{}] {}",
+        record.level(),
+        record.target(),
+        sanitize(&bounded.value)
     )
 }
 
@@ -93,7 +115,7 @@ pub fn plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
         .max_file_size(MAX_FILE_BYTES)
         .rotation_strategy(RotationStrategy::KeepSome(RETAINED_FILES))
         .format(|out, message, record| {
-            let safe = format_record(chrono::Utc::now(), record.level(), record.target(), message);
+            let safe = format_record(chrono::Utc::now(), record, message);
             out.finish(format_args!("{safe}"));
         })
         .build()

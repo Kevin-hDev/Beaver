@@ -11,6 +11,7 @@ import type { ActiveStreamItem } from "./active-stream-item";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import { EMPTY_CONTEXT_USAGE_RECORD } from "./agent-token-estimate";
+import { createStreamProjection, type StreamProjectionState } from "./agent-stream-projections";
 
 export interface VisibleTurnIdentity {
   turnId: string;
@@ -20,13 +21,11 @@ export interface VisibleTurnIdentity {
 
 export const MAX_PENDING_PERMISSIONS = 32;
 export const MAX_MESSAGES_PER_SESSION = 2000;
-export const MAX_QUEUED_USER_MESSAGES = 8;
 
 export type StreamKind = "chat" | "compression";
 
 export interface ChatState {
   messages: AgentMessage[];
-  queuedUserMessages: AgentMessage[];
   completedSegments: StreamSegment[];
   currentContent: string;
   currentContentPhase?: TokenPhase;
@@ -65,12 +64,13 @@ export type PermissionRequestState = AgentPermissionRequest;
 
 export interface ManagedStreamState extends ChatState {
   pendingPermissions: PermissionRequestState[];
+  projection: StreamProjectionState;
   activeTurn?: VisibleTurnIdentity;
   completed: boolean; updatedAt: number; error?: string; isConnectionError?: boolean; diagnosticSummary?: string;
 }
 
 export const EMPTY_CHAT_STATE: ChatState = {
-  messages: [], queuedUserMessages: [], completedSegments: [], currentContent: "",
+  messages: [], completedSegments: [], currentContent: "",
   currentContentPhase: undefined, currentThinking: "", currentTools: [],
   activeStreamItem: null, isStreaming: false, isWorking: false, isCompressing: false,
   tps: 0, tpsEstimated: false, sessionTokenCount: 0,
@@ -105,13 +105,14 @@ export function createManagedStreamState(
     streamRunId: crypto.randomUUID(),
     streamStartedAt: now, segmentStartedAt: now,
     pendingPermissions: [], completed: false,
+    projection: createStreamProjection(),
     updatedAt: now,
   };
 }
 
 export function toChatState(state: ManagedStreamState): ChatState {
   return {
-    messages: state.messages, queuedUserMessages: state.queuedUserMessages,
+    messages: state.messages,
     completedSegments: state.completedSegments,
     currentContent: state.currentContent, currentContentPhase: state.currentContentPhase,
     currentThinking: state.currentThinking,

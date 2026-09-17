@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Skills (le mockup les regroupe avec la mémoire ; ils méritent leur page)
 **Répond à** — « Comment j'apprends à l'agent une procédure qu'il doit suivre, sans la répéter à chaque fois ? »
-**Sources** — `src-tauri/src/services/agent_local/skill_catalog.rs` (lignes 8-9, 17-42, 141-165), `skill_parser.rs` (lignes 7-8), `skill_limits.rs`, `src-tauri/src/services/skill_manifest_policy.rs` (ligne 3), `tool_skill_loader.rs` (lignes 4-5, 19-27), `models/agent_turn_contract.rs` (ligne 12), `subagent_tool_profile.rs` (lignes 46-48), `src/hooks/use-active-skills.ts`, `src/components/agent-local/slash-autocomplete.tsx`, `src-tauri/src/services/agent_import/` (skills importés)
+**Sources** — `src-tauri/src/services/agent_local/context/skill_catalog.rs` (lignes 8-9, 17-42, 141-165), `skill_parser.rs` (lignes 7-8), `skill_limits.rs`, `src-tauri/src/services/skill_manifest_policy.rs` (ligne 3), `tool_skill_loader.rs` (lignes 4-5, 19-27), `models/agent_turn_contract.rs` (ligne 12), `subagent_tool_profile.rs` (lignes 46-48), `src/hooks/use-active-skills.ts`, `src/components/agent-local/slash-autocomplete.tsx`, `src-tauri/src/services/agent_import/` (skills importés)
 **Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : format du fichier, noms acceptés, limites, tri, sources, invocation par commande
 
 ---

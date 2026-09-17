@@ -1,6 +1,6 @@
 use super::{
     session_model::SessionModel,
-    session_types::{BrowserRuntimeTabUpdate, MAX_TITLE_CHARS},
+    session_types::{BrowserRuntimeTabUpdate, BrowserRuntimeUpdateResult, MAX_TITLE_CHARS},
     url_policy::validate_browser_url,
 };
 
@@ -9,7 +9,7 @@ impl SessionModel {
         &mut self,
         id: &str,
         update: &BrowserRuntimeTabUpdate,
-    ) -> Result<bool, ()> {
+    ) -> Result<BrowserRuntimeUpdateResult, ()> {
         let url = update
             .url
             .as_deref()
@@ -18,8 +18,9 @@ impl SessionModel {
             .map(|value| value.as_str().to_owned());
         let tab = self.tab_mut(id)?;
         let title = update.title.as_deref().map(clean_title);
-        let changed = assign_if_some(&mut tab.title, title)
-            | assign_if_some(&mut tab.url, url.map(Some))
+        let persisted_changed =
+            assign_if_some(&mut tab.title, title) | assign_if_some(&mut tab.url, url.map(Some));
+        let changed = persisted_changed
             | assign_if_some(&mut tab.loading, update.loading)
             | assign_if_some(&mut tab.can_go_back, update.can_go_back)
             | assign_if_some(&mut tab.can_go_forward, update.can_go_forward)
@@ -27,7 +28,10 @@ impl SessionModel {
         if changed {
             self.bump()?;
         }
-        Ok(changed)
+        Ok(BrowserRuntimeUpdateResult {
+            changed,
+            persisted_changed,
+        })
     }
 
     pub(super) fn mark_released(&mut self, id: &str) -> Result<bool, ()> {

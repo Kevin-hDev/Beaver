@@ -5,7 +5,6 @@ import {
   createImportDraft,
   draftMatchesSource,
   selectionMode,
-  toggleDraftId,
 } from "@/lib/agent-import-selection";
 import type { AgentSourceSummary } from "@/types/agent-import";
 
@@ -57,7 +56,7 @@ describe("agent-import-selection", () => {
 
   it("construit une sélection personnalisée", () => {
     const draft = createImportDraft(source);
-    draft.skillIds = toggleDraftId(draft.skillIds, "two");
+    draft.skillIds.delete("two");
 
     const selection = buildSourceSelection(source, draft);
 
@@ -69,7 +68,7 @@ describe("agent-import-selection", () => {
     const draft = createImportDraft(source);
     expect(draftMatchesSource(source, draft)).toBe(true);
 
-    draft.skillIds = toggleDraftId(draft.skillIds, "two");
+    draft.skillIds.delete("two");
     expect(draftMatchesSource(source, draft)).toBe(false);
   });
 

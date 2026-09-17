@@ -273,10 +273,12 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "medium", "high"],
+                    Some("medium"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
-            default_reasoning_mode: Some("medium".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },
@@ -291,10 +293,12 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "high", "max"],
+                    Some("max"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
-            default_reasoning_mode: Some("max".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },
@@ -309,16 +313,12 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["low", "medium", "high", "xhigh", "max"],
+                    Some("medium"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec![
-                "low".into(),
-                "medium".into(),
-                "high".into(),
-                "xhigh".into(),
-                "max".into(),
-            ],
-            default_reasoning_mode: Some("medium".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         },
@@ -380,8 +380,6 @@ async fn openrouter_contract_controls_minimal_and_provider_default_payloads() {
             control: ReasoningControl::Efforts(vec![ReasoningModeId::Minimal]),
         }),
         supports_fast_mode: false,
-        reasoning_modes: vec!["minimal".into()],
-        default_reasoning_mode: Some("minimal".into()),
         context_usage_includes_reasoning: true,
         is_free: false,
     };
@@ -394,8 +392,7 @@ async fn openrouter_contract_controls_minimal_and_provider_default_payloads() {
             default_effort: None,
             control: ReasoningControl::ProviderDefault,
         }),
-        reasoning_modes: vec!["auto".into()],
-        default_reasoning_mode: Some("auto".into()),
+
         ..base.clone()
     };
     super::runtime_models::replace_provider("openrouter", &[base, provider_default]).unwrap();

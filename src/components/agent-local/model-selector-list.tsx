@@ -6,6 +6,7 @@ import type { ModelCatalogIssue } from "@/hooks/cloud-models";
 import { KNOWN_ERROR_KEYS } from "@/lib/agent-error-codes";
 import type { FavoriteModel } from "@/hooks/use-favorite-models";
 import { useLocalListNavigation, type LocalListNavItem } from "@/hooks/use-local-list-navigation";
+import { Collapsible } from "@/components/ui/collapsible";
 import { ModelSelectorItem } from "./model-selector-item";
 
 interface Props {
@@ -133,8 +134,11 @@ export function ModelSelectorList({
                   : `${models.length}`}
               </span>
             </div>
-            <div className={`ms-provider-body ${isOpen ? "open" : ""}`}>
-              <div className="ms-provider-body-inner">
+            <Collapsible
+              open={isOpen}
+              className="ms-provider-body"
+              innerClassName="ms-provider-body-inner"
+            >
                 {issue && (
                   <div className="menu-row ms-item ms-item-disabled">
                     <span className="ms-item-name">
@@ -157,8 +161,7 @@ export function ModelSelectorList({
                     onToggleFav={onToggleFavorite}
                   />
                 ))}
-              </div>
-            </div>
+            </Collapsible>
           </div>
         );
       })}

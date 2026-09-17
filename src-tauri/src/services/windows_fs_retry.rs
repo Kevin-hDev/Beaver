@@ -1,3 +1,5 @@
+#![cfg(any(windows, test))]
+
 use std::time::Duration;
 
 // Windows scanners may briefly hold a file between its durable write and atomic

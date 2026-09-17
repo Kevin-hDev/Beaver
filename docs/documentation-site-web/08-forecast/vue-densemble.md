@@ -2,7 +2,7 @@
 
 **Emplacement site** — Forecast › Vue d'ensemble
 **Répond à** — « À quoi sert Forecast, où est-ce que ça se trouve dans Beaver, et qu'est-ce qu'il me faut pour obtenir ma première prévision ? »
-**Sources** — `src/components/agent-local/mode-selector.tsx`, `src/components/agent-local/use-agent-local-forecast-content.tsx`, `src/types/forecast-panel.ts`, `src/hooks/use-forecast-panel.ts` ; `src/components/forecast/forecast-panel.tsx`, `forecast-empty.tsx`, `forecast-data.ts`, `forecast-config.tsx`, `forecast-nav.tsx`, `forecast-section-router.tsx`, `forecast-errors.ts`, `forecast-limits.ts` ; `src/components/forecast/workbench/open-forecast-workbench.ts`, `forecast-workbench-nav.tsx`, `forecast-workbench-section.tsx`, `forecast-workbench-types.ts` ; `src-tauri/src/commands/forecast.rs`, `commands/forecast_models.rs` ; `src-tauri/src/services/forecast/limits.rs`, `storage_paths.rs`, `storage_index.rs`, `catalog.rs`, `catalog_specs/providers.rs` ; `src-tauri/src/services/agent_local/tool_definitions_forecast.rs` ; `src/i18n/fr.json`
+**Sources** — `src/components/agent-local/mode-selector.tsx`, `src/components/agent-local/use-agent-local-forecast-content.tsx`, `src/types/forecast-panel.ts`, `src/hooks/use-forecast-panel.ts` ; `src/components/forecast/forecast-panel.tsx`, `forecast-empty.tsx`, `forecast-data.ts`, `forecast-config.tsx`, `forecast-nav.tsx`, `forecast-section-router.tsx`, `forecast-errors.ts`, `forecast-limits.ts` ; `src/components/forecast/workbench/open-forecast-workbench.ts`, `forecast-workbench-nav.tsx`, `forecast-workbench-section.tsx`, `forecast-workbench-types.ts` ; `src-tauri/src/commands/forecast.rs`, `commands/forecast_models.rs` ; `src-tauri/src/services/forecast/limits.rs`, `storage_paths.rs`, `storage_index.rs`, `catalog.rs`, `catalog_specs/providers.rs` ; `src-tauri/src/services/agent_local/tools/tool_definitions_forecast.rs` ; `src/i18n/fr.json`
 **Vérification** — Vérifié dans le code le 10 septembre 2026. Aucun écran n'a été observé : tous les points d'affichage sont listés en fin de fichier pour la passe d'interface.
 
 > **Cette page est la porte d'entrée de la section Forecast.** Elle décrit à quoi sert l'espace, où il se trouve et le parcours complet d'une prévision. Chaque étape a ensuite sa page : les données (`08-forecast/donnees-et-audit.md`), le choix du modèle (`08-forecast/selection-du-modele.md`), les exports (`08-forecast/exports.md`), les modèles eux-mêmes (`08-forecast/modeles-locaux.md`, `08-forecast/modele-cloud-timegpt.md`).
@@ -157,7 +157,7 @@ Une analyse enregistrée pèse au plus **64 Mo** (`limits.rs:15`).
 
 ### 7. Le même travail depuis la conversation
 
-Le sous-titre de l'écran vide, **« Demander à l'agent »**, n'est pas décoratif : l'agent dispose de sept outils Forecast et peut faire tout le parcours à votre place (`services/agent_local/tool_definitions_forecast.rs:12-131`) :
+Le sous-titre de l'écran vide, **« Demander à l'agent »**, n'est pas décoratif : l'agent dispose de sept outils Forecast et peut faire tout le parcours à votre place (`services/agent_local/tools/tool_definitions_forecast.rs:12-131`) :
 
 | Outil | Ce qu'il fait |
 |---|---|

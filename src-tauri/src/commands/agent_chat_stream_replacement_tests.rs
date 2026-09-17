@@ -64,15 +64,6 @@ fn capacity_precedes_resolution_and_durable_admission_precedes_spawn() {
     );
 }
 
-#[test]
-fn active_user_message_is_refused_until_a_durable_consumer_exists() {
-    let backend = include_str!("agent_chat_queue.rs");
-
-    assert!(backend.contains("pub async fn queue_agent_message"));
-    assert!(!backend.contains("inbox.enqueue"));
-    assert!(backend.contains("Ok(false)"));
-}
-
 #[tokio::test]
 async fn later_start_wins_while_previous_cancellation_is_suspended() {
     let streams = Arc::new(ActiveStreams(Mutex::new(HashMap::new())));

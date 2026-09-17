@@ -373,10 +373,8 @@ async fn every_claude_5_family_uses_visible_adaptive_thinking() {
                 supports_tools: true,
                 supports_vision: true,
                 supports_thinking: true,
-                reasoning_contract: None,
+                reasoning_contract: crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(&["auto", "low", "xhigh"], Some("auto")),
                 supports_fast_mode: false,
-                reasoning_modes: vec!["auto".into(), "low".into(), "xhigh".into()],
-                default_reasoning_mode: Some("auto".into()),
                 context_usage_includes_reasoning: true,
                 is_free: false,
             })
@@ -415,10 +413,12 @@ async fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_contract: None,
+            reasoning_contract:
+                crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                    &["auto", "low", "high"],
+                    Some("high"),
+                ),
             supports_fast_mode: false,
-            reasoning_modes: vec!["auto".into(), "low".into(), "high".into()],
-            default_reasoning_mode: Some("high".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         }],

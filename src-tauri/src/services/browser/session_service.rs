@@ -1,9 +1,3 @@
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-use super::{
-    browser_view_key::BrowserViewKey,
-    runtime_revision::{RuntimeRevisionCache, RuntimeStamp},
-    session_types::BrowserRuntimeTabUpdate,
-};
 use super::{
     live_session_registry::LiveSessionRegistry,
     session_model::{BrowserSessionState, BrowserTabCreation, SessionModel},
@@ -15,10 +9,10 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Default)]
 pub struct BrowserSessionService {
-    gate: Arc<Mutex<()>>,
-    live_sessions: Arc<Mutex<LiveSessionRegistry>>,
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    runtime_revisions: Arc<Mutex<RuntimeRevisionCache>>,
+    pub(super) gate: Arc<Mutex<()>>,
+    pub(super) live_sessions: Arc<Mutex<LiveSessionRegistry>>,
+    #[cfg(browser_native_api)]
+    pub(super) runtime_revisions: Arc<Mutex<super::runtime_revision::RuntimeRevisionCache>>,
 }
 
 impl BrowserSessionService {
@@ -28,8 +22,11 @@ impl BrowserSessionService {
             .gate
             .lock()
             .map_err(|_| BrowserCommandError::Internal)?;
-        let cold = self.activate_session(session_id)?;
-        session_persistence::open_session(session_id, cold)
+        let mut sessions = self
+            .live_sessions
+            .lock()
+            .map_err(|_| BrowserCommandError::Internal)?;
+        Ok(self.session(&mut sessions, session_id)?.state().clone())
     }
 
     pub fn create_tab(
@@ -97,65 +94,6 @@ impl BrowserSessionService {
         })
     }
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    pub(super) fn update_runtime(
-        &self,
-        session_id: &str,
-        tab_id: &str,
-        stamp: RuntimeStamp,
-        mut update: BrowserRuntimeTabUpdate,
-    ) -> Result<Option<BrowserSessionState>, BrowserCommandError> {
-        let view_key = validated_view_key(session_id, tab_id)?;
-        let _guard = self
-            .gate
-            .lock()
-            .map_err(|_| BrowserCommandError::Internal)?;
-        if !self
-            .runtime_revisions
-            .lock()
-            .map_err(|_| BrowserCommandError::Internal)?
-            .filter_update(view_key, stamp, &mut update)
-        {
-            return Ok(None);
-        }
-        let cold = self.activate_session(session_id)?;
-        session_persistence::mutate_session(session_id, cold, |model| {
-            let changed = model
-                .update_runtime(tab_id, &update)
-                .map_err(|_| BrowserCommandError::InvalidInput)?;
-            Ok(changed.then(|| model.state().clone()))
-        })
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    pub(super) fn mark_released(
-        &self,
-        session_id: &str,
-        tab_id: &str,
-        stamp: RuntimeStamp,
-    ) -> Result<Option<BrowserSessionState>, BrowserCommandError> {
-        let view_key = validated_view_key(session_id, tab_id)?;
-        let _guard = self
-            .gate
-            .lock()
-            .map_err(|_| BrowserCommandError::Internal)?;
-        if !self
-            .runtime_revisions
-            .lock()
-            .map_err(|_| BrowserCommandError::Internal)?
-            .accept_release(view_key, stamp)
-        {
-            return Ok(None);
-        }
-        let cold = self.activate_session(session_id)?;
-        session_persistence::mutate_session(session_id, cold, |model| {
-            let changed = model
-                .mark_released(tab_id)
-                .map_err(|_| BrowserCommandError::InvalidInput)?;
-            Ok(changed.then(|| model.state().clone()))
-        })
-    }
-
     fn mutate<T>(
         &self,
         session_id: &str,
@@ -166,28 +104,45 @@ impl BrowserSessionService {
             .gate
             .lock()
             .map_err(|_| BrowserCommandError::Internal)?;
-        let cold = self.activate_session(session_id)?;
-        session_persistence::mutate_session(session_id, cold, operation)
+        let mut sessions = self
+            .live_sessions
+            .lock()
+            .map_err(|_| BrowserCommandError::Internal)?;
+        let model = self.session(&mut sessions, session_id)?;
+        let before = model.clone();
+        let persisted_before = model.persisted();
+        let result = match operation(model) {
+            Ok(result) => result,
+            Err(error) => {
+                *model = before;
+                return Err(error);
+            }
+        };
+        if model.persisted() != persisted_before {
+            if let Err(error) = session_persistence::save_session(session_id, model) {
+                *model = before;
+                return Err(error);
+            }
+        }
+        Ok(result)
     }
 
-    fn activate_session(&self, session_id: &str) -> Result<bool, BrowserCommandError> {
-        self.live_sessions
-            .lock()
-            .map(|mut registry| registry.activate(session_id))
-            .map_err(|_| BrowserCommandError::Internal)
+    pub(super) fn session<'a>(
+        &self,
+        sessions: &'a mut LiveSessionRegistry,
+        session_id: &str,
+    ) -> Result<&'a mut SessionModel, BrowserCommandError> {
+        if !sessions.contains(session_id) {
+            let model = session_persistence::load_or_create(session_id)?;
+            sessions.insert(session_id.to_owned(), model);
+        }
+        sessions
+            .get_mut(session_id)
+            .ok_or(BrowserCommandError::Internal)
     }
 }
 
 fn validate_session_id(session_id: &str) -> Result<(), BrowserCommandError> {
     crate::services::agent_local::session_store::validate_session_id(session_id)
-        .map_err(|_| BrowserCommandError::InvalidInput)
-}
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-fn validated_view_key(
-    session_id: &str,
-    tab_id: &str,
-) -> Result<BrowserViewKey, BrowserCommandError> {
-    BrowserViewKey::new(session_id.to_owned(), tab_id.to_owned())
         .map_err(|_| BrowserCommandError::InvalidInput)
 }

@@ -6,11 +6,6 @@ pub async fn search_registry(query: String) -> Vec<RegistryModelInfo> {
 }
 
 #[tauri::command]
-pub async fn get_registry_model(key: String) -> Option<RegistryModelInfo> {
-    litellm_catalog_search::get_model(&key).await
-}
-
-#[tauri::command]
 pub async fn list_registry_families() -> Vec<FamilyGroup> {
     litellm_catalog_search::list_families().await
 }

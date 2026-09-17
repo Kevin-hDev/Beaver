@@ -194,6 +194,34 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
 }
 
 #[tokio::test]
+async fn buffered_sse_still_prioritizes_user_cancellation() {
+    let body = "data: {\"type\":\"response.completed\",\"response\":{}}\n\n";
+    let (response, server) = sse_response(body, Duration::ZERO).await;
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+    let mut measurement = StreamMeasurement::new(None);
+
+    let error = consume_sse_with_timeout(
+        &NoopSink,
+        response,
+        cancel,
+        false,
+        None,
+        "openai",
+        "gpt-5.6-sol",
+        &[],
+        None,
+        Duration::from_secs(1),
+        &mut measurement,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(error, "Annulé");
+    server.await.unwrap();
+}
+
+#[tokio::test]
 async fn oversized_incomplete_sse_is_rejected_before_the_idle_deadline() {
     let (response, server) = oversized_incomplete_sse_response().await;
     let mut measurement = StreamMeasurement::new(None);

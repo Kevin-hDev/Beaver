@@ -7,13 +7,13 @@ import { EMPTY_CHAT_STATE } from "../agent-chat-stream-callbacks";
 import type { AgentMessage, AgentSession, FileAttachment } from "@/types/agent";
 import type { StreamSnapshot } from "../agent-stream-manager";
 import type { TurnStart } from "@/types/agent-turn.generated";
+import { createStreamProjection } from "../agent-stream-projections";
 
 type StartStreamMock = (
   sessionId: string,
   model: string,
   provider: string,
   turn: TurnStart,
-  think: boolean,
   startState: { displayMessages: AgentMessage[] },
 ) => void | Promise<void>;
 type SubscribeMock = (
@@ -87,7 +87,7 @@ describe("useAgentChat", () => {
     lastTruncatePayload = null;
     prepareResult = { status: "ready" };
     stopStream.mockResolvedValue("ignored");
-    startStream.mockImplementation((_sessionId, _model, _provider, _turn, _think, startState) => {
+    startStream.mockImplementation((_sessionId, _model, _provider, _turn, startState) => {
       lastStreamMessages = startState.displayMessages;
     });
     mockSessionInvoke(session);
@@ -119,6 +119,7 @@ describe("useAgentChat", () => {
     };
     getStreamSnapshot.mockReturnValueOnce({
       ...EMPTY_CHAT_STATE,
+      projection: createStreamProjection(),
       pendingPermissions: [request],
       completed: false,
     });
@@ -137,16 +138,21 @@ describe("useAgentChat", () => {
     });
     renderHook(() => useAgentChat(
       "session-1", "llama3", "ollama", onPermission,
-      undefined, undefined, undefined, undefined, undefined, undefined,
-      onPermissionClosed,
+      undefined, undefined, onPermissionClosed,
     ));
     const request = { id: "permission", toolName: "plugin.tool", arguments: {} };
     act(() => {
-      subscriber?.({ ...EMPTY_CHAT_STATE, pendingPermissions: [request], completed: false });
+      subscriber?.({
+        ...EMPTY_CHAT_STATE, projection: createStreamProjection(),
+        pendingPermissions: [request], completed: false,
+      });
     });
     expect(onPermission).toHaveBeenCalledWith(request);
     act(() => {
-      subscriber?.({ ...EMPTY_CHAT_STATE, pendingPermissions: [], completed: false });
+      subscriber?.({
+        ...EMPTY_CHAT_STATE, projection: createStreamProjection(),
+        pendingPermissions: [], completed: false,
+      });
     });
     expect(onPermissionClosed).toHaveBeenCalledWith("permission");
   });
@@ -191,6 +197,7 @@ describe("useAgentChat", () => {
     await waitFor(() => expect(result.current.sessionLoading).toBe(false));
     getStreamSnapshot.mockReturnValueOnce({
       ...EMPTY_CHAT_STATE, messages: session.messages, isStreaming: true,
+      projection: createStreamProjection(),
       pendingPermissions: [], completed: false,
     });
     await act(async () => { await result.current.reload("m2"); });
@@ -217,48 +224,11 @@ describe("useAgentChat", () => {
     expect(startStream).not.toHaveBeenCalled();
   });
 
-  it("transmet le support vision du modèle sélectionné au stream", async () => {
-    const { result } = renderHook(() =>
-      useAgentChat(
-        "session-1",
-        "google/gemma-4-31b-it",
-        "openrouter",
-        undefined,
-        true,
-        true,
-        true,
-        "auto",
-      ),
-    );
-    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
-
-    await act(async () => {
-      await result.current.sendMessage("décris l'image");
-    });
-
-    expect(startStream).toHaveBeenLastCalledWith(
-      "session-1",
-      "google/gemma-4-31b-it",
-      "openrouter",
-      expect.objectContaining({ type: "new" }),
-      true,
-      expect.any(Object),
-      undefined,
-      true,
-      true,
-      true,
-      "auto",
-      undefined,
-      false,
-      expect.any(String),
-    );
-  });
-
   it("rafraîchit le verrou des modes après le démarrage accepté", async () => {
     const onStreamStarted = vi.fn();
     const { result } = renderHook(() => useAgentChat(
       "session-1", "llama3", "ollama", undefined,
-      true, true, false, "auto", "manual", onStreamStarted,
+      "manual", onStreamStarted,
     ));
     await waitFor(() => expect(result.current.sessionLoading).toBe(false));
 
@@ -379,6 +349,7 @@ describe("useAgentChat", () => {
     await waitFor(() => expect(result.current.sessionLoading).toBe(false));
     const streaming = {
       ...EMPTY_CHAT_STATE,
+      projection: createStreamProjection(),
       messages: session.messages,
       isStreaming: true,
       pendingPermissions: [],

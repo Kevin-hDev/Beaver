@@ -119,6 +119,70 @@ describe("agentStreamManager", () => {
     expect(mocks.invoke).toHaveBeenCalledWith("get_agent_session", { id: "s1" });
   });
 
+  it("projette todos, outils et sous-agents depuis l'unique écoute du flux", async () => {
+    await agentStreamManager.startSession("parent", [], 0);
+    emit("parent", {
+      event: "todoUpdated",
+      data: { todos: [{ content: "Tester", status: "in_progress" }] },
+    });
+    emit("parent", {
+      event: "toolCall",
+      data: { name: "edit_file", arguments: { path: "a.ts" }, toolCallIndex: 0 },
+    });
+    emit("parent", {
+      event: "subagentSpawned",
+      data: {
+        subagentSessionId: "child",
+        subagentName: "Explorer",
+        subagentType: "explorer",
+        subagentDescription: "Inspecter",
+        subagentColorKey: "geminitor",
+        promptPreview: "Cherche",
+        runId: "run-1",
+      },
+    });
+
+    const running = agentStreamManager.getSnapshot("parent");
+    expect(running?.projection.todos?.[0]?.status).toBe("in_progress");
+    expect(running?.currentTools[0]?.name).toBe("edit_file");
+    expect(running?.projection.subagents.active[0]?.sessionId).toBe("child");
+
+    emit("parent", {
+      event: "subagentCompleted",
+      data: {
+        subagentSessionId: "child",
+        success: true,
+        status: "completed",
+        summary: "Terminé",
+        runId: "run-1",
+      },
+    });
+
+    const completed = agentStreamManager.getSnapshot("parent")?.projection.subagents;
+    expect(completed?.active).toEqual([]);
+    expect(completed?.completed[0]).toMatchObject({
+      sessionId: "child", status: "completed", summary: "Terminé",
+    });
+  });
+
+  it("refuse explicitement un 33e abonné sans évincer les vues actives", async () => {
+    const first = vi.fn();
+    const cleanups = [agentStreamManager.subscribe("subscribers", first)];
+    for (let index = 1; index < 32; index += 1) {
+      cleanups.push(agentStreamManager.subscribe("subscribers", vi.fn()));
+    }
+
+    expect(() => agentStreamManager.subscribe("subscribers", vi.fn()))
+      .toThrow("active_view_subscription_limit_reached");
+
+    await agentStreamManager.startSession("subscribers", [], 0);
+    expect(first).toHaveBeenCalled();
+    cleanups.pop()?.();
+    const replacement = agentStreamManager.subscribe("subscribers", vi.fn());
+    replacement();
+    cleanups.forEach((cleanup) => cleanup());
+  });
+
   it("ignore les events tardifs d'une génération annulée", async () => {
     await agentStreamManager.startSession("s1", [message("u1", "user", "Question")], 10);
     agentStreamManager.setSessionGeneration("s1", 7);
@@ -330,21 +394,6 @@ describe("agentStreamManager", () => {
     const during = agentStreamManager.getSnapshot("compression-context");
     expect(during?.contextUsageBuckets?.messages).toBe(10_600);
     expect(during?.contextUsageRecord.currentPreparation?.input.tokens).toBe(24_044);
-  });
-
-  it("met en file une intention pendant l'attente de la génération Rust", async () => {
-    await agentStreamManager.startSession(
-      "s1", [message("u1", "user", "Question")], 10, "chat", true,
-    );
-
-    const queued = agentStreamManager.queueUserMessage(
-      "s1", message("u2", "user", "Suite"),
-    );
-
-    expect(queued).toBe(true);
-    expect(agentStreamManager.getSnapshot("s1")?.queuedUserMessages).toEqual([
-      expect.objectContaining({ id: "u2", content: "Suite" }),
-    ]);
   });
 
   it("rejoue dans l'ordre les événements arrivés avant la résolution IPC", async () => {

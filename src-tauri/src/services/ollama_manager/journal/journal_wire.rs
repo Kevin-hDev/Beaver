@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
 use super::{DocumentError, OllamaJournalState, OllamaTransactionJournal};
 use serde::Deserialize;

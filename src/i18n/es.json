@@ -1344,6 +1344,7 @@
     "providerConnectionFailed": "No se pudo conectar con el proveedor.",
     "providerTemporarilyUnavailable": "El proveedor no está disponible temporalmente. Vuelve a intentarlo en unos instantes.",
     "providerRequestRejected": "El proveedor rechazó la solicitud.",
+    "providerResponseInvalid": "El proveedor devolvió una respuesta no válida.",
     "providerEmptyResponse": "El proveedor no devolvió ninguna respuesta ni llamada a herramientas. Puedes reintentar o elegir otro modelo.",
     "providerOutputLimit": "El modelo alcanzó su límite de generación antes de completar la respuesta. Acorta la solicitud o elige otro ajuste de razonamiento.",
     "providerContentFiltered": "El proveedor interrumpió la respuesta con su filtro de contenido. Puedes reformular la solicitud.",

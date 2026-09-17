@@ -1,6 +1,6 @@
 use super::error::OllamaErrorCode;
 use super::types::{OllamaEndpoint, OllamaStartOutcome};
-use super::{CancelOutcome, OllamaCliArgs, OllamaManager};
+use super::{CancelOutcome, OllamaManager};
 use crate::app_exit::AppExitCoordinator;
 use crate::services::agent_local::ollama_client::OllamaClient;
 use std::num::NonZeroU16;
@@ -36,7 +36,6 @@ async fn manager_exposes_one_decision_for_all_start_results() {
     let _ = manager.usable_endpoint().await;
     let _ = manager.owned_endpoint().await;
     let _ = manager.stop_and_wait(Instant::now()).await;
-    let _ = manager.run_cli(OllamaCliArgs::Version).await;
     let _client = OllamaClient::new(manager);
     let _cancel = CancelOutcome::Cancelled;
 }
@@ -44,11 +43,11 @@ async fn manager_exposes_one_decision_for_all_start_results() {
 #[test]
 fn all_consumers_use_injected_manager_and_do_not_own_runtime_actions() {
     let sources = [
-        include_str!("../agent_local/ollama_client.rs"),
-        include_str!("../agent_local/ollama_stream_request.rs"),
-        include_str!("../agent_local/ollama_collect.rs"),
-        include_str!("../agent_local/ollama_registry.rs"),
-        include_str!("../agent_local/ollama_modelfile_create.rs"),
+        include_str!("../agent_local/execution/ollama_client.rs"),
+        include_str!("../agent_local/execution/ollama_stream_request.rs"),
+        include_str!("../agent_local/execution/ollama_collect.rs"),
+        include_str!("../agent_local/execution/ollama_registry.rs"),
+        include_str!("../agent_local/execution/ollama_modelfile_create.rs"),
         include_str!("../../commands/ollama_version.rs"),
         include_str!("../../commands/agent_ollama.rs"),
         include_str!("../../commands/ollama_setup.rs"),

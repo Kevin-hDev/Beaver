@@ -82,6 +82,10 @@ pub fn export_artifacts(manifest_root: &Path) -> Result<(), String> {
         &directory.join("sdk/contract.d.ts"),
         &artifacts::render_sdk_contract(&contract)?,
     )?;
+    write(
+        &directory.join("contract-reader-limits.generated.mjs"),
+        &render_node_reader_limits(),
+    )?;
     update_document(
         &directory.join("sdk/README.md"),
         &document::generated_document_section(&contract)?,
@@ -89,6 +93,14 @@ pub fn export_artifacts(manifest_root: &Path) -> Result<(), String> {
     update_private_document_if_present(
         &private_api_path(manifest_root)?,
         &document::generated_document_section(&contract)?,
+    )
+}
+
+pub fn render_node_reader_limits() -> String {
+    format!(
+        "// Generated from extension_contract_shared.rs. Do not edit.\n\nexport const BOOTSTRAP_FILE_MAX_BYTES = {};\nexport const MAX_BOOTSTRAPPED_CONTRACT_BYTES = {};\n",
+        shared::BOOTSTRAP_FILE_MAX_BYTES,
+        shared::MAX_BOOTSTRAPPED_CONTRACT_BYTES
     )
 }
 

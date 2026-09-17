@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::blocking::run_ollama_blocking;
 use super::bundle_receipt::{read_receipt, write_receipt, write_version, BundleReceipt};
 use super::durable_fs::OllamaDurableFs;

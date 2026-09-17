@@ -1,0 +1,202 @@
+use crate::services::agent_local::types_ollama::{ModelInfo, OllamaModel};
+
+pub(crate) fn dedupe_by_digest(models: Vec<OllamaModel>) -> Vec<OllamaModel> {
+    use std::collections::HashMap;
+    let mut groups: HashMap<String, Vec<OllamaModel>> = HashMap::new();
+    let mut no_digest: Vec<OllamaModel> = Vec::new();
+    for m in models {
+        if m.digest_short.is_empty() {
+            no_digest.push(m);
+        } else {
+            groups.entry(m.digest_short.clone()).or_default().push(m);
+        }
+    }
+    let mut result: Vec<OllamaModel> = Vec::new();
+    for (_digest, mut group) in groups {
+        group.sort_by(|a, b| {
+            let al = a.name.ends_with(":latest");
+            let bl = b.name.ends_with(":latest");
+            al.cmp(&bl).then_with(|| a.name.len().cmp(&b.name.len()))
+        });
+        let mut primary = group.remove(0);
+        primary.aliases = group.into_iter().map(|m| m.name).collect();
+        result.push(primary);
+    }
+    result.extend(no_digest);
+    result.sort_by(|a, b| a.name.cmp(&b.name));
+    result
+}
+
+pub(crate) fn build_model_from_tags(
+    m: &serde_json::Value,
+    info: Option<ModelInfo>,
+    is_customized: bool,
+) -> OllamaModel {
+    let name = m["name"].as_str().unwrap_or_default().to_string();
+    let details = &m["details"];
+    let digest_short: String = m["digest"]
+        .as_str()
+        .unwrap_or_default()
+        .trim_start_matches("sha256:")
+        .chars()
+        .take(12)
+        .collect();
+    let supports_thinking = info.as_ref().is_some_and(|model| {
+        model
+            .capabilities
+            .iter()
+            .any(|capability| capability == "thinking")
+    });
+    let reasoning_modes = if supports_thinking {
+        crate::services::reasoning_ollama::supported_modes(&name)
+    } else {
+        Vec::new()
+    };
+    let default_reasoning_mode = supports_thinking.then(|| {
+        let preferred = crate::services::reasoning_ollama::default_mode(&name);
+        reasoning_modes
+            .iter()
+            .any(|mode| mode == preferred)
+            .then(|| preferred.to_string())
+    });
+    let default_reasoning_mode = default_reasoning_mode.flatten();
+    let reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_modes(
+            supports_thinking,
+            &reasoning_modes,
+            default_reasoning_mode.as_deref(),
+        );
+    OllamaModel {
+        name,
+        size: m["size"].as_u64().unwrap_or(0),
+        family: info
+            .as_ref()
+            .map_or_else(|| s(details, "family"), |i| i.family.clone()),
+        parameter_size: info.as_ref().map_or_else(
+            || s(details, "parameter_size"),
+            |i| i.parameter_size.clone(),
+        ),
+        quantization: info.as_ref().map_or_else(
+            || s(details, "quantization_level"),
+            |i| i.quantization.clone(),
+        ),
+        architecture: info
+            .as_ref()
+            .map_or_else(String::new, |i| i.architecture.clone()),
+        is_moe: info.as_ref().is_some_and(|i| i.is_moe),
+        context_length: info.as_ref().map_or(0, |i| i.context_length),
+        capabilities: info.map_or_else(|| vec!["completion".to_string()], |i| i.capabilities),
+        reasoning_contract,
+        context_usage_includes_reasoning: true,
+        digest_short,
+        aliases: Vec::new(),
+        is_customized,
+    }
+}
+
+pub(crate) const MAX_SHOW_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+const MAX_SHOW_CAPABILITIES: usize = 32;
+const MAX_SHOW_CAPABILITY_BYTES: usize = 64;
+
+pub(crate) fn parse_show_response(
+    name: &str,
+    json: &serde_json::Value,
+) -> Result<ModelInfo, &'static str> {
+    let details = &json["details"];
+    let mi = &json["model_info"];
+    let arch = mi["general.architecture"].as_str().unwrap_or("");
+    let capabilities = parse_capabilities(json)?;
+    let has_audio = capabilities.iter().any(|value| value == "audio");
+
+    Ok(ModelInfo {
+        name: name.to_string(),
+        modelfile: s(json, "modelfile"),
+        parameters: s(json, "parameters"),
+        template: s(json, "template"),
+        family: s(details, "family"),
+        parameter_size: s(details, "parameter_size"),
+        quantization: s(details, "quantization_level"),
+        architecture: arch.to_string(),
+        is_moe: mi
+            .get(format!("{arch}.expert_count"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0)
+            > 0,
+        context_length: mi[format!("{arch}.context_length")]
+            .as_u64()
+            .unwrap_or(4096),
+        capabilities,
+        has_audio,
+        license: s(json, "license"),
+    })
+}
+
+fn parse_capabilities(json: &serde_json::Value) -> Result<Vec<String>, &'static str> {
+    let raw = json["capabilities"].as_array().ok_or("ollama-show-error")?;
+    if raw.is_empty() || raw.len() > MAX_SHOW_CAPABILITIES {
+        return Err("ollama-show-error");
+    }
+    raw.iter()
+        .map(|value| {
+            let value = value.as_str().ok_or("ollama-show-error")?;
+            if value.is_empty()
+                || value.len() > MAX_SHOW_CAPABILITY_BYTES
+                || !value.bytes().all(|byte| {
+                    byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"-_".contains(&byte)
+                })
+            {
+                return Err("ollama-show-error");
+            }
+            Ok(value.to_string())
+        })
+        .collect()
+}
+
+fn s(v: &serde_json::Value, key: &str) -> String {
+    v[key].as_str().unwrap_or("").to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn thinking_info(name: &str) -> ModelInfo {
+        ModelInfo {
+            name: name.to_string(),
+            modelfile: String::new(),
+            parameters: String::new(),
+            template: String::new(),
+            family: String::new(),
+            parameter_size: String::new(),
+            quantization: String::new(),
+            architecture: String::new(),
+            is_moe: false,
+            context_length: 32_768,
+            capabilities: vec!["completion".into(), "thinking".into()],
+            has_audio: false,
+            license: String::new(),
+        }
+    }
+
+    #[test]
+    fn cloud_glm_constructor_uses_a_published_default() {
+        let model = build_model_from_tags(
+            &serde_json::json!({"name": "glm-5.3-flash:cloud"}),
+            Some(thinking_info("glm-5.3-flash:cloud")),
+            false,
+        );
+        assert_eq!(model.reasoning_modes(), ["low", "high", "max"]);
+        assert_eq!(model.default_reasoning_mode().as_deref(), Some("max"));
+    }
+
+    #[test]
+    fn legacy_ollama_constructor_keeps_auto_default() {
+        let model = build_model_from_tags(
+            &serde_json::json!({"name": "qwen3.5:4b"}),
+            Some(thinking_info("qwen3.5:4b")),
+            false,
+        );
+        assert_eq!(model.reasoning_modes(), ["off", "auto"]);
+        assert_eq!(model.default_reasoning_mode().as_deref(), Some("auto"));
+    }
+}

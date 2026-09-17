@@ -14,30 +14,28 @@ describe("persistAgentMessage", () => {
     invoke.mockReset().mockResolvedValue(undefined);
   });
 
-  it("met en file une seule intention et ne relance pas le stream", async () => {
+  it("refuse un second envoi pendant le flux sans créer de message", async () => {
     const doStream = vi.fn();
-    const queueStreamMessage = vi.fn().mockResolvedValue("queued");
-    await persistAgentMessage({
+    const resolveStreamSend = vi.fn().mockReturnValue("unavailable");
+    const accepted = await persistAgentMessage({
       sessionId: "session-1", messages: [], text: "Compare",
       skills: [{ id: "local:review", name: "review" }],
-      doStream, queueStreamMessage,
+      doStream, resolveStreamSend,
     });
 
-    expect(queueStreamMessage).toHaveBeenCalledWith(
-      "session-1",
-      { content: "Compare", files: [], skills: [{ id: "local:review", name: "review" }] },
-      expect.objectContaining({ role: "user", content: "Compare" }),
-    );
+    expect(accepted).toBe(false);
+    expect(resolveStreamSend).toHaveBeenCalledWith("session-1");
     expect(doStream).not.toHaveBeenCalled();
     expect(invoke).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith("errors.admission.queueUnavailable", "error");
   });
 
   it("refuse génériquement l'envoi pendant un arrêt sans créer d'optimiste", async () => {
     const doStream = vi.fn();
-    const queueStreamMessage = vi.fn().mockResolvedValue("stopping");
+    const resolveStreamSend = vi.fn().mockReturnValue("stopping");
     const accepted = await persistAgentMessage({
       sessionId: "session-1", messages: [], text: "Conserve-moi",
-      doStream, queueStreamMessage,
+      doStream, resolveStreamSend,
     });
 
     expect(accepted).toBe(false);

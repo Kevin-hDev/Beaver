@@ -17,7 +17,7 @@ pub(crate) fn begin_cef_shutdown(
     helper_exit_deadline: Instant,
     ultimate_deadline: Instant,
 ) -> CefShutdownBarrier {
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(browser_native_api)]
     return if super::cef_supervision::emergency::close_gate(
         admission_deadline,
         helper_exit_deadline,
@@ -27,7 +27,7 @@ pub(crate) fn begin_cef_shutdown(
     } else {
         CefShutdownBarrier::TimedOut
     };
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    #[cfg(not(browser_native_api))]
     {
         let _ = (admission_deadline, helper_exit_deadline, ultimate_deadline);
         CefShutdownBarrier::Drained
@@ -35,14 +35,14 @@ pub(crate) fn begin_cef_shutdown(
 }
 
 pub(crate) fn force_cef_shutdown() {
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(browser_native_api)]
     super::cef_supervision::emergency::force_once();
 }
 
 pub(crate) fn cef_has_runnable_helpers() -> bool {
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(browser_native_api)]
     return super::cef_supervision::emergency::has_runnable();
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    #[cfg(not(browser_native_api))]
     false
 }
 
@@ -51,7 +51,7 @@ pub(super) fn cef_supervision_root() -> std::path::PathBuf {
     crate::services::paths::data_dir().join("cef-supervision")
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(browser_native_api)]
 pub(super) fn capability_for_runtime(runtime: &BrowserRuntimeHandle) -> BrowserCapability {
     let runtime_capability = runtime.capability();
     if matches!(runtime_capability, BrowserCapability::Ready { .. })
@@ -70,7 +70,7 @@ pub(super) fn emit_capability(app: &tauri::AppHandle, runtime: &BrowserRuntimeHa
     let _ = app.emit(BROWSER_CAPABILITY_EVENT, capability_for_runtime(runtime));
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(browser_native_api))]
 pub(super) fn capability_for_runtime(_runtime: &BrowserRuntimeHandle) -> BrowserCapability {
     BrowserCapability::Hidden
 }

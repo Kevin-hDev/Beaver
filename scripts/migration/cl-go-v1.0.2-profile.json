@@ -127,16 +127,16 @@
       ],
       "contracts": [
         {
-          "file": "src-tauri/src/services/agent_local/session_index_io.rs",
+          "file": "src-tauri/src/services/agent_local/conversations/session_index_io.rs",
           "snippets": [".join(\"agent-sessions\")", ".join(\"index.json\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/session_order.rs",
+          "file": "src-tauri/src/services/agent_local/conversations/session_order.rs",
           "snippets": [".join(\"session-order.json\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/tool_plan_storage.rs",
+          "file": "src-tauri/src/services/agent_local/tools/tool_plan_storage.rs",
           "snippets": [".join(\"plans\")"]
         },
         {
@@ -144,27 +144,27 @@
           "snippets": ["b\"cl-go-dash:attachment-access:v1\""]
         },
         {
-          "file": "src-tauri/src/services/agent_local/tool_result_budget.rs",
+          "file": "src-tauri/src/services/agent_local/tools/tool_result_budget.rs",
           "snippets": [".join(\"tool-results\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/stream_recovery_store.rs",
+          "file": "src-tauri/src/services/agent_local/diagnostics/stream_recovery_store.rs",
           "snippets": [".join(\"agent-stream-recovery\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/extension_session_state.rs",
+          "file": "src-tauri/src/services/agent_local/extensions/extension_session_state.rs",
           "snippets": [".join(\"extension-session-state\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/tool_workspace_notice.rs",
+          "file": "src-tauri/src/services/agent_local/tools/tool_workspace_notice.rs",
           "snippets": [".join(\"session-workspaces\")"]
         }
       ],
       "evidence": [
-        "src-tauri/src/services/agent_local/session_store_tests.rs",
+        "src-tauri/src/services/agent_local/conversations/session_store_tests.rs",
         "src-tauri/src/services/attachment_access_tests.rs"
       ],
       "manualGates": ["Rouvre une vraie pièce jointe située hors du profil."]
@@ -179,11 +179,11 @@
       ],
       "contracts": [
         {
-          "file": "src-tauri/src/services/agent_local/session_tabs_file.rs",
+          "file": "src-tauri/src/services/agent_local/conversations/session_tabs_file.rs",
           "snippets": [".join(\"session-tabs.json\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/agent_settings.rs",
+          "file": "src-tauri/src/services/agent_local/execution/agent_settings.rs",
           "snippets": [".join(\"agent-settings.json\")"]
         },
         {
@@ -192,12 +192,12 @@
           "snippets": [".join(\"compression-profiles.json\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/session_permission_state.rs",
+          "file": "src-tauri/src/services/agent_local/conversations/session_permission_state.rs",
           "snippets": [".join(\"session-permissions\")"]
         }
       ],
       "evidence": [
-        "src-tauri/src/services/agent_local/session_permission_state_tests.rs",
+        "src-tauri/src/services/agent_local/conversations/session_permission_state_tests.rs",
         "src-tauri/src/services/compress/profile_store_tests.rs"
       ],
       "manualGates": ["Rouvre les profils de compression globaux et propres aux sessions après redémarrage."]
@@ -216,11 +216,11 @@
       ],
       "contracts": [
         {
-          "file": "src-tauri/src/services/agent_local/memory_paths.rs",
+          "file": "src-tauri/src/services/agent_local/context/memory_paths.rs",
           "snippets": ["data_dir().join(\"memory\")", "self.root.join(\"global\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/memory_settings.rs",
+          "file": "src-tauri/src/services/agent_local/context/memory_settings.rs",
           "snippets": [".join(\"memory-settings.json\")"]
         },
         {
@@ -228,16 +228,16 @@
           "snippets": [".join(\"personality-injection.json\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/skill_catalog.rs",
+          "file": "src-tauri/src/services/agent_local/context/skill_catalog.rs",
           "snippets": [".join(\"skills\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/translation_cache.rs",
+          "file": "src-tauri/src/services/agent_local/tools/translation_cache.rs",
           "snippets": [".join(\"translations\")"]
         }
       ],
       "evidence": [
-        "src-tauri/src/services/agent_local/memory_store_tests.rs",
+        "src-tauri/src/services/agent_local/context/memory_store_tests.rs",
         "src-tauri/src/storage_default_skills_tests.rs"
       ],
       "manualGates": []
@@ -250,13 +250,13 @@
       ],
       "contracts": [
         {
-          "file": "src-tauri/src/services/agent_local/memory_project_migration.rs",
+          "file": "src-tauri/src/services/agent_local/context/memory_project_migration.rs",
           "snippets": ["const PENDING_MARKER: &str = \".project-folder-migration-v2\";"]
         }
       ],
       "evidence": [
-        "src-tauri/src/services/agent_local/memory_project_id_tests.rs",
-        "src-tauri/src/services/agent_local/memory_project_migration_tests.rs"
+        "src-tauri/src/services/agent_local/context/memory_project_id_tests.rs",
+        "src-tauri/src/services/agent_local/context/memory_project_migration_tests.rs"
       ],
       "manualGates": ["Ouvre un projet réel dont le chemin n’a pas changé."]
     },
@@ -285,11 +285,11 @@
       "profilePaths": ["projects.json"],
       "contracts": [
         {
-          "file": "src-tauri/src/services/agent_local/project_store.rs",
+          "file": "src-tauri/src/services/agent_local/permissions/project_store.rs",
           "snippets": [".join(\"projects.json\")"]
         }
       ],
-      "evidence": ["src-tauri/src/services/agent_local/project_store.rs"],
+      "evidence": ["src-tauri/src/services/agent_local/permissions/project_store.rs"],
       "manualGates": ["Vérifie un vrai dépôt et un worktree externe au profil."]
     },
     {
@@ -303,33 +303,33 @@
       ],
       "contracts": [
         {
-          "file": "src-tauri/src/services/agent_local/subagent_worktree.rs",
+          "file": "src-tauri/src/services/agent_local/subagents/subagent_worktree.rs",
           "snippets": [".join(\"subagent-worktrees\")", "\"cl-go/subagent/{execution_id}\""]
         },
         {
-          "file": "src-tauri/src/services/agent_local/subagent_change_store.rs",
+          "file": "src-tauri/src/services/agent_local/subagents/subagent_change_store.rs",
           "snippets": [".join(\"subagent-changes\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/subagent_directory_workspace.rs",
+          "file": "src-tauri/src/services/agent_local/subagents/subagent_directory_workspace.rs",
           "snippets": [".join(\"subagent-directory-repos\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/subagent_report_overflow.rs",
+          "file": "src-tauri/src/services/agent_local/subagents/subagent_report_overflow.rs",
           "snippets": [".join(\"subagent-reports\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/subagent_directory_workspace.rs",
+          "file": "src-tauri/src/services/agent_local/subagents/subagent_directory_workspace.rs",
           "snippets": [".join(\"sdr\")"]
         }
       ],
       "evidence": [
-        "src-tauri/src/services/agent_local/subagent_worktree_ownership_tests.rs",
-        "src-tauri/src/services/agent_local/subagent_directory_recovery_tests.rs",
-        "src-tauri/src/services/agent_local/subagent_completion_capacity_tests.rs",
-        "src-tauri/src/services/agent_local/subagent_startup_cleanup_tests.rs"
+        "src-tauri/src/services/agent_local/subagents/subagent_worktree_ownership_tests.rs",
+        "src-tauri/src/services/agent_local/subagents/subagent_directory_recovery_tests.rs",
+        "src-tauri/src/services/agent_local/subagents/subagent_completion_capacity_tests.rs",
+        "src-tauri/src/services/agent_local/subagents/subagent_startup_cleanup_tests.rs"
       ],
       "manualGates": ["Récupère un vrai worktree non fusionné."]
     },
@@ -349,7 +349,7 @@
           "snippets": [".join(\"ollama-bundle\")"]
         },
         {
-          "file": "src-tauri/src/services/agent_local/model_customizations.rs",
+          "file": "src-tauri/src/services/agent_local/execution/model_customizations.rs",
           "snippets": [".join(\"ollama-custom-models.json\")"]
         },
         {
@@ -358,7 +358,7 @@
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/system_prompt_store_runtime.rs",
+          "file": "src-tauri/src/services/agent_local/prompts/system_prompt_store_runtime.rs",
           "snippets": [
             ".join(\"ollama-system-prompts.json\")",
             ".join(\"system-prompt-settings.json\")"
@@ -366,7 +366,7 @@
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/agent_local/ollama_native_prompts.rs",
+          "file": "src-tauri/src/services/agent_local/execution/ollama_native_prompts.rs",
           "snippets": [".join(\"ollama-native-system-prompts.json\")"]
         },
         {
@@ -377,8 +377,8 @@
       ],
       "evidence": [
         "src-tauri/src/commands/ollama_audit_tests.rs",
-        "src-tauri/src/services/agent_local/ollama_native_prompts_tests.rs",
-        "src-tauri/src/services/agent_local/system_prompt_settings_tests.rs",
+        "src-tauri/src/services/agent_local/execution/ollama_native_prompts_tests.rs",
+        "src-tauri/src/services/agent_local/prompts/system_prompt_settings_tests.rs",
         "src-tauri/src/services/ollama_manager/release_source_tests.rs"
       ],
       "manualGates": ["Vérifie qu’aucun modèle Ollama réel n’est retéléchargé."]
@@ -559,17 +559,17 @@
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/extensions/discovery_preferences.rs",
+          "file": "src-tauri/src/services/extensions/contract/discovery_preferences.rs",
           "snippets": [".join(\"extension-discovery-preferences.json\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/extensions/discovery_usage.rs",
+          "file": "src-tauri/src/services/extensions/contract/discovery_usage.rs",
           "snippets": [".join(\"extension-tool-usage.json\")"]
         },
         {
           "scope": "migration",
-          "file": "src-tauri/src/services/extensions/ui_artifact_store.rs",
+          "file": "src-tauri/src/services/extensions/ui/ui_artifact_store.rs",
           "snippets": ["const DIRECTORY: &str = \"extensions-ui\";", "data_dir().join(DIRECTORY)"]
         },
         {
@@ -583,7 +583,7 @@
       ],
       "evidence": [
         "src-tauri/src/services/provider_usage/ledger_tests.rs",
-        "src-tauri/src/services/extensions/ui_artifact_tests.rs"
+        "src-tauri/src/services/extensions/ui/ui_artifact_tests.rs"
       ],
       "manualGates": []
     },

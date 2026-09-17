@@ -1,11 +1,7 @@
 import { finishPartialStream } from "./agent-chat-stream-callbacks";
 import type { StreamRecord } from "./agent-stream-cleanup";
 import { markStreamCancelled } from "./agent-stream-generations";
-import { flushFrameNotify } from "./agent-stream-notify";
-import {
-  notifyRecord,
-  notifyRecordActivity,
-} from "./agent-stream-notify-dispatch";
+import { flushFrameNotify, notifyRecord, notifyRecordActivity } from "./agent-stream-notify";
 import { clearStreamRun } from "./agent-stream-run-ownership";
 
 export function stopStreamRecord(

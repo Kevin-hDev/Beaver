@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::Path;
 use std::time::Instant;
@@ -152,5 +150,4 @@ fn storage_deferred() -> TargetValidation {
     }
 }
 
-#[allow(dead_code)]
 fn _path_marker(_: &Path) {}

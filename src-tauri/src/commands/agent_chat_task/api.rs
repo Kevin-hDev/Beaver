@@ -1,6 +1,5 @@
 use super::common::{self, StreamMode};
 use super::params::StreamTaskParams;
-use crate::services::agent_local::tool_catalog;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm;
 
@@ -9,7 +8,7 @@ pub(crate) async fn run(
     mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
-    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+    journal: &mut crate::services::agent_local::conversation_journal::ConversationJournal,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     #[cfg(debug_assertions)]
     let mut params = params;
@@ -19,9 +18,7 @@ pub(crate) async fn run(
     let ctx =
         crate::services::compress::context_resolve::resolve_api(canonical_provider, &params.model)
             .await;
-    let caps =
-        super::api_capabilities::resolve(&params.provider, &params.model, &params.capability_hints)
-            .await;
+    let caps = super::api_capabilities::resolve(&params.provider, &params.model).await;
     #[cfg(debug_assertions)]
     let fixture_mode = params.fixture_run.is_some();
     #[cfg(not(debug_assertions))]
@@ -43,37 +40,20 @@ pub(crate) async fn run(
         let settings = crate::services::agent_local::agent_settings::load().await;
         super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider)
     };
-    let extension_tools = if fixture_mode || mode.is_chat {
-        crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
-    } else {
-        crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
-            final_tools,
-            crate::services::agent_local::extension_tool_set::PrepareContext {
-                session_id: &params.session_id,
-                provider: canonical_provider,
-                model: &params.model,
-                context_window: ctx.configured,
-                preserve_dynamic_tools: super::api_tools::preserve_explicit_dynamic_tools(
-                    !params.tools.is_empty(),
-                    params.subagent_profile.is_some(),
-                ),
-            },
-        )
-        .await?
-    };
-    let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
-    extension_tools
-        .report_prepared(&params.on_event, &params.session_id, &params.request_id)
-        .await?;
+    let (extension_tools, enabled_tool_names) = super::turn_tools::prepare_extensions(
+        &params,
+        &mode,
+        canonical_provider,
+        ctx.configured,
+        final_tools,
+        fixture_mode,
+    )
+    .await?;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await?;
     super::api_images::sanitize_images(&params.on_event, &mut messages, caps.vision);
-    let plan_mode_active = if fixture_mode {
-        false
-    } else {
-        super::ollama_setup::resolve_plan_mode(&params).await
-            && tool_catalog::has_plan_tools(&enabled_tool_names)
-    };
+    let plan_mode_active =
+        super::turn_tools::resolve_plan_mode(&params, &enabled_tool_names, fixture_mode).await;
     let mut _memory_guard = None;
     let context_usage_seed = if fixture_mode {
         super::fixture_prompt::prepare(&mut messages);
@@ -118,7 +98,10 @@ pub(crate) async fn run(
                 !mode.is_chat
                     && !mode.is_subagent
                     && has_tools
-                    && tool_catalog::has_tool(&enabled_tool_names, "load_skill"),
+                    && crate::services::agent_local::tool_catalog::has_tool(
+                        &enabled_tool_names,
+                        "load_skill",
+                    ),
             )
             .await;
             let prompt_context = common::PromptContext {
@@ -141,32 +124,19 @@ pub(crate) async fn run(
             seed
         }
     };
-    if !fixture_mode && super::api_tools::todo_tools_enabled(&enabled_tool_names) {
-        crate::services::agent_local::tool_todo::append_session_reminder(
-            &mut messages,
-            &params.session_id,
-        )
-        .await;
-    }
+    super::turn_tools::append_todo_reminder(
+        &mut messages,
+        &params.session_id,
+        &enabled_tool_names,
+        fixture_mode,
+    )
+    .await;
     if !fixture_mode {
         super::gemma4_thinking_guard::apply(&mut messages, canonical_provider, &params.model);
     }
 
-    let (think_active, effective_reasoning_mode) = match params.reasoning_profile.as_ref() {
-        Some(profile) => (profile.active, profile.mode_name.clone()),
-        None => {
-            let mode = crate::services::reasoning::normalize_for_model(
-                canonical_provider,
-                &params.model,
-                params.reasoning_mode.as_deref(),
-                caps.thinking,
-            );
-            (
-                crate::services::reasoning::enabled(mode.as_deref(), params.think) && caps.thinking,
-                mode,
-            )
-        }
-    };
+    let think_active = params.reasoning_profile.active;
+    let effective_reasoning_mode = params.reasoning_profile.mode_name.clone();
     #[cfg(debug_assertions)]
     let mut fixture_run = params.fixture_run.take();
     let completed = llm::agent_loop::run_agent_loop(
@@ -183,15 +153,14 @@ pub(crate) async fn run(
         params.request_id.clone(),
         params.parent_message_inbox.clone(),
         params.cancel.clone(),
-        ctx.native,
         ctx.configured,
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
-        params.continuation_target.clone(),
+        Some(params.continuation_target.clone()),
         #[cfg(debug_assertions)]
         fixture_run.as_mut(),
-        journal.as_mut(),
+        Some(journal),
     )
     .await?;
     finish_turn(&params, journal, completed, messages).await
@@ -199,28 +168,26 @@ pub(crate) async fn run(
 
 pub(crate) async fn finish_turn(
     params: &StreamTaskParams,
-    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+    journal: &mut crate::services::agent_local::conversation_journal::ConversationJournal,
     completed: crate::services::agent_local::agent_loop_finish::CompletedStreamTurn,
     messages: Vec<ChatMessage>,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
-    if let Some(journal) = journal.as_mut() {
-        journal.commit_turn().await?;
-        let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
-        super::reasoning_diagnostics::record_persisted(
-            &params.session_id,
-            &params.request_id,
-            turn_id,
-            assistant_message_id,
-        )
-        .await;
-        let _ = params.on_event.send(
-            crate::services::agent_local::types_ollama::StreamEvent::TurnCommitted {
-                turn_id: turn_id.to_string(),
-                user_message_id: user_message_id.to_string(),
-                assistant_message_id: assistant_message_id.to_string(),
-            },
-        );
-    }
+    journal.commit_turn().await?;
+    let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
+    super::reasoning_diagnostics::record_persisted(
+        &params.session_id,
+        &params.request_id,
+        turn_id,
+        assistant_message_id,
+    )
+    .await;
+    let _ = params.on_event.send(
+        crate::services::agent_local::types_ollama::StreamEvent::TurnCommitted {
+            turn_id: turn_id.to_string(),
+            user_message_id: user_message_id.to_string(),
+            assistant_message_id: assistant_message_id.to_string(),
+        },
+    );
     crate::services::agent_local::stream_diagnostics::record_completed(
         &params.session_id,
         &params.request_id,

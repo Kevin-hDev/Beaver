@@ -123,9 +123,9 @@ async fn send_request(
     )?;
     let mut body = prepared.body;
     cancel_aware(cancel, super::model_catalog::reasoning::prepare(&mut body)).await?;
+    let payload = serde_json::to_value(&body)
+        .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
     if let Some(preparation) = preparation {
-        let payload = serde_json::to_value(&body)
-            .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
         preparation
             .persist_payload(
                 crate::services::agent_local::prepared_context_count::responses(&payload),
@@ -136,6 +136,14 @@ async fn send_request(
         session_id,
         request_id,
         &prepared.replayed,
+    )
+    .await;
+    crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+        session_id,
+        request_id,
+        "codex-oauth",
+        "responses",
+        &payload,
     )
     .await;
     let routing_hint = super::routing_hint::for_request(&body)?;

@@ -10,7 +10,7 @@ fn write(path: &Path, content: &[u8]) {
 }
 
 #[test]
-fn removes_only_legacy_files_and_sanitizes_sessions() {
+fn removes_only_legacy_files_and_preserves_sessions() {
     let root = TempDir::new().unwrap();
     let old_backup = root.path().join("secrets.enc.bak-corrupted");
     let old_kimi = root
@@ -38,9 +38,8 @@ fn removes_only_legacy_files_and_sanitizes_sessions() {
     assert!(!old_xai.exists());
     assert!(current_vault.exists());
     assert!(current_device.exists());
-    let cleaned = fs::read_to_string(&session).unwrap();
-    assert!(!cleaned.contains("gsk_1234567890abcdefghijkl"));
-    assert!(cleaned.contains("[REDACTED]"));
+    let hardened = fs::read_to_string(&session).unwrap();
+    assert!(hardened.contains("gsk_1234567890abcdefghijkl"));
     assert!(root.path().join(MARKER_FILE).exists());
 
     run_in(root.path()).unwrap();
@@ -63,101 +62,6 @@ fn rewritten_sessions_are_private() {
         fs::metadata(session).unwrap().permissions().mode() & 0o777,
         0o600
     );
-}
-
-#[test]
-fn cleanup_redacts_visible_text_without_mutating_continuation_or_provider_ids() {
-    let root = TempDir::new().unwrap();
-    let session = root.path().join("agent-sessions/session.json");
-    let tool_extra = serde_json::json!({
-        "google": {"thought_signature": "Bearer opaque-tool-signature-12345678"},
-        "codex": {"output_items": [{"id": "sk-output-item-12345678"}]}
-    });
-    let controlled_collisions = serde_json::json!({
-        "id": "sk-controlled-id-12345678",
-        "continuation": "Bearer controlled-continuation-12345678",
-        "extra_content": "aaaaaaaaaaaaaaaaaaaa.bbbbb.cccccccccccccccccccc",
-        "provider_id": "sk-controlled-provider-id-12345678"
-    });
-    let continuation = serde_json::json!({
-        "schema_version": 1,
-        "continuation": {
-            "type": "responses_local",
-            "items": [{
-                "encrypted_content": "Bearer opaque-native-token-12345678",
-                "provider_item_id": "sk-native-item-12345678"
-            }]
-        }
-    });
-    write(
-        &session,
-        &serde_json::to_vec_pretty(&serde_json::json!({
-            "messages": [{
-                "id": "sk-message-id-12345678",
-                "turn_id": "sk-turn-id-12345678",
-                "tool_call_id": "sk-linked-call-id-12345678",
-                "role": "assistant",
-                "content": "sk-visible-content-12345678",
-                "tool_calls": [{
-                    "id": "sk-provider-call-12345678",
-                    "extra_content": tool_extra,
-                    "function": {
-                        "name":"read_file",
-                        "arguments": controlled_collisions
-                    }
-                }],
-                "tool_activities": [{
-                    "name": "read_file",
-                    "args": controlled_collisions,
-                    "result": controlled_collisions.to_string()
-                }],
-                "continuation": continuation
-            }]
-        }))
-        .unwrap(),
-    );
-
-    run_in(root.path()).unwrap();
-    let restored: serde_json::Value = serde_json::from_slice(&fs::read(session).unwrap()).unwrap();
-
-    assert_eq!(restored["messages"][0]["content"], "[REDACTED]");
-    assert_eq!(restored["messages"][0]["id"], "sk-message-id-12345678");
-    assert_eq!(restored["messages"][0]["turn_id"], "sk-turn-id-12345678");
-    assert_eq!(
-        restored["messages"][0]["tool_call_id"],
-        "sk-linked-call-id-12345678"
-    );
-    assert_eq!(
-        restored["messages"][0]["tool_calls"][0]["id"],
-        "sk-provider-call-12345678"
-    );
-    assert_eq!(
-        restored["messages"][0]["tool_calls"][0]["extra_content"],
-        serde_json::json!({ "google": tool_extra["google"].clone() })
-    );
-    assert_eq!(restored["messages"][0]["continuation"], continuation);
-    for key in ["id", "continuation", "extra_content", "provider_id"] {
-        assert_eq!(
-            restored["messages"][0]["tool_calls"][0]["function"]["arguments"][key],
-            "[REDACTED]"
-        );
-        assert_eq!(
-            restored["messages"][0]["tool_activities"][0]["args"][key],
-            "[REDACTED]"
-        );
-    }
-    let result = restored["messages"][0]["tool_activities"][0]["result"]
-        .as_str()
-        .unwrap();
-    for secret in [
-        "sk-controlled-id-12345678",
-        "controlled-continuation-12345678",
-        "aaaaaaaaaaaaaaaaaaaa.bbbbb.cccccccccccccccccccc",
-        "sk-controlled-provider-id-12345678",
-    ] {
-        assert!(!result.contains(secret));
-    }
-    assert!(result.contains("[REDACTED]"));
 }
 
 #[test]

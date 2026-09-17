@@ -1402,6 +1402,7 @@
     "providerConnectionFailed": "Unable to connect to the provider.",
     "providerTemporarilyUnavailable": "The provider is temporarily unavailable. Try again shortly.",
     "providerRequestRejected": "The provider rejected the request.",
+    "providerResponseInvalid": "The provider returned an invalid response.",
     "providerEmptyResponse": "The provider returned neither an answer nor a tool call. You can retry or choose another model.",
     "providerOutputLimit": "The model reached its generation limit before completing its answer. Shorten your request or choose a different reasoning setting.",
     "providerContentFiltered": "The provider interrupted the answer with its content filter. You can rephrase your request.",

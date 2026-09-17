@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::fingerprint::BundleFingerprint;
 use super::journal::{OllamaMigrationMarker, OllamaTransactionJournal};
@@ -26,7 +24,10 @@ pub enum ArchiveDirectoryEvidence {
 pub enum JournalPresence {
     Absent,
     Valid(OllamaTransactionJournal),
+    // Le décideur reste total pour les instantanés synthétiques et les erreurs de lecture futures.
+    #[allow(dead_code)]
     Invalid,
+    #[allow(dead_code)]
     Unknown,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -79,12 +80,6 @@ pub(super) const fn recovery_required() -> RecoveryDecision {
         code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
     }
 }
-fn is_present(e: &DirectoryEvidence) -> bool {
-    matches!(
-        e,
-        DirectoryEvidence::Present(_) | DirectoryEvidence::Incomplete
-    )
-}
 fn is_exact(e: &DirectoryEvidence, fp: &BundleFingerprint) -> bool {
     matches!(e, DirectoryEvidence::Present(actual) if actual == fp)
 }
@@ -101,7 +96,12 @@ pub(super) fn mask(s: &OllamaLayoutSnapshot) -> u16 {
         &s.failed_delete,
     ];
     dirs.iter().enumerate().fold(0, |value, (bit, item)| {
-        value | if is_present(item) { 1_u16 << bit } else { 0 }
+        value
+            | if super::recovery_helpers::is_present_or_incomplete(item) {
+                1_u16 << bit
+            } else {
+                0
+            }
     })
 }
 pub(super) fn exact_mask(
@@ -175,11 +175,10 @@ pub fn decide_recovery(s: &OllamaLayoutSnapshot) -> RecoveryDecision {
         return recovery_required();
     }
     match &s.journal {
-        JournalPresence::Absent => recovery_decision_rules::decide_without_journal(
-            s,
-            classify_backup_policy(&s.migration_marker),
-        ),
-        JournalPresence::Valid(journal) => recovery_decision_rules::decide_with_journal(s, journal),
+        JournalPresence::Absent => {
+            recovery_decision_rules::without_journal(s, classify_backup_policy(&s.migration_marker))
+        }
+        JournalPresence::Valid(journal) => recovery_decision_rules::with_journal(s, journal),
         JournalPresence::Invalid | JournalPresence::Unknown => defer(),
     }
 }

@@ -1,12 +1,10 @@
-#![allow(dead_code)]
-
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::migration::BackupPolicy;
 use super::recovery_decision::{
     exact_mask, mask, recovery_required, OllamaLayoutSnapshot, RecoveryDecision,
 };
 
-fn without_journal(s: &OllamaLayoutSnapshot, policy: BackupPolicy) -> RecoveryDecision {
+pub(super) fn without_journal(s: &OllamaLayoutSnapshot, policy: BackupPolicy) -> RecoveryDecision {
     let m = mask(s);
     match m {
         0 => RecoveryDecision::Ready,
@@ -33,7 +31,10 @@ fn without_journal(s: &OllamaLayoutSnapshot, policy: BackupPolicy) -> RecoveryDe
     }
 }
 
-fn with_journal(s: &OllamaLayoutSnapshot, journal: &OllamaTransactionJournal) -> RecoveryDecision {
+pub(super) fn with_journal(
+    s: &OllamaLayoutSnapshot,
+    journal: &OllamaTransactionJournal,
+) -> RecoveryDecision {
     let m = mask(s);
     if m & (2 | 32 | 64) != 0 {
         return recovery_required();
@@ -118,18 +119,4 @@ fn with_journal(s: &OllamaLayoutSnapshot, journal: &OllamaTransactionJournal) ->
             },
         },
     }
-}
-
-pub(super) fn decide_without_journal(
-    s: &OllamaLayoutSnapshot,
-    policy: BackupPolicy,
-) -> RecoveryDecision {
-    without_journal(s, policy)
-}
-
-pub(super) fn decide_with_journal(
-    s: &OllamaLayoutSnapshot,
-    journal: &OllamaTransactionJournal,
-) -> RecoveryDecision {
-    with_journal(s, journal)
 }

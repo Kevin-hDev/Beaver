@@ -1,7 +1,7 @@
 mod favicon_events;
 pub use favicon_events::{read_snapshot as favicon_snapshot, BrowserFaviconSnapshot};
 mod browser_api_types;
-#[cfg(native_browser)]
+#[cfg(any(test, native_browser))]
 mod browser_events;
 #[cfg(native_browser)]
 mod browser_slot;
@@ -20,7 +20,7 @@ mod cef_client;
 mod cef_cookie_gate;
 #[cfg(native_browser)]
 mod cef_cookie_gate_cleanup;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod cef_cookie_gate_policy;
 #[cfg(native_browser)]
 mod cef_diagnostics;
@@ -48,7 +48,7 @@ mod cef_life_span_handler;
 mod cef_load_handler;
 #[cfg(native_browser)]
 mod cef_permission_handler;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod cef_preflight;
 #[cfg(native_browser)]
 mod cef_request_handler;
@@ -75,10 +75,9 @@ mod favicon_task_gate;
 mod favicon_types;
 #[cfg(any(test, native_browser))]
 mod favicon_watchdog;
-// La condition suit les appels de cef_runtime_policy, gardés par l'OS et non
-// par native_browser : sous windows-tests le module disparaissait de la lib
-// hors test alors que ces appels restaient.
-#[cfg(any(test, target_os = "windows", target_os = "macos"))]
+// La supervision reste disponible avec l'API native sous windows-tests ;
+// native_browser désigne uniquement le moteur CEF réellement lié.
+#[cfg(any(test, browser_native_api))]
 mod cef_supervision;
 #[cfg(native_browser)]
 mod cef_surface;
@@ -86,14 +85,14 @@ mod cef_surface;
 mod cef_surface_view;
 #[cfg(native_browser)]
 mod cef_text;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 #[path = "cef_supervision/diagnostics.rs"]
 mod cef_unavailable;
 #[cfg(any(test, target_os = "macos"))]
 mod cookie_store_probe;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(browser_native_api)]
 mod ffi_guard;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod lifecycle;
 mod live_session_registry;
 mod local_site_candidates;
@@ -107,11 +106,11 @@ mod local_site_types;
 mod macos_helper_entry;
 #[cfg(target_os = "macos")]
 mod native_application;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod native_paths;
 #[cfg(target_os = "macos")]
 mod native_paths_macos_preflight;
-#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+#[cfg(all(native_browser, target_os = "windows"))]
 mod native_paths_windows_preflight;
 #[cfg(target_os = "macos")]
 mod native_pump;
@@ -119,7 +118,7 @@ mod native_pump;
 mod native_pump_wake;
 #[cfg(native_browser)]
 mod native_surface;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod navigation_target;
 pub(crate) mod process_role;
 pub(crate) use process_role::observe_native_webviews;
@@ -129,25 +128,28 @@ mod pump_gate;
 mod pump_scheduler;
 mod runtime_handle;
 mod runtime_integration;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod runtime_revision;
 mod session_model;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+mod session_model_persistence;
+#[cfg(any(test, browser_native_api))]
 mod session_model_runtime;
 mod session_order;
 mod session_persistence;
 mod session_service;
+#[cfg(browser_native_api)]
+mod session_service_runtime;
 mod session_store;
 mod session_types;
 mod session_validation;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(browser_native_api)]
 mod settings;
 mod surface_bounds;
 mod tab_id;
 mod url_policy;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod view_recency;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, browser_native_api))]
 mod view_state;
 #[cfg(target_os = "windows")]
 pub(crate) mod windows_sandbox;
@@ -169,7 +171,7 @@ pub use cef_library::BrowserLibraryGuard;
 pub(crate) use cef_runtime_policy::{
     begin_cef_shutdown, cef_has_runnable_helpers, force_cef_shutdown, CefShutdownBarrier,
 };
-#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+#[cfg(all(native_browser, target_os = "windows"))]
 pub(crate) use cef_supervision::{WindowsHelperAdmission, CEF_ADMISSION_SWITCH};
 pub use local_site_scanner::LocalSiteScanner;
 pub use local_site_types::{LocalSiteScanResult, LOCAL_SITES_CHANGED_EVENT};

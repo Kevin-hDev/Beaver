@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use std::fs::File;
 use std::path::{Path, PathBuf};

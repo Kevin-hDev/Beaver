@@ -1,6 +1,7 @@
 import type { SkillInfo } from "@/types/agent";
 import type { VoiceDeliverySnapshot } from "@/types/voice.generated";
 import { insertAtSelection, type ComposerSelection } from "./composer-draft-insertion";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 const MAX_DRAFTS = 64;
 export const MAX_SKILLS_PER_DRAFT = 16;
@@ -73,14 +74,6 @@ export function updateComposerDraft(
   return mutate(key, (entry) => ({ ...entry, ...update(entry.view) }));
 }
 
-export function setComposerDraftText(key: string, text: string) {
-  updateComposerDraft(key, (entry) => ({
-    ...entry,
-    text,
-    skills: text.length === 0 ? [] : entry.skills,
-  }));
-}
-
 export function clearComposerDraft(key: string) {
   const entry = drafts.get(key);
   if (!entry) return;
@@ -142,13 +135,8 @@ export function acknowledgeVoiceDelivery(key: string, deliveryId: string) {
 }
 
 export function subscribeComposerDrafts(listener: () => void): () => void {
-  if (listeners.size >= MAX_LISTENERS) {
-    console.error("[composer-draft] listener limit reached");
-    return () => undefined;
-  }
   const id = nextListenerId++;
-  listeners.set(id, listener);
-  return () => { listeners.delete(id); };
+  return addBoundedSubscriber(listeners, id, listener, MAX_LISTENERS, "composer-drafts");
 }
 
 export function resetComposerDraftStoreForTests() {

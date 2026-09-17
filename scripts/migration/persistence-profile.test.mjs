@@ -233,7 +233,7 @@ test("une migration incomplète bloque le démarrage sans exposer de chemin", ()
   for (const file of [
     "src-tauri/src/storage_migration.rs",
     "src-tauri/src/storage_migration_files.rs",
-    "src-tauri/src/services/agent_local/subagent_startup_cleanup.rs",
+    "src-tauri/src/services/agent_local/subagents/subagent_startup_cleanup.rs",
     "src/hooks/terminal-persistence.ts",
   ]) {
     const source = boundedRead(safeRelativePath(file), MAX_SOURCE_BYTES);

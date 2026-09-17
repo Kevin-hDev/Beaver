@@ -2,7 +2,7 @@ use super::{
     browser_events::{next_event_generation, BrowserTabEvent, ENGINE_STOPPED_EVENT, EVENT_VERSION},
     browser_slot::BrowserSlot,
     browser_view_key::BrowserViewKey,
-    cef_state_bridge::mark_view_released,
+    cef_state_bridge::release_view,
     cef_text::validated_cef_url,
 };
 use cef::*;
@@ -59,14 +59,9 @@ cef::wrap_request_handler! {
         ) {
             super::ffi_guard::unit(|| {
                 super::cef_diagnostics::log_renderer_termination(status, error_code);
-                if let Some(epoch) = self.slot.epoch() {
-                    super::favicon_runtime::mutate(&self.app, |state| state.release_view(&self.key, epoch));
-                }
                 let key = self.key.clone();
                 let app = self.app.clone();
-                if let Some(stamp) = self.slot.next_runtime_stamp() {
-                    mark_view_released(&app, key.clone(), stamp);
-                }
+                release_view(Some(&app), &key, &self.slot);
                 let main_app = app.clone();
                 let _ = app.run_on_main_thread(move || {
                     let _ = super::cef_engine::close_view(&main_app, &key);

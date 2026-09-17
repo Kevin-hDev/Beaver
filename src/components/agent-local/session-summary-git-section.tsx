@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaretDown, GitBranch } from "@/components/ui/icons";
 import { SessionSummaryGitActions } from "./session-summary-git-actions";
+import { Collapsible } from "@/components/ui/collapsible";
 import type { SessionSummaryGitState } from "./session-summary-git-types";
 
 export type { SessionSummaryGitState } from "./session-summary-git-types";
@@ -33,14 +34,12 @@ export function SessionSummaryGitSection({ git }: SessionSummaryGitSectionProps)
         <span className="ssb-row-value" title={branch}>{branch}</span>
         <CaretDown className={`ssb-section-caret ${open ? "ssb-section-caret-open" : ""}`} size="var(--icon-sm)" />
       </button>
-      <div className={`ssb-accordion ${open ? "ssb-accordion-open" : ""}`}>
-        <div className="ssb-accordion-inner">
+      <Collapsible open={open} className="ssb-accordion" innerClassName="ssb-accordion-inner">
           <div className="ssb-git-panel">
             <div className="ssb-git-status">{statusLabel(git, t)}</div>
             <SessionSummaryGitActions git={git} />
           </div>
-        </div>
-      </div>
+      </Collapsible>
     </>
   );
 }

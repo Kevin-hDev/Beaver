@@ -76,7 +76,7 @@ fn explicit_compression_command_does_not_create_a_recovery_journal() {
     };
 
     let (messages, journal) = StreamConversation::canonical(admitted)
-        .into_messages_and_journal(
+        .take_messages_and_journal(
             uuid::Uuid::new_v4().to_string(),
             uuid::Uuid::new_v4().to_string(),
         )

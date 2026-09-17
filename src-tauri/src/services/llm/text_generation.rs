@@ -5,6 +5,7 @@
 use super::stream_http::{post_chat_request_with_timeout_measured, RequestConfig};
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
 use crate::services::provider_usage::UsageWorkload;
+use std::future::Future;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
@@ -119,7 +120,7 @@ pub(crate) async fn collect(
             .await
             {
                 Ok(response) => {
-                    super::stream_silent_consume::consume_silent_bounded(
+                    super::stream_consume::consume_silent_bounded(
                         response,
                         cancel,
                         idle_timeout,
@@ -141,15 +142,14 @@ pub(crate) async fn collect(
                 request_timeout,
                 Some(max_tokens),
             );
-            tokio::select! {
-                _ = cancel.cancelled() => Err("Annulé".to_string()),
-                result = request => result.map(|(content, eval_count)| StreamResult {
+            await_ollama_request(request, &cancel)
+                .await
+                .map(|(content, eval_count)| StreamResult {
                     content,
                     eval_count: Some(eval_count),
                     done_reason: Some("stop".to_string()),
                     ..StreamResult::default()
-                }),
-            }
+                })
         }
         super::stream_dispatch::ClientKind::XaiOauth(_) => {
             Err("provider_configuration_invalid".to_string())
@@ -157,6 +157,20 @@ pub(crate) async fn collect(
     };
     super::stream_metrics::finish_silent(measurement, &result).await;
     result
+}
+
+async fn await_ollama_request<F>(
+    request: F,
+    cancel: &CancellationToken,
+) -> Result<(String, u32), String>
+where
+    F: Future<Output = Result<(String, u32), String>>,
+{
+    tokio::select! {
+        biased;
+        _ = cancel.cancelled() => Err("Annulé".to_string()),
+        result = request => result,
+    }
 }
 
 fn request_config<'a>(
@@ -182,5 +196,23 @@ fn request_config<'a>(
         session_id: Some(session_id),
         tool_result_previews: None,
         continuation_target: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn ready_ollama_result_never_beats_existing_cancellation() {
+        let cancel = CancellationToken::new();
+        cancel.cancel();
+
+        for _ in 0..32 {
+            let result =
+                await_ollama_request(std::future::ready(Ok(("ready".to_string(), 1))), &cancel)
+                    .await;
+            assert_eq!(result.unwrap_err(), "Annulé");
+        }
     }
 }

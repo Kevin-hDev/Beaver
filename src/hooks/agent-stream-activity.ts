@@ -1,4 +1,5 @@
 import type { ManagedStreamState } from "./agent-chat-stream-callbacks";
+import { addBoundedSubscriber } from "@/lib/bounded-subscriber";
 
 const MAX_ACTIVITY_SUBSCRIBERS = 16;
 
@@ -29,14 +30,8 @@ export function emitStreamActivity(sessionId: string, state: ManagedStreamState)
 }
 
 export function subscribeStreamActivity(subscriber: ActivitySubscriber): () => void {
-  while (subscribers.size >= MAX_ACTIVITY_SUBSCRIBERS) {
-    const first = subscribers.keys().next().value;
-    if (first === undefined) break;
-    subscribers.delete(first);
-  }
   const id = nextSubscriberId++;
-  subscribers.set(id, subscriber);
-  return () => {
-    subscribers.delete(id);
-  };
+  return addBoundedSubscriber(
+    subscribers, id, subscriber, MAX_ACTIVITY_SUBSCRIBERS, "agent-stream-activity",
+  );
 }

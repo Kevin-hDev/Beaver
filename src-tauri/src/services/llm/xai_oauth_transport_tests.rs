@@ -1,6 +1,6 @@
 use super::xai_oauth_transport::{
-    backend_path, catalog_reasoning_mode, classify_status, prepare_chat_request,
-    prepare_responses_request, validate_backend,
+    backend_path, catalog_reasoning_mode, prepare_chat_request, prepare_responses_request,
+    validate_backend,
 };
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -14,9 +14,22 @@ fn catalog_model() -> XaiCatalogModel {
         backend: XaiBackend::Responses,
         context_window: 500_000,
         max_output_tokens: None,
-        reasoning_modes: vec!["low".into(), "medium".into(), "high".into(), "xhigh".into()],
-        default_reasoning_mode: Some("high".into()),
+        reasoning_contract:
+            crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+                &["low", "medium", "high", "xhigh"],
+                Some("high"),
+            ),
     }
+}
+
+fn classify_status(
+    policy: crate::services::llm::route_profile::ErrorPolicy,
+    status: u16,
+    body: &str,
+    has_retry_after: bool,
+) -> String {
+    crate::services::llm::stream_http::classify_error(status, body, policy, true, has_retry_after)
+        .to_string()
 }
 
 fn fixture_target(
@@ -103,7 +116,11 @@ async fn fixture_budget_adds_a_bounded_xai_responses_output_limit() {
 #[test]
 fn chat_reasoning_is_restricted_by_the_subscription_catalog() {
     let mut model = catalog_model();
-    model.reasoning_modes.retain(|mode| mode != "xhigh");
+    model.reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+            &["low", "medium", "high"],
+            Some("high"),
+        );
 
     assert_eq!(catalog_reasoning_mode(&model, Some("low")), Some("low"));
     assert_eq!(catalog_reasoning_mode(&model, Some("xhigh")), Some("high"));
@@ -130,8 +147,11 @@ fn chat_request_uses_the_subscription_catalog_restriction() {
     };
     let mut model = catalog_model();
     model.backend = XaiBackend::ChatCompletions;
-    model.reasoning_modes = vec!["low".into(), "high".into()];
-    model.default_reasoning_mode = Some("high".into());
+    model.reasoning_contract =
+        crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+            &["low", "high"],
+            Some("high"),
+        );
 
     let prepared = prepare_chat_request(request, &model);
 

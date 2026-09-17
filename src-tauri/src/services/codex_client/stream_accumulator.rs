@@ -2,7 +2,6 @@ use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
 
-use super::limits::MAX_STREAM_TEXT_BYTES;
 use super::{stream_protocol, stream_tool::StreamTool};
 
 pub(super) struct StreamAccumulator<'a> {
@@ -14,33 +13,26 @@ pub(super) struct StreamAccumulator<'a> {
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
     usage_context: crate::services::provider_usage::UsageContext<'a>,
+    max_text_bytes: usize,
+    local_output_chars: Option<usize>,
+    accept_tools: bool,
+}
+
+pub(super) struct StreamPolicy {
+    pub(super) max_text_bytes: usize,
+    pub(super) local_output_chars: Option<usize>,
+    pub(super) accept_tools: bool,
 }
 
 impl<'a> StreamAccumulator<'a> {
-    pub(super) fn new(
-        provider: &'a str,
-        model: &'a str,
-        tools: &'a [serde_json::Value],
-        buffer_content: bool,
-        realtime_budget: Option<RealtimeBudget>,
-    ) -> Self {
-        Self::new_with_capture(
-            provider,
-            model,
-            tools,
-            buffer_content,
-            realtime_budget,
-            None,
-        )
-    }
-
-    pub(super) fn new_with_capture(
+    pub(super) fn new_with_limits(
         provider: &'a str,
         model: &'a str,
         tools: &'a [serde_json::Value],
         buffer_content: bool,
         realtime_budget: Option<RealtimeBudget>,
         reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
+        policy: StreamPolicy,
     ) -> Self {
         Self {
             result: StreamResult::default(),
@@ -53,6 +45,9 @@ impl<'a> StreamAccumulator<'a> {
             usage_context: crate::services::provider_usage::UsageContext::responses(
                 provider, model,
             ),
+            max_text_bytes: policy.max_text_bytes,
+            local_output_chars: policy.local_output_chars,
+            accept_tools: policy.accept_tools,
         }
     }
 
@@ -70,11 +65,15 @@ impl<'a> StreamAccumulator<'a> {
                 return self.record_thinking(on_event, event)
             }
             "response.output_text.delta" => return self.record_content(on_event, event),
-            "response.output_item.added" => self.tool.start(on_event, &mut self.result, event)?,
-            "response.function_call_arguments.delta" => {
+            "response.output_item.added" if self.accept_tools => {
+                self.tool.start(on_event, &mut self.result, event)?
+            }
+            "response.function_call_arguments.delta" if self.accept_tools => {
                 self.tool.append(on_event, &mut self.result, event)?
             }
-            "response.output_item.done" => self.finish_item(on_event, event)?,
+            "response.output_item.done" if self.accept_tools => {
+                self.finish_item(on_event, event)?
+            }
             "response.done" | "response.completed" => return self.completed(event).map(Some),
             "response.incomplete" => return Err(stream_protocol::incomplete_response()),
             "response.failed" | "error" => return Err(stream_protocol::failed_response(event)),
@@ -128,6 +127,14 @@ impl<'a> StreamAccumulator<'a> {
             &mut self.token_count,
             self.buffer_content,
         );
+        if self
+            .local_output_chars
+            .is_some_and(|max| self.result.content.chars().count() >= max)
+        {
+            return Ok(Some(StreamOutcome::Completed(std::mem::take(
+                &mut self.result,
+            ))));
+        }
         Ok(self.interrupt_if_needed())
     }
 
@@ -198,7 +205,7 @@ impl<'a> StreamAccumulator<'a> {
 
     fn record_text_size(&mut self, delta: &str) -> Result<(), String> {
         self.text_bytes = self.text_bytes.saturating_add(delta.len());
-        if self.text_bytes > MAX_STREAM_TEXT_BYTES {
+        if self.text_bytes > self.max_text_bytes {
             return Err("provider_payload_too_large".to_string());
         }
         Ok(())

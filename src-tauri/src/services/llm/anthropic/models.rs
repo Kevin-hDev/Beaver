@@ -57,6 +57,12 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
         .unwrap_or(false);
     let (reasoning_modes, default_reasoning_mode) =
         reasoning_contract(item, local.as_ref(), supports_thinking);
+    let reasoning_contract =
+        super::super::model_reasoning_contract::ModelReasoningContract::from_modes(
+            supports_thinking,
+            &reasoning_modes,
+            default_reasoning_mode.as_deref(),
+        );
     Ok(ModelInfo {
         id: id.to_string(),
         display_name: optional_text(item, "display_name")?,
@@ -76,11 +82,9 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
         supports_vision: capability(item, &["image_input"])
             .or_else(|| local.as_ref().map(|model| model.supports_vision))
             .unwrap_or(false),
-        reasoning_contract: None,
+        reasoning_contract,
         supports_thinking,
         supports_fast_mode: false,
-        reasoning_modes,
-        default_reasoning_mode,
         context_usage_includes_reasoning: true,
         is_free: local.as_ref().is_some_and(|model| model.is_free),
     })
@@ -191,6 +195,12 @@ pub(super) fn embedded_models() -> Vec<ModelInfo> {
 }
 
 fn from_embedded(model: ProviderModelConfig) -> ModelInfo {
+    let reasoning_contract =
+        super::super::model_reasoning_contract::ModelReasoningContract::from_modes(
+            model.supports_thinking,
+            &model.reasoning_modes,
+            model.default_reasoning_mode.as_deref(),
+        );
     ModelInfo {
         id: model.id,
         display_name: None,
@@ -202,10 +212,8 @@ fn from_embedded(model: ProviderModelConfig) -> ModelInfo {
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
-        reasoning_contract: None,
+        reasoning_contract,
         supports_fast_mode: false,
-        reasoning_modes: model.reasoning_modes,
-        default_reasoning_mode: model.default_reasoning_mode,
         context_usage_includes_reasoning: true,
         is_free: model.is_free,
     }

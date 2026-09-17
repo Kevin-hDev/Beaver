@@ -149,7 +149,7 @@ fn disabled_default_does_not_erase_the_effort_used_when_enabled() {
     .unwrap();
 
     assert_eq!(contract.default_effort, Some(ReasoningModeId::High));
-    assert_eq!(contract.legacy_projection().1.as_deref(), Some("off"));
+    assert_eq!(contract.selection().1.as_deref(), Some("off"));
 }
 
 #[test]
@@ -164,7 +164,7 @@ fn budget_only_reasoning_uses_the_provider_default_without_an_effort() {
 #[test]
 fn mandatory_null_efforts_never_offer_disabling_reasoning() {
     let contract = reasoning(&json!({"mandatory":true,"supported_efforts":null})).unwrap();
-    let (modes, _) = contract.legacy_projection();
+    let (modes, _) = contract.selection();
     assert!(!modes.iter().any(|mode| mode == "off"));
     assert!(modes.iter().any(|mode| mode == "minimal"));
 }

@@ -37,11 +37,30 @@ fn parses_bounded_chat_and_responses_models() {
     assert_eq!(models.len(), 2);
     assert_eq!(models[0].backend, XaiBackend::Responses);
     assert_eq!(
-        models[0].reasoning_modes,
+        models[0].reasoning_modes(),
         ["low", "medium", "high", "xhigh"]
     );
-    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("high"));
+    assert_eq!(models[0].default_reasoning_mode().as_deref(), Some("high"));
     assert_eq!(models[1].backend, XaiBackend::ChatCompletions);
+}
+
+#[test]
+fn remote_modes_keep_the_compatible_local_default() {
+    let remote = crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+        &["low", "high"],
+        None,
+    );
+    let local = crate::services::llm::model_reasoning_contract::ModelReasoningContract::from_names(
+        &["low", "high", "xhigh"],
+        Some("high"),
+    );
+
+    let merged = super::xai_catalog::merge_reasoning_contract(remote, local).unwrap();
+
+    assert_eq!(
+        merged.selection(),
+        (vec!["low".into(), "high".into()], Some("high".into()))
+    );
 }
 
 #[test]

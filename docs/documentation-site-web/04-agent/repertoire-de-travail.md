@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Répertoire de travail
 **Répond à** — « Où l'agent a-t-il le droit de lire et d'écrire, et comment je restreins ça ? »
-**Sources** — `src-tauri/src/services/agent_local/directory_access.rs` (lignes 7-10), `directory_policy.rs`, `directory_access_scope.rs`, `agent_working_dir.rs`, `project_store.rs`, `src/components/settings/file-access-settings.tsx`, `path-list-editor.tsx`, `src-tauri/src/commands/directory_access.rs`
+**Sources** — `src-tauri/src/services/agent_local/permissions/directory_access.rs` (lignes 7-10), `directory_policy.rs`, `directory_access_scope.rs`, `agent_working_dir.rs`, `project_store.rs`, `src/components/settings/file-access-settings.tsx`, `path-list-editor.tsx`, `src-tauri/src/commands/directory_access.rs`
 **Vérification** — Vérifié dans le code : limites, messages d'erreur, mécanisme de validation et racines par défaut (`src-tauri/src/models/config.rs`, `default_allowed_paths()`)
 
 ---

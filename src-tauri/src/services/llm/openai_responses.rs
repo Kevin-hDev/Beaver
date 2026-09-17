@@ -1,7 +1,7 @@
 use crate::services::agent_local::types_ollama::StreamOutcome;
 use crate::services::agent_local::types_ollama::StreamResult;
 use crate::services::compress::realtime_budget::RealtimeBudget;
-use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
+use crate::services::secure_http::AuthenticatedClient;
 use tokio_util::sync::CancellationToken;
 
 use super::stream_http::{RequestConfig, RequestError};
@@ -99,6 +99,14 @@ pub(super) async fn post(
         &prepared.replayed,
     )
     .await;
+    crate::services::agent_local::stream_diagnostics_payload::record_provider_payload(
+        config.session_id,
+        request_id,
+        config.provider_id,
+        "responses",
+        &body,
+    )
+    .await;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(config, &body).await {
         return response;
@@ -137,36 +145,21 @@ pub(super) async fn post(
     if response.status().is_success() {
         return Ok(response);
     }
-    let status = response.status();
-    let has_retry_after = response.headers().contains_key("retry-after");
-    let diagnostic_context =
-        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, &body)
-            .with_retry_after(response.headers());
-    let error_body = read_bounded(response, PROVIDER_ERROR_LIMIT)
-        .await
-        .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
-        .unwrap_or_default();
-    let details = super::provider_error::safe_details(&error_body);
-    super::provider_diagnostics::record_http_failure(
-        config.provider_id,
-        config.model,
-        status.as_u16(),
-        details,
-        request_bytes,
-        config.tools.len(),
-        diagnostic_context,
-    );
-    // Structured diagnostics above own the bounded details; the general log
-    // must not carry values derived from credentials, sessions or response bodies.
-    ::log::warn!("[responses] provider HTTP request failed");
-    Err(super::stream_http::classify_error(
-        status.as_u16(),
-        &error_body,
-        route.display_name,
-        route.error_policy,
-        false,
-        has_retry_after,
-    ))
+    Err(super::stream_http::reject_response(
+        response,
+        super::stream_http::RejectedResponseContext {
+            provider_id: config.provider_id,
+            model: config.model,
+            error_policy: route.error_policy,
+            oauth: route.is_oauth(),
+            request_bytes,
+            tool_count: config.tools.len(),
+            diagnostic: super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+                request_id, &body,
+            ),
+        },
+    )
+    .await)
 }
 
 fn request_error(error: RequestError) -> String {

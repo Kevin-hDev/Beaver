@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Contexte
 **Répond à** — « Pourquoi la conversation ralentit ou refuse de continuer, et qu'est-ce qui occupe la place ? »
-**Sources** — `src-tauri/src/services/agent_local/context_budget.rs` (lignes 4-6, 122-132), `context_capacity_error.rs` (lignes 3-5), `context_usage_buckets.rs` (lignes 11-28, 175-186), `context_budget_prune.rs`, `context_budget_history.rs`, `context_usage_runtime.rs`, `src-tauri/src/commands/context_usage.rs`
+**Sources** — `src-tauri/src/services/agent_local/context/context_budget.rs` (lignes 4-6, 122-132), `context_capacity_error.rs` (lignes 3-5), `context_usage_buckets.rs` (lignes 11-28, 175-186), `context_budget_prune.rs`, `context_budget_history.rs`, `context_usage_runtime.rs`, `src-tauri/src/commands/context_usage.rs`
 **Vérification** — Vérifié dans le code : réserve de réponse, catégories d'usage, code d'erreur
 
 **Ce fichier ne décrit pas la compression** — elle va être revue, son brief est gelé. Se contenter d'y renvoyer.

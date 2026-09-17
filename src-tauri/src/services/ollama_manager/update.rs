@@ -67,17 +67,10 @@ impl UpdateRequest {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum UpdateOutcome {
-    #[allow(dead_code)]
-    Updated {
-        fingerprint: BundleFingerprint,
-    },
+    Updated { fingerprint: BundleFingerprint },
     AlreadyCurrent,
-    CleanupPending {
-        code: OllamaErrorCode,
-    },
-    Deferred {
-        code: OllamaErrorCode,
-    },
+    CleanupPending { code: OllamaErrorCode },
+    Deferred { code: OllamaErrorCode },
 }
 
 #[async_trait::async_trait]

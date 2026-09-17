@@ -2,7 +2,7 @@
 
 **Emplacement site** — Extensions › Réécrire le prompt système dans le mockup ; à placer plutôt dans Agent › Prompts système
 **Répond à** — « Quelles instructions Beaver donne-t-il au modèle avant mon premier message, et puis-je les changer ? »
-**Sources** — `src-tauri/src/services/agent_local/system_prompt_types.rs`, `system_prompt_resolver.rs`, `system_prompt_store.rs`, `chat_prompts.rs` (lignes 57-101), `model_size.rs`, `ollama_native_prompts.rs`, `ollama_native_prompt_store.rs`, `src-tauri/src/commands/system_prompts.rs`, `src/components/system-prompts/`
+**Sources** — `src-tauri/src/services/agent_local/prompts/system_prompt_types.rs`, `system_prompt_resolver.rs`, `system_prompt_store.rs`, `chat_prompts.rs` (lignes 57-101), `model_size.rs`, `ollama_native_prompts.rs`, `ollama_native_prompt_store.rs`, `src-tauri/src/commands/system_prompts.rs`, `src/components/system-prompts/`
 **Vérification** — Vérifié dans le code : modes, niveaux, cibles, états et provenance des prompts
 
 ---

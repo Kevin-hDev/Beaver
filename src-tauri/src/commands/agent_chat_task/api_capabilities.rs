@@ -1,4 +1,3 @@
-use super::params::StreamCapabilityHints;
 use crate::services::llm::provider_model_lookup;
 
 pub(crate) struct ApiCapabilities {
@@ -7,11 +6,7 @@ pub(crate) struct ApiCapabilities {
     pub vision: bool,
 }
 
-pub(crate) async fn resolve(
-    provider: &str,
-    model: &str,
-    _hints: &StreamCapabilityHints,
-) -> ApiCapabilities {
+pub(crate) async fn resolve(provider: &str, model: &str) -> ApiCapabilities {
     let capability_provider = crate::services::llm::route::canonical_provider_id(provider);
     let resolved: Option<provider_model_lookup::ResolvedModelCapabilities> =
         provider_model_lookup::resolve(capability_provider, model).await;

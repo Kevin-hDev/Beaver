@@ -69,12 +69,7 @@ function startForSession(
     "model",
     "provider",
     turn(content),
-    false,
     { displayMessages: [message(content)], baseTokenCount: 0 },
-    undefined,
-    undefined,
-    undefined,
-    undefined,
     undefined,
     undefined,
     undefined,
@@ -549,7 +544,7 @@ describe("useAgentStream admission races", () => {
     const pending = deferred<ChatStreamAdmission>();
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "chat_stream") return pending.promise;
-      return Promise.resolve(command === "queue_agent_message");
+      return Promise.resolve(undefined);
     });
     const { result } = renderHook(() => useAgentStream());
     let running!: Promise<void>;
@@ -558,21 +553,14 @@ describe("useAgentStream admission races", () => {
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
         "chat_stream", expect.anything(),
       ));
-      expect(await result.current.queueStreamMessage(
-        "same-session",
-        { content: "queued", files: [], skills: [] },
-        message("queued"),
-      )).toBe("unavailable");
-      expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages)
-        .toHaveLength(0);
+      expect(result.current.resolveStreamSend("same-session")).toBe("unavailable");
       expect(await result.current.stopStream("same-session")).toBe("stopping");
       pending.resolve(admission(93));
       await running;
     });
 
-    expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages).toEqual([]);
-    expect(mocks.invoke.mock.calls.filter(([command]) => command === "queue_agent_message"))
-      .toEqual([]);
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "chat_stream"))
+      .toHaveLength(1);
   });
 
   it("ne fabrique pas de file pendant l'admission du run suivant", async () => {
@@ -601,17 +589,11 @@ describe("useAgentStream admission races", () => {
       ));
       secondRun = start(result, "run-b");
       await vi.waitFor(() => expect(chatCalls).toBe(2));
-      expect(await result.current.queueStreamMessage(
-        "same-session",
-        { content: "queued-b", files: [], skills: [] },
-        message("queued-b"),
-      )).toBe("unavailable");
+      expect(result.current.resolveStreamSend("same-session")).toBe("unavailable");
       firstCancel.resolve();
       await firstRun;
     });
 
-    expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages)
-      .toEqual([]);
     secondAdmission.reject(new Error("test cleanup"));
     await act(async () => { await secondRun; });
   });
@@ -633,22 +615,16 @@ describe("useAgentStream admission races", () => {
     mounted.unmount();
 
     const remounted = renderHook(() => useAgentStream());
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "blocked", files: [], skills: [] }, message("blocked"),
-    )).toBe("stopping");
-    expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages).toEqual([]);
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("stopping");
     await act(async () => { cancel.resolve(); await stopping; });
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "terminal", files: [], skills: [] }, message("terminal"),
-    )).toBe("start-new");
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("start-new");
   });
 
-  it("refuse l'envoi remount pendant un stop admis puis l'accepte après rejet", async () => {
+  it("refuse l'envoi remount pendant un stop admis puis pendant le flux restauré", async () => {
     const cancel = deferred<void>();
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "chat_stream") return Promise.resolve(admission(102));
       if (command === "cancel_agent_request") return cancel.promise;
-      if (command === "queue_agent_message") return Promise.resolve(true);
       return Promise.resolve(undefined);
     });
     const mounted = renderHook(() => useAgentStream());
@@ -660,18 +636,10 @@ describe("useAgentStream admission races", () => {
     ));
     mounted.unmount();
     const remounted = renderHook(() => useAgentStream());
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "blocked", files: [], skills: [] }, message("blocked"),
-    )).toBe("stopping");
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("stopping");
     await act(async () => { cancel.reject(new Error("internal")); await stopping; });
 
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "accepted", files: [], skills: [] }, message("accepted"),
-    )).toBe("queued");
-    expect(mocks.invoke).toHaveBeenCalledWith("queue_agent_message", {
-      sessionId: "same-session", generation: 102,
-      input: { content: "accepted", files: [], skills: [] },
-    });
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("unavailable");
   });
 
   it("refuse l'envoi remount pendant un stop différé puis reste terminal au succès", async () => {
@@ -697,22 +665,17 @@ describe("useAgentStream admission races", () => {
       "cancel_agent_request", { sessionId: "same-session", generation: 103 },
     ));
     const remounted = renderHook(() => useAgentStream());
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "blocked", files: [], skills: [] }, message("blocked"),
-    )).toBe("stopping");
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("stopping");
     await act(async () => { cancel.resolve(); await running; });
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "terminal", files: [], skills: [] }, message("terminal"),
-    )).toBe("start-new");
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("start-new");
   });
 
-  it("refuse l'envoi remount pendant un stop différé puis l'accepte après rejet", async () => {
+  it("refuse l'envoi remount pendant un stop différé puis pendant le flux restauré", async () => {
     const pending = deferred<ChatStreamAdmission>();
     const cancel = deferred<void>();
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "chat_stream") return pending.promise;
       if (command === "cancel_agent_request") return cancel.promise;
-      if (command === "queue_agent_message") return Promise.resolve(true);
       return Promise.resolve(undefined);
     });
     const mounted = renderHook(() => useAgentStream());
@@ -730,17 +693,9 @@ describe("useAgentStream admission races", () => {
       "cancel_agent_request", { sessionId: "same-session", generation: 104 },
     ));
     const remounted = renderHook(() => useAgentStream());
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "blocked", files: [], skills: [] }, message("blocked"),
-    )).toBe("stopping");
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("stopping");
     await act(async () => { cancel.reject(new Error("internal")); await running; });
 
-    expect(await remounted.result.current.queueStreamMessage(
-      "same-session", { content: "accepted", files: [], skills: [] }, message("accepted"),
-    )).toBe("queued");
-    expect(mocks.invoke).toHaveBeenCalledWith("queue_agent_message", {
-      sessionId: "same-session", generation: 104,
-      input: { content: "accepted", files: [], skills: [] },
-    });
+    expect(remounted.result.current.resolveStreamSend("same-session")).toBe("unavailable");
   });
 });

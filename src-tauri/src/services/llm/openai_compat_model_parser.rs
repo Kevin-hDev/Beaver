@@ -139,11 +139,6 @@ fn parse_model(
     } else {
         None
     };
-    let (reasoning_modes, default_reasoning_mode) = reasoning_metadata
-        .as_ref()
-        .map(super::model_reasoning_contract::ModelReasoningContract::legacy_projection)
-        .unwrap_or_else(|| (Vec::new(), None));
-
     let catalog_capabilities = if authoritative {
         super::openrouter_model_metadata::capabilities(
             model,
@@ -166,8 +161,6 @@ fn parse_model(
         supports_thinking: catalog_capabilities.thinking.unwrap_or(supports_thinking),
         reasoning_contract: reasoning_metadata,
         supports_fast_mode: false,
-        reasoning_modes,
-        default_reasoning_mode,
         context_usage_includes_reasoning: true,
         // Un badge gratuit exige un tarif nul explicite pour toutes les unités facturées.
         is_free: has_zero_pricing(&model["pricing"]),

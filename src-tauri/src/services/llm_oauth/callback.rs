@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
 
@@ -9,6 +10,8 @@ use super::OAuthFailure;
 
 const BIND_ADDR: &str = "127.0.0.1:56121";
 const TIMEOUT: Duration = Duration::from_secs(300);
+const CONNECTION_TIMEOUT: Duration = Duration::from_secs(5);
+const MAX_CALLBACK_ATTEMPTS: usize = 16;
 const MAX_REQUEST_BYTES: usize = 8 * 1024;
 const MAX_CODE_BYTES: usize = 4 * 1024;
 const MAX_QUERY_PAIRS: usize = 8;
@@ -53,12 +56,35 @@ async fn accept_until_valid(
     listener: &TcpListener,
     expected_state: &str,
 ) -> Result<Zeroizing<String>, OAuthFailure> {
+    let mut handlers = JoinSet::new();
+    let mut accepted = 0_usize;
     loop {
-        let (mut stream, _) = listener.accept().await.map_err(|_| OAuthFailure::Generic)?;
-        match handle_connection(&mut stream, expected_state).await {
-            Ok(code) => return Ok(code),
-            Err(OAuthFailure::Denied) => return Err(OAuthFailure::Denied),
-            Err(_) => {}
+        if accepted >= MAX_CALLBACK_ATTEMPTS && handlers.is_empty() {
+            return Err(OAuthFailure::Generic);
+        }
+        tokio::select! {
+            accepted_stream = listener.accept(), if accepted < MAX_CALLBACK_ATTEMPTS => {
+                let (mut stream, _) = accepted_stream.map_err(|_| OAuthFailure::Generic)?;
+                let state = Zeroizing::new(expected_state.to_string());
+                accepted += 1;
+                handlers.spawn(async move {
+                    tokio::time::timeout(
+                        CONNECTION_TIMEOUT,
+                        handle_connection(&mut stream, state.as_str()),
+                    )
+                    .await
+                    .unwrap_or(Err(OAuthFailure::Generic))
+                });
+            }
+            handled = handlers.join_next(), if !handlers.is_empty() => {
+                match handled {
+                    Some(Ok(Ok(code))) => return Ok(code),
+                    Some(Ok(Err(OAuthFailure::Denied))) => {
+                        return Err(OAuthFailure::Denied);
+                    }
+                    Some(Ok(Err(_)) | Err(_)) | None => {}
+                }
+            }
         }
     }
 }

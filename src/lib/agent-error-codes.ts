@@ -19,6 +19,7 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   provider_connection_failed: "errors.providerConnectionFailed",
   provider_temporarily_unavailable: "errors.providerTemporarilyUnavailable",
   provider_request_rejected: "errors.providerRequestRejected",
+  provider_response_invalid: "errors.providerResponseInvalid",
   provider_empty_response: "errors.providerEmptyResponse",
   provider_output_limit: "errors.providerOutputLimit",
   provider_content_filtered: "errors.providerContentFiltered",

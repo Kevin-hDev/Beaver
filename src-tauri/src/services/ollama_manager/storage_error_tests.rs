@@ -53,7 +53,6 @@ fn reviewed_j3_storage_boundaries_use_the_diagnostic_authority() {
         ("install storage", include_str!("install_storage.rs")),
         ("update staging", include_str!("update_platform_prepare.rs")),
         ("update rename", include_str!("update_platform.rs")),
-        ("extract staging", include_str!("extract.rs")),
         ("archive extraction", include_str!("extract_archive.rs")),
         ("manager process", include_str!("manager_process.rs")),
     ] {

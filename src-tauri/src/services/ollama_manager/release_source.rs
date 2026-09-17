@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::fingerprint::{OllamaVersion, Sha256Digest};
 use std::fmt;

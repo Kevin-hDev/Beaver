@@ -22,8 +22,11 @@ function readStoredWidth(sessionId: string | null): number {
   return clampFileTreeStoredWidth(undefined);
 }
 
-export function useFileTree(sessionId: string | null, projectPath: string | undefined) {
-  const [open, setOpen] = useState(false);
+export function useFileTree(
+  sessionId: string | null,
+  projectPath: string | undefined,
+  open: boolean,
+) {
   const [width, setWidth] = useState(() => readStoredWidth(sessionId));
   const { resizing, startResize } = useFileTreeResize(width, setWidth);
 
@@ -121,21 +124,12 @@ export function useFileTree(sessionId: string | null, projectPath: string | unde
     }
   }, [childrenMap, loadDirectory]);
 
-  const toggleOpen = useCallback(() => {
-    setOpen((v) => !v);
-  }, []);
-
-  const closeTree = useCallback(() => {
-    setOpen(false);
-  }, []);
-
   useEffect(() => {
     localStorage.setItem(treeStorageKey(sessionId), String(width));
   }, [sessionId, width]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- session switch must reset the project tree state
-    setOpen(false);
     setRootEntries([]);
     setChildrenMap(new Map());
     setExpandedPaths(new Set());
@@ -154,9 +148,6 @@ export function useFileTree(sessionId: string | null, projectPath: string | unde
     filter,
     loadError,
     setFilter,
-    setOpen,
-    toggleOpen,
-    closeTree,
     toggleExpand,
     startResize,
   };

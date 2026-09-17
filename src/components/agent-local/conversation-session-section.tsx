@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { MouseEvent, ReactNode, RefObject } from "react";
-import { CollapsePanel } from "./collapse-panel";
+import { Collapsible } from "@/components/ui/collapsible";
 import { ConversationSectionToggle } from "./conversation-section-toggle";
 import { ConversationSessionItem } from "./conversation-session-item";
 import { ConversationEmptyNote } from "./conversation-empty-note";
@@ -59,7 +59,11 @@ export function ConversationSessionSection({
       <ConversationSectionToggle open={!collapsed} onToggle={onToggleCollapse} action={action}>
         {title}
       </ConversationSectionToggle>
-      <CollapsePanel open={!collapsed}>
+      <Collapsible
+        open={!collapsed}
+        className="conv-collapse-panel"
+        innerClassName="conv-collapse-content"
+      >
         {sessions.length === 0 && <ConversationEmptyNote>{emptyLabel}</ConversationEmptyNote>}
         {drag.order.map((id) => {
           const s = byId.get(id);
@@ -85,7 +89,7 @@ export function ConversationSessionSection({
             />
           );
         })}
-      </CollapsePanel>
+      </Collapsible>
     </div>
   );
 }

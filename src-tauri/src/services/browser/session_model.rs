@@ -1,18 +1,14 @@
-use super::{
-    session_types::{blank_tab, PersistedBrowserSession, SESSION_VERSION},
-    session_validation::validate_persisted,
-    tab_id::validate_tab_id,
-    url_policy::validate_browser_url,
-};
+use super::{session_types::blank_tab, tab_id::validate_tab_id, url_policy::validate_browser_url};
 use std::collections::VecDeque;
 
 pub use super::session_types::{
     BrowserSessionState, BrowserTabCreation, BrowserTabState, MAX_BROWSER_TABS,
 };
 
+#[derive(Clone)]
 pub(super) struct SessionModel {
-    state: BrowserSessionState,
-    recency: VecDeque<String>,
+    pub(super) state: BrowserSessionState,
+    pub(super) recency: VecDeque<String>,
 }
 
 impl SessionModel {
@@ -28,42 +24,8 @@ impl SessionModel {
         })
     }
 
-    pub(super) fn restore(bytes: &[u8]) -> Result<Self, ()> {
-        let persisted: PersistedBrowserSession = serde_json::from_slice(bytes).map_err(|_| ())?;
-        validate_persisted(&persisted)?;
-        Ok(Self {
-            state: persisted.state,
-            recency: persisted.recency.into(),
-        })
-    }
-
-    pub(super) fn release_runtime(&mut self) -> Result<bool, ()> {
-        let mut changed = false;
-        for tab in &mut self.state.tabs {
-            let released = tab.url.is_some();
-            changed |=
-                tab.loading || tab.can_go_back || tab.can_go_forward || tab.released != released;
-            tab.loading = false;
-            tab.can_go_back = false;
-            tab.can_go_forward = false;
-            tab.released = released;
-        }
-        if changed {
-            self.bump()?;
-        }
-        Ok(changed)
-    }
-
     pub(super) fn state(&self) -> &BrowserSessionState {
         &self.state
-    }
-
-    pub(super) fn persisted(&self) -> PersistedBrowserSession {
-        PersistedBrowserSession {
-            version: SESSION_VERSION,
-            state: self.state.clone(),
-            recency: self.recency.iter().cloned().collect(),
-        }
     }
 
     pub(super) fn create_tab(

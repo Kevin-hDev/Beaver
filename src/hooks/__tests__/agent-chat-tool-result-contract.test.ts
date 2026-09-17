@@ -4,7 +4,7 @@ import {
   createManagedStreamState,
   finishPartialStream,
 } from "@/hooks/agent-chat-stream-callbacks";
-import { expandToolActivities, toolsToRecords } from "@/hooks/agent-chat-utils";
+import { toolsToRecords } from "@/hooks/agent-chat-utils";
 import type { ManagedStreamState } from "@/hooks/agent-chat-stream-callbacks";
 import type { ToolActivityRecord } from "@/types/agent";
 
@@ -118,30 +118,6 @@ describe("contrat des résultats d'outils", () => {
     expect(saved?.result).toBe("");
     expect(saved?.is_error).toBe(false);
     expect(saved?.result_meta?.status).toBe("success");
-  });
-
-  it("restaure une erreur structurée pour le modèle", () => {
-    const record = toolsToRecords([{
-      name: "bash",
-      args: { command: "false" },
-      result: "",
-      isError: true,
-      status: "error",
-      error: {
-        code: "shell_exit_nonzero",
-        category: "execution",
-        retryable: false,
-      },
-      truncated: true,
-    }])[0];
-
-    const restored = expandToolActivities([record], "");
-    const envelope: unknown = JSON.parse(restored[1].content);
-    expect(envelope).toMatchObject({
-      status: "error",
-      error: { code: "shell_exit_nonzero" },
-      truncated: true,
-    });
   });
 
   it("persiste une annulation locale avec des métadonnées cohérentes", () => {

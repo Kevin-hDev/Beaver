@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::blocking::run_ollama_blocking;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;

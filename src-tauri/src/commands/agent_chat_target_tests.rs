@@ -43,8 +43,6 @@ fn openrouter_contract_model(
             },
         ),
         supports_fast_mode: false,
-        reasoning_modes: Vec::new(),
-        default_reasoning_mode: None,
         context_usage_includes_reasoning: true,
         is_free: false,
     }
@@ -162,15 +160,9 @@ async fn forged_frontend_hints_cannot_change_persisted_reasoning_mode() {
         target.reasoning.ollama_payload.as_ref(),
         Some(&crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
     );
-    assert!(resolve(
-        &session.id,
-        "xai-oauth",
-        "qwen3.5:4b",
-        Some("high"),
-        Some(true),
-    )
-    .await
-    .is_err());
+    assert!(resolve(&session.id, "xai-oauth", "qwen3.5:4b")
+        .await
+        .is_err());
     cleanup(&session.id).await;
 }
 

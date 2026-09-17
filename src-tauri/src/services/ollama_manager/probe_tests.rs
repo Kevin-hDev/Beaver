@@ -15,7 +15,7 @@ use tokio_util::sync::CancellationToken;
 use super::error::OllamaErrorCode;
 use super::path_identity::{NativePathIdentityResolver, PathIdentityResolver};
 use super::port::OllamaPortAllocator;
-use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
+use super::probe::{OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 use super::probe_ownership::{wait_for_owned_endpoint, EndpointWaitResult};
 use super::spawn_profile::OllamaSpawnProfile;
 #[cfg(unix)]

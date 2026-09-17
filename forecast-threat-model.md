@@ -34,7 +34,7 @@ Questions ouvertes qui changeraient la priorité :
 
 - UI Forecast React : lance des prédictions, affiche résultats, modèles, notes et docs. Évidence : `src/components/forecast/forecast-panel.tsx`, `src/components/forecast/model-browser/model-specs.tsx`.
 - Commandes Tauri Forecast : point d'entrée IPC entre UI et backend. Évidence : `src-tauri/src/commands/forecast.rs`, `src-tauri/src/commands/forecast_models.rs`, `src-tauri/src/commands/forecast_details.rs`.
-- Tools LLM Forecast : point d'entrée agentique pour lancer, lire et modifier des analyses. Évidence : `src-tauri/src/services/agent_local/tool_dispatcher_forecast.rs`, `tool_dispatcher_forecast_analyze.rs`, `tool_definitions_forecast.rs`.
+- Tools LLM Forecast : point d'entrée agentique pour lancer, lire et modifier des analyses. Évidence : `src-tauri/src/services/agent_local/tools/tool_dispatcher_forecast.rs`, `tool_dispatcher_forecast_analyze.rs`, `tool_definitions_forecast.rs`.
 - Validation et parsing datasets : JSON, CSV, Excel, colonnes, fréquence, horizon, covariables. Évidence : `src-tauri/src/services/forecast/validation.rs`, `file_input.rs`, `input_data.rs`.
 - Stockage local Forecast : analyses JSON, notes Markdown, modèles téléchargés. Évidence : `src-tauri/src/services/forecast/storage.rs`, `notes.rs`, `notes_files.rs`, `model_manager/mod.rs`.
 - Sidecar local Python : moteur local de prédiction lancé par Tauri. Évidence : `src-tauri/src/services/forecast/sidecar.rs`, `sidecar_runtime.rs`, `sidecar_process.rs`.
@@ -107,7 +107,7 @@ flowchart LR
 | Surface | How reached | Trust boundary | Notes | Evidence (repo path / symbol) |
 |---|---|---|---|---|
 | `run_forecast` | UI Tauri | UI → Rust | Lance parsing, modèle local/cloud, sauvegarde | `src-tauri/src/commands/forecast.rs::run_forecast` |
-| `forecast` tool | Agent LLM | LLM → Rust tools | Peut lire un fichier ou envoyer JSON | `src-tauri/src/services/agent_local/tool_dispatcher_forecast.rs::handle_forecast` |
+| `forecast` tool | Agent LLM | LLM → Rust tools | Peut lire un fichier ou envoyer JSON | `src-tauri/src/services/agent_local/tools/tool_dispatcher_forecast.rs::handle_forecast` |
 | `forecast_read` tool | Agent LLM | LLM → stockage local | Relit analyses et résultats | `tool_dispatcher_forecast.rs::handle_read` |
 | `forecast_analyze` tool | Agent LLM | LLM → stockage local | Ajoute annotations/scénarios | `tool_dispatcher_forecast_analyze.rs::handle` |
 | Import fichier CSV/Excel | UI/tool | Fichier local → parser | Lecture tableur, limite taille/lignes | `src-tauri/src/services/forecast/file_input.rs` |
@@ -176,8 +176,8 @@ Low :
 
 | Path | Why it matters | Related Threat IDs |
 |---|---|---|
-| `src-tauri/src/services/agent_local/tool_dispatcher_forecast.rs` | Point d'entrée libre des agents pour lancer et lire Forecast | TM-001, TM-007 |
-| `src-tauri/src/services/agent_local/tool_dispatcher_forecast_analyze.rs` | Mutations analyses/scénarios/annotations par agent | TM-007 |
+| `src-tauri/src/services/agent_local/tools/tool_dispatcher_forecast.rs` | Point d'entrée libre des agents pour lancer et lire Forecast | TM-001, TM-007 |
+| `src-tauri/src/services/agent_local/tools/tool_dispatcher_forecast_analyze.rs` | Mutations analyses/scénarios/annotations par agent | TM-007 |
 | `src-tauri/src/services/forecast/client_nixtla.rs` | Envoi cloud et logging d'erreurs fournisseur | TM-001, TM-009 |
 | `src-tauri/src/services/forecast/model_manager/download.rs` | Téléchargements Hugging Face, future surface custom | TM-002, TM-003 |
 | `src-tauri/src/services/forecast/model_manager/download_github.rs` | Extraction zip GitHub et limites archive | TM-002, TM-003 |

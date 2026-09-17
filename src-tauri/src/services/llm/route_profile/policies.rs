@@ -18,15 +18,6 @@ pub(super) const INTERACTIVE_ONLY: RouteAvailability = RouteAvailability {
     account_metadata: true,
 };
 
-#[allow(dead_code, reason = "reserved for the next bounded candidate route")]
-pub(super) const CANDIDATE_ONLY: RouteAvailability = RouteAvailability {
-    interactive: false,
-    silent: false,
-    automation: false,
-    external_channel: false,
-    account_metadata: false,
-};
-
 const fn policy(
     schema: SchemaPolicy,
     cache: CachePolicy,

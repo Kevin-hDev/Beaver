@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::recovery_decision::MigrationMarkerPresence;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

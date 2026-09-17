@@ -7,6 +7,7 @@ pub(super) const MAX_LOCAL_TITLE_CHARS: usize = 80;
 pub const LOCAL_SITES_CHANGED_EVENT: &str = "browser-local-sites-changed-v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "lowercase")]
 pub enum LocalSiteProtocol {
     Http,
@@ -23,6 +24,7 @@ impl LocalSiteProtocol {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct LocalSite {
     pub url: String,
@@ -32,9 +34,11 @@ pub struct LocalSite {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct LocalSiteScanResult {
     pub sites: Vec<LocalSite>,
+    #[cfg_attr(test, ts(type = "number"))]
     pub generation: u64,
     pub changed: bool,
 }

@@ -13,7 +13,7 @@ import type {
   SkillReference,
   TurnStart,
 } from "@/types/agent-turn.generated";
-import type { QueueStreamResult } from "./agent-stream-run-ownership";
+import type { StreamSendResult } from "./agent-stream-run-ownership";
 
 export interface AgentSendPayload {
   text: string;
@@ -36,14 +36,19 @@ interface PersistAgentMessageOptions extends AgentSendPayload {
     permissionMode?: string,
     optimisticUserMessageId?: string,
   ) => Promise<void>;
-  queueStreamMessage?: (
-    sessionId: string,
-    input: NewUserTurnInput,
-    displayMessage: AgentMessage,
-  ) => Promise<QueueStreamResult>;
+  resolveStreamSend?: (sessionId: string) => StreamSendResult;
 }
 
 export async function persistAgentMessage(options: PersistAgentMessageOptions) {
+  const streamSend = options.resolveStreamSend?.(options.sessionId);
+  if (streamSend === "stopping") {
+    showToast(i18n.t("errors.streamStopping"), "info");
+    return false;
+  }
+  if (streamSend === "unavailable") {
+    showToast(i18n.t("errors.admission.queueUnavailable"), "error");
+    return false;
+  }
   if (options.projectId && options.messages.length === 0) {
     try {
       await invoke("update_session_project", {
@@ -64,20 +69,6 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
     files,
     skills: options.skills ?? [],
   };
-  const queueResult = await options.queueStreamMessage?.(
-    options.sessionId,
-    input,
-    userMessage,
-  );
-  if (queueResult === "queued") return true;
-  if (queueResult === "stopping") {
-    showToast(i18n.t("errors.streamStopping"), "info");
-    return false;
-  }
-  if (queueResult === "unavailable") {
-    showToast(i18n.t("errors.admission.queueUnavailable"), "error");
-    return false;
-  }
   await options.doStream(
     { type: "new", input },
     displayMessages,

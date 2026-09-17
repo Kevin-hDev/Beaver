@@ -7,8 +7,6 @@ import {
 } from "./file-preview-storage";
 
 interface PanelState extends StoredFilePreviewPanel {
-  open: boolean;
-  fullscreen: boolean;
   extraWidth: number;
 }
 
@@ -24,8 +22,6 @@ function stateKey(sessionId: string | null): string {
 function loadPanelState(sessionId: string | null): PanelState {
   return {
     ...readStoredFilePreviewPanel(sessionId),
-    open: false,
-    fullscreen: false,
     extraWidth: FILE_PREVIEW_DEFAULT_EXTRA_WIDTH,
   };
 }
@@ -50,8 +46,6 @@ export function useFilePreviewPanelState(sessionId: string | null) {
         : loadPanelState(sessionId);
       const next = updater(current);
       if (
-        next.open === current.open &&
-        next.fullscreen === current.fullscreen &&
         next.width === current.width &&
         next.extraWidth === current.extraWidth
       ) return currentStored;
@@ -61,14 +55,6 @@ export function useFilePreviewPanelState(sessionId: string | null) {
       return { key, value: next };
     });
   }, [key, sessionId]);
-
-  const setOpen = useCallback((action: SetStateAction<boolean>) => {
-    updatePanel((current) => ({ ...current, open: applyAction(current.open, action) }));
-  }, [updatePanel]);
-
-  const setFullscreen = useCallback((action: SetStateAction<boolean>) => {
-    updatePanel((current) => ({ ...current, fullscreen: applyAction(current.fullscreen, action) }));
-  }, [updatePanel]);
 
   const setWidth = useCallback((action: SetStateAction<number>) => {
     updatePanel((current) => ({ ...current, width: applyAction(current.width, action) }));
@@ -80,8 +66,6 @@ export function useFilePreviewPanelState(sessionId: string | null) {
 
   return {
     ...state,
-    setOpen,
-    setFullscreen,
     setWidth,
     setExtraWidth,
   };

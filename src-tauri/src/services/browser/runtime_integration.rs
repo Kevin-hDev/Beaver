@@ -22,7 +22,7 @@ pub(crate) fn prepare_native_application() -> bool {
     ready
 }
 
-#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+#[cfg(all(native_browser, target_os = "windows"))]
 pub(crate) fn prepare_native_application() -> bool {
     NATIVE_APPLICATION_READY.store(true, Ordering::Release);
     true

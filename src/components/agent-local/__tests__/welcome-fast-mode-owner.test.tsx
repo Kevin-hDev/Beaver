@@ -45,18 +45,19 @@ vi.mock("@/hooks/use-available-models", () => ({
     {
       id: "compatible", provider_id: "test-provider", provider_name: "Test",
       is_local: false, supports_tools: true, supports_thinking: true,
-      supports_fast_mode: true, reasoning_modes: ["off", "high"],
+      supports_fast_mode: true,
+      reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } },
     },
     {
       id: "incompatible", provider_id: "test-provider", provider_name: "Test",
       is_local: false, supports_tools: true, supports_thinking: true,
-      supports_fast_mode: false, reasoning_modes: ["off", "high"],
+      supports_fast_mode: false,
+      reasoning_contract: { control: { kind: "efforts", efforts: ["off", "high"] } },
     },
   ]]]) }),
 }));
 vi.mock("@/hooks/use-file-preview", () => ({ useFilePreview: () => ({}) }));
 vi.mock("@/hooks/use-agent-local-shortcuts", () => ({ useAgentLocalShortcuts: vi.fn() }));
-vi.mock("@/hooks/use-agent-local-preview-sync", () => ({ useAgentLocalPreviewSync: vi.fn() }));
 vi.mock("@/hooks/use-agent-local-controlled-preview", () => ({
   useAgentLocalControlledPreview: () => ({ open: false, toggleOpen: vi.fn(), openPlan: vi.fn(), openOperation: vi.fn() }),
 }));
@@ -73,7 +74,6 @@ vi.mock("@/hooks/use-directory-access-guard", () => ({
 }));
 vi.mock("@/hooks/use-file-tree", () => ({ useFileTree: () => ({}) }));
 vi.mock("@/hooks/use-forecast-panel", () => ({ useForecastPanel: () => ({}) }));
-vi.mock("@/hooks/use-agent-local-panel-nav", () => ({ useAgentLocalPanelNav: vi.fn() }));
 vi.mock("@/hooks/use-agent-local-controlled-panels", () => ({
   useAgentLocalControlledPanels: () => ({ fileTreeNav: {}, forecastNav: { panelMode: "preview", setPanelMode: vi.fn() } }),
 }));

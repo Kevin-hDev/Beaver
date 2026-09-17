@@ -1,4 +1,4 @@
-use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
+use crate::commands::agent_chat_task::{run_stream_task, StreamTaskParams};
 use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::models::AutomationDefinition;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
@@ -27,8 +27,6 @@ pub async fn run(
         session_id,
         &automation.provider,
         &automation.model,
-        None,
-        None,
     )
     .await
     {
@@ -131,21 +129,19 @@ pub async fn run(
         session_id: session_id.to_string(),
         request_id: stream.request_id.clone(),
         model: automation.model.clone(),
-        conversation: Some(
+        conversation:
             crate::commands::agent_chat_task::StreamConversation::canonical_for_automation(
                 admitted.turn,
                 automation.id,
                 &automation.target,
             ),
-        ),
-        continuation_target: Some(target.continuation),
-        reasoning_profile: Some(target.reasoning.clone()),
+        continuation_target: target.continuation,
+        reasoning_profile: target.reasoning.clone(),
         tools: Vec::new(),
         think: target.reasoning.active,
         provider: automation.provider.clone(),
         working_dir: resolved_dir.path,
         outputs_dir: resolved_dir.outputs_dir,
-        capability_hints: StreamCapabilityHints::default(),
         reasoning_mode: target.reasoning.mode_name,
         permission_mode: crate::commands::agent_chat_task::StreamPermissionMode::FullAccess,
         permission_emitter: None,

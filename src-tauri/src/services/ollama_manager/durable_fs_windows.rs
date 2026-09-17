@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::super::path_identity::CanonicalDirectory;
 use super::{
     retry_windows_sharing, validate_wide_units, windows_file_flush_access, OllamaDurableFs,
@@ -31,12 +29,6 @@ mod verified;
 #[derive(Clone, Debug, Default)]
 pub(crate) struct WindowsOllamaDurableFs {
     cancelled: Arc<AtomicBool>,
-}
-
-impl WindowsOllamaDurableFs {
-    pub(super) fn cancel(&self) {
-        self.cancelled.store(true, Ordering::Release);
-    }
 }
 
 impl OllamaDurableFs for WindowsOllamaDurableFs {

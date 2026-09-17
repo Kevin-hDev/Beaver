@@ -2,7 +2,7 @@
 
 **Emplacement site** — Agent › Mémoire (le mockup la regroupe avec les skills ; elle mérite sa page)
 **Répond à** — « Est-ce que l'agent se souvient d'une conversation à l'autre, et qu'est-ce qu'il retient exactement ? »
-**Sources** — `src-tauri/src/services/agent_local/memory_types.rs` (lignes 3-8, 12-16), `memory_format.rs` (lignes 8-10), `memory_store.rs`, `memory_paths.rs`, `memory_settings.rs`, `memory_prompt.rs`, `memory_tool.rs`, `memory_project_id.rs`, `memory_overview.rs`, `src/components/settings/memory-settings.tsx`
+**Sources** — `src-tauri/src/services/agent_local/context/memory_types.rs` (lignes 3-8, 12-16), `memory_format.rs` (lignes 8-10), `memory_store.rs`, `memory_paths.rs`, `memory_settings.rs`, `memory_prompt.rs`, `memory_tool.rs`, `memory_project_id.rs`, `memory_overview.rs`, `src/components/settings/memory-settings.tsx`
 **Vérification** — Vérifié dans le code : modes, portées, limites, structure d'une note
 
 ---

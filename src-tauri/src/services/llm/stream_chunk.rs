@@ -17,6 +17,7 @@ pub fn parse(data: &str) -> Vec<ParsedChunk> {
     parse_with_context(data, UsageContext::chat("unknown", "unknown"))
 }
 
+#[cfg(test)]
 pub fn parse_with_context(data: &str, context: UsageContext<'_>) -> Vec<ParsedChunk> {
     let chunk: Value = match serde_json::from_str(data) {
         Ok(v) => v,

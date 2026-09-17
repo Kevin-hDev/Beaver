@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AgentSessionMeta } from "@/types/agent";
 import {
+  agentNavigationSessionIds,
   terminalWorkspaceGroupKey,
   terminalWorkspaceGroupKeys,
 } from "../agent-local-workspace-scope";
@@ -20,6 +21,20 @@ function session(
     ...links,
   };
 }
+
+describe("agentNavigationSessionIds", () => {
+  it("garde l'ordre des projets puis les orphelines sans les sessions enfants", () => {
+    const sessions = [
+      session("project-b", { project_id: "b" }),
+      session("orphan"),
+      session("project-a", { project_id: "a" }),
+      session("child", { parent_session_id: "project-a", project_id: "a" }),
+    ];
+
+    expect(agentNavigationSessionIds(sessions, ["a", "b"]))
+      .toEqual(["project-a", "project-b", "orphan"]);
+  });
+});
 
 describe("terminalWorkspaceGroupKey", () => {
   it("partage le groupe du projet entre ses discussions", () => {

@@ -19,12 +19,14 @@ const UNAVAILABLE: &str = "terminal-tabs-unavailable";
 static TERMINAL_TABS_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
 pub struct TerminalSavedTab {
     pub label: String,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct TerminalTabsDocument {
     pub version: u8,
     pub groups: BTreeMap<String, Vec<TerminalSavedTab>>,

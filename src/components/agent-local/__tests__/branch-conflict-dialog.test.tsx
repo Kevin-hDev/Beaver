@@ -48,6 +48,8 @@ describe("BranchConflictDialog", () => {
     );
     await waitFor(() => expect(screen.getByText("file.txt")).not.toBeNull());
     expect(screen.getByRole("button", { name: "Description" }).getAttribute("aria-expanded")).toBe("false");
+    expect(document.querySelector(".bcd-description-panel")).toHaveClass("cps-region");
+    expect(document.querySelector(".bcd-description-panel")).toHaveAttribute("inert");
   });
 
   it("passes the optional description when committing", () => {
@@ -62,6 +64,8 @@ describe("BranchConflictDialog", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Description" }));
+    expect(document.querySelector(".bcd-description-panel"))
+      .toHaveAttribute("data-open", "true");
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Ma description" } });
     fireEvent.click(screen.getByRole("button", { name: "Commit and switch" }));
     expect(onCommitAndSwitch).toHaveBeenCalledWith("main", "Ma description");

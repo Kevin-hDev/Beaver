@@ -1,5 +1,4 @@
 // Les variantes décrivent le contrat IPC complet avant l'adoption des consommateurs.
-#![allow(dead_code)]
 
 use super::error::OllamaErrorCode;
 use serde::Serialize;
@@ -51,7 +50,10 @@ pub enum OllamaProgressStage {
     Committing,
     Starting,
     Recovering,
+    // Conservées dans le contrat IPC même si aucune phase actuelle ne les publie encore.
+    #[allow(dead_code)]
     RollingBack,
+    #[allow(dead_code)]
     Cleaning,
 }
 
@@ -80,7 +82,6 @@ pub enum CancelOutcome {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OllamaCliArgs {
-    Version,
     Create {
         model: String,
         modelfile: std::path::PathBuf,
@@ -95,7 +96,6 @@ pub struct OllamaCliOutput {
 impl OllamaCliArgs {
     pub(crate) fn validate(&self) -> Result<(), OllamaErrorCode> {
         match self {
-            Self::Version => Ok(()),
             Self::Create { model, modelfile } => {
                 if model.is_empty()
                     || model.len() > 128

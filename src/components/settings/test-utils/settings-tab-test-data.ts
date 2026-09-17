@@ -53,15 +53,6 @@ export function memoryOverview() {
   };
 }
 
-export function agentToolCatalog() {
-  return [
-    { id: "bash", locked: true, defaultEnabled: true, group: "core" },
-    { id: "search_mcp_tools", locked: true, defaultEnabled: true, group: "mcp" },
-    { id: "load_skill", locked: false, defaultEnabled: true, group: "workflow" },
-    { id: "forecast_run", locked: false, defaultEnabled: false, group: "forecast" },
-  ];
-}
-
 export function agentToolGroups() {
   return [
     { id: "web", locked: true, defaultEnabled: true, toolIds: ["web_search", "web_fetch"] },

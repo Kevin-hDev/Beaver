@@ -1,11 +1,11 @@
 use super::cef_cookie_gate_policy::cef_cookie_gate_policy_for_platform;
 
 #[test]
-fn runtime_policy_helper_is_only_compiled_with_the_cef_runtime() {
+fn runtime_policy_helper_is_only_compiled_with_the_native_browser_api() {
     let policy = include_str!("cef_cookie_gate_policy.rs").replace("\r\n", "\n");
 
     assert!(policy.contains(
-        "#[cfg(any(target_os = \"macos\", target_os = \"windows\"))]\n\
+        "#[cfg(browser_native_api)]\n\
          pub(super) fn cef_cookie_gate_policy()"
     ));
 }

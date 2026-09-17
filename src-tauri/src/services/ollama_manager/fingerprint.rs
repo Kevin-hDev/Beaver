@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use serde::de::{Error as DeError, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -110,11 +108,6 @@ impl Sha256Digest {
 
     pub fn constant_time_eq(&self, other: &Self) -> bool {
         bool::from(self.bytes.ct_eq(&other.bytes))
-    }
-
-    #[allow(dead_code)]
-    pub fn as_bytes(&self) -> &[u8; 32] {
-        &self.bytes
     }
 }
 

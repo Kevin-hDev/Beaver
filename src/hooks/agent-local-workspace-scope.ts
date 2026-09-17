@@ -41,3 +41,20 @@ export function terminalWorkspaceGroupKeys(
   }
   return [...keys];
 }
+
+export function agentNavigationSessionIds(
+  sessions: AgentSessionMeta[],
+  projectIds: string[],
+): string[] {
+  const projects = new Set(projectIds);
+  const visible = sessions.filter((entry) => (
+    !entry.parent_session_id && !entry.clone_parent_session_id
+  ));
+  const grouped = projectIds.flatMap((projectId) => (
+    visible.filter((entry) => entry.project_id === projectId).map((entry) => entry.id)
+  ));
+  const orphans = visible
+    .filter((entry) => !entry.project_id || !projects.has(entry.project_id))
+    .map((entry) => entry.id);
+  return [...grouped, ...orphans];
+}

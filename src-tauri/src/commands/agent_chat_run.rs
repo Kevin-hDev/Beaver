@@ -1,6 +1,4 @@
-use super::agent_chat_task::{
-    run_stream_task, StreamCapabilityHints, StreamConversation, StreamTaskParams,
-};
+use super::agent_chat_task::{run_stream_task, StreamConversation, StreamTaskParams};
 use crate::models::agent_turn_contract::ChatStreamAdmission;
 use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
@@ -52,8 +50,6 @@ pub(crate) async fn start(
                 &request.session_id,
                 &request.provider,
                 &request.model,
-                request.reasoning_mode.as_deref(),
-                request.capability_hints.supports_thinking,
                 fixture_run,
             )
             .await
@@ -63,21 +59,14 @@ pub(crate) async fn start(
                 &request.session_id,
                 &request.provider,
                 &request.model,
-                request.reasoning_mode.as_deref(),
-                request.capability_hints.supports_thinking,
             )
             .await
         }
     };
     #[cfg(not(debug_assertions))]
-    let target_result = super::agent_chat_target::resolve(
-        &request.session_id,
-        &request.provider,
-        &request.model,
-        request.reasoning_mode.as_deref(),
-        request.capability_hints.supports_thinking,
-    )
-    .await;
+    let target_result =
+        super::agent_chat_target::resolve(&request.session_id, &request.provider, &request.model)
+            .await;
     let target = match target_result {
         Ok(target) => target,
         Err(error) => {
@@ -102,7 +91,6 @@ pub(crate) async fn start(
     }
     request.think = target.reasoning.active;
     request.reasoning_mode = target.reasoning.mode_name.clone();
-    request.capability_hints = StreamCapabilityHints::default();
     let turn = match super::agent_chat_turn::prepare(request.turn.take().ok_or_else(generic_error)?)
         .await
     {

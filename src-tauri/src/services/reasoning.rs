@@ -61,7 +61,8 @@ pub fn normalize_for_model(
         Some(super::reasoning_ollama::default_mode(model).to_string())
     } else {
         crate::services::llm::provider_model_lookup::resolve_local(provider, model)
-            .and_then(|resolved| resolved.default_reasoning_mode)
+            .and_then(|resolved| resolved.reasoning_contract)
+            .and_then(|contract| contract.selection().1)
     };
     if preferred
         .as_ref()

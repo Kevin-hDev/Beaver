@@ -1,15 +1,11 @@
-#![allow(dead_code)]
-
 use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
-use super::manager::OllamaManager;
 use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
-use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
+use super::probe::{OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 use super::recovery::{
     RecoveryExecutor, RecoveryOutcome, RecoveryProbe, RecoveryProbeResult, RecoveryReason,
 };
 use super::spawn_profile::OllamaSpawnProfile;
-use super::types::OperationState;
 use crate::services::paths::{data_dir, ollama_paths};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -113,20 +109,4 @@ pub(super) fn frozen_models_directory(
             .ok()?
             .comparison_directory(),
     )
-}
-
-impl OllamaManager {
-    pub async fn recover(
-        &self,
-        reason: RecoveryReason,
-    ) -> Result<RecoveryOutcome, OllamaErrorCode> {
-        let guard = self.begin_operation(OperationState::Recovering).await?;
-        let result = recover_platform(reason).await;
-        match &result {
-            Err(code) => guard.fail(*code),
-            Ok(RecoveryOutcome::Deferred { code }) => guard.fail(*code),
-            Ok(_) => drop(guard),
-        }
-        result
-    }
 }
