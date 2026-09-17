@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
@@ -17,7 +17,6 @@ export function useContextProgress(
   record?: ContextUsageRecord,
 ): ContextProgressState {
   const [max, setMax] = useState(0);
-  const previousUsedTokens = useRef(usedTokens);
 
   const refresh = useCallback(async () => {
     if (!model) { setMax(0); return; }
@@ -28,9 +27,7 @@ export function useContextProgress(
         modelId: model,
       });
       setMax(context ?? 0);
-    } catch {
-      setMax(0);
-    }
+    } catch { /* Keep the last valid context size after a transient read failure. */ }
   }, [model, provider]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch→setState is intentional
@@ -45,14 +42,6 @@ export function useContextProgress(
     const unlisten = listen("ollama-models-changed", () => { void refresh(); });
     return () => { cleanupTauriListener(unlisten); };
   }, [refresh, provider]);
-
-  useEffect(() => {
-    const previous = previousUsedTokens.current;
-    previousUsedTokens.current = usedTokens;
-    if (usedTokens !== previous) {
-      void refresh();
-    }
-  }, [provider, refresh, usedTokens]);
 
   return {
     max,
