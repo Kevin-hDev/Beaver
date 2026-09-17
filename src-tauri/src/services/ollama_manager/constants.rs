@@ -5,6 +5,7 @@ pub(crate) const MAX_DURABLE_DOCUMENT_BYTES: usize = 4 * 1024;
 pub(crate) const MAX_OLLAMA_ENV_ENTRIES: usize = 256;
 pub(crate) const MAX_OLLAMA_ENV_KEY_UNITS: usize = 256;
 pub(crate) const MAX_OLLAMA_ENV_VALUE_UNITS: usize = 8_192;
+#[cfg(not(windows))]
 pub(crate) const MAX_OLLAMA_ENV_TOTAL_UNIX_BYTES: usize = 65_536;
 #[cfg(windows)]
 pub(crate) const MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16: usize = 32_767;

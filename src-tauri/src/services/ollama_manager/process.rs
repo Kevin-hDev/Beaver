@@ -64,7 +64,7 @@ pub(crate) struct GatedOllamaProcess {
 pub(crate) use super::process_owned::OwnedOllamaProcess;
 
 impl GatedOllamaProcess {
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn identity(&self) -> Result<OwnedProcessIdentity, OllamaProcessError> {
         self.native
             .as_ref()
@@ -81,7 +81,7 @@ impl GatedOllamaProcess {
         self.publish_inner(receipt, emergency, |_| {})
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn force_reap_failure_for_test(&mut self) {
         #[cfg(unix)]
         if let Some(native) = self.native.as_mut() {
@@ -89,7 +89,7 @@ impl GatedOllamaProcess {
         }
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn open_gate_and_wait_for_test(&mut self) -> Result<(), OllamaProcessError> {
         let native = self
             .native

@@ -10,12 +10,13 @@ use crate::services::paths::OllamaPaths;
 use std::ffi::OsString;
 use std::path::Path;
 
+#[cfg(all(test, not(windows)))]
+pub(crate) use super::constants::MAX_OLLAMA_ENV_TOTAL_UNIX_BYTES;
 #[cfg(all(test, windows))]
 pub(crate) use super::constants::MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16;
 #[cfg(test)]
 pub(crate) use super::constants::{
-    MAX_OLLAMA_ENV_ENTRIES, MAX_OLLAMA_ENV_KEY_UNITS, MAX_OLLAMA_ENV_TOTAL_UNIX_BYTES,
-    MAX_OLLAMA_ENV_VALUE_UNITS,
+    MAX_OLLAMA_ENV_ENTRIES, MAX_OLLAMA_ENV_KEY_UNITS, MAX_OLLAMA_ENV_VALUE_UNITS,
 };
 pub(crate) use super::spawn_environment::FrozenEnvironment;
 

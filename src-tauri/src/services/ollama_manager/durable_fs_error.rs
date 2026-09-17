@@ -80,7 +80,7 @@ impl OllamaFsError {
         self.kind
     }
 
-    #[cfg(any(windows, test))]
+    #[cfg(test)]
     pub(in crate::services::ollama_manager) const fn is_cancelled(self) -> bool {
         self.cancelled
     }

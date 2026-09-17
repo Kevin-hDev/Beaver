@@ -53,7 +53,7 @@ pub fn extract_archive(
     )
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(super) fn extract_archive_for_test<F>(
     archive: &Path,
     staging: &Path,

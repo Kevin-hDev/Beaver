@@ -31,12 +31,6 @@ pub(crate) struct WindowsOllamaDurableFs {
     cancelled: Arc<AtomicBool>,
 }
 
-impl WindowsOllamaDurableFs {
-    pub(super) fn cancel(&self) {
-        self.cancelled.store(true, Ordering::Release);
-    }
-}
-
 impl OllamaDurableFs for WindowsOllamaDurableFs {
     fn read_bounded(&self, path: &Path, max_bytes: usize) -> Result<Vec<u8>, OllamaFsError> {
         let metadata =

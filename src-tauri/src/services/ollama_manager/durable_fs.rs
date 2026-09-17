@@ -36,6 +36,7 @@ pub(super) trait OllamaDurableFs: Send + Sync {
     fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError>;
 }
 
+#[cfg(any(unix, test))]
 pub(super) fn sync_parent_pair<Sync>(
     source: &Path,
     destination: &Path,

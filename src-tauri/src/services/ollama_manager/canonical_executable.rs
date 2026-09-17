@@ -7,6 +7,7 @@ pub struct NativeFileIdentity {
 }
 
 impl NativeFileIdentity {
+    #[cfg(unix)]
     pub(crate) fn value(&self) -> u128 {
         self.value
     }
@@ -93,10 +94,12 @@ impl CanonicalExecutable {
         &self.path
     }
 
+    #[cfg(unix)]
     pub(crate) fn identity(&self) -> &NativeFileIdentity {
         &self.identity
     }
 
+    #[cfg(not(windows))]
     pub(crate) fn value(&self) -> u128 {
         self.identity.value
     }

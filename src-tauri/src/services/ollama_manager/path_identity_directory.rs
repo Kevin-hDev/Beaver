@@ -61,7 +61,7 @@ impl CanonicalDirectory {
         self.handle.as_ref().map(|handle| handle.0.as_ref())
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn has_stable_handle(&self) -> bool {
         #[cfg(any(unix, windows))]
         return self.handle.is_some();
