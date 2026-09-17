@@ -1,8 +1,8 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::progress::{self, OllamaProgressReporter, OllamaProgressUpdate};
-use super::release_source::{AllowlistedArchiveName, OllamaArchive, OllamaReleaseManifest};
+#[cfg(test)]
+use super::release_source::AllowlistedArchiveName;
+use super::release_source::OllamaReleaseManifest;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use tokio_util::sync::CancellationToken;
@@ -39,10 +39,12 @@ impl DownloadLimits {
     }
 }
 
+#[cfg(test)]
 pub fn bounded_archive_name(raw: &str) -> Result<AllowlistedArchiveName, OllamaErrorCode> {
     AllowlistedArchiveName::parse(raw)
 }
 
+#[cfg(test)]
 pub async fn download_archives(
     manifest: &OllamaReleaseManifest,
     staging: &Path,
@@ -94,22 +96,6 @@ pub async fn download_archives_with_progress(
         paths.push(destination);
     }
     Ok(paths)
-}
-
-pub async fn download_archive(
-    archive: &OllamaArchive,
-    destination: &Path,
-    cancellation: &CancellationToken,
-) -> Result<(), OllamaErrorCode> {
-    super::download_stream::download_archive_with_progress(
-        archive,
-        destination,
-        cancellation,
-        None,
-        0,
-        archive.expected_size,
-    )
-    .await
 }
 
 #[cfg(test)]

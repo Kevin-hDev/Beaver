@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::release_source::AllowlistedArchiveName;
 use std::path::{Component, Path};
@@ -35,38 +33,6 @@ pub fn validate_member_path(path: &Path) -> Result<(), OllamaErrorCode> {
         })
     {
         return Err(OllamaErrorCode::OllamaBundleInvalid);
-    }
-    Ok(())
-}
-
-pub fn validate_staging_directory(staging: &Path) -> Result<(), OllamaErrorCode> {
-    let metadata = std::fs::symlink_metadata(staging).map_err(|error| {
-        super::storage_error::io(
-            "extract-staging-inspect",
-            &error,
-            OllamaErrorCode::OllamaStorageUnavailable,
-        )
-    })?;
-    if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
-        return Err(OllamaErrorCode::OllamaBundleInvalid);
-    }
-    Ok(())
-}
-
-pub fn validate_empty_staging(staging: &Path) -> Result<(), OllamaErrorCode> {
-    validate_staging_directory(staging)?;
-    if std::fs::read_dir(staging)
-        .map_err(|error| {
-            super::storage_error::io(
-                "extract-staging-enumerate",
-                &error,
-                OllamaErrorCode::OllamaStorageUnavailable,
-            )
-        })?
-        .next()
-        .is_some()
-    {
-        return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
     }
     Ok(())
 }

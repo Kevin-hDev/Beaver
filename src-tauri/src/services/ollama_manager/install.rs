@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::bundle_install::{prepare_bundle, reinspect_active, write_metadata};
 #[cfg(not(test))]
 use super::download::download_archives_with_progress;
@@ -15,7 +13,9 @@ use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, TargetValidation};
 use super::progress::{self, OllamaProgressReporter};
 use super::release_source::OllamaReleaseManifest;
 use super::spawn_profile::OllamaSpawnProfile;
-use crate::services::paths::{ollama_paths, OllamaPaths};
+#[cfg(test)]
+use crate::services::paths::ollama_paths;
+use crate::services::paths::OllamaPaths;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -39,10 +39,12 @@ pub struct InstallRequest {
 }
 
 impl InstallRequest {
+    #[cfg(test)]
     pub fn for_test(root: PathBuf) -> Self {
         Self::for_test_with_cancel(root, CancellationToken::new())
     }
 
+    #[cfg(test)]
     pub fn for_test_with_cancel(root: PathBuf, cancellation: CancellationToken) -> Self {
         let root = dunce::canonicalize(&root).unwrap_or(root);
         let paths = ollama_paths(&root);

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::fingerprint::BundleFingerprint;
 use super::journal::{OllamaMigrationMarker, OllamaTransactionJournal};
@@ -26,7 +24,10 @@ pub enum ArchiveDirectoryEvidence {
 pub enum JournalPresence {
     Absent,
     Valid(OllamaTransactionJournal),
+    // Le décideur reste total pour les instantanés synthétiques et les erreurs de lecture futures.
+    #[allow(dead_code)]
     Invalid,
+    #[allow(dead_code)]
     Unknown,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]

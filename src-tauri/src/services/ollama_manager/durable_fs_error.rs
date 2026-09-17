@@ -4,6 +4,7 @@ use std::fmt;
 pub(in crate::services::ollama_manager) enum OllamaFsErrorKind {
     NotFound,
     AlreadyExists,
+    #[cfg(any(windows, test))]
     SharingViolation,
     PermissionDenied,
     InvalidInput,
@@ -13,11 +14,13 @@ pub(in crate::services::ollama_manager) enum OllamaFsErrorKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::services::ollama_manager) enum OllamaFsOperation {
     InspectHandle,
+    #[cfg(windows)]
     OpenRoot,
     EnumerateDirectory,
     OpenChild,
     MarkChildDeleted,
     MarkRootDeleted,
+    #[cfg(test)]
     SyncParent,
 }
 
@@ -39,6 +42,7 @@ impl OllamaFsError {
         }
     }
 
+    #[cfg(any(windows, test))]
     pub(in crate::services::ollama_manager) const fn from_os_code(
         kind: OllamaFsErrorKind,
         os_code: u32,
@@ -62,6 +66,7 @@ impl OllamaFsError {
         }
     }
 
+    #[cfg(any(windows, test))]
     pub(in crate::services::ollama_manager) fn cancelled() -> Self {
         Self {
             kind: OllamaFsErrorKind::Other,
@@ -75,6 +80,7 @@ impl OllamaFsError {
         self.kind
     }
 
+    #[cfg(any(windows, test))]
     pub(in crate::services::ollama_manager) const fn is_cancelled(self) -> bool {
         self.cancelled
     }

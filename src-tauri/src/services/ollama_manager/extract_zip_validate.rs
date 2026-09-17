@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::extract::validate_member_path;
 use std::collections::HashSet;

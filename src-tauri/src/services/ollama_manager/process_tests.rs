@@ -246,7 +246,7 @@ fn identity_change_after_receipt_write_fails_before_emergency_admission() {
         version: OllamaVersion::parse("2.3.4").expect("version"),
         executable_sha256: Sha256Digest::from_hex(&"ef".repeat(32)).expect("digest"),
     };
-    let launcher = DefaultOllamaProcessLauncher::new(bundle);
+    let launcher = DefaultOllamaProcessLauncher::new(bundle.clone());
     let gated = launcher.create_gated(&spawn_attempt).expect("gated");
     let paths = ollama_paths(&std::fs::canonicalize(root.path()).expect("canonical root"));
     let receipt_path = paths.process_receipt.clone();
@@ -305,7 +305,7 @@ fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
         version: OllamaVersion::parse("8.9.0").expect("version"),
         executable_sha256: Sha256Digest::from_hex(&"88".repeat(32)).expect("digest"),
     };
-    let launcher = DefaultOllamaProcessLauncher::new(bundle);
+    let launcher = DefaultOllamaProcessLauncher::new(bundle.clone());
     let mut gated = launcher.create_gated(&spawn_attempt).expect("gated");
     gated
         .open_gate_and_wait_for_test()
@@ -335,8 +335,8 @@ fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
         .expect("executable");
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {
-        let recovery = launcher
-            .recover_receipt(&store, expected, deadline)
+        let recovery = store
+            .recover_active(&bundle, expected, deadline)
             .expect("recovery");
         if recovery == super::process_receipt::ProcessReceiptRecovery::Reaped {
             break;

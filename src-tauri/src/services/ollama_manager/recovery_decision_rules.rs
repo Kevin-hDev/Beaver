@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::migration::BackupPolicy;
 use super::recovery_decision::{

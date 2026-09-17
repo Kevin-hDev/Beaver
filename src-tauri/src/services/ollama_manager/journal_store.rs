@@ -1,8 +1,6 @@
-#![allow(dead_code)]
-
 use super::blocking::run_ollama_blocking;
 use super::constants::MAX_DURABLE_DOCUMENT_BYTES;
-use super::durable_fs::{platform_fs, OllamaDurableFs, OllamaFsErrorKind, PlatformOllamaDurableFs};
+use super::durable_fs::{OllamaDurableFs, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
 use super::journal::OllamaTransactionJournal;
 use crate::services::paths::OllamaPaths;
@@ -91,12 +89,6 @@ impl<F: OllamaDurableFs + 'static> OllamaJournalStore<F> {
             Err(error) => Err(super::storage_error::durable("journal-remove", error)),
         })
         .await
-    }
-}
-
-impl OllamaJournalStore<PlatformOllamaDurableFs> {
-    pub(super) fn platform(paths: OllamaPaths) -> Self {
-        Self::new(Arc::new(platform_fs()), paths)
     }
 }
 

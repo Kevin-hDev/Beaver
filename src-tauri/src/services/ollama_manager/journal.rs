@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::constants::MAX_DURABLE_DOCUMENT_BYTES;
 use super::fingerprint::BundleFingerprint;
 use serde::Serialize;

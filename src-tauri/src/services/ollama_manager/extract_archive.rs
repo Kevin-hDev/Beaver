@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use super::extract::{ensure_not_cancelled, validate_member_path, ArchiveMemberKind};
 use super::extract_root::ExtractionRoot;

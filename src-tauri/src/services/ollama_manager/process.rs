@@ -1,6 +1,6 @@
 use super::constants::PROCESS_REAP_FALLBACK_TIMEOUT;
 use super::fingerprint::BundleFingerprint;
-use super::process_receipt::{ProcessReceipt, ProcessReceiptRecovery, ProcessReceiptStore};
+use super::process_receipt::{ProcessReceipt, ProcessReceiptStore};
 use super::spawn_profile::OllamaSpawnAttempt;
 #[path = "process_lifecycle.rs"]
 mod lifecycle;
@@ -40,17 +40,6 @@ impl DefaultOllamaProcessLauncher {
     pub(crate) fn new(bundle: BundleFingerprint) -> Self {
         Self { bundle }
     }
-
-    pub(crate) fn recover_receipt(
-        &self,
-        store: &ProcessReceiptStore,
-        expected_executable: u128,
-        deadline: Instant,
-    ) -> Result<ProcessReceiptRecovery, OllamaProcessError> {
-        store
-            .recover_active(&self.bundle, expected_executable, deadline)
-            .map_err(|_| OllamaProcessError::Receipt)
-    }
 }
 
 pub(crate) struct GatedOllamaProcess {
@@ -84,6 +73,7 @@ impl OllamaProcessLauncher for DefaultOllamaProcessLauncher {
 }
 
 impl GatedOllamaProcess {
+    #[cfg(test)]
     pub(crate) fn identity(&self) -> Result<OwnedProcessIdentity, OllamaProcessError> {
         self.native
             .as_ref()
@@ -98,16 +88,6 @@ impl GatedOllamaProcess {
         emergency: &AppEmergencyPublisher,
     ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
         self.publish_inner(receipt, emergency, |_| {})
-    }
-
-    #[cfg(test)]
-    pub(crate) fn publish_with_cutpoint(
-        self,
-        receipt: &ProcessReceiptStore,
-        emergency: &AppEmergencyPublisher,
-        after_receipt: impl FnOnce(),
-    ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
-        self.publish_inner(receipt, emergency, |_| after_receipt())
     }
 
     #[cfg(test)]

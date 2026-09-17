@@ -1,4 +1,5 @@
 impl OllamaManager {
+    #[cfg(test)]
     pub async fn update(
         &self,
         request: super::update::UpdateRequest,
@@ -40,6 +41,7 @@ impl OllamaManager {
             .await
     }
 
+    #[cfg(test)]
     async fn run_admitted_update(
         &self,
         mut request: super::update::UpdateRequest,

@@ -88,15 +88,12 @@ impl ProcessReceipt {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ProcessReceiptError {
-    Missing,
     Oversized,
     Invalid,
     Storage,
 }
 
 pub(crate) use super::process_receipt_recovery::ProcessReceiptRecovery;
-#[cfg(test)]
-pub(crate) use super::process_receipt_recovery::RecoveryProbe;
 
 #[derive(Clone)]
 pub(crate) struct ProcessReceiptStore {
@@ -163,14 +160,6 @@ impl ProcessReceiptStore {
         (committed == *receipt)
             .then_some(())
             .ok_or(ProcessReceiptError::Invalid)
-    }
-
-    pub(crate) fn replace(&self, receipt: &ProcessReceipt) -> Result<(), ProcessReceiptError> {
-        let bytes = receipt.serialize_bounded()?;
-        self.fs
-            .replace_atomic(&self.tmp, &self.path, &bytes)
-            .map_err(|_| ProcessReceiptError::Storage)?;
-        Ok(())
     }
 
     pub(crate) fn remove(&self) -> Result<(), ProcessReceiptError> {

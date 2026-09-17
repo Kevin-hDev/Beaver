@@ -1,5 +1,4 @@
 // Les codes sont le contrat IPC complet; certains ne sont consommés qu'aux tâches suivantes.
-#![allow(dead_code)]
 
 use serde::Serialize;
 
@@ -32,6 +31,7 @@ pub enum OllamaErrorCode {
 }
 
 impl OllamaErrorCode {
+    #[cfg(test)]
     pub const ALL: [Self; 20] = [
         Self::OllamaUpdateCleanupPending,
         Self::OllamaUpdateRecoveryRequired,
@@ -55,7 +55,6 @@ impl OllamaErrorCode {
         Self::OllamaInternal,
     ];
 
-    #[allow(dead_code)]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::OllamaUpdateCleanupPending => "ollama-update-cleanup-pending",
@@ -81,6 +80,7 @@ impl OllamaErrorCode {
         }
     }
 
+    #[cfg(test)]
     pub const fn i18n_key(self) -> &'static str {
         match self {
             Self::OllamaUpdateCleanupPending => "ollama.errors.updateCleanupPending",

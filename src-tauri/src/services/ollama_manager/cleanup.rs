@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::blocking::run_ollama_blocking;
 pub(crate) use super::cleanup_inspection::snapshot;
 use super::cleanup_inspection::validate_trash;

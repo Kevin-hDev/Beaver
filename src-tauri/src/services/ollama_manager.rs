@@ -47,14 +47,10 @@ mod probe_http;
 mod probe_ownership;
 mod probe_runner;
 mod probe_support;
-#[allow(dead_code)]
 mod process;
 mod process_error;
-#[allow(dead_code)]
 mod process_owned;
-#[allow(dead_code)]
 mod process_receipt;
-#[allow(dead_code)]
 mod process_receipt_recovery;
 mod progress;
 mod recovery;
@@ -72,10 +68,8 @@ mod retry;
 mod rollback;
 mod spawn_environment;
 #[cfg(unix)]
-#[allow(dead_code)]
 mod spawn_gate_unix;
 #[cfg(windows)]
-#[allow(dead_code)]
 mod spawn_gate_windows;
 mod spawn_profile;
 mod spawn_profile_paths;
@@ -175,56 +169,16 @@ mod windows_path_identity_tests;
 mod windows_spawn_gate_tests;
 #[cfg(all(test, windows))]
 mod windows_tree_job_tests;
-#[allow(unused_imports)]
-pub use bundle_receipt::{BundlePlatform, BundleReceipt};
 #[cfg(windows)]
 pub(crate) use canonical_executable::windows_image_identity_from_path;
-#[allow(unused_imports)]
-pub(crate) use canonical_executable::{CanonicalExecutable, NativeFileIdentity};
-#[allow(unused_imports)]
-pub use download::{download_archive, download_archives, verify_sha256};
 pub use error::OllamaErrorCode;
-#[allow(unused_imports)]
-pub use extract::{extract_archive, extract_archive_overlay};
-#[allow(unused_imports)]
-pub use fingerprint::{BundleFingerprint, FingerprintError, OllamaVersion, Sha256Digest};
-#[allow(unused_imports)]
+pub use fingerprint::OllamaVersion;
 pub use install::{InstallOutcome, InstallRequest};
-#[allow(unused_imports)]
-pub use journal::{
-    classify_migration_marker, DocumentError, OllamaJournalState, OllamaMigrationMarker,
-    OllamaMigrationMarkerClassification, OllamaTransactionJournal,
-};
 pub use manager::OllamaManager;
-#[allow(unused_imports)]
-pub(crate) use path_identity::{
-    CanonicalDirectory, NativeDirectoryIdentity, PathIdentityResolver, ValidatedPathComponent,
-    VerifiedDirectoryLocation,
-};
-#[allow(unused_imports)]
-pub(crate) use path_identity_resolver::NativePathIdentityResolver;
-#[allow(unused_imports)]
-pub use port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
-#[allow(unused_imports)]
-pub use probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
-#[allow(unused_imports)]
-pub(crate) use process_owned::OwnedProcessSidecar;
-#[allow(unused_imports)]
 pub use progress::{OllamaProgressReporter, OllamaProgressUpdate};
-#[allow(unused_imports)]
-pub use recovery::{RecoveryOutcome, RecoveryReason};
-#[allow(unused_imports)]
-pub use release_source::{
-    AllowlistedArchiveName, OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl,
-};
-#[allow(unused_imports)]
-pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
-#[allow(unused_imports)]
-pub(crate) use startup::{OllamaStartupBarrier, StartupBarrierState};
-#[allow(unused_imports)]
+pub(crate) use startup::StartupBarrierState;
 pub use types::{
-    BundleState, CancelOutcome, DaemonState, OllamaCliArgs, OllamaCliOutput, OllamaEndpoint,
-    OllamaProgressStage, OllamaRuntimeStatus, OllamaStartOutcome, OperationState,
+    BundleState, CancelOutcome, DaemonState, OllamaCliArgs, OllamaEndpoint, OllamaProgressStage,
+    OllamaRuntimeStatus, OllamaStartOutcome, OperationState,
 };
-#[allow(unused_imports)]
 pub use update::{UpdateOutcome, UpdateRequest, UpdateSidecar};

@@ -22,6 +22,7 @@ impl GatedOllamaProcess {
             .reap(deadline)
     }
 
+    #[cfg(test)]
     pub(crate) fn terminate_and_reap(
         mut self,
         deadline: Instant,

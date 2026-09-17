@@ -1,6 +1,6 @@
 use super::error::OllamaErrorCode;
 use super::types::{OllamaEndpoint, OllamaStartOutcome};
-use super::{CancelOutcome, OllamaCliArgs, OllamaManager};
+use super::{CancelOutcome, OllamaManager};
 use crate::app_exit::AppExitCoordinator;
 use crate::services::agent_local::ollama_client::OllamaClient;
 use std::num::NonZeroU16;
@@ -36,7 +36,6 @@ async fn manager_exposes_one_decision_for_all_start_results() {
     let _ = manager.usable_endpoint().await;
     let _ = manager.owned_endpoint().await;
     let _ = manager.stop_and_wait(Instant::now()).await;
-    let _ = manager.run_cli(OllamaCliArgs::Version).await;
     let _client = OllamaClient::new(manager);
     let _cancel = CancelOutcome::Cancelled;
 }

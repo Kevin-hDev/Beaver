@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::error::OllamaErrorCode;
 use crate::services::paths::OllamaPaths;
 

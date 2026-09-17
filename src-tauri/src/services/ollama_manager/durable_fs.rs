@@ -1,7 +1,6 @@
-#![allow(dead_code)]
-
 use super::path_identity::CanonicalDirectory;
 use std::path::Path;
+#[cfg(any(windows, test))]
 use std::time::Duration;
 
 #[path = "durable_fs_error.rs"]
@@ -9,7 +8,9 @@ mod durable_fs_error;
 pub(super) use durable_fs_error::OllamaFsOperation;
 pub(super) use durable_fs_error::{OllamaFsError, OllamaFsErrorKind};
 
+#[cfg(any(windows, test))]
 pub(super) const MAX_WINDOWS_PATH_UNITS: usize = 32_768;
+#[cfg(any(windows, test))]
 pub(super) const WINDOWS_FILE_FLUSH_ACCESS: u32 = 0x4000_0000;
 
 pub(super) trait OllamaDurableFs: Send + Sync {
@@ -57,6 +58,7 @@ where
     Ok(())
 }
 
+#[cfg(any(windows, test))]
 pub(super) fn validate_wide_units<I>(units: I) -> Result<(), OllamaFsErrorKind>
 where
     I: IntoIterator<Item = u16>,
@@ -74,10 +76,12 @@ where
     Ok(())
 }
 
+#[cfg(any(windows, test))]
 pub(super) const fn windows_file_flush_access() -> u32 {
     WINDOWS_FILE_FLUSH_ACCESS
 }
 
+#[cfg(any(windows, test))]
 pub(super) fn retry_windows_sharing<T, Operation, Cancel, Sleep>(
     mut operation: Operation,
     mut cancelled: Cancel,

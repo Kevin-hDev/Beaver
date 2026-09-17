@@ -1,7 +1,5 @@
 use super::error::OllamaErrorCode;
-use super::extract::{
-    extract_archive, validate_empty_staging, validate_member_path, ArchiveMemberKind,
-};
+use super::extract::{extract_archive, validate_member_path, ArchiveMemberKind};
 use super::extract_fixture::{
     empty_staging, raw_header, write_duplicate_zip, write_gzip_tar, write_symlink_zip, write_zip,
     TarMember, ZipMember,
@@ -27,15 +25,6 @@ fn extraction_rejects_links_and_duplicate_members() {
         ArchiveMemberKind::Hardlink.validate(),
         Err(OllamaErrorCode::OllamaExtractionFailed)
     );
-}
-
-#[test]
-fn extraction_requires_an_existing_empty_regular_staging_directory() {
-    let root = tempfile::tempdir().unwrap();
-    let staging = empty_staging(root.path());
-    assert!(validate_empty_staging(&staging).is_ok());
-    std::fs::write(staging.join("file"), b"x").unwrap();
-    assert!(validate_empty_staging(&staging).is_err());
 }
 
 #[cfg(unix)]

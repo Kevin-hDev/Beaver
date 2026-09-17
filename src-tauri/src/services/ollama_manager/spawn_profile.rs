@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::canonical_executable::CanonicalExecutable;
 use super::error::OllamaErrorCode;
 use super::path_identity::{CanonicalDirectory, PathIdentityResolver};
@@ -12,10 +10,12 @@ use crate::services::paths::OllamaPaths;
 use std::ffi::OsString;
 use std::path::Path;
 
-#[allow(unused_imports)]
+#[cfg(all(test, windows))]
+pub(crate) use super::constants::MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16;
+#[cfg(test)]
 pub(crate) use super::constants::{
     MAX_OLLAMA_ENV_ENTRIES, MAX_OLLAMA_ENV_KEY_UNITS, MAX_OLLAMA_ENV_TOTAL_UNIX_BYTES,
-    MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16, MAX_OLLAMA_ENV_VALUE_UNITS,
+    MAX_OLLAMA_ENV_VALUE_UNITS,
 };
 pub(crate) use super::spawn_environment::FrozenEnvironment;
 
@@ -182,6 +182,7 @@ impl<'a> OllamaSpawnAttempt<'a> {
     pub(crate) fn profile(&self) -> &'a OllamaSpawnProfile {
         self.profile
     }
+    #[cfg(test)]
     pub(crate) fn endpoint(&self) -> &OllamaEndpoint {
         &self.endpoint
     }

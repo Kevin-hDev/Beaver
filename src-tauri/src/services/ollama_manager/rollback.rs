@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::cleanup;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
@@ -12,7 +10,6 @@ use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum RollbackTransition {
-    PersistRollbackPending,
     MoveRejectedToFailed,
     RestorePrevious,
     PersistRollbackCleanupPending,
@@ -112,7 +109,6 @@ where
             cleanup::remove_trash(fs, &paths.failed_delete, paths, models).await
         }
         RollbackTransition::RemoveJournal => journal.remove().await,
-        RollbackTransition::PersistRollbackPending => Ok(()),
     }
 }
 

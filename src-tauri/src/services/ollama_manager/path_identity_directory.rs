@@ -26,6 +26,7 @@ impl PartialEq for CanonicalDirectory {
 impl Eq for CanonicalDirectory {}
 
 impl CanonicalDirectory {
+    #[cfg(test)]
     pub(crate) fn synthetic(path: PathBuf, identity: Option<NativeDirectoryIdentity>) -> Self {
         #[cfg(any(unix, windows))]
         return Self::from_native(path, identity, None);

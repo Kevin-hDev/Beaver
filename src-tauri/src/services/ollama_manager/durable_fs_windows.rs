@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::super::path_identity::CanonicalDirectory;
 use super::{
     retry_windows_sharing, validate_wide_units, windows_file_flush_access, OllamaDurableFs,

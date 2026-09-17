@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::super::path_identity::CanonicalDirectory;
 use super::sync_parent_pair;
 use super::{OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};

@@ -19,11 +19,10 @@ impl FrozenEnvironment {
         assert!(entries.len() <= MAX_OLLAMA_ENV_ENTRIES);
         Self { entries }
     }
-    #[allow(dead_code)]
     pub(crate) fn entries(&self) -> &[(OsString, OsString)] {
         &self.entries
     }
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub(crate) fn get(&self, key: &str) -> Option<&str> {
         self.entries.iter().find_map(|(name, value)| {
             same_key(name, OsStr::new(key))
@@ -31,7 +30,7 @@ impl FrozenEnvironment {
                 .flatten()
         })
     }
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub(crate) fn count(&self, key: &str) -> usize {
         self.entries
             .iter()

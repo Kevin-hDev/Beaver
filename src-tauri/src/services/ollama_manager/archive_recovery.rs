@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::cleanup;
 use super::cleanup_inspection::validate_trash;
 use super::durable_fs::OllamaDurableFs;

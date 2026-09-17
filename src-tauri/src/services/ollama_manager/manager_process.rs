@@ -148,9 +148,6 @@ impl OllamaManager {
         }
         let mut command = background_command::new_tokio(binary);
         match &args {
-            OllamaCliArgs::Version => {
-                command.arg("--version");
-            }
             OllamaCliArgs::Create { model, modelfile } => {
                 if self.owned_endpoint().await.is_none() {
                     return Err(OllamaErrorCode::OllamaUnavailable);
