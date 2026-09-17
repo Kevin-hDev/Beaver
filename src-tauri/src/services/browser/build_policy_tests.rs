@@ -54,8 +54,8 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
     assert!(session_types.contains(
         "#[cfg(any(test, browser_native_api))]\npub(super) struct BrowserRuntimeUpdateResult"
     ));
-    assert!(test_modules
-        .contains("#[cfg(all(test, native_browser))]\n#[path = \"browser_contract_tests.rs\"]"));
+    assert!(module.contains("#[cfg(any(test, native_browser))]\nmod browser_events;"));
+    assert!(test_modules.contains("#[cfg(test)]\n#[path = \"browser_contract_tests.rs\"]"));
 }
 
 #[test]

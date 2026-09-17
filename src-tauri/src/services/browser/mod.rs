@@ -1,7 +1,7 @@
 mod favicon_events;
 pub use favicon_events::{read_snapshot as favicon_snapshot, BrowserFaviconSnapshot};
 mod browser_api_types;
-#[cfg(native_browser)]
+#[cfg(any(test, native_browser))]
 mod browser_events;
 #[cfg(native_browser)]
 mod browser_slot;
