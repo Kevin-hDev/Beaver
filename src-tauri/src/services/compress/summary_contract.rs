@@ -55,11 +55,7 @@ pub fn validate(output: SummaryRawOutput, maximum_tokens: u32) -> Result<Validat
         })?;
         cursor = cursor.saturating_add(offset).saturating_add(section.len());
     }
-    let content = super::compression_redaction::redact_checkpoint_text(&content);
     let estimated = crate::services::token_counting::estimate_text_tokens(&content);
-    if estimated == 0 {
-        return Err(invalid("compression_summary_empty_after_redaction"));
-    }
     if estimated > maximum_tokens as usize {
         return Err(invalid("compression_summary_over_budget"));
     }

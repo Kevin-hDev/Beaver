@@ -4,25 +4,20 @@ pub fn redact_json(value: &Value) -> Value {
     redact_json_inner(value, 0)
 }
 
-pub fn redact_json_preserving_shape(value: &mut Value) {
-    redact_json_in_place(value, 0, true);
-}
-
 pub fn redact_json_high_confidence_preserving_shape(value: &mut Value) {
-    redact_json_in_place(value, 0, false);
+    redact_json_in_place(value, 0);
 }
 
-fn redact_json_in_place(value: &mut Value, depth: usize, broad: bool) {
+fn redact_json_in_place(value: &mut Value, depth: usize) {
     if depth > 32 {
         *value = Value::String(REDACTED.to_string());
         return;
     }
     match value {
-        Value::String(content) if broad => redact_string(content),
         Value::String(content) => redact_high_confidence_string(content),
         Value::Array(items) => {
             for item in items {
-                redact_json_in_place(item, depth + 1, broad);
+                redact_json_in_place(item, depth + 1);
             }
         }
         Value::Object(map) => {
@@ -31,7 +26,7 @@ fn redact_json_in_place(value: &mut Value, depth: usize, broad: bool) {
                     zeroize_json_value(item, 0);
                     *item = Value::String(REDACTED.to_string());
                 } else {
-                    redact_json_in_place(item, depth + 1, broad);
+                    redact_json_in_place(item, depth + 1);
                 }
             }
         }

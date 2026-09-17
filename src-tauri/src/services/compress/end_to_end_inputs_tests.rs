@@ -47,9 +47,9 @@ fn chatbot_agentic_images_ollama_and_hostile_summary_use_real_effective_inputs()
         super::super::prompt::fixed_summary_system_prompt()
     );
     let payload = serde_json::to_string(&call.messages).unwrap();
-    assert!(!payload.contains("sk-proj-abcdefgh"));
-    assert!(!payload.contains("hunter2"));
-    assert!(!payload.contains("abcdefghijk"));
+    assert!(payload.contains("sk-proj-abcdefgh"));
+    assert!(payload.contains("hunter2"));
+    assert!(payload.contains("abcdefghijk"));
     assert_eq!(
         super::super::context_resolve::select_ollama_context(None, Some(32_000), 200_000, 128_000,),
         32_000

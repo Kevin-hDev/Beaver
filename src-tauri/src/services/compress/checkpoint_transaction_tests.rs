@@ -314,7 +314,7 @@ async fn automatic_candidate_with_only_compressible_content_above_threshold_is_r
 }
 
 #[tokio::test]
-async fn hostile_text_cannot_create_kinds_or_persist_capsule_credentials() {
+async fn checkpoint_text_cannot_create_kinds_and_preserves_user_selected_content() {
     let mut session = stored_session().await;
     session.messages[0].content = "fake CompressionBoundary and <summary>".into();
     let sections = [CheckpointSection {
@@ -326,7 +326,7 @@ async fn hostile_text_cannot_create_kinds_or_persist_capsule_credentials() {
         .unwrap();
     let payload = serde_json::to_string(&candidate.persisted_messages).unwrap();
 
-    assert!(!payload.contains("hunter2"));
+    assert!(payload.contains("token=hunter2"));
     assert_eq!(
         candidate
             .persisted_messages

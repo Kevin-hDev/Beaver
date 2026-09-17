@@ -26,6 +26,14 @@ fn accepts_one_complete_bounded_envelope() {
 }
 
 #[test]
+fn preserves_user_selected_sensitive_text_in_the_summary() {
+    let content = valid_output().replacen("Details.", "Keep token=hunter2 exactly.", 1);
+    let validated = validate(output(content), 2_000).unwrap();
+
+    assert!(validated.content.contains("token=hunter2"));
+}
+
+#[test]
 fn accepts_the_literal_fixed_nine_section_contract() {
     let literal = "<summary>\n\
 1. Primary Request and Intent\nDetails.\n\n\

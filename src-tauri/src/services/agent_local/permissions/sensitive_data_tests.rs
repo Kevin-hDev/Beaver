@@ -69,19 +69,3 @@ fn keeps_common_words_and_urls_intact() {
     let text = "Desk-ask-risk-task https://example.test/task-report";
     assert_eq!(redact_text(text), text);
 }
-
-#[test]
-fn preserving_redaction_keeps_json_shape() {
-    let mut value = json!({
-        "messages": [
-            {"content": ["hello", "gsk_1234567890abcdefghijkl"]},
-            {"nested": {"token": "private-value"}}
-        ]
-    });
-    redact_json_preserving_shape(&mut value);
-    assert_eq!(value["messages"].as_array().unwrap().len(), 2);
-    assert_eq!(value["messages"][0]["content"].as_array().unwrap().len(), 2);
-    assert_eq!(value["messages"][0]["content"][0], "hello");
-    assert_eq!(value["messages"][0]["content"][1], "[REDACTED]");
-    assert_eq!(value["messages"][1]["nested"]["token"], "[REDACTED]");
-}

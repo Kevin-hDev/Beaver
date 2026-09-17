@@ -63,12 +63,6 @@ fn redact_high_confidence(content: &str) -> Zeroizing<String> {
     current
 }
 
-pub fn redact_string(content: &mut String) {
-    let redacted = redact_text(content);
-    content.zeroize();
-    *content = redacted;
-}
-
 pub fn redact_high_confidence_string(content: &mut String) {
     let redacted = redact_high_confidence_text(content);
     content.zeroize();
