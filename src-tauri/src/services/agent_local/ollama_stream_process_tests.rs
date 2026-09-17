@@ -7,6 +7,26 @@ use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureCon
 use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
 use crate::services::stream_utils::ThinkTagFilter;
 
+#[test]
+fn parser_retry_never_replays_an_already_published_tool_call() {
+    let parser_error = "XML syntax error: element <function> closed by </parameter>";
+    let mut result = StreamResult::default();
+    assert!(super::ollama_stream::can_retry_parser_crash(
+        parser_error,
+        0,
+        &result
+    ));
+
+    result
+        .tool_calls
+        .push(("read_file".into(), serde_json::json!({"path":"package.json"})));
+    assert!(!super::ollama_stream::can_retry_parser_crash(
+        parser_error,
+        0,
+        &result
+    ));
+}
+
 fn replay_text_fragments(
     mut fragments: crate::services::llm::stream_fragments::StreamFragmentState,
     chunks: &[&str],

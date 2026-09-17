@@ -139,12 +139,13 @@ async fn stream_chat_inner(
                             },
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein
-                            // stream. Si aucun contenu final n'a encore été émis (on
-                            // n'a reçu que du thinking), on peut retenter proprement.
-                            if is_tool_parse_crash(&e)
-                                && options.retry_counts.parser_retries < MAX_PARSER_RETRIES
-                                && result.content.is_empty()
-                            {
+                            // stream. Si aucun contenu final ni appel d'outil n'a été
+                            // publié (on n'a reçu que du thinking), on peut retenter.
+                            if can_retry_parser_crash(
+                                &e,
+                                options.retry_counts.parser_retries,
+                                &result,
+                            ) {
                                 let attempt = options.retry_counts.parser_retries + 1;
                                 ::log::warn!(
                                     "[ollama-stream] crash parser tool-call mid-stream (#{}), retry",
@@ -212,4 +213,15 @@ async fn stream_chat_inner(
     } else {
         StreamOutcome::Completed(result)
     })
+}
+
+pub(crate) fn can_retry_parser_crash(
+    error: &str,
+    parser_retries: u32,
+    result: &StreamResult,
+) -> bool {
+    is_tool_parse_crash(error)
+        && parser_retries < MAX_PARSER_RETRIES
+        && result.content.is_empty()
+        && result.tool_calls.is_empty()
 }
