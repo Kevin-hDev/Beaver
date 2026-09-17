@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
 use super::tool_execution_outcome::ToolExecutionOutcome;
-use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_parallel_batch::{flush_read_batch, BatchEntry};
 use super::tool_executor_parallel_finalize::{
     publish_results, resolve_and_record_diagnostics, IndexedResult,
@@ -30,7 +29,6 @@ pub async fn run_with_parallel_reads(
     request_id: &str,
     plan_mode_active: bool,
     tool_call_ids: &[String],
-    compression: Option<&ToolCompression<'_>>,
     can_use_delegate_batch: bool,
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
@@ -195,7 +193,6 @@ pub async fn run_with_parallel_reads(
         indexed_results,
         &emitted_results,
         tool_call_ids,
-        compression,
     )
     .await
 }

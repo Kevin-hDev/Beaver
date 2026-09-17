@@ -5,7 +5,6 @@
 use super::permission_gate::{self, PermissionDecision};
 use super::stream_events::AgentEventEmitter;
 use super::tool_execution_outcome::ToolExecutionOutcome;
-use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_helpers::{push_tool_result, resolve_tool_path};
 use super::types_ollama::ChatMessage;
 use super::types_tools::ToolResult;
@@ -55,7 +54,6 @@ pub(super) async fn intercept_and_publish(
     summary: &Option<Value>,
     idx: usize,
     tool_call_ids: &[String],
-    compression: Option<&ToolCompression<'_>>,
 ) -> Option<ToolExecutionOutcome> {
     let result = crate::services::extensions::before_tool_effect(
         interception,
@@ -75,23 +73,19 @@ pub(super) async fn intercept_and_publish(
         &result,
     )
     .await;
-    Some(
-        push_and_compress(
-            on_event,
-            messages,
-            name,
-            args,
-            working_dir,
-            result,
-            idx,
-            tool_call_ids,
-            compression,
-        )
-        .await,
-    )
+    Some(push_result(
+        on_event,
+        messages,
+        name,
+        args,
+        working_dir,
+        result,
+        idx,
+        tool_call_ids,
+    ))
 }
 
-pub(super) async fn push_and_compress(
+pub(super) fn push_result(
     on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,
     name: &str,
@@ -100,7 +94,6 @@ pub(super) async fn push_and_compress(
     mut tr: ToolResult,
     idx: usize,
     tool_call_ids: &[String],
-    compression: Option<&ToolCompression<'_>>,
 ) -> ToolExecutionOutcome {
     let resolved_path = resolve_tool_path(name, args, working_dir);
     let mut outcome = ToolExecutionOutcome::with_compressed(false);
@@ -126,11 +119,6 @@ pub(super) async fn push_and_compress(
         resolved_path,
         artifact_records,
     );
-    let compressed = match compression {
-        Some(compression) => compression.try_run(messages).await,
-        None => false,
-    };
-    outcome.compressed = compressed;
     outcome.record(follow_up);
     outcome
 }

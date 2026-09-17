@@ -39,9 +39,13 @@ async fn migration_profile_snapshot_and_two_atomic_compressions_survive_restart(
         .messages
         .iter()
         .any(|message| { message.message_kind == Some(AgentMessageKind::CompressionCheckpoint) }));
-    crate::services::agent_local::session_migration::commit_current(&loaded)
-        .await
-        .expect("persist current session");
+    let migrated = loaded.into_session();
+    crate::services::agent_local::session_store::write_to_path_for_test(
+        legacy_path.clone(),
+        &migrated,
+    )
+    .await
+    .expect("persist current session");
     let current = std::fs::read(&legacy_path).expect("current session");
     let reloaded = crate::services::agent_local::session_migration::read(
         &current,

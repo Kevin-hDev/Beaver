@@ -24,6 +24,14 @@ const V3_COMPRESSION_FIXTURE: &[u8] = include_bytes!("fixtures/session-v3-compre
 const V4_TOOL_ACTIVITY_FIXTURE: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v4-with-tool-activity.json");
 
+async fn write_migrated(
+    path: PathBuf,
+    loaded: super::session_migration::LoadedSession,
+) -> Result<(), String> {
+    let session = loaded.into_session();
+    super::session_store_document::write_to_path(path, &session).await
+}
+
 #[tokio::test]
 async fn v5_context_fixture_migrates_to_v7_with_an_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
@@ -61,7 +69,7 @@ async fn v5_context_fixture_migrates_to_v7_with_an_exact_backup() {
         transcript
     );
 
-    super::session_migration::commit_current(&migrated)
+    write_migrated(path.clone(), migrated)
         .await
         .expect("publish v6");
     assert_eq!(
@@ -207,7 +215,7 @@ async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup
         .unwrap()[0]
         .artifacts
         .is_empty());
-    super::session_migration::commit_current(&migrated)
+    write_migrated(path.clone(), migrated)
         .await
         .expect("publish v6");
     assert_eq!(
@@ -243,7 +251,7 @@ async fn v4_migrates_to_v7_with_empty_artifacts_and_exact_backup() {
             .flatten()
             .all(|activity| activity.artifacts.is_empty())
     }));
-    super::session_migration::commit_current(&migrated)
+    write_migrated(path.clone(), migrated)
         .await
         .expect("publish v6");
     let backup = root
@@ -298,7 +306,7 @@ async fn v3_migrates_to_v7_with_an_empty_guard_and_exact_backup() {
     assert!(loaded.session().automatic_compression_guard.is_empty());
     assert_eq!(loaded.session().compression_count, 2);
     assert_eq!(loaded.session().messages.len(), 3);
-    super::session_migration::commit_current(&loaded)
+    write_migrated(path.clone(), loaded)
         .await
         .expect("publish v6");
     let backup = super::session_migration::v3_backup_path(&path).expect("v3 backup path");
@@ -368,7 +376,7 @@ async fn v2_compression_markers_migrate_to_v7_with_an_exact_backup() {
     assert!(loaded.session().compression_profile_selection.is_none());
     assert_eq!(loaded.session().compression_count, 0);
 
-    super::session_migration::commit_current(&loaded)
+    write_migrated(path.clone(), loaded)
         .await
         .expect("publish v6");
     let backup = super::session_migration::v2_backup_path(&path).expect("v2 backup path");
@@ -717,7 +725,7 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
         Some(call_id.as_str())
     );
 
-    super::session_migration::commit_current(&loaded)
+    write_migrated(path.clone(), loaded)
         .await
         .expect("commit v2");
     let backup = super::session_migration::backup_path(&path).expect("backup path");
@@ -768,7 +776,7 @@ async fn legacy_messages_share_one_turn_until_the_next_user_message() {
         .iter()
         .all(|message| message.turn_id == second_turn));
 
-    super::session_migration::commit_current(&loaded)
+    write_migrated(path.clone(), loaded)
         .await
         .expect("commit v2");
     let restored = super::session_store_document::read_from_path(path)
@@ -1038,7 +1046,7 @@ async fn migrated_session_backup_and_directory_are_private() {
     let path = private.join("00000000-0000-4000-8000-000000000002.json");
     crate::services::private_store::atomic_write(&path, V1_FIXTURE).expect("seed v1");
     let loaded = super::session_migration::read(V1_FIXTURE, path.clone()).expect("load v1");
-    super::session_migration::commit_current(&loaded)
+    write_migrated(path.clone(), loaded)
         .await
         .unwrap();
     let backup = super::session_migration::backup_path(&path).unwrap();

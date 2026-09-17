@@ -154,7 +154,6 @@ pub async fn run_delegate_only_tools(
     cancel: CancellationToken,
     plan_mode_active: bool,
     tool_call_ids: &[String],
-    compression: Option<&super::tool_executor_compression::ToolCompression<'_>>,
     mode: &str,
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
@@ -185,9 +184,6 @@ pub async fn run_delegate_only_tools(
             tool_call_ids.get(output.index).map(String::as_str),
         );
         outcome.record(follow_up);
-        if let Some(compression) = compression {
-            outcome.compressed |= compression.try_run(messages).await;
-        }
     }
     outcome
 }

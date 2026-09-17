@@ -25,11 +25,7 @@ pub fn configurable() -> Vec<ProviderSpec> {
 
 pub fn find_configurable(provider_id: &str) -> Option<ProviderSpec> {
     let profile = route_profile::find(provider_id)?;
-    matches!(
-        profile.catalog,
-        CatalogPolicy::PublicApi { .. } | CatalogPolicy::ConfigurableApi { .. }
-    )
-    .then_some(())?;
+    matches!(profile.catalog, CatalogPolicy::PublicApi { .. }).then_some(())?;
     to_spec(profile)
 }
 
@@ -42,9 +38,7 @@ fn to_public_spec(profile: &'static route_profile::RouteProfile) -> Option<Provi
 
 fn to_spec(profile: &'static route_profile::RouteProfile) -> Option<ProviderSpec> {
     let signup_url = match profile.catalog {
-        CatalogPolicy::PublicApi { signup_url } | CatalogPolicy::ConfigurableApi { signup_url } => {
-            signup_url
-        }
+        CatalogPolicy::PublicApi { signup_url } => signup_url,
         CatalogPolicy::Hidden => unreachable!("hidden routes are filtered before conversion"),
     };
     let (base_url, models_endpoint) = profile

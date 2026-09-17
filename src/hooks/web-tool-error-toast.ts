@@ -29,8 +29,6 @@ function remember(key: string) {
   }
 }
 
-export const sanitizeWebToolError = sanitizeToolError;
-
 export function resetWebToolToastDedupeForTest() {
   shown.clear();
   shownKeys.length = 0;

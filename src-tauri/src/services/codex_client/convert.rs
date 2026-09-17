@@ -126,22 +126,6 @@ pub(crate) fn function_call_output(call_id: &str, output: &str) -> serde_json::V
     serde_json::json!({"type":"function_call_output", "call_id":call_id, "output":output})
 }
 
-/// Les transports Responses (Codex, OpenAI API et xAI OAuth) réutiliseront
-/// cette conversion unique lorsqu'une politique sera validée réel.
-#[allow(
-    dead_code,
-    reason = "Task 19 connects this only after a live-validated Responses policy"
-)]
-pub(crate) fn convert_continuity(
-    messages: &[ChatMessage],
-    approval: &crate::services::llm::reasoning_wire::replay::ReplayApproval<'_>,
-    input: &mut Vec<serde_json::Value>,
-) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
-    crate::services::llm::reasoning_wire::replay::apply_responses_continuity(
-        messages, approval, input,
-    )
-}
-
 fn user_message_to_responses(msg: &ChatMessage) -> serde_json::Value {
     let Some(images) = &msg.images else {
         return serde_json::json!({"role": "user", "content": msg.content});

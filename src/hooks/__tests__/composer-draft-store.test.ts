@@ -7,17 +7,25 @@ import {
   pinComposerDraft,
   readComposerDraft,
   resetComposerDraftStoreForTests,
-  setComposerDraftText,
   subscribeComposerDrafts,
   unpinComposerDraft,
+  updateComposerDraft,
 } from "../composer-draft-store";
+
+function setText(key: string, text: string) {
+  updateComposerDraft(key, (entry) => ({
+    ...entry,
+    text,
+    skills: text.length === 0 ? [] : entry.skills,
+  }));
+}
 
 describe("composer draft store", () => {
   beforeEach(resetComposerDraftStoreForTests);
 
   it("insère une livraison une seule fois dans le texte courant", () => {
     openComposerDraft("session:one");
-    setComposerDraftText("session:one", "avant après");
+    setText("session:one", "avant après");
     expect(applyVoiceDelivery({ id: "result-1", draftKey: "session:one", text: "DICTÉ", microphoneDisconnected: false }))
       .toBe("inserted");
     expect(applyVoiceDelivery({ id: "result-1", draftKey: "session:one", text: "DICTÉ", microphoneDisconnected: false }))
@@ -35,7 +43,7 @@ describe("composer draft store", () => {
   it("une écriture tardive ne rouvre pas une destination fermée", () => {
     openComposerDraft("session:closed");
     closeComposerDraft("session:closed");
-    setComposerDraftText("session:closed", "retardataire");
+    setText("session:closed", "retardataire");
     expect(applyVoiceDelivery({ id: "result-1", draftKey: "session:closed", text: "DICTÉ", microphoneDisconnected: false }))
       .toBe("destination-closed");
   });
@@ -48,7 +56,7 @@ describe("composer draft store", () => {
     unpinComposerDraft("protected", "operation-1");
     for (let index = 0; index < 64; index += 1) {
       openComposerDraft(`other:${index}`);
-      setComposerDraftText(`other:${index}`, String(index));
+      setText(`other:${index}`, String(index));
     }
     expect(readComposerDraft("protected").text).toBe("sauvé");
     acknowledgeVoiceDelivery("protected", "result-1");

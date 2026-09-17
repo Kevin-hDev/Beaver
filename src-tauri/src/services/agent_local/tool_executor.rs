@@ -10,7 +10,6 @@ use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
 use super::tool_execution_outcome::ToolExecutionOutcome;
-use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_parallel::run_with_parallel_reads;
 use super::tool_executor_sequential::run_sequential;
 
@@ -26,7 +25,6 @@ pub async fn run_tools(
     write_guard: &mut WriteGuard,
     plan_mode_active: bool,
     tool_call_ids: &[String],
-    compression: Option<&ToolCompression<'_>>,
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     run_tools_with_eager(
@@ -42,7 +40,6 @@ pub async fn run_tools(
         plan_mode_active,
         None,
         tool_call_ids,
-        compression,
         interception,
     )
     .await
@@ -61,7 +58,6 @@ pub async fn run_tools_with_eager(
     plan_mode_active: bool,
     mut eager_results: Option<HashMap<usize, ToolResult>>,
     tool_call_ids: &[String],
-    compression: Option<&ToolCompression<'_>>,
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     let can_use_delegate_batch = matches!(
@@ -85,7 +81,6 @@ pub async fn run_tools_with_eager(
             cancel,
             plan_mode_active,
             tool_call_ids,
-            compression,
             mode,
             interception,
         )
@@ -104,7 +99,6 @@ pub async fn run_tools_with_eager(
             write_guard,
             plan_mode_active,
             tool_call_ids,
-            compression,
             interception,
         )
         .await
@@ -122,7 +116,6 @@ pub async fn run_tools_with_eager(
             request_id,
             plan_mode_active,
             tool_call_ids,
-            compression,
             can_use_delegate_batch,
             interception,
         )

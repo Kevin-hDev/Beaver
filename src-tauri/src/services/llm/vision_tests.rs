@@ -73,7 +73,7 @@ fn unsupported_image_wire_is_rejected_explicitly() {
     assert_eq!(
         image_part(
             "iVBORw0KGgo=",
-            super::super::route_profile::ImageFormat::Unsupported,
+            super::super::route_profile::ImageFormat::OllamaNative,
         ),
         Err("vision_wire_unsupported")
     );

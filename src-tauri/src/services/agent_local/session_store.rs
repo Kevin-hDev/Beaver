@@ -67,14 +67,12 @@ async fn update_index(meta: AgentSessionMeta) {
     }
 }
 
-#[allow(dead_code, reason = "consumed by the staged compression transaction")]
 pub(crate) async fn prepare_document(
     session: &AgentSession,
 ) -> Result<super::session_store_document::PreparedSessionDocument, String> {
     super::session_store_document::prepare(session).await
 }
 
-#[allow(dead_code, reason = "consumed by the staged compression transaction")]
 pub(crate) async fn save_prepared(
     prepared: super::session_store_document::PreparedSessionDocument,
 ) -> Result<(), String> {
@@ -93,6 +91,14 @@ pub(crate) async fn save_prepared(
     super::session_store_document::write_prepared_to_path(path, prepared).await?;
     update_index(meta).await;
     Ok(())
+}
+
+#[cfg(test)]
+pub(crate) async fn write_to_path_for_test(
+    path: std::path::PathBuf,
+    session: &AgentSession,
+) -> Result<(), String> {
+    super::session_store_document::write_to_path(path, session).await
 }
 
 #[cfg(test)]

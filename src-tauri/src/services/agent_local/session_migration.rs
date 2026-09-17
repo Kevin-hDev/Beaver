@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 use zeroize::Zeroizing;
 
-use super::session_limits::{self, CURRENT_SESSION_SCHEMA_VERSION};
+use super::session_limits;
+#[cfg(test)]
+use super::session_limits::CURRENT_SESSION_SCHEMA_VERSION;
 use super::session_migration_wire::WireVersion;
 use super::types_session::AgentSession;
 
@@ -28,10 +30,7 @@ pub struct LoadedSession {
 }
 
 impl LoadedSession {
-    #[allow(
-        dead_code,
-        reason = "public migration API consumed by staged session owners"
-    )]
+    #[cfg(test)]
     pub fn session(&self) -> &AgentSession {
         &self.session
     }
@@ -99,15 +98,6 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
         )
         .then(|| Zeroizing::new(bytes.to_vec())),
     })
-}
-
-#[allow(
-    dead_code,
-    reason = "public migration API consumed by staged session owners"
-)]
-pub async fn commit_current(loaded: &LoadedSession) -> Result<(), String> {
-    let bytes = serialize_current(loaded.session())?;
-    commit_migrated_bytes(loaded, bytes).await
 }
 
 pub(super) async fn commit_migrated_bytes(
@@ -206,10 +196,7 @@ pub(super) fn v5_backup_path(path: &Path) -> Result<PathBuf, String> {
     super::session_migration_backup::v5_backup_path(path)
 }
 
-#[allow(
-    dead_code,
-    reason = "shared serializer for the staged public migration API"
-)]
+#[cfg(test)]
 pub(super) fn serialize_current(session: &AgentSession) -> Result<Vec<u8>, String> {
     if session.schema_version != CURRENT_SESSION_SCHEMA_VERSION {
         return Err(session_limits::save_failed());

@@ -1,7 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   resetWebToolToastDedupeForTest,
-  sanitizeWebToolError,
   webToolErrorToastMessage,
 } from "../web-tool-error-toast";
 import type { StreamEvent } from "@/types/agent";
@@ -42,15 +41,6 @@ describe("webToolErrorToastMessage", () => {
   it("ignore les fallbacks réussis et les outils non web", () => {
     expect(webToolErrorToastMessage("s1", toolOk("web_search", 1))).toBeNull();
     expect(webToolErrorToastMessage("s1", toolError("grep", 1, "bad"))).toBeNull();
-  });
-});
-
-describe("sanitizeWebToolError", () => {
-  it("retire secrets et chemins locaux du détail visible", () => {
-    const msg = sanitizeWebToolError("Bearer abcdefghijkl secret_key=abc123456 /Users/me/app/file.ts");
-    expect(msg).toContain("Bearer [redacted]");
-    expect(msg).toContain("secret_key=[redacted]");
-    expect(msg).toContain("[path]");
   });
 });
 

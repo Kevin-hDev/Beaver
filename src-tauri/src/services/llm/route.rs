@@ -127,11 +127,7 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
             (Cow::Owned(endpoint.base_url), Cow::Borrowed("/models"))
         }
         route_profile::EndpointPolicy::ConnectionConfigured
-        | route_profile::EndpointPolicy::OllamaLocal
-        | route_profile::EndpointPolicy::RegionAllowlist { .. }
-        | route_profile::EndpointPolicy::Workspace { .. }
-        | route_profile::EndpointPolicy::ValidatedHttps
-        | route_profile::EndpointPolicy::PinnedBackend { .. } => return None,
+        | route_profile::EndpointPolicy::OllamaLocal => return None,
     };
     let auth_source = match profile.auth {
         AuthKind::ApiKey { credential_id, .. } => AuthSource::ApiKey(credential_id),

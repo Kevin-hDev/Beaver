@@ -18,13 +18,11 @@ pub(crate) async fn resolve_fixture_transport(
     if !route_profile::supports_bounded_fixture(route_id) {
         return Err(RouteSelectionError::Unavailable);
     }
-    let fixture_catalog = matches!(
-        profile.catalog,
-        CatalogPolicy::PublicApi { .. } | CatalogPolicy::ConfigurableApi { .. }
-    ) || matches!(
-        profile.client,
-        ClientSelector::Codex | ClientSelector::XaiOauth
-    );
+    let fixture_catalog = matches!(profile.catalog, CatalogPolicy::PublicApi { .. })
+        || matches!(
+            profile.client,
+            ClientSelector::Codex | ClientSelector::XaiOauth
+        );
     if !fixture_catalog
         || replay.route_id != profile.id
         || replay.model_id != model

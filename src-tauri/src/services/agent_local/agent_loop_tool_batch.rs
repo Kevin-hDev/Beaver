@@ -101,7 +101,6 @@ pub(super) async fn execute(context: ToolBatchContext<'_>) -> ToolExecutionOutco
         context.plan_active,
         Some(context.eager_results),
         context.tool_call_ids,
-        None,
         context.interception,
     )
     .await

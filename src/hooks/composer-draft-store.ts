@@ -73,14 +73,6 @@ export function updateComposerDraft(
   return mutate(key, (entry) => ({ ...entry, ...update(entry.view) }));
 }
 
-export function setComposerDraftText(key: string, text: string) {
-  updateComposerDraft(key, (entry) => ({
-    ...entry,
-    text,
-    skills: text.length === 0 ? [] : entry.skills,
-  }));
-}
-
 export function clearComposerDraft(key: string) {
   const entry = drafts.get(key);
   if (!entry) return;

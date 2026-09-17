@@ -6,7 +6,6 @@ import type {
   ToolResultStatus,
   TokenPhase,
 } from "@/types/agent";
-import { toolResultForModel } from "@/lib/tool-result-model";
 
 export interface ToolActivity {
   name: string;
@@ -127,18 +126,6 @@ export interface SavedSegment {
   phase?: TokenPhase;
 }
 
-export interface ChatMsg {
-  role: string;
-  content: string;
-  images?: string[] | null;
-  tool_calls?: Array<{
-    id?: string;
-    function: { name: string; arguments: Record<string, unknown> };
-  }> | null;
-  tool_name?: string | null;
-  tool_call_id?: string | null;
-}
-
 function rebuildArgs(name: string, summary: string): Record<string, string> {
   if (name === "web_search") return { query: summary };
   if (name === "web_fetch") return { url: summary };
@@ -155,56 +142,4 @@ export function restoredToolArguments(
   activity: ToolActivityRecord,
 ): Record<string, unknown> {
   return activity.args ?? rebuildArgs(activity.name, activity.summary);
-}
-
-export function expandToolActivities(
-  activities: ToolActivityRecord[], content: string,
-): ChatMsg[] {
-  return expandTurnFlat(activities, content);
-}
-
-export function expandSegmentsToChat(
-  segments: SavedSegment[], fallbackContent: string,
-): ChatMsg[] {
-  const msgs: ChatMsg[] = [];
-  let idCounter = 0;
-  for (const seg of segments) {
-    if (seg.tools.length > 0) {
-      const toolCalls = seg.tools.map((t) => {
-        const id = `restored-${idCounter++}`;
-        return { id, function: { name: t.name, arguments: restoredToolArguments(t) } };
-      });
-      msgs.push({ role: "assistant", content: seg.content || "", tool_calls: toolCalls });
-      for (const tc of toolCalls) {
-        const tool = seg.tools[toolCalls.indexOf(tc)];
-        msgs.push({ role: "tool", content: toolResultForModel(tool), tool_name: tool.name, tool_call_id: tc.id });
-      }
-    } else if (seg.content) {
-      msgs.push({ role: "assistant", content: seg.content });
-    }
-  }
-  if (msgs.length === 0 && fallbackContent) {
-    msgs.push({ role: "assistant", content: fallbackContent });
-  }
-  return msgs;
-}
-
-function expandTurnFlat(activities: ToolActivityRecord[], content: string): ChatMsg[] {
-  const msgs: ChatMsg[] = [];
-  const toolCalls = activities.map((t, i) => ({
-    id: `restored-${i}`,
-    function: { name: t.name, arguments: restoredToolArguments(t) },
-  }));
-  msgs.push({ role: "assistant", content: "", tool_calls: toolCalls });
-  for (let i = 0; i < activities.length; i++) {
-    const t = activities[i];
-    msgs.push({
-      role: "tool", content: toolResultForModel(t),
-      tool_name: t.name, tool_call_id: `restored-${i}`,
-    });
-  }
-  if (content) {
-    msgs.push({ role: "assistant", content });
-  }
-  return msgs;
 }

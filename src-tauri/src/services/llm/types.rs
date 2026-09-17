@@ -80,19 +80,6 @@ impl From<LlmError> for String {
     }
 }
 
-impl LlmError {
-    pub fn is_retryable(&self) -> bool {
-        matches!(
-            self,
-            LlmError::RateLimit { .. }
-                | LlmError::Http {
-                    status: 502..=504,
-                    ..
-                }
-        )
-    }
-}
-
 #[cfg(test)]
 #[path = "types_tests.rs"]
 mod tests;

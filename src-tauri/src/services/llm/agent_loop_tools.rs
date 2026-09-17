@@ -88,7 +88,6 @@ pub(super) async fn execute_tool_batch(context: ToolBatchContext<'_>) -> ToolExe
         context.write_guard,
         context.plan_active,
         context.tool_call_ids,
-        None,
         context.interception,
     )
     .await

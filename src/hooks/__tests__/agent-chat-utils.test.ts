@@ -3,10 +3,8 @@ import {
   toolsToRecords,
   segmentsToRecords,
   buildSegmentedMessage,
-  expandToolActivities,
-  expandSegmentsToChat,
 } from "@/hooks/agent-chat-utils";
-import type { ToolActivity, StreamSegment, SavedSegment } from "@/hooks/agent-chat-utils";
+import type { ToolActivity, StreamSegment } from "@/hooks/agent-chat-utils";
 
 function tool(name: string, args: Record<string, unknown>, result?: string): ToolActivity {
   return { name, args, result };
@@ -134,66 +132,5 @@ describe("buildSegmentedMessage", () => {
     const segments: StreamSegment[] = [{ thinking: "", tools: [], content: "travail", phase: "work" }];
     const { segments: savedSegments } = buildSegmentedMessage(segments);
     expect(savedSegments?.[0].phase).toBe("work");
-  });
-});
-
-describe("expandToolActivities", () => {
-  it("crée message assistant + messages tool", () => {
-    const activities = [{ name: "bash", summary: "ls", result: "fichiers.txt" }];
-    const msgs = expandToolActivities(activities, "réponse finale");
-    expect(msgs[0].role).toBe("assistant");
-    expect(msgs[0].tool_calls).toHaveLength(1);
-    expect(msgs[1].role).toBe("tool");
-    expect(msgs[1].content).toBe("fichiers.txt");
-    expect(msgs[msgs.length - 1].content).toBe("réponse finale");
-  });
-});
-
-describe("expandSegmentsToChat", () => {
-  it("fallback sur content si pas de segments", () => {
-    const msgs = expandSegmentsToChat([], "contenu direct");
-    expect(msgs).toHaveLength(1);
-    expect(msgs[0].role).toBe("assistant");
-    expect(msgs[0].content).toBe("contenu direct");
-  });
-
-  it("génère messages tool pour segment avec tools", () => {
-    const segments: SavedSegment[] = [
-      { content: "", tools: [{ name: "bash", summary: "ls", result: "ok" }] },
-    ];
-    const msgs = expandSegmentsToChat(segments, "");
-    expect(msgs[0].role).toBe("assistant");
-    expect(msgs[0].tool_calls).toHaveLength(1);
-    expect(msgs[1].role).toBe("tool");
-    expect(msgs[1].content).toBe("ok");
-  });
-
-  it("génère un message assistant pour segment sans tools", () => {
-    const segments: SavedSegment[] = [{ content: "texte pur", tools: [] }];
-    const msgs = expandSegmentsToChat(segments, "");
-    expect(msgs).toHaveLength(1);
-    expect(msgs[0].role).toBe("assistant");
-    expect(msgs[0].content).toBe("texte pur");
-  });
-
-  it("multiple segments avec et sans tools génèrent la bonne séquence", () => {
-    const segments: SavedSegment[] = [
-      { content: "intro", tools: [] },
-      { content: "", tools: [{ name: "bash", summary: "ls", result: "fichiers" }] },
-      { content: "conclusion", tools: [] },
-    ];
-    const msgs = expandSegmentsToChat(segments, "");
-    // segment 1 : assistant text
-    expect(msgs[0].role).toBe("assistant");
-    expect(msgs[0].content).toBe("intro");
-    // segment 2 : assistant tool_calls + tool result
-    expect(msgs[1].role).toBe("assistant");
-    expect(msgs[1].tool_calls).toHaveLength(1);
-    expect(msgs[2].role).toBe("tool");
-    expect(msgs[2].content).toBe("fichiers");
-    // segment 3 : assistant text
-    expect(msgs[3].role).toBe("assistant");
-    expect(msgs[3].content).toBe("conclusion");
-    expect(msgs).toHaveLength(4);
   });
 });

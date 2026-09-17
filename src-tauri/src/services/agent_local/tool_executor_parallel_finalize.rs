@@ -7,10 +7,6 @@ pub(super) type IndexedResult<'a> = Option<(
     crate::services::agent_local::types_tools::ToolResult,
 )>;
 
-#[expect(
-    clippy::too_many_arguments,
-    reason = "finalization needs the collected batch context"
-)]
 pub(super) async fn publish_results(
     on_event: &super::stream_events::AgentEventEmitter,
     messages: &mut Vec<super::types_ollama::ChatMessage>,
@@ -19,7 +15,6 @@ pub(super) async fn publish_results(
     indexed_results: Vec<IndexedResult<'_>>,
     emitted_results: &[bool],
     tool_call_ids: &[String],
-    compression: Option<&super::tool_executor_compression::ToolCompression<'_>>,
 ) -> super::tool_execution_outcome::ToolExecutionOutcome {
     let tool_id = |idx| tool_call_ids.get(idx).map(String::as_str);
     let mut outcome = super::tool_execution_outcome::ToolExecutionOutcome::default();
@@ -62,9 +57,6 @@ pub(super) async fn publish_results(
                 )
             };
             outcome.record(follow_up);
-            if let Some(compression) = compression {
-                outcome.compressed |= compression.try_run(messages).await;
-            }
         }
     }
     outcome

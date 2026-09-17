@@ -91,7 +91,6 @@ pub mod tool_document_write_xml;
 mod tool_execution_artifacts;
 pub mod tool_execution_outcome;
 pub mod tool_executor;
-pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;
 mod tool_executor_delegate_launch;
 pub mod tool_executor_diagnostics;

@@ -26,7 +26,7 @@ vi.mock("../working-stats", () => ({
   LoadingIndicator: () => <div data-testid="loading-indicator" />,
 }));
 vi.mock("@/lib/file-preview-utils", () => ({
-  collectMessageFileOperations: () => [],
+  collectFileOperations: () => [],
 }));
 vi.mock("../chat.css", () => ({}));
 vi.mock("../messages.css", () => ({}));

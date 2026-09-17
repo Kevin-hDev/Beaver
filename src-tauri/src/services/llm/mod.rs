@@ -25,9 +25,6 @@ pub(crate) mod api_key_probe;
 mod api_key_probe_tests;
 pub mod catalog;
 pub(crate) mod catalog_limits;
-mod endpoint_policy;
-#[cfg(test)]
-mod endpoint_policy_tests;
 pub mod fast_mode;
 #[cfg(all(test, debug_assertions))]
 mod fixture_tool_error_tests;

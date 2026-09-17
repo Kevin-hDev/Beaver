@@ -9,13 +9,10 @@ use crate::services::agent_local::write_guard::WriteGuard;
 use tokio_util::sync::CancellationToken;
 
 use super::tool_execution_outcome::ToolExecutionOutcome;
-use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_helpers::{
     check_write_guard, dispatch_or_interactive, post_record_read, post_record_write,
 };
-use super::tool_executor_sequential_support::{
-    check_allowed, initial_validation, push_and_compress,
-};
+use super::tool_executor_sequential_support::{check_allowed, initial_validation, push_result};
 
 pub async fn run_sequential(
     on_event: &AgentEventEmitter,
@@ -28,7 +25,6 @@ pub async fn run_sequential(
     write_guard: &mut WriteGuard,
     plan_mode_active: bool,
     tool_call_ids: &[String],
-    compression: Option<&ToolCompression<'_>>,
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> ToolExecutionOutcome {
     let mut outcome = ToolExecutionOutcome::default();
@@ -50,7 +46,7 @@ pub async fn run_sequential(
             Err(tr) => {
                 if !merge_or_stop(
                     &mut outcome,
-                    push_and_compress(
+                    push_result(
                         on_event,
                         messages,
                         name,
@@ -59,9 +55,7 @@ pub async fn run_sequential(
                         tr,
                         idx,
                         tool_call_ids,
-                        compression,
-                    )
-                    .await,
+                    ),
                 ) {
                     return outcome;
                 }
@@ -81,7 +75,7 @@ pub async fn run_sequential(
                 .await;
                 if !merge_or_stop(
                     &mut outcome,
-                    push_and_compress(
+                    push_result(
                         on_event,
                         messages,
                         name,
@@ -90,9 +84,7 @@ pub async fn run_sequential(
                         tr,
                         idx,
                         tool_call_ids,
-                        compression,
-                    )
-                    .await,
+                    ),
                 ) {
                     return outcome;
                 }
@@ -114,7 +106,6 @@ pub async fn run_sequential(
             &arg_summary,
             idx,
             tool_call_ids,
-            compression,
         )
         .await
         {
@@ -136,7 +127,7 @@ pub async fn run_sequential(
             .await;
             if !merge_or_stop(
                 &mut outcome,
-                push_and_compress(
+                push_result(
                     on_event,
                     messages,
                     name,
@@ -145,9 +136,7 @@ pub async fn run_sequential(
                     tr,
                     idx,
                     tool_call_ids,
-                    compression,
-                )
-                .await,
+                ),
             ) {
                 return outcome;
             }
@@ -195,7 +184,7 @@ pub async fn run_sequential(
             .await;
         if !merge_or_stop(
             &mut outcome,
-            push_and_compress(
+            push_result(
                 on_event,
                 messages,
                 name,
@@ -204,9 +193,7 @@ pub async fn run_sequential(
                 tr,
                 idx,
                 tool_call_ids,
-                compression,
-            )
-            .await,
+            ),
         ) {
             return outcome;
         }

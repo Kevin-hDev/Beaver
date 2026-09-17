@@ -94,17 +94,12 @@ pub(crate) enum ToolResultMedia {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(
-    dead_code,
-    reason = "candidate routes must declare explicit image refusal"
-)]
 pub(crate) enum ImageFormat {
     OpenAiNested,
     MistralFlat,
     ResponsesInput,
     OllamaNative,
     AnthropicBlock,
-    Unsupported,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -168,13 +163,7 @@ pub(in crate::services::llm) struct RouteAvailability {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::services::llm) enum CatalogPolicy {
-    PublicApi {
-        signup_url: &'static str,
-    },
-    #[allow(dead_code, reason = "reserved for bounded pre-promotion routes")]
-    ConfigurableApi {
-        signup_url: &'static str,
-    },
+    PublicApi { signup_url: &'static str },
     Hidden,
 }
 

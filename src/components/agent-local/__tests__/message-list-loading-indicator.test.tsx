@@ -43,7 +43,6 @@ vi.mock("../plan-preview-bubble", () => ({ PlanPreviewBubble: () => null }));
 vi.mock("../file-change-bubble", () => ({ FileChangeBubble: () => null }));
 vi.mock("@/lib/file-preview-utils", () => ({
   collectFileOperations: () => [],
-  collectMessageFileOperations: () => [],
 }));
 vi.mock("../chat.css", () => ({}));
 vi.mock("../messages.css", () => ({}));

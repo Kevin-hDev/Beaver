@@ -34,14 +34,3 @@ export function createUserMessage(
     skill_names: skillNames,
   };
 }
-
-export function createEditedUserMessage(
-  original: AgentMessage,
-  content: string,
-): AgentMessage {
-  return createUserMessage(
-    content,
-    original.files.map((file) => ({ ...file })),
-    original.skill_names ? [...original.skill_names] : undefined,
-  );
-}

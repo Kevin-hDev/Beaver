@@ -1,8 +1,5 @@
 use super::LoopCompression;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::tool_executor_compression::{
-    ToolCompression, ToolCompressionProvider,
-};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_session::{AgentMessage, AgentSession};
 use crate::services::llm::fast_mode;
@@ -126,44 +123,6 @@ async fn loop_compression_reaches_the_payload_with_the_generation_capture() {
         .expect("delete session");
 
     assert!(result.is_some());
-    assert_eq!(payloads.len(), 1);
-    assert_eq!(payloads[0]["service_tier"], "fast");
-    assert!(payloads[0]["input"].is_array());
-}
-
-#[tokio::test]
-async fn tool_executor_compression_reaches_the_payload_with_the_generation_capture() {
-    let (session, captured) = captured_session("Tool compression Fast").await;
-    let scenario = StreamScenario::start_with_fragments(&session.id, summary_fragments())
-        .await
-        .unwrap();
-    let emitter = AgentEventEmitter::test(session.id.clone());
-    let working_dir = tempfile::tempdir().expect("working directory");
-    let compression = ToolCompression {
-        on_event: &emitter,
-        provider: ToolCompressionProvider::Cloud {
-            provider_id: "openai",
-            model: "gpt-5.6-luna",
-            fast_mode: captured,
-        },
-        session_id: &session.id,
-        request_id: "request-tool-compression",
-        configured_context: 100_000,
-        provider_tools: &[],
-        chatbot: false,
-        plan_mode_active: false,
-        working_dir: working_dir.path(),
-        cancel: CancellationToken::new(),
-    };
-    let mut messages = runtime_messages();
-
-    let result = compression.try_run(&mut messages).await;
-    let payloads = scenario.payloads();
-    crate::services::agent_local::session_store::delete_one(&session.id)
-        .await
-        .expect("delete session");
-
-    assert!(result);
     assert_eq!(payloads.len(), 1);
     assert_eq!(payloads[0]["service_tier"], "fast");
     assert!(payloads[0]["input"].is_array());

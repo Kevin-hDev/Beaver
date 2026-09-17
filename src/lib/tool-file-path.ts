@@ -1,18 +1,9 @@
 import type { ToolActivityRecord } from "@/types/agent";
 
 const FILE_TOOLS = new Set(["read_file", "write_file", "edit_file", "read_spreadsheet", "read_document", "write_spreadsheet", "write_document", "transform_image"]);
-const PATH_KEYS = ["path", "file_path", "filepath", "target_path"];
 
 export function isFileTool(name: string): boolean {
   return FILE_TOOLS.has(name);
-}
-
-export function extractToolPath(args: Record<string, unknown>): string {
-  for (const key of PATH_KEYS) {
-    const value = args[key];
-    if (typeof value === "string" && value.trim()) return value;
-  }
-  return "";
 }
 
 export function inferSavedToolPaths(
@@ -26,12 +17,4 @@ export function inferSavedToolPaths(
     if (summary) lastPath = summary;
     return summary === tool.summary ? tool : { ...tool, summary };
   });
-}
-
-export function lastSavedToolPath(tools: ToolActivityRecord[], initialPath = ""): string {
-  let lastPath = initialPath;
-  for (const tool of tools) {
-    if (isFileTool(tool.name) && tool.summary.trim()) lastPath = tool.summary;
-  }
-  return lastPath;
 }

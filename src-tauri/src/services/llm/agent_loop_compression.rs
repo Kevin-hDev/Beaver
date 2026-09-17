@@ -1,8 +1,5 @@
 use super::agent_loop_message;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::tool_executor_compression::{
-    ToolCompression, ToolCompressionProvider,
-};
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
@@ -137,33 +134,6 @@ impl LoopCompression<'_> {
     pub fn reset_counts(last_prompt: &mut Option<u32>, last_eval: &mut Option<u32>) {
         *last_prompt = None;
         *last_eval = None;
-    }
-
-    #[allow(
-        dead_code,
-        reason = "journal commits tool results before compression can resume"
-    )]
-    pub fn tool_compression<'a>(
-        &'a self,
-        provider_tools: &'a [serde_json::Value],
-        cancel: CancellationToken,
-    ) -> ToolCompression<'a> {
-        ToolCompression {
-            on_event: self.on_event,
-            provider: ToolCompressionProvider::Cloud {
-                provider_id: self.provider_id,
-                model: self.model,
-                fast_mode: self.fast_mode,
-            },
-            session_id: self.session_id,
-            request_id: self.request_id,
-            configured_context: self.configured_context,
-            provider_tools,
-            chatbot: self.chatbot,
-            plan_mode_active: self.plan_mode_active,
-            working_dir: self.working_dir,
-            cancel,
-        }
     }
 }
 

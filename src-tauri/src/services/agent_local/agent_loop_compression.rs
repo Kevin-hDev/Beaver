@@ -1,6 +1,5 @@
 use super::agent_loop_support;
 use super::stream_events::AgentEventEmitter;
-use super::tool_executor_compression::{ToolCompression, ToolCompressionProvider};
 use super::types_ollama::{ChatMessage, StreamResult};
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
@@ -135,26 +134,4 @@ impl LoopCompression<'_> {
         *last_eval = None;
     }
 
-    #[allow(
-        dead_code,
-        reason = "journal commits tool results before compression can resume"
-    )]
-    pub fn tool_compression<'a>(
-        &'a self,
-        provider_tools: &'a [serde_json::Value],
-        cancel: CancellationToken,
-    ) -> ToolCompression<'a> {
-        ToolCompression {
-            on_event: self.on_event,
-            provider: ToolCompressionProvider::Ollama { model: self.model },
-            session_id: self.session_id,
-            request_id: self.request_id,
-            configured_context: self.configured_context,
-            provider_tools,
-            chatbot: self.chatbot,
-            plan_mode_active: self.plan_mode_active,
-            working_dir: self.working_dir,
-            cancel,
-        }
-    }
 }
