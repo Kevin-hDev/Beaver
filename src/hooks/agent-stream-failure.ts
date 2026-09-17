@@ -1,7 +1,7 @@
 import i18n from "@/i18n";
 import { scheduleCleanup } from "./agent-stream-cleanup";
 import { flushFrameNotify } from "./agent-stream-notify";
-import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispatch";
+import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify";
 import { getRecord, records } from "./agent-stream-records";
 import { markStreamCancelled } from "./agent-stream-generations";
 import { clearStreamRun } from "./agent-stream-run-ownership";

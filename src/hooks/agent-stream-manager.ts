@@ -13,28 +13,23 @@ import {
 } from "./agent-stream-generations";
 import {
   getOrCreateRecord,
+  getActivity,
   getRecord,
+  getSnapshot,
+  isStreaming,
   records,
+  setSessionGeneration as adoptSessionGeneration,
   snapshot,
   startStreamRecord,
   touchSession,
+  clearStreamPermission,
   type StreamSnapshot,
 } from "./agent-stream-records";
 import { subscribeStreamActivity } from "./agent-stream-activity";
-import {
-  getActivity,
-  getSnapshot,
-  isStreaming,
-  setSessionGeneration as adoptSessionGeneration,
-} from "./agent-stream-access";
 import { handleCompressionComplete } from "./agent-stream-compression-complete";
 import { applySessionSnapshot } from "./agent-stream-snapshot";
-import {
-  notifyRecord as notify,
-  notifyRecordActivity as notifyActivity,
-} from "./agent-stream-notify-dispatch";
+import { notifyRecord as notify, notifyRecordActivity as notifyActivity } from "./agent-stream-notify";
 import { showToast } from "@/lib/toast-emitter";
-import { clearStreamPermission } from "./agent-stream-permissions";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
 import { webToolErrorToastMessage } from "./web-tool-error-toast";
 import { failSession } from "./agent-stream-failure";

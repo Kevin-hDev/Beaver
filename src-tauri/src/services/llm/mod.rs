@@ -83,7 +83,6 @@ mod request_auth;
 #[cfg(test)]
 mod request_auth_tests;
 pub(crate) mod request_purpose;
-mod retry;
 pub mod route;
 #[cfg(test)]
 mod route_behavior_baseline_tests;
@@ -103,6 +102,7 @@ pub(crate) mod stream_dispatch;
 mod stream_dispatch_tests;
 pub(crate) mod stream_fragments;
 pub(crate) mod stream_http;
+mod stream_once;
 #[cfg(test)]
 pub(crate) use stream_http::RequestConfig as RequestConfigForTest;
 mod stream_http_error;

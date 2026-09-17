@@ -1,7 +1,7 @@
 use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
 use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
-use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
+use super::probe::{OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 use super::recovery::{
     RecoveryExecutor, RecoveryOutcome, RecoveryProbe, RecoveryProbeResult, RecoveryReason,
 };

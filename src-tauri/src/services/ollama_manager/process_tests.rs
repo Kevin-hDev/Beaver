@@ -1,5 +1,5 @@
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
-use super::process::{DefaultOllamaProcessLauncher, OllamaProcessError, OllamaProcessLauncher};
+use super::process::{DefaultOllamaProcessLauncher, OllamaProcessError};
 use super::spawn_profile::OllamaSpawnAttempt;
 use super::spawn_profile_test_support::env;
 use super::types::OllamaEndpoint;

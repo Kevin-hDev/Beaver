@@ -38,3 +38,25 @@ pub(super) struct ApiRequestParams<'a> {
     pub journal:
         Option<&'a crate::services::agent_local::conversation_journal::ConversationJournal>,
 }
+
+impl ApiRequestParams<'_> {
+    pub(super) fn stream_config(
+        &self,
+        purpose: super::request_purpose::RequestPurpose,
+    ) -> super::stream_http::RequestConfig<'_> {
+        super::stream_http::RequestConfig {
+            provider_id: self.provider_id,
+            model: self.model,
+            messages: self.messages,
+            tools: self.tools,
+            think: self.think,
+            reasoning_mode: self.reasoning_mode,
+            max_tokens: None,
+            purpose,
+            session_id: Some(self.session_id),
+            fast_mode: self.fast_mode,
+            tool_result_previews: Some(self.tool_result_previews),
+            continuation_target: self.continuation_target.as_ref(),
+        }
+    }
+}

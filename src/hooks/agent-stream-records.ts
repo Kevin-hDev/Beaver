@@ -8,6 +8,8 @@ import { clearCleanup, enforceSessionLimit, type StreamRecord } from "./agent-st
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { AgentMessage } from "@/types/agent";
 import { assignStreamRun, type StreamRun } from "./agent-stream-run-ownership";
+import { takePendingAdmission } from "./agent-stream-generations";
+import { toStreamActivity } from "./agent-stream-activity";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import { resolveContextUsage } from "./agent-token-estimate";
 import type { StreamProjectionState } from "./agent-stream-projections";
@@ -120,4 +122,31 @@ export function snapshot(state: StreamRecord["state"]): StreamSnapshot {
     isConnectionError: state.isConnectionError,
     diagnosticSummary: state.diagnosticSummary,
   };
+}
+
+export function setSessionGeneration(sessionId: string, generation: number) {
+  const record = getRecord(sessionId);
+  return record ? takePendingAdmission(record, generation) : null;
+}
+
+export function getSnapshot(sessionId: string): StreamSnapshot | null {
+  const record = getRecord(sessionId);
+  return record?.started ? snapshot(record.state) : null;
+}
+
+export function getActivity(sessionId: string) {
+  const record = getRecord(sessionId);
+  return record?.started ? toStreamActivity(sessionId, record.state) : null;
+}
+
+export function isStreaming(sessionId: string): boolean {
+  return getRecord(sessionId)?.state.isStreaming ?? false;
+}
+
+export function clearStreamPermission(permissionId: string): void {
+  for (const record of records.values()) {
+    const nextPending = record.state.pendingPermissions.filter((item) => item.id !== permissionId);
+    if (nextPending.length === record.state.pendingPermissions.length) continue;
+    record.state = { ...record.state, pendingPermissions: nextPending };
+  }
 }

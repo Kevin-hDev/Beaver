@@ -9,7 +9,7 @@ use super::fingerprint::{BundleFingerprint, OllamaVersion};
 pub(crate) use super::install_archives::archive_staging_path;
 use super::install_archives::remove_archives;
 use super::path_identity::NativePathIdentityResolver;
-use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, TargetValidation};
+use super::probe::{OwnedOllamaTargetProbe, TargetValidation};
 use super::progress::{self, OllamaProgressReporter};
 use super::release_source::OllamaReleaseManifest;
 use super::spawn_profile::OllamaSpawnProfile;

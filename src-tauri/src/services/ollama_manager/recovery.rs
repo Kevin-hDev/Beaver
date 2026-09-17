@@ -7,7 +7,7 @@ use super::path_identity::CanonicalDirectory;
 use super::recovery_decision::{
     decide_recovery, JournalPresence, OllamaLayoutSnapshot, RecoveryDecision,
 };
-use super::recovery_helpers::{present, target_of};
+use super::recovery_helpers::{is_exactly_present, target_of};
 pub(crate) use super::recovery_probe::{RecoveryProbe, RecoveryProbeResult};
 use super::recovery_types::ApplyResult;
 pub use super::recovery_types::{RecoveryOutcome, RecoveryReason};
@@ -66,14 +66,6 @@ where
             .map_or(JournalPresence::Absent, JournalPresence::Valid);
         let snapshot = cleanup::snapshot(journal, &*self.fs, &self.paths);
         let outcome = self.execute_snapshot(&snapshot, reason).await?;
-        if matches!(outcome, RecoveryOutcome::ProgressMade) {
-            let journal = self
-                .journal
-                .read()
-                .await?
-                .map_or(JournalPresence::Absent, JournalPresence::Valid);
-            let _ = cleanup::snapshot(journal, &*self.fs, &self.paths);
-        }
         Ok(outcome)
     }
 
@@ -155,7 +147,7 @@ where
                 Ok(ApplyResult::Progress)
             }
             RecoveryDecision::RestoreLegacyBackup => {
-                let source = if present(&snapshot.legacy_backup) {
+                let source = if is_exactly_present(&snapshot.legacy_backup) {
                     &self.paths.legacy_backup
                 } else {
                     &self.paths.backup
@@ -175,14 +167,15 @@ where
         &self,
         snapshot: &OllamaLayoutSnapshot,
     ) -> Result<ApplyResult, OllamaErrorCode> {
-        let (source, destination) =
-            if present(&snapshot.active) && present(&snapshot.update_staging) {
-                (&self.paths.active, &self.paths.backup)
-            } else if present(&snapshot.update_staging) {
-                (&self.paths.update_staging, &self.paths.active)
-            } else {
-                (&self.paths.install_staging, &self.paths.active)
-            };
+        let (source, destination) = if is_exactly_present(&snapshot.active)
+            && is_exactly_present(&snapshot.update_staging)
+        {
+            (&self.paths.active, &self.paths.backup)
+        } else if is_exactly_present(&snapshot.update_staging) {
+            (&self.paths.update_staging, &self.paths.active)
+        } else {
+            (&self.paths.install_staging, &self.paths.active)
+        };
         cleanup::rename(&self.fs, source, destination).await?;
         Ok(ApplyResult::Progress)
     }

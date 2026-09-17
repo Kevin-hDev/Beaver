@@ -25,13 +25,6 @@ pub(crate) enum OllamaProcessError {
     InvalidState,
 }
 
-pub(crate) trait OllamaProcessLauncher: Send + Sync {
-    fn create_gated(
-        &self,
-        attempt: &OllamaSpawnAttempt<'_>,
-    ) -> Result<GatedOllamaProcess, OllamaProcessError>;
-}
-
 pub(crate) struct DefaultOllamaProcessLauncher {
     bundle: BundleFingerprint,
 }
@@ -40,19 +33,8 @@ impl DefaultOllamaProcessLauncher {
     pub(crate) fn new(bundle: BundleFingerprint) -> Self {
         Self { bundle }
     }
-}
 
-pub(crate) struct GatedOllamaProcess {
-    native: Option<NativeGatedProcess>,
-    identity: OwnedProcessIdentity,
-    executable: u128,
-    bundle: BundleFingerprint,
-}
-
-pub(crate) use super::process_owned::OwnedOllamaProcess;
-
-impl OllamaProcessLauncher for DefaultOllamaProcessLauncher {
-    fn create_gated(
+    pub(crate) fn create_gated(
         &self,
         attempt: &OllamaSpawnAttempt<'_>,
     ) -> Result<GatedOllamaProcess, OllamaProcessError> {
@@ -71,6 +53,15 @@ impl OllamaProcessLauncher for DefaultOllamaProcessLauncher {
         })
     }
 }
+
+pub(crate) struct GatedOllamaProcess {
+    native: Option<NativeGatedProcess>,
+    identity: OwnedProcessIdentity,
+    executable: u128,
+    bundle: BundleFingerprint,
+}
+
+pub(crate) use super::process_owned::OwnedOllamaProcess;
 
 impl GatedOllamaProcess {
     #[cfg(test)]
@@ -189,14 +180,14 @@ impl GatedOllamaProcess {
 }
 
 #[cfg(unix)]
-fn platform_create(
+pub(crate) fn platform_create(
     attempt: &OllamaSpawnAttempt<'_>,
 ) -> Result<NativeGatedProcess, OllamaProcessError> {
     super::spawn_gate_unix::create(attempt)
 }
 
 #[cfg(windows)]
-fn platform_create(
+pub(crate) fn platform_create(
     attempt: &OllamaSpawnAttempt<'_>,
 ) -> Result<NativeGatedProcess, OllamaProcessError> {
     super::spawn_gate_windows::create(attempt)

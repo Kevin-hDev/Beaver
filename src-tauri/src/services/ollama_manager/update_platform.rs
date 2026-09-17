@@ -6,9 +6,7 @@ use super::super::fingerprint::BundleFingerprint;
 use super::super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::super::journal_store::OllamaJournalStore;
 use super::super::path_identity::NativePathIdentityResolver;
-use super::super::probe::{
-    OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation,
-};
+use super::super::probe::{OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 use super::super::recovery_decision::{DirectoryEvidence, JournalPresence};
 use super::super::spawn_profile::OllamaSpawnProfile;
 use super::{

@@ -6,7 +6,7 @@ use super::error::OllamaErrorCode;
 use super::journal::{OllamaJournalState, OllamaMigrationMarker, OllamaTransactionJournal};
 use super::journal_store::OllamaJournalStore;
 use super::path_identity::CanonicalDirectory;
-use super::recovery_decision::{DirectoryEvidence, OllamaLayoutSnapshot};
+use super::recovery_decision::OllamaLayoutSnapshot;
 use crate::services::paths::OllamaPaths;
 use std::path::Path;
 use std::sync::Arc;
@@ -23,21 +23,23 @@ pub(crate) enum CleanupTransition {
 pub(crate) fn choose(
     snapshot: &OllamaLayoutSnapshot,
 ) -> Result<CleanupTransition, OllamaErrorCode> {
-    if present(&snapshot.backup) && present(&snapshot.backup_delete)
-        || present(&snapshot.failed) && present(&snapshot.failed_delete)
+    if super::recovery_helpers::is_present_or_incomplete(&snapshot.backup)
+        && super::recovery_helpers::is_present_or_incomplete(&snapshot.backup_delete)
+        || super::recovery_helpers::is_present_or_incomplete(&snapshot.failed)
+            && super::recovery_helpers::is_present_or_incomplete(&snapshot.failed_delete)
     {
         return Err(OllamaErrorCode::OllamaRecoveryDeferred);
     }
-    if present(&snapshot.backup) {
+    if super::recovery_helpers::is_present_or_incomplete(&snapshot.backup) {
         return Ok(CleanupTransition::MoveBackupToDelete);
     }
-    if present(&snapshot.backup_delete) {
+    if super::recovery_helpers::is_present_or_incomplete(&snapshot.backup_delete) {
         return Ok(CleanupTransition::RemoveBackupDelete);
     }
-    if present(&snapshot.failed) {
+    if super::recovery_helpers::is_present_or_incomplete(&snapshot.failed) {
         return Ok(CleanupTransition::MoveFailedToDelete);
     }
-    if present(&snapshot.failed_delete) {
+    if super::recovery_helpers::is_present_or_incomplete(&snapshot.failed_delete) {
         return Ok(CleanupTransition::RemoveFailedDelete);
     }
     Ok(CleanupTransition::RemoveJournal)
@@ -143,11 +145,4 @@ where
             .map_err(|error| super::storage_error::durable("cleanup-remove-tree", error))
     })
     .await
-}
-
-fn present(evidence: &DirectoryEvidence) -> bool {
-    matches!(
-        evidence,
-        DirectoryEvidence::Present(_) | DirectoryEvidence::Incomplete
-    )
 }

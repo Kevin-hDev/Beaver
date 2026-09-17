@@ -1,5 +1,5 @@
 import { flushFrameNotify } from "./agent-stream-notify";
-import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispatch";
+import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify";
 import { getRecord } from "./agent-stream-records";
 import { visibleAssistant } from "./agent-stream-visible-assistant";
 import { resolvePreparedContextBuckets } from "./context-usage-stream";

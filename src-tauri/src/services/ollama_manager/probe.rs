@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use std::time::Instant;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
@@ -25,16 +24,6 @@ pub enum TargetValidation {
     Deferred { code: OllamaErrorCode },
 }
 
-#[async_trait]
-pub trait OllamaTargetProbe: Send + Sync {
-    async fn validate(
-        &self,
-        target: &PreparedBundle,
-        profile: &OllamaSpawnProfile,
-        cancellation: &CancellationToken,
-    ) -> TargetValidation;
-}
-
 pub struct OwnedOllamaTargetProbe<A = DefaultOllamaPortAllocator> {
     allocator: A,
     deadline: Instant,
@@ -57,12 +46,11 @@ impl OwnedOllamaTargetProbe<DefaultOllamaPortAllocator> {
     }
 }
 
-#[async_trait]
-impl<A> OllamaTargetProbe for OwnedOllamaTargetProbe<A>
+impl<A> OwnedOllamaTargetProbe<A>
 where
     A: OllamaPortAllocator,
 {
-    async fn validate(
+    pub async fn validate(
         &self,
         target: &PreparedBundle,
         profile: &OllamaSpawnProfile,

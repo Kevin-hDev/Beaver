@@ -1,8 +1,9 @@
-use super::retry_stream;
+use super::stream_once;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::fast_mode::{self, FastModeRequest};
 use crate::services::llm::request_purpose::RequestPurpose;
+use crate::services::llm::stream_http::RequestConfig;
 use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenario};
 use tokio_util::sync::CancellationToken;
 
@@ -27,26 +28,31 @@ async fn retryable_provider_failure_is_sent_once_without_idempotency() {
     let previews =
         crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
 
-    let retry = retry_stream(
-        &emitter,
-        &session.id,
-        "request-retry-fast",
-        1,
+    let retry = stream_once(
         &mut next_attempt,
-        "openai",
-        captured,
-        RequestPurpose::ManualChat,
-        "gpt-5.6-luna",
-        &messages,
-        &[],
-        false,
-        None,
-        &previews,
-        CancellationToken::new(),
-        false,
-        None,
-        None,
-        None,
+        crate::services::llm::stream::InteractiveStreamRequest {
+            on_event: &emitter,
+            request_id: "request-retry-fast",
+            turn: 1,
+            request: RequestConfig {
+                provider_id: "openai",
+                model: "gpt-5.6-luna",
+                messages: &messages,
+                tools: &[],
+                think: false,
+                reasoning_mode: None,
+                max_tokens: None,
+                purpose: RequestPurpose::ManualChat,
+                session_id: Some(&session.id),
+                fast_mode: captured,
+                tool_result_previews: Some(&previews),
+                continuation_target: None,
+            },
+            cancel: CancellationToken::new(),
+            buffer_content: false,
+            realtime_budget: None,
+            preparation: None,
+        },
     );
     let release_failure = async {
         scenario.wait_for_payloads(1).await;
@@ -90,26 +96,31 @@ async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
     let previews =
         crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
 
-    let error = retry_stream(
-        &emitter,
-        &session.id,
-        "request-fast-refusal",
-        1,
+    let error = stream_once(
         &mut next_attempt,
-        "openai",
-        FastModeRequest::Fast,
-        RequestPurpose::ManualChat,
-        "gpt-5.6-luna",
-        &messages,
-        &tools,
-        false,
-        None,
-        &previews,
-        CancellationToken::new(),
-        false,
-        None,
-        None,
-        None,
+        crate::services::llm::stream::InteractiveStreamRequest {
+            on_event: &emitter,
+            request_id: "request-fast-refusal",
+            turn: 1,
+            request: RequestConfig {
+                provider_id: "openai",
+                model: "gpt-5.6-luna",
+                messages: &messages,
+                tools: &tools,
+                think: false,
+                reasoning_mode: None,
+                max_tokens: None,
+                purpose: RequestPurpose::ManualChat,
+                session_id: Some(&session.id),
+                fast_mode: FastModeRequest::Fast,
+                tool_result_previews: Some(&previews),
+                continuation_target: None,
+            },
+            cancel: CancellationToken::new(),
+            buffer_content: false,
+            realtime_budget: None,
+            preparation: None,
+        },
     )
     .await
     .unwrap_err();

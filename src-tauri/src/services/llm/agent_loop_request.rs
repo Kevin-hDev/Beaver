@@ -71,26 +71,18 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     let first_preparation =
         super::agent_loop_request_context::prepared_attempt(&params, 1, breakdown)
             .with_realtime_budget(realtime_budget.clone());
-    let first_attempt = super::retry::retry_stream(
-        params.on_event,
-        params.session_id,
-        params.request_id,
-        turn,
+    let first_attempt = super::stream_once::stream_once(
         &mut next_attempt,
-        params.provider_id,
-        params.fast_mode,
-        purpose,
-        params.model,
-        params.messages,
-        params.tools,
-        params.think,
-        params.reasoning_mode,
-        params.tool_result_previews,
-        params.cancel.clone(),
-        plan_active,
-        realtime_budget,
-        params.continuation_target.as_ref(),
-        Some(&first_preparation),
+        super::stream::InteractiveStreamRequest {
+            on_event: params.on_event,
+            request_id: params.request_id,
+            turn,
+            request: params.stream_config(purpose),
+            cancel: params.cancel.clone(),
+            buffer_content: plan_active,
+            realtime_budget,
+            preparation: Some(&first_preparation),
+        },
     )
     .await;
     let (outcome, completed_attempt) = match first_attempt {
@@ -131,26 +123,18 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 "Requête provider réduite après un rejet de taille.",
             )
             .await;
-            let outcome = super::retry::retry_stream(
-                params.on_event,
-                params.session_id,
-                params.request_id,
-                turn,
+            let outcome = super::stream_once::stream_once(
                 &mut next_attempt,
-                params.provider_id,
-                params.fast_mode,
-                purpose,
-                params.model,
-                params.messages,
-                params.tools,
-                params.think,
-                params.reasoning_mode,
-                params.tool_result_previews,
-                params.cancel.clone(),
-                plan_active,
-                reduced_budget,
-                params.continuation_target.as_ref(),
-                Some(&reduced_preparation),
+                super::stream::InteractiveStreamRequest {
+                    on_event: params.on_event,
+                    request_id: params.request_id,
+                    turn,
+                    request: params.stream_config(purpose),
+                    cancel: params.cancel.clone(),
+                    buffer_content: plan_active,
+                    realtime_budget: reduced_budget,
+                    preparation: Some(&reduced_preparation),
+                },
             )
             .await?;
             return super::agent_loop_request_finish::finish(

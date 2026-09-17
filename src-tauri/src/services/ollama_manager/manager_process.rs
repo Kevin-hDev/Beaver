@@ -3,7 +3,7 @@ use super::durable_fs::platform_fs;
 use super::fingerprint::BundleFingerprint;
 use super::path_identity_resolver::NativePathIdentityResolver;
 use super::port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
-use super::process::{DefaultOllamaProcessLauncher, OllamaProcessLauncher, OwnedOllamaProcess};
+use super::process::{DefaultOllamaProcessLauncher, OwnedOllamaProcess};
 use super::process_error::map_process_error;
 use super::process_receipt::ProcessReceiptStore;
 use super::spawn_profile::{OllamaSpawnAttempt, OllamaSpawnProfile};
