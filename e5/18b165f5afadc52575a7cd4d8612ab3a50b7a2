@@ -1,0 +1,26 @@
+Task: M11 — Centraliser les métadonnées de chemins des outils
+
+Raison:
+Les noms et rôles des arguments de chemin étaient recopiés dans plusieurs politiques et pouvaient diverger. Une table unique décrit désormais les champs de lecture, écriture et dossier de travail; chaque politique garde sa propre décision et sa frontière de confiance.
+
+Changements:
+- Ajout de tool_path_args comme autorité unique des noms et rôles de chemins natifs.
+- Réutilisation dans les hooks, diagnostics, garde d'écriture, mémoire, restrictions sous-agent et capture de modifications.
+- Couverture étendue des traversées aux champs non standard de transform_image et Forecast.
+- Test exhaustif entre les métadonnées et les schémas publiés de tous les outils natifs.
+
+Validation:
+- cargo test tool_path_args --lib: 2 réussis
+- cargo test tool_hooks --lib: 15 réussis
+- cargo test write_guard_helpers --lib: 7 réussis
+- cargo test memory_paths --lib: 9 réussis
+- cargo test subagent_tool_guard --lib: 7 réussis
+- cargo test diagnostic_args --lib: 4 réussis
+- cargo check: réussi
+- cargo clippy --all-targets -- -D warnings: réussi
+- cargo fmt --all -- --check: réussi
+- git diff --check: réussi
+- graphify update .: réussi
+
+Décision:
+Les listes de noms de champs sont centralisées. Les politiques de permission, restriction sous-agent, diagnostic, lecture/écriture et capture de diff restent séparées car elles répondent à des contrats différents.
