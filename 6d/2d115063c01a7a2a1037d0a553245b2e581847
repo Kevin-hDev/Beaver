@@ -1,0 +1,29 @@
+Tâche E07 — Mesurer l'intérêt des outils anticipés Ollama
+
+Décision :
+- conserver l'anticipation des outils Ollama en lecture seule ;
+- ne pas l'étendre aux routes cloud dans ce chantier ;
+- garder l'interception prioritaire : avec un intercepteur actif, l'anticipation reste désactivée.
+
+Mesures :
+- qwen3.5:4b, Ollama 0.32.15, 4 exécutions par scénario ;
+- fenêtre médiane premier outil → fin : 18,6 ms pour un read_file, 1 125,0 ms pour trois read_file, 18,2 ms pour grep, 1 250,9 ms pour trois web_search ;
+- opérations locales sur 30 exécutions : 0,017 ms pour une lecture, 0,040 ms pour trois lectures, 37,811 ms pour rg ;
+- web_search externe non exécuté : la mesure porte sur sa publication par Ollama, sans utiliser de fournisseur réel.
+
+Correctif :
+- une reprise après crash du parseur est interdite dès qu'un appel d'outil complet a été publié ;
+- cela empêche le même appel d'être transmis une seconde fois par le canal anticipé.
+
+Validation :
+- nouveau test ciblé : 1 réussi ;
+- cargo test --lib eager : 5 réussis ;
+- extension_tool_interception_paths : 3 réussis ;
+- tool_executor_parallel_batch : 1 réussi ;
+- cargo fmt --check, cargo check et clippy strict : réussis ;
+- suite Rust complète : 5 861 tests lib + 51 CLI + 1 prelogger + 2 shell réussis, 0 échec ;
+- graphify update . réussi ; serveur Ollama arrêté et port 11501 libre.
+
+Historique de validation :
+- un premier filtre a exécuté 0 test et n'a pas été compté ;
+- le premier texte d'erreur du nouveau test ne correspondait pas à la signature réelle, puis le test a été corrigé et relancé avec succès.
