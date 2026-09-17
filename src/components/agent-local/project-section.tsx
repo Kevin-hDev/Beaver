@@ -4,7 +4,7 @@ import { DotsThreeVertical, Trash } from "@/components/ui/icons";
 import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
 import { FolderStateIcon } from "@/components/ui/folder-state-icon";
-import { CollapsePanel } from "./collapse-panel";
+import { Collapsible } from "@/components/ui/collapsible";
 import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { ConversationSessionItem } from "./conversation-session-item";
 import { ConversationEmptyNote } from "./conversation-empty-note";
@@ -156,7 +156,11 @@ export function ProjectSection({
         )}
       </div>
 
-      <CollapsePanel open={!collapsed}>
+      <Collapsible
+        open={!collapsed}
+        className="conv-collapse-panel"
+        innerClassName="conv-collapse-content"
+      >
         {sessionDrag.order.map((id) => {
           const s = sessionById.get(id);
           if (!s) return null;
@@ -187,7 +191,7 @@ export function ProjectSection({
         {sessions.length === 0 && (
           <ConversationEmptyNote indented>{t("projects.noDiscussion")}</ConversationEmptyNote>
         )}
-      </CollapsePanel>
+      </Collapsible>
 
       {ctx && <ContextMenu x={ctx.x} y={ctx.y} items={projectMenuItems} onClose={() => setCtx(null)} />}
       {sessionCtx && <ContextMenu x={sessionCtx.x} y={sessionCtx.y} items={sessionMenuItems} onClose={() => setSessionCtx(null)} />}

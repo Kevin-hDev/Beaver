@@ -55,14 +55,16 @@ const agent: SubagentInfo = {
 
 describe("Session summary lists", () => {
   it("deplie une todo list et affiche ses taches", () => {
-    const { getAllByText, getByRole, getByText } = render(<SessionSummaryTodoList runs={runs} />);
+    const { container, getAllByText, getByRole, getByText } = render(<SessionSummaryTodoList runs={runs} />);
 
     expect(getByText("1/2")).toBeTruthy();
+    expect(container.querySelector(".ssb-accordion")).toHaveClass("cps-region");
     fireEvent.click(getByRole("button", { name: /Implement UI/ }));
 
     expect(getByText("One")).toBeTruthy();
     expect(getByText("Two")).toBeTruthy();
     expect(getAllByText("pending").length).toBeGreaterThan(0);
+    expect(container.querySelector(".ssb-accordion")).toHaveAttribute("data-open", "true");
   });
 
   it("ouvre le plan au clic sur son entree", () => {

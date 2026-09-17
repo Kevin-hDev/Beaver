@@ -87,6 +87,17 @@ describe("ConversationList", () => {
     expect(notes).toEqual(["projects.noProject", "projects.noDiscussion"]);
   });
 
+  it("utilise la primitive commune pour replier les rangements", () => {
+    const { container, getByText } = render(<ConversationList {...defaultProps} />);
+    const panels = container.querySelectorAll(".conv-collapse-panel");
+    expect(panels).toHaveLength(2);
+    expect([...panels].every((panel) => panel.classList.contains("cps-region"))).toBe(true);
+
+    fireEvent.click(getByText("projects.title").closest('[role="button"]')!);
+    expect(panels[0]).toHaveAttribute("data-open", "false");
+    expect(panels[0]).toHaveAttribute("inert");
+  });
+
   it("n'annonce pas Épinglé tant qu'aucune conversation ne l'est", () => {
     const { queryByText } = render(<ConversationList {...defaultProps} sessions={[makeSession()]} />);
     expect(queryByText("projects.pinned")).toBeNull();

@@ -155,14 +155,8 @@
   transform: rotate(180deg);
 }
 
-.ssb-accordion {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 180ms ease;
-}
-
-.ssb-accordion-open {
-  grid-template-rows: 1fr;
+.cps-region.ssb-accordion {
+  transition: height 180ms ease;
 }
 
 .ssb-accordion-inner {

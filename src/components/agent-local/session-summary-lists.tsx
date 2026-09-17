@@ -9,6 +9,7 @@ import {
   PauseCircle,
 } from "@/components/ui/icons";
 import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
+import { Collapsible } from "@/components/ui/collapsible";
 import { subagentDisplayName, subagentSecondaryText } from "@/lib/subagent-display";
 import type { AgentPlanRun, AgentTodoItem, AgentTodoRun, SubagentInfo } from "@/types/agent";
 import { SubagentIcon } from "./subagent-icon";
@@ -52,15 +53,13 @@ export function SessionSummaryTodoList({ runs }: { runs: AgentTodoRun[] }) {
           </span>
           <ChevronDown className={`ssb-item-caret ${open ? "ssb-item-caret-open" : ""}`} aria-hidden="true" />
         </button>
-        <div className={`ssb-accordion ${open ? "ssb-accordion-open" : ""}`}>
-          <div className="ssb-accordion-inner">
+        <Collapsible open={open} className="ssb-accordion" innerClassName="ssb-accordion-inner">
             <div className="ssb-task-list">
               {run.todos.map((todo, index) => (
                 <TodoTaskRow key={`${todo.status}-${index}-${todo.content}`} todo={todo} />
               ))}
             </div>
-          </div>
-        </div>
+        </Collapsible>
       </div>
     );
   });
