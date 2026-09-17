@@ -27,7 +27,7 @@ pub fn native(id: String, tool_name: &str, arguments: &Value) -> PermissionReque
     PermissionRequest {
         id,
         tool_name: tool_name.to_string(),
-        arguments: arguments.clone(),
+        arguments: super::sensitive_data::redact_json(arguments),
         extension: None,
     }
 }
@@ -65,6 +65,37 @@ pub fn for_extension(
 mod tests {
     use crate::services::extensions::ExtensionEffect;
     use serde_json::json;
+
+    #[test]
+    fn native_request_masks_only_secret_values_without_mutating_execution_arguments() {
+        let credential = ["xai", "-", &"A".repeat(24)].concat();
+        let arguments = json!({
+            "command": format!(
+                "curl --header 'Authorization: Bearer {credential}' https://api.example.test/v1"
+            ),
+            "path": "/tmp/report.txt",
+        });
+        let original = arguments.clone();
+
+        let request = super::native("request-id".to_string(), "bash", &arguments);
+        let displayed = request.arguments["command"].as_str().unwrap();
+
+        assert!(displayed.contains("curl --header"));
+        assert!(displayed.contains("https://api.example.test/v1"));
+        assert!(displayed.contains("[REDACTED]"));
+        assert!(!displayed.contains(&credential));
+        assert_eq!(request.arguments["path"], "/tmp/report.txt");
+        assert_eq!(arguments, original);
+    }
+
+    #[test]
+    fn native_request_keeps_an_ordinary_command_fully_readable() {
+        let arguments = json!({"command": "git -C /tmp/project status --short"});
+
+        let request = super::native("request-id".to_string(), "bash", &arguments);
+
+        assert_eq!(request.arguments, arguments);
+    }
 
     #[test]
     fn extension_request_hides_arguments_and_bounds_a_redacted_summary() {

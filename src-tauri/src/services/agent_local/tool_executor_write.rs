@@ -8,7 +8,7 @@ use crate::services::agent_local::tool_hooks::{run_post_hooks, run_pre_hooks, Pr
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::write_guard::WriteGuard;
-use crate::services::agent_local::{permission_gate, permission_policy, sensitive_data};
+use crate::services::agent_local::{permission_gate, permission_policy};
 use serde_json::Value;
 use tokio_util::sync::CancellationToken;
 
@@ -105,11 +105,6 @@ pub(super) async fn execute_write(
         );
     } else if permission_policy::uses_auto_bypass(mode) {
         permission_gate::log_diagnostic("auto_bypass", Some(name), Some(mode));
-    } else if permission_policy::requires_sensitive_bash_prompt(mode, name, args) {
-        let safe_args = sensitive_data::redact_json(args);
-        if !request_once(on_event, name, &safe_args, cancel.clone()).await {
-            return super::tool_executor_errors::denied_or_cancelled(&cancel);
-        }
     } else if permission_gate::requires_permission(name, args)
         && !permission_gate::is_allowed(
             session_id,
@@ -180,17 +175,4 @@ pub(super) async fn execute_write(
     // Enregistre le fichier écrit comme "déjà vu" pour ne pas bloquer le tour suivant.
     post_record_write(name, args, working_dir, &tr, write_guard);
     tr
-}
-
-async fn request_once(
-    on_event: &AgentEventEmitter,
-    name: &str,
-    args: &Value,
-    cancel: CancellationToken,
-) -> bool {
-    match permission_gate::request(on_event, name, args, cancel).await {
-        permission_gate::PermissionDecision::Allow
-        | permission_gate::PermissionDecision::AllowSession => true,
-        permission_gate::PermissionDecision::Deny => false,
-    }
 }
