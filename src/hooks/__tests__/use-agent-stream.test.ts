@@ -134,7 +134,7 @@ describe("useAgentStream", () => {
     const { result } = renderHook(() => useAgentStream());
 
     await act(() => result.current.startStream(
-      "session-1", "model", "provider", next, false,
+      "session-1", "model", "provider", next,
       { displayMessages: [message], baseTokenCount: 0 },
     ));
 
@@ -149,10 +149,9 @@ describe("useAgentStream", () => {
     const { result } = renderHook(() => useAgentStream());
 
     await act(() => result.current.startStream(
-      "session-1", "model", "provider", turn("Question"), false,
+      "session-1", "model", "provider", turn("Question"),
       { displayMessages: [message], baseTokenCount: 0 },
-      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-      message.id,
+      undefined, undefined, undefined, message.id,
     ));
 
     expect(mocks.setSessionGeneration).toHaveBeenCalledWith("session-1", 42);
@@ -172,7 +171,7 @@ describe("useAgentStream", () => {
     let starting!: Promise<void>;
     await act(async () => {
       starting = result.current.startStream(
-        "session-1", "model", "provider", turn("Question"), true,
+        "session-1", "model", "provider", turn("Question"),
         { displayMessages: [message], baseTokenCount: 0 },
       );
       await Promise.resolve();
@@ -195,7 +194,7 @@ describe("useAgentStream", () => {
 
     await act(async () => {
       await result.current.startStream(
-        "session-1", "model", "provider", turn("Question"), false,
+        "session-1", "model", "provider", turn("Question"),
         { displayMessages: [first], baseTokenCount: 0 },
       );
       await result.current.queueStreamMessage("session-1", input("Suite"), queued);
@@ -220,7 +219,7 @@ describe("useAgentStream", () => {
     let queuedDuringAdmission = "start-new";
     await act(async () => {
       starting = result.current.startStream(
-        "session-1", "model", "provider", turn("Question"), false,
+        "session-1", "model", "provider", turn("Question"),
         { displayMessages: [first], baseTokenCount: 0 },
       );
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
@@ -250,7 +249,7 @@ describe("useAgentStream", () => {
     let crossSession = "queued";
     await act(async () => {
       starting = result.current.startStream(
-        "session-1", "model", "provider", turn("Question"), false,
+        "session-1", "model", "provider", turn("Question"),
         { displayMessages: [userMessage("Question")], baseTokenCount: 0 },
       );
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
@@ -285,14 +284,14 @@ describe("useAgentStream", () => {
 
     await act(async () => {
       await result.current.startStream(
-        "session-a", "model", "provider", turn("A"), false,
+        "session-a", "model", "provider", turn("A"),
         { displayMessages: [userMessage("A")], baseTokenCount: 0 },
       );
     });
     let startingB!: Promise<void>;
     await act(async () => {
       startingB = result.current.startStream(
-        "session-b", "model", "provider", turn("B"), false,
+        "session-b", "model", "provider", turn("B"),
         { displayMessages: [userMessage("B")], baseTokenCount: 0 },
       );
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(2));
@@ -316,7 +315,7 @@ describe("useAgentStream", () => {
     let starting!: Promise<void>;
     await act(async () => {
       starting = result.current.startStream(
-        "session-1", "model", "provider", turn("Question"), false,
+        "session-1", "model", "provider", turn("Question"),
         { displayMessages: [userMessage("Question")], baseTokenCount: 0 },
       );
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
@@ -338,7 +337,7 @@ describe("useAgentStream", () => {
     const { result } = renderHook(() => useAgentStream());
     await act(async () => {
       await result.current.startStream(
-        "session-1", "model", "provider", turn("Question"), false,
+        "session-1", "model", "provider", turn("Question"),
         { displayMessages: [message], baseTokenCount: 0 },
       );
       await result.current.stopStream("session-1");
@@ -352,11 +351,11 @@ describe("useAgentStream", () => {
     const { result } = renderHook(() => useAgentStream());
     await act(async () => {
       await result.current.startStream(
-        "session-a", "model", "provider", turn("A"), false,
+        "session-a", "model", "provider", turn("A"),
         { displayMessages: [userMessage("A")], baseTokenCount: 0 },
       );
       await result.current.startStream(
-        "session-b", "model", "provider", turn("B"), false,
+        "session-b", "model", "provider", turn("B"),
         { displayMessages: [userMessage("B")], baseTokenCount: 0 },
       );
       await result.current.stopStream("session-a");
@@ -373,7 +372,7 @@ describe("useAgentStream", () => {
     const message = userMessage("Question");
     const { result } = renderHook(() => useAgentStream());
     await act(() => result.current.startStream(
-      "session-1", "model", "provider", turn("Question"), false,
+      "session-1", "model", "provider", turn("Question"),
       { displayMessages: [message], baseTokenCount: 0 },
     ));
     expect(mocks.failSession).toHaveBeenCalledWith(

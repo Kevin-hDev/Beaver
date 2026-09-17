@@ -59,6 +59,9 @@ pub(super) async fn run(
         return Ok(CompletedStreamTurn::compression(messages));
     }
     let response_language = response_language(&params);
+    let journal = journal
+        .as_mut()
+        .ok_or_else(|| "conversation_admission_failed".to_string())?;
     if chat_engine(&params.provider) == ChatEngine::Ollama {
         ollama::run(params, messages, mode, response_language, journal).await
     } else {

@@ -2,7 +2,7 @@
     clippy::too_many_arguments,
     reason = "orchestration boundary keeps related runtime context explicit"
 )]
-use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
+use crate::commands::agent_chat_task::{run_stream_task, StreamTaskParams};
 use crate::models::agent_turn_contract::NewUserTurnInput;
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::stream_events::{self, AgentEventEmitter};
@@ -40,8 +40,6 @@ pub(super) async fn run_inner(
         &child_session_id,
         &provider,
         &model,
-        None,
-        None,
     )
     .await
     .map_err(|_| "conversation_admission_failed".to_string())?;
@@ -74,22 +72,19 @@ pub(super) async fn run_inner(
         session_id: child_session_id.clone(),
         request_id: request_id.clone(),
         model,
-        conversation: Some(
-            crate::commands::agent_chat_task::StreamConversation::canonical_for_subagent(
+        conversation: crate::commands::agent_chat_task::StreamConversation::canonical_for_subagent(
                 admitted,
                 system_prompt,
                 active.run_id,
                 active.execution_id,
-            ),
         ),
-        continuation_target: Some(target.continuation),
-        reasoning_profile: Some(target.reasoning.clone()),
+        continuation_target: target.continuation,
+        reasoning_profile: target.reasoning.clone(),
         tools,
         think: target.reasoning.active,
         provider,
         working_dir: std::path::PathBuf::from(working_dir),
         outputs_dir: None,
-        capability_hints: StreamCapabilityHints::default(),
         reasoning_mode: target.reasoning.mode_name,
         permission_mode: crate::commands::agent_chat_task::StreamPermissionMode::Bounded(Some(
             runtime_context.permission_mode,

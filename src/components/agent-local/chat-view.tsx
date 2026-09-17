@@ -49,10 +49,6 @@ export function ChatView({
   const selectedModelCaps = useSelectedModelCapabilities(provider, model);
   const chat = useAgentChat(
     sessionId, model, provider, permissions.enqueue,
-    selectedModelCaps?.supports_tools,
-    selectedModelCaps?.supports_thinking,
-    selectedModelCaps?.supports_vision,
-    reasoningMode,
     permMode.mode,
     permMode.refresh,
     permissions.remove,

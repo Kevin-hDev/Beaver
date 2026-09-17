@@ -70,7 +70,6 @@ describe("useAgentStream compression", () => {
         "model",
         "provider",
         { type: "new", input: { content: command.content, files: [], skills: [] } },
-        false,
         { displayMessages: [command], baseTokenCount: 123 },
       );
     });
@@ -96,7 +95,6 @@ describe("useAgentStream compression", () => {
         "model",
         "provider",
         { type: "new", input: { content: message.content, files: [], skills: [] } },
-        false,
         { displayMessages: [message], baseTokenCount: 123 },
       );
     });

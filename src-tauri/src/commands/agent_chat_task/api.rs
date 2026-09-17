@@ -9,7 +9,7 @@ pub(crate) async fn run(
     mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
-    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+    journal: &mut crate::services::agent_local::conversation_journal::ConversationJournal,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     #[cfg(debug_assertions)]
     let mut params = params;
@@ -19,9 +19,7 @@ pub(crate) async fn run(
     let ctx =
         crate::services::compress::context_resolve::resolve_api(canonical_provider, &params.model)
             .await;
-    let caps =
-        super::api_capabilities::resolve(&params.provider, &params.model, &params.capability_hints)
-            .await;
+    let caps = super::api_capabilities::resolve(&params.provider, &params.model).await;
     #[cfg(debug_assertions)]
     let fixture_mode = params.fixture_run.is_some();
     #[cfg(not(debug_assertions))]
@@ -152,21 +150,8 @@ pub(crate) async fn run(
         super::gemma4_thinking_guard::apply(&mut messages, canonical_provider, &params.model);
     }
 
-    let (think_active, effective_reasoning_mode) = match params.reasoning_profile.as_ref() {
-        Some(profile) => (profile.active, profile.mode_name.clone()),
-        None => {
-            let mode = crate::services::reasoning::normalize_for_model(
-                canonical_provider,
-                &params.model,
-                params.reasoning_mode.as_deref(),
-                caps.thinking,
-            );
-            (
-                crate::services::reasoning::enabled(mode.as_deref(), params.think) && caps.thinking,
-                mode,
-            )
-        }
-    };
+    let think_active = params.reasoning_profile.active;
+    let effective_reasoning_mode = params.reasoning_profile.mode_name.clone();
     #[cfg(debug_assertions)]
     let mut fixture_run = params.fixture_run.take();
     let completed = llm::agent_loop::run_agent_loop(
@@ -187,10 +172,10 @@ pub(crate) async fn run(
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
-        params.continuation_target.clone(),
+        Some(params.continuation_target.clone()),
         #[cfg(debug_assertions)]
         fixture_run.as_mut(),
-        journal.as_mut(),
+        Some(journal),
     )
     .await?;
     finish_turn(&params, journal, completed, messages).await
@@ -198,28 +183,26 @@ pub(crate) async fn run(
 
 pub(crate) async fn finish_turn(
     params: &StreamTaskParams,
-    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+    journal: &mut crate::services::agent_local::conversation_journal::ConversationJournal,
     completed: crate::services::agent_local::agent_loop_finish::CompletedStreamTurn,
     messages: Vec<ChatMessage>,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
-    if let Some(journal) = journal.as_mut() {
-        journal.commit_turn().await?;
-        let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
-        super::reasoning_diagnostics::record_persisted(
-            &params.session_id,
-            &params.request_id,
-            turn_id,
-            assistant_message_id,
-        )
-        .await;
-        let _ = params.on_event.send(
-            crate::services::agent_local::types_ollama::StreamEvent::TurnCommitted {
-                turn_id: turn_id.to_string(),
-                user_message_id: user_message_id.to_string(),
-                assistant_message_id: assistant_message_id.to_string(),
-            },
-        );
-    }
+    journal.commit_turn().await?;
+    let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
+    super::reasoning_diagnostics::record_persisted(
+        &params.session_id,
+        &params.request_id,
+        turn_id,
+        assistant_message_id,
+    )
+    .await;
+    let _ = params.on_event.send(
+        crate::services::agent_local::types_ollama::StreamEvent::TurnCommitted {
+            turn_id: turn_id.to_string(),
+            user_message_id: user_message_id.to_string(),
+            assistant_message_id: assistant_message_id.to_string(),
+        },
+    );
     crate::services::agent_local::stream_diagnostics::record_completed(
         &params.session_id,
         &params.request_id,

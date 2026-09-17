@@ -13,7 +13,6 @@ type StartStreamMock = (
   model: string,
   provider: string,
   turn: TurnStart,
-  think: boolean,
   startState: { displayMessages: AgentMessage[] },
 ) => void | Promise<void>;
 type SubscribeMock = (
@@ -87,7 +86,7 @@ describe("useAgentChat", () => {
     lastTruncatePayload = null;
     prepareResult = { status: "ready" };
     stopStream.mockResolvedValue("ignored");
-    startStream.mockImplementation((_sessionId, _model, _provider, _turn, _think, startState) => {
+    startStream.mockImplementation((_sessionId, _model, _provider, _turn, startState) => {
       lastStreamMessages = startState.displayMessages;
     });
     mockSessionInvoke(session);
@@ -137,8 +136,7 @@ describe("useAgentChat", () => {
     });
     renderHook(() => useAgentChat(
       "session-1", "llama3", "ollama", onPermission,
-      undefined, undefined, undefined, undefined, undefined, undefined,
-      onPermissionClosed,
+      undefined, undefined, onPermissionClosed,
     ));
     const request = { id: "permission", toolName: "plugin.tool", arguments: {} };
     act(() => {
@@ -217,48 +215,11 @@ describe("useAgentChat", () => {
     expect(startStream).not.toHaveBeenCalled();
   });
 
-  it("transmet le support vision du modèle sélectionné au stream", async () => {
-    const { result } = renderHook(() =>
-      useAgentChat(
-        "session-1",
-        "google/gemma-4-31b-it",
-        "openrouter",
-        undefined,
-        true,
-        true,
-        true,
-        "auto",
-      ),
-    );
-    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
-
-    await act(async () => {
-      await result.current.sendMessage("décris l'image");
-    });
-
-    expect(startStream).toHaveBeenLastCalledWith(
-      "session-1",
-      "google/gemma-4-31b-it",
-      "openrouter",
-      expect.objectContaining({ type: "new" }),
-      true,
-      expect.any(Object),
-      undefined,
-      true,
-      true,
-      true,
-      "auto",
-      undefined,
-      false,
-      expect.any(String),
-    );
-  });
-
   it("rafraîchit le verrou des modes après le démarrage accepté", async () => {
     const onStreamStarted = vi.fn();
     const { result } = renderHook(() => useAgentChat(
       "session-1", "llama3", "ollama", undefined,
-      true, true, false, "auto", "manual", onStreamStarted,
+      "manual", onStreamStarted,
     ));
     await waitFor(() => expect(result.current.sessionLoading).toBe(false));
 

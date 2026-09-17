@@ -24,7 +24,7 @@ mod workspace_prompt;
 #[cfg(test)]
 pub(crate) use conversation::convert as convert_provider_message_for_test;
 pub(crate) use conversation::StreamConversation;
-pub(crate) use params::{StreamCapabilityHints, StreamPermissionMode, StreamTaskParams};
+pub(crate) use params::{StreamPermissionMode, StreamTaskParams};
 
 use crate::services::agent_local::agent_loop_finish::CompletedStreamTurn;
 
@@ -107,12 +107,9 @@ async fn run_stream_task_inner(
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }
     validate_canonical_target(&params)?;
-    let conversation = params
+    let (messages, mut journal) = params
         .conversation
-        .take()
-        .ok_or_else(|| "conversation_admission_failed".to_string())?;
-    let (messages, mut journal) = conversation
-        .into_messages_and_journal(params.session_id.clone(), params.request_id.clone())?;
+        .take_messages_and_journal(params.session_id.clone(), params.request_id.clone())?;
     if let Some(current) = journal.as_mut() {
         let (log, owner) =
             crate::services::agent_local::stream_recovery_log::StreamRecoveryLog::create(
@@ -131,17 +128,11 @@ async fn run_stream_task_inner(
 }
 
 fn validate_canonical_target(params: &StreamTaskParams) -> Result<(), String> {
-    let Some(target) = params.continuation_target.as_ref() else {
-        return Ok(());
-    };
-    let Some(profile) = params.reasoning_profile.as_ref() else {
-        return Err("conversation_admission_failed".to_string());
-    };
     validate_target_profile(
         &params.provider,
         &params.model,
-        target,
-        profile,
+        &params.continuation_target,
+        &params.reasoning_profile,
         params.think,
         params.reasoning_mode.as_deref(),
     )

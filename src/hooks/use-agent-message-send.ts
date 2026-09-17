@@ -6,7 +6,6 @@ interface Params {
   sessionId: string | null;
   messages: AgentMessage[];
   permissionModeRef: RefObject<string | undefined>;
-  savingRef: RefObject<boolean>;
   runOrDefer: (
     workingDir: string | undefined,
     run: (resolvedWorkingDir?: string) => Promise<void>,
@@ -17,11 +16,10 @@ interface Params {
 
 export function useAgentMessageSend(params: Params) {
   const {
-    sessionId, messages, permissionModeRef, savingRef, runOrDefer, doStream, queueStreamMessage,
+    sessionId, messages, permissionModeRef, runOrDefer, doStream, queueStreamMessage,
   } = params;
   const persist = useCallback(async (payload: AgentSendPayload) => {
     if (!sessionId) return false;
-    while (savingRef.current) await new Promise((resolve) => setTimeout(resolve, 50));
     return persistAgentMessage({
       ...payload,
       sessionId,
@@ -30,7 +28,7 @@ export function useAgentMessageSend(params: Params) {
       doStream,
       queueStreamMessage,
     });
-  }, [doStream, messages, permissionModeRef, queueStreamMessage, savingRef, sessionId]);
+  }, [doStream, messages, permissionModeRef, queueStreamMessage, sessionId]);
 
   return useCallback(async (
     text: string,

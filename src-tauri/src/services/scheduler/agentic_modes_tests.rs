@@ -198,7 +198,7 @@ async fn assert_tool_trace_is_an_agent_result(is_new_session: bool) {
             uuid::Uuid::nil(),
             &mode,
         )
-        .into_messages_and_journal(session.id.clone(), uuid::Uuid::new_v4().to_string())
+        .take_messages_and_journal(session.id.clone(), uuid::Uuid::new_v4().to_string())
         .unwrap();
     let mut journal = journal.unwrap();
     journal

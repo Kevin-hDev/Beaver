@@ -2,7 +2,7 @@ use super::agent_bridge::BridgeError;
 use super::agent_bridge_support::{audit_msg, emit_session_updated, send_final_reply};
 use super::channels::{ChannelAdapter, InboundMessage};
 use super::security::audit::{self, AuditAction};
-use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
+use crate::commands::agent_chat_task::{run_stream_task, StreamTaskParams};
 use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use tauri::Manager;
@@ -17,10 +17,9 @@ pub(super) async fn run(
     provider: String,
     model: String,
 ) -> Result<(), BridgeError> {
-    let target =
-        crate::commands::agent_chat_target::resolve(&session_id, &provider, &model, None, None)
-            .await
-            .map_err(|_| BridgeError::SessionError("conversation_admission_failed".into()))?;
+    let target = crate::commands::agent_chat_target::resolve(&session_id, &provider, &model)
+        .await
+        .map_err(|_| BridgeError::SessionError("conversation_admission_failed".into()))?;
     let stream = crate::commands::agent_chat_admission::admit_background(&app, &session_id)
         .await
         .map_err(|error| BridgeError::SessionError(audit::sanitize_error(&error)))?;
@@ -90,17 +89,16 @@ pub(super) async fn run(
         session_id: session_id.clone(),
         request_id: request_id.clone(),
         model,
-        conversation: Some(
-            crate::commands::agent_chat_task::StreamConversation::canonical(admitted.turn),
+        conversation: crate::commands::agent_chat_task::StreamConversation::canonical(
+            admitted.turn,
         ),
-        continuation_target: Some(target.continuation),
-        reasoning_profile: Some(target.reasoning.clone()),
+        continuation_target: target.continuation,
+        reasoning_profile: target.reasoning.clone(),
         tools: vec![],
         think: target.reasoning.active,
         provider,
         working_dir: resolved_working_dir.path,
         outputs_dir: resolved_working_dir.outputs_dir,
-        capability_hints: StreamCapabilityHints::default(),
         reasoning_mode: target.reasoning.mode_name,
         permission_mode: crate::commands::agent_chat_task::StreamPermissionMode::Bounded(Some(
             "auto".to_string(),

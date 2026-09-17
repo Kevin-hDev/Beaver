@@ -9,7 +9,7 @@ pub(crate) async fn run(
     mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
-    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+    journal: &mut crate::services::agent_local::conversation_journal::ConversationJournal,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     #[cfg(debug_assertions)]
     let mut params = params;
@@ -169,19 +169,18 @@ pub(crate) async fn run(
 
     #[cfg(debug_assertions)]
     let mut fixture_run = params.fixture_run.take();
-    let live_replay_target = match params.continuation_target.as_ref() {
-        Some(crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(
-            target,
-        )) => Some(target.clone()),
+    let live_replay_target = match &params.continuation_target {
+        crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target) => {
+            Some(target.clone())
+        }
         _ => None,
     };
     #[cfg(debug_assertions)]
-    let fixture_candidate = params
-        .continuation_target
-        .as_ref()
-        .filter(|target| target.is_fixture_candidate())
-        .and_then(|target| target.replay())
-        .cloned();
+    let fixture_candidate = if params.continuation_target.is_fixture_candidate() {
+        params.continuation_target.replay().cloned()
+    } else {
+        None
+    };
     let completed = agent_loop::run_agent_loop(
         &params.on_event,
         &mut messages,
@@ -197,17 +196,13 @@ pub(crate) async fn run(
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
-        params
-            .continuation_target
-            .as_ref()
-            .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
-            .is_some(),
+        params.continuation_target.replay().is_some(),
         live_replay_target,
         #[cfg(debug_assertions)]
         fixture_candidate,
         #[cfg(debug_assertions)]
         fixture_run.as_mut(),
-        journal.as_mut(),
+        Some(journal),
     )
     .await?;
     super::api::finish_turn(&params, journal, completed, messages).await
