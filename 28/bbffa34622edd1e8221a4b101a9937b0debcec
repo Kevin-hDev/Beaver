@@ -5,3 +5,11 @@ Décision : conserver l’historique et corriger explicitement l’attribution p
 Changement : la note de 60d6dc71 et le registre local indiquent que la suite de persistance n’était pas verte à ce commit. La preuve appartient à d602c79c et compte 10 tests.
 
 Validation actuelle : npm run test:persistence-migration — 10 tests réussis.
+
+Validation finale au commit exact 28bbffa3
+- npm test : 638 fichiers Vitest, 3 487 tests, puis tous les scripts build/CI/fichiers/CEF/e2e/extensions/fixtures/contrats réussis.
+- npm run lint : OK ; npx tsc --noEmit : OK ; npm run contracts:check : OK.
+- cargo clippy --all-targets -- -D warnings : OK.
+- cargo test --quiet -- --test-threads=1 : 5 873 réussis, 34 ignorés ; CLI 51 réussis ; intégrations 1 et 2 réussies, 1 ignorée.
+- npm run test:persistence-migration : 10 réussis.
+- git diff --check : OK.
