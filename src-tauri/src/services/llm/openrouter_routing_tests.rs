@@ -75,7 +75,7 @@ fn external_routing_collections_and_labels_are_bounded_and_redacted() {
 #[tokio::test]
 async fn real_sse_readers_persist_final_routing_metadata_even_on_stream_error() {
     use crate::services::agent_local::stream_events::AgentEventEmitter;
-    use crate::services::llm::{route_profile, stream_consume, stream_silent_consume};
+    use crate::services::llm::{route_profile, stream_consume};
     use crate::services::provider_usage::UsageContext;
     use tokio_util::sync::CancellationToken;
     for silent in [false, true] {
@@ -91,7 +91,7 @@ async fn real_sse_readers_persist_final_routing_metadata_even_on_stream_error() 
             let mut response = response(200, &body).await;
             openrouter::attach(&mut response, "openrouter", "nvidia/test", Some(&id));
             let result = if silent {
-                stream_silent_consume::consume_silent(
+                stream_consume::consume_silent(
                     response,
                     CancellationToken::new(),
                     std::time::Duration::from_secs(2),
@@ -227,7 +227,7 @@ async fn cancellation_flushes_header_evidence_without_claiming_a_completed_gener
     openrouter::attach(&mut response, "openrouter", "meta/test", Some(&id));
     let cancel = tokio_util::sync::CancellationToken::new();
     cancel.cancel();
-    let result = crate::services::llm::stream_silent_consume::consume_silent(
+    let result = crate::services::llm::stream_consume::consume_silent(
         response,
         cancel,
         std::time::Duration::from_secs(2),

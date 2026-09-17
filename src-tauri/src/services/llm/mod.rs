@@ -90,13 +90,13 @@ mod route_behavior_baseline_tests;
 pub(crate) mod route_profile;
 pub mod runtime_models;
 pub mod stream;
+mod stream_chat_accumulator;
 mod stream_chunk;
 #[cfg(test)]
 mod stream_chunk_tests;
 mod stream_completion;
 mod stream_consume;
 mod stream_consume_budget;
-mod stream_consume_record;
 pub mod stream_convert;
 pub(crate) mod stream_dispatch;
 #[cfg(test)]
@@ -121,7 +121,6 @@ pub(crate) mod stream_reasoning;
 mod stream_reasoning_tests;
 mod stream_reasoning_zai;
 mod stream_silent;
-mod stream_silent_consume;
 pub(crate) mod stream_sse;
 #[cfg(test)]
 pub(crate) mod stream_test_transport;

@@ -119,7 +119,7 @@ pub(crate) async fn collect(
             .await
             {
                 Ok(response) => {
-                    super::stream_silent_consume::consume_silent_bounded(
+                    super::stream_consume::consume_silent_bounded(
                         response,
                         cancel,
                         idle_timeout,

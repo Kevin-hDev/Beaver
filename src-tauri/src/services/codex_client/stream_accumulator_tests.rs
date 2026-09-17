@@ -1,6 +1,7 @@
 use super::*;
 use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome};
+use crate::services::codex_client::limits::MAX_STREAM_TEXT_BYTES;
 use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::provider_usage::{
     RequestMeasurement, RequestMeasurementContext, UsageApiFormat, UsageWorkload,

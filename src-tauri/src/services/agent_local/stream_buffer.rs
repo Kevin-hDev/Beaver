@@ -5,6 +5,14 @@ pub trait StreamEventSink {
     fn send_event(&self, event: StreamEvent) -> Result<(), String>;
 }
 
+pub struct DiscardStreamEvents;
+
+impl StreamEventSink for DiscardStreamEvents {
+    fn send_event(&self, _event: StreamEvent) -> Result<(), String> {
+        Ok(())
+    }
+}
+
 impl StreamEventSink for AgentEventEmitter {
     fn send_event(&self, event: StreamEvent) -> Result<(), String> {
         self.send(event)

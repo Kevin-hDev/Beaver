@@ -35,20 +35,49 @@ async fn oversized_incomplete_sse_response() -> (reqwest::Response, tokio::task:
 
 #[test]
 fn local_output_limit_is_optional() {
-    let result = StreamResult {
-        content: "x".repeat(100),
-        ..Default::default()
-    };
-    assert!(!output_is_over_local_limit(&result, None));
+    let mut accumulator = StreamAccumulator::new_silent("openai", "fixture", &[], None, 1024);
+    let outcome = accumulator
+        .apply(
+            &DiscardStreamEvents,
+            &serde_json::json!({"type":"response.output_text.delta","delta":"abcdef"}),
+        )
+        .unwrap();
+    assert!(outcome.is_none());
 }
 
 #[test]
 fn local_output_limit_uses_safe_char_estimate() {
-    let result = StreamResult {
-        content: "x".repeat(60),
-        ..Default::default()
-    };
-    assert!(output_is_over_local_limit(&result, Some(10)));
+    let mut accumulator = StreamAccumulator::new_silent("openai", "fixture", &[], Some(1), 1024);
+    let outcome = accumulator
+        .apply(
+            &DiscardStreamEvents,
+            &serde_json::json!({"type":"response.output_text.delta","delta":"éééééé"}),
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(outcome.into_result().content, "éééééé");
+}
+
+#[test]
+fn silent_accumulator_keeps_ignoring_unrequested_tools() {
+    let mut accumulator = StreamAccumulator::new_silent("openai", "fixture", &[], None, 1024);
+    accumulator
+        .apply(
+            &DiscardStreamEvents,
+            &serde_json::json!({
+                "type":"response.output_item.added",
+                "item":{"type":"function_call","id":"call-1","name":"shell"}
+            }),
+        )
+        .unwrap();
+    let outcome = accumulator
+        .apply(
+            &DiscardStreamEvents,
+            &serde_json::json!({"type":"response.completed","response":{}}),
+        )
+        .unwrap()
+        .unwrap();
+    assert!(outcome.into_result().tool_calls.is_empty());
 }
 
 #[tokio::test]
