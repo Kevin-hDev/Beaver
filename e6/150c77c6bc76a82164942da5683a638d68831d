@@ -1,0 +1,24 @@
+Tâche M14 — partager progressivement les étapes communes des deux boucles Agent.
+
+Décision et raison : les deux routes utilisent désormais une seule préparation des extensions, une seule résolution du mode Plan, un seul rappel Todo, une seule préparation des sous-agents, un seul contrôle d'annulation et un seul constructeur de message assistant. Ces contrats étaient identiques et divergeaient déjà ; les centraliser évite de corriger deux fois le même comportement. Les choix de définitions d'outils, prompts, transports, reprise Ollama, anticipation, décharge GPU et règles fournisseur restent dans leur route.
+
+Invariant extensions : snapshot_for_model_request(permission_mode) reste appelé dans chaque boucle au début de chaque requête modèle. Sa durée de validité, le rafraîchissement entre requêtes, les restrictions des sous-agents et l'annulation avec le parent ne changent pas.
+
+Correction incluse : le chemin cloud passe par prepare_subagents comme Ollama, donc cleanup_old_results() s'applique désormais aux deux routes au lieu d'être oublié côté cloud.
+
+Validation exécutée au commit e6150c77 :
+- cargo check : succès.
+- cargo fmt --all -- --check : succès.
+- cargo clippy --all-targets -- -D warnings : succès.
+- cargo test turn_tools -- --nocapture : 2 réussis.
+- cargo test agent_loop_unbounded -- --nocapture : 4 réussis, couvrant Ollama/cloud, plus de 200 tours et outils.
+- cargo test agent_loop_compression -- --nocapture : 1 réussi.
+- cargo test stream_recovery -- --nocapture : 31 réussis.
+- cargo test subagent_task -- --nocapture : 13 réussis.
+- cargo test scheduler::agentic -- --nocapture : 6 réussis.
+- cargo test gateway::agent_bridge -- --nocapture : 4 réussis.
+- cargo test ollama_stream_process -- --nocapture : 10 réussis.
+- cargo test --lib : 5 858 réussis, 0 échec, 32 ignorés.
+- graphify update . : succès, 47 334 nœuds / 107 531 arêtes.
+
+Avertissements non bloquants observés : ts-rs ignore deux attributs serde déjà connus ; le linker macOS signale une grande section __eh_frame. Aucun échec.
