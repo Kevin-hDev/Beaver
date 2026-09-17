@@ -11,7 +11,7 @@ describe("agent stream activity subscriptions", () => {
     }
 
     expect(() => subscribeStreamActivity(vi.fn()))
-      .toThrow("Active view subscription limit reached");
+      .toThrow("active_view_subscription_limit_reached");
     emitStreamActivity("session", createManagedStreamState([], 0));
     expect(first).toHaveBeenCalledOnce();
 

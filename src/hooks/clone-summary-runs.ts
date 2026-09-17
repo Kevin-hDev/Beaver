@@ -56,7 +56,7 @@ export function finishCloneSummaryRun(sessionId: string, operationId: string) {
 
 function subscribe(listener: () => void): () => void {
   const id = nextListenerId++;
-  return addBoundedSubscriber(listeners, id, listener, 64);
+  return addBoundedSubscriber(listeners, id, listener, 64, "clone-summary-runs");
 }
 
 function notify() {

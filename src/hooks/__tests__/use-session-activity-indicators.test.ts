@@ -77,7 +77,7 @@ describe("reduceSessionActivity", () => {
       renderHook(() => useSessionActivityIndicators(sessionIds, null)));
 
     expect(() => renderHook(() => useSessionActivityIndicators(sessionIds, null)))
-      .toThrow("Active view subscription limit reached");
+      .toThrow("active_view_subscription_limit_reached");
 
     views.pop()?.unmount();
     const replacement = renderHook(() => useSessionActivityIndicators(sessionIds, null));

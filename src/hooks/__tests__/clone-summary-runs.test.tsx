@@ -8,7 +8,7 @@ describe("clone summary subscriptions", () => {
       renderHook(() => useCloneSummaryRun(`session-${index}`)));
 
     expect(() => renderHook(() => useCloneSummaryRun("overflow")))
-      .toThrow("Active view subscription limit reached");
+      .toThrow("active_view_subscription_limit_reached");
 
     views.pop()?.unmount();
     const replacement = renderHook(() => useCloneSummaryRun("replacement"));

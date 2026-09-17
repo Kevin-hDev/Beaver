@@ -76,7 +76,7 @@ describe("composer draft store", () => {
       cleanups.push(subscribeComposerDrafts(vi.fn()));
     }
     expect(() => subscribeComposerDrafts(vi.fn()))
-      .toThrow("Active view subscription limit reached");
+      .toThrow("active_view_subscription_limit_reached");
     openComposerDraft("listener-test");
     expect(first).toHaveBeenCalledOnce();
     cleanups.pop()?.();

@@ -138,7 +138,11 @@ function subscribe(sessionId: string, subscriber: Subscriber): () => void {
   clearCleanup(record);
   const id = record.nextSubscriberId++;
   const unsubscribe = addBoundedSubscriber(
-    record.subscribers, id, subscriber as (s: unknown) => void, MAX_SUBSCRIBERS_PER_SESSION,
+    record.subscribers,
+    id,
+    subscriber as (s: unknown) => void,
+    MAX_SUBSCRIBERS_PER_SESSION,
+    "agent-stream-session",
   );
   if (record.started) subscriber(snapshot(record.state));
   return () => {

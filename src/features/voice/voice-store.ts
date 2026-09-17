@@ -18,7 +18,7 @@ export function readVoiceSnapshot(): VoiceSnapshot | null { return snapshot; }
 
 export function subscribeVoiceSnapshots(listener: () => void): () => void {
   const id = nextListenerId++;
-  return addBoundedSubscriber(listeners, id, listener, MAX_LISTENERS);
+  return addBoundedSubscriber(listeners, id, listener, MAX_LISTENERS, "voice-snapshots");
 }
 
 export function useVoiceSnapshot(): VoiceSnapshot | null {

@@ -136,7 +136,7 @@ export function acknowledgeVoiceDelivery(key: string, deliveryId: string) {
 
 export function subscribeComposerDrafts(listener: () => void): () => void {
   const id = nextListenerId++;
-  return addBoundedSubscriber(listeners, id, listener, MAX_LISTENERS);
+  return addBoundedSubscriber(listeners, id, listener, MAX_LISTENERS, "composer-drafts");
 }
 
 export function resetComposerDraftStoreForTests() {

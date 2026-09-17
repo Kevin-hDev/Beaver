@@ -31,5 +31,7 @@ export function emitStreamActivity(sessionId: string, state: ManagedStreamState)
 
 export function subscribeStreamActivity(subscriber: ActivitySubscriber): () => void {
   const id = nextSubscriberId++;
-  return addBoundedSubscriber(subscribers, id, subscriber, MAX_ACTIVITY_SUBSCRIBERS);
+  return addBoundedSubscriber(
+    subscribers, id, subscriber, MAX_ACTIVITY_SUBSCRIBERS, "agent-stream-activity",
+  );
 }

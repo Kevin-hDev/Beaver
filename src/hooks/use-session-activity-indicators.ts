@@ -122,7 +122,7 @@ function filterVisible(ids: Set<string>, visibleIds: Set<string>): Set<string> {
 function subscribeStore(listener: () => void): () => void {
   ensureActivitySubscription();
   const id = nextListenerId++;
-  return addBoundedSubscriber(listeners, id, listener, 16);
+  return addBoundedSubscriber(listeners, id, listener, 16, "session-activity-indicators");
 }
 
 function getStoreState(): SessionActivityState {

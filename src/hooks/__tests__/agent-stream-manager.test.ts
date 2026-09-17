@@ -173,7 +173,7 @@ describe("agentStreamManager", () => {
     }
 
     expect(() => agentStreamManager.subscribe("subscribers", vi.fn()))
-      .toThrow("Active view subscription limit reached");
+      .toThrow("active_view_subscription_limit_reached");
 
     await agentStreamManager.startSession("subscribers", [], 0);
     expect(first).toHaveBeenCalled();
