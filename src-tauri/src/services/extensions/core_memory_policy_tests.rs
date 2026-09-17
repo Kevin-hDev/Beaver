@@ -18,9 +18,11 @@ async fn memory_api_obeys_disabled_manual_automatic_modes() {
         3_000,
         0,
     );
-    assert!(invoke(&context, "memory.list", json!({"scope": "global"}), &layout)
-        .await
-        .is_err());
+    assert!(
+        invoke(&context, "memory.list", json!({"scope": "global"}), &layout)
+            .await
+            .is_err()
+    );
     drop(disabled);
 
     let manual = crate::services::agent_local::memory_runtime::begin(
@@ -102,10 +104,7 @@ async fn memory_api_shares_turn_budget_with_native_tools() {
         .await
         .unwrap();
 
-    assert!(read["content"]
-        .as_str()
-        .unwrap()
-        .contains("budget épuisé"));
+    assert!(read["content"].as_str().unwrap().contains("budget épuisé"));
     assert_eq!(page["items"], json!([]));
     assert_eq!(page["nextCursor"], "0");
 }
@@ -157,9 +156,14 @@ async fn disappearing_project_and_symlinked_scope_fail_closed() {
         0,
     );
     std::fs::remove_dir(project.path()).unwrap();
-    assert!(invoke(&context, "memory.list", json!({"scope": "project"}), &layout)
-        .await
-        .is_err());
+    assert!(invoke(
+        &context,
+        "memory.list",
+        json!({"scope": "project"}),
+        &layout
+    )
+    .await
+    .is_err());
 
     #[cfg(unix)]
     {

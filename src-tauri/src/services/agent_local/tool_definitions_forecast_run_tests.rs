@@ -1,7 +1,5 @@
 use super::definition_for;
-use crate::services::forecast::selection_policy::{
-    ForecastSelectionMode, ForecastSelectionPolicy,
-};
+use crate::services::forecast::selection_policy::{ForecastSelectionMode, ForecastSelectionPolicy};
 
 fn policy(mode: ForecastSelectionMode) -> ForecastSelectionPolicy {
     ForecastSelectionPolicy {

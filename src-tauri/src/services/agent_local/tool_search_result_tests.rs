@@ -47,7 +47,9 @@ async fn exact_glob_limit_is_not_reported_as_truncated() {
 #[tokio::test]
 async fn exact_grep_limit_is_not_reported_as_truncated() {
     let directory = tempfile::tempdir().unwrap();
-    let lines = std::iter::repeat_n("match", 250).collect::<Vec<_>>().join("\n");
+    let lines = std::iter::repeat_n("match", 250)
+        .collect::<Vec<_>>()
+        .join("\n");
     std::fs::write(directory.path().join("matches.txt"), lines).unwrap();
 
     let result = grep("match", None, None, directory.path()).await;
@@ -59,7 +61,9 @@ async fn exact_grep_limit_is_not_reported_as_truncated() {
 #[tokio::test]
 async fn grep_reports_truncation_only_after_an_extra_match() {
     let directory = tempfile::tempdir().unwrap();
-    let lines = std::iter::repeat_n("match", 251).collect::<Vec<_>>().join("\n");
+    let lines = std::iter::repeat_n("match", 251)
+        .collect::<Vec<_>>()
+        .join("\n");
     std::fs::write(directory.path().join("matches.txt"), lines).unwrap();
 
     let result = grep("match", None, None, directory.path()).await;
@@ -89,8 +93,5 @@ async fn a_missing_search_root_is_not_reported_as_a_scan_failure() {
         result.error.as_ref().unwrap().code.as_ref(),
         "search_root_not_found"
     );
-    assert_eq!(
-        result.error.unwrap().category,
-        ToolErrorCategory::NotFound
-    );
+    assert_eq!(result.error.unwrap().category, ToolErrorCategory::NotFound);
 }

@@ -4,10 +4,8 @@ use super::types_todo::{AgentTodoItem, AgentTodoRunStatus};
 use super::types_tools::ToolResult;
 
 pub(super) async fn execute(args: &Value, session_id: &str) -> ToolResult {
-    match super::tool_todo::save_with(session_id, |session| {
-        delete_run_for_args(session, args)
-    })
-    .await
+    match super::tool_todo::save_with(session_id, |session| delete_run_for_args(session, args))
+        .await
     {
         Ok(Ok((active, run_id, status))) => {
             super::tool_todo::emit_update(session_id, active);

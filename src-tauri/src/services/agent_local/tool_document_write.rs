@@ -71,10 +71,12 @@ pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> 
         super::tool_office_limits::MAX_DOCUMENT_BLOCKS,
     ) {
         Ok(blocks) => blocks,
-        Err(super::tool_office_array::ArrayInputError::Invalid) => return ToolResult::validation(
-            "document_content_invalid",
-            "Le paramètre 'content' doit être un tableau de blocs",
-        ),
+        Err(super::tool_office_array::ArrayInputError::Invalid) => {
+            return ToolResult::validation(
+                "document_content_invalid",
+                "Le paramètre 'content' doit être un tableau de blocs",
+            )
+        }
         Err(super::tool_office_array::ArrayInputError::TooMany) => {
             return ToolResult::validation(
                 "document_block_limit_exceeded",
@@ -90,10 +92,12 @@ pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> 
 
     let document_xml = match super::tool_document_write_xml::build_document_xml(&blocks) {
         Ok(xml) => xml,
-        Err(error) => return ToolResult::validation(
-            "document_content_invalid",
-            format!("Erreur génération XML: {error}"),
-        ),
+        Err(error) => {
+            return ToolResult::validation(
+                "document_content_invalid",
+                format!("Erreur génération XML: {error}"),
+            )
+        }
     };
 
     match write_docx_zip(&validated, &document_xml) {
@@ -102,10 +106,9 @@ pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> 
             validated.display(),
             block_count
         )),
-        Err(error) => ToolResult::execution("document_write_failed", error, false)
-            .with_error_hint(
-                "Vérifier le fichier cible avant toute nouvelle écriture : il peut être partiel.",
-            ),
+        Err(error) => ToolResult::execution("document_write_failed", error, false).with_error_hint(
+            "Vérifier le fichier cible avant toute nouvelle écriture : il peut être partiel.",
+        ),
     }
 }
 

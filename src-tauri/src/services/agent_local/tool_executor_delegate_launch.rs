@@ -14,13 +14,9 @@ pub(super) async fn launch(
     interception: &crate::services::extensions::InterceptionSnapshot,
 ) -> Result<super::tool_dispatcher_delegate::PendingDelegate, ToolResult> {
     let tool = super::tool_executor_delegate_batch::DELEGATE_TOOL;
-    if let Err(msg) = super::tool_plan_guard::ensure_allowed_for_session(
-        tool,
-        args,
-        session_id,
-        plan_mode_active,
-    )
-    .await
+    if let Err(msg) =
+        super::tool_plan_guard::ensure_allowed_for_session(tool, args, session_id, plan_mode_active)
+            .await
     {
         return Err(ToolResult::error(
             msg,

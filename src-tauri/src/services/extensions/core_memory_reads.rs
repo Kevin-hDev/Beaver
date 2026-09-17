@@ -44,15 +44,18 @@ pub(super) async fn list(
             updated_at: parsed.topic.updated_at,
         };
         let encoded = serde_json::to_string(&summary).map_err(|_| ExtensionBridgeError::Failed)?;
-        let (_, truncated) = crate::services::agent_local::memory_runtime::consume_result(session, &encoded);
+        let (_, truncated) =
+            crate::services::agent_local::memory_runtime::consume_result(session, &encoded);
         if truncated {
             break;
         }
         items.push(summary);
     }
-    let next = (offset.saturating_add(items.len()) < total)
-        .then(|| (offset + items.len()).to_string());
-    Ok(CoreResponse::Json(json!({"items": items, "nextCursor": next})))
+    let next =
+        (offset.saturating_add(items.len()) < total).then(|| (offset + items.len()).to_string());
+    Ok(CoreResponse::Json(
+        json!({"items": items, "nextCursor": next}),
+    ))
 }
 
 pub(super) async fn read(
@@ -66,7 +69,8 @@ pub(super) async fn read(
     let (parsed, content) = crate::services::agent_local::memory_store::read_topic(scope, &path)
         .await
         .map_err(map_read_error)?;
-    let (content, _) = crate::services::agent_local::memory_runtime::consume_result(session, &content);
+    let (content, _) =
+        crate::services::agent_local::memory_runtime::consume_result(session, &content);
     Ok(CoreResponse::Json(topic_value(&parsed.topic, content)))
 }
 

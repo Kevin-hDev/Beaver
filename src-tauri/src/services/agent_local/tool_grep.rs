@@ -1,6 +1,6 @@
 use crate::services::agent_local::security;
-use crate::services::agent_local::tool_scan_timeout::{run_scan, scan_cancelled};
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::tool_scan_timeout::{run_scan, scan_cancelled};
 use crate::services::agent_local::types_tools::ToolResult;
 use grep_regex::RegexMatcher;
 use grep_searcher::{Searcher, Sink, SinkMatch};
@@ -172,7 +172,9 @@ fn grep_blocking(
     let mut result = if skipped_errors > 0 {
         ToolResult::partial(
             output,
-            [format!("{skipped_errors} fichier(s) ou dossier(s) n'ont pas pu être lus.")],
+            [format!(
+                "{skipped_errors} fichier(s) ou dossier(s) n'ont pas pu être lus."
+            )],
         )
     } else {
         ToolResult::ok(output)

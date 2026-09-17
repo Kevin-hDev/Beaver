@@ -1,9 +1,8 @@
-use super::{
-    validate_topic_target, write_topic_locked, MemoryEditError, MemoryWriteError,
-    MEMORY_WRITE_LOCK,
-};
 use super::super::memory_paths::MemoryScope;
 use super::super::memory_types::MAX_TOPIC_BYTES;
+use super::{
+    validate_topic_target, write_topic_locked, MemoryEditError, MemoryWriteError, MEMORY_WRITE_LOCK,
+};
 use std::path::Path;
 
 pub struct ArchiveTopicResult {
@@ -76,14 +75,12 @@ pub async fn archive_topic_result(
 ) -> Result<ArchiveTopicResult, MemoryWriteError> {
     let _guard = MEMORY_WRITE_LOCK.lock().await;
     validate_topic_target(scope, path).map_err(MemoryWriteError::TargetInvalid)?;
-    let current = read_existing(path)
-        .await
-        .map_err(|error| match error {
-            MemoryEditError::Failed(error) => error,
-            MemoryEditError::NotFound | MemoryEditError::Stale => {
-                MemoryWriteError::SourceUnavailable("Sujet mémoire introuvable.".into())
-            }
-        })?;
+    let current = read_existing(path).await.map_err(|error| match error {
+        MemoryEditError::Failed(error) => error,
+        MemoryEditError::NotFound | MemoryEditError::Stale => {
+            MemoryWriteError::SourceUnavailable("Sujet mémoire introuvable.".into())
+        }
+    })?;
     let archived = super::super::memory_format_update::archive(&current)
         .map_err(MemoryWriteError::ContentInvalid)?;
     match write_topic_locked(scope, path, &archived).await {

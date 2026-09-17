@@ -24,9 +24,7 @@ impl SubagentRuntimeContext {
 }
 
 fn most_restrictive<'a>(left: &'a str, right: &'a str) -> &'a str {
-    if !matches!(left, "chat" | "manual" | "auto")
-        || !matches!(right, "chat" | "manual" | "auto")
-    {
+    if !matches!(left, "chat" | "manual" | "auto") || !matches!(right, "chat" | "manual" | "auto") {
         return "chat";
     }
     let rank = |value| match value {
@@ -35,7 +33,11 @@ fn most_restrictive<'a>(left: &'a str, right: &'a str) -> &'a str {
         "auto" => 2,
         _ => 0,
     };
-    if rank(left) <= rank(right) { left } else { right }
+    if rank(left) <= rank(right) {
+        left
+    } else {
+        right
+    }
 }
 
 #[cfg(test)]

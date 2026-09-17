@@ -4,7 +4,10 @@ use super::core_api_contract::{
 
 #[test]
 fn core_api_contract_is_single_authority() {
-    assert_eq!(super::core_api_test_support::THIRD_PARTY_IDENTITIES.len(), 2);
+    assert_eq!(
+        super::core_api_test_support::THIRD_PARTY_IDENTITIES.len(),
+        2
+    );
     assert_eq!(super::core_api_test_support::OFFICIAL_IDENTITY, "official");
     assert_eq!(super::core_api_test_support::TURN_IDS.len(), 2);
     let all = advertised_capabilities_for(true);
@@ -26,7 +29,10 @@ fn core_api_contract_is_single_authority() {
     );
     let advertised = advertised_capabilities();
     assert!(validate_negotiated_capabilities(
-        &advertised.iter().map(|value| (*value).to_string()).collect::<Vec<_>>()
+        &advertised
+            .iter()
+            .map(|value| (*value).to_string())
+            .collect::<Vec<_>>()
     )
     .is_ok());
     for capability in ["automations", "subagents", "toolInterception"] {
@@ -59,7 +65,14 @@ fn linux_advertises_only_maintained_extension_capabilities() {
     ] {
         assert!(!capabilities.contains(&capability));
     }
-    for capability in ["tools", "events", "ui", "skills", "resources", "richToolResults"] {
+    for capability in [
+        "tools",
+        "events",
+        "ui",
+        "skills",
+        "resources",
+        "richToolResults",
+    ] {
         assert!(capabilities.contains(&capability));
     }
 

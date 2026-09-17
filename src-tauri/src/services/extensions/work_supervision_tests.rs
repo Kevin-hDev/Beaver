@@ -116,8 +116,8 @@ async fn stop_cancels_and_awaits_reader_operation_and_core_call() {
     work.spawn_core_call(
         &super::host_identity::HostIdentity::ThirdParty("test".into()),
         move |cancel| async move {
-        cancel.cancelled().await;
-        core_call_completed.fetch_add(1, Ordering::SeqCst);
+            cancel.cancelled().await;
+            core_call_completed.fetch_add(1, Ordering::SeqCst);
         },
     )
     .expect("supervised extension core call starts");

@@ -24,7 +24,13 @@ mod tests {
         let definition = definition();
         let parameters = &definition["function"]["parameters"];
         assert!(parameters["properties"].get("data_profile_id").is_none());
-        for required in ["target_column", "date_column", "horizon", "frequency", "confidence_level"] {
+        for required in [
+            "target_column",
+            "date_column",
+            "horizon",
+            "frequency",
+            "confidence_level",
+        ] {
             assert!(parameters["required"]
                 .as_array()
                 .unwrap()

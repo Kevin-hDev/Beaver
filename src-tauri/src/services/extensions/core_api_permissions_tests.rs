@@ -2,8 +2,8 @@ use super::core_bridge::ExtensionBridgeError;
 use super::core_scope::{AgentCoreScope, CoreScopeRegistry};
 use super::host_identity::HostIdentity;
 use super::types::{ExtensionApiLevel, ExtensionEffect};
-use crate::services::llm::request_purpose::RequestPurpose;
 use crate::services::agent_local::subagent_tool_profile::SubagentToolProfile;
+use crate::services::llm::request_purpose::RequestPurpose;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
@@ -12,7 +12,13 @@ pub(super) fn scoped_context(
     plan_active: bool,
     cancel: CancellationToken,
 ) -> super::call_context::ExtensionCallContext {
-    scoped_context_for(plan_active, cancel, "manual", None, RequestPurpose::ManualChat)
+    scoped_context_for(
+        plan_active,
+        cancel,
+        "manual",
+        None,
+        RequestPurpose::ManualChat,
+    )
 }
 
 fn scoped_context_for(
@@ -88,7 +94,13 @@ async fn automation_activation_always_requires_manual_confirmation() {
 #[tokio::test]
 async fn models_generate_is_denied_in_plan_explorer_and_chat() {
     for context in [
-        scoped_context_for(true, CancellationToken::new(), "manual", None, RequestPurpose::ManualChat),
+        scoped_context_for(
+            true,
+            CancellationToken::new(),
+            "manual",
+            None,
+            RequestPurpose::ManualChat,
+        ),
         scoped_context_for(
             false,
             CancellationToken::new(),
@@ -96,17 +108,31 @@ async fn models_generate_is_denied_in_plan_explorer_and_chat() {
             Some(SubagentToolProfile::Explorer),
             RequestPurpose::ManualChat,
         ),
-        scoped_context_for(false, CancellationToken::new(), "chat", None, RequestPurpose::ManualChat),
+        scoped_context_for(
+            false,
+            CancellationToken::new(),
+            "chat",
+            None,
+            RequestPurpose::ManualChat,
+        ),
     ] {
         let policy = super::core_api_dispatch::policy(&context, "models.generate").unwrap();
         assert_eq!(
-            super::core_api_permissions::authorize(&context, "models.generate", &serde_json::json!({}), policy.effect).await,
+            super::core_api_permissions::authorize(
+                &context,
+                "models.generate",
+                &serde_json::json!({}),
+                policy.effect
+            )
+            .await,
             Err(ExtensionBridgeError::Denied),
         );
     }
-    assert!(!crate::services::llm::stream_dispatch::model_route_descriptor("xai-oauth")
-        .unwrap()
-        .generation_supported);
+    assert!(
+        !crate::services::llm::stream_dispatch::model_route_descriptor("xai-oauth")
+            .unwrap()
+            .generation_supported
+    );
 }
 
 #[tokio::test]
@@ -114,7 +140,13 @@ async fn nested_call_cannot_upgrade_plan_or_parent_permissions() {
     let context = scoped_context(true, CancellationToken::new());
     let policy = super::core_api_dispatch::policy(&context, "memory.write").unwrap();
     assert_eq!(
-        super::core_api_permissions::authorize(&context, "memory.write", &serde_json::json!({}), policy.effect).await,
+        super::core_api_permissions::authorize(
+            &context,
+            "memory.write",
+            &serde_json::json!({}),
+            policy.effect
+        )
+        .await,
         Err(ExtensionBridgeError::Denied)
     );
 }
@@ -125,7 +157,13 @@ async fn legacy_call_and_typed_call_share_authorization() {
     for method in ["mcp.tool.call", "memory.write"] {
         let policy = super::core_api_dispatch::policy(&context, method).unwrap();
         assert_eq!(
-            super::core_api_permissions::authorize(&context, method, &serde_json::json!({}), policy.effect).await,
+            super::core_api_permissions::authorize(
+                &context,
+                method,
+                &serde_json::json!({}),
+                policy.effect
+            )
+            .await,
             Err(ExtensionBridgeError::Denied),
             "{method}"
         );

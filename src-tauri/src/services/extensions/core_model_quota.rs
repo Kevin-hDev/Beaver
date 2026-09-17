@@ -73,7 +73,10 @@ mod tests {
             leases.push(acquire(&identity).unwrap());
             leases.push(acquire(&identity).unwrap());
         }
-        assert_eq!(acquire(&HostIdentity::Official).err(), Some("core_saturated"));
+        assert_eq!(
+            acquire(&HostIdentity::Official).err(),
+            Some("core_saturated")
+        );
         drop(leases);
         reset();
     }

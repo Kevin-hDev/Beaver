@@ -109,10 +109,7 @@ fn validate_subagent_change_ids(
     Ok(())
 }
 
-fn validate_shell_control(
-    tool: &str,
-    args: &serde_json::Map<String, Value>,
-) -> Result<(), String> {
+fn validate_shell_control(tool: &str, args: &serde_json::Map<String, Value>) -> Result<(), String> {
     if tool != "bash_control" {
         return Ok(());
     }
@@ -137,10 +134,7 @@ fn validate_shell_control(
     Ok(())
 }
 
-fn validate_shell_text(
-    tool: &str,
-    args: &serde_json::Map<String, Value>,
-) -> Result<(), String> {
+fn validate_shell_text(tool: &str, args: &serde_json::Map<String, Value>) -> Result<(), String> {
     match tool {
         "bash" => super::tool_bash::validate_command(
             args.get("command")
@@ -157,10 +151,7 @@ fn validate_shell_text(
     }
 }
 
-fn validate_shell_numbers(
-    tool: &str,
-    args: &serde_json::Map<String, Value>,
-) -> Result<(), String> {
+fn validate_shell_numbers(tool: &str, args: &serde_json::Map<String, Value>) -> Result<(), String> {
     if tool == "bash" {
         if let Some(timeout) = args.get("timeout").filter(|value| !value.is_null()) {
             if timeout.as_u64().is_none_or(|seconds| seconds == 0) {
@@ -186,8 +177,8 @@ fn validate_shell_numbers(
 #[path = "tool_validate_bash_tests.rs"]
 mod bash_tests;
 #[cfg(test)]
-#[path = "tool_validate_tests.rs"]
-mod tests;
-#[cfg(test)]
 #[path = "tool_validate_forecast_tests.rs"]
 mod forecast_tests;
+#[cfg(test)]
+#[path = "tool_validate_tests.rs"]
+mod tests;

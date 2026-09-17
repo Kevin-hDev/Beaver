@@ -91,11 +91,7 @@ mod tests {
         let task = tokio::spawn(async move {
             wait(
                 &AgentEventEmitter::test("session".into()),
-                super::super::permission_request::native(
-                    task_id,
-                    "bash",
-                    &serde_json::json!({}),
-                ),
+                super::super::permission_request::native(task_id, "bash", &serde_json::json!({})),
                 cancel,
                 Some(std::time::Instant::now() + std::time::Duration::from_millis(20)),
             )

@@ -45,8 +45,7 @@ pub async fn prompt_was_delivered(child_id: &str, execution_id: &str, prompt: &s
         .get(child_id)
         .filter(|entry| entry.execution_id == execution_id)
         .is_some_and(|entry| {
-            entry.initial_prompt_hash == Some(hash)
-                || entry.delivered_prompt_hashes.contains(&hash)
+            entry.initial_prompt_hash == Some(hash) || entry.delivered_prompt_hashes.contains(&hash)
         })
 }
 
@@ -95,7 +94,10 @@ pub async fn save_and_mark_prompts_delivered(
         .into_iter()
         .filter(|hash| !entry.delivered_prompt_hashes.contains(hash))
         .collect::<Vec<_>>();
-    if entry.delivered_prompt_hashes.len().saturating_add(new_hashes.len())
+    if entry
+        .delivered_prompt_hashes
+        .len()
+        .saturating_add(new_hashes.len())
         > MAX_DELIVERED_PROMPT_HASHES
     {
         return Err("Limite de corrections sous-agent atteinte".to_string());
@@ -133,10 +135,7 @@ pub async fn cancel_execution(child_id: &str, expected_execution_id: &str) -> bo
     true
 }
 
-pub async fn adopt_children_for_parent_stream(
-    parent_id: &str,
-    parent_cancel: &CancellationToken,
-) {
+pub async fn adopt_children_for_parent_stream(parent_id: &str, parent_cancel: &CancellationToken) {
     if parent_cancel.is_cancelled() {
         return;
     }
@@ -158,7 +157,13 @@ pub async fn cancel_stopped_parent_stream_children(parent_id: &str) {
 }
 
 pub async fn cancel_children_for_extension(extension_id: &str) {
-    let child_ids = REGISTRY.lock().await.entries.keys().cloned().collect::<Vec<_>>();
+    let child_ids = REGISTRY
+        .lock()
+        .await
+        .entries
+        .keys()
+        .cloned()
+        .collect::<Vec<_>>();
     for child_id in child_ids {
         let owned = super::session_store::get(&child_id)
             .await

@@ -1,13 +1,13 @@
 use serde_json::Value;
 
-#[path = "tool_definitions_forecast_run.rs"]
-mod forecast_run;
 #[path = "tool_definitions_forecast_audit.rs"]
 mod forecast_audit;
 #[path = "tool_definitions_forecast_data.rs"]
 mod forecast_data;
 #[path = "tool_definitions_forecast_evaluation.rs"]
 mod forecast_evaluation;
+#[path = "tool_definitions_forecast_run.rs"]
+mod forecast_run;
 
 pub fn forecast_tool_definitions() -> Vec<Value> {
     vec![
@@ -172,10 +172,7 @@ fn forecast_models_definition_for(auto: bool) -> Value {
 
 pub(super) fn definition_for_tool(name: &str) -> Option<Value> {
     forecast_tool_definitions().into_iter().find(|definition| {
-        definition
-            .pointer("/function/name")
-            .and_then(Value::as_str)
-            == Some(name)
+        definition.pointer("/function/name").and_then(Value::as_str) == Some(name)
     })
 }
 

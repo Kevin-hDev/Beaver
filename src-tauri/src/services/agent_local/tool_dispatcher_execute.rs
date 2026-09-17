@@ -66,5 +66,6 @@ pub(super) async fn execute(
         }
         result.file_changes_mut().push(change);
     }
-    super::tool_dispatcher_finalize::finalize(result, tool_name, trace.session_id, working_dir).await
+    super::tool_dispatcher_finalize::finalize(result, tool_name, trace.session_id, working_dir)
+        .await
 }

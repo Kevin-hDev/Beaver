@@ -86,6 +86,9 @@ async fn ignored_quality_is_reported_as_a_partial_result() {
     .await;
 
     assert_eq!(result.status, ToolResultStatus::Partial);
-    assert!(result.warnings.iter().any(|warning| warning.contains("ignorée")));
+    assert!(result
+        .warnings
+        .iter()
+        .any(|warning| warning.contains("ignorée")));
     assert!(output.exists());
 }

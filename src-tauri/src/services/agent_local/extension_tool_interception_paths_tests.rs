@@ -31,9 +31,8 @@ async fn denied_interception_prevents_the_real_write_executor_effect() {
 
 #[tokio::test]
 async fn eager_result_is_never_replayed_when_interception_is_active() {
-    let eager: EagerHandle = tokio::spawn(async {
-        HashMap::from([(0, ToolResult::ok("effect already produced"))])
-    });
+    let eager: EagerHandle =
+        tokio::spawn(async { HashMap::from([(0, ToolResult::ok("effect already produced"))]) });
     let prepared = agent_loop_tool_batch::prepare(
         eager,
         false,

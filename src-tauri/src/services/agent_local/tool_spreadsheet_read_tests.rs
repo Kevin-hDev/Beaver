@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::agent_local::tool_spreadsheet_read::{build_result, read_spreadsheet};
-    use crate::services::agent_local::tool_spreadsheet_range::parse as parse_range;
     use crate::services::agent_local::tool_result_contract::ToolResultStatus;
+    use crate::services::agent_local::tool_spreadsheet_range::parse as parse_range;
+    use crate::services::agent_local::tool_spreadsheet_read::{build_result, read_spreadsheet};
     use tempfile::TempDir;
 
     fn working_dir() -> TempDir {
@@ -128,10 +128,14 @@ mod tests {
     async fn csv_reports_and_applies_column_truncation() {
         let tmp = working_dir();
         let csv_path = tmp.path().join("wide.csv");
-        let line = (0..1001).map(|index| index.to_string()).collect::<Vec<_>>().join(",");
+        let line = (0..1001)
+            .map(|index| index.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
         std::fs::write(&csv_path, format!("{line}\n{line}\n")).unwrap();
 
-        let result = read_spreadsheet(csv_path.to_str().unwrap(), None, None, None, tmp.path()).await;
+        let result =
+            read_spreadsheet(csv_path.to_str().unwrap(), None, None, None, tmp.path()).await;
         let json: serde_json::Value = serde_json::from_str(&result.content).unwrap();
         assert_eq!(json["headers"].as_array().unwrap().len(), 1000);
         assert_eq!(json["rows"][0].as_array().unwrap().len(), 1000);

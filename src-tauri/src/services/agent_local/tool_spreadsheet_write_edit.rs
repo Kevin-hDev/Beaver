@@ -15,12 +15,11 @@ pub(super) fn edit_xlsx(
 ) -> Result<(), super::tool_spreadsheet_error::SpreadsheetWriteError> {
     super::tool_spreadsheet_write::validate_spreadsheet_input(path)
         .map_err(super::tool_spreadsheet_error::SpreadsheetWriteError::source)?;
-    let mut book = umya_spreadsheet::reader::xlsx::read(path)
-        .map_err(|_| {
-            super::tool_spreadsheet_error::SpreadsheetWriteError::source(
-                "Impossible d'ouvrir le fichier xlsx",
-            )
-        })?;
+    let mut book = umya_spreadsheet::reader::xlsx::read(path).map_err(|_| {
+        super::tool_spreadsheet_error::SpreadsheetWriteError::source(
+            "Impossible d'ouvrir le fichier xlsx",
+        )
+    })?;
 
     for op in ops {
         let op_type = op["type"].as_str().unwrap_or("");
@@ -43,12 +42,11 @@ pub(super) fn edit_xlsx(
         }
     }
 
-    umya_spreadsheet::writer::xlsx::write(&book, path)
-        .map_err(|_| {
-            super::tool_spreadsheet_error::SpreadsheetWriteError::write(
-                "Impossible de sauvegarder le fichier xlsx",
-            )
-        })
+    umya_spreadsheet::writer::xlsx::write(&book, path).map_err(|_| {
+        super::tool_spreadsheet_error::SpreadsheetWriteError::write(
+            "Impossible de sauvegarder le fichier xlsx",
+        )
+    })
 }
 
 pub(super) fn resolve_sheet_name(book: &umya_spreadsheet::Workbook, op: &Value) -> String {
@@ -108,10 +106,7 @@ fn apply_set_row(book: &mut umya_spreadsheet::Workbook, op: &Value) -> Result<()
     Ok(())
 }
 
-fn apply_set_column_width(
-    book: &mut umya_spreadsheet::Workbook,
-    op: &Value,
-) -> Result<(), String> {
+fn apply_set_column_width(book: &mut umya_spreadsheet::Workbook, op: &Value) -> Result<(), String> {
     let col_idx = try_value_as_u32(&op["col"], "col")?;
     let col_1based = col_idx + 1;
     let width = value_as_f64(&op["width"]).unwrap_or(8.43);

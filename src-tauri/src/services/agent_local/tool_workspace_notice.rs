@@ -43,7 +43,8 @@ fn append_with_outputs(
 fn allowed_roots(working_dir: &Path, configured_outputs: Option<PathBuf>) -> Vec<PathBuf> {
     let mut roots = vec![working_dir.to_path_buf()];
     let app_workspaces = crate::services::paths::data_dir().join("session-workspaces");
-    if working_dir.starts_with(&app_workspaces) && working_dir.file_name().is_some_and(|v| v == "work")
+    if working_dir.starts_with(&app_workspaces)
+        && working_dir.file_name().is_some_and(|v| v == "work")
     {
         if let Some(outputs) = working_dir.parent().map(|parent| parent.join("outputs")) {
             roots.push(outputs);

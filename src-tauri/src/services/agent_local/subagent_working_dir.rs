@@ -67,12 +67,8 @@ async fn create_coder_worktree(
         )
         .await
     } else {
-        super::subagent_directory_replay::seed_pending(
-            child_session_id,
-            execution_id,
-            &worktree,
-        )
-        .await
+        super::subagent_directory_replay::seed_pending(child_session_id, execution_id, &worktree)
+            .await
     };
     if seeded.is_err() {
         cleanup_failed(base, &path, child_session_id, execution_id, git_repository).await;
@@ -116,7 +112,8 @@ async fn cleanup_failed(
             let _ = super::subagent_git_command::delete_branch(base, &branch).await;
         }
     } else {
-        let _ = super::subagent_directory_workspace::remove_repository(child_id, execution_id).await;
+        let _ =
+            super::subagent_directory_workspace::remove_repository(child_id, execution_id).await;
     }
 }
 
@@ -134,13 +131,9 @@ pub async fn cleanup_owned(
         return;
     };
     let clear_current = session.subagent_worktree.as_deref() == Some(expected);
-    if super::subagent_worktree::remove_owned(
-        expected,
-        child_session_id,
-        expected_execution_id,
-    )
-    .await
-    .is_err()
+    if super::subagent_worktree::remove_owned(expected, child_session_id, expected_execution_id)
+        .await
+        .is_err()
     {
         ::log::warn!("[subagent] cleanup worktree");
         return;

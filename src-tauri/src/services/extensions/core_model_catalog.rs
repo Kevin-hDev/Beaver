@@ -26,7 +26,8 @@ pub(super) async fn list(params: &Value) -> Result<CoreResponse, ExtensionBridge
         if !is_configured(&connection) {
             continue;
         }
-        let Some(route) = crate::services::llm::stream_dispatch::model_route_descriptor(&connection)
+        let Some(route) =
+            crate::services::llm::stream_dispatch::model_route_descriptor(&connection)
         else {
             continue;
         };
@@ -49,8 +50,8 @@ pub(super) async fn list(params: &Value) -> Result<CoreResponse, ExtensionBridge
         .skip(offset)
         .take(super::types::MAX_SDK_PAGE_RESULTS)
         .collect::<Vec<_>>();
-    let next = (offset.saturating_add(page.len()) < total)
-        .then(|| (offset + page.len()).to_string());
+    let next =
+        (offset.saturating_add(page.len()) < total).then(|| (offset + page.len()).to_string());
     Ok(CoreResponse::Json(json!({
         "items": page,
         "nextCursor": next,

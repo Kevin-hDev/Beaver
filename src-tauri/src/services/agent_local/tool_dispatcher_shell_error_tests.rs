@@ -6,7 +6,10 @@ fn setup_errors_have_distinct_recovery_semantics() {
     let capacity = from_message("Trop de processus shell actifs.".to_string());
     let internal = from_message("Sortie shell indisponible.".to_string());
 
-    assert_eq!(missing.error.unwrap().code.as_ref(), "shell_session_not_found");
+    assert_eq!(
+        missing.error.unwrap().code.as_ref(),
+        "shell_session_not_found"
+    );
     let capacity_error = capacity.error.as_ref().unwrap();
     let internal_error = internal.error.as_ref().unwrap();
     assert_eq!(capacity_error.category, ToolErrorCategory::Conflict);
@@ -23,9 +26,15 @@ fn cancellation_timeout_and_invalid_input_are_not_conflated() {
     let timeout = from_message("Délai d'écriture dépassé.".to_string());
     let invalid = from_message("Commande shell invalide.".to_string());
 
-    assert_eq!(cancelled.status, super::super::tool_result_contract::ToolResultStatus::Cancelled);
+    assert_eq!(
+        cancelled.status,
+        super::super::tool_result_contract::ToolResultStatus::Cancelled
+    );
     assert_eq!(timeout.error.unwrap().category, ToolErrorCategory::Timeout);
-    assert_eq!(invalid.error.unwrap().category, ToolErrorCategory::Validation);
+    assert_eq!(
+        invalid.error.unwrap().category,
+        ToolErrorCategory::Validation
+    );
 }
 
 #[test]

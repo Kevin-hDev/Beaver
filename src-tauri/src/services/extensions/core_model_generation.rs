@@ -116,7 +116,10 @@ fn required_string<'a>(params: &'a Value, key: &str) -> Result<&'a str, Extensio
 }
 
 fn optional_string<'a>(params: &'a Value, key: &str) -> Option<&'a str> {
-    params.get(key).and_then(Value::as_str).filter(|value| !value.is_empty())
+    params
+        .get(key)
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
 }
 
 fn request_limits(params: &Value) -> Result<(&str, u32), ExtensionBridgeError> {
@@ -154,7 +157,10 @@ mod tests {
     #[test]
     fn ollama_length_reason_is_preserved() {
         let result = super::ollama_result("partial".into(), 10, Some("length".into()));
-        assert_eq!(super::finish_reason(result.done_reason.as_deref()), "length");
+        assert_eq!(
+            super::finish_reason(result.done_reason.as_deref()),
+            "length"
+        );
     }
 
     #[test]

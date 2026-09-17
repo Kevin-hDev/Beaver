@@ -234,8 +234,7 @@ fn contract_rejects_unknown_core_api_fields_and_limits() {
     assert!(generator::validate_contract(&unknown, &directory).is_err());
 
     let mut limit = contract;
-    limit["methods"]["hostToCore"][11]["params"][0]["limit"] =
-        serde_json::json!("missingLimit");
+    limit["methods"]["hostToCore"][11]["params"][0]["limit"] = serde_json::json!("missingLimit");
     assert!(generator::validate_contract(&limit, &directory).is_err());
 }
 
@@ -282,8 +281,9 @@ fn generated_rust_names_host_notifications() {
     let generated = include_str!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
     assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
-    assert!(generated
-        .contains("pub const HOST_EVENT_ACTIVITY_METHOD: &str = \"host.event.activity\";"));
+    assert!(
+        generated.contains("pub const HOST_EVENT_ACTIVITY_METHOD: &str = \"host.event.activity\";")
+    );
     assert!(generated.contains("pub enum HostState"));
     assert!(generated.contains("pub enum OptionalExtensionCapability"));
     assert!(generated.contains("pub enum ExtensionContributionType"));

@@ -61,6 +61,9 @@ mod tests {
     #[test]
     fn rejects_invalid_and_oversized_side_lists() {
         assert!(parse(&serde_json::json!(["diagonal"])).is_err());
-        assert!(parse(&serde_json::json!(["top", "bottom", "left", "right", "top"])).is_err());
+        assert!(parse(&serde_json::json!([
+            "top", "bottom", "left", "right", "top"
+        ]))
+        .is_err());
     }
 }

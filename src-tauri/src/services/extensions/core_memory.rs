@@ -22,12 +22,8 @@ async fn call_with_layout(
     match method {
         "memory.list" => super::core_memory_reads::list(context, params, &scope).await,
         "memory.read" => super::core_memory_reads::read(context, params, &scope).await,
-        "memory.write" => {
-            super::core_memory_mutations::write(context, params, &scope).await
-        }
-        "memory.archive" => {
-            super::core_memory_mutations::archive(context, params, &scope).await
-        }
+        "memory.write" => super::core_memory_mutations::write(context, params, &scope).await,
+        "memory.archive" => super::core_memory_mutations::archive(context, params, &scope).await,
         _ => Err(ExtensionBridgeError::MethodUnavailable),
     }
 }

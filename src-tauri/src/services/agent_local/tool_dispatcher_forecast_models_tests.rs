@@ -1,9 +1,9 @@
 use crate::services::forecast::auto_selection::select;
 use crate::services::forecast::data_quality::DataProfile;
-use crate::services::forecast::hardware_profile::HardwareProfile;
 use crate::services::forecast::evaluation::types::{
     BacktestIndexResult, BacktestIndexSummary, BacktestKind, BacktestMetrics,
 };
+use crate::services::forecast::hardware_profile::HardwareProfile;
 use std::collections::BTreeMap;
 
 fn model(id: &str, runnable: bool) -> serde_json::Value {
@@ -148,10 +148,7 @@ fn comparable_backtests_drive_the_auto_ranking() {
 
 #[test]
 fn unknown_hardware_only_keeps_lightweight_safe_models() {
-    let models = [
-        model("chronos-bolt-tiny", true),
-        model("chronos-2", true),
-    ];
+    let models = [model("chronos-bolt-tiny", true), model("chronos-2", true)];
     let unknown = HardwareProfile {
         gpu_memory_kind: crate::services::forecast::hardware_profile::GpuMemoryKind::Unknown,
         vram_total_mb: None,

@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_tools::ToolResult;
@@ -6,8 +9,8 @@ use crate::services::agent_local::write_guard::WriteGuard;
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
-use super::tool_executor_compression::ToolCompression;
 use super::tool_execution_outcome::ToolExecutionOutcome;
+use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_parallel::run_with_parallel_reads;
 use super::tool_executor_sequential::run_sequential;
 

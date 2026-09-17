@@ -10,9 +10,7 @@ static MEMORY_WRITE_LOCK: Mutex<()> = Mutex::const_new(());
 
 #[path = "memory_store_topics.rs"]
 mod topics;
-pub use topics::{
-    archive_topic, archive_topic_result, edit_topic, read_topic, replace_topic,
-};
+pub use topics::{archive_topic, archive_topic_result, edit_topic, read_topic, replace_topic};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MemoryEditError {
@@ -140,9 +138,7 @@ fn validate_topic_target(scope: &MemoryScope, path: &Path) -> Result<(), String>
         .topics_dir()
         .canonicalize()
         .map_err(|_| "Chemin du sujet mémoire invalide.".to_string())?;
-    let actual_parent = path
-        .parent()
-        .and_then(|parent| parent.canonicalize().ok());
+    let actual_parent = path.parent().and_then(|parent| parent.canonicalize().ok());
     if actual_parent.as_deref() != Some(expected_parent.as_path())
         || path.extension().and_then(|value| value.to_str()) != Some("md")
         || path
@@ -152,7 +148,8 @@ fn validate_topic_target(scope: &MemoryScope, path: &Path) -> Result<(), String>
     {
         return Err("Chemin du sujet mémoire invalide.".into());
     }
-    if matches!(std::fs::symlink_metadata(path), Ok(metadata) if metadata.file_type().is_symlink()) {
+    if matches!(std::fs::symlink_metadata(path), Ok(metadata) if metadata.file_type().is_symlink())
+    {
         return Err("Lien symbolique mémoire interdit.".into());
     }
     Ok(())

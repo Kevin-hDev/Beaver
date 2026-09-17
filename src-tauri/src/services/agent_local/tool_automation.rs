@@ -44,7 +44,11 @@ pub async fn execute(
         Err(error) => return automation_failure(action_name, error),
     };
     if restricted_mutation(&request, &session, &actor).await {
-        return failure(action_name, "permission_denied", ToolErrorCategory::Permission);
+        return failure(
+            action_name,
+            "permission_denied",
+            ToolErrorCategory::Permission,
+        );
     }
     dispatch(request, session, actor).await
 }

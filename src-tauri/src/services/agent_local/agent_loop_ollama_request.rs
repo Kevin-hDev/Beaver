@@ -129,19 +129,18 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     )
     .await;
     let (tool_tx, tool_rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut eager_handle =
-        EagerHandleGuard::new(super::eager_dispatch::spawn_eager_handle(
-            tool_rx,
-            params.on_event.clone(),
-            params.working_dir.to_path_buf(),
-            params.session_id.to_string(),
-            params.request_id.to_string(),
-            params.permission_mode.to_string(),
-            plan_active,
-            params.cancel.clone(),
-            params.enable_eager_tools,
-            params.interception.clone(),
-        ));
+    let mut eager_handle = EagerHandleGuard::new(super::eager_dispatch::spawn_eager_handle(
+        tool_rx,
+        params.on_event.clone(),
+        params.working_dir.to_path_buf(),
+        params.session_id.to_string(),
+        params.request_id.to_string(),
+        params.permission_mode.to_string(),
+        plan_active,
+        params.cancel.clone(),
+        params.enable_eager_tools,
+        params.interception.clone(),
+    ));
     super::stream_diagnostics::mark_phase(
         params.session_id,
         params.request_id,

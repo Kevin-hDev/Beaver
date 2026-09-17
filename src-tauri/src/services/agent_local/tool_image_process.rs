@@ -48,7 +48,9 @@ pub async fn transform_image(
 
     let mut img = match image::open(&validated_in) {
         Ok(i) => i,
-        Err(_) => return ToolResult::validation("image_content_invalid", "Impossible d'ouvrir l'image"),
+        Err(_) => {
+            return ToolResult::validation("image_content_invalid", "Impossible d'ouvrir l'image")
+        }
     };
 
     if operations.as_array().is_some_and(Vec::is_empty) {
@@ -74,9 +76,7 @@ pub async fn transform_image(
             )
         }
     };
-    if let Err(error) =
-        super::tool_image_process_geometry::validate_output_format(&validated_out)
-    {
+    if let Err(error) = super::tool_image_process_geometry::validate_output_format(&validated_out) {
         return error;
     }
 
@@ -88,10 +88,12 @@ pub async fn transform_image(
             super::tool_office_limits::MAX_IMAGE_OPERATIONS,
         ) {
             Ok(operations) => operations,
-            Err(super::tool_office_array::ArrayInputError::Invalid) => return ToolResult::validation(
-                "image_operations_invalid",
-                "Le paramètre 'operations' doit être un tableau",
-            ),
+            Err(super::tool_office_array::ArrayInputError::Invalid) => {
+                return ToolResult::validation(
+                    "image_operations_invalid",
+                    "Le paramètre 'operations' doit être un tableau",
+                )
+            }
             Err(super::tool_office_array::ArrayInputError::TooMany) => {
                 return ToolResult::validation(
                     "image_operation_limit_exceeded",
@@ -154,7 +156,10 @@ pub async fn transform_image(
 
     let (file_size, metadata_warning) = match std::fs::metadata(&validated_out) {
         Ok(metadata) => (metadata.len(), None),
-        Err(_) => (0, Some("La taille du fichier de sortie n'a pas pu être confirmée.")),
+        Err(_) => (
+            0,
+            Some("La taille du fichier de sortie n'a pas pu être confirmée."),
+        ),
     };
 
     let json = serde_json::json!({

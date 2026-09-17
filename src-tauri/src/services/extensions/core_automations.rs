@@ -70,9 +70,11 @@ async fn list(
         .take(super::types::MAX_SDK_PAGE_RESULTS)
         .map(super::core_automations_params::public_automation)
         .collect::<Vec<_>>();
-    let next = (offset.saturating_add(page.len()) < total)
-        .then(|| (offset + page.len()).to_string());
-    Ok(CoreResponse::Json(json!({"items": page, "nextCursor": next})))
+    let next =
+        (offset.saturating_add(page.len()) < total).then(|| (offset + page.len()).to_string());
+    Ok(CoreResponse::Json(
+        json!({"items": page, "nextCursor": next}),
+    ))
 }
 
 async fn create(
@@ -90,7 +92,9 @@ async fn create(
         description: super::core_automations_params::optional(params, "description")?
             .map(str::to_string),
         prompt: super::core_automations_params::required(params, "prompt")?.to_string(),
-        target: AutomationTarget::NewSession { project_id: session.project_id },
+        target: AutomationTarget::NewSession {
+            project_id: session.project_id,
+        },
         provider: session.provider,
         model: session.model,
         schedule: super::core_automations_params::schedule(params.get("schedule"))?,
@@ -99,9 +103,9 @@ async fn create(
     let created = crate::services::automations::service_owned_api::create(actor, owner, input)
         .await
         .map_err(super::core_automations_params::map_error)?;
-    Ok(CoreResponse::Json(super::core_automations_params::public_automation(
-        created.definition,
-    )))
+    Ok(CoreResponse::Json(
+        super::core_automations_params::public_automation(created.definition),
+    ))
 }
 
 async fn update(
@@ -129,9 +133,9 @@ async fn update(
     )
     .await
     .map_err(super::core_automations_params::map_error)?;
-    Ok(CoreResponse::Json(super::core_automations_params::public_automation(
-        updated.definition,
-    )))
+    Ok(CoreResponse::Json(
+        super::core_automations_params::public_automation(updated.definition),
+    ))
 }
 
 async fn set_active(
@@ -139,7 +143,10 @@ async fn set_active(
     owner: &ExtensionActorIdentity,
     params: &Value,
 ) -> Result<CoreResponse, ExtensionBridgeError> {
-    let active = params.get("active").and_then(Value::as_bool).ok_or(ExtensionBridgeError::Denied)?;
+    let active = params
+        .get("active")
+        .and_then(Value::as_bool)
+        .ok_or(ExtensionBridgeError::Denied)?;
     let updated = crate::services::automations::service_owned_api::set_active(
         actor,
         owner,
@@ -149,9 +156,9 @@ async fn set_active(
     )
     .await
     .map_err(super::core_automations_params::map_error)?;
-    Ok(CoreResponse::Json(super::core_automations_params::public_automation(
-        updated.definition,
-    )))
+    Ok(CoreResponse::Json(
+        super::core_automations_params::public_automation(updated.definition),
+    ))
 }
 
 async fn delete(

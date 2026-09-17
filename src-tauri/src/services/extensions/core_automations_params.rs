@@ -20,9 +20,17 @@ pub(super) fn public_automation(value: crate::models::AutomationDefinition) -> V
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum PublicSchedule {
-    Once { local_datetime: String, timezone: String },
-    Cron { expression: String, timezone: String },
-    AfterCompletion { delay_minutes: u32 },
+    Once {
+        local_datetime: String,
+        timezone: String,
+    },
+    Cron {
+        expression: String,
+        timezone: String,
+    },
+    AfterCompletion {
+        delay_minutes: u32,
+    },
 }
 
 pub(super) fn schedule(value: Option<&Value>) -> Result<AutomationSchedule, ExtensionBridgeError> {
@@ -31,11 +39,19 @@ pub(super) fn schedule(value: Option<&Value>) -> Result<AutomationSchedule, Exte
     )
     .map_err(|_| ExtensionBridgeError::Denied)?;
     match value {
-        PublicSchedule::Once { local_datetime, timezone } => Ok(AutomationSchedule::Once {
-            local_datetime: local_datetime.parse().map_err(|_| ExtensionBridgeError::Denied)?,
+        PublicSchedule::Once {
+            local_datetime,
+            timezone,
+        } => Ok(AutomationSchedule::Once {
+            local_datetime: local_datetime
+                .parse()
+                .map_err(|_| ExtensionBridgeError::Denied)?,
             timezone: timezone.parse().map_err(|_| ExtensionBridgeError::Denied)?,
         }),
-        PublicSchedule::Cron { expression, timezone } => Ok(AutomationSchedule::Cron {
+        PublicSchedule::Cron {
+            expression,
+            timezone,
+        } => Ok(AutomationSchedule::Cron {
             expression,
             timezone: timezone.parse().map_err(|_| ExtensionBridgeError::Denied)?,
         }),
@@ -52,18 +68,19 @@ pub(super) fn id(params: &Value) -> Result<uuid::Uuid, ExtensionBridgeError> {
 }
 
 pub(super) fn revision(params: &Value) -> Result<u64, ExtensionBridgeError> {
-    params.get("revision").and_then(Value::as_u64).ok_or(ExtensionBridgeError::Denied)
+    params
+        .get("revision")
+        .and_then(Value::as_u64)
+        .ok_or(ExtensionBridgeError::Denied)
 }
 
 pub(super) fn cursor(params: &Value) -> Result<usize, ExtensionBridgeError> {
-    optional(params, "cursor")?
-        .map_or(Ok(0), |value| value.parse().map_err(|_| ExtensionBridgeError::Denied))
+    optional(params, "cursor")?.map_or(Ok(0), |value| {
+        value.parse().map_err(|_| ExtensionBridgeError::Denied)
+    })
 }
 
-pub(super) fn required<'a>(
-    params: &'a Value,
-    key: &str,
-) -> Result<&'a str, ExtensionBridgeError> {
+pub(super) fn required<'a>(params: &'a Value, key: &str) -> Result<&'a str, ExtensionBridgeError> {
     optional(params, key)?.ok_or(ExtensionBridgeError::Denied)
 }
 

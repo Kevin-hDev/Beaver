@@ -1,8 +1,8 @@
 use serde_json::Value;
 use std::time::Duration;
 
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::mcp_bridge::{arguments, config, registry};
 
 const MCP_CALL_TIMEOUT: Duration = Duration::from_secs(60);
@@ -48,14 +48,10 @@ pub(super) async fn call(args: &Value) -> ToolResult {
     {
         Ok(Ok(result)) => to_tool_result(result),
         Ok(Err(error)) => transport_failure(error),
-        Err(_) => ToolResult::timeout(
-            "mcp_call_timeout",
-            "appel MCP expiré",
-            false,
-        )
-        .with_error_hint(
-            "Vérifier l'état du service avant de relancer : l'action a pu être exécutée.",
-        ),
+        Err(_) => ToolResult::timeout("mcp_call_timeout", "appel MCP expiré", false)
+            .with_error_hint(
+                "Vérifier l'état du service avant de relancer : l'action a pu être exécutée.",
+            ),
     }
 }
 

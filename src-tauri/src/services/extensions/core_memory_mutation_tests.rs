@@ -54,9 +54,7 @@ async fn stale_memory_write_is_rejected() {
     .await;
     assert_eq!(
         stale,
-        Err(super::super::super::core_bridge::ExtensionBridgeError::Backend(
-            "core_memory_stale"
-        ))
+        Err(super::super::super::core_bridge::ExtensionBridgeError::Backend("core_memory_stale"))
     );
 }
 
@@ -101,16 +99,20 @@ async fn memory_applied_but_unindexed_is_not_retried() {
         .as_str()
         .unwrap()
         .contains("status: archived"));
-    assert_eq!(invoke(
-        &context,
-        "memory.archive",
-        json!({"scope": "global", "topicId": id}),
-        &layout,
-    )
-    .await,
-    Err(super::super::super::core_bridge::ExtensionBridgeError::Backend(
-        "core_memory_not_found"
-    )));
+    assert_eq!(
+        invoke(
+            &context,
+            "memory.archive",
+            json!({"scope": "global", "topicId": id}),
+            &layout,
+        )
+        .await,
+        Err(
+            super::super::super::core_bridge::ExtensionBridgeError::Backend(
+                "core_memory_not_found"
+            )
+        )
+    );
 }
 
 #[tokio::test]

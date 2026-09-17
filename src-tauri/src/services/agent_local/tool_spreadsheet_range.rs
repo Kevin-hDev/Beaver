@@ -12,8 +12,12 @@ pub(super) fn parse(value: &str) -> Option<(usize, usize, usize, usize)> {
     let row_start = row_index(&captures[2])?;
     let column_end = column_index(&captures[3])?;
     let row_end = row_index(&captures[4])?;
-    (row_start <= row_end && column_start <= column_end)
-        .then_some((row_start, column_start, row_end, column_end))
+    (row_start <= row_end && column_start <= column_end).then_some((
+        row_start,
+        column_start,
+        row_end,
+        column_end,
+    ))
 }
 
 pub(super) fn column_index(value: &str) -> Option<usize> {

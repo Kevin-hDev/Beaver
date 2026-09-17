@@ -4,11 +4,21 @@ use crate::services::agent_local::types_session::{
 
 #[test]
 fn subagents_require_parent_agent_mode_and_declared_parameters() {
-    assert!(!super::core_subagents::scope_allows_subagents(false, false, "auto"));
-    assert!(!super::core_subagents::scope_allows_subagents(true, true, "auto"));
-    assert!(!super::core_subagents::scope_allows_subagents(true, false, "chat"));
-    assert!(!super::core_subagents::scope_allows_subagents(true, false, "future"));
-    assert!(super::core_subagents::scope_allows_subagents(true, false, "manual"));
+    assert!(!super::core_subagents::scope_allows_subagents(
+        false, false, "auto"
+    ));
+    assert!(!super::core_subagents::scope_allows_subagents(
+        true, true, "auto"
+    ));
+    assert!(!super::core_subagents::scope_allows_subagents(
+        true, false, "chat"
+    ));
+    assert!(!super::core_subagents::scope_allows_subagents(
+        true, false, "future"
+    ));
+    assert!(super::core_subagents::scope_allows_subagents(
+        true, false, "manual"
+    ));
     assert!(super::core_subagents::validate_keys(
         "subagents.get",
         &serde_json::json!({"subagentId": "child", "extensionId": "spoof"}),
@@ -27,20 +37,24 @@ fn extension_cannot_control_another_owners_child() {
         "accumulated_tokens": 0,
         "messages": [],
         "parent_session_id": "parent"
-    })).unwrap();
-    child.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
-        extension_id: "owner.one".into(),
-        extension_version: "1.0.0".into(),
-        extension_fingerprint: "ab".repeat(32),
-    }));
+    }))
+    .unwrap();
+    child.subagent_extension_owner =
+        Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
+            extension_id: "owner.one".into(),
+            extension_version: "1.0.0".into(),
+            extension_fingerprint: "ab".repeat(32),
+        }));
     let neighbor = SubagentExtensionOwner {
         extension_id: "owner.two".into(),
         extension_version: "1.0.0".into(),
         extension_fingerprint: "ab".repeat(32),
     };
-    assert!(!crate::services::agent_local::subagent_extension_api::owner_matches(
-        &child, "parent", &neighbor,
-    ));
+    assert!(
+        !crate::services::agent_local::subagent_extension_api::owner_matches(
+            &child, "parent", &neighbor,
+        )
+    );
 }
 
 #[tokio::test]
@@ -126,11 +140,12 @@ async fn owned_child(parent_id: &str, extension_id: &str) -> AgentSession {
         .await
         .unwrap();
     child.parent_session_id = Some(parent_id.to_string());
-    child.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
-        extension_id: extension_id.into(),
-        extension_version: "1.0.0".into(),
-        extension_fingerprint: "ab".repeat(32),
-    }));
+    child.subagent_extension_owner =
+        Some(SubagentExtensionOwnership::Valid(SubagentExtensionOwner {
+            extension_id: extension_id.into(),
+            extension_version: "1.0.0".into(),
+            extension_fingerprint: "ab".repeat(32),
+        }));
     session_store::save(&child).await.unwrap();
     child
 }

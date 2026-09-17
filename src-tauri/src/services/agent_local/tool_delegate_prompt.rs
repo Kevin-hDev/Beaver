@@ -2,11 +2,12 @@ use super::types_tools::ToolResult;
 use serde_json::Value;
 
 pub(super) fn from_args(args: &Value) -> Result<String, ToolResult> {
-    let prompt = args["prompt"]
-        .as_str()
-        .ok_or_else(|| {
-            ToolResult::validation("subagent_prompt_required", "Paramètre 'prompt' manquant ou vide")
-        })?;
+    let prompt = args["prompt"].as_str().ok_or_else(|| {
+        ToolResult::validation(
+            "subagent_prompt_required",
+            "Paramètre 'prompt' manquant ou vide",
+        )
+    })?;
     if prompt.trim().is_empty() {
         return Err(ToolResult::validation(
             "subagent_prompt_required",

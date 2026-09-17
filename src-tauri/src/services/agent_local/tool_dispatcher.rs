@@ -6,9 +6,9 @@ use crate::services::agent_local::{
 use serde_json::Value;
 use std::path::Path;
 
-pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
-pub(crate) use super::tool_dispatcher_entry::dispatch_authorized_with_progress;
 pub(crate) use super::extension_tool_authority::ToolDispatchAuthority;
+pub(crate) use super::tool_dispatcher_entry::dispatch_authorized_with_progress;
+pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
 #[cfg(test)]
 pub(crate) use super::tool_dispatcher_error::enrich as enrich_error;
 pub use crate::services::agent_local::tool_definitions::get_tool_definitions;

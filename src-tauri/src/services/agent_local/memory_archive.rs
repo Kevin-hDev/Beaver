@@ -51,9 +51,7 @@ pub async fn store(
 }
 
 fn reject_archive_symlink(path: &Path) -> Result<(), String> {
-    if std::fs::symlink_metadata(path)
-        .is_ok_and(|metadata| metadata.file_type().is_symlink())
-    {
+    if std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
         return Err("Lien symbolique mémoire interdit.".into());
     }
     Ok(())

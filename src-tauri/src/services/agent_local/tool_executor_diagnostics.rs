@@ -36,5 +36,5 @@ pub async fn completed(
         summary.as_ref(),
         result.is_error,
     )
-        .await;
+    .await;
 }

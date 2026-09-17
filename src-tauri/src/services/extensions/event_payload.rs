@@ -101,7 +101,10 @@ pub(super) fn tool(
     }
 }
 
-#[expect(clippy::too_many_arguments, reason = "future producer contract stays explicit")]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "future producer contract stays explicit"
+)]
 pub(super) fn automation_status(
     event: &'static str,
     session_id: &str,
@@ -148,7 +151,10 @@ pub(super) fn subagent_status(
     )
 }
 
-#[expect(clippy::too_many_arguments, reason = "closed event envelope stays explicit")]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "closed event envelope stays explicit"
+)]
 fn owned_status(
     event: &'static str,
     session_id: &str,
@@ -162,8 +168,14 @@ fn owned_status(
     terminal: bool,
 ) -> EventDraft {
     let mut payload = serde_json::Map::new();
-    payload.insert(id_field.to_string(), serde_json::Value::String(id.to_string()));
-    payload.insert("status".to_string(), serde_json::Value::String(status.to_string()));
+    payload.insert(
+        id_field.to_string(),
+        serde_json::Value::String(id.to_string()),
+    );
+    payload.insert(
+        "status".to_string(),
+        serde_json::Value::String(status.to_string()),
+    );
     payload.insert(
         "errorCode".to_string(),
         error_code.map_or(serde_json::Value::Null, |code| {

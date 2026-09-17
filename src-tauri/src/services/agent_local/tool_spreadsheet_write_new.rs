@@ -57,13 +57,11 @@ pub(super) fn create_xlsx(
         }
     }
 
-    workbook
-        .save(path)
-        .map_err(|_| {
-            super::tool_spreadsheet_error::SpreadsheetWriteError::write(
-                "Impossible de sauvegarder le fichier xlsx",
-            )
-        })
+    workbook.save(path).map_err(|_| {
+        super::tool_spreadsheet_error::SpreadsheetWriteError::write(
+            "Impossible de sauvegarder le fichier xlsx",
+        )
+    })
 }
 
 fn apply_set_cell(ws: &mut rust_xlsxwriter::Worksheet, op: &Value) -> Result<(), String> {

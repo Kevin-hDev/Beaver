@@ -77,8 +77,7 @@ pub(crate) async fn spawn_delegate_owned(
                 move || {
                     let _ = spawn_emitter.send(spawn_event);
                 },
-            )
-            {
+            ) {
                 super::subagent_registry::unregister(&child_id).await;
                 if let Err(mark_err) =
                     super::session_subagents::mark_status(&child_id, super::subagent_status::FAILED)
@@ -86,12 +85,12 @@ pub(crate) async fn spawn_delegate_owned(
                 {
                     ::log::error!("[delegate] mark_status failed {child_id}: {mark_err}");
                 }
-                return Err(ToolResult::internal(
-                    "subagent_spawn_dispatch_failed",
-                    e,
-                    false,
-                )
-                .with_error_hint("Inspecter le sous-agent créé avant de relancer la délégation."));
+                return Err(
+                    ToolResult::internal("subagent_spawn_dispatch_failed", e, false)
+                        .with_error_hint(
+                            "Inspecter le sous-agent créé avant de relancer la délégation.",
+                        ),
+                );
             }
             if extension_owned {
                 let _ = crate::services::extensions::subagent_status_event(

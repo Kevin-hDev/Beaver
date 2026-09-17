@@ -2,10 +2,7 @@ use super::requested_model_id;
 
 #[test]
 fn requested_model_id_is_optional_and_strictly_validated() {
-    assert_eq!(
-        requested_model_id(&serde_json::json!({})).unwrap(),
-        None
-    );
+    assert_eq!(requested_model_id(&serde_json::json!({})).unwrap(), None);
     assert!(requested_model_id(&serde_json::json!({
         "requested_model_id": ["moirai-2.0-r-small"]
     }))

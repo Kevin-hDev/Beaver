@@ -12,8 +12,8 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
-use super::tool_executor_helpers::post_record_read;
 use super::stream_events::AgentEventEmitter;
+use super::tool_executor_helpers::post_record_read;
 
 pub(crate) const MAX_PARALLEL: usize = 10;
 const READ_BATCH_TIMEOUT: Duration = Duration::from_secs(600);

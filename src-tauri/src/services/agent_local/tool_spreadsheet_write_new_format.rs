@@ -48,12 +48,9 @@ pub(super) fn apply_set_number_format(ws: &mut Worksheet, op: &Value) -> Result<
                 Ok(number) => ws.write_number_with_format(row, col, number, &format),
                 Err(_) => ws.write_string_with_format(row, col, text, &format),
             },
-            Value::Number(number) => ws.write_number_with_format(
-                row,
-                col,
-                number.as_f64().unwrap_or(0.0),
-                &format,
-            ),
+            Value::Number(number) => {
+                ws.write_number_with_format(row, col, number.as_f64().unwrap_or(0.0), &format)
+            }
             _ => ws.write_blank(row, col, &format),
         }
     };
@@ -81,16 +78,9 @@ pub(super) fn apply_merge_cells(ws: &mut Worksheet, op: &Value) -> Result<(), St
         .ok_or_else(|| "Référence start_cell invalide".to_string())?;
     let (last_row, last_col) = super::tool_spreadsheet_write::parse_cell_ref(end)
         .ok_or_else(|| "Référence end_cell invalide".to_string())?;
-    ws.merge_range(
-        first_row,
-        first_col,
-        last_row,
-        last_col,
-        "",
-        &Format::new(),
-    )
-    .map(|_| ())
-    .map_err(|_| "Erreur fusion cellules".to_string())
+    ws.merge_range(first_row, first_col, last_row, last_col, "", &Format::new())
+        .map(|_| ())
+        .map_err(|_| "Erreur fusion cellules".to_string())
 }
 
 pub(super) fn apply_set_row_height(ws: &mut Worksheet, op: &Value) -> Result<(), String> {

@@ -65,8 +65,7 @@ mod tests {
         );
         let content = render("bash", &result);
         let (metadata, output) = content.split_once('\n').expect("metadata and output");
-        let rendered: serde_json::Value =
-            serde_json::from_str(metadata).expect("model envelope");
+        let rendered: serde_json::Value = serde_json::from_str(metadata).expect("model envelope");
 
         assert_eq!(rendered["status"], "error");
         assert_eq!(rendered["error"]["code"], "shell_exit_nonzero");
@@ -79,8 +78,7 @@ mod tests {
         let result = ToolResult::partial("some files", ["one file was unreadable"]);
         let content = render("grep", &result);
         let (metadata, output) = content.split_once('\n').expect("metadata and output");
-        let rendered: serde_json::Value =
-            serde_json::from_str(metadata).expect("model envelope");
+        let rendered: serde_json::Value = serde_json::from_str(metadata).expect("model envelope");
 
         assert_eq!(rendered["status"], "partial");
         assert_eq!(rendered["warnings"][0], "one file was unreadable");
@@ -91,8 +89,7 @@ mod tests {
     fn running_process_is_not_serialized_as_a_completed_success() {
         let content = render("bash", &ToolResult::running("session=123"));
         let (metadata, output) = content.split_once('\n').expect("metadata and output");
-        let rendered: serde_json::Value =
-            serde_json::from_str(metadata).expect("model envelope");
+        let rendered: serde_json::Value = serde_json::from_str(metadata).expect("model envelope");
 
         assert_eq!(rendered["status"], "running");
         assert_eq!(output, "session=123");

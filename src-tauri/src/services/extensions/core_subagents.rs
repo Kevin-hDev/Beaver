@@ -62,12 +62,10 @@ async fn list(
         .unwrap_or("0")
         .parse::<usize>()
         .map_err(|_| ExtensionBridgeError::Denied)?;
-    let items = crate::services::agent_local::subagent_extension_api::list(
-        &scope.agent.session_id,
-        owner,
-    )
-    .await
-    .map_err(map_error)?;
+    let items =
+        crate::services::agent_local::subagent_extension_api::list(&scope.agent.session_id, owner)
+            .await
+            .map_err(map_error)?;
     let total = items.len();
     let page = items
         .into_iter()
@@ -75,8 +73,11 @@ async fn list(
         .take(super::types::MAX_SDK_PAGE_RESULTS)
         .map(|child| public(&child))
         .collect::<Vec<_>>();
-    let next = (offset.saturating_add(page.len()) < total).then(|| (offset + page.len()).to_string());
-    Ok(CoreResponse::Json(json!({"items": page, "nextCursor": next})))
+    let next =
+        (offset.saturating_add(page.len()) < total).then(|| (offset + page.len()).to_string());
+    Ok(CoreResponse::Json(
+        json!({"items": page, "nextCursor": next}),
+    ))
 }
 
 async fn get(
@@ -117,7 +118,9 @@ async fn cancel(
     )
     .await
     .map_err(map_error)?;
-    Ok(CoreResponse::Json(json!({"accepted": true, "stopped": stopped})))
+    Ok(CoreResponse::Json(
+        json!({"accepted": true, "stopped": stopped}),
+    ))
 }
 
 async fn owned(

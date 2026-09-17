@@ -76,7 +76,13 @@ pub(super) async fn archive(
     let outcome = crate::services::agent_local::memory_store::archive_topic_result(scope, &path)
         .await
         .map_err(map_write_error)?;
-    mutation_response(session, scope, &path, outcome.content, outcome.index_updated)
+    mutation_response(
+        session,
+        scope,
+        &path,
+        outcome.content,
+        outcome.index_updated,
+    )
 }
 
 fn mutation_response(
@@ -92,7 +98,8 @@ fn mutation_response(
         crate::services::agent_local::memory_store::scope_kind(scope),
     )
     .map_err(|_| ExtensionBridgeError::Failed)?;
-    let (content, _) = crate::services::agent_local::memory_runtime::consume_result(session, &content);
+    let (content, _) =
+        crate::services::agent_local::memory_runtime::consume_result(session, &content);
     Ok(CoreResponse::Json(json!({
         "topic": super::core_memory_reads::topic_value(&parsed.topic, content),
         "applied": true,
@@ -100,7 +107,9 @@ fn mutation_response(
     })))
 }
 
-fn mutation_result(result: Result<Vec<String>, MemoryEditError>) -> Result<bool, ExtensionBridgeError> {
+fn mutation_result(
+    result: Result<Vec<String>, MemoryEditError>,
+) -> Result<bool, ExtensionBridgeError> {
     match result {
         Ok(_) => Ok(true),
         Err(MemoryEditError::Stale) => Err(ExtensionBridgeError::Backend("core_memory_stale")),
@@ -111,7 +120,9 @@ fn mutation_result(result: Result<Vec<String>, MemoryEditError>) -> Result<bool,
     }
 }
 
-fn write_result(result: Result<Vec<String>, MemoryWriteError>) -> Result<bool, ExtensionBridgeError> {
+fn write_result(
+    result: Result<Vec<String>, MemoryWriteError>,
+) -> Result<bool, ExtensionBridgeError> {
     match result {
         Ok(_) => Ok(true),
         Err(MemoryWriteError::AppliedButIndexFailed(_)) => Ok(false),

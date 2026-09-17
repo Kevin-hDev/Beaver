@@ -382,17 +382,15 @@ async fn assert_descendant_creation(native_owner: bool) {
     let parent_id = uuid::Uuid::parse_str(created["data"]["id"].as_str().unwrap()).unwrap();
     if !native_owner {
         crate::services::automations::mutate(|items| {
-            items[0].extension_owner = Some(
-                crate::models::AutomationExtensionOwnership::Valid(
-                    crate::models::AutomationExtensionOwner {
-                        extension_id: "com.example.owner".into(),
-                        extension_version: "1.0.0".into(),
-                        extension_fingerprint: "ab".repeat(32),
-                        approved_content_sha256: None,
-                        approved_at: None,
-                    },
-                ),
-            );
+            items[0].extension_owner = Some(crate::models::AutomationExtensionOwnership::Valid(
+                crate::models::AutomationExtensionOwner {
+                    extension_id: "com.example.owner".into(),
+                    extension_version: "1.0.0".into(),
+                    extension_fingerprint: "ab".repeat(32),
+                    approved_content_sha256: None,
+                    approved_at: None,
+                },
+            ));
             Ok(())
         })
         .await

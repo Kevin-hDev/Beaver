@@ -9,19 +9,13 @@ pub async fn is_git_repository(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn create(
-    project: &Path,
-    child_id: &str,
-    execution_id: &str,
-) -> Result<PathBuf, String> {
+pub async fn create(project: &Path, child_id: &str, execution_id: &str) -> Result<PathBuf, String> {
     super::subagent_directory_limits::validate_source(project).await?;
     let repository = repository_path(child_id, execution_id)?;
     let worktree = super::subagent_worktree::path_for_execution(child_id, execution_id)?;
     ensure_absent(&repository).await?;
     ensure_absent(&worktree).await?;
-    let parent = repository
-        .parent()
-        .ok_or_else(generic_error)?;
+    let parent = repository.parent().ok_or_else(generic_error)?;
     tokio::fs::create_dir_all(parent)
         .await
         .map_err(|_| generic_error())?;
@@ -135,13 +129,21 @@ async fn run(
 ) -> Result<bool, String> {
     let mut command = super::subagent_directory_git::command();
     if let Some((work_tree, repository)) = work_tree {
-        command.arg("--git-dir").arg(repository).arg("--work-tree").arg(work_tree);
+        command
+            .arg("--git-dir")
+            .arg(repository)
+            .arg("--work-tree")
+            .arg(work_tree);
     } else if let Some(repository) = git_dir {
         command.arg("--git-dir").arg(repository);
     }
     command.args(args).kill_on_drop(true);
     command.stdout(Stdio::null()).stderr(Stdio::null());
-    command.status().await.map(|status| status.success()).map_err(|_| generic_error())
+    command
+        .status()
+        .await
+        .map(|status| status.success())
+        .map_err(|_| generic_error())
 }
 
 async fn ensure_absent(path: &Path) -> Result<(), String> {

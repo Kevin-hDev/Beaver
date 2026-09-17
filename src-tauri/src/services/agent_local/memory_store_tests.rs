@@ -114,10 +114,13 @@ async fn settings_archive_updates_metadata_and_active_indexes() {
         .await
         .unwrap();
     assert!(archived.contains("status: archived"));
-    assert!(!scope.summary_path().exists() || !tokio::fs::read_to_string(scope.summary_path())
-        .await
-        .unwrap()
-        .contains("Interface compacte"));
+    assert!(
+        !scope.summary_path().exists()
+            || !tokio::fs::read_to_string(scope.summary_path())
+                .await
+                .unwrap()
+                .contains("Interface compacte")
+    );
 }
 
 #[tokio::test]

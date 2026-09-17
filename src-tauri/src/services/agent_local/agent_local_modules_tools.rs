@@ -5,8 +5,12 @@ pub mod subagent_working_dir;
 pub mod subagent_worktree;
 include!("agent_local_modules_shell.rs");
 include!("agent_local_modules_extensions.rs");
+#[cfg(test)]
+mod extension_tool_interception_paths_tests;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
+mod permission_pending;
+pub(crate) mod subagent_extension_api;
 #[cfg(test)]
 mod tool_artifact_tests;
 pub mod tool_automation;
@@ -14,7 +18,6 @@ pub mod tool_automation;
 mod tool_automation_tests;
 mod tool_automation_validation;
 pub mod tool_availability;
-mod permission_pending;
 pub mod tool_catalog;
 mod tool_catalog_filter;
 #[cfg(test)]
@@ -36,7 +39,6 @@ pub mod tool_definitions_subagent;
 pub mod tool_definitions_todo;
 pub mod tool_definitions_web;
 pub mod tool_delegate;
-pub(crate) mod subagent_extension_api;
 pub mod tool_delegate_child;
 mod tool_delegate_identity;
 mod tool_delegate_prompt;
@@ -44,9 +46,8 @@ mod tool_dispatch_trace;
 pub mod tool_dispatcher;
 pub mod tool_dispatcher_delegate;
 mod tool_dispatcher_entry;
-mod tool_dispatcher_events;
-mod tool_dispatcher_validation;
 mod tool_dispatcher_error;
+mod tool_dispatcher_events;
 mod tool_dispatcher_execute;
 pub mod tool_dispatcher_fallback;
 mod tool_dispatcher_finalize;
@@ -72,6 +73,7 @@ pub mod tool_dispatcher_shell;
 mod tool_dispatcher_shell_error;
 #[cfg(test)]
 pub mod tool_dispatcher_tests;
+mod tool_dispatcher_validation;
 #[cfg(test)]
 pub mod tool_document_format_tests;
 pub mod tool_document_read;
@@ -88,8 +90,6 @@ pub mod tool_document_write_tests;
 pub mod tool_document_write_xml;
 mod tool_execution_artifacts;
 pub mod tool_execution_outcome;
-#[cfg(test)]
-mod extension_tool_interception_paths_tests;
 pub mod tool_executor;
 pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;

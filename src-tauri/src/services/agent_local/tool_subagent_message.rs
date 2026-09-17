@@ -26,14 +26,16 @@ pub(super) async fn run_with_cancel(
     let payload = {
         let lock = super::session_store::lock_session(child_id).await;
         let _guard = lock.lock().await;
-        let Ok(mut child) = super::tool_subagent_control::owned_child_by_id(child_id, parent_id).await
+        let Ok(mut child) =
+            super::tool_subagent_control::owned_child_by_id(child_id, parent_id).await
         else {
             return ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.");
         };
         let active_run = super::subagent_registry::active_run_for_child(&child.id).await;
-        if let Some(active) = active_run.as_ref().filter(|run| {
-            !run.cancelled && child.subagent_run_id.as_deref() == Some(&run.run_id)
-        }) {
+        if let Some(active) = active_run
+            .as_ref()
+            .filter(|run| !run.cancelled && child.subagent_run_id.as_deref() == Some(&run.run_id))
+        {
             if super::subagent_registry::prompt_was_delivered(
                 &child.id,
                 &active.execution_id,
@@ -59,9 +61,9 @@ pub(super) async fn run_with_cancel(
 }
 
 fn valid_prompt(args: &Value) -> Option<&str> {
-    args["prompt"].as_str().filter(|value| {
-        !value.trim().is_empty() && value.chars().count() <= MAX_PROMPT_SIZE
-    })
+    args["prompt"]
+        .as_str()
+        .filter(|value| !value.trim().is_empty() && value.chars().count() <= MAX_PROMPT_SIZE)
 }
 
 fn valid_child_id(args: &Value) -> Option<&str> {

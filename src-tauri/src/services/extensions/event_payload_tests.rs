@@ -63,12 +63,7 @@ fn future_owned_events_keep_distinct_bounded_flows() {
         false,
     );
     let subagent = super::event_payload::subagent_status(
-        "session",
-        "request",
-        "child",
-        "running",
-        true,
-        false,
+        "session", "request", "child", "running", true, false,
     );
     assert_eq!(automation.payload["automationId"], "automation");
     assert_eq!(subagent.payload["subagentId"], "child");

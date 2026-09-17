@@ -1,5 +1,5 @@
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::types_tools::ToolResult;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,

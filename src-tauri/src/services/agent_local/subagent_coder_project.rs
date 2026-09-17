@@ -1,9 +1,6 @@
 use std::path::{Path, PathBuf};
 
-pub async fn resolve(
-    project_id: Option<&str>,
-    child_session_id: &str,
-) -> Result<PathBuf, String> {
+pub async fn resolve(project_id: Option<&str>, child_session_id: &str) -> Result<PathBuf, String> {
     if let Some(project_id) = project_id {
         if let Some(project) = super::project_store::list()
             .await

@@ -17,19 +17,18 @@ fn v6(owner: serde_json::Value) -> Vec<u8> {
 
 #[test]
 fn session_v7_preserves_v6_artifacts_and_future_readability() {
-    let loaded = super::session_migration::read(
-        &v6(serde_json::Value::Null),
-        PathBuf::from("session.json"),
-    )
-    .unwrap();
+    let loaded =
+        super::session_migration::read(&v6(serde_json::Value::Null), PathBuf::from("session.json"))
+            .unwrap();
     assert_eq!(loaded.session().schema_version, 7);
     assert!(loaded.session().subagent_extension_owner.is_none());
 
-    let future = String::from_utf8(super::session_migration::serialize_current(loaded.session()).unwrap())
-        .unwrap()
-        .replace("\"schema_version\": 7", "\"schema_version\": 8");
-    let future = super::session_migration::read(future.as_bytes(), PathBuf::from("future.json"))
-        .unwrap();
+    let future =
+        String::from_utf8(super::session_migration::serialize_current(loaded.session()).unwrap())
+            .unwrap()
+            .replace("\"schema_version\": 7", "\"schema_version\": 8");
+    let future =
+        super::session_migration::read(future.as_bytes(), PathBuf::from("future.json")).unwrap();
     assert_eq!(future.session().schema_version, 8);
 }
 
@@ -42,11 +41,9 @@ fn malformed_extension_owner_keeps_history_readable_but_unowned() {
             "\"subagent_extension_owner\":null",
             "\"subagent_extension_owner\":{\"extensionId\":[\"invalid\"]}",
         );
-    let loaded = super::session_migration::read(
-        malformed_v7.as_bytes(),
-        PathBuf::from("session.json"),
-    )
-    .unwrap();
+    let loaded =
+        super::session_migration::read(malformed_v7.as_bytes(), PathBuf::from("session.json"))
+            .unwrap();
     assert!(matches!(
         loaded.session().subagent_extension_owner,
         Some(super::types_session::SubagentExtensionOwnership::Invalid(_))

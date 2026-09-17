@@ -1,8 +1,8 @@
+#[cfg(unix)]
+use crate::services::agent_local::tool_files::write_file;
 use crate::services::agent_local::tool_files::{
     edit_file, read_file, write_file_in_roots, DEFAULT_LIMIT,
 };
-#[cfg(unix)]
-use crate::services::agent_local::tool_files::write_file;
 use crate::services::agent_local::tool_result_contract::ToolResultStatus;
 // MAX_LIMIT est 50_000 — on le réimporte pour les tests de borne
 const MAX_LIMIT: usize = 50_000;
@@ -208,7 +208,10 @@ async fn write_file_uses_the_same_effective_roots_for_both_checks() {
 
     assert!(roots.iter().any(|root| canonical_working.starts_with(root)));
     assert!(!result.is_error, "{}", result.content);
-    assert_eq!(std::fs::read_to_string(working_dir.join("created.txt")).unwrap(), "managed");
+    assert_eq!(
+        std::fs::read_to_string(working_dir.join("created.txt")).unwrap(),
+        "managed"
+    );
 }
 
 #[tokio::test]

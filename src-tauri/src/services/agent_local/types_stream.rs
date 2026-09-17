@@ -95,7 +95,9 @@ pub enum StreamEvent {
     TurnEnd {},
     PermissionRequest(super::permission_request::PermissionRequest),
     #[serde(rename_all = "camelCase")]
-    PermissionClosed { id: String },
+    PermissionClosed {
+        id: String,
+    },
     #[serde(rename_all = "camelCase")]
     Done {
         eval_count: Option<u32>,

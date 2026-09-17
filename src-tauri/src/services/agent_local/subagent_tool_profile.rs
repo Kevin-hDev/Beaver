@@ -162,10 +162,7 @@ mod replacement_tests {
             "function": {"name": "write_file"}
         });
 
-        assert!(super::replacement_is_filtered(
-            &replacement,
-            &["read_file"]
-        ));
+        assert!(super::replacement_is_filtered(&replacement, &["read_file"]));
         assert!(!super::replacement_is_filtered(
             &replacement,
             &["read_file", "write_file"]

@@ -173,7 +173,6 @@ impl EventDelivery {
         }
     }
 
-
     #[cfg(test)]
     pub(super) fn test_delivery() -> (Self, tokio::sync::mpsc::Receiver<EventEnvelope>) {
         let (sender, receiver) = tokio::sync::mpsc::channel(1);

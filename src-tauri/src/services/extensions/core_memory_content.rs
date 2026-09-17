@@ -23,11 +23,7 @@ pub(super) fn for_create(
     )
 }
 
-pub(super) fn for_update(
-    content: &str,
-    current: &MemoryTopic,
-    scope: &str,
-) -> Result<String, ()> {
+pub(super) fn for_update(content: &str, current: &MemoryTopic, scope: &str) -> Result<String, ()> {
     let now = chrono::Utc::now().to_rfc3339();
     rewrite(
         content,
@@ -90,11 +86,17 @@ mod tests {
     #[test]
     fn controlled_fields_are_unique_and_owned_by_rust() {
         let input = "---\nid: old\nscope: global\ntype: preference\nstatus: stale\ntitle: T\nsummary: S\ncreated_at: old\nupdated_at: old\ntags: []\nsource: parent\nsession_id: old\n---\nBody";
-        let output = super::for_create(input, "new", "project", "session", "confirmed", "user")
-            .unwrap();
+        let output =
+            super::for_create(input, "new", "project", "session", "confirmed", "user").unwrap();
         assert!(output.contains("id: new\nscope: project"));
         assert!(output.contains("status: confirmed"));
         assert!(output.contains("session_id: session"));
-        assert_eq!(output.lines().filter(|line| line.starts_with("id:")).count(), 1);
+        assert_eq!(
+            output
+                .lines()
+                .filter(|line| line.starts_with("id:"))
+                .count(),
+            1
+        );
     }
 }
