@@ -1,0 +1,16 @@
+Correction review 09 — inventaire des annulations de flux
+
+Les trois routes restantes relevées dans l’inventaire donnent maintenant une priorité déterministe à une annulation déjà demandée : WebSocket Codex, flux Ollama interactif et génération texte Ollama. Un test de régression couvre chaque site avec une donnée ou un résultat déjà disponible. L’inventaire du motif signalé par la review est ainsi clos.
+
+Validation exécutée sur ce commit :
+- test WebSocket d’annulation : 1 réussi, 0 échec
+- test flux Ollama d’annulation : 1 réussi, 0 échec
+- test génération texte Ollama d’annulation : 1 réussi, 0 échec
+- cargo test services::codex_client::websocket::tests : 8 réussis, 0 échec
+- cargo test services::agent_local::ollama_stream_process_tests : 12 réussis, 0 échec
+- cargo test services::llm::text_generation::tests : 1 réussi, 0 échec
+- cargo check : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- cargo fmt --all -- --check : réussi
+- git diff --check : réussi
+- graphify update . : réussi
