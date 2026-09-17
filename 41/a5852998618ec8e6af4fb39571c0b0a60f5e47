@@ -1,0 +1,24 @@
+M29 — conditions de compilation du navigateur nommées par capacité.
+
+Changement :
+- browser_native_api désigne les contrats disponibles sur macOS et Windows, y compris windows-tests sans moteur lié ;
+- native_browser reste l’autorité du moteur CEF réellement lié : macOS et Windows hors windows-tests ;
+- les expressions macOS/Windows équivalentes du domaine navigateur utilisent browser_native_api ;
+- les chemins Windows qui exigent le moteur utilisent all(native_browser, target_os = "windows") ;
+- les branches réellement propres à macOS ou Windows gardent target_os.
+
+Validation locale :
+- cargo test services::browser:: : 205 réussis, 2 générateurs ignorés ;
+- cargo check : réussi ;
+- cargo check --features windows-tests sur macOS : réussi ;
+- cargo clippy --all-targets -- -D warnings : réussi ;
+- npm run test:cef : 45 réussis, 1 test PowerShell Windows ignoré sur macOS ;
+- cargo fmt --all -- --check et git diff --check : réussis ;
+- aucune ancienne expression équivalente ne reste dans le périmètre ;
+- graphify update . : réussi.
+
+Incidents et limites :
+- le premier passage navigateur a trouvé un test de politique qui attendait encore l’ancienne expression cfg ; il a été aligné puis les 205 tests ont réussi ;
+- cargo check croisé Linux s’arrête dans glib-sys faute de sysroot pkg-config/GLib ;
+- cargo check croisé Windows, avec et sans windows-tests, s’arrête dans aws-lc-sys faute d’en-têtes C/Windows sur macOS ;
+- les jobs CI existants backend-windows-native et backend-windows restent donc l’autorité d’exécution Windows, contrôlée par npm run test:cef.
