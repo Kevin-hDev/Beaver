@@ -11,13 +11,12 @@ pub fn check_write_guard(
     working_dir: &std::path::Path,
     write_guard: &mut WriteGuard,
 ) -> Result<(), String> {
-    let path_str = match name {
-        "write_file" | "edit_file" | "write_spreadsheet" | "write_document" => {
-            args["path"].as_str().unwrap_or("")
-        }
-        "transform_image" => args["output_path"].as_str().unwrap_or(""),
-        _ => "",
-    };
+    let path_str = super::tool_path_args::first_value(
+        name,
+        super::tool_path_args::PathUse::Write,
+        args,
+    )
+    .unwrap_or("");
     if !path_str.is_empty() {
         let p = std::path::Path::new(path_str);
         let resolved = if p.is_absolute() {
@@ -45,12 +44,20 @@ pub fn post_record_read(
     }
     match name {
         "read_file" | "read_document" | "read_spreadsheet" => {
-            if let Some(path_str) = args["path"].as_str() {
+            if let Some(path_str) = super::tool_path_args::first_value(
+                name,
+                super::tool_path_args::PathUse::Read,
+                args,
+            ) {
                 record_path(write_guard, path_str, working_dir);
             }
         }
         "transform_image" => {
-            if let Some(path_str) = args["input_path"].as_str() {
+            if let Some(path_str) = super::tool_path_args::first_value(
+                name,
+                super::tool_path_args::PathUse::Read,
+                args,
+            ) {
                 record_path(write_guard, path_str, working_dir);
             }
         }
@@ -90,13 +97,11 @@ pub fn post_record_write(
         write_guard.record_reads(&paths);
         return;
     }
-    let path_str = match name {
-        "write_file" | "edit_file" | "write_spreadsheet" | "write_document" => {
-            args["path"].as_str()
-        }
-        "transform_image" => args["output_path"].as_str(),
-        _ => return,
-    };
+    let path_str = super::tool_path_args::first_value(
+        name,
+        super::tool_path_args::PathUse::Write,
+        args,
+    );
     if let Some(path_str) = path_str {
         record_path(write_guard, path_str, working_dir);
     }
@@ -120,12 +125,7 @@ pub fn resolve_tool_path(
     args: &serde_json::Value,
     working_dir: &std::path::Path,
 ) -> Option<String> {
-    let path_str = match name {
-        "read_file" | "write_file" | "edit_file" | "read_spreadsheet" | "read_document"
-        | "write_spreadsheet" | "write_document" => args["path"].as_str(),
-        "transform_image" => args["input_path"].as_str(),
-        _ => return None,
-    }?;
+    let path_str = super::tool_path_args::primary_value(name, args)?;
     let p = std::path::Path::new(path_str);
     let resolved = if p.is_absolute() {
         p.to_path_buf()

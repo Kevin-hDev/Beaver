@@ -105,11 +105,17 @@ pub fn validate_for_profile(
     }
     match tool_name {
         "read_file" | "write_file" | "edit_file" | "list_dir" => {
-            validate_path_argument(args.get("path"), working_dir)?;
+            let path = super::tool_path_args::primary_value(tool_name, args)
+                .ok_or_else(|| "Chemin invalide.".to_string())?;
+            validate_confined_path(path, working_dir)?;
         }
         "grep" | "glob" => {
-            if let Some(path) = args.get("path") {
-                validate_path_argument(Some(path), working_dir)?;
+            if let Some(path) = super::tool_path_args::first_value(
+                tool_name,
+                super::tool_path_args::PathUse::Read,
+                args,
+            ) {
+                validate_confined_path(path, working_dir)?;
             }
         }
         "bash" => validate_bash(profile, args, working_dir)?,
@@ -172,7 +178,11 @@ fn validate_bash(
     args: &Value,
     working_dir: &Path,
 ) -> Result<(), String> {
-    if let Some(workdir) = args.get("workdir") {
+    if let Some(workdir) = super::tool_path_args::value(
+        "bash",
+        super::tool_path_args::PathUse::WorkingDirectory,
+        args,
+    ) {
         validate_path_argument(Some(workdir), working_dir)?;
     }
     let command = args

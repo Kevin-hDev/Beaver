@@ -79,6 +79,19 @@ mod tests {
     }
 
     #[test]
+    fn pre_hook_checks_nonstandard_path_fields() {
+        for (tool, args) in [
+            ("transform_image", json!({"input_path": "../image.png"})),
+            ("forecast_run", json!({"file_path": "../data.csv"})),
+        ] {
+            assert!(matches!(
+                run_pre_hooks(tool, &args),
+                PreHookDecision::Deny(_)
+            ));
+        }
+    }
+
+    #[test]
     fn post_hook_passes_through() {
         let result = ToolResult::ok("contenu du fichier");
         let args = json!({ "path": "/some/file.txt" });

@@ -123,6 +123,9 @@ pub mod tool_group_catalog;
 pub mod tool_hooks;
 #[cfg(test)]
 pub mod tool_hooks_tests;
+pub mod tool_path_args;
+#[cfg(test)]
+mod tool_path_args_tests;
 mod tool_image_inspect;
 pub mod tool_image_process;
 #[cfg(test)]

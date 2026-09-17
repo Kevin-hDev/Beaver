@@ -32,47 +32,28 @@ pub fn run_pre_hooks(tool_name: &str, args: &Value) -> PreHookDecision {
         );
     }
 
-    if matches!(
-        tool_name,
-        "write_file"
-            | "edit_file"
-            | "read_file"
-            | "write_spreadsheet"
-            | "write_document"
-            | "list_dir"
-            | "glob"
-            | "grep"
-            | "read_spreadsheet"
-            | "read_document"
-    ) {
-        if let Some(path) = args["path"].as_str() {
-            if path.contains("..") {
-                return PreHookDecision::Deny("Chemin avec '..' interdit".into());
-            }
+    for field in super::tool_path_args::fields(tool_name)
+        .iter()
+        .filter(|field| field.usage != super::tool_path_args::PathUse::WorkingDirectory)
+    {
+        if args[field.name]
+            .as_str()
+            .is_some_and(|path| path.contains(".."))
+        {
+            return PreHookDecision::Deny("Chemin avec '..' interdit".into());
         }
     }
 
-    if tool_name == "transform_image" {
-        for key in &["input_path", "output_path"] {
-            if let Some(path) = args[*key].as_str() {
-                if path.contains("..") {
-                    return PreHookDecision::Deny("Chemin avec '..' interdit".into());
-                }
-            }
-        }
-    }
-
-    if matches!(
+    if super::tool_path_args::first_value(
         tool_name,
-        "write_file" | "edit_file" | "write_spreadsheet" | "write_document"
-    ) {
-        if let Some(path) = args["path"].as_str() {
-            if is_protected_app_file(path) {
-                return PreHookDecision::Deny(
-                    "Écriture interdite sur les fichiers de configuration de l'application".into(),
-                );
-            }
-        }
+        super::tool_path_args::PathUse::Write,
+        args,
+    )
+    .is_some_and(is_protected_app_file)
+    {
+        return PreHookDecision::Deny(
+            "Écriture interdite sur les fichiers de configuration de l'application".into(),
+        );
     }
 
     PreHookDecision::Allow

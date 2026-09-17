@@ -6,29 +6,25 @@ const MAX_JSON: usize = 1000;
 
 pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Value> {
     let mut out = Map::new();
+    for field in super::tool_path_args::fields(tool_name) {
+        add_path(&mut out, field.name, args, working_dir);
+    }
     match tool_name {
         "read_file" | "write_file" | "edit_file" | "list_dir" | "read_document"
         | "write_document" | "read_spreadsheet" | "write_spreadsheet"
-        | "transform_image" => {
-            add_path(&mut out, "path", args, working_dir);
-            add_path(&mut out, "input_path", args, working_dir);
-            add_path(&mut out, "output_path", args, working_dir);
-        }
+        | "transform_image" | "forecast_data_audit" | "forecast_run" => {}
         "bash" => {
             if let Some(command) = args["command"].as_str() {
                 out.insert("command".to_string(), json!(safe_command(command)));
             }
-            add_path(&mut out, "workdir", args, working_dir);
         }
         "bash_control" => add_text(&mut out, "session_id", args),
         "grep" => {
             add_text(&mut out, "pattern", args);
             add_text(&mut out, "glob", args);
-            add_path(&mut out, "path", args, working_dir);
         }
         "glob" => {
             add_text(&mut out, "pattern", args);
-            add_path(&mut out, "path", args, working_dir);
         }
         "web_search" | "web_fetch" => {
             add_text(&mut out, "query", args);

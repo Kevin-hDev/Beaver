@@ -132,11 +132,13 @@ pub fn lexical_path(raw_path: &str, working_dir: &Path) -> Result<PathBuf, Strin
 }
 
 pub fn path_arg<'a>(tool_name: &str, args: &'a serde_json::Value) -> Option<&'a str> {
-    match tool_name {
-        "read_file" | "write_file" | "edit_file" | "list_dir" => args["path"].as_str(),
-        "grep" | "glob" => args.get("path").and_then(serde_json::Value::as_str),
-        _ => None,
+    if !matches!(
+        tool_name,
+        "read_file" | "write_file" | "edit_file" | "list_dir" | "grep" | "glob"
+    ) {
+        return None;
     }
+    super::tool_path_args::primary_value(tool_name, args)
 }
 
 pub fn command_mentions_memory(command: &str) -> bool {

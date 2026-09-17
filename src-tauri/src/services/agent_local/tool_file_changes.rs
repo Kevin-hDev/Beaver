@@ -66,11 +66,14 @@ pub fn direct_snapshot(
     args: &Value,
     working_dir: &Path,
 ) -> Option<(PathBuf, Option<FileState>)> {
-    let key = match tool_name {
-        "write_file" | "edit_file" => "path",
-        _ => return None,
-    };
-    let raw = args.get(key)?.as_str()?;
+    if !matches!(tool_name, "write_file" | "edit_file") {
+        return None;
+    }
+    let raw = super::tool_path_args::first_value(
+        tool_name,
+        super::tool_path_args::PathUse::Write,
+        args,
+    )?;
     let candidate = if Path::new(raw).is_absolute() {
         PathBuf::from(raw)
     } else {
