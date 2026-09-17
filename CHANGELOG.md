@@ -24,6 +24,14 @@
 
 - **Agent-managed wakeups** — the Agent can now create, inspect, update, enable, disable, and delete scheduled wakeups, review their execution history and errors, and schedule work either in the current conversation or in a separate session.
 
+### Extension platform
+
+- **Expanded public extension API** — approved extensions on macOS and Windows can use capability-negotiated APIs for configured model generation, scoped Beaver memory, owned automations, and owned subagents without receiving raw session, project, authentication, or provider secrets.
+- **Restrictive tool interception** — extensions can observe a bounded summary of pending tool calls and either continue or deny them, while Beaver's native permission checks, deterministic ordering, deadlines, and fail-closed behavior remain authoritative.
+- **Scoped authority and cancellation** — contextual extension calls inherit the active Agent turn, project, permission mode, deadline, and cancellation state; Stop, double Escape, revocation, updates, and Host restarts terminate outstanding rights and owned work.
+- **Observable extension events** — nine bounded Agent, tool, automation, and subagent events are available with owner filtering, ordered best-effort delivery, Host activity counters, and diagnostics for dropped or timed-out handlers.
+- **Complete extension author guide** — `EXTENSIONS.md` now documents the current lifecycle, optional capabilities, contextual APIs, interface modes, installation paths, security boundaries, limits, recovery, troubleshooting, and distribution checks in one place.
+
 ### Voice dictation
 
 - **Private local transcription** — macOS and Windows users can dictate prompts directly into the composer with on-device Parakeet TDT v3, Qwen3 ASR, or Cohere Transcribe models, live audio feedback, configurable language, gain, silence detection, keyboard shortcuts, resumable model downloads, and recovery for interrupted long dictations.
