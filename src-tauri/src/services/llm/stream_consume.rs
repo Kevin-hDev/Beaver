@@ -113,6 +113,7 @@ async fn consume(
 
     loop {
         tokio::select! {
+            biased;
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
             _ = tokio::time::sleep(idle_timeout) => {
                 return Err("provider_temporarily_unavailable".to_string());
