@@ -1,0 +1,17 @@
+Tâche E05 — Simplifier le lancement shell et le nettoyage
+
+Décision :
+- conserver les constructions Tokio interactive et std de capture de profil ;
+- conserver les sorties de nettoyage explicites, dont les ressources diffèrent selon l'étape ;
+- ne pas ajouter de trait de commande, de fonction à options ni de garde asynchrone ;
+- préserver l'admission unique par OwnedProcess et l'isolation shell.
+
+Validation :
+- 43 tests shell_sandbox réussis sur macOS ; 1 test réseau ignoré comme prévu ;
+- 2 tests tool_bash_process_run réussis ;
+- toutes les branches de préparation relues : annulation, stockage, spawn, admission, PID, pipes et registre ;
+- couverture Windows dédiée identifiée ; exécution native laissée à la CI Windows ;
+- git diff --check réussi avant commit.
+
+Limite :
+- aucune modification de production ; la preuve Windows reste une obligation si ce code change.
