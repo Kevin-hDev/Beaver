@@ -14,7 +14,7 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   // Les thèmes d'extension, leurs parcours, les tests d'aperçus de liens et les guides rejouent ces clés.
   clgo: 164,
   // Les guides et leurs pages générées citent le nom exact de l'ancien paquet Linux.
-  "cl-go": 127,
+  "cl-go": 126,
   // Les deux branches main et la CLI appellent explicitement la bibliothèque Rust.
   cl_go_dash: 78,
 });
