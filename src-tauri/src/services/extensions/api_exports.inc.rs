@@ -43,10 +43,7 @@ pub(crate) use public_api::{
 };
 
 pub(crate) use extension_internal_exports::*;
-pub(crate) use installer::{
-    install_git as install_git_source, install_npm as install_npm_source,
-    uninstall as uninstall_extension, update as update_managed_extension,
-};
+pub(crate) use installer::uninstall as uninstall_extension;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
 pub(crate) use resource_identifier::parse as parse_qualified_contribution_id;

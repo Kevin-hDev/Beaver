@@ -4,7 +4,7 @@ use crate::services::extensions::{extension_recovery, loading_marker, registry_r
 fn every_extension_command_closes_unknown_errors() {
     let generated = crate::services::extensions::error_codes::ALL;
 
-    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 22);
+    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 19);
     for command in super::command_error::ExtensionCommand::ALL {
         let error = super::command_error::close(
             command,
@@ -48,16 +48,13 @@ fn r0_boundary_codes_remain_declared_and_preserved() {
 }
 
 #[test]
-fn extension_command_inventory_names_all_twenty_two_boundaries() {
+fn extension_command_inventory_names_all_nineteen_boundaries() {
     let actual = super::command_error::ExtensionCommand::ALL.map(|command| command.label());
     assert_eq!(
         actual,
         [
             "list_extensions",
             "add_local_extension",
-            "install_git_extension",
-            "install_npm_extension",
-            "update_extension",
             "remove_extension",
             "set_extension_enabled",
             "set_extension_show_in_chat",

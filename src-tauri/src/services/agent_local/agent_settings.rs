@@ -137,29 +137,6 @@ pub fn with_tool_group_enabled(
     Ok(settings.normalized())
 }
 
-pub async fn set_optional_tool_enabled(
-    tool_id: String,
-    enabled: bool,
-) -> Result<AgentSettings, String> {
-    let _guard = SETTINGS_LOCK.lock().await;
-    super::tool_catalog::validate_optional_tool_id(&tool_id)?;
-    let mut settings = load().await;
-    if enabled {
-        if !settings
-            .enabled_optional_tools
-            .iter()
-            .any(|id| id == &tool_id)
-        {
-            settings.enabled_optional_tools.push(tool_id);
-        }
-    } else {
-        settings.enabled_optional_tools.retain(|id| id != &tool_id);
-    }
-    let settings = settings.normalized();
-    save(&settings).await?;
-    Ok(settings)
-}
-
 pub async fn set_tool_group_enabled(
     group_id: String,
     enabled: bool,

@@ -57,16 +57,6 @@ pub fn normalize_enabled_optional_tools(input: &[String]) -> Vec<String> {
         .collect()
 }
 
-pub fn validate_optional_tool_id(tool_id: &str) -> Result<(), String> {
-    if is_locked_tool(tool_id) {
-        return Err("Ce tool est verrouillé.".to_string());
-    }
-    if !is_optional_tool(tool_id) {
-        return Err("Tool inconnu.".to_string());
-    }
-    Ok(())
-}
-
 pub fn is_locked_tool(tool_id: &str) -> bool {
     entries().any(|tool| tool.locked && tool.id == tool_id)
 }

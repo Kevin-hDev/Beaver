@@ -58,12 +58,6 @@ fn search_in(
     results
 }
 
-pub async fn get_model(key: &str) -> Option<RegistryModelInfo> {
-    let reg = get_lock().read().await;
-    let entry = reg.get(key)?;
-    Some(to_info(key, entry))
-}
-
 pub async fn list_families() -> Vec<FamilyGroup> {
     let reg = get_lock().read().await;
     let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();

@@ -2,9 +2,6 @@ use super::operation_failure::OperationFailure;
 
 #[derive(Clone, Copy)]
 pub enum Operation {
-    InstallGit,
-    InstallNpm,
-    Update,
     Uninstall,
     Cleanup,
 }
@@ -12,9 +9,6 @@ pub enum Operation {
 impl Operation {
     fn label(self) -> &'static str {
         match self {
-            Self::InstallGit => "install_git",
-            Self::InstallNpm => "install_npm",
-            Self::Update => "update",
             Self::Uninstall => "uninstall",
             Self::Cleanup => "cleanup",
         }

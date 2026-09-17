@@ -84,12 +84,7 @@ vi.mock("@tauri-apps/api/core", async () => {
         });
       }
       if (cmd === "read_file_preview") return Promise.resolve("# Interface compacte");
-      if (cmd === "list_agent_tool_catalog") return Promise.resolve(data.agentToolCatalog());
       if (cmd === "list_agent_tool_groups") return Promise.resolve(data.agentToolGroups());
-      if (cmd === "set_agent_tool_enabled") {
-        const enabled = args?.enabled === false ? [] : ["load_skill"];
-        return Promise.resolve({ permission_mode: "auto", enabled_optional_tools: enabled });
-      }
       if (cmd === "set_agent_tool_group_enabled") {
         const enabled = args?.enabled === false ? [] : ["load_skill"];
         return Promise.resolve({ permission_mode: "auto", enabled_optional_tools: enabled });

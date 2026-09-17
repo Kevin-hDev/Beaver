@@ -39,14 +39,6 @@ fn flat_catalog_keeps_its_public_group_labels() {
 }
 
 #[test]
-fn rejects_locked_and_unknown_tool_ids() {
-    assert!(validate_optional_tool_id("bash").is_err());
-    assert!(validate_optional_tool_id("bash_control").is_err());
-    assert!(validate_optional_tool_id("missing_tool").is_err());
-    assert!(validate_optional_tool_id("load_skill").is_ok());
-}
-
-#[test]
 fn filtered_definitions_keep_locked_and_enabled_optional_tools() {
     let enabled = vec!["load_skill".to_string()];
     let defs = super::tool_definitions::get_tool_definitions();

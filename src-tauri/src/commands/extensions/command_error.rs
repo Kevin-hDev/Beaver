@@ -2,9 +2,6 @@
 pub(in crate::commands) enum ExtensionCommand {
     List,
     AddLocal,
-    InstallGit,
-    InstallNpm,
-    Update,
     Remove,
     SetEnabled,
     SetShowInChat,
@@ -26,12 +23,9 @@ pub(in crate::commands) enum ExtensionCommand {
 
 impl ExtensionCommand {
     #[cfg(test)]
-    pub(in crate::commands) const ALL: [Self; 22] = [
+    pub(in crate::commands) const ALL: [Self; 19] = [
         Self::List,
         Self::AddLocal,
-        Self::InstallGit,
-        Self::InstallNpm,
-        Self::Update,
         Self::Remove,
         Self::SetEnabled,
         Self::SetShowInChat,
@@ -55,9 +49,6 @@ impl ExtensionCommand {
         match self {
             Self::List => "list_extensions",
             Self::AddLocal => "add_local_extension",
-            Self::InstallGit => "install_git_extension",
-            Self::InstallNpm => "install_npm_extension",
-            Self::Update => "update_extension",
             Self::Remove => "remove_extension",
             Self::SetEnabled => "set_extension_enabled",
             Self::SetShowInChat => "set_extension_show_in_chat",
