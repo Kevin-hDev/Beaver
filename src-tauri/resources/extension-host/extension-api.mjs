@@ -21,12 +21,12 @@ import {
   validRelativePath,
 } from "./contribution-validation.mjs";
 
-export function createExtensionApi(specification) {
+export function createExtensionApi(specification, onEventActivity) {
   const capabilities = activeCapabilities();
   const tools = [];
   const skills = [];
   const resources = [];
-  const eventHandlers = createEventHandlers();
+  const eventHandlers = createEventHandlers(onEventActivity);
   const ui = createUiApi(specification);
   const interceptor = createToolInterceptor(capabilities.includes("toolInterception"));
   const contextual = createContextualApis(capabilities, callAtLevel, callMemoryWrite);

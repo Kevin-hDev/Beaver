@@ -2,7 +2,7 @@ import { LIMITS } from "./contract.mjs";
 
 const MAX_COUNTER = Number.MAX_SAFE_INTEGER;
 
-export function createEventDelivery(getExtensions, getActiveHandlers = () => 0) {
+export function createEventDelivery(getExtensions, publishActivity = () => {}) {
   const queue = [];
   const activity = {
     queued: 0,
@@ -14,22 +14,28 @@ export function createEventDelivery(getExtensions, getActiveHandlers = () => 0) 
   let draining = false;
 
   function snapshot() {
-    activity.activeHandlers = getActiveHandlers();
     return Object.freeze({ ...activity });
+  }
+
+  function publish() {
+    // Callback outcomes exist only in this process, so publish snapshots instead of recreating them in Rust.
+    publishActivity(snapshot());
   }
 
   function enqueue(event, payload) {
     if (queue.length >= LIMITS.maxEventQueuePerHost) {
       activity.dropped = increment(activity.dropped);
-      return { queued: false, activity: snapshot() };
+      publish();
+      return { queued: false };
     }
     queue.push({ event, payload });
     activity.queued = increment(activity.queued);
+    publish();
     if (!draining) {
       draining = true;
       queueMicrotask(drain);
     }
-    return { queued: true, activity: snapshot() };
+    return { queued: true };
   }
 
   async function drain() {
@@ -44,6 +50,7 @@ export function createEventDelivery(getExtensions, getActiveHandlers = () => 0) 
           activity.delivered = add(activity.delivered, result.delivered);
           activity.dropped = add(activity.dropped, result.dropped);
           activity.timedOut = add(activity.timedOut, result.timedOut);
+          publish();
         }
       }
     } finally {
@@ -55,7 +62,12 @@ export function createEventDelivery(getExtensions, getActiveHandlers = () => 0) 
     }
   }
 
-  return Object.freeze({ enqueue, activity: snapshot });
+  function handlerActivity(activeHandlers) {
+    activity.activeHandlers = activeHandlers;
+    publish();
+  }
+
+  return Object.freeze({ enqueue, handlerActivity });
 }
 
 function increment(value) {

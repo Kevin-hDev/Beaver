@@ -105,20 +105,7 @@ fn render_host_methods(output: &mut String, methods: &[Value]) -> Result<(), Str
         "#[allow(dead_code)]\npub const HOST_TO_CORE_METHODS: &[(&str, &str, &str, Option<usize>)] = &[{}];\n",
         rendered.join(", ")
     ));
-    let notifications = methods
-        .iter()
-        .filter(|method| method["kind"] == "notification")
-        .collect::<Vec<_>>();
-    if notifications.len() != 1 {
-        return Err("expected one host load stage notification".to_string());
-    }
-    let notification = notifications[0]
-        .as_object()
-        .ok_or_else(|| "invalid host method contract".to_string())?;
-    output.push_str(&format!(
-        "#[allow(dead_code)]\npub const HOST_LOAD_STAGE_METHOD: &str = {:?};\n",
-        string(notification, "name")?
-    ));
+    output.push_str(&super::notification_renderer::render(methods)?);
     Ok(())
 }
 

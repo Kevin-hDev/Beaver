@@ -113,6 +113,65 @@ async fn accepts_ordered_load_notifications_without_responding() {
 }
 
 #[tokio::test]
+async fn records_bounded_host_event_activity() {
+    let (mut child, writer, _reader) = echo_host().await;
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
+    let tracker = super::super::host_load_tracker::HostLoadTracker::default();
+    let work = extension_work();
+    let (delivery, _receiver) = super::super::event_delivery::EventDelivery::test_delivery();
+    work.event_router().install(
+        HostIdentity::Official,
+        1,
+        std::collections::BTreeSet::from(["session.turn.started".to_string()]),
+        delivery,
+    );
+    let message = serde_json::to_vec(&json!({
+        "jsonrpc": "2.0",
+        "method": "host.event.activity",
+        "params": {
+            "queued": 4,
+            "delivered": 3,
+            "dropped": 1,
+            "timedOut": 2,
+            "activeHandlers": 1
+        }
+    }))
+    .unwrap();
+
+    assert!(receive(&message, &writer, &pending, &tracker, &work)
+        .await
+        .is_ok());
+    assert_eq!(
+        work.event_router().activity(),
+        super::super::types::ExtensionEventActivity {
+            queued: 4,
+            delivered: 3,
+            dropped: 1,
+            timed_out: 2,
+            active_handlers: 1,
+        }
+    );
+    let oversized = serde_json::to_vec(&json!({
+        "jsonrpc": "2.0",
+        "method": "host.event.activity",
+        "params": {
+            "queued": 9_007_199_254_740_992_u64,
+            "delivered": 0,
+            "dropped": 0,
+            "timedOut": 0,
+            "activeHandlers": 0
+        }
+    }))
+    .unwrap();
+    assert!(receive(&oversized, &writer, &pending, &tracker, &work)
+        .await
+        .is_err());
+
+    let _ = child.start_kill();
+    let _ = child.wait().await;
+}
+
+#[tokio::test]
 async fn rejects_load_notification_outside_the_active_order() {
     let (mut child, writer, _reader) = echo_host().await;
     let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));

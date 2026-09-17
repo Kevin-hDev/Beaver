@@ -39,6 +39,32 @@ test("event payloads are isolated between extension handlers", async () => {
   assert.deepEqual(seen, ["started"]);
 });
 
+test("host activity reports real handler outcomes", async () => {
+  const snapshots = [];
+  let delivery;
+  const context = createExtensionApi(
+    { id: "com.beaver.activity-test", manifest: { apiLevel: "stable" } },
+    (activeHandlers) => delivery.handlerActivity(activeHandlers),
+  );
+  context.api.on("session.turn.started", () => {});
+  delivery = createEventDelivery(
+    () => [{ context }],
+    (activity) => snapshots.push(activity),
+  );
+
+  delivery.enqueue("session.turn.started", {});
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(snapshots.some((activity) => activity.activeHandlers === 1), true);
+  assert.deepEqual(snapshots.at(-1), {
+    queued: 1,
+    delivered: 1,
+    dropped: 0,
+    timedOut: 0,
+    activeHandlers: 0,
+  });
+});
+
 test("a callback that never finishes keeps its bounded active slot", async () => {
   let release;
   const blocked = new Promise((resolve) => { release = resolve; });

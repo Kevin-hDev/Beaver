@@ -41,7 +41,7 @@ fn activity_aggregates_bounded_delivery_counters() {
     use std::collections::BTreeSet;
 
     let router = super::event_delivery::EventRouter::default();
-    for id in ["first", "second"] {
+    for (index, id) in ["first", "second"].into_iter().enumerate() {
         let (delivery, _receiver) = super::event_delivery::EventDelivery::test_delivery();
         let envelope = super::event_payload::EventEnvelope::build(
             super::event_payload::turn_started("session", id),
@@ -56,12 +56,33 @@ fn activity_aggregates_bounded_delivery_counters() {
             BTreeSet::from(["session.turn.started".to_string()]),
             delivery,
         );
+        router.update_host_activity(
+            &super::host_identity::HostIdentity::ThirdParty(id.to_string()),
+            1,
+            super::types::ExtensionEventActivity {
+                queued: index as u64 + 1,
+                delivered: 1,
+                dropped: 1,
+                timed_out: 1,
+                active_handlers: 1,
+            },
+        );
+        router.update_host_activity(
+            &super::host_identity::HostIdentity::ThirdParty(id.to_string()),
+            2,
+            super::types::ExtensionEventActivity {
+                queued: 99,
+                ..Default::default()
+            },
+        );
     }
 
     let activity = router.activity();
-    assert_eq!(activity.queued, 2);
-    assert_eq!(activity.dropped, 2);
-    assert_eq!(activity.delivered, 0);
+    assert_eq!(activity.queued, 3);
+    assert_eq!(activity.delivered, 2);
+    assert_eq!(activity.dropped, 4);
+    assert_eq!(activity.timed_out, 2);
+    assert_eq!(activity.active_handlers, 2);
 }
 
 #[test]
@@ -133,13 +154,32 @@ fn terminal_event_clears_a_flow_after_the_last_delivery_is_removed() {
 
 #[test]
 fn host_queue_rejection_is_not_a_delivery() {
-    assert!(super::event_delivery::host_enqueued(
-        &serde_json::json!({"queued": true})
-    ));
-    assert!(!super::event_delivery::host_enqueued(
-        &serde_json::json!({"queued": false})
-    ));
-    assert!(!super::event_delivery::host_enqueued(
-        &serde_json::json!({"activity": {}})
-    ));
+    assert_eq!(
+        super::event_delivery::host_queue_acknowledgement(&serde_json::json!({"queued": true})),
+        Some(true)
+    );
+    assert_eq!(
+        super::event_delivery::host_queue_acknowledgement(&serde_json::json!({"queued": false})),
+        Some(false)
+    );
+    assert_eq!(
+        super::event_delivery::host_queue_acknowledgement(&serde_json::json!({"activity": {}})),
+        None
+    );
+}
+
+#[test]
+fn host_event_request_matches_the_host_dispatch_shape() {
+    let envelope = super::event_payload::EventEnvelope::build(
+        super::event_payload::turn_started("session", "request"),
+        7,
+    )
+    .unwrap();
+    let request = super::event_delivery::host_event_request(envelope).unwrap();
+
+    assert_eq!(request["event"], "session.turn.started");
+    assert_eq!(request["payload"]["type"], "session.turn.started");
+    assert_eq!(request["payload"]["sequence"], 7);
+    assert_eq!(request["payload"]["sessionId"], "session");
+    assert_eq!(request["payload"]["payload"]["status"], "started");
 }

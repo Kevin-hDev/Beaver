@@ -193,8 +193,12 @@ export const CORE_API_METHODS = parseCoreApiMethods(
 const notificationMethods = Object.entries(methodKinds)
   .filter(([, kind]) => kind === "notification")
   .map(([name]) => name);
-if (notificationMethods.length !== 1) throw new Error("invalid_extension_contract");
-export const HOST_LOAD_STAGE_METHOD = notificationMethods[0];
+if (
+  !notificationMethods.includes("host.load.stage")
+  || !notificationMethods.includes("host.event.activity")
+) throw new Error("invalid_extension_contract");
+export const HOST_LOAD_STAGE_METHOD = "host.load.stage";
+export const HOST_EVENT_ACTIVITY_METHOD = "host.event.activity";
 
 const diagnosticCodes = [...HOST_DIAGNOSTIC_CODES, ...RUNTIME_DIAGNOSTIC_CODES];
 if (new Set(diagnosticCodes).size !== diagnosticCodes.length) {

@@ -1,6 +1,6 @@
 # Extensions Beaver
 
-> Guide utilisateur et auteur — état de l’implémentation au 16 septembre 2026.
+> Guide utilisateur et auteur — état de l’implémentation au 17 septembre 2026.
 >
 > Ce guide décrit les extensions hébergées par Beaver. Les contrats JSON restent les
 > autorités exécutables lorsque leur détail diffère d’un exemple humain.
@@ -22,6 +22,7 @@ et les contrats JSON générés restent les autorités techniques complètes :
 - [Comprendre les risques et la compatibilité](#à-retenir-avant-de-commencer)
 - [Créer le manifeste](#créer-le-manifeste)
 - [Coder un premier outil](#coder-un-premier-outil)
+- [Utiliser les services de Beaver](#utiliser-les-services-exposés-par-beaver)
 - [Ajouter des skills, ressources et fichiers](#skills-ressources-et-résultats-de-fichier)
 - [Étendre ou remplacer l’interface](#étendre-linterface)
 - [Installer depuis un fichier, Git ou npm](#ajouter-lextension-à-beaver)
@@ -80,17 +81,20 @@ Beaver lance le point d’entrée dans son Hôte Node.js et lui fournit directem
 
 | Élément           | Prise en charge actuelle                                               |
 | ----------------- | ---------------------------------------------------------------------- |
-| Systèmes          | macOS Apple Silicon, Linux x64 et Windows x64                          |
+| Systèmes          | macOS Apple Silicon, Windows x64 et Linux x64 en maintenance           |
 | Langages d’entrée | JavaScript et TypeScript, modules JS/TS/JSX/TSX compris                |
 | Runtime           | Node.js 20 minimum ; l’environnement Beaver actuel vise Node.js 24 LTS |
 | API Beaver        | `beaverApi: "1"`                                                       |
 | Interface         | API UI `1`, modes `standard` et `advanced`                             |
 | Sources           | fichier local, dossier local, Git HTTPS/SSH et registre npm officiel   |
 
-Ces systèmes sont les cibles de Beaver. Les parcours automatisés ont été validés sur les
-trois systèmes, mais les recettes manuelles finales sur paquets installés Windows et
-Linux restent suivies dans les checklists liées à la fin de ce guide. Une extension qui
-utilise un module natif conserve sa propre matrice de compatibilité.
+Le runtime historique des extensions reste maintenu sur les trois systèmes. Depuis
+Beaver 1.2.3, Linux est cependant en maintenance seulement : les nouvelles capacités
+`models`, `memory`, `automations`, `subagents` et `toolInterception` n’y sont pas
+annoncées. Une extension doit tester `beaver.capabilities` et continuer sans ces
+fonctions. Les recettes manuelles finales sur paquets installés Windows et Linux restent
+suivies dans les checklists liées à la fin de ce guide. Une extension qui utilise un
+module natif conserve sa propre matrice de compatibilité.
 
 Le point d’entrée d’une extension hébergée doit être écrit en JavaScript ou TypeScript.
 Comme ce code possède l’accès complet à Node.js, il peut appeler un programme écrit
@@ -160,8 +164,13 @@ Un outil peut aussi retourner du texte et des fichiers relatifs au dossier de tr
 Beaver contrôle ces fichiers avant et pendant la lecture, applique le budget du lot et
 conserve des métadonnées attribuées sans enregistrer les octets binaires. Un aperçu image
 ne rejoint un fournisseur que si sa route le permet ; les autres routes reçoivent une
-référence textuelle. Le mode Chat classique et les sous-agents ne reçoivent pas ces
-capacités d’extension.
+référence textuelle. Le mode Chat classique ne reçoit aucune capacité d’extension.
+
+Les sous-agents utilisent un catalogue distinct, filtré avant la découverte. Explorer
+reste limité aux outils `read-only`, peut inspecter les extensions et charger leurs
+ressources, mais ne reçoit pas `load_skill`. Coder reçoit seulement ce que son profil,
+sa route et son budget de contexte autorisent. Une inspection ne peut jamais restaurer
+un outil ou une capacité retirés par ce filtrage.
 
 À l’ouverture d’une conversation, la vérification automatique des fichiers dispose
 d’un budget total de 64 Mio. Chaque lecture réserve son coût maximal, y compris le
@@ -361,19 +370,52 @@ ne doit pas bloquer le travail : sa file, son temps et sa charge sont bornés, e
 panne est attribuée à son extension. Les payloads exacts restent définis par le contrat
 du runtime.
 
+| Événement                       | Moment observé                                        |
+| ------------------------------- | ----------------------------------------------------- |
+| `session.turn.started`          | Début d’un tour Agent admis                           |
+| `session.turn.completed`        | Tour Agent terminé normalement                        |
+| `session.turn.failed`           | Tour Agent terminé en erreur                          |
+| `session.turn.cancelled`        | Tour Agent annulé                                     |
+| `tool.execution.started`        | Outil admis, juste avant son exécution                |
+| `tool.execution.finished`       | Exécution de l’outil terminée                         |
+| `automation.execution.started`  | Réveil de l’extension réellement démarré              |
+| `automation.execution.finished` | Réveil de l’extension arrivé à un état terminal       |
+| `subagent.status.changed`       | État d’un sous-agent appartenant à l’extension changé |
+
+Les événements de tour et d’outil concernent seulement le mode Agent. Les événements
+d’automatisation et de sous-agent sont envoyés uniquement à l’extension propriétaire.
+Un événement contient une enveloppe bornée avec `id`, `sequence`, `occurredAt`, `type`,
+`sessionId`, `requestId` et `payload`. Un événement d’outil ne contient jamais son
+résultat, les arguments complets, un chemin, un fichier ou un secret.
+
 ```ts
 const unsubscribe = beaver.on("session.turn.started", async (event) => {
-  const { sessionId, mode } = event as {
+  const { sessionId, requestId, sequence, payload } = event as {
     sessionId: string;
-    mode: string;
+    requestId: string;
+    sequence: number;
+    payload: { status: string };
   };
 
   void sessionId;
-  void mode;
+  void requestId;
+  void sequence;
+  void payload;
 });
 ```
 
-Conservez la fonction `unsubscribe` et appelez-la pendant `deactivate()`.
+Enregistrez les abonnements pendant `activate()`. Beaver fige les événements demandés à
+la fin du chargement ; ajouter un nouveau `beaver.on(...)` plus tard ne crée pas un
+nouveau routage côté cœur. Conservez la fonction `unsubscribe` et appelez-la pendant
+`deactivate()`.
+
+La livraison est asynchrone, ordonnée par flux, sans rejeu durable ni garantie
+« exactement une fois ». Une file pleine, une erreur ou un délai dépassé peut perdre
+une observation sans bloquer le tour Agent. Le délai d’un gestionnaire est de cinq
+secondes ; il arrête l’attente de Beaver mais ne peut pas annuler la Promise JavaScript.
+Le gestionnaire continue donc d’occuper un emplacement jusqu’à sa vraie terminaison.
+Le panneau **Réglages → Extensions → Hôte** affiche les compteurs admis, livrés, perdus,
+expirés et encore actifs pour aider au diagnostic.
 
 ### Détecter les capacités facultatives
 
@@ -405,6 +447,13 @@ if (
   });
 }
 ```
+
+Les capacités facultatives actuelles sont `skills`, `resources`, `richToolResults`,
+`models`, `memory`, `automations`, `subagents` et `toolInterception`. Leur absence ne
+signifie pas que Beaver est en erreur : elle peut venir d’une ancienne version, d’une
+fonction indisponible sur le système ou d’un Hôte négocié avec une surface plus petite.
+Ne déduisez jamais une capacité de la version affichée et n’appelez pas une méthode
+facultative sans ces deux vérifications.
 
 Le chemin d’un skill se termine obligatoirement par `SKILL.md` ou `skill.md`. Les
 ressources acceptent les types `text`, `image` et `file`. Ces chemins sont relatifs à la
@@ -452,24 +501,239 @@ Le SDK fournit des méthodes typées pour :
 - `beaver.secrets.getProviderKey(...)`, les jetons MCP et les jetons de canaux.
 
 Les capacités facultatives `models`, `memory`, `automations`, `subagents` et
-`toolInterception` ajoutent des opérations contextualisées. Vérifiez toujours la
-capacité et la méthode avant de l’utiliser. Elles fonctionnent pendant un appel
-d’outil en mode Agent ; l’activation de l’extension, ses événements et ses actions
-d’interface n’ont pas ce contexte et reçoivent un refus explicite.
+`toolInterception` étendent cette surface. Vérifiez toujours la capacité et la présence
+de la méthode. Le tableau suivant résume les appels ; les signatures TypeScript exactes
+restent dans [`core-api.d.ts`](./src-tauri/resources/extension-host/sdk/core-api.d.ts).
 
-- `beaver.models` liste les modèles et produit une génération bornée ;
-- `beaver.memory` manipule des sujets globaux ou de projet avec contrôle de révision ;
-- `beaver.automations` crée uniquement des réveils inactifs. L’utilisateur les
-  réapprouve et les active depuis l’écran Automatisations ;
-- `beaver.subagents` crée, suit, contacte et annule les enfants de l’appel parent ;
-- `beaver.interceptTool` peut continuer ou refuser une action, jamais remplacer une
-  permission refusée par Beaver.
+| Espace                 | Méthodes publiques                                 | Contexte requis |
+| ---------------------- | -------------------------------------------------- | --------------- |
+| `beaver.models`        | `list`, `generate`                                 | `generate` oui  |
+| `beaver.memory`        | `list`, `read`, `write`, `archive`                 | Oui             |
+| `beaver.automations`   | `list`, `create`, `update`, `setActive`, `delete`  | Oui             |
+| `beaver.subagents`     | `spawn`, `list`, `get`, `send`, `cancel`           | Oui             |
+| `beaver.interceptTool` | Enregistrer un gestionnaire qui continue ou refuse | Non             |
+
+Un contexte est créé par Rust pour la durée d’un appel réel à un outil d’extension. Il
+lie l’extension, la conversation, le tour, le projet, le mode de permission, une
+échéance et l’annulation. Le SDK le propage automatiquement : l’auteur ne transmet ni
+identifiant de session ni jeton. L’activation, les événements et les actions UI ne
+possèdent pas ce contexte. `models.list()` est la seule nouvelle méthode métier qui
+peut être appelée sans lui.
+
+Stop, double Échap, fin du tour, désactivation, mise à jour ou redémarrage de l’Hôte
+révoquent le contexte et les appels imbriqués encore en cours. Un timer JavaScript ne
+prolonge pas les droits après la fin de l’outil. La classe d’effet de l’outil parent ne
+donne pas automatiquement le droit d’appeler une opération plus sensible : Beaver
+applique aussi la politique de la méthode imbriquée et peut demander une confirmation.
+Le mode Plan reste limité aux lectures `read-only`.
+
+Les fragments ci-dessous supposent que la capacité et la méthode ont déjà été vérifiées.
+Sauf `models.list()` et l’enregistrement de l’intercepteur, ils doivent s’exécuter depuis
+la fonction `execute` d’un outil.
+
+#### Modèles configurés
+
+`models.list()` retourne au plus 50 modèles par page et un `nextCursor` éventuel. La
+liste expose seulement l’identifiant de connexion, le fournisseur canonique, la famille
+de transport, le modèle, son nom et `generationSupported` ; elle ne révèle ni clé, ni
+URL privée, ni en-tête d’authentification.
+
+`models.generate(...)` produit une réponse texte ponctuelle, pas un nouvel Agent : pas
+d’outil, de vision ou de boucle autonome. Sans `connectionId` ou `modelId`, Beaver
+utilise la connexion et le modèle de la conversation courante. Une sélection explicite
+doit désigner une connexion déjà configurée et un modèle connu dont
+`generationSupported` vaut `true`.
+
+```ts
+const page = await beaver.models!.list();
+const candidate = page.items.find((model) => model.generationSupported);
+
+const result = await beaver.models!.generate({
+  prompt: "Résume ce texte en trois phrases.",
+  connectionId: candidate?.connectionId,
+  modelId: candidate?.modelId,
+  maxOutputTokens: 512,
+});
+
+return `${result.text}\nFin : ${result.finishReason}`;
+```
+
+Une génération peut utiliser un fournisseur facturé. Elle n’est pas idempotente et ne
+doit jamais être répétée automatiquement après une erreur de transport ambiguë. Le
+résultat indique `stop`, `length` ou `contentFilter` et fournit les compteurs d’usage
+disponibles ainsi que `ledgerRecorded`.
+
+#### Mémoire
+
+La portée vaut `global` ou `project`. La portée projet désigne uniquement le projet déjà
+résolu pour le tour courant ; l’extension ne peut pas choisir un autre chemin ou projet.
+Les réglages mémoire de la conversation, ses budgets de lecture et les permissions
+d’écriture restent applicables.
+
+Une écriture reçoit le document Markdown complet d’un sujet, avec son frontmatter. Les
+champs `type`, `title`, `summary`, `tags` et le corps viennent de l’extension. Les champs
+`id`, `scope`, `status`, `created_at`, `updated_at`, `source` et `session_id` doivent être
+présents une seule fois, mais Beaver remplace leurs valeurs par ses autorités avant
+l’écriture. Les types acceptés sont `preference`, `feedback`, `project` et `reference`.
+Un secret détecté, un corps vide ou un document mal formé est refusé.
+
+Une écriture sans `topicId` crée un sujet. Pour mettre à jour un sujet existant, passez
+son `id` et son `updatedAt` dans `expectedUpdatedAt` : une version périmée est refusée au
+lieu d’écraser une modification concurrente.
+
+```ts
+const topicDocument = (body: string) => `---
+id: 00000000-0000-0000-0000-000000000000
+scope: project
+type: project
+status: inferred
+title: Format des échanges
+summary: Le projet utilise JSON Lines pour ses échanges locaux.
+created_at: 1970-01-01T00:00:00Z
+updated_at: 1970-01-01T00:00:00Z
+tags: [protocol, jsonl]
+source: user
+session_id: 00000000-0000-0000-0000-000000000000
+---
+${body}`;
+
+const created = await beaver.memory!.write({
+  scope: "project",
+  content: topicDocument("Décision : conserver le format JSON Lines."),
+});
+
+const updated = await beaver.memory!.write({
+  scope: "project",
+  topicId: created.topic.id,
+  expectedUpdatedAt: created.topic.updatedAt,
+  content: topicDocument(
+    "Décision : conserver JSON Lines, avec messages bornés.",
+  ),
+});
+
+if (!updated.indexUpdated) {
+  // Le contenu a été appliqué, mais l’index n’a pas été actualisé : ne pas réécrire.
+}
+```
+
+`list` et `read` respectent le budget mémoire restant du tour. `archive` et `write` sont
+des mutations. `applied: true` avec `indexUpdated: false` signifie que le fichier a déjà
+été modifié ; le retenter aveuglément créerait un second effet.
+
+La politique mémoire actuelle borne chaque portée à 256 sujets et chaque document à
+48 Kio. Un titre contient au plus 120 caractères, un résumé 240 caractères et une liste
+au plus huit tags de 32 caractères alphanumériques, `-` et `_` compris. Ces valeurs
+appartiennent au domaine mémoire et peuvent évoluer indépendamment de l’API d’extension.
+
+#### Automatisations
+
+Une extension manipule uniquement les automatisations qu’elle a créées. Chaque création
+produit un réveil Agent inactif, lié à l’identité, à la version et à l’empreinte de
+l’extension. La cible est une nouvelle conversation du projet courant avec le modèle et
+le fournisseur courants. L’extension ne peut pas choisir une autre cible en ajoutant un
+champ au JSON.
+
+Les trois formes d’horaire acceptées sont :
+
+```ts
+const schedules = [
+  {
+    kind: "once",
+    local_datetime: "2026-09-18T09:30",
+    timezone: "Europe/Paris",
+  },
+  { kind: "cron", expression: "0 9 * * 1-5", timezone: "Europe/Paris" },
+  { kind: "after_completion", delay_minutes: 10 },
+];
+```
+
+Une date unique doit encore être future. Une expression cron contient exactement cinq
+champs et utilise uniquement les nombres, espaces, `*`, `,`, `-` et `/`. Le délai après
+achèvement va de 1 à 525 600 minutes. Utilisez un nom de fuseau IANA comme
+`Europe/Paris`, pas un décalage fixe inventé.
+
+```ts
+const wakeup = await beaver.automations!.create({
+  name: "Suivi du rapport",
+  description: "Vérifie le rapport après ce travail.",
+  prompt: "Relis le rapport et signale les points encore ouverts.",
+  schedule: { kind: "after_completion", delay_minutes: 10 },
+});
+
+// Toujours soumis à une approbation humaine explicite dans Beaver.
+const active = await beaver.automations!.setActive(
+  wakeup.id,
+  wakeup.revision,
+  true,
+);
+```
+
+`update`, `setActive` et `delete` exigent la dernière `revision` afin de refuser les
+écritures concurrentes. Activer un réveil demande toujours l’accord explicite de
+l’utilisateur, même en mode automatique. Une modification de son contenu exécutable ou
+du code approuvé invalide cet accord. Désactiver, mettre à jour ou retirer l’extension
+annule son travail actif sans effacer son historique. Une automatisation ou un
+sous-agent ne peut pas créer, modifier ou réactiver récursivement des réveils.
+
+#### Sous-agents
+
+Une extension peut créer un enfant `explorer` ou `coder` depuis un outil exécuté par une
+conversation Agent parente en mode manuel ou automatique. L’API est refusée en mode
+Chat, en mode Plan et depuis un autre sous-agent. L’enfant reste attribué à la même
+extension et à la même conversation parente.
+
+```ts
+const child = await beaver.subagents!.spawn(
+  "explorer",
+  "Inspecte le projet et résume l’architecture sans modifier de fichier.",
+);
+
+const current = await beaver.subagents!.get(child.id);
+if (current.status === "running") {
+  await beaver.subagents!.send(child.id, "Concentre-toi sur le stockage.");
+}
+```
+
+`list` et `get` ne montrent que les enfants possédés par cette extension dans le parent
+courant. `send` et `cancel` ne peuvent pas piloter un enfant natif, celui d’une autre
+extension ou celui d’une ancienne version révoquée. La fin du bref appel `spawn` ne tue
+pas l’enfant ; l’arrêt du flux parent, la révocation de l’extension ou l’arrêt de Beaver
+l’annulent. Le champ `report` apparaît lorsqu’un rapport est disponible.
+
+#### Interception restrictive des outils
+
+Enregistrez au plus un intercepteur pendant `activate()`. Il reçoit le nom canonique de
+l’outil, sa classe d’effet, le mode courant et éventuellement un résumé borné des
+arguments. Il peut seulement retourner `continue` ou `deny` : il ne peut ni modifier les
+arguments, ni exécuter l’outil, ni accorder une permission refusée par Beaver.
+
+```ts
+const stopIntercepting = beaver.interceptTool?.((call) => {
+  if (call.effect === "process") {
+    return { decision: "deny", reason: "processes_disabled_by_extension" };
+  }
+  return { decision: "continue" };
+});
+```
+
+Conservez `stopIntercepting` pour `deactivate()`. Les protections natives passent avant
+l’intercepteur et l’effet réel seulement après lui. Les intercepteurs actifs sont
+appelés séquentiellement dans un ordre déterministe, avec un plafond global de huit. Un
+gestionnaire ne dispose pas du contexte permettant d’appeler les API métier ci-dessus,
+ce qui évite la réentrance.
+
+Une erreur, une réponse invalide ou un délai individuel dépassé refuse l’outil et met
+l’extension fautive en erreur jusqu’à sa réactivation. Si le budget de toute la chaîne
+est épuisé, l’outil est refusé mais aucune extension n’est accusée à tort. Un résultat
+tardif ne peut jamais reprendre l’effet annulé.
 
 Un exemple complet et exécuté par les tests se trouve dans
 [`scripts/extensions/fixtures/core-api/`](./scripts/extensions/fixtures/core-api/).
 
 `beaver.call(method, params)` expose le même pont stable de plus bas niveau. N’inventez
-pas un nom de méthode : seules les méthodes du contrat du runtime sont acceptées.
+pas un nom de méthode : seules les méthodes du contrat du runtime sont acceptées. Quand
+il est appelé depuis un outil, il transporte le même contexte et subit les mêmes
+contrôles que les raccourcis typés.
 
 Les erreurs du pont sont des `BeaverExtensionError` bornées. Elles fournissent `reason`,
 `code` et `retryable`. Retentez seulement une erreur explicitement retentable, avec un
@@ -491,6 +755,11 @@ try {
   }
 }
 ```
+
+Les raisons actuellement marquées retentables sont `core_busy`,
+`core_request_timeout`, `core_transport_failed` et `core_saturated`. La valeur booléenne
+`retryable` reste l’autorité à utiliser : ne maintenez pas votre propre copie de cette
+liste dans l’extension.
 
 Ne placez jamais une clé ou un jeton dans un log, une erreur, un résultat d’outil ou un
 fichier de diagnostic. Une fois remis au JavaScript, un secret ne peut plus être
@@ -938,6 +1207,10 @@ Procédez dans cet ordre :
 | Interface cassée au lancement                                | Module avancé ou chargement UI interrompu                                                                  | Démarrer sans UI tierce avec Maj ou `--safe-mode`, puis désactiver l’extension                   |
 | Extensions indisponibles mais conversation encore utilisable | Registre ou état de conversation refusé ; Beaver a conservé uniquement les outils natifs sûrs              | Lire l’avertissement, préserver les fichiers et redémarrer ou mettre Beaver à jour               |
 | Un Hôte redémarre en boucle                                  | L’extension plante pendant son activation ou ses appels                                                    | Lire le diagnostic, corriger puis recharger ; le budget automatique est limité                   |
+| API `models`/mémoire/réveils/enfants absente                 | Ancienne version, Linux en maintenance ou capacité non négociée                                            | Tester `beaver.capabilities` et prévoir un fonctionnement dégradé                                |
+| Erreur `core_context_required` ou `core_context_revoked`     | Appel métier hors d’un outil Agent actif, après Stop ou après la fin du tour                               | Appeler depuis `execute`, ne pas conserver le contexte dans un timer et respecter l’annulation   |
+| Réveil créé mais inactif                                     | Comportement voulu : une extension ne peut pas programmer seule une exécution future                       | Faire confirmer `setActive(true)` par l’utilisateur dans Beaver                                  |
+| Événements perdus ou expirés                                 | File pleine, gestionnaire en erreur ou Promise trop lente                                                  | Lire les compteurs Hôte, alléger le callback et déplacer le travail lourd hors de l’observateur  |
 | Secret potentiellement divulgué                              | Le code approuvé a pu conserver une copie                                                                  | Désactiver l’extension puis révoquer immédiatement le secret chez son fournisseur                |
 
 Si Beaver s’est arrêté pendant le chargement d’une extension, il affiche au prochain
@@ -1005,10 +1278,13 @@ Testez l’extension depuis un profil Beaver jetable, jamais depuis le seul fich
 8. désactivez, réactivez, rechargez puis redémarrez Beaver ;
 9. faites échouer volontairement l’activation et confirmez que les autres extensions
    continuent de fonctionner ;
-10. testez l’interface au clavier, à largeur étroite et dans les six thèmes Beaver ;
-11. si l’interface est avancée, cassez-la et vérifiez le démarrage avec Maj ou
+10. si vous utilisez une API contextuelle, testez-la hors contexte, après Stop, après
+    révocation, en mode Plan et avec une permission refusée ;
+11. testez une erreur retentable sans répéter aveuglément une génération ou mutation ;
+12. testez l’interface au clavier, à largeur étroite et dans les six thèmes Beaver ;
+13. si l’interface est avancée, cassez-la et vérifiez le démarrage avec Maj ou
     `--safe-mode` ;
-12. installez enfin la même archive réelle depuis Git ou npm, car un dossier local ne
+14. installez enfin la même archive réelle depuis Git ou npm, car un dossier local ne
     prouve pas le parcours distribué.
 
 Pour une contribution directe au dépôt Beaver, les fixtures et tests de l’Hôte vivent
@@ -1069,6 +1345,17 @@ La fixture d’acceptation complète des skills, ressources et résultats se tro
 | Empreinte                            | 2 000 fichiers, 4 Mio par fichier, 32 Mio au total, profondeur 16 |
 | Exécution d’un outil                 |                                                       55 secondes |
 | Gestionnaire d’événement             |                                                        5 secondes |
+| File d’événements                    |                                             32 par processus Hôte |
+| Taille d’un événement                |                                                            16 Kio |
+| Contextes métier actifs              |                                  64 au total, 8 par identité Hôte |
+| Appels cœur simultanés               |                                               8 par identité Hôte |
+| Générations de modèle                |                                        2 par identité, 8 au total |
+| Génération de modèle                 |                     entrée 64 Kio, sortie 4 096 tokens et 256 Kio |
+| Délai de génération                  |                                                       25 secondes |
+| Intercepteurs                        |                                1 par extension, 8 actifs au total |
+| Délai d’interception                 |                           250 ms par gestionnaire, 1 s par chaîne |
+| Automatisations possédées            |                                                   8 par extension |
+| Page des API contextuelles           |                                                       50 éléments |
 | Action UI standard                   |                                                       15 secondes |
 | Redémarrages automatiques d’un Hôte  |                                    3 sur une fenêtre de 5 minutes |
 
@@ -1077,9 +1364,10 @@ les deux contrats JSON liés en tête du document et dans les tables générées
 
 ## État des validations multiplateformes
 
-Le code, les contrats et les parcours automatisés fusionnés sont validés. Les essais
-manuels avec paquets installés Windows et Linux restent suivis séparément afin de ne pas
-transformer une CI verte en preuve d’un comportement qu’aucun testeur n’a observé :
+Les contrôles automatisés de l’implémentation actuelle sont verts au 17 septembre 2026.
+Les essais manuels avec paquets installés Windows et Linux restent suivis séparément
+afin de ne pas transformer une CI verte en preuve d’un comportement qu’aucun testeur
+n’a observé :
 
 - [acceptation fonctionnelle Windows/Linux](./docs/fonctionnalites/extension/CHECKLIST_ACCEPTATION_EXTENSIONS_WINDOWS_LINUX.md) ;
 - [résilience du démarrage Windows/Linux](./docs/fonctionnalites/extension/CHECKLIST_STARTUP_RESILIENCE_WINDOWS_LINUX.md).

@@ -99,7 +99,14 @@ async fn receive_bound(
     let object = super::protocol::envelope(&message)?;
     if let Some(method) = object.get("method").and_then(Value::as_str) {
         if object.get("id").is_none() {
-            return receive_notification(method, object.get("params"), context.load_tracker).await;
+            return receive_notification(
+                method,
+                object.get("params"),
+                context.load_tracker,
+                work,
+                authority,
+            )
+            .await;
         }
         let id = object
             .get("id")
@@ -194,7 +201,12 @@ async fn receive_notification(
     method: &str,
     params: Option<&Value>,
     load_tracker: &HostLoadTracker,
+    work: &super::work_supervision::ExtensionWorkServices,
+    authority: &HostAuthority,
 ) -> Result<(), String> {
+    if method == super::types::HOST_EVENT_ACTIVITY_METHOD {
+        return super::event_activity_notification::receive(params, work, authority);
+    }
     if method != super::types::HOST_LOAD_STAGE_METHOD {
         return Err("Réponse de l'hôte d'extensions invalide.".to_string());
     }

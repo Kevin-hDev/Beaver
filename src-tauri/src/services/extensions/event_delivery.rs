@@ -23,6 +23,7 @@ struct DeliveryEntry {
     generation: u64,
     subscriptions: BTreeSet<String>,
     delivery: EventDelivery,
+    host_activity: super::types::ExtensionEventActivity,
 }
 
 #[derive(Clone)]
@@ -34,11 +35,9 @@ pub(super) struct EventDelivery {
 
 #[derive(Default)]
 struct EventCounters {
-    queued: AtomicU64,
-    delivered: AtomicU64,
+    // Rust owns only failures before a valid Host acknowledgement; Node owns callback outcomes.
     dropped: AtomicU64,
     timed_out: AtomicU64,
-    active_handlers: AtomicU64,
 }
 
 impl EventRouter {
@@ -72,6 +71,7 @@ impl EventRouter {
                 generation,
                 subscriptions,
                 delivery,
+                host_activity: super::types::ExtensionEventActivity::default(),
             },
         ) {
             previous.delivery.cancel.cancel();
@@ -140,20 +140,13 @@ impl EventDelivery {
                         None => break,
                     },
                 };
-                increment(&worker_counters.active_handlers);
-                let Ok(payload) = serde_json::to_value(envelope) else {
-                    worker_counters.active_handlers.store(0, Ordering::Release);
+                let Some(payload) = host_event_request(envelope) else {
                     increment(&worker_counters.dropped);
                     continue;
                 };
-                let result = process
-                    .request("event.emit", payload)
-                    .await;
-                worker_counters.active_handlers.store(0, Ordering::Release);
+                let result = process.request("event.emit", payload).await;
                 match result {
-                    Ok(response) if host_enqueued(&response) => {
-                        increment(&worker_counters.delivered)
-                    }
+                    Ok(response) if host_queue_acknowledgement(&response).is_some() => {}
                     Ok(_) => increment(&worker_counters.dropped),
                     Err(error) if error == super::error_codes::HOST_TIMEOUT => {
                         increment(&worker_counters.timed_out)
@@ -175,7 +168,7 @@ impl EventDelivery {
             return;
         }
         match self.sender.try_send(envelope) {
-            Ok(()) => increment(&self.counters.queued),
+            Ok(()) => {}
             Err(_) => increment(&self.counters.dropped),
         }
     }
@@ -205,8 +198,14 @@ impl EventDelivery {
     }
 }
 
-pub(super) fn host_enqueued(response: &serde_json::Value) -> bool {
-    response.get("queued").and_then(serde_json::Value::as_bool) == Some(true)
+pub(super) fn host_queue_acknowledgement(response: &serde_json::Value) -> Option<bool> {
+    response.get("queued").and_then(serde_json::Value::as_bool)
+}
+
+pub(super) fn host_event_request(envelope: EventEnvelope) -> Option<serde_json::Value> {
+    let event = envelope.event;
+    let payload = serde_json::to_value(envelope).ok()?;
+    Some(serde_json::json!({"event": event, "payload": payload}))
 }
 
 fn increment(counter: &AtomicU64) {

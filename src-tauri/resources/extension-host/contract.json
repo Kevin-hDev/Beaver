@@ -496,6 +496,12 @@
         "level": "stable",
         "kind": "notification",
         "rustBudgetMs": null
+      },
+      {
+        "name": "host.event.activity",
+        "level": "stable",
+        "kind": "notification",
+        "rustBudgetMs": null
       }
     ]
   },

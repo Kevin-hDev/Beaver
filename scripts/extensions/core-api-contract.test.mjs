@@ -3,10 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { resolve } from "node:path";
 import { createHost } from "./host-test-client.mjs";
-import {
-  validateCoreApiParams,
-  validateCoreApiResult,
-} from "../../src-tauri/resources/extension-host/core-api-validation.mjs";
+import { validateCoreApiParams } from "../../src-tauri/resources/extension-host/core-api-validation.mjs";
 
 const contract = JSON.parse(await readFile(
   new URL("../../src-tauri/resources/extension-host/contract.json", import.meta.url),
@@ -165,12 +162,6 @@ test("la projection refuse méthodes, champs et budgets hors contrat", () => {
   );
   assert.throws(
     () => validateCoreApiParams("models.generate", { prompt: `${exact}🦫` }),
-    /core_request_failed/u,
-  );
-  const exactResult = "x".repeat(contract.limits.maxMessageBytes - 2);
-  assert.equal(validateCoreApiResult(exactResult), exactResult);
-  assert.throws(
-    () => validateCoreApiResult(`${exactResult}x`),
     /core_request_failed/u,
   );
 });

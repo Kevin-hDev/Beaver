@@ -415,6 +415,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | `subagents.send` | `stable` | `request` | `subagents` | `yes` | `no` | `process` | `subagentMutation` | 0 |
 | `subagents.cancel` | `stable` | `request` | `subagents` | `yes` | `no` | `process` | `subagentMutation` | 0 |
 | `host.load.stage` | `stable` | `notification` | `n/a` | `n/a` | `n/a` | `n/a` | `n/a` | n/a |
+| `host.event.activity` | `stable` | `notification` | `n/a` | `n/a` | `n/a` | `n/a` | `n/a` | n/a |
 
 ### Limits
 

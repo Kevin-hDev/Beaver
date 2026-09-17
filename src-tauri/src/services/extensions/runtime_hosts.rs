@@ -53,7 +53,6 @@ pub(super) struct BoundHostChannel {
     pub(super) api_level: ExtensionApiLevel,
     pub(super) generation: Arc<HostGeneration>,
     pub(super) process: Arc<HostProcess>,
-    #[allow(dead_code)] // Consumed as each negotiated API surface is connected in B2-B9.
     pub(super) capabilities: Vec<String>,
     revoked: tokio_util::sync::CancellationToken,
     _temporary_directory: tempfile::TempDir,

@@ -11,7 +11,7 @@ export declare const MODEL_FINISH_REASONS: readonly ["stop","length","contentFil
 export declare const CORE_TO_HOST_METHODS: readonly ["host.hello","host.reset","host.load","tool.call","event.emit","ui.action","tool.intercept"];
 export declare const STABLE_HOST_TO_CORE_REQUEST_METHODS: readonly ["app.info","sessions.list","sessions.get","projects.list","mcp.connectors.list","mcp.tool.call","channels.config.get","secrets.provider.get","secrets.mcp.oauth.get","secrets.mcp.env.get","secrets.channel.get","models.list","models.generate","memory.list","memory.read","memory.write","memory.archive","automations.list","automations.create","automations.update","automations.setActive","automations.delete","subagents.spawn","subagents.list","subagents.get","subagents.send","subagents.cancel"];
 export declare const ADVANCED_HOST_TO_CORE_REQUEST_METHODS: readonly [];
-export declare const HOST_TO_CORE_NOTIFICATION_METHODS: readonly ["host.load.stage"];
+export declare const HOST_TO_CORE_NOTIFICATION_METHODS: readonly ["host.load.stage","host.event.activity"];
 export declare const EXTENSION_EVENTS: readonly ["session.turn.started","session.turn.completed","session.turn.failed","session.turn.cancelled","tool.execution.started","tool.execution.finished","automation.execution.started","automation.execution.finished","subagent.status.changed"];
 export declare const EXTENSION_HOST_STATES: readonly ["stopped","starting","running","error"];
 export declare const HOST_LOAD_STAGES: readonly ["import","activate","register"];

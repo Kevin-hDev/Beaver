@@ -1,6 +1,12 @@
-import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
+import {
+  HOST_EVENT_ACTIVITY_METHOD,
+  HOST_LOAD_STAGE_METHOD,
+  LIMITS,
+  LOAD_STAGES,
+  supportsEvent,
+  TIMEOUTS,
+} from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
-import { activeEventHandlerCount } from "./event-handlers.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
 import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
@@ -14,7 +20,7 @@ const extensions = new Map();
 const tools = new Map();
 const eventDelivery = createEventDelivery(
   () => extensions.values(),
-  activeEventHandlerCount,
+  (activity) => notifyCore(HOST_EVENT_ACTIVITY_METHOD, activity),
 );
 
 export async function resetExtensions() {
@@ -98,8 +104,6 @@ export async function emitExtensionEvent(event, payload) {
   return eventDelivery.enqueue(event, payload);
 }
 
-export const extensionEventActivity = eventDelivery.activity;
-
 export async function callExtensionUiAction(params) {
   return invokeUiAction(extensions.get(params?.extensionId), params);
 }
@@ -121,7 +125,7 @@ export async function loadExtensionWithApi(specification, createApi) {
       throw new Error("invalid_extension_specification");
     }
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
-    const context = createApi(specification);
+    const context = createApi(specification, eventDelivery.handlerActivity);
     const module = await importExtensionModule(specification.mainPath);
     stage = LOAD_STAGES[1];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });

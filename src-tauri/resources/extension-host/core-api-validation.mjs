@@ -34,17 +34,6 @@ export function validateCoreApiParams(methodName, input) {
   return Object.freeze(output);
 }
 
-export function validateCoreApiResult(value) {
-  let encoded;
-  try {
-    encoded = Buffer.from(JSON.stringify(value), "utf8");
-  } catch {
-    throw new Error("core_request_failed");
-  }
-  if (encoded.length > LIMITS.maxMessageBytes) throw new Error("core_request_failed");
-  return value;
-}
-
 function validType(value, type) {
   if (type === "string") return typeof value === "string";
   if (type === "integer") return Number.isSafeInteger(value);

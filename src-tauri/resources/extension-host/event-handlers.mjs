@@ -3,11 +3,7 @@ import { validIdentifier } from "./contribution-validation.mjs";
 
 const inFlightHandlers = new Set();
 
-export function activeEventHandlerCount() {
-  return inFlightHandlers.size;
-}
-
-export function createEventHandlers() {
+export function createEventHandlers(onActivity = () => {}) {
   const events = new Map();
   let handlerCount = 0;
 
@@ -35,7 +31,7 @@ export function createEventHandlers() {
   async function emit(event, payload) {
     const result = { delivered: 0, dropped: 0, timedOut: 0, activeHandlers: 0 };
     for (const handler of [...(events.get(event) ?? [])]) {
-      const outcome = await run(handler, payload);
+      const outcome = await run(handler, payload, onActivity);
       if (outcome === "delivered") result.delivered += 1;
       else if (outcome === "timedOut") result.timedOut += 1;
       else result.dropped += 1;
@@ -47,11 +43,15 @@ export function createEventHandlers() {
   return Object.freeze({ events, on, emit });
 }
 
-async function run(handler, payload) {
+async function run(handler, payload, onActivity) {
   if (inFlightHandlers.size >= LIMITS.maxInFlightHandlers) return "dropped";
   const execution = Promise.resolve().then(() => handler(payload));
   inFlightHandlers.add(execution);
-  void execution.finally(() => inFlightHandlers.delete(execution)).catch(() => {});
+  onActivity(inFlightHandlers.size);
+  void execution.finally(() => {
+    inFlightHandlers.delete(execution);
+    onActivity(inFlightHandlers.size);
+  }).catch(() => {});
   let timer;
   try {
     return await Promise.race([

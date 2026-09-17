@@ -272,16 +272,18 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
         .find(|line| line.contains("STABLE_HOST_TO_CORE_REQUEST_METHODS"))
         .unwrap()
         .contains("host.load.stage"));
-    assert!(
-        checked_in.contains("HOST_TO_CORE_NOTIFICATION_METHODS: readonly [\"host.load.stage\"]")
-    );
+    assert!(checked_in.contains(
+        "HOST_TO_CORE_NOTIFICATION_METHODS: readonly [\"host.load.stage\",\"host.event.activity\"]"
+    ));
 }
 
 #[test]
-fn generated_rust_names_the_unique_load_stage_notification() {
+fn generated_rust_names_host_notifications() {
     let generated = include_str!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
     assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
+    assert!(generated
+        .contains("pub const HOST_EVENT_ACTIVITY_METHOD: &str = \"host.event.activity\";"));
     assert!(generated.contains("pub enum HostState"));
     assert!(generated.contains("pub enum OptionalExtensionCapability"));
     assert!(generated.contains("pub enum ExtensionContributionType"));
