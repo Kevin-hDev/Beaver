@@ -24,6 +24,21 @@ fn defaults_match_product_choice() {
 }
 
 #[test]
+fn flat_catalog_keeps_its_public_group_labels() {
+    let entries = catalog()
+        .into_iter()
+        .map(|entry| (entry.id, entry.group))
+        .collect::<BTreeMap<_, _>>();
+
+    assert_eq!(entries["bash"], "core");
+    assert_eq!(entries["web_fetch"], "web");
+    assert_eq!(entries["manage_automation"], "automation");
+    assert_eq!(entries["plan_mode"], "workflow");
+    assert_eq!(entries["transform_image"], "office");
+    assert_eq!(entries["list_extensions"], "extensions");
+}
+
+#[test]
 fn rejects_locked_and_unknown_tool_ids() {
     assert!(validate_optional_tool_id("bash").is_err());
     assert!(validate_optional_tool_id("bash_control").is_err());

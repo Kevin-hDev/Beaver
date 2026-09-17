@@ -14,115 +14,30 @@ pub struct ToolCatalogEntry {
 }
 
 pub const MAX_OPTIONAL_TOOLS: usize = 32;
-pub const SUBAGENT_TOOLS: &[&str] = &[
-    "delegate_task",
-    "list_subagents",
-    "get_subagent",
-    "cancel_subagent",
-    "message_subagent",
-    "archive_subagent",
-    "inspect_subagent_changes",
-    "apply_subagent_changes",
-    "discard_subagent_changes",
-];
+pub use super::tool_group_catalog::SUBAGENT_TOOLS;
 
-const LOCKED_TOOLS: &[ToolCatalogEntry] = &[
-    locked("bash", "core"),
-    locked("bash_control", "core"),
-    locked("read_file", "core"),
-    locked("write_file", "core"),
-    locked("edit_file", "core"),
-    locked("list_dir", "core"),
-    locked("grep", "core"),
-    locked("glob", "core"),
-    locked("web_search", "web"),
-    locked("web_fetch", "web"),
-    locked("search_mcp_tools", "mcp"),
-    locked(
-        crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
-        "extensions",
-    ),
-    locked(
-        crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
-        "extensions",
-    ),
-    locked(super::tool_extension_resource::NAME, "extensions"),
-];
-
-const OPTIONAL_TOOLS: &[ToolCatalogEntry] = &[
-    optional_default("load_skill", "workflow"),
-    optional_default("manage_automation", "automation"),
-    optional_default("ask_user_choice", "workflow"),
-    optional_default("delegate_task", "subagents"),
-    optional_default("list_subagents", "subagents"),
-    optional_default("get_subagent", "subagents"),
-    optional_default("cancel_subagent", "subagents"),
-    optional_default("message_subagent", "subagents"),
-    optional_default("archive_subagent", "subagents"),
-    optional_default("inspect_subagent_changes", "subagents"),
-    optional_default("apply_subagent_changes", "subagents"),
-    optional_default("discard_subagent_changes", "subagents"),
-    optional_default("plan_mode", "workflow"),
-    optional_off("todo_write", "todo"),
-    optional_off("todo_history", "todo"),
-    optional_off("todo_pause", "todo"),
-    optional_off("todo_resume", "todo"),
-    optional_off("todo_delete", "todo"),
-    optional_off("create_branch", "git"),
-    optional_off("checkout_branch", "git"),
-    optional_off("forecast_data_audit", "forecast"),
-    optional_off("forecast_run", "forecast"),
-    optional_off("forecast_models", "forecast"),
-    optional_off("forecast_analyze", "forecast"),
-    optional_off("forecast_read", "forecast"),
-    optional_off("forecast_backtest", "forecast"),
-    optional_off("forecast_compare_models", "forecast"),
-    optional_off("read_spreadsheet", "office"),
-    optional_off("write_spreadsheet", "office"),
-    optional_off("read_document", "office"),
-    optional_off("write_document", "office"),
-    optional_off("transform_image", "office"),
-];
-
-const fn locked(id: &'static str, group: &'static str) -> ToolCatalogEntry {
-    ToolCatalogEntry {
-        id,
-        locked: true,
-        default_enabled: true,
-        group,
-    }
-}
-
-const fn optional_default(id: &'static str, group: &'static str) -> ToolCatalogEntry {
-    ToolCatalogEntry {
-        id,
-        locked: false,
-        default_enabled: true,
-        group,
-    }
-}
-
-const fn optional_off(id: &'static str, group: &'static str) -> ToolCatalogEntry {
-    ToolCatalogEntry {
-        id,
-        locked: false,
-        default_enabled: false,
-        group,
-    }
+fn entries() -> impl Iterator<Item = ToolCatalogEntry> {
+    super::tool_group_catalog::catalog_groups().flat_map(|group| {
+        group
+            .tool_ids
+            .iter()
+            .copied()
+            .map(|id| ToolCatalogEntry {
+                id,
+                locked: group.locked,
+                default_enabled: group.default_enabled,
+                group: group.catalog_group,
+            })
+    })
 }
 
 pub fn catalog() -> Vec<ToolCatalogEntry> {
-    LOCKED_TOOLS
-        .iter()
-        .chain(OPTIONAL_TOOLS.iter())
-        .copied()
-        .collect()
+    entries().collect()
 }
 
 pub fn default_enabled_optional_tools() -> Vec<String> {
-    OPTIONAL_TOOLS
-        .iter()
-        .filter(|tool| tool.default_enabled)
+    entries()
+        .filter(|tool| !tool.locked && tool.default_enabled)
         .map(|tool| tool.id.to_string())
         .collect()
 }
@@ -134,9 +49,9 @@ pub fn normalize_enabled_optional_tools(input: &[String]) -> Vec<String> {
     } else {
         selected.retain(|tool_id| !SUBAGENT_TOOLS.contains(tool_id));
     }
-    OPTIONAL_TOOLS
-        .iter()
+    entries()
         .filter(|tool| selected.contains(tool.id))
+        .filter(|tool| !tool.locked)
         .take(MAX_OPTIONAL_TOOLS)
         .map(|tool| tool.id.to_string())
         .collect()
@@ -153,11 +68,11 @@ pub fn validate_optional_tool_id(tool_id: &str) -> Result<(), String> {
 }
 
 pub fn is_locked_tool(tool_id: &str) -> bool {
-    LOCKED_TOOLS.iter().any(|tool| tool.id == tool_id)
+    entries().any(|tool| tool.locked && tool.id == tool_id)
 }
 
 pub fn is_optional_tool(tool_id: &str) -> bool {
-    OPTIONAL_TOOLS.iter().any(|tool| tool.id == tool_id)
+    entries().any(|tool| !tool.locked && tool.id == tool_id)
 }
 
 pub fn is_enabled(tool_id: &str, enabled_optional_tools: &[String]) -> bool {

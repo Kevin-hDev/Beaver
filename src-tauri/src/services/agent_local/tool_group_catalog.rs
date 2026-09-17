@@ -7,32 +7,66 @@ pub struct ToolGroupEntry {
     pub locked: bool,
     pub default_enabled: bool,
     pub tool_ids: &'static [&'static str],
+    #[serde(skip)]
+    pub(crate) catalog_group: &'static str,
 }
 
+pub const SUBAGENT_TOOLS: &[&str] = &[
+    "delegate_task",
+    "list_subagents",
+    "get_subagent",
+    "cancel_subagent",
+    "message_subagent",
+    "archive_subagent",
+    "inspect_subagent_changes",
+    "apply_subagent_changes",
+    "discard_subagent_changes",
+];
+
 const LOCKED_GROUPS: &[ToolGroupEntry] = &[
-    group("terminal", true, true, &["bash", "bash_control"]),
+    group("terminal", true, true, &["bash", "bash_control"], "core"),
     group(
         "files",
         true,
         true,
         &["read_file", "write_file", "edit_file", "list_dir"],
+        "core",
     ),
-    group("file_search", true, true, &["grep", "glob"]),
-    group("web", true, true, &["web_search", "web_fetch"]),
-    group("mcp", true, true, &["search_mcp_tools"]),
+    group("file_search", true, true, &["grep", "glob"], "core"),
+    group("web", true, true, &["web_search", "web_fetch"], "web"),
+    group("mcp", true, true, &["search_mcp_tools"], "mcp"),
 ];
 
+const CATALOG_ONLY_GROUPS: &[ToolGroupEntry] = &[group(
+    "extensions",
+    true,
+    true,
+    &[
+        crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
+        crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
+        super::tool_extension_resource::NAME,
+    ],
+    "extensions",
+)];
+
 const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
-    group("skills", false, true, &["load_skill"]),
-    group("automations", false, true, &["manage_automation"]),
-    group("user_choice", false, true, &["ask_user_choice"]),
+    group("skills", false, true, &["load_skill"], "workflow"),
     group(
-        "subagents",
+        "automations",
         false,
         true,
-        super::tool_catalog::SUBAGENT_TOOLS,
+        &["manage_automation"],
+        "automation",
     ),
-    group("plan_mode", false, true, &["plan_mode"]),
+    group(
+        "user_choice",
+        false,
+        true,
+        &["ask_user_choice"],
+        "workflow",
+    ),
+    group("subagents", false, true, SUBAGENT_TOOLS, "subagents"),
+    group("plan_mode", false, true, &["plan_mode"], "workflow"),
     group(
         "todo_list",
         false,
@@ -44,12 +78,14 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
             "todo_resume",
             "todo_delete",
         ],
+        "todo",
     ),
     group(
         "git_branches",
         false,
         false,
         &["create_branch", "checkout_branch"],
+        "git",
     ),
     group(
         "forecast",
@@ -64,20 +100,23 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
             "forecast_backtest",
             "forecast_compare_models",
         ],
+        "forecast",
     ),
     group(
         "spreadsheet",
         false,
         false,
         &["read_spreadsheet", "write_spreadsheet"],
+        "office",
     ),
     group(
         "document",
         false,
         false,
         &["read_document", "write_document"],
+        "office",
     ),
-    group("images", false, false, &["transform_image"]),
+    group("images", false, false, &["transform_image"], "office"),
 ];
 
 const fn group(
@@ -85,12 +124,14 @@ const fn group(
     locked: bool,
     default_enabled: bool,
     tool_ids: &'static [&'static str],
+    catalog_group: &'static str,
 ) -> ToolGroupEntry {
     ToolGroupEntry {
         id,
         locked,
         default_enabled,
         tool_ids,
+        catalog_group,
     }
 }
 
@@ -100,6 +141,13 @@ pub fn groups() -> Vec<ToolGroupEntry> {
         .chain(OPTIONAL_GROUPS.iter())
         .copied()
         .collect()
+}
+
+pub(crate) fn catalog_groups() -> impl Iterator<Item = &'static ToolGroupEntry> {
+    LOCKED_GROUPS
+        .iter()
+        .chain(CATALOG_ONLY_GROUPS.iter())
+        .chain(OPTIONAL_GROUPS.iter())
 }
 
 pub fn optional_group_tool_ids(group_id: &str) -> Result<&'static [&'static str], String> {
@@ -148,7 +196,7 @@ mod tests {
     fn subagent_group_contains_all_control_tools() {
         let tools = optional_group_tool_ids("subagents").unwrap();
 
-        assert_eq!(tools, super::super::tool_catalog::SUBAGENT_TOOLS);
+        assert_eq!(tools, SUBAGENT_TOOLS);
     }
 
     #[test]
