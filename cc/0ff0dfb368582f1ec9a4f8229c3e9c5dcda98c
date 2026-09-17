@@ -1,0 +1,7 @@
+Review 08 — Liberté des données pendant la compression.
+
+Décision : la compression réduit et résume le contexte, mais ne masque pas le contenu que l’utilisateur a choisi de transmettre. Les continuations opaques du fournisseur et les autorisations internes de pièces jointes restent exclues de la requête de résumé.
+
+Changement : suppression de la couche de masquage propre à la compression ; historique, consignes de profil, résumé validé et sections du checkpoint conservent leur texte. Le masquage des journaux, diagnostics et surfaces techniques sensibles reste en place. Le helper large devenu mort a été supprimé.
+
+Validation : 32 tests ciblés verts (requête, contrat, entrée réelle, transaction, données sensibles) ; cargo check ; cargo fmt --check ; git diff --check ; graphify update .
