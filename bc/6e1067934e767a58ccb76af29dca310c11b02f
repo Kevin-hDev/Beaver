@@ -1,0 +1,17 @@
+Tâche E04 — Comparer les contrats des écritures durables
+
+Décision :
+- conserver private_store et ollama_manager::durable_fs comme autorités séparées ;
+- garder les droits privés, le nettoyage des temporaires et la sémantique de publication de private_store ;
+- garder les erreurs typées, l'annulation Windows, les temporaires de reprise et la synchronisation transactionnelle d'Ollama ;
+- ne partager que les mécanismes sans politique ; windows_fs_retry::bounded couvre déjà le cas réel commun.
+
+Validation :
+- implémentations Unix et Windows comparées ;
+- écritures Ollama avec et sans remplacement relues ;
+- synchronisation des parents, classification d'erreurs et annulation vérifiées dans le code ;
+- tests d'interruption private_store relus sur chaque étape ;
+- git diff --check réussi avant commit.
+
+Limite :
+- étude statique, aucune modification de comportement ni nouveau test nécessaire.
