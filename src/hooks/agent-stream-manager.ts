@@ -39,7 +39,6 @@ import { showToast } from "@/lib/toast-emitter";
 import { clearStreamPermission } from "./agent-stream-permissions";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
 import { webToolErrorToastMessage } from "./web-tool-error-toast";
-import { queueUserMessage, removeQueuedUserMessage } from "./agent-stream-user-queue";
 import { failSession } from "./agent-stream-failure";
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
@@ -77,7 +76,7 @@ export const agentStreamManager = { startSession, stopSession, failSession, setS
   getDeferredStop, getOwnedRunState, claimStop, releaseStop, completeStop,
   releaseOwner,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
-  queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
+  reconcileTurnAdmission,
   subscribeActivity: subscribeStreamActivity };
 
 function ensureListener() {

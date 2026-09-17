@@ -11,12 +11,12 @@ interface Params {
     run: (resolvedWorkingDir?: string) => Promise<void>,
   ) => Promise<void>;
   doStream: Parameters<typeof persistAgentMessage>[0]["doStream"];
-  queueStreamMessage: Parameters<typeof persistAgentMessage>[0]["queueStreamMessage"];
+  resolveStreamSend: Parameters<typeof persistAgentMessage>[0]["resolveStreamSend"];
 }
 
 export function useAgentMessageSend(params: Params) {
   const {
-    sessionId, messages, permissionModeRef, runOrDefer, doStream, queueStreamMessage,
+    sessionId, messages, permissionModeRef, runOrDefer, doStream, resolveStreamSend,
   } = params;
   const persist = useCallback(async (payload: AgentSendPayload) => {
     if (!sessionId) return false;
@@ -26,9 +26,9 @@ export function useAgentMessageSend(params: Params) {
       messages,
       permissionMode: permissionModeRef.current,
       doStream,
-      queueStreamMessage,
+      resolveStreamSend,
     });
-  }, [doStream, messages, permissionModeRef, queueStreamMessage, sessionId]);
+  }, [doStream, messages, permissionModeRef, resolveStreamSend, sessionId]);
 
   return useCallback(async (
     text: string,

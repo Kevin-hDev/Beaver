@@ -4,19 +4,14 @@ import { agentStreamManager, type StreamSnapshot } from "./agent-stream-manager"
 import type { AgentMessage } from "@/types/agent";
 import type {
   ChatStreamAdmission,
-  NewUserTurnInput,
   TurnStart,
 } from "@/types/agent-turn.generated";
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { ContextUsageRecord } from "@/types/agent-session.generated";
 import i18n from "@/i18n";
 import { admissionErrorMessage } from "@/lib/admission-error";
-import { showToast } from "@/lib/toast-emitter";
 import { awaitPendingReasoning } from "./session-reasoning-mutation";
-import type {
-  QueueStreamResult,
-  StreamRun,
-} from "./agent-stream-run-ownership";
+import type { StreamRun, StreamSendResult } from "./agent-stream-run-ownership";
 
 interface StreamStartState {
   displayMessages: AgentMessage[];
@@ -114,32 +109,12 @@ export function useAgentStream() {
     }
   }, []);
 
-  const queueStreamMessage = useCallback(async (
-    sessionId: string,
-    input: NewUserTurnInput,
-    displayMessage: AgentMessage,
-  ): Promise<QueueStreamResult> => {
+  const resolveStreamSend = useCallback((sessionId: string): StreamSendResult => {
     if (!agentStreamManager.ownsOwner(sessionId, ownerRef.current)
         && !agentStreamManager.adoptOwner(sessionId, ownerRef.current)) return "start-new";
     const runState = agentStreamManager.getOwnedRunState(sessionId, ownerRef.current);
     if (runState.kind === "terminal") return "start-new";
     if (runState.kind === "stopping") return "stopping";
-    if (runState.kind === "pendingAdmission") {
-      return "unavailable";
-    }
-    if (!agentStreamManager.queueUserMessage(sessionId, displayMessage)) {
-      return "start-new";
-    }
-    try {
-      const queued = await invoke<boolean>("queue_agent_message", {
-        sessionId, generation: runState.generation,
-        input,
-      });
-      if (queued) return "queued";
-    } catch (error) {
-      showToast(admissionErrorMessage(error, i18n.t), "error");
-    }
-    agentStreamManager.removeQueuedUserMessage(sessionId, displayMessage.id);
     return "unavailable";
   }, []);
 
@@ -174,7 +149,7 @@ export function useAgentStream() {
 
   return {
     startStream,
-    queueStreamMessage,
+    resolveStreamSend,
     stopStream,
     subscribeToStream,
     getStreamSnapshot,

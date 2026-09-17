@@ -332,21 +332,6 @@ describe("agentStreamManager", () => {
     expect(during?.contextUsageRecord.currentPreparation?.input.tokens).toBe(24_044);
   });
 
-  it("met en file une intention pendant l'attente de la génération Rust", async () => {
-    await agentStreamManager.startSession(
-      "s1", [message("u1", "user", "Question")], 10, "chat", true,
-    );
-
-    const queued = agentStreamManager.queueUserMessage(
-      "s1", message("u2", "user", "Suite"),
-    );
-
-    expect(queued).toBe(true);
-    expect(agentStreamManager.getSnapshot("s1")?.queuedUserMessages).toEqual([
-      expect.objectContaining({ id: "u2", content: "Suite" }),
-    ]);
-  });
-
   it("rejoue dans l'ordre les événements arrivés avant la résolution IPC", async () => {
     const turn = {
       turnId: "00000000-0000-4000-8000-000000000021",

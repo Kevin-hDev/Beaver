@@ -44,7 +44,7 @@ export function useAgentChat(
   const sessionRef = useRef(sessionId);
   const permissions = useAgentPermissionDelivery(onPermissionRequest, onPermissionClosed);
   const {
-    startStream, queueStreamMessage, stopStream, subscribeToStream, getStreamSnapshot,
+    startStream, resolveStreamSend, stopStream, subscribeToStream, getStreamSnapshot,
   } = useAgentStream();
   // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable closures
   sessionRef.current = sessionId;
@@ -137,7 +137,7 @@ export function useAgentChat(
     permissionModeRef: permModeRef,
     runOrDefer,
     doStream,
-    queueStreamMessage,
+    resolveStreamSend,
   });
   const syncTokenCount = useCallback(async (): Promise<number> => {
     if (!sessionId) return state.sessionTokenCount;

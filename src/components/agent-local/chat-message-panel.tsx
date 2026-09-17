@@ -32,7 +32,6 @@ export function ChatMessagePanel({
   return (
     <MessageList
       messages={chat.messages}
-      queuedUserMessages={chat.queuedUserMessages}
       completedSegments={chat.completedSegments}
       currentContent={chat.currentContent}
       currentContentPhase={chat.currentContentPhase}

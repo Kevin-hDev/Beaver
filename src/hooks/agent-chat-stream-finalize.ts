@@ -54,10 +54,7 @@ export function finalizeStream(
   const allMessages = trimMessages(
     assistantMessage ? [...state.messages, assistantMessage] : state.messages,
   );
-  const contextUsageBuckets = resolvePreparedContextBuckets(
-    state,
-    state.queuedUserMessages,
-  );
+  const contextUsageBuckets = resolvePreparedContextBuckets(state);
   const recorded = resolveContextUsage(state.contextUsageRecord);
   const resolvedContextTokens = recorded.used !== null
     ? state.sessionTokenCount

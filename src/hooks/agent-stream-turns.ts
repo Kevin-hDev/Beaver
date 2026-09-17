@@ -38,24 +38,14 @@ function reconcileIdentity(
     ? existing
     : optimisticMessageIndex(record.state.messages, optimisticUserMessageId);
   let messages = record.state.messages;
-  let queuedUserMessages = record.state.queuedUserMessages;
   if (optimistic >= 0) {
     messages = messages.map((message, index) => index === optimistic
       ? { ...message, id: identity.userMessageId, turn_id: identity.turnId }
       : message);
-  } else if (queuedUserMessages.length > 0) {
-    const [queued, ...remaining] = queuedUserMessages;
-    messages = [...messages, {
-      ...queued,
-      id: identity.userMessageId,
-      turn_id: identity.turnId,
-    }];
-    queuedUserMessages = remaining;
   }
   record.state = {
     ...record.state,
     messages,
-    queuedUserMessages,
     activeTurn: identity,
     updatedAt: Date.now(),
   };

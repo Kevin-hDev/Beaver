@@ -19,15 +19,6 @@ fn child_guard_runs_before_stream_replacement_and_permission_mutation() {
 }
 
 #[test]
-fn child_guard_runs_before_queue_stream_lookup() {
-    let source = include_str!("agent_chat_queue.rs");
-    assert_guard_precedes(
-        command_body(source, "pub async fn queue_agent_message"),
-        "streams.0.lock",
-    );
-}
-
-#[test]
 fn child_guard_runs_before_each_user_session_mutation() {
     let source = include_str!("agent_sessions.rs");
     for (command, boundary) in [
