@@ -1,0 +1,7 @@
+Review 08 — Correction de la preuve M07.
+
+Décision : conserver l’historique et corriger explicitement l’attribution plutôt que réécrire le commit.
+
+Changement : la note de 60d6dc71 et le registre local indiquent que la suite de persistance n’était pas verte à ce commit. La preuve appartient à d602c79c et compte 10 tests.
+
+Validation actuelle : npm run test:persistence-migration — 10 tests réussis.
