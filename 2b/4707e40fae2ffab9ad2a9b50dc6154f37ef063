@@ -1,0 +1,25 @@
+Tâche M05 — Émettre les erreurs Ollama une seule fois.
+
+Décision : le transport retourne un code stable et ne produit plus d'événement Error. agent_chat_run_spawn reste l'unique émetteur visible, car il ajoute déjà le diagnostic et masque les détails internes.
+
+Changements :
+- retrait des cinq émissions Error dans ollama_stream, ollama_stream_request et ollama_stream_request_error ;
+- codes publics stables pour connexion, délai, erreur serveur et réponse invalide ;
+- nouveau message traduit provider_response_invalid dans les sept langues ;
+- détails de réponse invalides conservés uniquement dans un log expurgé ;
+- compatibilité du classifieur avec les anciennes phrases conservée, avec suppression du faux positif contains("rate") qui classait « generate » comme erreur fournisseur.
+
+Preuve avant correction :
+- rg trouvait cinq StreamEvent::Error dans ollama_stream*.rs et un au point central ;
+- les nouveaux tests de codes Rust et frontend échouaient avec unknown/errors.streamInterrupted.
+
+Validation après correction :
+- rg ne trouve plus qu'un StreamEvent::Error de production, dans commands/agent_chat_run_spawn.rs ;
+- cargo test ollama_stream --lib : 16 réussis ;
+- cargo test stream_diagnostics --lib : 42 réussis ;
+- npx vitest run des erreurs de flux et de la bulle : 19 réussis ;
+- HTTP 400, réponse malformée, délai et annulation ont des contrats distincts ; aucun détail brut n'est rendu ;
+- cargo check et cargo clippy --all-targets -- -D warnings : réussis ;
+- npx tsc --noEmit et npm run lint : réussis ;
+- sept fichiers i18n valides avec jq ; formatage et diff check réussis ;
+- graphify update . : réussi, 47 446 nœuds et 107 814 arêtes.
