@@ -1,0 +1,16 @@
+M08 — Réduction des relais vides
+
+Résultat
+- `retry_stream` devient `stream_once`; il ne suggère plus une reprise inexistante.
+- Le contexte interactif groupe le `RequestConfig` déjà présent avec les données d’exécution, sans modifier annulation, numérotation, capture de continuité ni politique d’idempotence.
+- Ollama partage le test de présence des répertoires, appelle directement ses décisions et son lanceur natif, retire deux traits à implémentation unique et ne reconstruit plus un instantané immédiatement jeté.
+- Le registre React porte ses lectures et la suppression d’une permission; la notification tient dans un seul fichier.
+- Les relais d’outils qui appliquent encore diagnostic, autorisation ou ordre d’exécution sont conservés.
+
+Validation
+- Tests ciblés LLM: 8 scénarios réels réussis.
+- Tests Ollama: 346 réussis, 1 ignoré.
+- Tests frontend ciblés: 38 réussis.
+- Suite Rust complète: 5 861 réussis, 0 échec, 32 ignorés.
+- Suite frontend complète: 636 fichiers, 3 506 tests réussis, contrôles annexes réussis.
+- `cargo check`, Clippy strict, lint frontend, TypeScript, formatage, `git diff --check` et Graphify réussis.
