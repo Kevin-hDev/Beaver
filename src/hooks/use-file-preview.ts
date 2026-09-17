@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type SetStateAction } from "react";
 import { fileNameFromPath, normalizeFileOperationPath } from "@/lib/file-preview-utils";
 import type { AgentPlanRun } from "@/types/agent";
 import type { FileOperation, FilePreviewActiveTab, FilePreviewListMode } from "@/types/file-preview";
+import type { AgentLocalWorkspaceState } from "@/types/navigation";
 import {
   readStoredFilePreviewTabs,
   writeStoredFilePreviewTabs,
@@ -12,22 +13,26 @@ import { usePreviewFallbackExistence } from "./use-preview-fallback-existence";
 import { usePrunePreviewTabs } from "./use-prune-preview-tabs";
 const MAX_TABS = 6;
 
+interface FilePreviewViewState {
+  open: boolean;
+  fullscreen: boolean;
+  activeTab: FilePreviewActiveTab;
+  onChange?: (partial: Partial<AgentLocalWorkspaceState>) => void;
+}
+
 export function useFilePreview(
   sessionId: string | null,
   operations: FileOperation[],
-  baseDir?: string,
+  baseDir: string | undefined,
+  view: FilePreviewViewState,
 ) {
+  const { open, fullscreen, activeTab, onChange } = view;
   const {
-    open,
-    fullscreen,
     width,
     extraWidth,
-    setOpen,
-    setFullscreen,
     setWidth,
     setExtraWidth,
   } = useFilePreviewPanelState(sessionId);
-  const [activeTab, setActiveTab] = useState<FilePreviewActiveTab>("summary");
   const [listMode, setListMode] = useState<FilePreviewListMode>("latest");
   const [tabIds, setTabIds] = useState<string[]>(() => readStoredFilePreviewTabs(sessionId));
   const [fallbackOps, setFallbackOps] = useState<FileOperation[]>([]);
@@ -49,8 +54,21 @@ export function useFilePreview(
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on session change is intentional
     setFallbackOps([]);
     setTabIds(readStoredFilePreviewTabs(sessionId));
-    setActiveTab("summary"); setListMode("latest");
+    setListMode("latest");
   }, [sessionId]);
+
+  const setOpen = useCallback((action: SetStateAction<boolean>) => {
+    const next = typeof action === "function" ? action(open) : action;
+    if (next !== open) onChange?.({ previewOpen: next });
+  }, [onChange, open]);
+  const setFullscreen = useCallback((action: SetStateAction<boolean>) => {
+    const next = typeof action === "function" ? action(fullscreen) : action;
+    if (next !== fullscreen) onChange?.({ previewFullscreen: next });
+  }, [fullscreen, onChange]);
+  const setActiveTab = useCallback((action: SetStateAction<FilePreviewActiveTab>) => {
+    const next = typeof action === "function" ? action(activeTab) : action;
+    if (next !== activeTab) onChange?.({ previewActiveTab: next });
+  }, [activeTab, onChange]);
 
   usePrunePreviewTabs(operationById, setTabIds, setActiveTab);
 
@@ -66,15 +84,14 @@ export function useFilePreview(
   usePreviewFallbackExistence(filesystemFallbacks, baseDir, removeMissingFallbacks);
 
   const openOperation = useCallback((operation: FileOperation) => {
-    setOpen(true);
     setFallbackOps((items) => operations.some((item) => item.id === operation.id) || items.some((item) => item.id === operation.id) ? items : [operation, ...items].slice(0, MAX_TABS));
-    setActiveTab(operation.id);
+    onChange?.({ previewOpen: true, previewActiveTab: operation.id });
     setTabIds((ids) => {
       const next = [operation.id, ...ids.filter((id) => id !== operation.id)];
       return next.slice(0, MAX_TABS);
     });
     return operation.id;
-  }, [operations, setOpen]);
+  }, [onChange, operations]);
 
   const openFullPath = useCallback((path: string) => {
     const fallback: FileOperation = {
@@ -115,20 +132,21 @@ export function useFilePreview(
 
   const closeTab = useCallback((id: string) => {
     setTabIds((ids) => ids.filter((tabId) => tabId !== id));
-    setActiveTab((current) => current === id ? "summary" : current);
-  }, []);
+    if (activeTab === id) onChange?.({ previewActiveTab: "summary" });
+  }, [activeTab, onChange]);
 
   const closePanel = useCallback(() => {
-    setOpen(false);
-    setFullscreen(false);
+    onChange?.({ previewOpen: false, previewFullscreen: false });
     setExtraWidth(0);
-  }, [setOpen, setFullscreen, setExtraWidth]);
+  }, [onChange, setExtraWidth]);
 
   const toggleOpen = useCallback(() => {
-    if (open) setFullscreen(false);
-    setOpen(!open);
-    setActiveTab((current) => current || "summary");
-  }, [open, setOpen, setFullscreen]);
+    onChange?.({
+      previewOpen: !open,
+      previewFullscreen: open ? false : fullscreen,
+      previewActiveTab: activeTab || "summary",
+    });
+  }, [activeTab, fullscreen, onChange, open]);
 
   return {
     open,

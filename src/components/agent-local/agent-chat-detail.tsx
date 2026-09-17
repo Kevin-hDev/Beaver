@@ -5,7 +5,7 @@ import { FilePreviewPanel } from "@/components/file-preview/file-preview-panel";
 import { FileTreePanel } from "@/components/file-tree/file-tree-panel";
 import { BrowserPanel } from "@/components/internal-browser/browser-panel";
 import type { useFilePreview } from "@/hooks/use-file-preview";
-import type { useFileTree } from "@/hooks/use-file-tree";
+import type { ControlledFileTree } from "@/hooks/use-agent-local-controlled-panels";
 import { useAgentPanelLayout } from "@/hooks/use-agent-panel-layout";
 import type { DroppedFile } from "@/hooks/use-file-drop";
 import type { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
@@ -52,7 +52,7 @@ interface AgentChatDetailProps {
   onInitialMessageSent: () => void;
   onFileOperationsChange: (operations: FileOperationGroups) => void;
   onPreviewFullscreenChange: (fullscreen: boolean) => void;
-  fileTree: ReturnType<typeof useFileTree>;
+  fileTree: ControlledFileTree;
   parentSessionId?: string;
   onOpenSubagent?: (sessionId: string) => void;
   onGoToParent?: () => void;

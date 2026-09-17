@@ -67,11 +67,7 @@ describe("useAgentLocalControlledPreview", () => {
     act(() => result.current.closePanel());
 
     expect(preview.closePanel).toHaveBeenCalled();
-    expect(onNavChange).toHaveBeenCalledWith({
-      previewOpen: false,
-      previewFullscreen: false,
-      fileTreeOpen: false,
-    });
+    expect(onNavChange).toHaveBeenCalledWith({ fileTreeOpen: false });
   });
 
   it("ferme aussi l'arborescence quand toggleOpen replie la preview", () => {
@@ -91,14 +87,8 @@ describe("useAgentLocalControlledPreview", () => {
 
     act(() => result.current.toggleOpen());
 
-    expect(preview.setOpen).toHaveBeenCalledWith(false);
-    expect(preview.setFullscreen).toHaveBeenCalledWith(false);
-    expect(onNavChange).toHaveBeenCalledWith({
-      previewOpen: false,
-      previewFullscreen: false,
-      previewActiveTab: "summary",
-      fileTreeOpen: false,
-    });
+    expect(preview.toggleOpen).toHaveBeenCalledOnce();
+    expect(onNavChange).toHaveBeenCalledWith({ fileTreeOpen: false });
   });
 
   it.each(["forecast", "browser"] as const)(
@@ -116,11 +106,7 @@ describe("useAgentLocalControlledPreview", () => {
         result.current.openPath(operation.path);
       });
 
-      expect(onNavChange).toHaveBeenLastCalledWith({
-        previewOpen: true,
-        previewActiveTab: `read:${operation.path}`,
-        panelMode: "preview",
-      });
+      expect(onNavChange).toHaveBeenLastCalledWith({ panelMode: "preview" });
     },
   );
 
@@ -133,22 +119,18 @@ describe("useAgentLocalControlledPreview", () => {
       onNavChange,
     }));
     const entries = [
-      { open: () => result.current.openOperation(operation), tabId: operation.id },
-      { open: () => result.current.openPath(operation.path), tabId: `read:${operation.path}` },
-      { open: () => result.current.openFullPath(operation.path), tabId: `read:${operation.path}` },
-      { open: () => result.current.openPlan(plan), tabId: `plan:${plan.id}` },
+      () => result.current.openOperation(operation),
+      () => result.current.openPath(operation.path),
+      () => result.current.openFullPath(operation.path),
+      () => result.current.openPlan(plan),
     ];
 
-    for (const entry of entries) {
+    for (const open of entries) {
       onNavChange.mockClear();
       act(() => {
-        entry.open();
+        open();
       });
-      expect(onNavChange).toHaveBeenLastCalledWith({
-        previewOpen: true,
-        previewActiveTab: entry.tabId,
-        panelMode: "preview",
-      });
+      expect(onNavChange).toHaveBeenLastCalledWith({ panelMode: "preview" });
     }
   });
 });

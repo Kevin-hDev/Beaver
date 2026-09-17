@@ -24,32 +24,30 @@ interface Args {
   onNavChange?: (partial: Partial<AgentLocalWorkspaceState>) => void;
 }
 
+export type ControlledFileTree = ReturnType<typeof useFileTree> & {
+  toggleOpen: () => void;
+};
+
 export function useAgentLocalControlledPanels({
   navState, sessionId, filePreview, fileTree, forecast, onNavChange,
 }: Args) {
   const toggleFileTree = useCallback(() => {
     const nextOpen = !navState.fileTreeOpen;
-    fileTree.setOpen(nextOpen);
     onNavChange?.({ fileTreeOpen: nextOpen });
-  }, [fileTree, navState.fileTreeOpen, onNavChange]);
+  }, [navState.fileTreeOpen, onNavChange]);
 
-  const fileTreeNav = useMemo(() => ({
+  const fileTreeNav: ControlledFileTree = useMemo(() => ({
     ...fileTree,
     open: navState.fileTreeOpen,
     toggleOpen: toggleFileTree,
-    closeTree: () => {
-      fileTree.closeTree();
-      onNavChange?.({ fileTreeOpen: false });
-    },
-  }), [fileTree, navState.fileTreeOpen, onNavChange, toggleFileTree]);
+  }), [fileTree, navState.fileTreeOpen, toggleFileTree]);
 
   const setPanelMode = useCallback((mode: PanelMode) => {
     forecast.setPanelMode(mode);
     if (mode === "forecast" && navState.previewFullscreen) {
       filePreview.setFullscreen(false);
-      onNavChange?.({ previewFullscreen: false });
     }
-  }, [filePreview, forecast, navState.previewFullscreen, onNavChange]);
+  }, [filePreview, forecast, navState.previewFullscreen]);
 
   const setSection = useCallback((section: ForecastSection) => {
     forecast.setSection(section);
@@ -59,11 +57,7 @@ export function useAgentLocalControlledPanels({
     forecast.loadAnalysis(id);
     filePreview.setOpen(true);
     if (navState.previewFullscreen) filePreview.setFullscreen(false);
-    onNavChange?.({
-      previewOpen: true,
-      previewFullscreen: false,
-    });
-  }, [filePreview, forecast, navState.previewFullscreen, onNavChange]);
+  }, [filePreview, forecast, navState.previewFullscreen]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -85,8 +79,7 @@ export function useAgentLocalControlledPanels({
   const focusAnalysis = useCallback((id: string) => {
     forecast.focusAnalysis(id);
     if (navState.previewFullscreen) filePreview.setFullscreen(false);
-    if (navState.previewFullscreen) onNavChange?.({ previewFullscreen: false });
-  }, [filePreview, forecast, navState.previewFullscreen, onNavChange]);
+  }, [filePreview, forecast, navState.previewFullscreen]);
 
   const closeAnalysis = useCallback(() => {
     forecast.closeAnalysis();

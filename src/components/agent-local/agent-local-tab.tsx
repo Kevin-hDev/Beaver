@@ -5,7 +5,6 @@ import { WelcomeView } from "./welcome-view";
 import { useAgentLocalTab } from "@/hooks/use-agent-local-tab";
 import { useFileTree } from "@/hooks/use-file-tree";
 import { useForecastPanel } from "@/hooks/use-forecast-panel";
-import { useAgentLocalPanelNav } from "@/hooks/use-agent-local-panel-nav";
 import { useAgentLocalControlledPanels } from "@/hooks/use-agent-local-controlled-panels";
 import { useGitBranch } from "@/hooks/use-git-branch";
 import { useGitUncommittedFiles } from "@/hooks/use-git-uncommitted-files";
@@ -68,9 +67,8 @@ export const AgentLocalTab = memo(function AgentLocalTab({
     projectPath: displayProject?.path,
     sessionTabs,
   });
-  const fileTree = useFileTree(displaySessionId, displayProject?.path);
+  const fileTree = useFileTree(displaySessionId, displayProject?.path, navState.fileTreeOpen);
   const forecast = useForecastPanel(navState, onNavChange);
-  useAgentLocalPanelNav({ navState, fileTree });
   const { fileTreeNav, forecastNav } = useAgentLocalControlledPanels({
     navState, sessionId: displaySessionId ?? null, filePreview, fileTree, forecast, onNavChange,
   });

@@ -19,7 +19,6 @@ vi.mock("@/hooks/use-session-tabs", () => ({
 }));
 vi.mock("@/hooks/use-file-tree", () => ({ useFileTree: () => ({}) }));
 vi.mock("@/hooks/use-forecast-panel", () => ({ useForecastPanel: () => ({}) }));
-vi.mock("@/hooks/use-agent-local-panel-nav", () => ({ useAgentLocalPanelNav: vi.fn() }));
 vi.mock("@/hooks/use-agent-local-controlled-panels", () => ({
   useAgentLocalControlledPanels: () => ({
     fileTreeNav: {}, forecastNav: { panelMode: "preview", setPanelMode: vi.fn() },

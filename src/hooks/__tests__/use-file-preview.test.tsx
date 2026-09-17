@@ -1,8 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useCallback, useState } from "react";
 import { checkPreviewFilesExist } from "@/services/file-preview";
 import { useFilePreview } from "../use-file-preview";
 import type { FileOperation } from "@/types/file-preview";
+import { DEFAULT_AGENT_LOCAL_WORKSPACE } from "@/types/navigation";
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(() => {})),
@@ -31,11 +33,38 @@ describe("useFilePreview", () => {
       width: 420,
     }));
 
-    const { result } = renderHook(() => useFilePreview("session-1", []));
+    const { result } = renderPreview([]);
 
     expect(result.current.open).toBe(false);
     expect(result.current.fullscreen).toBe(false);
     expect(result.current.width).toBe(420);
+  });
+
+  it("utilise directement la visibilité et l'onglet contrôlés", () => {
+    const selected = operation({ id: "operation-id" });
+    const { result } = renderPreview([selected], undefined, {
+      previewOpen: true,
+      previewFullscreen: true,
+      previewActiveTab: "operation-id",
+    });
+
+    expect(result.current.open).toBe(true);
+    expect(result.current.fullscreen).toBe(true);
+    expect(result.current.activeTab).toBe("operation-id");
+  });
+
+  it("publie les changements de panneau dans l'état contrôlé", () => {
+    const selected = operation({ id: "operation-id" });
+    const { result } = renderPreview([selected]);
+
+    act(() => result.current.setOpen(true));
+    expect(result.current.open).toBe(true);
+
+    act(() => result.current.setFullscreen(true));
+    expect(result.current.fullscreen).toBe(true);
+
+    act(() => result.current.setActiveTab("operation-id"));
+    expect(result.current.activeTab).toBe("operation-id");
   });
 
   it("ouvre le fichier complet sans réutiliser une diff du même chemin", () => {
@@ -45,7 +74,7 @@ describe("useFilePreview", () => {
       operation({ id: "edit-small", path, additions: 3, deletions: 3, type: "edit" }),
     ];
 
-    const { result } = renderHook(() => useFilePreview("session-1", operations));
+    const { result } = renderPreview(operations);
 
     act(() => {
       result.current.openFullPath(path);
@@ -65,7 +94,7 @@ describe("useFilePreview", () => {
     const path = "/repo/src/deleted.ts";
     vi.mocked(checkPreviewFilesExist).mockResolvedValueOnce([{ path, exists: false }]);
 
-    const { result } = renderHook(() => useFilePreview("session-1", [], "/repo"));
+    const { result } = renderPreview([], "/repo");
 
     act(() => {
       result.current.openFullPath(path);
@@ -91,7 +120,7 @@ describe("useFilePreview", () => {
         useParent: true,
       },
     });
-    const { result } = renderHook(() => useFilePreview("session-1", [], "/repo"));
+    const { result } = renderPreview([], "/repo");
 
     act(() => {
       result.current.openOperation(snapshot);
@@ -101,6 +130,25 @@ describe("useFilePreview", () => {
     expect(checkPreviewFilesExist).not.toHaveBeenCalled();
   });
 });
+
+function renderPreview(
+  operations: FileOperation[],
+  baseDir?: string,
+  initial: Partial<typeof DEFAULT_AGENT_LOCAL_WORKSPACE> = {},
+) {
+  return renderHook(() => {
+    const [view, setView] = useState({ ...DEFAULT_AGENT_LOCAL_WORKSPACE, ...initial });
+    const onChange = useCallback((partial: Partial<typeof view>) => {
+      setView((current) => ({ ...current, ...partial }));
+    }, []);
+    return useFilePreview("session-1", operations, baseDir, {
+      open: view.previewOpen,
+      fullscreen: view.previewFullscreen,
+      activeTab: view.previewActiveTab,
+      onChange,
+    });
+  });
+}
 
 function operation(overrides: Partial<FileOperation>): FileOperation {
   return {

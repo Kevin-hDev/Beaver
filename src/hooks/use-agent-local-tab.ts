@@ -10,7 +10,6 @@ import { useSessionActions } from "@/hooks/use-session-actions";
 import { useSessionFastMode } from "@/hooks/use-session-fast-mode";
 import { useFilePreview } from "@/hooks/use-file-preview";
 import { useAgentLocalShortcuts } from "@/hooks/use-agent-local-shortcuts";
-import { useAgentLocalPreviewSync } from "@/hooks/use-agent-local-preview-sync";
 import { useAgentLocalControlledPreview } from "@/hooks/use-agent-local-controlled-preview";
 import { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
 import { useOwnedFileOperations } from "@/hooks/use-owned-file-operations";
@@ -98,7 +97,17 @@ export function useAgentLocalTab({
     currentDefault.provider,
     welcomeReasoningMode,
   );
-  const filePreviewState = useFilePreview(activeSessionId ?? null, fileOperations.all, activeProject?.path);
+  const filePreviewState = useFilePreview(
+    activeSessionId ?? null,
+    fileOperations.all,
+    activeProject?.path,
+    {
+      open: navState.previewOpen,
+      fullscreen: navState.previewFullscreen,
+      activeTab: navState.previewActiveTab,
+      onChange: onNavChange,
+    },
+  );
   const { setFastMode, isFastModePending } = useSessionFastMode(refresh);
 
   useUnavailableModelFallback({
@@ -162,8 +171,6 @@ export function useAgentLocalTab({
     onToggleTerminal: terminal.togglePanel,
     onTogglePreview: filePreview.toggleOpen,
   });
-
-  useAgentLocalPreviewSync({ navState, filePreview: filePreviewState });
 
   const visibleSessionIds = useMemo(() => {
     const projectIdSet = new Set(projectsHook.projects.map((p) => p.id));
