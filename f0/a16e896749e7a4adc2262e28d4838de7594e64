@@ -1,0 +1,16 @@
+Review 08 — Priorité à l’annulation du flux Codex/Responses
+
+Décision
+- Le lecteur SSE Codex/Responses donne la priorité déterministe à l’annulation, comme le lecteur LLM commun.
+- Raison : une annulation déjà demandée doit gagner face à une réponse entièrement disponible, sinon la génération peut être déclarée terminée.
+
+Changements
+- Ajout de biased au tokio::select! partagé par les flux interactifs et silencieux Codex/Responses.
+- Test de régression avec jeton pré-annulé et événement response.completed déjà disponible.
+
+Validation
+- cargo test buffered_sse_still_prioritizes_user_cancellation : 1 test réussi.
+- cargo fmt --all -- --check : réussi.
+- cargo check : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.
