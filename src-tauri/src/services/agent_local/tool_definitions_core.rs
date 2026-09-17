@@ -51,8 +51,8 @@ pub fn core_tool_definitions() -> Vec<Value> {
                 "type": "object",
                 "properties": {
                     "path": {"type": "string", "description": "File path (relative to working directory, or absolute)"},
-                    "offset": {"type": "integer", "description": "Starting line (0-based, default: 0)"},
-                    "limit": {"type": "integer", "description": "Max lines to return (default: 2000, max: 50000)"}
+                    "offset": {"type": "integer", "minimum": 0, "description": "Starting line (0-based, default: 0)"},
+                    "limit": {"type": "integer", "minimum": 0, "description": "Max lines to return (default: 2000, max: 50000)"}
                 },
                 "required": ["path"]
             }),
@@ -99,13 +99,13 @@ pub fn core_tool_definitions() -> Vec<Value> {
              Depth: recursive up to 3 levels deep. Flat listing is not available — for a flat view use bash `ls`. \
              Excluded by default: dotfiles (names starting with `.`), `node_modules`, `target`. \
              Truncated at 500 entries. \
-             Read paths must be inside the working directory or an allowed read root. Use '.' to list the working directory.",
+             Read paths must be inside the working directory or an allowed read root. Omit path or use '.' to list the working directory.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string", "description": "Directory path (use '.' for working directory)"}
+                    "path": {"type": "string", "description": "Optional directory path (default: working directory)"}
                 },
-                "required": ["path"]
+                "required": []
             }),
         ),
     ]

@@ -15,7 +15,7 @@ pub fn office_tool_definitions() -> Vec<serde_json::Value> {
                     "path": {"type": "string", "description": "Path to the file"},
                     "sheet": {"type": "string", "description": "Sheet name (default: first). Ignored for CSV."},
                     "range": {"type": "string", "description": "Cell range (e.g. 'A1:D10'). Ignored for CSV."},
-                    "max_rows": {"type": "integer", "description": "Max data rows (default: 500, max: 5000)"}
+                    "max_rows": {"type": "integer", "minimum": 0, "description": "Max data rows (default: 500, max: 5000)"}
                 },
                 "required": ["path"]
             }),

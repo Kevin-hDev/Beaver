@@ -41,7 +41,7 @@ fn analyze_rejects_unknown_nested_parameters() {
         }),
     )
     .unwrap_err();
-    assert!(typo.contains("params.scenaro_id"));
+    assert!(typo.contains("params.scenaro_id"), "{typo}");
 
     let nested = validate(
         "forecast_analyze",
@@ -52,5 +52,8 @@ fn analyze_rejects_unknown_nested_parameters() {
         }),
     )
     .unwrap_err();
-    assert!(nested.contains("params.covariate_adjustments[0].unknown"));
+    assert!(
+        nested.contains("params.covariate_adjustments[0].unknown"),
+        "{nested}"
+    );
 }

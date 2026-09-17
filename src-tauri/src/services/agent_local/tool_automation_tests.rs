@@ -66,8 +66,7 @@ fn nested_schedule_and_patch_are_strict() {
             "patch":{"status":"disabled","target_mode":"resume_session"}
         }),
     ] {
-        let generic = super::tool_validate::validate("manage_automation", &request).unwrap();
-        assert!(super::tool_automation_validation::parse(&generic).is_err());
+        assert!(super::tool_validate::validate("manage_automation", &request).is_err());
     }
 }
 

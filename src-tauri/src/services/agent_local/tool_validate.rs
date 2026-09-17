@@ -2,59 +2,22 @@ use serde_json::Value;
 
 #[path = "tool_validate_definition.rs"]
 mod definition;
-#[path = "tool_validate_schema.rs"]
-mod schema;
-use schema::{schema, Ty};
-
 pub(crate) use definition::validate as validate_definition;
 
-fn type_ok(val: &Value, ty: Ty) -> bool {
-    match ty {
-        Ty::Str => val.is_string(),
-        Ty::Int => val.is_u64(),
-        Ty::Float => val.is_f64() || val.is_u64() || val.is_i64(),
-        Ty::Arr => val.is_array(),
-        Ty::Obj => val.is_object(),
-        Ty::Bool => val.is_boolean(),
-    }
-}
-
-fn ty_label(ty: Ty) -> &'static str {
-    match ty {
-        Ty::Str => "string",
-        Ty::Int => "entier positif ou nul",
-        Ty::Float => "number",
-        Ty::Arr => "array",
-        Ty::Obj => "object",
-        Ty::Bool => "boolean",
-    }
-}
-
 pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
-    if let Some(definition) = super::tool_definitions_forecast::definition_for_tool(tool) {
-        return validate_definition(tool, args, &definition);
-    }
-    let specs = match schema(tool) {
-        Some(s) => s,
-        None => return Ok(args.clone()),
+    let Some(definition) = super::tool_definitions::native_tool_definitions()
+        .into_iter()
+        .find(|definition| {
+            definition.pointer("/function/name").and_then(Value::as_str) == Some(tool)
+        })
+    else {
+        return Ok(args.clone());
     };
-
-    let obj = match args.as_object() {
-        Some(o) => o,
-        None => return Err("les arguments doivent être un objet JSON".into()),
-    };
-
-    for &(name, ty, required) in specs {
-        match obj.get(name) {
-            None | Some(Value::Null) if required => {
-                return Err(format!("paramètre '{name}' requis"));
-            }
-            Some(v) if !v.is_null() && !type_ok(v, ty) => {
-                return Err(format!("'{name}' doit être de type {}", ty_label(ty)));
-            }
-            _ => {}
-        }
-    }
+    let normalized = without_legacy_shell_alias(tool, args);
+    validate_definition(tool, normalized.as_ref().unwrap_or(args), &definition)?;
+    let obj = args
+        .as_object()
+        .ok_or_else(|| "les arguments doivent être un objet JSON".to_string())?;
     validate_subagent_change_ids(tool, obj)?;
     validate_shell_numbers(tool, obj)?;
     validate_shell_text(tool, obj)?;
@@ -69,20 +32,17 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
         }
     }
 
-    if let Some(key) = obj
-        .keys()
-        .find(|key| !specs.iter().any(|(name, _, _)| *name == key.as_str()))
-    {
-        let accepted = specs
-            .iter()
-            .map(|(name, _, _)| *name)
-            .collect::<Vec<_>>()
-            .join(", ");
-        return Err(format!(
-            "paramètre '{key}' inconnu; paramètres acceptés: {accepted}"
-        ));
-    }
     Ok(args.clone())
+}
+
+fn without_legacy_shell_alias(tool: &str, args: &Value) -> Option<Value> {
+    if !matches!(tool, "bash" | "bash_control") || args.get("yield-time-ms").is_none() {
+        return None;
+    }
+    let mut normalized = args.clone();
+    let object = normalized.as_object_mut()?;
+    object.remove("yield-time-ms")?;
+    Some(normalized)
 }
 
 fn validate_subagent_change_ids(

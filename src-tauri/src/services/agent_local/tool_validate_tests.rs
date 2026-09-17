@@ -18,6 +18,13 @@ mod tests {
     }
 
     #[test]
+    fn list_dir_keeps_the_working_directory_default() {
+        assert!(validate("list_dir", &json!({})).is_ok());
+        assert!(validate("list_dir", &json!({"path": "."})).is_ok());
+        assert!(validate("list_dir", &json!({"path": 42})).is_err());
+    }
+
+    #[test]
     fn search_mcp_valid() {
         let args = json!({"mode": "call", "tool_id": "svc.tool", "arguments": {"key": "val"}});
         assert!(validate("search_mcp_tools", &args).is_ok());
@@ -119,6 +126,22 @@ mod tests {
     fn unknown_tool_passes_through() {
         let args = json!({"anything": true});
         assert!(validate("unknown_future_tool", &args).is_ok());
+    }
+
+    #[test]
+    fn every_native_tool_uses_its_published_definition() {
+        for entry in crate::services::agent_local::tool_catalog::catalog() {
+            assert!(
+                validate(entry.id, &json!("not an object")).is_err(),
+                "missing definition for {}",
+                entry.id
+            );
+            assert!(
+                validate(entry.id, &json!({"__unexpected": true})).is_err(),
+                "unknown argument accepted by {}",
+                entry.id
+            );
+        }
     }
 
     #[test]

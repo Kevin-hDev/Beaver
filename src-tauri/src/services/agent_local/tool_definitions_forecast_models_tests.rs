@@ -44,7 +44,10 @@ fn model_tool_explains_that_candidates_are_already_confidence_safe() {
 
 #[test]
 fn analyze_tool_exposes_a_bounded_backtest_driven_ensemble() {
-    let definition = definition_for_tool("forecast_analyze").unwrap();
+    let definition = forecast_tool_definitions()
+        .into_iter()
+        .find(|definition| definition["function"]["name"] == "forecast_analyze")
+        .unwrap();
     let model_ids =
         &definition["function"]["parameters"]["properties"]["params"]["properties"]["model_ids"];
     let description = definition["function"]["description"].as_str().unwrap();

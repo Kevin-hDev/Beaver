@@ -1,44 +1,37 @@
 use serde_json::Value;
 
 pub fn validate(tool: &str, args: &Value, definition: &Value) -> Result<Value, String> {
-    let object = args
-        .as_object()
-        .ok_or_else(|| "les arguments doivent être un objet JSON".to_string())?;
     let parameters = definition
         .pointer("/function/parameters")
-        .and_then(Value::as_object)
-        .ok_or_else(|| "schéma d'outil indisponible".to_string())?;
-    let properties = parameters
-        .get("properties")
-        .and_then(Value::as_object)
-        .ok_or_else(|| "schéma d'outil indisponible".to_string())?;
-    let required = parameters
-        .get("required")
-        .and_then(Value::as_array)
-        .ok_or_else(|| "schéma d'outil indisponible".to_string())?;
-
-    for name in required.iter().filter_map(Value::as_str) {
-        if !matches!(object.get(name), Some(value) if !value.is_null()) {
-            return Err(format!("paramètre '{name}' requis"));
-        }
-    }
-
-    for (name, value) in object {
-        let Some(property) = properties.get(name) else {
-            let accepted = properties.keys().cloned().collect::<Vec<_>>().join(", ");
-            return Err(format!(
-                "paramètre '{name}' inconnu pour {tool}; paramètres acceptés: {accepted}"
-            ));
-        };
-        if !value.is_null() {
-            validate_value(name, value, property)?;
-        }
-    }
+        .ok_or_else(|| format!("schéma d'outil indisponible pour {tool}"))?;
+    validate_value("", args, parameters)?;
     Ok(args.clone())
 }
 
-fn validate_value(name: &str, value: &Value, property: &Value) -> Result<(), String> {
-    let expected = property["type"]
+fn validate_value(name: &str, value: &Value, schema: &Value) -> Result<(), String> {
+    if let Some(variants) = schema.get("oneOf").and_then(Value::as_array) {
+        let matches = variants
+            .iter()
+            .filter(|variant| validate_value(name, value, variant).is_ok())
+            .count();
+        return (matches == 1)
+            .then_some(())
+            .ok_or_else(|| format!("'{}' ne correspond pas au schéma attendu", label(name)));
+    }
+    if let Some(variants) = schema.get("anyOf").and_then(Value::as_array) {
+        return variants
+            .iter()
+            .any(|variant| validate_value(name, value, variant).is_ok())
+            .then_some(())
+            .ok_or_else(|| format!("'{}' ne correspond pas au schéma attendu", label(name)));
+    }
+    if let Some(expected) = schema.get("const") {
+        return (value == expected)
+            .then_some(())
+            .ok_or_else(|| format!("'{}' contient une valeur invalide", label(name)));
+    }
+
+    let expected = schema["type"]
         .as_str()
         .ok_or_else(|| "schéma d'outil indisponible".to_string())?;
     let valid = match expected {
@@ -48,31 +41,109 @@ fn validate_value(name: &str, value: &Value, property: &Value) -> Result<(), Str
         "array" => value.is_array(),
         "object" => value.is_object(),
         "boolean" => value.is_boolean(),
+        "null" => value.is_null(),
         _ => false,
     };
     if !valid {
-        return Err(format!("'{name}' doit être de type {expected}"));
+        return Err(format!("'{}' doit être de type {expected}", label(name)));
     }
-    validate_constraints(name, value, property)?;
-    validate_children(name, value, property)
+
+    validate_constraints(name, value, schema)?;
+    match expected {
+        "array" => validate_array(name, value, schema),
+        "object" => validate_object(name, value, schema),
+        "string" => validate_string_format(name, value, schema),
+        _ => Ok(()),
+    }
 }
 
-fn validate_constraints(name: &str, value: &Value, property: &Value) -> Result<(), String> {
+fn validate_array(name: &str, value: &Value, schema: &Value) -> Result<(), String> {
+    let Some(item_schema) = schema.get("items") else {
+        return Ok(());
+    };
+    for (index, item) in value.as_array().into_iter().flatten().enumerate() {
+        validate_value(&format!("{name}[{index}]"), item, item_schema)?;
+    }
+    Ok(())
+}
+
+fn validate_object(name: &str, value: &Value, schema: &Value) -> Result<(), String> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| format!("'{name}' doit être de type object"))?;
+    let required = schema["required"]
+        .as_array()
+        .map(|items| items.iter().filter_map(Value::as_str).collect::<Vec<_>>())
+        .unwrap_or_default();
+    for required_name in &required {
+        if !matches!(object.get(*required_name), Some(value) if !value.is_null()) {
+            return Err(format!("paramètre '{required_name}' requis"));
+        }
+    }
+
+    let Some(properties) = schema.get("properties").and_then(Value::as_object) else {
+        return Ok(());
+    };
+    for (child_name, child_value) in object {
+        let Some(child_schema) = properties.get(child_name) else {
+            let accepted = properties.keys().cloned().collect::<Vec<_>>().join(", ");
+            return Err(format!(
+                "paramètre '{}' inconnu; paramètres acceptés: {accepted}",
+                child_path(name, child_name)
+            ));
+        };
+        if child_value.is_null() && !required.contains(&child_name.as_str()) {
+            continue;
+        }
+        let qualified = child_path(name, child_name);
+        validate_value(&qualified, child_value, child_schema)?;
+    }
+    Ok(())
+}
+
+fn child_path(parent: &str, child: &str) -> String {
+    if parent.is_empty() {
+        child.to_string()
+    } else {
+        format!("{parent}.{child}")
+    }
+}
+
+fn label(name: &str) -> &str {
+    if name.is_empty() {
+        "arguments"
+    } else {
+        name
+    }
+}
+
+fn validate_string_format(name: &str, value: &Value, schema: &Value) -> Result<(), String> {
+    if schema["format"].as_str() == Some("uuid")
+        && value
+            .as_str()
+            .is_none_or(|text| uuid::Uuid::parse_str(text).is_err())
+    {
+        return Err(format!("'{name}' doit être un UUID"));
+    }
+    Ok(())
+}
+
+fn validate_constraints(name: &str, value: &Value, schema: &Value) -> Result<(), String> {
     if let Some(text) = value.as_str() {
         let length = text.chars().count() as u64;
-        check_u64_bound(name, length, property, "minLength", false)?;
-        check_u64_bound(name, length, property, "maxLength", true)?;
+        check_u64_bound(name, length, schema, "minLength", false)?;
+        check_u64_bound(name, length, schema, "maxLength", true)?;
     }
     if let Some(items) = value.as_array() {
         let length = items.len() as u64;
-        check_u64_bound(name, length, property, "minItems", false)?;
-        check_u64_bound(name, length, property, "maxItems", true)?;
+        check_u64_bound(name, length, schema, "minItems", false)?;
+        check_u64_bound(name, length, schema, "maxItems", true)?;
     }
     if let Some(number) = value.as_f64() {
-        check_number_bound(name, number, property, "minimum", false)?;
-        check_number_bound(name, number, property, "maximum", true)?;
+        check_number_bound(name, number, schema, "minimum", false)?;
+        check_number_bound(name, number, schema, "maximum", true)?;
     }
-    if let Some(allowed) = property.get("enum").and_then(Value::as_array) {
+    if let Some(allowed) = schema.get("enum").and_then(Value::as_array) {
         if !allowed.contains(value) {
             return Err(format!("'{name}' contient une valeur invalide"));
         }
@@ -108,30 +179,6 @@ fn check_number_bound(
     };
     if (maximum && actual > bound) || (!maximum && actual < bound) {
         return Err(format!("'{name}' est hors limites"));
-    }
-    Ok(())
-}
-
-fn validate_children(name: &str, value: &Value, property: &Value) -> Result<(), String> {
-    if let (Some(items), Some(item_schema)) = (value.as_array(), property.get("items")) {
-        for (index, item) in items.iter().enumerate() {
-            validate_value(&format!("{name}[{index}]"), item, item_schema)?;
-        }
-    }
-    let (Some(object), Some(properties)) = (
-        value.as_object(),
-        property.get("properties").and_then(Value::as_object),
-    ) else {
-        return Ok(());
-    };
-    for (child_name, child_value) in object {
-        let Some(child_schema) = properties.get(child_name) else {
-            let accepted = properties.keys().cloned().collect::<Vec<_>>().join(", ");
-            return Err(format!(
-                "paramètre '{name}.{child_name}' inconnu; paramètres acceptés: {accepted}"
-            ));
-        };
-        validate_value(&format!("{name}.{child_name}"), child_value, child_schema)?;
     }
     Ok(())
 }

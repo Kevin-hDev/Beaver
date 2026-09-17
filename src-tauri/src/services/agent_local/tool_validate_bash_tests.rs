@@ -27,6 +27,23 @@ fn valid_bash_control() {
 }
 
 #[test]
+fn legacy_hyphenated_yield_alias_remains_valid() {
+    validate(
+        "bash",
+        &json!({"command": "pwd", "yield-time-ms": 500})
+    )
+    .expect("bash must keep the legacy yield alias");
+    validate(
+        "bash_control",
+        &json!({
+            "session_id": "2a8a08dc-660d-477a-9a44-32c24ba814cb",
+            "yield-time-ms": 500
+        })
+    )
+    .expect("bash_control must keep the legacy yield alias");
+}
+
+#[test]
 fn bash_control_accepts_chars_followed_by_eof() {
     let args = json!({
         "session_id": "2a8a08dc-660d-477a-9a44-32c24ba814cb",

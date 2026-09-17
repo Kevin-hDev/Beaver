@@ -170,12 +170,6 @@ fn forecast_models_definition_for(auto: bool) -> Value {
     )
 }
 
-pub(super) fn definition_for_tool(name: &str) -> Option<Value> {
-    forecast_tool_definitions().into_iter().find(|definition| {
-        definition.pointer("/function/name").and_then(Value::as_str) == Some(name)
-    })
-}
-
 #[cfg(test)]
 #[path = "tool_definitions_forecast_models_tests.rs"]
 mod tests;
