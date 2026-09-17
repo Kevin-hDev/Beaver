@@ -49,6 +49,7 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     .await
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_store_document::write_to_path(path, session).await?;
+    crate::services::agent_local::session_index::mark_document_changed();
     update_index(crate::services::agent_local::session_index::meta_from_session(session)).await;
     Ok(())
 }
@@ -89,6 +90,7 @@ pub(crate) async fn save_prepared(
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     let meta = crate::services::agent_local::session_index::meta_from_session(prepared.session());
     super::session_store_document::write_prepared_to_path(path, prepared).await?;
+    crate::services::agent_local::session_index::mark_document_changed();
     update_index(meta).await;
     Ok(())
 }

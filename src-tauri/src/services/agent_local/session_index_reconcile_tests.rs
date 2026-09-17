@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::agent_local::types_session::AgentSession;
 use chrono::Utc;
 use tempfile::TempDir;
 

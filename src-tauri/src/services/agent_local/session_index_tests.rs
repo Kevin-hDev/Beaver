@@ -2,7 +2,6 @@ use super::test_support::*;
 use super::*;
 use crate::services::agent_local::session_index_io;
 use chrono::Utc;
-use std::path::Path;
 use tempfile::TempDir;
 
 #[test]
@@ -152,10 +151,12 @@ async fn update_count_via_write() {
 async fn rebuild_empty_and_nonexistent() {
     let tmp = TempDir::new().unwrap();
     assert!(rebuild_index_from(tmp.path()).await.unwrap().is_empty());
-    assert!(rebuild_index_from(Path::new("/tmp/nonexistent-cl-go"))
+    let missing = tmp.path().join("missing");
+    assert!(rebuild_index_from(&missing)
         .await
         .unwrap()
         .is_empty());
+    assert!(missing.join("index.json").is_file());
 }
 
 #[tokio::test]
@@ -212,6 +213,87 @@ async fn rebuild_multiple_sessions() {
     let entries = rebuild_index_from(tmp.path()).await.unwrap();
     assert_eq!(entries.len(), 5);
     assert_eq!(entries.iter().filter(|e| e.is_heartbeat).count(), 3);
+}
+
+#[tokio::test]
+async fn published_rebuild_avoids_a_second_scan_with_many_sessions() {
+    let tmp = TempDir::new().unwrap();
+    for index in 0..128 {
+        persist(
+            tmp.path(),
+            &test_session(&format!("many-{index}"), "Conversation", false),
+        )
+        .await;
+    }
+
+    let (rebuild_reads, repeated_reads) = measure_rebuild_then_read(tmp.path()).await.unwrap();
+
+    assert_eq!(rebuild_reads, 128);
+    assert_eq!(repeated_reads, 0);
+}
+
+#[tokio::test]
+async fn a_changed_document_revision_discovers_missing_metadata() {
+    let tmp = TempDir::new().unwrap();
+    persist(tmp.path(), &test_session("first", "First", false)).await;
+    let guard = INDEX_LOCK.lock().await;
+    let revision = SESSION_SOURCE_REVISION.load(std::sync::atomic::Ordering::Acquire);
+    rebuild_index_from(tmp.path()).await.unwrap();
+    let path = tmp.path().join("index.json");
+    refresh_reconcile_state(&path, revision).await;
+    persist(tmp.path(), &test_session("second", "Second", false)).await;
+
+    let entries = read_index_once(&path, revision + 1).await.unwrap();
+
+    assert_eq!(entries.len(), 2);
+    assert!(entries.iter().any(|entry| entry.id == "second"));
+    *INDEX_RECONCILE_FINGERPRINT.lock().await = None;
+    INDEX_SOURCE_REVISION.store(u64::MAX, std::sync::atomic::Ordering::Release);
+    drop(guard);
+}
+
+#[tokio::test]
+async fn readers_wait_for_the_shared_index_operation() {
+    let guard = INDEX_LOCK.lock().await;
+    let mut reader = tokio::spawn(read_index());
+
+    assert!(tokio::time::timeout(std::time::Duration::from_millis(20), &mut reader)
+        .await
+        .is_err());
+    drop(guard);
+
+    tokio::time::timeout(std::time::Duration::from_secs(5), reader)
+        .await
+        .expect("reader released")
+        .expect("reader task")
+        .expect("index read");
+}
+
+#[tokio::test]
+async fn rebuild_preserves_a_v7_extension_owner() {
+    use crate::services::agent_local::types_session::{
+        SubagentExtensionOwner, SubagentExtensionOwnership,
+    };
+
+    let tmp = TempDir::new().unwrap();
+    let mut session = test_session("extension-child", "Extension child", false);
+    session.subagent_extension_owner = Some(SubagentExtensionOwnership::Valid(
+        SubagentExtensionOwner {
+            extension_id: "example.extension".into(),
+            extension_version: "1.0.0".into(),
+            extension_fingerprint: "fingerprint".into(),
+        },
+    ));
+    persist(tmp.path(), &session).await;
+
+    rebuild_index_from(tmp.path()).await.unwrap();
+    let loaded = super::super::session_store_document::read_from_path(
+        tmp.path().join("extension-child.json"),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(loaded.subagent_extension_owner, session.subagent_extension_owner);
 }
 
 #[tokio::test]

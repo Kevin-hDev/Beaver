@@ -1,94 +1,104 @@
 pub(crate) use super::session_index_io::write_index_to;
+pub(crate) use super::session_index_meta::from_session as meta_from_session;
 use super::session_index_io::{
-    index_fingerprint, index_path, read_index_from, read_index_raw, write_index, IndexFingerprint,
+    index_dir, index_fingerprint, index_path, read_index_from, write_index, IndexFingerprint,
 };
-use super::session_security;
-use super::session_store::validate_session_id;
-use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
+use super::session_index_reconcile::reconcile as reconcile_index;
+#[cfg(test)]
+use super::session_index_reconcile::meta_drifted as index_meta_drifted;
+use crate::services::agent_local::types_session::AgentSessionMeta;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::sync::Mutex;
 
+// ponytail: one lock is enough for this bounded local index; split it only if profiling proves contention.
 static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
 static INDEX_RECONCILE_FINGERPRINT: Mutex<Option<IndexFingerprint>> = Mutex::const_new(None);
+static SESSION_SOURCE_REVISION: AtomicU64 = AtomicU64::new(0);
+static INDEX_SOURCE_REVISION: AtomicU64 = AtomicU64::new(u64::MAX);
 #[cfg(test)]
 static FAIL_NEXT_UPSERT_SESSION: Mutex<Option<String>> = Mutex::const_new(None);
 
 pub async fn read_index() -> Result<Vec<AgentSessionMeta>, String> {
+    let _guard = INDEX_LOCK.lock().await;
+    read_index_locked().await
+}
+
+async fn read_index_locked() -> Result<Vec<AgentSessionMeta>, String> {
+    loop {
+        let source_revision = SESSION_SOURCE_REVISION.load(Ordering::Acquire);
+        let entries = read_index_once(&index_path(), source_revision).await?;
+        if SESSION_SOURCE_REVISION.load(Ordering::Acquire) == source_revision {
+            return Ok(entries);
+        }
+    }
+}
+
+async fn read_index_once(
+    path: &Path,
+    source_revision: u64,
+) -> Result<Vec<AgentSessionMeta>, String> {
     let mut last_fingerprint = INDEX_RECONCILE_FINGERPRINT.lock().await;
-    let path = index_path();
-    match read_index_from(&path).await {
+    match read_index_from(path).await {
         Ok(entries) => {
-            let fingerprint = index_fingerprint(&path).await;
-            if last_fingerprint.as_ref() == fingerprint.as_ref() {
+            let fingerprint = index_fingerprint(path).await;
+            if INDEX_SOURCE_REVISION.load(Ordering::Acquire) != source_revision {
+                let dir = path
+                    .parent()
+                    .ok_or_else(|| "index indisponible".to_string())?;
+                let entries = rebuild_index_from(dir).await?;
+                *last_fingerprint = index_fingerprint(path).await;
+                INDEX_SOURCE_REVISION.store(source_revision, Ordering::Release);
+                Ok(entries)
+            } else if last_fingerprint.as_ref() == fingerprint.as_ref() {
                 Ok(entries)
             } else {
-                let entries = reconcile_index(&path, entries).await?;
-                *last_fingerprint = index_fingerprint(&path).await;
+                let entries = reconcile_index(path, entries).await?;
+                *last_fingerprint = index_fingerprint(path).await;
+                INDEX_SOURCE_REVISION.store(source_revision, Ordering::Release);
                 Ok(entries)
             }
         }
         Err(_) => {
-            let entries = rebuild_index().await?;
-            *last_fingerprint = index_fingerprint(&path).await;
+            let dir = path
+                .parent()
+                .ok_or_else(|| "index indisponible".to_string())?;
+            let entries = rebuild_index_from(dir).await?;
+            *last_fingerprint = index_fingerprint(path).await;
+            INDEX_SOURCE_REVISION.store(source_revision, Ordering::Release);
             Ok(entries)
         }
     }
 }
 
-async fn reconcile_index(
-    index_path: &Path,
-    entries: Vec<AgentSessionMeta>,
-) -> Result<Vec<AgentSessionMeta>, String> {
-    let Some(dir) = index_path.parent() else {
-        return Ok(entries);
-    };
-    for meta in &entries {
-        if validate_session_id(&meta.id).is_err() {
-            return rebuild_index_from(dir).await;
-        }
-        let path = dir.join(format!("{}.json", meta.id));
-        let Ok(session) = super::session_store_document::read_from_path(path).await else {
-            return rebuild_index_from(dir).await;
-        };
-        if index_meta_drifted(meta, &session) {
-            return rebuild_index_from(dir).await;
-        }
-    }
-    Ok(entries)
-}
-
-fn index_meta_drifted(meta: &AgentSessionMeta, session: &AgentSession) -> bool {
-    let expected = meta_from_session(session);
-    meta.archived_at != session.archived_at
-        || meta.fast_mode_enabled != session.fast_mode_enabled
-        || meta.parent_session_id != session.parent_session_id
-        || meta.subagent_type != session.subagent_type
-        || meta.subagent_status != session.subagent_status
-        || meta.subagent_run_id != session.subagent_run_id
-        || meta.subagent_description != expected.subagent_description
-        || meta.subagent_color_key != session.subagent_color_key
-        || meta.subagent_summary != expected.subagent_summary
-        || meta.subagent_last_activity != expected.subagent_last_activity
-        || meta.clone_parent_session_id != session.clone_parent_session_id
-        || meta.clone_parent_message_id != session.clone_parent_message_id
-        || meta.clone_mode != session.clone_mode
-        || meta.clone_root_session_id != session.clone_root_session_id
-        || meta.git_branch != session.git_branch
-        || meta.has_active_context_request != expected.has_active_context_request
-}
-
 pub async fn rebuild_index() -> Result<Vec<AgentSessionMeta>, String> {
-    let dir = crate::services::paths::data_dir().join("agent-sessions");
-    rebuild_index_from(&dir).await
+    let _guard = INDEX_LOCK.lock().await;
+    rebuild_global_index_locked().await
+}
+
+async fn rebuild_global_index_locked() -> Result<Vec<AgentSessionMeta>, String> {
+    loop {
+        let source_revision = SESSION_SOURCE_REVISION.load(Ordering::Acquire);
+        let entries = rebuild_index_from(index_dir().as_path()).await?;
+        if SESSION_SOURCE_REVISION.load(Ordering::Acquire) != source_revision {
+            continue;
+        }
+        refresh_reconcile_state(&index_path(), source_revision).await;
+        return Ok(entries);
+    }
 }
 
 pub async fn rebuild_index_from(dir: &Path) -> Result<Vec<AgentSessionMeta>, String> {
     let mut entries = Vec::new();
     let mut evicted = 0_usize;
-    if !dir.exists() {
-        return Ok(entries);
-    }
-    let mut read_dir = tokio::fs::read_dir(dir).await.map_err(|e| e.to_string())?;
+    let mut read_dir = match tokio::fs::read_dir(dir).await {
+        Ok(read_dir) => read_dir,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            write_index_to(dir, &entries).await?;
+            return Ok(entries);
+        }
+        Err(error) => return Err(error.to_string()),
+    };
     while let Ok(Some(entry)) = read_dir.next_entry().await {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("json") {
@@ -97,6 +107,8 @@ pub async fn rebuild_index_from(dir: &Path) -> Result<Vec<AgentSessionMeta>, Str
         if path.file_name().and_then(|n| n.to_str()) == Some("index.json") {
             continue;
         }
+        #[cfg(test)]
+        test_support::record_document_read();
         if let Ok(session) = super::session_store_document::read_from_path(path).await {
             entries.push(meta_from_session(&session));
             if entries.len() >= super::session_index_io::MAX_REBUILD_BUFFER_ENTRIES {
@@ -126,26 +138,34 @@ pub async fn upsert_entry(meta: AgentSessionMeta) -> Result<(), String> {
         }
     }
     let _guard = INDEX_LOCK.lock().await;
-    let mut entries = read_index_raw().await;
+    let source_revision = SESSION_SOURCE_REVISION.load(Ordering::Acquire);
+    let mut entries = match read_index_from(&index_path()).await {
+        Ok(entries) => entries,
+        Err(_) => rebuild_index_from(index_dir().as_path()).await?,
+    };
     if let Some(pos) = entries.iter().position(|e| e.id == meta.id) {
         entries[pos] = meta;
     } else {
         entries.push(meta);
     }
     write_index(&entries).await?;
-    refresh_reconcile_fingerprint().await;
+    refresh_reconcile_state(&index_path(), source_revision).await;
     Ok(())
 }
 
 pub(super) async fn repair_after_upsert_failure() -> Result<(), String> {
     let _guard = INDEX_LOCK.lock().await;
-    rebuild_index().await?;
-    refresh_reconcile_fingerprint().await;
-    Ok(())
+    rebuild_global_index_locked().await.map(|_| ())
 }
 
 pub(super) async fn invalidate_reconcile_fingerprint() {
+    let _guard = INDEX_LOCK.lock().await;
     *INDEX_RECONCILE_FINGERPRINT.lock().await = None;
+    INDEX_SOURCE_REVISION.store(u64::MAX, Ordering::Release);
+}
+
+pub(super) fn mark_document_changed() {
+    SESSION_SOURCE_REVISION.fetch_add(1, Ordering::AcqRel);
 }
 
 #[cfg(test)]
@@ -155,55 +175,21 @@ pub(super) async fn fail_next_upsert_for_session(id: &str) {
 
 pub async fn remove_entry(id: &str) -> Result<(), String> {
     let _guard = INDEX_LOCK.lock().await;
-    let mut entries = read_index_raw().await;
+    let source_revision = SESSION_SOURCE_REVISION.load(Ordering::Acquire);
+    let mut entries = match read_index_from(&index_path()).await {
+        Ok(entries) => entries,
+        Err(_) => rebuild_index_from(index_dir().as_path()).await?,
+    };
     entries.retain(|e| e.id != id);
     write_index(&entries).await?;
-    refresh_reconcile_fingerprint().await;
+    refresh_reconcile_state(&index_path(), source_revision).await;
     Ok(())
 }
 
-pub fn meta_from_session(session: &AgentSession) -> AgentSessionMeta {
-    AgentSessionMeta {
-        id: session.id.clone(),
-        name: crate::services::agent_local::sensitive_data::redact_high_confidence_text(
-            &session.name,
-        ),
-        created_at: session.created_at,
-        updated_at: session.updated_at,
-        archived_at: session.archived_at,
-        pinned_at: session.pinned_at,
-        model: session.model.clone(),
-        provider: session.provider.clone(),
-        thinking_enabled: session.thinking_enabled,
-        fast_mode_enabled: session.fast_mode_enabled,
-        reasoning_mode: session.reasoning_mode.clone(),
-        message_count: session.messages.len(),
-        is_heartbeat: session.is_heartbeat,
-        is_gateway: session.is_gateway,
-        has_active_context_request: session.context_usage.active_request_id.is_some(),
-        gateway_channel_key: session_security::redacted_optional(&session.gateway_channel_key),
-        project_id: session.project_id.clone(),
-        parent_session_id: session.parent_session_id.clone(),
-        subagent_type: session.subagent_type.clone(),
-        subagent_status: session.subagent_status.clone(),
-        subagent_run_id: session.subagent_run_id.clone(),
-        subagent_description: session_security::redacted_optional(&session.subagent_description),
-        subagent_color_key: session.subagent_color_key.clone(),
-        subagent_summary: session_security::redacted_optional(&session.subagent_summary),
-        subagent_last_activity: session_security::redacted_activity(
-            &session.subagent_last_activity,
-        ),
-        clone_parent_session_id: session.clone_parent_session_id.clone(),
-        clone_parent_message_id: session.clone_parent_message_id.clone(),
-        clone_mode: session.clone_mode.clone(),
-        clone_root_session_id: session.clone_root_session_id.clone(),
-        git_branch: session.git_branch.clone(),
-    }
-}
-
-async fn refresh_reconcile_fingerprint() {
+async fn refresh_reconcile_state(path: &Path, source_revision: u64) {
     let mut last_fingerprint = INDEX_RECONCILE_FINGERPRINT.lock().await;
-    *last_fingerprint = index_fingerprint(&index_path()).await;
+    *last_fingerprint = index_fingerprint(path).await;
+    INDEX_SOURCE_REVISION.store(source_revision, Ordering::Release);
 }
 
 #[path = "session_index_tests.rs"]
@@ -212,7 +198,7 @@ mod tests;
 
 #[path = "session_index_test_support.rs"]
 #[cfg(test)]
-mod test_support;
+pub(super) mod test_support;
 
 #[path = "session_index_reconcile_tests.rs"]
 #[cfg(test)]

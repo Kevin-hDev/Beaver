@@ -1,6 +1,33 @@
 use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
 use chrono::Utc;
+use std::cell::Cell;
 use std::path::Path;
+
+tokio::task_local! {
+    static DOCUMENT_READS: Cell<usize>;
+}
+
+pub(crate) fn record_document_read() {
+    let _ = DOCUMENT_READS.try_with(|count| count.set(count.get() + 1));
+}
+
+pub(super) async fn measure_rebuild_then_read(dir: &Path) -> Result<(usize, usize), String> {
+    let _guard = super::INDEX_LOCK.lock().await;
+    DOCUMENT_READS
+        .scope(Cell::new(0), async {
+            let revision = super::SESSION_SOURCE_REVISION.load(std::sync::atomic::Ordering::Acquire);
+            super::rebuild_index_from(dir).await?;
+            let rebuild_reads = DOCUMENT_READS.with(Cell::get);
+            let path = dir.join("index.json");
+            super::refresh_reconcile_state(&path, revision).await;
+            super::read_index_once(&path, revision).await?;
+            let repeated_reads = DOCUMENT_READS.with(Cell::get) - rebuild_reads;
+            *super::INDEX_RECONCILE_FINGERPRINT.lock().await = None;
+            super::INDEX_SOURCE_REVISION.store(u64::MAX, std::sync::atomic::Ordering::Release);
+            Ok((rebuild_reads, repeated_reads))
+        })
+        .await
+}
 
 pub(super) fn test_session(id: &str, name: &str, heartbeat: bool) -> AgentSession {
     AgentSession {

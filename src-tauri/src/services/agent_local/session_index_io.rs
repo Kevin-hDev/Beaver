@@ -14,9 +14,11 @@ pub(super) struct IndexFingerprint {
 }
 
 pub(super) fn index_path() -> PathBuf {
-    crate::services::paths::data_dir()
-        .join("agent-sessions")
-        .join("index.json")
+    index_dir().join("index.json")
+}
+
+pub(super) fn index_dir() -> PathBuf {
+    crate::services::paths::data_dir().join("agent-sessions")
 }
 
 pub(super) async fn index_fingerprint(path: &Path) -> Option<IndexFingerprint> {
@@ -25,10 +27,6 @@ pub(super) async fn index_fingerprint(path: &Path) -> Option<IndexFingerprint> {
         len: metadata.len(),
         modified: metadata.modified().ok(),
     })
-}
-
-pub(super) async fn read_index_raw() -> Vec<AgentSessionMeta> {
-    read_index_from(&index_path()).await.unwrap_or_default()
 }
 
 pub(super) async fn read_index_from(path: &Path) -> Result<Vec<AgentSessionMeta>, String> {

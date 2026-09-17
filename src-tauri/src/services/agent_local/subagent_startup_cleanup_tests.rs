@@ -189,6 +189,9 @@ fn cleanup_uses_the_session_store_and_propagates_index_rebuild_failure() {
 
     assert!(source.contains("session_store::read_from_dir"));
     assert!(source.contains("session_store::write_to_dir"));
+    assert!(source.contains("session_store::save"));
+    assert!(source.contains("session_index::rebuild_index()"));
+    assert!(source.contains("if cleaned > 0 && !global"));
     assert!(!source.contains("let _ = session_index::rebuild_index_from"));
 }
 

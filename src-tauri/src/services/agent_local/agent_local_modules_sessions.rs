@@ -63,6 +63,8 @@ mod session_fast_mode_tests;
 pub mod session_id;
 pub mod session_index;
 mod session_index_io;
+mod session_index_meta;
+mod session_index_reconcile;
 pub mod session_limits;
 pub mod session_locks;
 pub mod session_migration;

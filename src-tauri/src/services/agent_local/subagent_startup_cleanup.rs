@@ -45,7 +45,12 @@ pub(crate) async fn cleanup_orphans_in_dir(
     startup_cutoff: DateTime<Utc>,
     remove_worktrees: bool,
 ) -> Result<usize, String> {
-    let metas = session_index::rebuild_index_from(sessions_dir).await?;
+    let global = sessions_dir == global_sessions_dir();
+    let metas = if global {
+        session_index::rebuild_index().await?
+    } else {
+        session_index::rebuild_index_from(sessions_dir).await?
+    };
     let mut cleaned = 0usize;
 
     for meta in orphan_candidates(&metas, startup_cutoff) {
@@ -59,10 +64,7 @@ pub(crate) async fn cleanup_orphans_in_dir(
         let mut changed = false;
         if session.subagent_status.as_deref() == Some(subagent_status::RUNNING) {
             session.subagent_status = Some(subagent_status::INTERRUPTED.to_string());
-            if session_store::write_to_dir(sessions_dir, &session)
-                .await
-                .is_err()
-            {
+            if write_session(sessions_dir, &session, global).await.is_err() {
                 ::log::warn!("[startup-cleanup] mise à jour de session impossible");
                 continue;
             }
@@ -73,10 +75,7 @@ pub(crate) async fn cleanup_orphans_in_dir(
             match super::subagent_task_change::recover_and_remove_orphan(&session).await {
                 Ok(()) => {
                     session.subagent_worktree = None;
-                    if session_store::write_to_dir(sessions_dir, &session)
-                        .await
-                        .is_err()
-                    {
+                    if write_session(sessions_dir, &session, global).await.is_err() {
                         ::log::warn!("[startup-cleanup] finalisation worktree impossible");
                     } else {
                         changed = true;
@@ -88,11 +87,27 @@ pub(crate) async fn cleanup_orphans_in_dir(
         cleaned += usize::from(changed);
     }
 
-    if cleaned > 0 {
+    if cleaned > 0 && !global {
         session_index::rebuild_index_from(sessions_dir).await?;
     }
 
     Ok(cleaned)
+}
+
+fn global_sessions_dir() -> std::path::PathBuf {
+    crate::services::paths::data_dir().join("agent-sessions")
+}
+
+async fn write_session(
+    sessions_dir: &Path,
+    session: &super::types_session::AgentSession,
+    global: bool,
+) -> Result<(), String> {
+    if global {
+        session_store::save(session).await
+    } else {
+        session_store::write_to_dir(sessions_dir, session).await
+    }
 }
 
 fn orphan_candidates(
