@@ -1,6 +1,6 @@
 use super::*;
 
-#[cfg(test)]
+#[cfg(all(test, native_browser))]
 #[path = "browser_contract_tests.rs"]
 mod browser_contract_tests;
 #[cfg(all(test, native_browser))]

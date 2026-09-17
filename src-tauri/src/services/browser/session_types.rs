@@ -76,6 +76,7 @@ pub(super) struct BrowserRuntimeTabUpdate {
     pub(super) can_go_forward: Option<bool>,
 }
 
+#[cfg(any(test, browser_native_api))]
 pub(super) struct BrowserRuntimeUpdateResult {
     pub(super) changed: bool,
     pub(super) persisted_changed: bool,

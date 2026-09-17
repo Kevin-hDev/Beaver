@@ -31,6 +31,8 @@ fn build_script_names_browser_capabilities_separately() {
 #[test]
 fn native_runtime_modules_are_not_built_in_linux_library() {
     let module = normalized_source("src/services/browser/mod.rs");
+    let session_types = normalized_source("src/services/browser/session_types.rs");
+    let test_modules = normalized_source("src/services/browser/test_modules.rs");
 
     for runtime_module in [
         "lifecycle",
@@ -49,6 +51,11 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
     }
 
     assert!(module.contains("#[cfg(any(test, target_os = \"macos\"))]\nmod cookie_store_probe;"));
+    assert!(session_types.contains(
+        "#[cfg(any(test, browser_native_api))]\npub(super) struct BrowserRuntimeUpdateResult"
+    ));
+    assert!(test_modules
+        .contains("#[cfg(all(test, native_browser))]\n#[path = \"browser_contract_tests.rs\"]"));
 }
 
 #[test]
