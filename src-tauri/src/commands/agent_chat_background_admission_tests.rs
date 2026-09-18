@@ -30,9 +30,7 @@ async fn idle_background_admission_finishes_and_persists_its_diagnostic() {
     assert_eq!(diagnostic.status, "running");
     let streams = app.state::<crate::ActiveStreams>();
     assert_eq!(streams.0.lock().await.len(), 1);
-    admitted.cancel.cancel();
-    streams.0.lock().await.clear();
-    session_store::delete_one(&session.id).await.unwrap();
+    finish_admission(&streams, &session.id, &admitted).await;
 }
 
 #[tokio::test]
@@ -57,10 +55,7 @@ async fn concurrent_background_admissions_keep_exactly_one_active_stream() {
 
     assert_ne!(first.is_ok(), second.is_ok());
     let rejected = if first.is_ok() { &second } else { &first };
-    assert!(matches!(
-        rejected,
-        Err(BackgroundAdmissionError::Busy | BackgroundAdmissionError::Unavailable)
-    ));
+    assert!(matches!(rejected, Err(BackgroundAdmissionError::Busy)));
     let admitted = first.or(second).unwrap();
     let streams = app.state::<crate::ActiveStreams>();
     let active = streams.0.lock().await;
@@ -68,7 +63,35 @@ async fn concurrent_background_admissions_keep_exactly_one_active_stream() {
     assert_eq!(active.get(&session.id).unwrap().2, admitted.request_id);
     assert!(!admitted.cancel.is_cancelled());
     drop(active);
+    finish_admission(&streams, &session.id, &admitted).await;
+}
+
+async fn finish_admission(
+    streams: &crate::ActiveStreams,
+    session_id: &str,
+    admitted: &super::AgentChatAdmission,
+) {
     admitted.cancel.cancel();
-    streams.0.lock().await.clear();
-    session_store::delete_one(&session.id).await.unwrap();
+    crate::services::agent_local::stream_diagnostics::record_cancelled(
+        session_id,
+        &admitted.request_id,
+    )
+    .await;
+    assert!(
+        crate::commands::agent_chat_streams::finish_active_stream(
+            streams,
+            session_id,
+            admitted.generation,
+        )
+        .await
+    );
+    assert!(streams.0.lock().await.is_empty());
+    let saved = session_store::get(session_id).await.unwrap();
+    let diagnostic = saved
+        .diagnostic_runs
+        .iter()
+        .find(|run| run.request_id == admitted.request_id)
+        .unwrap();
+    assert_eq!(diagnostic.status, "cancelled");
+    session_store::delete_one(session_id).await.unwrap();
 }
