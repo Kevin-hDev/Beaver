@@ -81,6 +81,7 @@ pub async fn prepare_delegate(
             match super::tool_delegate_child::prepare_existing_child(
                 id.trim(),
                 &parent_session_id,
+                extension_owner.as_ref(),
                 subagent_type,
                 &prompt,
                 &name,
@@ -119,20 +120,6 @@ pub async fn prepare_delegate(
         }
     };
 
-    if let (Some(expected), Some(_)) = (extension_owner.as_ref(), existing_child_id) {
-        let matches = child
-            .subagent_extension_owner
-            .as_ref()
-            .and_then(super::types_session::SubagentExtensionOwnership::valid)
-            == Some(expected);
-        if !matches {
-            subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
-            return Err(ToolResult::not_found(
-                "subagent_not_found",
-                "Sous-agent introuvable.",
-            ));
-        }
-    }
     if let Some(owner) = extension_owner {
         child.subagent_extension_owner = Some(
             super::types_session::SubagentExtensionOwnership::Valid(owner),

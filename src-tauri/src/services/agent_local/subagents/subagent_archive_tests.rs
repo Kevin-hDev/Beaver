@@ -12,6 +12,7 @@ async fn archived_child_cannot_be_redeployed() {
     let redeploy = super::tool_delegate_child::prepare_existing_child(
         &child.id,
         &parent.id,
+        None,
         "explorer",
         "Nouvelle mission",
         "Geminitor",

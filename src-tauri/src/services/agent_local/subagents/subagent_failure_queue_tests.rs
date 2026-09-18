@@ -55,6 +55,7 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
     tool_delegate_child::prepare_existing_child(
         &child.id,
         &parent.id,
+        None,
         "explorer",
         "correction durable",
         "Geminitor",
