@@ -1,0 +1,9 @@
+Validation Windows locale du 18 septembre 2026 — correctifs H03/H04.
+
+Source : c44d597844057885e873f65b2f524364f5aa0947. Le propriétaire d'un enfant est conservé lors de l'héritage de contexte ; les automatisations Ollama valident les capacités du modèle via le client local.
+
+Preuves : 5700 tests Rust réussis, 0 échoué, 35 ignorés ; Clippy strict sortie 0 ; Graphify actualisé. Paquet E2E Windows x64 : SHA-256 5D8227DB906A0C3205E355C38E4D86218BDB13C528AC5ACC2E43BD6FFFAE8669, 325054767 octets. H03 création/approbation/révocation/réapprobation réelle réussi ; H04 enfant réel créé/listé/relu puis cancelled après désactivation du propriétaire. H02 annulation/délai/voisin distinct puis Stop et double Échap natifs réussis.
+
+L'exécution complète a ensuite révélé deux autres défauts : verrou réentrant à l'admission d'une automatisation et identifiant de récupération réutilisé après checkpoint. Ils sont corrigés séparément dans 4ddbea21c18bdd50cff7c507346be240104657fd ; leur validation empaquetée est consignée avec ce successeur. Un délai réel Ollama de 25 secondes et une intermittence CEF historique restent distingués des succès.
+
+Autorité détaillée : C:/Users/huynh/projects/Beaver/docs/fonctionnalites/extension/VALIDATION_API_PART_2_WINDOWS_2026-09-18.md. Journaux privés ignorés : .validation/2026-09-18 dans le worktree de validation. Aucun push, PR, CI, merge, tag ou release ; document startup préexistant exclu.
