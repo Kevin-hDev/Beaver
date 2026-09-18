@@ -1,5 +1,8 @@
 use super::AutomationError;
-use crate::services::agent_local::ollama_client::OllamaClient;
+use crate::services::agent_local::ollama_client::{OllamaClient, OllamaModelError};
+
+// Bound the entire validation, including endpoint resolution, without changing generation budgets.
+const VALIDATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 pub(super) async fn validate_model(
     client: &OllamaClient,
@@ -9,10 +12,18 @@ pub(super) async fn validate_model(
         return Err(AutomationError::ModelUnavailable);
     }
     // Ollama owns local availability and capabilities; the cloud catalogue cannot validate them.
-    let info = client
-        .show_model(model)
+    let info = tokio::time::timeout(VALIDATION_TIMEOUT, client.inspect_model(model))
         .await
-        .map_err(|_| AutomationError::ModelUnavailable)?;
+        .map_err(|_| {
+            ::log::warn!("[automations] ollama_validation=timeout");
+            AutomationError::ProviderUnavailable
+        })?
+        .map_err(|error| match error {
+            OllamaModelError::Unavailable => AutomationError::ProviderUnavailable,
+            OllamaModelError::NotFound | OllamaModelError::InvalidResponse => {
+                AutomationError::ModelUnavailable
+            }
+        })?;
     if !info
         .capabilities
         .iter()

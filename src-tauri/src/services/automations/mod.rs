@@ -11,13 +11,15 @@ pub(crate) mod migration;
 pub(crate) mod migration_conflict;
 mod migration_convert;
 mod migration_files;
+#[cfg(test)]
+mod model_routing_tests;
 pub(crate) mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
-mod ownership;
 mod ollama_validation;
 #[cfg(test)]
 mod ollama_validation_tests;
+mod ownership;
 mod runtime_lifecycle;
 mod runtime_recovery;
 mod runtime_retired;

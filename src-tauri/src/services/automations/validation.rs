@@ -87,6 +87,20 @@ pub(super) fn validate_definition(
 }
 
 pub(crate) async fn validate_model(provider: &str, model: &str) -> Result<(), AutomationError> {
+    validate_model_with_ollama(
+        provider,
+        model,
+        &crate::services::agent_local::ollama_client::OllamaClient::from_global,
+    )
+    .await
+}
+
+pub(super) async fn validate_model_with_ollama(
+    provider: &str,
+    model: &str,
+    ollama: &(dyn Fn() -> Result<crate::services::agent_local::ollama_client::OllamaClient, String>
+          + Sync),
+) -> Result<(), AutomationError> {
     if llm::route::canonical_provider_id(provider) != provider
         || !llm::stream_dispatch::is_available(
             provider,
@@ -97,8 +111,7 @@ pub(crate) async fn validate_model(provider: &str, model: &str) -> Result<(), Au
         return Err(AutomationError::ProviderUnavailable);
     }
     if provider == "ollama" {
-        let client = crate::services::agent_local::ollama_client::OllamaClient::from_global()
-            .map_err(|_| AutomationError::ModelUnavailable)?;
+        let client = ollama().map_err(|_| AutomationError::ProviderUnavailable)?;
         return super::ollama_validation::validate_model(&client, model).await;
     }
     let info =
