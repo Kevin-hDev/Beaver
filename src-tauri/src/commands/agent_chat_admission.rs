@@ -34,8 +34,6 @@ pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
     .await
     .map_err(|_| BackgroundAdmissionError::Unavailable)?;
     let streams = app.state::<ActiveStreams>();
-    let session_guard =
-        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     {
         let map = streams.0.lock().await;
         if map.contains_key(session_id) {
@@ -54,6 +52,9 @@ pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
     let request_id =
         crate::services::agent_local::stream_diagnostics::start_request(session_id, generation)
             .await;
+    // The diagnostic takes this same session lock; finish it before admission owns the lease.
+    let session_guard =
+        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     let inserted = {
         let mut map = streams.0.lock().await;
         if map.contains_key(session_id)
@@ -176,3 +177,7 @@ where
         request_id,
     })
 }
+
+#[cfg(test)]
+#[path = "agent_chat_background_admission_tests.rs"]
+mod background_tests;

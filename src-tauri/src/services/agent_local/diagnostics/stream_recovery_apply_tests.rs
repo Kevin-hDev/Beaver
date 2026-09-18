@@ -474,3 +474,95 @@ fn append_tool_result(
     result.tool_call_id = Some(call_id.into());
     messages.push(result);
 }
+
+#[tokio::test]
+async fn cancelled_delta_after_tool_checkpoints_keeps_committed_message_identities() {
+    use super::conversation_journal::ConversationJournal;
+    use super::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};
+
+    let (session, mut header) = session_and_header().await;
+    header.request_id = super::stream_diagnostics::start_request(&session.id, 1).await;
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        header.turn_id.clone(),
+        header.user_message_id.clone(),
+        header.assistant_message_id.clone(),
+        header.request_id.clone(),
+    )
+    .unwrap();
+    let (log, lease) = StreamRecoveryLog::create(header.clone(), CancellationToken::new())
+        .await
+        .unwrap();
+    journal.attach_recovery(log.clone(), lease);
+    for index in 0..2 {
+        let call_id = format!("call-checkpoint-{index}");
+        journal
+            .persist_assistant_step(&ChatMessage::assistant(
+                String::new(),
+                None,
+                None,
+                None,
+                Some(vec![ToolCallOllama {
+                    id: Some(call_id.clone()),
+                    function: ToolCallFunction {
+                        name: "read_file".into(),
+                        arguments: serde_json::json!({"path":"facts.txt"}),
+                    },
+                    extra_content: None,
+                }]),
+            ))
+            .await
+            .unwrap();
+        journal
+            .persist_tool_results(
+                &[ChatMessage::tool(
+                    "durable result".into(),
+                    Some(call_id),
+                    Some("read_file".into()),
+                )],
+                &[],
+            )
+            .await
+            .unwrap();
+    }
+    let committed = super::session_store::get(&session.id)
+        .await
+        .unwrap()
+        .messages;
+    log.record_event(RecoverableStreamEvent::Token {
+        content: "interrupted continuation".into(),
+        phase: None,
+    })
+    .unwrap();
+    recover_session(
+        &session.id,
+        StreamRecoveryMode::Owner {
+            request_id: &header.request_id,
+            terminal: OwnerTerminal::Cancelled,
+        },
+    )
+    .await
+    .unwrap();
+    drop(journal);
+    drop(log);
+    recover_session(&session.id, StreamRecoveryMode::StaleOnly)
+        .await
+        .unwrap();
+    let recovered = super::session_store::get(&session.id).await.unwrap();
+    assert_eq!(recovered.messages.len(), committed.len() + 1);
+    for (before, after) in committed.iter().zip(&recovered.messages) {
+        assert_eq!(
+            serde_json::to_value(before).unwrap(),
+            serde_json::to_value(after).unwrap()
+        );
+    }
+    let tail = recovered.messages.last().unwrap();
+    assert_eq!(tail.content, "interrupted continuation");
+    assert!(committed.iter().all(|message| message.id != tail.id));
+    assert_eq!(
+        recovered.diagnostic_runs.last().unwrap().status,
+        "cancelled"
+    );
+    super::conversation_history_validation::validate(&recovered.messages).unwrap();
+    super::session_store::delete_one(&session.id).await.unwrap();
+}
