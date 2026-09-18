@@ -96,6 +96,11 @@ pub(crate) async fn validate_model(provider: &str, model: &str) -> Result<(), Au
     {
         return Err(AutomationError::ProviderUnavailable);
     }
+    if provider == "ollama" {
+        let client = crate::services::agent_local::ollama_client::OllamaClient::from_global()
+            .map_err(|_| AutomationError::ModelUnavailable)?;
+        return super::ollama_validation::validate_model(&client, model).await;
+    }
     let info =
         llm::runtime_models::lookup(provider, model).or_else(|| local_model(provider, model));
     let info = match info {

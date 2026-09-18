@@ -175,6 +175,8 @@ pub(super) async fn inherit_parent_context(
     let lock = session_store::lock_session(&child.id).await;
     let _guard = lock.lock().await;
     let mut current = session_store::get(&child.id).await?;
+    // Keep the prepared owner durable so extension revocation can find this child.
+    current.subagent_extension_owner = child.subagent_extension_owner.clone();
     current.model = parent.model.clone();
     current.provider = parent.provider.clone();
     current.thinking_enabled = parent.thinking_enabled;

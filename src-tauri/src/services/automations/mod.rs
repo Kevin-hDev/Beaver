@@ -15,6 +15,9 @@ pub(crate) mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
 mod ownership;
+mod ollama_validation;
+#[cfg(test)]
+mod ollama_validation_tests;
 mod runtime_lifecycle;
 mod runtime_recovery;
 mod runtime_retired;
