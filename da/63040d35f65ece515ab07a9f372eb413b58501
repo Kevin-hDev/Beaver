@@ -1,0 +1,9 @@
+Task 6 review evidence
+
+Implemented beaver cleanup with a strict three-family whitelist: old Beaver log rotations, interrupted Ollama bundle files and manager-owned abandoned staging, and tool results older than 24 hours. Every collection is bounded. Inventory read failures block cleanup. Symbolic links on a candidate or its family are refused.
+
+The existing application cleanup now reuses old_results_in/remove_results and reports failures instead of swallowing them. Ollama staging selection and deletion stay owned by ollama_manager; deletion re-reads recovery state immediately before acting, and a pending recovery test proves its staging remains intact.
+
+Validation: cargo fmt check passed; cargo check passed; cargo clippy --all-targets -- -D warnings passed; cleanup tests 9 passed; Ollama CLI access tests 2 passed; tool result budget tests 12 passed; complete Rust suite passed with library 5404 passed and 21 ignored, beaver 43 passed, integration 1 passed, no failures; real beaver cleanup --dry-run while Beaver was open refused with exit 1; beaver status confirmed Application ouverte; graphify update passed.
+
+Limitation for final review: a real dry-run inventory and confirmed deletion were intentionally not run because Beaver is open for the parallel Automatisations workstream; the command correctly requires it to be closed.

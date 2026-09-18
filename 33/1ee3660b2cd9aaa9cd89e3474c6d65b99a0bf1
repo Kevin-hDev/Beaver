@@ -1,0 +1,40 @@
+T01 — Porte A macOS validée
+
+Révision testée : 331ee3660b2cd9aaa9cd89e3474c6d65b99a0bf1
+Machine : MacBook Pro Mac16,8, Apple M4 Pro, 24 Go
+Système : macOS 27.0 (26A5425a)
+Build : CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npm run tauri build -- --features voice-probe
+Paquet : Beaver_1.2.2_aarch64.dmg
+Identité : com.clgo.dash
+SHA-256 exécutable : 24d019e8573c3042329c040c48fb5cde4a4bf770714d791832f40a4f7051b08e
+
+Preuves :
+- absence de demande avant clic ;
+- demande TCC Microphone au clic depuis le DMG monté ;
+- TCC confirme user-consent, Allowed, authorization_value=2 ;
+- entitlement signé com.apple.security.device.audio-input ;
+- 210944 échantillons, niveau non nul, arrêt automatique ;
+- 165376 échantillons, arrêt manuel immédiat ;
+- aucun processus du paquet restant après fermeture ;
+- codesign --verify --deep --strict réussi.
+
+Validations :
+- contrat paquet : 1 test réussi ;
+- frontend ciblé : 7 tests réussis ;
+- Rust ciblé : 3 tests réussis ;
+- TypeScript, ESLint ciblé, plutil, cargo check standard et Clippy voice-probe réussis ;
+- build paquet réussi.
+
+Le scénario de refus puis nouvelle tentative est reporté à T13 car il modifie le choix de confidentialité macOS.
+
+Le coffre éphémère est strictement limité à la feature temporaire voice-probe afin qu'une invite keychain étrangère au test ne précède pas l'action micro. Le chemin standard reste inchangé et ce code doit disparaître avec le panneau en T13.
+
+RECTIFICATIF DU 15 SEPTEMBRE 2026 — incident coffre
+
+L'affirmation d'isolation du coffre éphémère était fausse. La feature voice-probe injectait une clé maître temporaire dans l'état global tout en conservant le chemin réel des données. Un service de démarrage a ensuite publié secrets.enc avec cette clé non persistée. Le coffre de l'utilisateur est devenu indéchiffrable au redémarrage (aead::Error). Le panneau voice-probe et ce chemin éphémère ont été supprimés à T13 ; le HEAD courant ne peut plus reproduire l'incident.
+
+Impact observé : configured-providers.json est intact avec 12 entrées ; secrets.enc a été remplacé le 15 septembre à 00:18. Une sauvegarde byte-identique de l'état endommagé a été conservée sous secrets.enc.unrecoverable-voice-probe-2026-09-15.bak. Cinq clés restent récupérables depuis l'ancien stockage système ; sept devront être reconnectées.
+
+RÉCUPÉRATION DU 15 SEPTEMBRE 2026
+
+Après accord explicite de l'utilisateur, le coffre endommagé et son marqueur ont été mis en quarantaine sans suppression. Le mécanisme de migration existant a créé un nouveau coffre avec la clé maître persistante et a confirmé « migrated 5 keys from keychain ». Le registre contient désormais brave, deepseek, google, mistral et openrouter. Vérification visuelle réussie dans Réglages > Providers > Clés API. Les copies en quarantaine restent conservées.

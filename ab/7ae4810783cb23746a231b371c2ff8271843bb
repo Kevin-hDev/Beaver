@@ -1,0 +1,23 @@
+M19 — Supprimer les exports et chemins réellement sans consommateur
+
+Décision et périmètre
+- Inventaire E02 refait avant suppression : la commande IPC get_registry_model et les surfaces SDK/contrat des extensions restent publiées et inchangées.
+- Suppression limitée aux exports frontend sans appelant, aux anciennes API internes de migration, aux variantes de routes futures jamais construites et à la compression d'outils jamais activée (tous ses appelants passaient None).
+- La compression automatique réelle après les outils reste assurée par LoopCompression.
+
+Changements
+- Les scénarios de migration v1-v5/v7 écrivent désormais par le vrai chemin session_store_document::write_to_path avant le retrait de commit_current.
+- Les aides frontend mortes et leurs seuls tests redondants sont retirés ; les scénarios utiles restent branchés sur les API vivantes.
+- Les annotations dead_code trompeuses de prepare_document/save_prepared sont retirées car ces fonctions ont des appelants de production.
+- Les politiques de routes actives, les formats d'image actifs et les API publiques restent inchangés.
+
+Validation
+- npm test : 635 fichiers, 3499 tests Vitest, puis toutes les suites build/CI/fichiers/CEF/e2e/hôte d'extensions/raisonnement/contrats, sortie 0.
+- Tests frontend ciblés : 10 fichiers, 97 tests, sortie 0.
+- cargo test -- --test-threads=8 : 5862 tests de bibliothèque + 51 tests CLI + intégrations, 0 échec.
+- cargo test session_migration --lib : 34 réussites.
+- cargo test tool_executor --lib : 8 réussites.
+- cargo test agent_loop_compression --lib : 1 réussite.
+- cargo test vision --lib : 123 réussites, 1 test ignoré.
+- npx tsc --noEmit, npm run lint, cargo check, cargo clippy --all-targets -- -D warnings, cargo fmt --all -- --check et git diff --check : succès.
+- graphify update . : succès.

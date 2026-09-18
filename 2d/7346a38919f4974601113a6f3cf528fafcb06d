@@ -1,0 +1,11 @@
+Decision: recover a validated conversation tail that ends with only the user's message by inserting the existing empty assistant terminal marker before admitting the next turn.
+
+Reason: cancelling before the provider emits its first assistant token leaves a valid user-only tail. Cancel must stop that request without permanently poisoning the conversation. The shared admission path covers cloud and Ollama while preserving the fail-closed behavior for pending tools.
+
+Evidence: session 7262463a-c931-46e6-9e48-d171b71623fe was cancelled before any assistant content, then the next request failed at request_start with conversation_admission_failed before reaching the provider.
+
+Validation:
+- cargo test services::agent_local::conversation_interrupted_tail_tests --lib: 12 passed
+- cargo test: 5529 library, 51 CLI, 1 integration passed; 0 failed
+- cargo clippy --all-targets -- -D warnings: passed
+- graphify update .: passed

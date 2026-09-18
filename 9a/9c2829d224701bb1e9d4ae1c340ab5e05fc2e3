@@ -1,0 +1,31 @@
+Review corrections - interception attribution and truthful runtime state
+
+What changed:
+- Skips interceptors that were cleanly disabled, uninstalled, retired, or replaced while a request was in flight, without blaming them or hiding the next active decision.
+- Attributes simultaneous deadline expiry to the earliest deadline and keeps an exact tie collective.
+- Stops assigning a not-yet-started extension as owner of an exhausted chain budget.
+- Gives registration capacity and runtime chain exhaustion distinct contract codes.
+- Keeps host diagnostics reserved for loading as required by B10; runtime interception outcomes remain represented by tool error codes, activity counters, and the registry last_error instead of fake register-stage diagnostics.
+- Restores Session and ExternalChannel automation provenance from the persisted creator identifier.
+- Promotes the eager interception conflict to the generated backend error contract and all seven locales.
+- Replaces weak coverage with strict deadline-order tests, stale-generation/ineligible tests, an actual eager replay guard, and a real write executor assertion proving no file is created after denial.
+
+Root-cause choices:
+- Eligibility is rechecked both before and after the host request, and catalog generation is the authority for whether a handler is still current.
+- A legitimate lifecycle change maps to Continue; malformed responses, handler failures, and individual timeouts remain fail-closed.
+- Test-only denied snapshots exercise the production executor ordering without creating a second production interception path.
+- Historical external-channel records without a persisted gateway fingerprint remain indistinguishable from sessions; new records persist the already-redacted gateway identifier.
+
+Validation executed:
+- cargo test --lib tool_interception_tests: 13 passed
+- cargo test --lib extension_tool_interception_paths_tests: 2 passed
+- cargo test --lib summaries_expose_extension_origin_and_safe_inactive_reasons: 1 passed
+- checked_in_typescript_matches_the_extension_contract: 1 passed
+- checked_in_sdk_contract_matches_the_extension_contract: 1 passed
+- checked_in_sdk_readme_tables_match_the_contract: 1 passed
+- cargo check --lib
+- npx tsc --noEmit
+- 4 targeted frontend files: 14 passed
+- npm run test:extensions-host: 143 passed after the separate harness correction committed next
+- git diff --check
+- graphify update .

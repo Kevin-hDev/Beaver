@@ -1,0 +1,15 @@
+Integration follow-up after merging codex/fix-provider-reliability into main.
+
+Root cause:
+- The SearXNG README contract delimited the Linux section with the first global Windows heading.
+- Main now contains an earlier Windows installation heading, so the merged tree produced an empty slice although both branches passed independently.
+
+Decision:
+- Keep the restructured README intact.
+- Resolve the Windows boundary only after the Linux heading and assert both boundaries explicitly, so future failures identify a missing or reordered section.
+
+Verification on the merged tree:
+- node --test scripts/ci/searxng-readme-contract.test.mjs: 2 passed.
+- npm test -- --run: 604 Vitest files, 3326 tests, and all build, CI, CEF, E2E, extension-host, reasoning-fixture, and contract suites passed.
+- cargo test --lib -- --test-threads=4 before this test-only change: 5394 passed, 0 failed, 21 ignored.
+- graphify update . completed.

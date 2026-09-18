@@ -1,0 +1,27 @@
+Task: M12 — Partager les contrôles réellement communs aux exécuteurs d'outils
+
+Raison:
+Le chemin d'écriture parallèle vérifiait trois fois le mode Plan avant toute attente ou effet, puis une quatrième fois après la demande d'autorisation. Les deux contrôles intermédiaires ne fermaient aucune fenêtre et pouvaient diverger.
+
+Changements:
+- Suppression de deux contrôles Plan consécutifs dans l'orchestrateur parallèle et son passe-plat d'écriture.
+- Le contrôle faisant foi reste au début de execute_write, avant hooks et interception, y compris en mode chat.
+- La revalidation après l'éventuelle attente d'autorisation est conservée.
+- Les orchestrations séquentielle/parallèle, les cinq sites d'interception, l'ordre des résultats et les défenses du dispatcher restent distincts.
+- Ajout d'un test réel prouvant qu'aucun fichier n'est créé en mode Plan sur les routes auto et chat.
+
+Validation:
+- cargo test tool_plan_guard --lib: 8 réussis
+- cargo test subagent_tool_guard --lib: 7 réussis
+- cargo test tool_executor_parallel --lib: 3 réussis
+- cargo test permission_gate --lib: 41 réussis
+- cargo test tool_automation_tests --lib: 9 réussis
+- cargo test tool_interception --lib: 16 réussis
+- cargo check: réussi
+- cargo clippy --all-targets -- -D warnings: réussi
+- cargo fmt --all -- --check: réussi
+- git diff --check: réussi
+- graphify update .: réussi
+
+Décision:
+Aucune fusion générale des exécuteurs n'est faite. Leurs contrats d'ordre, de concurrence et de publication diffèrent; seuls les contrôles strictement consécutifs et identiques sont retirés.

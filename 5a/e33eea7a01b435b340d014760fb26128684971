@@ -1,0 +1,6 @@
+Task: prevent a failed trace archive from blocking every installer retry.
+
+Evidence:
+- cargo test trace_tests --lib (5 passed)
+- cargo clippy --all-targets -- -D warnings (passed)
+- cargo fmt --all (clean)

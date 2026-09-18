@@ -1,0 +1,11 @@
+CI correction after the first PR run.
+
+Root causes addressed:
+- Linux and Windows Rust jobs installed the nested Host dependencies but not the root esbuild dependency executed by the complete UI artifact integration test.
+- the E2E build did not prepare the Extension Host at all, so clean runners lacked ui-build.mjs and the bundled Node runtime; the E2E package now prepares and explicitly embeds the real Host.
+- the generated SDK README assertion compared LF output against a CRLF checkout on Windows.
+- the legacy migration fixture used a Unix-only /tmp source instead of a real cross-platform temporary extension directory.
+
+Regression coverage: the E2E structure test asserts Host preparation, Host bundling and both root dependency installations; targeted Rust tests exercise all three previously failing cases.
+
+Local validation: node --test scripts/e2e/e2e-process.test.mjs (26 passed); npm run lint; cargo clippy --all-targets -- -D warnings; cargo fmt --check; three targeted Rust tests (1 passed each, zero failures); real Extension Host preparation produced ui-build.mjs and the pinned Node v24.18.0 runtime; git diff --check; graphify update .

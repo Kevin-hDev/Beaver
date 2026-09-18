@@ -1,0 +1,3 @@
+Review correction: removed the unused privileged mkdir operation, documented the fixed-length run-id comparison, and emits a generic diagnostic when safe orphan deletion itself fails. No path or private data is logged.
+
+Proof: cargo test --manifest-path installer/src-tauri/Cargo.toml (44 passed, 2 ignored); cargo fmt --check and cargo clippy --all-targets -- -D warnings (exit 0).

@@ -1,0 +1,1 @@
+CI correction: persistence contracts still pointed to the scheduler test moved under automations and did not register the new durable data_dir owners. Updated the existing migration profile evidence and the bounded owner inventory only. Validation: npm run test:persistence-migration 10/10 passed; git diff --check passed; graphify update . passed.

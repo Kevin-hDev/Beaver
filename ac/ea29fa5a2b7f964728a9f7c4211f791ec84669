@@ -1,0 +1,4 @@
+Task: prevent zombie Ollama update progress on request setup failure.
+Reason: current_dir can fail before cancellation ownership exists, so progress must not be published first.
+Changes: resolve the inherited working directory before begin_progress and reuse it in UpdateRequest; add an ordering regression test.
+Evidence: regression test failed before the fix and passed after it; cargo fmt check and strict clippy passed; graphify update completed.

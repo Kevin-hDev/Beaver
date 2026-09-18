@@ -1,0 +1,13 @@
+API-P1 reviewer note
+
+Scope: replaces lexical search_extension_tools/plugin_search with list_extensions (read-only full listing) and inspect_extensions (1-4 exact IDs, session discovery for next model turn). Old discovery modules were removed. No P2-P7 work.
+
+Key decisions: compact name/id JSON is untrusted metadata; inspection reuses production extension_tool_selection/refresh_active and the 10% all-or-nothing rule; schemas appear only after rebuilding the next tool set; diagnostics rename Search/DiscoveryResult to Inspection/InspectionResult with bounded legacy aliases; generated contract owns error codes, limits, and now tool-name constants. Under capacity >=2 list+inspect are retained together.
+
+RED/GREEN evidence: RED observed for capacity-two pair preservation, legacy inspection IDs over four, and stale dispatcher lexical test. GREEN counts observed: discovery 23/23; tool_extension 13/13; selection 6/6; tool_policy 4/4; true dispatcher filter 5/5 (old filter collected 0); tool_catalog 9/9; plan_guard 7/7; read-only 1/1; Vitest extension errors/translations/tool error 18/18; extension host 95/95. contracts generate/check, tsc, lint, cargo check, clippy, fmt, diff-check passed.
+
+Root-review corrections included: budget/validation hardening, prompt direct-known-ID rule, generated listing errors and localized rendering, stable bounded catalog/result/diagnostics, non-stale dispatcher test, generated tool-name aliases, and clean inspection formatting. Local allow(clippy::duplicate_mod) remains motivated solely by the generator fixture; redundant closure removed.
+
+Limit: no real local model/extension run was simulated because it needs an external service/key. Payload and integration tests are present; packaged live verification is deferred to P7.
+
+Known non-blocking environment warning: macOS linker reports __eh_frame section too large while all commands exit successfully.

@@ -1,0 +1,35 @@
+B4 — Memory API
+
+State validated:
+- Adds bounded memory.list/read/write/archive to the public extension API.
+- Scope is resolved in Rust from the active turn; extensions can only select global or the already-resolved project scope.
+- Reads and writes reuse MemoryRuntime policy, shared turn result budget, existing store lock, path validation, parsing and index ownership.
+- Manual writes require the existing explicit authorization; disabled or missing policies fail closed.
+- Updates require expectedUpdatedAt and stale revisions are rejected.
+- Archive now preserves AppliedButIndexFailed and reports applied/indexUpdated=false, preventing blind retry.
+- Responses expose structured topic data without internal filesystem paths.
+- Contract, generated SDK/TypeScript, Node host projection and capability negotiation are aligned.
+- Also closes a B3 capability-negotiation omission: Rust now advertises models when the already-implemented model API is available.
+
+Self-review corrections before commit:
+- Missing scopes now map to core_memory_not_found instead of a generic path failure.
+- A second archive maps explicitly to core_memory_not_found.
+- Removed an unnecessary public re-export that would fail strict lint.
+- Split store and tests by responsibility; all modified source files remain below 230 lines.
+
+Validation executed:
+- cargo test --lib services::extensions => 508 passed, 10 ignored.
+- cargo test --lib services::extensions::core_memory => 8 passed.
+- cargo test --lib services::agent_local::memory_store => 8 passed.
+- npm run test:extensions-host => 133 passed.
+- node --test scripts/extensions/core-memory.test.mjs => 1 passed.
+- npm run contracts:check => passed.
+- npx tsc --noEmit => passed.
+- npm run lint => passed.
+- cargo check => passed.
+- cargo clippy --all-targets -- -D warnings => passed (only existing ts-rs parser notices).
+- cargo fmt --check and git diff --check => passed.
+- graphify update . => passed.
+
+Deliberate boundary:
+- No free-form file access, personality/index mutation, snapshot cache, retry loop or new memory policy was added.

@@ -1,0 +1,7 @@
+Tâche 2/8 — Stockages durables et migration sans perte.
+
+TDD RED : les tests store/runtime/migration échouaient sur les propriétaires de fichiers absents.
+Validation GREEN : store 3 tests, migration 8 tests, runtime 9 tests, résilience config 12 tests, cargo check, cargo clippy --all-targets -- -D warnings, git diff --check.
+Couverture : fixture config réelle assainie vérifiée sans secret, versions futures refusées, plafonds 64/128, écriture atomique, checkpoint et occurrences dans une même publication, reprise aux 5 frontières, fuseau absent sans mutation, retour ancienne version, collisions identiques/différentes/réservées, résolution retrait/nouvel UUID, nettoyage seulement après le lancement suivant réussi.
+Maintenance : graphify update . exécuté.
+Décision : verrou Tokio global court partagé ; aucun appel réseau ou Agent sous verrou. Les validations métier complètes seront centralisées dans la tâche 3.

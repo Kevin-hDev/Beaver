@@ -1,0 +1,40 @@
+Lot B11 - Acceptation integree et fermeture locale de la seconde partie de l API publique des extensions.
+
+Portee:
+- Ajoute une fixture contextuelle qui enchaine generation modele factice, ecriture/relecture memoire et resultat fichier riche.
+- Ajoute une integration reelle via l Hote Node/Jiti et un coeur Rust factice, avec attribution de portee, echeance restante, ordre des appels et absence de fuite du secret de portee.
+- Ajoute les cas adversariaux de saturation bornee et de resultat trompeur a lecture mutable.
+- Verifie dans le paquet macOS la projection des capacites selon la plateforme, la persistance apres rechargement et la desactivation.
+- Sous Linux, les cinq capacites nouvelles restent non annoncees conformement a la maintenance seule; les capacites historiques restent disponibles.
+
+Causes racines trouvees pendant l acceptation empaquetee et corrigees:
+- Le profil CEF isole importait encore les donnees legacy du vrai compte. Les migrations legacy sont maintenant coupees uniquement avec la feature cef-test-profile, avec test et preuve par le parcours d onboarding empaquete.
+- Le parseur frontend strict ne reconnaissait pas contributions.interceptors et rejetait toute la reponse du registre. Il accepte maintenant uniquement le tableau borne d objets vides emis par Rust et continue de refuser toute forme enrichie ou hors limite.
+- Le diagnostic OpenRouter etait pris apres le retour d annulation silencieuse; il est maintenant observe avant ce retour sans changer la semantique d annulation.
+- Les attentes de persistance et de migration de session ont ete alignees sur les autorites actuelles Automations et session v7.
+
+Validations lues sur le commit candidat:
+- npm run lint: vert.
+- npx tsc --noEmit: vert.
+- npm run contracts:check: vert, y compris le contrat contextual API.
+- npm run test:persistence-migration: 10 passes, 0 echec.
+- npm test: 637 fichiers Vitest et 3525 tests passes; toutes les suites Node suivantes vertes, dont 142 tests Hote.
+- node --test scripts/extensions/core-api-integration.test.mjs: 2 passes, 0 echec.
+- cargo test --lib: 5839 passes, 0 echec, 32 ignores.
+- cargo clippy --all-targets -- -D warnings: vert; cargo fmt --check: vert.
+- npm run test:e2e:packaged: 74 passes, 3 skips Linux attendus, 0 echec sur le paquet macOS et le profil isole.
+- git diff --check: vert.
+- graphify update .: termine, graphe AST actualise.
+
+Revue de securite:
+- Aucun secret de portee ne revient dans les resultats captures.
+- Les appels contextuels gardent identite, secret et echeance cote pont; les collections de saturation restent bornees a 64 admissions.
+- Le snapshot du resultat empeche une mutation entre validation et envoi.
+- Le profil de test empaquete ne peut plus lire les donnees legacy du compte reel.
+- Le parseur frontend echoue ferme sur les intercepteurs inconnus ou hors limite.
+
+Limites declarees:
+- Windows empaquete non execute localement: la checklist reste ouverte et doit etre remplie sur le meme SHA/paquet.
+- Linux ne recoit pas ces cinq nouvelles capacites par decision produit; seule leur absence propre et les non-regressions historiques sont exigees.
+- Les parcours automatisations et sous-agents sont prouves par leurs tests Rust specialises executes dans la suite complete; ils ne sont pas simules comme appels fournisseur dans le paquet macOS.
+- Revue externe, CI, fusion et verification post-fusion non lancees. Aucun push ni PR effectue.

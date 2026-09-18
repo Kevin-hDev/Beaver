@@ -1,0 +1,71 @@
+Reprise de validation des trois modèles — 8 septembre 2026
+
+Périmètre : Codex HTTP, diagnostics de compteurs, diagnostics des refus
+Google. Aucun changement de région, de clé, de facturation, d'activation
+de continuité, de protocole Gemini ou de politique de cache implicite.
+
+Décisions et causes :
+1. Codex HTTP transmet maintenant session-id depuis la même clé canonique
+   hachée que prompt_cache_key. Le WebSocket possédait déjà une affinité.
+   La clé reste identique sur la reprise après401. Extraction inchangée de
+   RequestCredentials pour garder request_http sous230lignes ; ownership,
+   destruction et zéroïsation inchangés. Comparaison avec le code officiel
+   Codex local (codex-api/src/requests/headers.rs et endpoint/responses.rs).
+2. Le filtre générique de secrets masquait aussi cache_read_tokens=3712 et
+   les autres grands compteurs. Le producteur utilise désormais des labels
+   *_count, sans changer le filtre, les statistiques de coûts ni les types
+   d'usage. Test passant par le vrai redactor, plus test de stockage Ollama.
+3. Les diagnostics ignoraient les enveloppes Google RPC en tableau et
+   error.status. Lecture du tableau unitaire seulement, mêmes champs
+   bornés, aucun message libre. Les catégories de quota sont des booléens
+   construits depuis les types Google RPC connus ; aucun quotaId/projet/
+   message n'est persisté. Parcours borné16détails ×16violations, délai
+   entier borné86400secondes. Aucun changement de politique de reprise.
+
+Preuves réelles (sessions locales, pas de secrets dans cette note) :
+- Codex 06372035-e17e-4dca-b84e-d3c602a3e812 : réponse terminée,
+  input3929/output5/cache_read3712/miss217. Trace relue sur disque.
+  Le succès après ajout de l'en-tête ne démontre pas qu'il était la cause
+  unique des anciens misses ; le cache reste distant et les traces étaient
+  auparavant partiellement masquées. Aucun coût API Codex.
+- OpenRouter GLM 4ede0e9e-acb4-41f3-ab63-79ec3780e772 : Z.AI puis GMICloud
+  puis GMICloud ; troisième réponse input5774/cache5696/miss78,
+  coût publié92microUSD. Aucun changement du routage GLM nécessaire.
+- Google 9403044b-5095-46b6-ac60-5d596fc31990 : refus429 du
+  2026-09-07T23:53:32UTC, RESOURCE_EXHAUSTED, requests_per_day=true,
+  autres catégoriesfalse, retry_after_seconds28. Quota quotidien, pas
+  plafond local de1EUR. Pas de nouvelle boucle d'essais ni de hausse quota.
+- Alibaba reste dans l'inventaire Singapour : list_llm_models(qwen) retourne
+  142 modèles sélectionnables, aucun des trois nouveaux IDs exacts. Cela
+  ne vaut pas un test d'inférence GLM-5.3-Flash. Ollama Cloud direct n'est
+  pas intégré et reste un lot futur ; les anciennes demandes de configurer
+  Pékin/d'activer Ollama Cloud étaient des erreurs de périmètre.
+
+Validation exécutée sur ce diff :
+- cargo test --lib --quiet :5219passés/0échec/19ignorés,51.61s.
+- cargo clippy --all-targets -- -D warnings :code0.
+- cargo fmt --check, git diff --cached --check :code0.
+- npm run lint:provider-boundaries :code0,61fichiers autorisés.
+- Régressions vues rouges puis vertes : en-tête HTTP, compteurs après
+  filtrage, enveloppe/statut Google et catégories de quota.
+- cargo build :code0 ; moteur chargé et appels réels ci-dessus observés.
+- graphify update . :code0,AST uniquement. Pas de relabellisation LLM.
+Warnings préexistants ts-rs/serde et linker __eh_frame observés, pas cachés.
+Les19tests ignorés ne sont pas revendiqués comme exécutés. Pas de nouvelle
+suite frontend complète sur ce diff Rust uniquement.
+
+Non terminé : hit Gemini direct (quota quotidien), hit Gemini OpenRouter
+(réponses réussies, cache0), expiration des caches implicites. Aucun100%
+annoncé. L'essai de marqueur explicite Gemini a été retiré sans implémenter
+une nouvelle politique estimative pouvant ajouter des400/frais de stockage.
+Le plan exclut un nouveau moteur de cache. Ne pas confondre absence de hit
+best-effort et défaut prouvé du transport.
+
+Rapport local détaillé :
+docs/superpowers/plans/2026-09-07-validation-live-complementaire.md
+(docs ignorés dans ce dépôt). Dépenses de la passe lexicale OpenRouter :
+0.009512USD publiés ; erreurs Google sans usage restent provisionnées.
+Deux rechargements du moteur après la première expérience d'affinité,
+sans nouvelle validation de trousseau. Beaver laissé ouvert.
+Les changements étrangers au lot sont conservés, non inclus. Aucun push,
+merge, release ni activation globale.

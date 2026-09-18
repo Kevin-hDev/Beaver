@@ -1,0 +1,28 @@
+M30 — reconstruction partagée de l’index des conversations.
+
+Changement :
+- un verrou unique sérialise lecture, reconstruction, ajout et retrait de la projection locale bornée ;
+- chaque sauvegarde durable incrémente une révision de source avant la mise à jour de l’index ;
+- une reconstruction publie ensemble son empreinte disque et la révision des documents ;
+- une lecture consécutive réutilise donc l’index sans reparcourir les conversations ;
+- si un document change pendant une reconstruction, celle-ci recommence avant de libérer les lecteurs ;
+- si la révision change avant l’ajout à l’index, une reconstruction complète retrouve aussi les nouveaux documents absents de l’ancienne projection ;
+- le nettoyage de démarrage utilise la reconstruction globale partagée et le chemin normal de sauvegarde, sans second parcours global ;
+- le cache index.json reste sur disque et les documents de session restent l’autorité ;
+- l’extraction des métadonnées et la réconciliation ont été séparées pour garder chaque fichier source sous 230 lignes.
+
+Validation locale :
+- cargo test session_index : 22 réussis ;
+- cargo test subagent_startup_cleanup : 7 réussis ;
+- cargo test session_migration_v7 : 2 réussis ;
+- cargo test session_store_update_race : 8 réussis ;
+- archivage ciblé : 1 réussi ; modification/listing fast mode ciblé : 1 réussi ;
+- mesure sur 128 conversations : 128 lectures lors de la reconstruction, 0 lors de la lecture suivante ;
+- test de sérialisation concurrente et test d’une nouvelle session encore absente de l’index : réussis ;
+- attribution d’extension d’une session v7 préservée après reconstruction : réussi ;
+- suite Rust complète finale : 5 873 tests principaux réussis, 34 ignorés prévus ; 51 tests CLI réussis ; intégrations réussies, dont 1 test prelogger et 2 tests macOS avec 1 point d’entrée ignoré ;
+- cargo clippy --all-targets -- -D warnings, cargo fmt --all -- --check et git diff --check : réussis ;
+- graphify update . : réussi.
+
+Incident de validation :
+- la première recompilation a été interrompue avant les tests par un disque plein dans le cache incrémental Rust ; cargo clean a supprimé 356,6 Gio d’artefacts régénérables, puis toutes les validations ci-dessus ont réussi.

@@ -1,0 +1,1 @@
+Counter-review P1: the canonical-manifest explanation now documents manifest_values, the parser it actually describes. release_version has its own accurate trust-boundary comment.\n\nValidation: bash syntax check and install.sh test suite passed.

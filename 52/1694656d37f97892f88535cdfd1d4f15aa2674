@@ -1,0 +1,6 @@
+Suivi de validation M03
+
+But : rendre déterministe le test d’annulation du callback OAuth xAI sans modifier le code produit.
+Cause : fermer un socket TCP avec une lecture incomplète peut produire EOF, ConnectionReset ou ConnectionAborted selon l’ordonnancement et l’OS ; ces trois issues prouvent que la connexion détenue est fermée.
+Validation : test exact rejoué 20 fois ; cargo clippy --all-targets -- -D warnings ; cargo fmt --all -- --check ; git diff --check ; graphify update .
+Contexte : la suite Rust complète avait 5864 succès, 32 ignorés et ce seul test instable ; les 20 rejeux corrigés sont verts.

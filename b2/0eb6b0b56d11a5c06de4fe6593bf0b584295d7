@@ -1,0 +1,7 @@
+Corrections B4 et M2 — réessai réseau
+
+Décision : un asset final existant est revalidé par taille, chemin, type, lien et SHA-256 puis réutilisé. Les seuls 5xx réessayables attendent 1 s puis 2 s, avec annulation possible.
+
+TDD :
+- Rouge : un asset déjà validé déclenchait DownloadFailed et les trois essais finissaient en moins de 3 s.
+- Vert : réutilisation sans réseau et durée minimale de 3 s observées.

@@ -1,0 +1,20 @@
+M25 — Primitive d’accordéon commune
+
+Décision
+- Les quatre familles d’accordéons restantes utilisent Collapsible.
+- Raison : supprimer les animations par piste de grille qui divergeaient et réutiliser la primitive déjà corrigée pour les interruptions, le contenu dynamique et le mouvement réduit.
+
+Changements
+- Suppression de CollapsePanel et des quatre transitions grid-template-rows locales.
+- Conversations, fournisseurs de modèles, description de conflit Git et résumés de session passent par Collapsible.
+- Les durées 400/200/300/180 ms, l’opacité du conflit, les conteneurs de défilement et les propriétaires du glisser-déposer sont conservés.
+- Les régions fermées deviennent inert via la primitive commune.
+
+Validation exécutée
+- 96 tests ciblés : primitive, composants réels, clavier, contenu dynamique, défilement des commits et glisser-déposer.
+- Vérification visuelle locale avec les feuilles de production : clair et sombre, ouverture, fermeture et interruption rapide, sans rognage ni état figé.
+- npm test : 636 fichiers et 3 505 tests Vitest, puis toutes les suites build, CI, fichiers, CEF, e2e, extensions et raisonnement réussies.
+- npx tsc --noEmit : réussi.
+- npm run lint : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.

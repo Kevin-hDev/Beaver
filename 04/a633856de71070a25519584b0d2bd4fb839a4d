@@ -1,0 +1,8 @@
+Motif: corréler un refus pré-HTTP à la tentative réellement courante sans écraser une génération de remplacement.
+Cause: le rollback enregistrait toujours conversation_admission_failed et les diagnostics ne conservaient ni provider ni modèle de la tentative.
+Avant/après: ChatTargetError ferme les motifs; le rollback extrait enregistre le motif fourni seulement pour la génération courante; chaque run peut conserver provider/model, compatibles avec les anciens JSON.
+Autorités: commands/agent_chat_target_error.rs pour les motifs; commands/agent_chat_rollback.rs pour le nettoyage; services/agent_local/types_diagnostics.rs pour le contrat persistant.
+RED: mismatched_attempt_has_a_closed_internal_reason ne compilait pas sans type fermé; current_pre_http_rejection ne compilait pas sans identité/rollback; contrat TS refusait provider/model absents.
+GREEN: cargo test agent_chat_run --lib 6/6; cargo test agent_chat_target --lib 13/13; cargo test types_diagnostics_contract --lib 2/2 + 1 test générateur ignoré; filtre stream_diagnostics 36/36. Export: npm run contracts:generate:diagnostics exit 0.
+Avertissements: ts-rs deny_unknown_fields et ld __eh_frame préexistants; dead_code temporaire from_serialized appartient à l étape HTTP suivante.
+Non exécuté: vérifications communes et clippy regroupés en fin de lot; aucune suite complète.

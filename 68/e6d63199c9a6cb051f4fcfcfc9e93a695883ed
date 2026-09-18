@@ -1,0 +1,25 @@
+Tâche: M20 — Nettoyer l'ancien parcours de reprise Ollama et les annotations périmées.
+
+Décision:
+- ProcessReceiptStore::recover_active reste l'unique autorité de reprise des reçus de processus.
+- Les scénarios utiles de process_receipt_tests.rs et process_tests.rs passent désormais par ce chemin réel.
+- Les aides réservées aux tests et à Windows sont limitées par cfg(test) / cfg(windows).
+- Les champs RAII et quatre variantes légitimes de contrat ont été conservés; seules ces variantes portent encore un allow(dead_code) ciblé.
+
+Changements:
+- suppression de RecoveryProbe, recover, recover_identity, reap_exact et recover_receipt;
+- suppression de façades et helpers sans consommateur (OwnedProcessSidecar, ancien download_archive, validate_empty_staging, OllamaCliArgs::Version, réexports morts);
+- passage de 66 allow(dead_code) + 21 allow(unused_imports) larges à quatre exceptions ciblées et justifiées;
+- tests réels pour reçu absent/invalide, processus terminé, identité exacte, reap et divergence de bundle.
+
+Validation:
+- cargo fmt -- --check: OK
+- cargo check --message-format=short: OK, zéro avertissement Beaver
+- cargo clippy --all-targets -- -D warnings: OK
+- cargo test services::ollama_manager --lib -- --test-threads=1: 346 réussis, 1 ignoré
+- cargo test: 5 862 tests lib réussis, 32 ignorés; 51 tests CLI réussis; intégrations et doc-tests réussis
+- graphify update .: OK
+- cargo check --target x86_64-pc-windows-msvc: non exécutable jusqu'au code Beaver; aws-lc-sys échoue faute de SDK Windows/windows.h sur ce Mac. Les contrats Windows indépendants passent dans la suite multiplateforme macOS.
+
+Risque résiduel:
+- La compilation native Windows doit rester confirmée par la CI Windows; l'échec local est antérieur à Beaver et lié à l'environnement de cross-compilation.

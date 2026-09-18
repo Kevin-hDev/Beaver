@@ -1,0 +1,5 @@
+CI follow-up: Rust 1.98 formatted the included extension contract test differently from the local formatter even though cargo fmt --check was green locally.
+
+Correction: apply the exact stable-CI rustfmt layout without changing behavior.
+
+Validation: the targeted SDK README test executes once and passes; scripts/build/check-rust-format.mjs passes against PR base 335c3959; git diff --check.

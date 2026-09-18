@@ -1,0 +1,24 @@
+CI correction batch after run 33951947554.
+
+Root causes fixed:
+- The included-source formatter was previously run locally without RUSTFMT_BASE_SHA, so it checked no PR-diff Rust files. The 74 indirectly included Rust files are now mechanically formatted with rustfmt, and the exact CI command using base 1ff5cf3d755e6c718505412f7ba99e6ff3995b0b passes.
+- windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests still expected the removed "Windows AppContainer test inventory" label. It now verifies the real confinement step, exact AppContainer test, and ignored-test invocation.
+- Windows E2E builds intentionally use the shorter repository-level target/e2e path, while artifact upload/download used src-tauri/target/e2e. WINDOWS_E2E_PACKAGE_DIR is now the single workflow authority shared by both sides.
+- Windows PowerShell multi-command steps could hide an earlier native command failure. The affected native contract steps now use fail-fast bash. The Ollama Rust filter also uses the documented windows-tests profile, which avoids loading libcef.dll in the test process.
+
+Observed CI evidence:
+- Windows package build succeeded and produced target/e2e/debug/bundle/nsis/Beaver E2E_1.2.1_x64-setup.exe before the old upload path failed.
+- The macOS and Windows backend failures reproduced only the stale AppContainer-label assertion.
+- CodeQL, dependency audits, frontend, Linux WebView, desktop CEF, and the Windows extension host were green on the reviewed head.
+
+Local verification:
+- node --test scripts/e2e/e2e-ci-contracts.test.mjs: 23 passed.
+- npm run test:e2e-runner: 91 passed.
+- npm run lint: passed.
+- targeted Rust Windows workflow contract: 1 passed, 5006 filtered out.
+- cargo fmt --check: passed.
+- RUSTFMT_BASE_SHA=1ff5cf3d755e6c718505412f7ba99e6ff3995b0b node scripts/build/check-rust-format.mjs: passed.
+- git diff --check: passed.
+- graphify update .: passed.
+
+Cross-platform packaged acceptance remains to be proven by the next CI run; this note does not claim it green.

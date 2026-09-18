@@ -1,0 +1,26 @@
+Task 6 validée — contrat LLM et permissions
+
+Implémentation:
+- manage_automation expose six actions strictes: list/get/create/update/history/delete.
+- Identité dérivée de la session et du request_id, jamais des arguments; resume_session cible la session appelante.
+- Création héritant fournisseur/modèle, résultat JSON stable, liste compacte, détail complet et statuts runtime calculés côté backend.
+- Permissions manuelles séparées entre manage_automation:read et manage_automation:mutate; Full Access conserve son bypass et delete ne demande plus confirm.
+- Audit des updates ne conserve que les noms de champs et jamais le prompt.
+
+TDD / correction observée:
+- Le premier parcours dispatcher a échoué sur list avec store_unavailable après create. Cause: absence normale de automation-runtime.json traitée comme une panne. Corrigé dans le service: runtime absent = aucune occurrence en cours; runtime corrompu reste fail-closed.
+
+Validations vertes:
+- cargo test --lib tool_automation_tests --no-fail-fast: 5 réussis
+- cargo test --lib services::agent_local::permission_allow_cache::tests --no-fail-fast: 6 réussis
+- cargo test --lib services::llm::tool_schema:: --no-fail-fast: 15 réussis
+- cargo test --lib tool_validate --no-fail-fast: 29 réussis
+- cargo test --lib services::automations::service_tests --no-fail-fast: 5 réussis
+- cargo test --lib management_actions_are_audited_without_prompts_or_results --no-fail-fast: 1 réussi
+- cargo fmt --check: réussi
+- cargo check: réussi
+- cargo clippy --all-targets -- -D warnings: réussi
+- git diff --check: réussi
+- graphify update . exécuté
+
+Avertissements non bloquants observés pendant les tests: ts-rs ignore deny_unknown_fields pour sa génération et ld signale une grande section __eh_frame; aucun échec.

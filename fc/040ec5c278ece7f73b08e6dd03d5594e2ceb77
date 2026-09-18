@@ -1,0 +1,80 @@
+Review follow-up — 2026-09-08
+
+Base: 613d601feb48ae97eb07117e706e35e03291455a, branch codex/ajout-gemini-glm-astra.
+Authority: docs/superpowers/plans/2026-09-08-review-correctifs-gemini-glm-astra.md.
+Kevin approved this corrective lot and the pending B2/F2 decisions. No merge,
+push, paid request, application restart, or continuity-policy activation in this lot.
+
+Corrections and decisions
+
+- H2: model diagnostic safe_summary now uses support::clip, the same bounded
+  redaction authority as the event. Regression exercises record -> session save
+  -> reload, rejects the fake bearer token, bounds the summary and checks equality
+  with the recorded event. Before the fix it failed the length assertion (the
+  downstream session sanitizer already removed the fake secret); after it passes.
+- I1: WebSocket handshake receives request.prompt_cache_key directly, exactly
+  the canonical field used by HTTP. All three affinity headers and the auth retry
+  consume that value. No duplicated derivation or raw-UUID fallback. If a malformed
+  session cannot produce a key, reject configuration before connecting instead
+  of sending a raw ID. Real loopback stream regression now requires a derived
+  bv1_ affinity in addition to agreement of the three headers. It failed before
+  changing the production caller, then passed for all three transport modes.
+  This is offline socket evidence, not a new paid cache-hit measurement.
+- G1: test:provider-usage reuses scripts/ci/run-rust-test-filter.mjs for BOTH
+  filters. This existing authority inventories the exact execution filter and
+  refuses an empty inventory; no duplicate runner or plaintext key introduced.
+- B2: approved product decision: a valid remembered effort (including low) is
+  retained when reasoning is mandatory, even if an old session says disabled.
+  The supported-modes authority determines whether off exists; no provider list
+  was added. Invalid/missing remembered modes still normalize to the valid
+  default. Optional reasoning still respects disabled, witnessed by DeepSeek.
+  Google/Z.AI tests exercise the real profile and outgoing request constructor.
+  No persisted session rewrite, no new mode, no change to Ollama resolution.
+- H1: comment makes explicit that missing input OR total deliberately clears
+  derived output and prevents invented pricing. No accounting behavior change.
+- I3: correction of prior note terminology: the cache journal regression proves
+  a JSON serialization/deserialization roundtrip IN MEMORY, not a disk write.
+  Disk-store tests are separate. The new H2 test above does exercise session
+  persistence; these two forms of evidence must not be conflated.
+- F2: several app relaunches occurred during the previous live-validation lot,
+  beyond the originally requested single coordinated restart. The deviation is
+  acknowledged, not rewritten as advance permission. Kevin's present approval
+  accepts this recorded disposition. This lot performs no app restart; future
+  restarts must still be grouped and coordinated when needed.
+
+Remaining informational observations, explicitly NOT claimed fixed
+
+- I2: shared pricing-catalog test setup retains the theoretical future parallel
+  race noted by review. No current competing test was identified. A new scoped
+  catalog/injection design is deferred rather than adding unrelated test plumbing.
+- G2: the existing cfg(test) catalog branch is absent from release builds; retain
+  it as reviewed (no corrective action required).
+- H3: fractional quota retry delays remain unavailable in diagnostics rather
+  than rounded. This is informational, does not control retry execution, and
+  remains conservative. No new fractional parser in this focused lot.
+
+Verification performed on the final source diff
+
+- RED before corrections: persisted_model_summary_filters_secrets... (length);
+  mandatory_google_and_zai_profiles... (medium versus low); and
+  request_keeps_payload_and_handshake_aligned_for_every_mode (raw affinity).
+- cargo test --lib: 5227 passed, 0 failed, 19 ignored (52.01 seconds).
+  All three regressions above and the optional-reasoning witness passed.
+- cargo clippy --all-targets -- -D warnings: exit 0. Existing ts-rs diagnostic
+  about deny_unknown_fields still prints during compilation; not a new warning.
+- cargo fmt -- --check: exit 0.
+- npm run test:provider-usage: 91 + 6 tests passed; each count verified by runner.
+- node --test scripts/ci/run-rust-test-filter.test.mjs: 7 passed, 0 failed.
+- Actual nonexistent filter beaver_intentionally_nonexistent_review_filter:
+  exit 1, 'Rust test filter failed' — expected negative validation.
+- npm run lint:provider-boundaries: exit 0, unchanged 61 authorized files.
+- npx tsc --noEmit: exit 0. git diff --check: exit 0.
+- Self-review: canonical payload key shared with HTTP; no secret copying into
+  JS/logs; mandatory/optional reasoning distinction preserved; changes limited
+  to this lot. Source files remain within 230 lines (websocket.rs: 229).
+- graphify update .: exit 0, AST index updated (41581 nodes, 92527 edges).
+  Community labels were partly renamed by hubs; no semantic-doc refresh claimed.
+
+Unrelated third-party notices, website/mockup changes and microphone assets were
+left untouched and excluded from this commit. No frontend layout changed; no
+new visual validation or billable live validation is claimed here.

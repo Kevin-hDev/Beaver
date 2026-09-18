@@ -1,0 +1,7 @@
+Review 08 — Refus à la limite des abonnements UI.
+
+Décision : conserver la limite et le refus, mais rendre l’incident traçable sans journaliser de contenu utilisateur et sans exposer un message technique à l’écran.
+
+Changement : le helper commun écrit le code stable active_view_subscription_limit_reached dans beaver.log via le plugin Tauri, avec seulement le registre et les compteurs. Les six appelants donnent un nom stable. La frontière d’erreur conserve le message i18n générique.
+
+Validation : 8 fichiers Vitest / 42 tests verts ; npx tsc --noEmit ; npm run lint ; npm run contracts:check ; git diff --check ; graphify update .

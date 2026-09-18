@@ -1,0 +1,21 @@
+T03 — Dépendances natives et catalogue exécutable
+
+Résultat
+- cpal 0.18.2 et sherpa-onnx 1.13.8 sont épinglés aux seules cibles macOS/Windows ; sherpa est lié statiquement.
+- Le catalogue embarqué version 1 décrit Parakeet, Cohere, Qwen et Silero avec révisions, sources HTTPS autorisées, tailles, fichiers, SHA-256, langues/dialectes, capacités de langue et licences.
+- Le chargeur échoue fermé et borne fichier, entrées, manifests, langues et champs.
+- Le catalogue est déclaré explicitement dans bundle.resources et un script vérifie sa présence et son identité dans le paquet.
+- THIRD_PARTY_NOTICES couvre les bibliothèques et les quatre poids ; le SVG Bootstrap existant reste inchangé.
+
+Preuves
+- cargo test --manifest-path src-tauri/Cargo.toml --lib services::voice::download::catalog_tests : 9 réussis.
+- cargo test --manifest-path src-tauri/Cargo.toml --lib services::voice::native_contract_tests -- --nocapture : 1 réussi ; rééchantillonnage natif réellement exécuté sur Apple arm64.
+- node --test scripts/voice/check-packaged-resources.test.mjs : 3 réussis.
+- cargo clippy --manifest-path src-tauri/Cargo.toml --lib -- -D warnings : réussi.
+- npm run lint et npx tsc --noEmit : réussis.
+- CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npm run tauri build : Beaver.app et DMG construits.
+- codesign --verify --deep --strict : réussi.
+- Catalogue source/paquet : SHA-256 46ef56c43be5f09df30b94062550c5e94a43d472a7d91a1fe6c1a7e6d374ae48 ; aucun poids ONNX empaqueté.
+- Contrôle isolé Windows x64 : cpal, sherpa et leurs appels compilent. Beaver complet en compilation croisée s'arrête dans aws-lc-sys faute de SDK Windows sur le Mac ; le job Windows natif reste requis en T07/T13.
+
+Détails et provenance : docs/fonctionnalites/vocal/PREUVES-PROTOTYPE.md, section T03.

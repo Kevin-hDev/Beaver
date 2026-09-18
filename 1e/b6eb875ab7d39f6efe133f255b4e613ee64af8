@@ -1,0 +1,5 @@
+CI correction: register the durable stream-recovery journal in the existing agent-session persistence domain and refresh the reviewed data-directory call inventory after the recovery and truncation code split.
+
+Reason: the journal survives an application crash by design, so treating its root as unknown would leave the persistence authority incomplete; the v1.0.2 historical attestation remains unchanged because this is a forward migration contract.
+
+Validation: npm run test:persistence-migration (10/10), npm run test:brand-boundaries (15/15), git diff --check, graphify update .

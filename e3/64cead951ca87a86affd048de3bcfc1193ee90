@@ -1,0 +1,20 @@
+Task 3 — service de gestion, historique et audit
+
+TDD : les tests du service puis de l historique ont d abord échoué sur les stubs StoreUnavailable; les tests sont ensuite passés après implémentation.
+
+Décisions :
+- automations/history_store.rs est l autorité unique du journal wakeups.jsonl; scheduler/log_store.rs ne fait plus que convertir et déléguer.
+- Toutes les lectures et mutations de gestion écrivent une intention d audit avant action; les résultats, y compris les erreurs, réutilisent le même UUID v4 sans prompt ni contenu fournisseur.
+- Le verrou partagé sérialise mutations, finalisation et réconciliation; aucun appel catalogue ou Agent ne se produit sous ce verrou.
+- target, provider et creator sont immuables; un modèle doit être canonique, disponible pour RequestPurpose::Automation et compatible outils.
+- after_completion est réancré uniquement lors d un changement de déclencheur ou d une réactivation; les autres mises à jour préservent l ancre.
+
+Validation observée :
+- cargo test --lib services::automations : 30 réussis, 0 échec.
+- cargo test --lib services::scheduler : 47 réussis, 0 échec.
+- cargo check : succès.
+- cargo clippy --all-targets -- -D warnings : succès (seul avertissement externe ts-rs deny_unknown_fields, non promu par Clippy).
+- Tests ciblés : service 4, historique 3, audit 3, journal historique 14, tous verts.
+- graphify update . : graphe mis à jour, 49375 noeuds / 103796 arêtes.
+- git diff --cached --check : succès.
+- Fichiers source Automatisations <= 230 lignes; fichiers de tests exemptés selon AGENTS.md.

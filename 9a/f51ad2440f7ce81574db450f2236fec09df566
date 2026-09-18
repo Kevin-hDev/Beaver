@@ -1,0 +1,8 @@
+Task: resolve delayed model retry and queued cancellation review findings.
+
+Evidence:
+- npx vitest run src/hooks/__tests__/use-update-checker.test.tsx src/components/updates/window/update-window-layout.test.ts src/components/updates/window/update-window-actions.test.ts src/components/updates/window/use-update-operations.test.tsx src/components/updates/window/update-progress-window.test.tsx (21 passed)
+- cargo test model_downloads_projection --lib (4 passed)
+- npm run lint (passed)
+- npx tsc --noEmit (passed)
+- cargo clippy --all-targets -- -D warnings (passed)

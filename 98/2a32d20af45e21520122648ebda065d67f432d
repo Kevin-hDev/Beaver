@@ -1,0 +1,1 @@
+Cause: the global identical-call breaker treated valid passive bash_control polling like repeated work. Validation: circuit_breaker (8 tests), repeated_passive_bash_control_is_allowed, finished_shell_session_controls_are_bounded, passive_control_in_a_mixed_batch_does_not_hide_active_work, and foreign_shell_session_controls_are_bounded.

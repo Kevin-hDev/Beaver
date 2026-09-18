@@ -1,0 +1,9 @@
+Windows CI follow-up for PR #36.
+
+Reason: std::os::windows::fs::MetadataExt volume_serial_number/file_index are unstable on the stable Rust runner.
+
+Decision: derive attachment identity from the already-opened file handle with GetFileInformationByHandle, matching Beaver existing Windows identity code. Registration now opens the canonical file through the single-link/no-follow private-store boundary before deriving identity; later reads compare the identity of their own opened handle. This preserves and strengthens substitution protection.
+
+Validated locally: cargo fmt --check; standalone included-source rustfmt gate; default and e2e strict clippy; 15 attachment tests passed. The macOS cross-target check could not reach Beaver because aws-lc-sys requires a native Windows SDK; the real Windows GitHub runner is the platform proof.
+
+Merge requirement unchanged: GitHub Squash and merge only, with all preserve-thinking decisions copied from the PR body/git notes.

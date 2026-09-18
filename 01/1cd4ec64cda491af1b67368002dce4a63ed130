@@ -1,0 +1,12 @@
+Correction review 09 — état opaque des fournisseurs
+
+La demande de résumé retire maintenant extra_content des appels d’outil, comme elle retirait déjà la continuation fournisseur et les autorisations temporaires de fichiers. Le contenu choisi par l’utilisateur et les arguments visibles des outils restent inchangés. La copie source de la conversation n’est pas mutée.
+
+Validation exécutée sur ce commit :
+- cargo test services::compress::summary_request_tests -- --nocapture : 7 réussis, 0 échec
+- cargo test services::compress -- --nocapture : 165 réussis, 0 échec
+- cargo check : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- cargo fmt --all -- --check : réussi
+- git diff --check : réussi
+- graphify update . : réussi

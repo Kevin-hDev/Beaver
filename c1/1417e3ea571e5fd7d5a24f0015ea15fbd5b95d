@@ -1,0 +1,24 @@
+CI correction after run 35043133978.
+
+Root causes fixed:
+- Windows directory handles were incorrectly passed to FlushFileBuffers, causing five voice model installation/removal tests to fail with model-download-storage-failed.
+- The recognizer path assertion assumed Unix separators.
+- The licensed external voice corpus test ran without its required VOICE_TEST_CORPUS_DIR in CI.
+
+Implementation:
+- Reuse the existing MoveFileExW authority with MOVEFILE_WRITE_THROUGH for atomic replacement and non-replacing durable rename.
+- Keep FlushFileBuffers only for regular files.
+- Publish voice staging and receipt tombstones through the shared durable rename path; startup remains the cleanup authority for leftover model bytes.
+- Build expected recognizer paths with Path::join.
+- Mark the external corpus test ignored by default while keeping it runnable explicitly.
+
+Validation:
+- cargo fmt --all -- --check: green
+- cargo clippy --all-targets -- -D warnings: green before commit
+- cargo test --lib: 5747 passed, 0 failed, 31 ignored
+- private_store suite: 25 passed
+- voice suite with VOICE_TEST_CORPUS_DIR: 107 passed, 0 failed, 6 ignored
+- explicit ignored corpus test: 1 passed
+- Windows metadata source regression tests: 2 passed
+- graphify update .: completed
+- macOS cross-check for x86_64-pc-windows-msvc stopped in third-party native builds because Windows SDK headers are unavailable; native Windows CI is the proof boundary.

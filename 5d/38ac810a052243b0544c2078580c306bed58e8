@@ -1,0 +1,9 @@
+Traçabilité ajoutée le 6 septembre 2026, sans réécrire l’historique.
+
+Tâche 1 : autorité backend, admission, bornes, annulation et consentement. Exécuteur de production volontairement absent à ce stade.
+
+task-1-report.md : 15 tests store, 15 exports de contrats exacts, 8 lifecycle (1 ignoré). Journaux historiques /tmp/beaver-install-jobs-{final,contracts,lifecycle}.log cités par ce rapport. Ces chiffres sont ceux du rapport de tâche, pas une nouvelle exécution sur cet ancien commit.
+
+Autorité locale des rapports : .superpowers/sdd/2026-09-05-extension-installation-background/ (ignoré). Les logs historiques ne portent pas tous une empreinte de checkout ; aucun rejeu sur cet ancien commit n’est revendiqué. La note de 69a2d057 décrit la validation globale ultérieure et ses limites natives. Les corrections de la revue disposent de leurs propres logs review-*.log.
+
+Aucun push, CI, merge ou publication réalisé par cet ajout de note.

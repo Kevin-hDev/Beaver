@@ -1,0 +1,25 @@
+Task 3 — beaver status and process detection
+
+Reason:
+- The durable Ollama receipt does not persist the HTTP port, so status reports process presence instead of claiming service health.
+- Model storage resolution reuses the existing spawn-profile authority.
+- Beaver launches Ollama under a gated executable name on Unix; the CLI now reuses that gate-name parser instead of duplicating its format.
+- Filesystem scans are bounded, saturating, and do not follow symbolic links.
+
+TDD evidence:
+- Initial task tests failed to compile before app_detect/status existed.
+- Regression test then failed for ollama.exe while the real process was named .beaver-gated-19787-d1QCQW.
+- After the shared-authority fix, all 12 beaver tests pass.
+
+Validation:
+- cargo fmt --all -- --check: PASS
+- cargo test --bin beaver: 12 passed, 0 failed
+- cargo check: PASS
+- cargo clippy --all-targets -- -D warnings: PASS
+- cargo test: 5397 library tests passed, 21 ignored, 0 failed; 12 beaver tests passed
+- cargo run --quiet --bin beaver -- status: Application ouverte; Processus Ollama présent; 6 manifests; bounded data summary
+- git diff --check: PASS
+- graphify update .: PASS
+
+Manual limitation:
+- The live “application closed” output was not forced because PID 19787 is the shared Beaver Dev instance used by the parallel Automatisations chantier. Exact positive and negative name matching is covered by unit tests.

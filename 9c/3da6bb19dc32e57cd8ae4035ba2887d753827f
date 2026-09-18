@@ -1,0 +1,23 @@
+Reason:
+The extension-loader correction changes only two bundled JavaScript resources. Rebuilding the Windows CEF application for every hypothesis costs about one hour and obscures diagnosis. A diagnostic-only boundary now reuses a previously built installer, installs it in the normal isolated profile, overlays exactly loader.mjs and module-loader.mjs from the reviewed checkout, and runs the real packaged CEF journey. It is explicitly not packaging proof; a fresh installer remains required once after the behavior is green.
+
+Safety and scope:
+- Manual workflow target only, with a validated numeric source run id.
+- GitHub Actions read permission is explicit.
+- Only two fixed filenames are copied. Source root, regular-file type, symlink status and 64 KiB per-file bound are validated before launch.
+- Any preparation or overlay error fails closed and triggers normal isolated installation cleanup.
+- The diagnostic artifact remains bounded and retained for 14 days.
+
+TDD evidence:
+- packaged-app test first failed because the installed loader remained old; it now proves both exact files are overlaid.
+- e2e-process test first failed because the explicit opt-in resolver did not exist; it now proves absent, valid and malformed inputs.
+- CI contract tests first failed because the target and job did not exist; they now prove no build dependency, cross-run artifact selection and the diagnostic flag.
+
+Validation:
+- targeted E2E tests: 48 passed
+- npm run test:e2e-runner: 94 passed
+- npx tsc --noEmit: passed
+- npm run lint: passed
+- git diff --check: passed
+- graphify . --update --code-only: passed
+- windows-host run 33974311925: passed before this workflow-only commit.

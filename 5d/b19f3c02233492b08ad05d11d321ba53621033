@@ -1,0 +1,24 @@
+Correction de la reprise apres echec — 2026-09-09
+
+Cause : agent_chat_run_spawn appelait rollback_current apres toute erreur de la tache, y compris un refus fournisseur sans assistant. Le message utilisateur disparaissait du disque mais restait visible. La reprise par ID echouait alors dans truncate_and_replace_at avec un faux message de panne de sauvegarde.
+
+Decision : la frontiere est l'acceptation de l'execution, pas la reponse HTTP. AdmissionRollback porte cet etat. La tache le marque avant TurnAdmitted ; un echec de spawn garde sa copie non acceptee et son rollback. Toute erreur ulterieure conserve le message, y compris une preparation interne ou une annulation. Pas de nouvelle politique par provider ni de changement de contrats thinking/outils.
+
+UI : reprise/edition extraites dans useAgentTurnRevision pour partager un verrou pose avant le premier await ; refus de tronquer si un stream est actif. Repli d'erreur dedie en sept langues, refus classes conserves. Aucun retry automatique. Les messages deja effaces ne sont pas recrees.
+
+Preuves : test Rust rouge (0 messages au lieu de 1), puis vert avec edition/reprise du meme ID et du meme tour. Tests frontend rouges (3 relances au lieu de 1, mauvaise traduction), puis verts ; test du stream actif et liberation du verrou apres echec inclus.
+Commandes executees :
+- cargo test --lib agent_chat_run_tests : 7 verts.
+- cargo test --lib --quiet : 5377 reussis, 0 echec, 21 ignores.
+- npx vitest run : 3317 verts, 604 fichiers.
+- npm run lint : vert, frontieres providers 65 fichiers.
+- npx tsc --noEmit : exit 0.
+- cargo clippy --all-targets -- -D warnings : exit 0.
+- cargo fmt --check et git diff --check : exit 0.
+Avertissements existants : ts-rs deny_unknown_fields, linker unwind, canvas jsdom.
+Graphify AST : 42265 noeuds, 95894 liens, 2059 communautes ; 443 noms derives des hubs, aucun appel LLM.
+
+Relecture manuelle du diff et des appelants effectuee. Aucun bundle reconstruit, aucune relance de Beaver ni requete payante dans ce lot : validation UI live reste a faire. Le test ne reconstitue pas l'ordre exact des tentatives live precedentes.
+Premiere compilation interrompue par disque plein ; Kevin a supprime le cache incremental, puis toutes les commandes annoncees ont reussi. Environ 6,6 Gio disponibles a la fin, pas de nettoyage d'autres donnees.
+
+Rapport local non versionne : docs/providers/openrouter/validation-correctifs-2026-09-09.md, section Reprise apres echec.

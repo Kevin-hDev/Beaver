@@ -1,0 +1,7 @@
+Lot R0 complete: contract.json is now the single business authority for extension API version, limits, timeouts, methods, events, effects, diagnostics and error codes. Rust, TypeScript, SDK declarations and bounded documentation tables are generated and drift-checked. The host protocol now uses host.reset plus sequential host.load requests with an ordered HostLoadTracker.
+
+Controller review corrections before commit: clean clones tolerate the intentionally absent private docs; non-string effects normalize to unknown; request and notification method unions are separated and host.load.stage cannot pass through beaver.call; legacy unknown persisted events are ignored without losing the registry; JSON-RPC envelopes require an identified request/response or a valid notification method.
+
+Fresh verification: required R0 commands green (13 contract artifact tests plus 1 ignored exporter, 2 error-code tests, 8 contract checks, 57 extension-host tests, 13 focused frontend tests); npm run lint and TypeScript green; full npm test green with 2826 Vitest tests and all script suites; Rust services::extensions green with 120 passed and 1 ignored; graphify update green. Only the pre-existing macOS __eh_frame linker warning remains.
+
+Private documentation: docs/fonctionnalites/extension/EXTENSION_API_V1.md was regenerated and reviewed but is intentionally outside Git by product decision. Contract checks validate it when present and remain executable in a clean clone where private docs are absent. No Office Tool implementation was moved or changed.

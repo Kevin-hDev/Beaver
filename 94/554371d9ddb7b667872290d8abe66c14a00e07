@@ -1,0 +1,3 @@
+Review corrections D-m1..D-m3 — authoritative context display.
+
+Decision: zero is a valid provider or prepared measurement, while reconstructed zero and non-positive context limits remain unknown. ContextProgress accepts only ResolvedContextUsage, so measured and reconstructed totals cannot disagree through parallel props. Any visible breakdown is labelled estimated when no authoritative total exists.

@@ -1,0 +1,7 @@
+Correction M4 — environnement du premier lancement
+
+Décision : seul le lancement de Beaver hérite de l'environnement utilisateur. Les outils système fermés conservent env_clear.
+
+TDD :
+- Rouge : le processus Beaver de test ne recevait pas les variables utilisateur.
+- Vert : le vrai processus enfant écrit la valeur héritée attendue.

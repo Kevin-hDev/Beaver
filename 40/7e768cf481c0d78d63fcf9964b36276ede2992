@@ -1,0 +1,7 @@
+CI persistence correction for PR #53.
+
+Root cause: the extension stabilization work introduced three direct data_dir accesses that were not added to the reviewed persistence inventory, while the per-host IPC channel directory was not classified as transient. The runtime and migration behavior were correct; the single persistence authority was incomplete.
+
+Implementation: registered access_log.rs, loading_marker.rs, and runtime.rs in the exact data-directory reference inventory; classified extension-host-channels as transient because it is recreated at launch and contains no durable user data; extended the transient-root validation to recognize that explicit bounded name.
+
+Fresh validation: npm run test:persistence-migration (10 passed, 0 failed); npm run lint; npx tsc --noEmit; npm test (528 Vitest files / 2867 tests plus all build, CI, CEF, E2E, extension-host, and reasoning script suites); git diff --check; graphify update .

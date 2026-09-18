@@ -1,0 +1,20 @@
+CI correction: keep native browser contracts out of Linux builds
+
+Reason:
+The browser domain reorganization registered browser_contract_tests on every test target even though browser_events is intentionally native_browser-only. BrowserRuntimeUpdateResult also remained unconditional although its sole implementation module is available only for tests or browser_native_api. Linux strict Clippy therefore failed with one unresolved import and one dead-code error.
+
+Change:
+- register browser_contract_tests only when native_browser is linked
+- compile BrowserRuntimeUpdateResult only for tests or browser_native_api
+- extend the existing build-policy test to lock both boundaries
+
+Validation:
+- cargo test services::browser::test_modules::build_policy_tests --lib -- --nocapture: 6/6 passed
+- cargo clippy --all-targets -- -D warnings: passed locally on macOS
+- exact changed-source rustfmt CI check: passed
+- git diff --check: passed
+
+Linux compilation remains the CI authority for the target-specific branch.
+
+Post-change maintenance:
+- graphify update . passed (47,410 nodes, 107,661 edges)

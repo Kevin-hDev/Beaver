@@ -1,0 +1,7 @@
+Task: make voice shortcut capture wait for a complete key combination.
+
+Root causes: modifier keys were accepted as complete shortcuts and the settings control persisted the value on keydown. The shortcut-clear request also decoded JSON null as an absent patch, leaving the previous shortcut stored.
+
+Implementation: ignore modifier-only key codes, preview a valid combination while keys are held, persist it on release of the main key, and preserve collision, repeat, Escape, Backspace and Delete handling. Decode an explicit null as a requested shortcut removal in the Rust settings patch.
+
+Validation: 3 targeted frontend files passed (5 tests); 3 targeted Rust voice settings tests passed; TypeScript, ESLint, rustfmt and diff checks passed. The running Beaver UI showed the combination while held and changed to Modifier only after release. The temporary test shortcut was reset to none. Graphify was updated. The ignored SPEC and microphone brief were aligned locally. review-dark.png was left untouched.

@@ -1,0 +1,17 @@
+Task 8 — empaquetage et installation du CLI
+
+Décision : déclarer target/beaver-cli/beaver dans bundle.externalBin et préparer le fichier suffixé par le triplet cible, conformément au contrat Tauri 2. La copie réutilise la vérification atomique bornée déjà employée par le helper de mise à jour. build.rs crée seulement un placeholder afin que cargo check puisse analyser la configuration avant la préparation release.
+
+Installation macOS : le bundle doit contenir Contents/MacOS/beaver. Le script crée /usr/local/bin/beaver lorsque le dossier est inscriptible ; sinon il affiche la commande sudo ln -sfn et conserve le succès de l’installation.
+
+Validation :
+- node --test scripts/build/prepare-beaver-cli.test.mjs scripts/build/prepare-release.test.mjs : 9/9
+- npm run test:build-scripts : 60/60
+- npm run test:install : install.sh OK, sécurité 4/4, migration 6/6
+- cargo check --bin beaver : succès
+- CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npm run tauri build : succès, Beaver.app et Beaver_1.2.2_aarch64.dmg produits
+- Beaver.app/Contents/MacOS/beaver --version : Beaver 1.2.2, Mach-O arm64
+- codesign --verify --deep --strict Beaver.app : succès
+- graphify update . : succès
+
+Observation hors périmètre : le build release affiche 10 avertissements préexistants dans reasoning_fixture_store/app_build. Le premier lancement sans CLGO_CEF_ALLOW_ADHOC_SIGNING a correctement refusé la signature ad hoc ; la relance a utilisé la variable déjà définie par la CI du dépôt.

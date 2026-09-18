@@ -1,0 +1,13 @@
+API-P3 — chargement contrôlé des skills et ressources découverts.
+
+Périmètre: load_skill devient sensible à la session pour les IDs extension:<extension-id>:<local-id>; load_extension_resource charge un ID exact. Les skills ordinaires restent sur le catalogue historique, dont le préfixe extension: est désormais réservé. Aucun contenu binaire non texte n est injecté dans ce lot.
+
+Frontières: session principale existante, profil fournisseur compatible, extension inspectée, enabled, trusted, statut Active et index courant sont tous exigés. Chat, OpenRouter Groq normal/compound, sous-agents et commande Tauri sans session échouent fermés. AlreadyAvailable est admissible à l inspection afin que les skills/ressources d un plugin dont les outils sont déjà actifs restent accessibles.
+
+Fichiers: lecture sous racine canonique, composants sans symlink, fichier régulier à lien unique, identité vérifiée avant et après lecture et limites exactes. file_signature est l autorité unique JPEG/PNG/GIF/WebP/PDF/ZIP/UTF-8/binaire; type réel prioritaire, ZIP reste ambigu. Windows ADS et noms DOS réservés sont refusés.
+
+Revue racine: Terra a livré une première base incomplète. La revue a ajouté les contrôles de session/route/statut, les cas de redémarrage, la fixture Hôte réelle, les catégories d erreur non retentables, la double identité de fichier et les frontières Chat/Groq/sous-agent. Deux suites Rust complètes ont révélé une course des tests P3 sur le registre singleton; le montage final injecte des instantanés bornés registre/index dans les tests, sans retry ni sérialisation artificielle. extensions/mod.rs reste sous 230 lignes via test_modules.inc.rs. tool_dispatcher_entry.rs n a pas été découpé car aucune branche de production n y a été ajoutée.
+
+Validation observée: Rust complet 4891 réussis, 0 échec, 17 ignorés; resource_loader 7/7; verified_file_read 7/7; file_signature 2/2; extension_skill_loader 3/3; tool_extension_resource 2/2; tool_skill_loader 3/3; plan_guard 8/8; inspection 12/12; Groq 4/4; sous-agents 6/6; Chat 6/6; catalogue 9/9; pièces jointes 14/14; vision 7/7. Hôte 103/103 avec la fixture api-expansion réellement chargée. tsc, lint, clippy strict, fmt et diff-check verts.
+
+Contrôle: Hôte Jiti réel pour l enregistrement de la fixture; backend avec vraies sessions de test isolées avant/après découverte, lecture, perte des contributions runtime et reconstruction. Aucun contrôle GUI n est pertinent pour ce lot backend; le parcours empaqueté reste prévu en API-P7. Avertissement linker macOS __eh_frame non bloquant. Graphify sans clé a refusé les non-code, puis graphify --code-only a réussi sur 4704 fichiers.

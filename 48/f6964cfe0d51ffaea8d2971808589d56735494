@@ -1,0 +1,14 @@
+Correctif post-implémentation — progression des modèles vocaux
+
+Cause : VoiceModelList et VoiceControls rendaient encore OperationProgressAction alors que les mêmes ModelDownloadState étaient déjà projetés dans la fenêtre globale update-progress. Cette double projection créait deux barres et deux commandes d'annulation. La fenêtre utilisait aussi le vocabulaire des mises à jour pour toute opération.
+
+Correction : la fenêtre globale devient l'unique barre de progression et l'unique annulation pour un transfert actif. Les vues vocales conservent seulement l'action Reprendre pour un transfert suspendu. Le titre, l'état terminé et l'erreur utilisent isUpdate : Téléchargement/Installation terminée pour une installation, Mise à jour/Mis à jour pour une vraie mise à jour. Les opérations multiples portent un titre neutre. Les sept langues sont couvertes.
+
+Preuves :
+- vérification réelle pendant le téléchargement Cohere : titre visible Téléchargement et phase Téléchargement ;
+- vérification réelle du panneau vocal : aucune barre locale ;
+- 4 fichiers de tests ciblés, 14 tests réussis ;
+- TypeScript réussi ;
+- ESLint ciblé réussi ;
+- cohérence des sept catalogues i18n réussie ;
+- git diff --check réussi.

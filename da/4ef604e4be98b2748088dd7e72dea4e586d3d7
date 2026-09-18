@@ -1,0 +1,15 @@
+Review correction:
+- Removed the privileged delayed-deletion API from the unelevated current-user installer.
+- Shutdown now removes validated sibling artifacts while preserving the running executable and ownership marker for the existing orphan purge on the next installer launch.
+
+Reason: the OS API requires elevation and deleting the marker first made normal current-user leftovers permanently unverifiable.
+
+Red proof:
+- node --test scripts/installers-security.test.mjs failed while the privileged API and marker deletion remained.
+
+Validation:
+- node --test scripts/installers-security.test.mjs: 5 passed
+- cargo test windows_cleanup_identifies_the_executable_and_its_owned_directory: 1 passed
+- installer cargo fmt --check and clippy --all-targets -D warnings passed
+- git diff --check
+- graphify update . completed.

@@ -1,0 +1,39 @@
+Task 4b1 — exact debug fixture selection and evidence
+
+Luna xHigh implemented; parent reviewed all changed files and corrected the lot.
+Eight documented September route/model pairs and all their modes are selectable.
+Alibaba ZHIPU/GLM-5.3-Flash stays absent: contract/access unresolved.
+Explicit bounded route/model/mode filters are validated before runner credential
+initialization. Batch and IPC export share mode-aware report naming; historical
+names remain stable. No historic report rewritten or new live report fabricated.
+
+Each user turn owns a fresh fixture directory. Tools must write then read in
+the SAME turn. Evidence checks exact successful results, values, call IDs and
+turn IDs; the next turn uses no tools. Vision uses the real synthetic quadrants
+without giving their colors in the prompt, with image+tool and later image recall.
+Counts come from observed payload/reasoning events, not the number of turn IDs.
+
+Parent found a deterministic failure before paid use: vision recall called a
+helper requiring the word fixture, although the requested answer was RED only.
+The regression failed (1 test, exit 101), then passed after separating expected
+answer from the no-tool requirement. Whole-word ordered answer comparisons also
+reject NOT_RED, not red, infrared and incorrect quadrant order. Added tests for
+tool correlation/failure/wrong value/wrong turn/reversed calls. Bounded raw filter
+bytes before allocation. Removed a complex callback type and redundant borrows
+reported by Clippy rather than suppressing warnings.
+
+Checks on final code: cargo test --lib reasoning_fixture 32 passed; cargo clippy
+--lib -- -D warnings exit 0; npm run test:reasoning-fixtures 10 passed plus report
+validation; provider boundaries green with 59 owned files (two debug fixture
+decisions newly documented). Formatting/diff checks passed. Existing test linker
+and ts-rs warnings remain. Graphify AST maintenance ran; semantic names stale.
+
+IMPORTANT: not ready for paid use yet. LIVE_RUNNER_BLOCKED_UNTIL_4B2 remains true.
+Actual request/output caps and synthetic private-context isolation are task 4b2.
+Timeout requests cancellation with the actual generation, but disappearance from
+ActiveStreams alone is NOT proof the future finished. Task 4b2 must bound/drop
+the actual fixture future and reuse the deadline authority. No production chat
+activation, app restart, key access, paid request, full-suite claim or publication.
+
+Plan: /Users/kevinh/Projects/Beaver/docs/superpowers/plans/2026-09-07-ajout-gemini-glm-astra.md
+Journal: /Users/kevinh/Projects/Beaver/docs/providers/validation-modeles-2026-09-07.md

@@ -1,0 +1,58 @@
+Lot P1.2 — attribution et reprise des pannes de chargement d’extensions.
+
+État livré
+- Un marqueur v1 strict, borné à 1 024 octets et écrit atomiquement précède chaque véritable requête host.load.
+- Son étape ne progresse que depuis les notifications ordonnées host.load.stage.
+- Le marqueur n’est retiré qu’après validation et application effective du résultat par Rust.
+- Une extension locale interrompue reste activée mais est exclue au redémarrage; ses voisines et les plugins officiels continuent.
+- Un marqueur invalide ou orphelin bloque temporairement les extensions locales sans réécrire leur intention persistée.
+- Les cinq commandes de reprise sont exposées avec des réponses génériques et bornées.
+- Le registre et le snapshot de récupération ont une seule autorité mémoire.
+
+Décisions et raisons
+- attempts est persisté immédiatement avant l’appel host.load : il compte un chargement réellement commencé, pas un préflight refusé.
+- Une relance prudente resynchronise tous les hôtes normalement éligibles : l’état publié doit rester identique aux processus réellement vivants.
+- Un marqueur visant une extension absente est invalide : l’utilisateur ne doit pas rester bloqué par un identifiant orphelin.
+- Seul un marqueur invalide/orphelin peut être écarté; une interruption valide exige retry ou désactivation.
+- Le premier snapshot de récupération est conservé : une demande répétée ne doit jamais effacer l’intention initiale.
+- private_store::repair_app_storage reste l’unique propriétaire du nettoyage des temporaires.
+
+Revue indépendante du contrôleur
+Le sous-agent a livré sans commit. La revue racine a trouvé puis corrigé avec tests rouges/verts :
+1. un retry local arrêtait tous les Hôtes mais ne rechargeait que la cible;
+2. attempts était consommé avant empreinte et avant host.load;
+3. discard pouvait supprimer une interruption valide;
+4. un marqueur valide mais orphelin piégeait la reprise;
+5. une seconde récupération globale pouvait remplacer le snapshot par une liste vide;
+6. un marqueur invalide inchangé faisait échouer une synchronisation Builtin vide;
+7. un retry échoué laissait le runtime en Starting;
+8. chaque appel cœur clonait tout le registre;
+9. le test de liaison Hôte ne prouvait pas le rejet d’un autre processus;
+10. la suite Extensions a révélé une fixture host_reader sans marqueur durable.
+
+Sécurité
+- Lecture bornée, schéma strict, identifiants/étapes/date/tentatives validés.
+- Liens symboliques et fichiers multi-liens refusés; écritures privées et atomiques.
+- Aucun contenu, chemin ou date du marqueur dans l’UI ou les logs.
+- Identité issue du canal et du registre Rust, jamais des paramètres Node.
+- Aucun verrou registre/Hôtes gardé pendant un await.
+
+Validation observée
+- cargo test --lib services::extensions : 207 réussis, 1 ignoré, 0 échec.
+- cargo test complet : 4 685 réussis, 10 ignorés, 0 échec; intégration prelogger_diagnostics 1/1.
+- npm test : exit 0; Vitest 526 fichiers / 2 835 tests, build 56, CI 16, CEF 45 avec 1 Windows ignoré, E2E 70, Hôte 57, reasoning 10.
+- npm run lint : exit 0.
+- npx tsc --noEmit : exit 0.
+- cargo clippy --all-targets -- -D warnings : exit 0.
+- cargo fmt --check : exit 0.
+- git diff --check : exit 0.
+- graphify update . : exit 0; 42 113 nœuds, 87 979 arêtes, 2 404 communautés.
+- Aucun fichier de production du lot ne dépasse 230 lignes; maximum 224.
+
+Incident de validation
+La première exécution globale a rencontré ENOSPC dans les artefacts Cargo. cargo clean --package cl-go-dash a supprimé uniquement les artefacts de compilation reproductibles. Les suites Rust et frontend ont ensuite été relancées intégralement et ont toutes deux terminé avec exit 0.
+
+Limites connues
+- Validation locale effectuée sur macOS; pas de cross-build Windows/Linux dans ce lot.
+- Un marqueur invalide qui est lui-même un lien symbolique reste non supprimable par la commande, volontairement fail-closed.
+- La documentation du plan et les rapports .superpowers sont privés/ignorés et ne font pas partie du commit.

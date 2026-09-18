@@ -1,0 +1,50 @@
+Lot P1.5 — interface Extensions alignée sur l’état runtime
+
+Périmètre livré
+- L’interface conserve le dernier registre valide pendant un rafraîchissement et distingue vide, chargement, erreur et contenu.
+- Les erreurs d’opération apparaissent dans la liste, la fiche et le dialogue d’activation avec les codes i18n fermés de P1.4.
+- Un refus d’activation garde le dialogue ouvert; seule une confirmation backend réussie le ferme.
+- hostBusy couvre rechargement, récupération, activation/désactivation, retry de chargement et restauration du snapshot. RuntimeHosts reste l’unique autorité de sérialisation.
+- La fiche expose activation, statut runtime, niveau/API, auteur, provenance, dates, dernière erreur, contributions et classes d’effet.
+- Le bandeau de reprise consomme les cinq commandes P1.2. Ouvrir la fiche reste une navigation locale.
+- Les présentations et types courants d’applications externes sont retirés. La valeur external subsiste uniquement à la frontière de migration de l’ancienne navigation; external-read et external-write restent des classes d’effet.
+- Les sept langues et les tokens CSS existants sont utilisés; aucune couleur ni chaîne visible n’est codée en dur.
+
+Contre-revue contrôleur et corrections TDD
+1. Un échec du refresh de reprise masquait le bandeau: dernier état conservé et erreur traduite affichée.
+2. Une réponse de registre obsolète pouvait écraser la plus récente: génération de refresh ajoutée.
+3. Une erreur ancienne contaminait un nouveau dialogue d’activation: erreur effacée à l’ouverture.
+4. Les états initiaux chargement/erreur n’avaient pas de rôles accessibles: status/alert ajoutés.
+5. Le fond du dialogue était un bouton contenant des boutons: rôle présentation, DialogPortal, identifiants uniques, focus restauré et Échap global.
+6. Le CSS du bandeau dépendait du panneau Hôte: styles déplacés vers l’autorité parent extensions-page.css.
+7. Une ancienne erreur de chargement restait visible pendant un nouveau refresh: effacement au démarrage.
+8. La reprise avait la même course de réponses obsolètes: génération de refresh ajoutée.
+9. Le parseur acceptait toute étape: validation contre HOST_LOAD_STAGES généré depuis le contrat.
+
+Preuves observées
+- Première vague contrôleur: 6 échecs rouges / 26 succès, puis 32 succès.
+- Deuxième vague contrôleur: 3 échecs rouges / 15 succès, puis 35 succès.
+- Tests ciblés finaux: UI/i18n 38/38; hook/parsing/navigation 34/34.
+- Vitest complet: 527 fichiers, 2 858 tests réussis.
+- npm test complet: exit 0, Vitest et toutes les suites secondaires réussis.
+- Rust complet: 4 709 réussis, 10 ignorés; intégration 1/1.
+- npm run lint, npx tsc --noEmit, cargo check, Clippy strict, cargo fmt, contracts:check et git diff --check: exit 0.
+- Graphify: 42 223 nœuds, 88 207 arêtes, 2 433 communautés; sortie lue, exit 0.
+
+Validation visuelle native après le commit
+- Le premier lancement isolé avait échoué avant l’interface avec cef-supervision-object puis GPU process isn't usable. Après validation explicite du trousseau macOS par l’utilisateur, Beaver est resté ouvert sans nouvelle disparition de WebView; les erreurs CEF/GPU sont donc consignées comme symptômes en aval du démarrage bloqué, pas comme une panne GPU démontrée.
+- Parcours réellement observés: liste, fiche Documents, état vide personnalisé, panneau Hôte, thèmes sombre/clair et interface française/allemande.
+- Cycle runtime réversible observé: activation de Documents, Hôte à une extension active avec Node.js v24.18.0 et Jiti 2.7.0, puis désactivation et vérification du retour à l’état initial.
+- Français, thème sombre et Documents désactivé ont été restaurés. Aucune récupération globale, installation, suppression ou mutation d’extension personnalisée n’a été déclenchée.
+- La bordure native n’a pas accepté le redimensionnement piloté; une largeur inférieure et les fixtures Hôte mort/reprise ne sont pas revendiquées comme observées sur les données réelles. Elles restent couvertes par les tests ciblés.
+
+Porte finale documentaire
+- Le document privé EXTENSION_API_V1.md porte la date du 2 septembre 2026 et le commit exact 216788c9ddfe190119b1f7cec9cafc5b294f937a.
+- Son texte décrit désormais l’isolation par Hôte tiers, l’identité du canal, les empreintes, les permissions par effet, la reprise et le retrait de la valeur external.
+- Sa section générée possède exactement le même SHA-256 que la section du README SDK issue de contract.json.
+- EXTENSIONS_PRIORITY_SCOPE.md relie désormais chaque lot à son commit et distingue les parcours natifs observés des scénarios destructifs ou de largeur réduite couverts uniquement par les tests.
+- La maintenance sémantique Graphify globale a été arrêtée sans fusion: le manifeste du checkout principal signalait 1 609 fichiers nouveaux ou modifiés, dont des maquettes et images hors scope. Le graphe AST de la branche reste à jour; l’indexation du document privé devra être reprise sans absorber ces travaux tiers.
+
+Hors périmètre préservé
+- Aucun changement des capacités Office, MCP, de la politique de sélection à 10 %, ni du futur transport d’applications externes.
+- Aucun commit, push ou note créé par le sous-agent; revue, corrections, validation, commit et présente note appartiennent au contrôleur.

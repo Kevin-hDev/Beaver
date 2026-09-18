@@ -1,0 +1,13 @@
+Reason: Dependabot reported GHSA-9rgm-9g3h-6x36 because the central devalue override pinned 5.8.1; Svelte accepts ^5.8.1 and the first fixed release is 5.9.1.
+
+Change: update the existing single override authority and lockfile entry to devalue 5.9.2.
+
+Validation:
+- npm ci: passed
+- npm ls devalue --all: resolves only devalue 5.9.2 through Svelte
+- npm audit: 0 vulnerabilities
+- npm test: 638 Vitest files / 3488 tests plus all script, CEF, extension-host and contract suites passed
+- npm run lint: passed
+- npx tsc --noEmit: passed
+- git diff --check: passed
+- graphify update .: completed with no tracked graph changes

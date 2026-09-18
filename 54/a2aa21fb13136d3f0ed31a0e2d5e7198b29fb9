@@ -1,0 +1,10 @@
+T09 — Livraison unique au brouillon
+
+- Stockage unique borné à 64 brouillons, réservations et dernier résultat appliqué protégés jusqu’à acquittement.
+- Insertion UTF-16 à la dernière sélection connue, sans remplacement, espace ajouté ni coupure de paire de substitution.
+- VoiceRoot est monté hors des surfaces suspendues, s’abonne avant la relecture et ne garde qu’une livraison en cours avec un signal de rattrapage.
+- Fermeture d’onglet, nettoyage Git, archivage de conversation et fin de l’accueil passent par le même arbitrage ; la navigation seule ne ferme rien.
+- MessageAccepted part uniquement après la réussite réelle de onSend. Un refus ou une exception conserve le brouillon et le filet.
+
+Validation : 46 tests frontend ciblés, npx tsc --noEmit, npm run lint -- --quiet, git diff --check et graphify update . réussis.
+Limite inchangée : la Porte B Windows/Ollama/vocabulaire technique reste ouverte depuis T07.

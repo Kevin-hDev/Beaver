@@ -1,0 +1,9 @@
+Traçabilité ajoutée le 6 septembre 2026, sans réécrire l’historique.
+
+Tâche 3 : mesure du volume, arrêt avant consentement, cache npm conservé et reprise contrôlée par verrouillage/empreinte. Un accord reste fini et préserve la réserve disque.
+
+task-3-final-isolated.log : filtre services::extensions, 451 passés / 0 échec / 10 ignorés. task-3-git-final.log : git_source 5 passés / 0 échec. Sorties relues le 6 septembre. Ne pas confondre avec task-3-extensions-final.log : cet essai antérieur contient 1 échec et n’est pas la preuve finale. Le prototype réel npm est décrit dans npm-resume-research.md.
+
+Autorité locale des rapports : .superpowers/sdd/2026-09-05-extension-installation-background/ (ignoré). Les logs historiques ne portent pas tous une empreinte de checkout ; aucun rejeu sur cet ancien commit n’est revendiqué. La note de 69a2d057 décrit la validation globale ultérieure et ses limites natives. Les corrections de la revue disposent de leurs propres logs review-*.log.
+
+Aucun push, CI, merge ou publication réalisé par cet ajout de note.

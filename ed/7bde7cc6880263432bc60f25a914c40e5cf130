@@ -1,0 +1,9 @@
+CI follow-up after the real Extension Host began starting successfully.
+
+Root cause: the final installed-theme E2E scenario persisted extension:<theme-id>, while the canonical format is extension:<extension-id>:<theme-id>. On reload the application correctly treated that malformed value as unavailable and restored the system theme.
+
+Correction: construct the persisted choice through the production extensionThemeChoice authority instead of duplicating its serialization in the test.
+
+CI evidence before correction: the Host started, runtime proof passed, advanced UI passed, installation passed, and all 42 locale/theme checks passed; only the malformed final theme-choice scenario failed (48 passed, 1 failed).
+
+Local validation: theme parser and useTheme suites (11 passed); npx tsc --noEmit; npm run lint; git diff --check; graphify update .

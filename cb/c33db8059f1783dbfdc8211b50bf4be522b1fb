@@ -1,0 +1,11 @@
+Tâche 6 — Autorité bornée de progression et frontière de fenêtre.
+
+Décisions : UpdateProgressRuntime est l’unique projection UI en mémoire, avec IndexMap limité à 32 entrées, séquences monotones, validation des IDs/labels/progression et éviction du terminal le plus ancien uniquement. La position de la fenêtre reste en mémoire de session. Linux conserve volontairement zéro nouvelle fenêtre.
+
+Sécurité : le label update-progress passe par un garde Rust unique. Sept commandes seulement sont admises ; set_api_key, write_agent_md, pty_spawn et toute commande inconnue sont rejetées avec command-not-available. La capability ne contient que listen, unlisten, close et start-dragging. Le redimensionnement est limité à la fenêtre appelante et à 96..=640 px, puis borné à l’écran courant.
+
+Preuves vertes : 6 tests update_progress plus 1 exporteur ignoré ; 3 tests invoke_gate ; 2 tests statiques capability/CSP ; cargo clippy --all-targets -- -D warnings ; contracts:check ; npm run build ; graphify update. Le vrai scénario tests/e2e/update-progress-security.spec.ts passe : la webview tente set_api_key, reçoit command-not-available, puis main confirme has_api_key=false.
+
+Résultat E2E global consigné sans le masquer : npm run test:e2e reste rouge sur sept scénarios onboarding/extensions indépendants (app-root non affiché et extensions_host_unavailable). Les trois premiers scénarios existants et le nouveau scénario update-progress passent. La configuration E2E a reçu explicitement la capability update-progress, ajout nécessaire au test réel mais absent de la liste de fichiers initiale du plan.
+
+Décalage volontaire : le délai UI de retrait après 4 secondes reste dans la tâche Interface exacte, car il dépend du premier rendu réel qui y est créé ; le backend ferme déjà la fenêtre dès que le dernier terminal est retiré.

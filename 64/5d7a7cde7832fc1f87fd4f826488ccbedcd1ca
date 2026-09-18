@@ -1,0 +1,21 @@
+M17 — Contrat unique de raisonnement
+
+Résultat
+- `reasoning_contract` est l’unique représentation publiée et stockée pour les modèles Rust, IPC et frontend.
+- Les anciens modes et défauts du registre statique restent des entrées fournisseur, converties une seule fois à cette frontière.
+- Catalogue, sélecteur, admission, payloads et continuité lisent tous le contrat commun.
+- Un mode `auto` explicitement proposé reste sélectionnable ; `ProviderDefault` représente seulement l’absence de contrôle utilisateur.
+- Le défaut local xAI complète le catalogue distant uniquement lorsqu’il est compatible.
+
+Structure
+- Les tests de `runtime_models.rs` sont déplacés dans `runtime_models_tests.rs` afin de garder le fichier de production sous 230 lignes.
+- L’ordre des sessions visibles a été extrait dans l’aide existante du domaine, sans nouvelle couche.
+
+Validation
+- `cargo test --lib --quiet -- --test-threads=1`: 5 861 réussis, 0 échec, 32 ignorés.
+- `npm test`: 636 fichiers, 3 506 tests réussis, contrôles annexes inclus.
+- `cargo check` et `cargo clippy --all-targets -- -D warnings`: réussis.
+- `npm run lint` et `npx tsc --noEmit`: réussis.
+- `npm run contracts:check`: réussi.
+- `graphify update .`: 47 370 nœuds, 107 608 arêtes, 2 288 communautés.
+- `git diff --check` et limite de 230 lignes sur les fichiers de production modifiés: réussis.

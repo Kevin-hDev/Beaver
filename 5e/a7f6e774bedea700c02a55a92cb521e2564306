@@ -1,0 +1,7 @@
+Correction M1 — récupération macOS bornée
+
+Décision : avant staging, au plus 4 096 entrées sont lues et 32 siblings reconnus sont admis. Si Beaver.app est valide, les stages/backups/failed obsolètes sont supprimés. Si la cible manque, l'unique backup valide est restauré ; plusieurs backups bloquent. Le stage courant est nettoyé sur toute erreur ou annulation, y compris par la session privilégiée.
+
+TDD :
+- Rouge : aucun module de récupération n'existait.
+- Vert : suppression des orphelins et restauration de l'unique backup ; 44 tests Rust passés, 2 ignorés ; vrai DMG local 1/1 ; clippy strict vert.

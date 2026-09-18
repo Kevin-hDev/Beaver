@@ -1,0 +1,12 @@
+Décision issue de la review 10 — métadonnées privées de session
+
+La copie de l’historique envoyée au modèle de résumé exclut désormais replay_source et skill_ids. Les noms lisibles des skills restent présents. La conversation persistée, la reprise du raisonnement, le rechargement des skills et la collecte des références de checkpoint utilisent toujours les données sources intactes.
+
+Validation exécutée sur ce commit :
+- cargo test services::compress::summary_request_tests -- --nocapture : 7 réussis, 0 échec
+- cargo test services::compress -- --nocapture : 165 réussis, 0 échec
+- cargo check : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- cargo fmt --all -- --check : réussi
+- git diff --check : réussi
+- graphify update . : réussi

@@ -1,0 +1,9 @@
+B5 implementation: durable, attributed extension-owned automations.
+
+Design: automations.json migrates from schema v1 to v2 through an exact pre-v2 backup and an atomic two-startup cleanup marker. Future schemas remain readable in degraded mode but are not rewritten. Malformed ownership stays preserved and non-native.
+
+Security: extension identity is derived from the trusted active Rust registry and the authorized call context, never from SDK parameters. New extension automations are disabled, ownership is immutable, activation always uses the existing explicit confirmation channel, and consent is bound to a SHA-256 fingerprint of prompt, schedule, model, provider, and target. Limits of 8 per extension and 64 globally are enforced under the store lock with optimistic revisions.
+
+Scope: CRUD only. This commit does not admit or execute newly scheduled extension work; that belongs to B6. Native UI/tool mutations reuse the same service owner and scheduler reload signal.
+
+Validation: contracts:check passed; extension host 134/134; automations 66/66; extension core 42/42; heartbeat 4/4; native automation tool 7/7; persistence migration 10/10; focused frontend 6/6; TypeScript, ESLint, cargo check, cargo fmt, and clippy -D warnings passed. Existing ts-rs parsing and macOS compact-unwind warnings remain unchanged.

@@ -1,0 +1,5 @@
+Adds the future v1.2.0 CHANGELOG entry after customizable context compression merged in PR #43.
+
+The entry documents named profiles, global and per-session selection, context-window bands, bounded checkpoint contents, atomic persistence, migrations, retry guards, and context-ring visibility.
+
+Only CHANGELOG.md is committed; unrelated beaver-site mockups and local screenshots remain untouched.

@@ -1,0 +1,10 @@
+Review correction A-B1 — interrupted marker on Anthropic
+
+Decision:
+The empty assistant record remains the durable terminal marker for Beaver's transcript, but Anthropic omits an assistant entry that has neither text nor tool calls. Such an entry has no provider semantics and Anthropic Messages rejects it.
+
+Proof:
+- The regression test failed with BuildError::InvalidMessage before the fix.
+- interrupted_turn_marker_is_not_sent_to_anthropic passes after the fix.
+- All 15 anthropic::payload_tests pass.
+- cargo fmt --check and git diff --check pass.

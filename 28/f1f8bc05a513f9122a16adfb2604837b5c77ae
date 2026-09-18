@@ -1,0 +1,1 @@
+Integrate origin/main 84229e58 into the provider branch to reproduce GitHub's tested merge state. Includes two previously published terminal commits (889273a3, 84229e58), no conflicts. This is not a merge of PR #61 into main. Unrelated local edits preserved. Follow-up commit fixes the Windows-only import failure revealed by CI and records verification.

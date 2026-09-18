@@ -1,0 +1,9 @@
+Traçabilité ajoutée le 6 septembre 2026, sans réécrire l’historique.
+
+Tâche 2 : exécution réelle supervisée, journal de propriété, annulation et reprise explicite. Le travail bloquant garde son admission jusqu’à sa fin réelle.
+
+task-2-report.md et task-2-verified-*.log : cargo test --manifest-path src-tauri/Cargo.toml --lib services::extensions::<filtre>. install_jobs 33/0/1 ignoré ; installer 8/0/1 ; process_runner 1/0/0 ; git_source 5/0/0 ; npm_ 7/0/0 ; ui_builder 1/0/0. Les six sorties ont été relues le 6 septembre : 55 passés, 0 échec. Ce sont les preuves du checkpoint de tâche, pas une nouvelle exécution sur cet ancien commit.
+
+Autorité locale des rapports : .superpowers/sdd/2026-09-05-extension-installation-background/ (ignoré). Les logs historiques ne portent pas tous une empreinte de checkout ; aucun rejeu sur cet ancien commit n’est revendiqué. La note de 69a2d057 décrit la validation globale ultérieure et ses limites natives. Les corrections de la revue disposent de leurs propres logs review-*.log.
+
+Aucun push, CI, merge ou publication réalisé par cet ajout de note.

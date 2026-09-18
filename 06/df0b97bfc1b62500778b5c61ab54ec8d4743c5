@@ -1,0 +1,26 @@
+Tâche M10 — Valider les arguments depuis les définitions publiées.
+
+Raison
+Les paramètres des outils étaient décrits dans les définitions JSON envoyées au modèle et recopiés dans tool_validate_schema.rs. Les deux tables divergeaient déjà sur list_dir.path et la copie Forecast était sans effet.
+
+Changement
+- Les 46 outils natifs sont validés depuis leur définition JSON Schema.
+- Le validateur commun prend en charge types, bornes, enum, const, UUID, oneOf/anyOf, objets et tableaux imbriqués.
+- Les règles métier restent séparées : commandes shell, identifiants de changements sous-agents, bash_control et todo_delete.
+- list_dir.path est désormais facultatif dans le schéma publié, conformément au comportement historique qui cible le dossier de travail.
+- L'alias enregistré yield-time-ms reste accepté et n'est pas annoncé au modèle.
+- La table manuelle de 184 lignes et le chercheur Forecast parallèle sont supprimés.
+
+Validation
+- cargo test tool_validate --lib : 32 réussis, 0 échec.
+- cargo test tool_automation --lib : 9 réussis, 0 échec.
+- cargo test tool_definitions --lib : 22 réussis, 0 échec.
+- cargo test tool_dispatcher --lib : 48 réussis, 0 échec.
+- cargo check : réussi sans avertissement.
+- cargo clippy --all-targets -- -D warnings : réussi.
+- cargo fmt --all -- --check : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.
+
+Décision
+L'absence de path pour list_dir reste compatible et équivaut à '.'. Raison : l'exécuteur possède déjà ce défaut documenté et des appels enregistrés peuvent en dépendre.

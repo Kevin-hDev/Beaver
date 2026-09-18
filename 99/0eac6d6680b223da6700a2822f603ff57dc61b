@@ -1,0 +1,9 @@
+CI follow-up to 97400a78 / run 34030963078.
+
+Linux failure: cargo fmt does not cover the include! test source; complementary check now passes after formatting fingerprint_tests.rs.
+macOS failure: test started a Tauri global worker before preparing checkpoint and capacity. A test-only Notify gate now establishes preparation-before-execution. Exact test passed and binary repeated 20/20 successfully.
+Windows: backend dependency install plus four packaged acceptance installation failures remain unexplained. Added a minimal real Node gate probe before npm preflight. Temporary instrumentation emits only fixed markers and allowlisted error codes; no raw stderr, secrets, or extension content is printed. Production launch behavior is unchanged. Remove instrumentation after Windows root cause is proven.
+
+Local validation: installer_process 6 passed, 1 subprocess fixture ignored; CI contracts 25 passed; complementary rust format check against base 1ff5cf3d passed; git diff --check passed; graphify update completed (45580 nodes, 95748 edges).
+
+This diagnostic commit deliberately skips push/PR CI to avoid rebuilding all packages before the Windows cause is known. Dispatch only CI target=windows-backend. A subsequent normal commit and complete green CI are mandatory before merge. No claim of Windows validation.

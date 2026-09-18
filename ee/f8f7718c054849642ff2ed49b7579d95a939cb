@@ -1,0 +1,9 @@
+CI correction after Windows packaged acceptance run 33966005620.
+
+Root cause narrowed from the retained import-stage marker and the exact 60-second host boundary: plain .mjs extensions were always routed through Jiti transformation because tryNative is disabled by default under Node. Under the installed Windows CEF workload, with the official Office host resident, the third-party import could exhaust the bounded host request.
+
+Resolution: prefer the native Node loader for compatible JavaScript while retaining Jiti as the fallback for TypeScript and the @beaver/sdk alias. The bundled-runtime smoke now keeps all four official Office plugins resident in one real bundled host while loading the standard third-party UI fixture in a second host. Its request deadline consumes the generated extension contract rather than copying the value.
+
+Diagnostic boundary: WebDriver's W3C script deadline now outlives and mirrors Beaver's bounded host setup deadline so Beaver's specific host error is observable instead of being replaced by a generic execute/sync timeout. The Mocha outer guard remains the larger UI setup budget.
+
+Validation observed locally: test:extensions-host 119/119; test:extensions-runtime-smoke 3/3; test:e2e-runner 91/91; TypeScript noEmit; lint; git diff --check; graphify code-only update. The Windows installed path still requires the targeted windows-host and windows-native CI proofs.

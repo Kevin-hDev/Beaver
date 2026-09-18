@@ -1,0 +1,30 @@
+CI diagnosis and remediation for PR 54 after run 33842239407.
+
+Windows CEF evidence:
+- The new fast Windows gate passed a real Node/Jiti host.load, ruling out preparation and initial import/activate/register.
+- The packaged CEF journey then failed only in the anonymous acceptance before hook after its 66-second Mocha guard expired.
+- That hook combined host initialization, refresh, three installations, catalog waits, and UI interaction; the outer guard could expire before the bounded activation catch reported its recovery stage.
+
+Correction:
+- Acceptance setup is split into four named hooks: host initialization, standard fixture, theme fixture, advanced fixture.
+- Each hook derives its outer allowance from the executable extension contract (host request + stop + two UI action budgets); the underlying operations remain independently bounded.
+- UI assertions moved into the actual test, and a source contract locks the diagnostic phase names.
+- A prepared-runtime Rust test now proves stop, restart, and real UI load in sequence.
+
+Dependency audit evidence:
+- Both npm audits in run 33842239330 reached the registry advisory endpoint twice and timed out; no vulnerability finding was emitted.
+- Transient exhaustion now exits with code 75. Actual advisory failures still exit 1.
+- Only code 75 activates the independently pinned official OSV scanner for both lockfiles, so the workflow stays fail-closed instead of treating registry downtime as success.
+
+Local validation:
+- npm run test:ci-scripts: 21 passed.
+- npm run test:e2e-runner: 78 passed.
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- cargo fmt --check: passed.
+- prepared runtime filter: 5 passed, including restart plus real load.
+- cargo clippy --all-targets --features windows-tests -- -D warnings: passed.
+- git diff --check: passed.
+- graphify update .: completed.
+
+The packaged Windows CEF path and hosted OSV fallback still require CI confirmation; this note does not claim them green before execution.

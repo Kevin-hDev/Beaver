@@ -1,0 +1,18 @@
+Audit maintenance — M03
+
+Décision : conserver le délai global de 300 s et ajouter les mêmes garanties locales que les callbacks Codex/MCP : délai de 5 s par connexion, traitements concurrents bornés et plafond de 16 tentatives. Aucune fusion des trois serveurs OAuth : elle n'est pas nécessaire pour corriger le défaut.
+
+Comportement : une connexion xAI incomplète ne bloque plus un callback valide. L'annulation ou la fin du serveur abandonne les handlers pendants. La comparaison OAuth state reste celle en temps constant déjà utilisée.
+
+Preuve avant correction :
+- cargo test incomplete_connection_does_not_block_a_valid_callback --lib -- --nocapture
+- échec attendu après 1,06 s : Elapsed(())
+
+Preuves après correction :
+- cargo test llm_oauth::callback --lib -- --nocapture : 7 réussis, 0 échec
+- cargo fmt --all -- --check : réussi
+- cargo check : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
+- graphify update . : réussi, graphe reconstruit à 47 454 nœuds / 107 846 arêtes
+
+Limite : validation native exécutée sur macOS dans cette session ; le code repose uniquement sur Tokio TCP et reprend un mécanisme déjà compilé pour Codex/MCP sur les plateformes livrées.

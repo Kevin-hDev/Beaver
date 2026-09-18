@@ -1,0 +1,11 @@
+Provider reasoning correction after manual-session review (2026-08-29).
+
+Anthropic: adaptive thinking now always requests display=summarized. This applies through the capability contract rather than model-name guessing and is regression-tested with Claude Sonnet 5, Opus 5, and Fable 5. Manual budget thinking remains unchanged and signatures remain private replay data.
+
+Alibaba Model Studio: the embedded reasoning inventory now contains 76 canonical contracts covering Qwen, DeepSeek, GLM, Kimi, and MiniMax. Hybrid models receive only documented toggles and efforts; thinking-only models never receive enable_thinking=false; preserve_thinking is restricted to exact documented model IDs. DeepSeek R1 distilled variants are separate tool-disabled entries. The documented US aliases and V4 snapshot limits are included.
+
+Tools: Model Studio GLM 5.2/5.1/5/4.7/4.6 require tool_stream=true. The flag is validated in the registry and resolved only from the direct Model Studio entry, with a red-green regression proving it cannot leak through OpenRouter inheritance.
+
+Continuity: activation and replay remain separate. Models may expose thinking while replay stays forbidden unless the exact catalog contract documents preserved thinking. Unknown models fail closed.
+
+Verification: cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test --lib = 4352 passed, 0 failed, 7 ignored; npx tsc --noEmit; npm run lint including provider boundaries at 56 owned files; npm test including 488 Vitest files / 2630 tests and all build, CI, CEF, E2E-runner, extension-host, and reasoning-fixture scripts. Graphify code and documentation update commands completed. No paid live API call was performed in this correction pass; the open application was not restarted.

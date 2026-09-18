@@ -1,0 +1,23 @@
+Preserve-thinking final targeted correction (2026-08-27).
+
+Source review: /private/tmp/claude-501/-Users-kevinh-Projects-Beaver/4c17e5d6-b3a4-4b3a-b2cf-443dd99f914e/scratchpad/review-fix2/RAPPORT-CORRECTIONS-2.md
+
+D1 closed: v1 sessions interrupted after assistant tool calls no longer clear their history. Migration preserves the call messages, creates one bounded generic cancelled tool result for every missing result, adds the terminal assistant through the existing closer, and still performs strict final validation. If no safe repair or valid suffix exists, parsing now fails instead of publishing an empty session.
+
+Backup safety closed independently: an empty v2 never acknowledges or removes an existing v1 backup. The backup owner checks the actual backup before logging retention, so ordinary empty sessions without a backup stay silent.
+
+D2 closed: DeepSeek deepseek-v4-flash and Z.AI glm-4.5-flash reports were regenerated with the outbound ReplayEvidence emitter. DeepSeek proof run_id=09aa0dcd-0b76-435b-a144-a70fc5c573c5; Z.AI proof run_ids=f3a4228a-d5f6-4156-b063-1d03ff8a1174,ed140e9c-fca5-4b66-9403-3dd6990c2b3f. Every checked-in scenario is passe, has a run_id, and contains observed replay evidence.
+
+DeepSeek fixture rationale: its native reasoning is replayed only inside a tool chain; user continuation is forbidden. The first live turn proves capture, outbound replay, response and persistence. The harness therefore requires one complete DeepSeek tool turn and keeps two turns for every other provider. The successful report was generated only after explicitly rebuilding reasoning-fixture-live.
+
+D3 closed: the xAI OAuth test now calls validate_backend, the same guard invoked by stream_chat, and proves ChatCompletions returns reasoning_continuity_invalid while Responses is accepted. The compression constant now records why two complete turns are required for an open journal.
+
+TDD evidence: the interrupted-v1 test first failed because messages was empty; the backup test first failed because the v1 backup had been deleted. Both pass after the fix, and the migration test covers two missing tool results.
+
+Fresh verification on 40d1f224: cargo fmt --check and cargo clippy --all-targets -- -D warnings exit 0; cargo test --quiet = 4192 passed, 0 failed, 7 ignored plus 1 integration test passed; npx tsc --noEmit and npm run lint exit 0; npm test including 476 Vitest files / 2578 tests plus build, CI, CEF, E2E, extension-host and reasoning-fixture suites exit 0; fixture validator and git diff --check exit 0; graphify update completed.
+
+Product decision retained: while a stream is active, a new user message is refused with a clear message and its draft is preserved; the durable mid-stream queue remains deferred.
+
+Intentionally not live-enabled: moonshot-oauth (quota unavailable; implementation retained), Groq (scheduled removal), and Ollama deepseek-r1:latest (no validated reasoning output).
+
+MERGE REQUIREMENT: squash the full implementation range 2848a17e..40d1f224 when integrating. The branch contains 70 commits after 2848a17e. Copy these exclusions, the active-stream decision, and the DeepSeek fixture rationale into the squash commit message because git notes do not survive a squash.

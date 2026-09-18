@@ -1,0 +1,20 @@
+T04 — Installer, reprendre et supprimer par le guichet commun
+
+Implémentation :
+- étend le gestionnaire commun avec Voice et Suspended, reprise manuelle et conservation au shutdown ;
+- ajoute un checkpoint borné et versionné, avancé seulement après synchronisation du partiel et publication durable du pointeur ;
+- distingue une écriture publiée mais dont la durabilité du dossier parent reste non confirmée ;
+- reprend par Range/If-Range, refuse les sources non HTTPS en production, borne redirections, octets et tentatives ;
+- vérifie archive, chemins et manifest avant publication atomique, puis rend le modèle disponible par reçu durable ;
+- bloque la suppression quand le modèle est occupé et retire le reçu avant les fichiers ;
+- génère le contrat TypeScript du gestionnaire depuis Rust.
+
+Preuves :
+- cargo test --lib services::voice::download:: -- --nocapture : 30 réussis ;
+- cargo test --lib model_downloads -- --nocapture : 17 réussis, 2 preuves ignorées ;
+- cargo test --lib services::private_store : 25 réussis ;
+- npm run contracts:check, cargo fmt --check, cargo clippy --all-targets -- -D warnings et git diff --check : réussis ;
+- preuve réseau réelle ignorée : Parakeet révision 2bda32ec70b097a55adaa07d9a7173915b43cc78 repris de 4 242 144 à 487 170 055 octets, 4 fichiers vérifiés, test réussi en 73,70 s ;
+- tests frontend ciblés : 13 réussis ; suite complète : 3 472 réussis, un test Mascotte sans rapport a échoué sous charge puis ses 6 cas ont réussi isolément.
+
+Limite planifiée : la synchronisation de dossier Windows est implémentée avec CreateFileW/FlushFileBuffers ; sa preuve sur hôte Windows appartient à T07/T13. Le raccordement du vrai verrou de cycle de vie pour la suppression appartient à T05.

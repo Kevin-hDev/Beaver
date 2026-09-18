@@ -1,0 +1,23 @@
+Task 1 — exact September profiles and catalog metadata precedence
+
+Parent-reviewed task by Luna (gpt-5.6-luna, xhigh). No live/API spend, vault/keychain access, app restart, merge, push or release.
+
+Added exact direct profiles: Google gemini-3.8-flash (1048576/65536, low/medium/high, default medium), Z.AI glm-5.3-flash (1048576/131072, low/high/max, default max), OpenAI gpt-6-astra (1050000/128000, five efforts, no claimed official default or Fast capability). No fabricated Alibaba entry; its exact output-limit contract remains pending. No forced Astra fallback for Codex.
+
+OpenRouter catalog metadata is bounded and authoritative for effective route limits. Parser/enrichment/request limiter/model context resolver share one explicit ownership predicate. Missing/null effort lists preserve historical behavior; explicit empty lists and empty intersections remain empty. Modes unsupported by the existing wire adapter are not exposed. Remote none maps to Beaver off only when not mandatory. Codex consumes a published compatible default, otherwise retains the compatible embedded fallback (including Spark high).
+
+Parent review corrections: a new end-to-end parse -> enrich -> runtime -> normalize test FAILED (exit 101, embedded Some(max) versus remote None). Resolved the root cause by making the enriched OpenRouter object the backend authority as well as the UI authority. The test then covers remote low default, empty intersection, refreshed runtime, and context/output limits deliberately different from embedded values. Also centralized the new provider decision instead of expanding multiple branch allowances; added one documented allowance in the metadata owner. Internal reasoning_metadata_present is serde(skip) and false on other routes; no new IPC field. Reused conversion/effort helpers rather than duplicating tables.
+
+Verification after parent corrections:
+- cargo test --lib services::llm:: : 431 passed, 0 failed.
+- cargo test --lib services::codex_client::model_catalog : 7 passed, 0 failed.
+- npm run lint:provider-boundaries : exit 0, 56 authorized files.
+- cargo fmt --all -- --check : exit 0.
+- git diff --check : exit 0.
+- graphify update . : exit 0, AST graph rebuilt (41315 nodes, 91981 edges). Community semantic names were not regenerated; Graphify reports their labeling as stale. No paid semantic extraction attempted by parent.
+
+Worker's earlier targeted tests: provider_model 40, model_catalog 18, openai_compat_parsing 14, stream_max_tokens 11, openrouter metadata 4, Codex Astra 1; all reported green before parent additions. Its initial red states were compilation failures (missing module/struct field), not behavioral red-green evidence. The parent test above provides the actual behavioral reproduction.
+
+Existing ts-rs serde-attribute and macOS linker warnings remain visible; no silent test failures or zero-test filters are treated as proof. Source files remain within the project's size threshold. Full final suites/live continuity activation belong to later tasks, not this commit.
+
+After Kevin reported a PC shutdown, all edits were recovered. Checkout was main; switched back to codex/ajout-gemini-glm-astra without losing files. fc4ee998 and its note were intact. Unrelated site/mockup changes and screenshots were preserved. The original worker process no longer exists; next task will use a new Luna/xhigh worker with the same one-task-at-a-time contract.

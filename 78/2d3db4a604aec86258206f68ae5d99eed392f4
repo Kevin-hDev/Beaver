@@ -1,0 +1,33 @@
+Parent final live validation correction — 2026-09-07
+
+Two actual OpenRouter GLM-5.3-Flash fixture sessions exposed a shared stream
+capture bug: high retained 79 JSON fragments for one reasoning block and hit
+the bounded fixture body on the next send; max exceeded 128 native items and
+correctly closed continuation. No limits were raised and neither failure is
+reported as a successful live proof.
+
+Cause/fix: OpenRouter delta.reasoning_details text/summary fragments must be
+assembled into consecutive logical blocks before persistence. The official
+OpenRouter SDK implements this in src/chat/index.ts (read 2026-09-07):
+https://github.com/OpenRouterTeam/ai-sdk-provider/blob/main/src/chat/index.ts
+We additionally keep conflicting index/id/format boundaries and unknown
+shapes intact. Encrypted blocks are never merged. Signatures are never
+compared or concatenated; a late signature is retained without erasing text.
+Non-stream message arrays are not merged. Replay still uses the captured
+immutable envelope; no migration/rewrite of old stored reasoning.
+
+CaptureBudget gains a bounded fragment path: validate depth and serialized
+bytes before concatenation, retain the native item ceiling for distinct
+blocks. JSON overhead of each incoming fragment is charged conservatively,
+so a pathological fragmented stream can close early, never exceed the bound.
+No repeated whole-accumulator cloning/serialization; no new unbounded map.
+
+Verification personally read: RED 2 failing regression tests / 2 passing,
+exit 101 (/tmp/beaver-openrouter-fragments-red.log). GREEN 34 reasoning_wire
+tests including 6 new cases, then 216 reasoning_ tests exit 0. Strict Clippy
+all targets exit 0. Existing byte/depth/distinct-item fail-closed tests remain
+green. Warnings ts-rs/linker are pre-existing and not hidden. Live retest needs
+the next grouped build; not yet claimed here. Parent reviewed the diff.
+
+Scope: four source/test files only. Codex Ultra preparation is a separate
+commit. No push, PR, merge, release, secrets or private reasoning in this note.

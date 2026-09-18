@@ -1,0 +1,11 @@
+Plan task: Moteur d'installation et état exposé.
+
+Implemented: Rust-authoritative generated TypeScript contract; five-step single-operation runtime with platform-specific cancellation boundary; five closed Tauri commands; pinned download orchestration; exact-path process detection; structured bounded traces; validated launch and relaunch.
+
+macOS: read-only DMG mount, exact Beaver.app identity, CSPRNG staging siblings, ditto copy, atomic swap with rollback, local writable custom destinations, /Applications-only Authorization Services session restricted to /bin/mkdir, /usr/bin/ditto, /bin/mv and /bin/rm. Deliberate reason: deprecated AuthorizationExecuteWithPrivileges is limited to Apple-owned binaries until signing/notarization permits a signed helper.
+
+Windows: bounded local-drive destination grammar, existing-parent reparse validation and revalidation, direct NSIS /S plus /D argument launch without shell, installed executable verification, and deferred current executable then owned directory deletion at process teardown.
+
+TDD evidence: missing contract module E0583; generated TypeScript mismatch; missing runtime/platform/install modules E0583; unresolved macOS functions. Final native proof: cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test => 35 passed, 0 failed, 2 ignored; MACOSX_DEPLOYMENT_TARGET=11.0 cargo check --target aarch64-apple-darwin => success; ignored real-DMG test platform_macos_tests::installs_a_complete_bundle_from_a_local_dmg => 1 passed and proves replacement without old/new mixing; npm run contracts:generate:installer => success. graphify update . completed.
+
+Verification limit: cargo check --target x86_64-pc-windows-msvc was attempted after implementation but this macOS host lacks llvm-rc and Windows SDK headers (windows.h and stdlib.h); the failure occurs in Tauri/aws-lc build dependencies before Beaver installer code. Windows CI remains the required native proof.

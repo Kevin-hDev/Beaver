@@ -1,0 +1,7 @@
+Decision: the context panel keeps one user-facing total with no estimation badge, symbol, provenance label, secondary status, or provider-output row.
+
+Reason: this is the established product behavior requested by Kevin and matches the compact context display used by other agent harnesses. The visible number is always the sum of the same seven buckets shown in the panel, so users have one value to follow. Source and measurement records remain persisted for backend capacity and compression decisions, not as competing UI totals.
+
+The breakdown is required at the ContextProgress boundary. This removes the unreachable fallback that could have displayed a provider measurement above a different category sum. ResolvedContextUsage retains only used, max, and output because output is still consumed by stream accounting; unused status, source, coverage, secondary status, and embedded breakdown projections were deleted. The 112 translations owned only by the removed UI were deleted in all seven locales.
+
+Validation: TypeScript passed, ESLint and React boundary checks passed, 23 focused context-panel and token-resolution tests passed, and all seven locale files parse as JSON.

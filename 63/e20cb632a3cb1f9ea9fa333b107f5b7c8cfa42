@@ -1,0 +1,47 @@
+Task 5 — usage counters and model-selector regression coverage
+
+Base: 52c63fdc. Branch: codex/ajout-gemini-glm-astra.
+Plan: docs/superpowers/plans/2026-09-07-ajout-gemini-glm-astra.md.
+Luna xHigh implemented this lot; parent reviewed all diffs, corrected causes,
+and executed final verification. No live activation in this commit.
+
+Decisions:
+- Read Google's total_cached_tokens only for Google Chat Completions.
+- Share the exact GPT-5.6/Astra cache-write predicate between usage and pricing;
+  do not redefine is_gpt_56 or broaden Chat payload parameters for Astra.
+- Keep unrepresentable tier/cache-write price estimates unknown. Exact reported
+  cost wins even with a populated catalog (real catalog insertion test).
+- Reuse StreamResult.usage for native Ollama terminal cache counters and existing
+  persisted diagnostics. Missing, zero and invalid are distinct, no double count.
+- Frontend consumes runtime metadata unchanged; tests cover nine tuples, actual
+  defaults, OAuth refresh, empty/unavailable catalogs. Alibaba auto metadata in
+  tests is explicitly synthetic, NOT a proven contract or activation.
+- Move diagnostics tests into companion file; no removed coverage or new IPC.
+
+Parent reproduced two behavioral failures (exit 101) before fixing:
+1. Oversized native cached count accepted without an input total.
+2. Google Chat cache field accepted under other Google API formats.
+Fixes reuse the existing bounded parser and exact usage context respectively.
+Parent also strengthened loaded-pricing and actual-hook default/refresh tests.
+Boundary allowance assigns exact counts to responsible modules (60 files), not
+a scanner exemption. 11 guard tests pass.
+
+Executed verification on final code tree:
+- provider_usage: 80 passing; ollama_stream_process: 10 passing.
+- Three scoped Vitest files: 18 passing.
+- Full cargo test: exit 0, 5184 unit passed, 19 ignored, 1 integration passed.
+- Full npm test: exit 0, 3211 Vitest tests / 594 files plus script/CEF/runner/
+  extensions/fixture/contract suites.
+- Clippy all-targets strict, fmt check, tsc, npm lint, diff check: exit 0.
+The tested tree also contains the separate P06 test and runner ordering fix
+committed in the next lot; no production code changes between these checks.
+Warnings: ts-rs attribute, macOS linker, jsdom canvas; not hidden failures.
+
+Blocked check: npm run test:provider-usage exited 2 before any request because
+no env API key is supplied. Legacy Node runner has no output/deadline budget;
+no vault secret exported to JS. Not claimed green or replaced silently.
+Live API/vision/cold-restart proofs remain pending. Spend: 0. All new policies
+remain Disabled (Alibaba Forbidden), no production reasoning proof invented.
+Graphify AST updated successfully: 41490 nodes, 92352 edges, 2113 communities;
+semantic labels not refreshed. Local ignored journal sections 15-16 updated.
+Unrelated site/mockup/notices/mic/screenshots excluded. No push/PR/merge/release.

@@ -1,0 +1,17 @@
+Decision: configure Tauri's single application Tokio runtime with 8 MiB worker stacks before any service work, and reuse that same stack-size authority for the one-time Bash command checks.
+
+Reason: a real cold Beaver Dev run still exhausted a default 2 MiB worker while inspect_extensions collected registered tool names, after the regex-only workaround had succeeded. The fault is the shared agent future depth rather than one tool, so sizing the common runtime fixes cloud, Ollama, heartbeat, gateway and subagent execution without adding per-tool workarounds. The exit coordinator remains initialized first so the larger runtime preserves lifecycle ownership.
+
+Validation:
+- node ../scripts/ci/run-rust-test-filter.mjs --filter tauri_workers_have_room_for_agent_tools (1 passed, cold child and 3 MiB stack probe)
+- node ../scripts/ci/run-rust-test-filter.mjs --filter startup_tests (40 passed)
+- cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+- cargo check --manifest-path src-tauri/Cargo.toml
+- cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+- cargo test --manifest-path src-tauri/Cargo.toml (5643 passed total across targets, 0 failed, 22 ignored)
+- Beaver Dev: the formerly crashing read_file request completed; 3262-character input was complete; oversized input was capped at 200000 model-visible characters with its full 273018-character result retained on disk
+- Beaver Dev: cancellation during sleep 60 accepted a new message in the same session
+- Beaver Dev: SIGKILL during sleep 120 restored the user message, reasoning and failed tool after restart; no shell descendant survived; the same session answered REPRISE-OK
+- Beaver Dev: context panel reconciled to one total and remained readable in dark and light themes
+- beaver.log: no SMALL/LARGE fixture marker and no new ERROR/FATAL entry during validation
+- graphify update .

@@ -1,0 +1,20 @@
+Task 9 — vérification finale et ajustement locale
+
+Correction : sur macOS, sys_locale ignore LANG/LC_ALL et suivait toujours la langue système. La CLI consulte désormais LC_ALL, LC_MESSAGES puis LANG pour une préférence fr/en valide, avant de revenir à la langue système. Les valeurs sont bornées et les caractères de contrôle refusés. Raison : les scripts et la CI doivent pouvoir choisir la langue comme prévu par le plan.
+
+Parcours réel application fermée : --version, --help, paths, status, doctor, logs, logs reveils -n 10, cleanup --dry-run et update lus en français ; codes 0, doctor 9/9 vert, update À jour. Le même parcours avec LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 est désormais entièrement en anglais et vert.
+
+Parcours réel application ouverte : paquet macOS ouvert à l’écran ; status = ouverte ; cleanup refuse avec code 1. update répond À jour avec code 0 car aucune release plus récente n’existe, donc la branche de refus avant application ne peut pas être observée aujourd’hui. Le paquet a ensuite été fermé et status a confirmé fermée. AppleScript a rendu -128 pendant la fermeture, mais le processus était effectivement fermé au contrôle suivant.
+
+Casse volontaire sous le TMPDIR macOS via cef-test-profile : config JSON corrompue + reçu ollama-bundle-receipt.tmp + beaver_2020-01-01.log antidaté. doctor affiche les échecs config, téléchargement interrompu et bundle incomplet, code 1. cleanup --dry-run affiche la rotation >30 jours et le téléchargement interrompu, total 26 o, code 0. Les profils jetables ont été supprimés ; aucune donnée réelle modifiée. Le plan attribue les rotations anciennes à cleanup, tandis que doctor contrôle uniquement les journaux actifs hors borne.
+
+Validation complète :
+- cargo check : succès
+- cargo clippy --all-targets -- -D warnings : succès ; avertissement informatif ts-rs préexistant sur deny_unknown_fields
+- cargo test : bibliothèque 5408 passés, 21 ignorés ; CLI 45 passés ; intégration 1 passée
+- npm run lint : succès
+- npx tsc --noEmit : succès
+- cargo fmt --all -- --check : succès
+- graphify update . : succès
+
+Limite connue déjà consignée en Task 7 : une application réelle de mise à jour et son refus app ouverte exigent une release plus récente.

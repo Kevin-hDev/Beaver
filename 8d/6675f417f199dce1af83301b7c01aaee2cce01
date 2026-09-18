@@ -1,0 +1,11 @@
+# macOS acceptance viewport
+
+Full CI 34041463046 at ca284a8c: macOS packaged acceptance job 101513164853 failed only in background installation before-all. Exact error: Native viewport did not reach 1100×760. 68 other tests passed, including final native CEF shutdown. Diagnostics downloaded to /tmp/beaver-macos-34041463046. The request sequence was 1100×760, 1100×854, 1100×959; the helper's integer scaling formula implies a 677-pixel measured height for the first two attempts. The required height is unattainable in this sequence; no install scenario began.
+
+Background installation now uses the 900×600 baseline already exercised by UI acceptance and API expansion. Centralize that baseline as defaults of setMinimumViewport and migrate all three callers. Keep strict rendered-size checks, Retina compensation, narrow-layout containment and functional assertions. On failure print measured dimensions as well as requested dimensions. Do not claim that the native hosted display's physical resolution was directly read: available artifacts omitted those measurements.
+
+Two helper regression tests simulate a content height capped at 677 and a driver with 2:1 sizing. The explicit 1100×760 requirement must still fail, with measured dimensions; default native baseline must succeed. All 100 E2E runner tests pass. Graphify and diff checks pass.
+
+Local native command E2E_SKIP_BUILD=1 E2E_REQUIRE_CEF_SMOKE=1 E2E_ARTIFACT_DIR=.e2e-artifacts/macos-viewport-followup npm run test:e2e:packaged exited 0: 72 passing in 2m45.7s, including all four installation scenarios. This used the existing local package, not the newly downloaded CI package. Its executable SHA256 is 54295c42e582b52e42f861955c00366486b0b2e20fbd42245449eef4e69fd843. Fresh CI acceptance remains required on the corrected test commit. Screenshots inspected: light and narrow dark contain the tracker; full-width dark screenshot captured the splash, so it is not a valid visual proof of the tracker. Do not claim comprehensive visual validation from the passing functional suite.
+
+No application source changes. Preserve the running Windows build from ca284a8c: commit locally, wait for its build/acceptance result before pushing a normal validation commit, which would otherwise cancel the current PR workflow. Then validate the new SHA completely before any merge.

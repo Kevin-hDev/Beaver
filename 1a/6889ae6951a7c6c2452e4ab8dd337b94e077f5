@@ -1,0 +1,19 @@
+Task 1 — Beaver CLI skeleton and --version
+
+Reason: the terminal command needs one isolated binary and one stable facade into the private library. Unknown CLI tokens are bounded and stripped of terminal controls before display; the argument collection is capped at 64.
+
+Scope:
+- declared the beaver binary and enabled sysinfo disk support
+- added cli_support as the sole public CLI-to-library boundary
+- added FR/EN output, TTY-aware colors, size formatting, help, and --version
+
+TDD red: cargo test --bin beaver failed with the expected missing Lang, lang_from_locale, format_size_with, and safe_cli_token symbols.
+
+Validation:
+- cargo test --bin beaver: 4 passed, 0 failed
+- cargo run --bin beaver -- --version: Beaver 1.2.2 and the worktree binary path
+- cargo check: exit 0
+- cargo clippy --all-targets -- -D warnings: exit 0
+- cargo test: library 5397 passed, 0 failed, 21 ignored; beaver 4 passed
+- cargo fmt --check and git diff --check: exit 0
+- graphify update .: exit 0

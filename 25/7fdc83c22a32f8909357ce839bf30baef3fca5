@@ -1,0 +1,35 @@
+Review context: closes P1, P2 and P4 from docs/superpowers/plans/2026-08-30-review-preserve-thinking.md.
+
+Decisions and rationale:
+- Missing required reasoning state now creates ContinuityBarrier::Fallback at the end of the affected historical turn. The visible turn stays in the session, but native replay resumes only after it, so later sends are no longer permanently blocked.
+- The fallback is intentionally limited to Required + UserContinuation, a turn containing at least one assistant, and zero Complete target-compatible assistant envelopes. This avoids mistaking the newly persisted user-only turn for a failed capture, keeps ToolContinuation fail-closed, preserves Optional policies, and preserves valid multi-message/tool turns that already contain a complete envelope.
+- Provenance barriers (route/model/credential/mode), legacy and compaction retain priority; eligibility and Required replay semantics are unchanged.
+- Anthropic transport EOF/[DONE] can no longer complete capture. Only the native message_stop event can seal Anthropic reasoning.
+- Removed the obsolete dead_code allowance on Anthropic PreparedPayload.replayed because the field is consumed by the active stream path.
+
+TDD evidence before implementation:
+- conversation_transition_tests: 9 passed, 2 failed; both missing-envelope cases expected Fallback but observed None.
+- anthropic_transport_end_without_message_stop_cannot_complete_capture failed because finish_complete returned an envelope.
+
+Regression coverage added:
+- historical required turn without any complete envelope falls back and a later complete turn remains replayable;
+- the current user-only turn does not trigger fallback;
+- a turn with one complete envelope is preserved;
+- ToolContinuation remains fail-closed;
+- Optional replay remains tolerant;
+- Anthropic EOF without message_stop remains incomplete.
+
+Verification after correction:
+- cargo fmt --check: pass.
+- cargo test: 4358 passed, 0 failed, 7 ignored; integration test 1 passed.
+- cargo clippy --all-targets -- -D warnings: pass.
+- npx tsc --noEmit: pass.
+- npm run lint: pass; provider routing boundaries report 56 authorized files.
+- npm test: pass; Vitest 488 files / 2631 tests plus build, CI, CEF, E2E-runner, extension-host and reasoning-fixture suites.
+- git diff --check: pass.
+- graphify update .: completed; graph rebuilt to 39132 nodes / 81481 edges.
+
+Test-run note:
+- One cargo test run launched concurrently with npm test hit publish_emergency_capacity_failure_reaps_child_and_keeps_slots. The isolated test then passed, and the exact sequential cargo test command passed in full. No code was changed for that unrelated resource-contention failure.
+
+No application restart and no paid/live provider request were performed for this local continuity correction.

@@ -1,0 +1,23 @@
+Tâche : réduire la latence initiale du mode vocal sous deux secondes sans modifier la transcription.
+
+Implémentation :
+- ModelLifecycle reste le propriétaire unique et supervise sa maintenance ainsi qu’un seul chargement ASR.
+- À froid, Silero VAD est vérifié et chargé en premier ; le microphone s’ouvre pendant que le modèle ASR complet est vérifié et chargé.
+- Un canal sans tampon conserve la propriété lors d’une annulation : le microphone ferme, l’état Arrêt reste visible jusqu’au retour natif, puis le modèle suit le réglage de déchargement.
+- Le même VAD reste utilisé pendant toute la capture afin de ne jamais réinitialiser une phrase en cours.
+- Le chemin chaud réutilise directement le modèle déjà chargé.
+
+Validation :
+- cargo clippy --lib -- -D warnings : réussi.
+- tests modèle : 10 réussis.
+- tests capture : 15 réussis.
+- tests actions vocales : 6 réussis.
+- suite Rust sans le corpus externe : 5721 réussis, 28 ignorés, 1 filtré explicitement.
+- preuve native Parakeet installé : VAD prêt en 18 ms ; microphone système ouvert et actif en 303 ms ; ASR complet prêt en 1856 ms.
+- La suite Voice non filtrée exige toujours VOICE_TEST_CORPUS_DIR pour son test de corpus externe, exigence préexistante consignée dans PREUVES-PROTOTYPE.md.
+
+Points de revue :
+- courses d’annulation autour du canal de rendez-vous ;
+- restitution de la réservation et du cache lorsque le receveur disparaît ;
+- attente du travail bloquant enregistré pendant la fermeture ;
+- validation Windows réelle encore requise pour la qualification finale.

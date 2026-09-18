@@ -1,0 +1,45 @@
+Compression review corrections — reviewer notes
+
+Decisions preserved:
+- The global automatic-compression switch remains. It gates automatic compression and realtime interruption only; explicit /compress remains available.
+- The strict nine-section summary contract remains.
+- The three independent context-window bands and their current Beaver defaults remain unchanged.
+
+Seven blocker corrections:
+1. Profile migration preserves the source file if the v1 backup cannot be written. A syntactically valid but invalid document fails closed instead of being overwritten.
+2. Repairing unreadable v2 JSON no longer deletes the v1 rollback backup in that same load.
+3. The automatic guard recognizes a successful compression in the same top-level turn across checkpoint ID and message-count changes. Realtime interruption follows the same rule. Explicit /compress neither rearms nor clears the guard before a successful commit.
+4. User-only, assistant-only, and closed tool-chain selections that cannot form complete persisted turns are retained in bounded checkpoint sections instead of being discarded.
+5. All editable compression limits and band boundaries are exposed by the Rust CompressionProfilesView contract; production Settings components no longer own copies.
+6. Numeric fields keep incomplete keyboard input locally and persist only a valid in-range value; blur or Enter performs the final clamp.
+7. A disabled below-64K band greys only band-specific quantities. Shared threshold and both prompts remain available; the threshold is disabled only by the global automatic switch.
+
+Gemma 34K diagnosis:
+- The failed Gemma request was built from the roughly 96K persisted history estimate although the effective Ollama window was 34K. The summary input is now bounded by the effective context window after subtracting output, fixed prompt overhead, and a safety reserve; impossible requests fail before network.
+- Transport and cancellation failures are no longer collapsed into invalid_summary.
+- Starting a compression stream preserves the last prepared context snapshot, so a failed /compress no longer makes the ring jump from 24K to the full 96K persisted history.
+- This incident is distinct from the earlier real qwen/deepseek invalid-summary observations about the nine-section output contract; those observations are not reclassified.
+
+Additional review corrections:
+- User cancellation does not increment or suspend the automatic guard.
+- Invalid persisted guard state is reset during tolerant read rather than making the session unreadable.
+- Bounded UTF-8 file reads retain the valid prefix when the byte boundary splits a character.
+- Retained images are clamped to the provider image limit.
+- Chatbot checkpoints exclude agentic unresolved state.
+- Prompt controls are normalized, dead compression translations were removed in all seven locales, the preview reports the backend-computed expected reduction, and the help bubble can flip to the visible side.
+
+Verification:
+- npm test: 502 Vitest files / 2683 tests passed, then build-script, CI-script, CEF, E2E-runner, extension-host, and reasoning-fixture suites all passed.
+- cargo test --lib: 4472 passed, 0 failed, 8 ignored.
+- cargo test services::compress --lib: 164 passed.
+- Targeted compression/UI/i18n suite: 8 files / 42 tests passed.
+- npm run lint passed without warnings.
+- npx tsc --noEmit passed.
+- cargo check passed.
+- cargo clippy --all-targets -- -D warnings passed.
+- cargo fmt --check passed.
+- npm run contracts:check passed for all four Rust-to-TypeScript contracts.
+- git diff --check passed.
+- graphify update . completed.
+
+Manual acceptance still required after relaunch: retry the original Gemma E2B session at num_ctx 34K and verify the real summary response, final compressed size, and ring behavior.

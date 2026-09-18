@@ -1,0 +1,39 @@
+Contexte de review — résilience du démarrage des extensions (6 septembre 2026)
+
+Base : 6b8278a0. Branche : codex/extension-startup-resilience.
+Périmètre autorisé : plan, corrections isolées, tests, commit local et cette note. Aucun push, merge, bump de version ou changement des données personnelles.
+
+Cause initiale
+Le binaire installé Beaver 1.2.1 ne comprenait pas le registre v2 produit par le développement. L'initialisation refusée laissait un catalogue sans version ; configure() rejetait cet état avant l'appel au fournisseur. Le frontend rendait l'erreur générique request_start (unknown). Le chantier API d'extensions terminé avait ajouté le lecteur v2, mais pas la résilience à un registre refusé ni l'explication correcte.
+Les sessions de référence sont 13407fb6-e6cc-4e77-b6a0-832be6ad3d98, a2a54195-f3db-4a5b-b446-f8671b14761b, 6b328a17-d5b8-4c33-b155-e1fd1d20140d et a07cb731-3300-419d-a759-62712a9c6f49. Elles n'ont pas été modifiées pour tester le correctif.
+
+Comportement corrigé et décisions
+1. storage.rs identifie un format futur avant de désérialiser son schéma. Format futur, erreur de lecture et migration invalide ont des codes stables distincts. load/save refusent les données invalides ; les tests comparent les octets et sauvegardes avant/après. Les anciens formats valides gardent leur migration ascendante. Il n'y a aucune rétro-migration.
+2. Le DynamicIndex porte l'autorité de disponibilité avec son catalogue. Au refus de démarrage ou à l'échec de publication, les capacités dynamiques sont retirées et les mutations refusées. Une publication valide réouvre le catalogue, même vide. registry_startup centralise l'initialisation, registry_availability la disponibilité et le retrait atomique de l'index.
+3. ExtensionToolSet consulte cette disponibilité avant configure(). Une erreur du registre ou d'écriture de l'état des extensions de session conserve seulement les outils natifs déjà admis, reconstruits depuis le catalogue canonique et plafonnés selon le fournisseur. Les erreurs d'admission et de fournisseur restent bloquantes. Les outils dynamiques inconnus, notamment MCP, sont également exclus de ce repli strictement natif.
+4. Un garde borné par session, détenu par ExtensionToolSet et libéré à sa destruction, interdit la réactivation d'une extension pendant le tour dégradé. Il compte les tours qui se chevauchent. Motif : un échec de sauvegarde de session peut laisser d'anciens droits persistés, et le registre peut redevenir disponible pendant une réponse. Le garde couvre outils/remplacements, découverte, skills et ressources d'extensions. Les contrôles natifs de permissions et de sous-agent restent en place.
+5. Les deux chemins de préparation, API et Ollama, publient une notice traduite et une trace persistée à code stable. Les erreurs terminales de même famille sont classifiées et traduites ; le résumé technique n'est plus affiché sous leur explication. Les sept langues sont couvertes. Le contrat JSON reste l'autorité ; SDK, README du SDK et types TypeScript ont été régénérés.
+
+Tests et preuves exécutés
+- Tests initialement rouges observés : préparation native bloquée par l'état d'extensions invalide ; quatre erreurs UI conservant request_start (unknown) ; classification des formats/lectures et écrasements de registre refusé.
+- cargo test --lib extension -- --test-threads=1 : 597 passed, 0 failed, 10 ignored.
+- cargo test --lib extension : 597 passed, 0 failed, 10 ignored (exécution parallèle normale).
+- cargo test --lib stream_diagnostics_failure -- --nocapture : 7 passed, 0 failed.
+- Transport simulé : préparation dégradée -> véritable sérialisation Responses -> réponse HTTP simulée -> texte Bonjour reçu ; un seul outil read_file dans le payload ; cause retrouvée après relecture de la session. Préparation Ollama, erreur d'écriture réelle sur le chemin de cache d'une session de test, limites fournisseur, sous-ensemble admis, schémas natifs et durée du garde couverts.
+- npx vitest run src/hooks/__tests__/agent-chat-extension-errors.test.ts src/hooks/__tests__/agent-chat-stream-callbacks.test.ts src/hooks/__tests__/agent-chat-stream-callbacks-error.test.ts src/hooks/__tests__/agent-stream-manager.test.ts src/hooks/__tests__/agent-stream-persistence.test.ts src/components/ui/__tests__/toast.test.tsx : 84 passed, 6 fichiers, 0 échec. Les notices sont reçues par le gestionnaire de flux, affichées par le toast et suivies d'un token sans interrompre la réponse.
+- Export Rust exact du contrat d'extensions : 1 test exécuté, succès. npm run contracts:check : succès.
+- npx tsc --noEmit, npm run lint, cargo fmt --all -- --check et cargo clippy --all-targets -- -D warnings : succès. rustfmt a aussi été appliqué explicitement aux fichiers Rust changés car certains modules du projet sont inclus indirectement.
+- Inspection visuelle des quatre notices françaises, en sombre et clair, via les véritables composants/styles React dans une page Vite temporaire ; page et serveur supprimés/arrêtés après vérification.
+
+Adaptations des tests existants
+La première suite élargie avait 588 succès et 10 échecs : des tests d'installation/inspection utilisaient auparavant le registre global non initialisé comme un registre vide. Leur préparation initialise désormais explicitement un catalogue de test une seule fois, sans nettoyage des dossiers concurrents et sans assouplir le code de production. Le test du refus avant initialisation tourne dans un processus isolé. Une fixture de migration était aussi sémantiquement invalide (API/UI et empreinte artificielle) : elle a été rendue valide et la vérification du champ legacy séparée.
+
+Limites honnêtes et points de review
+- Aucun essai complet d'envoi dans un nouveau binaire Tauri empaqueté et aucun appel payant/réel au fournisseur. Le transport est simulé ; l'inspection visuelle valide les composants, pas toute l'application installée. Les dix tests Rust explicitement ignorés ne sont pas déclarés validés. La suite Rust globale hors périmètre n'a pas été exécutée.
+- Les avertissements ts-rs sur deny_unknown_fields et linker __eh_frame du binaire de tests demeurent ; les commandes ont bien terminé avec succès.
+- Le binaire 1.2.1 déjà installé ne peut pas bénéficier rétroactivement du correctif. Il faudra exécuter une version qui contient ce commit. Le partage historique du répertoire de données dev/release demeure ; ce travail protège les refus de compatibilité.
+- Graphify : mise à jour AST réussie. Mise à jour sémantique tentée, refusée sans clé API configurée ; documentation sémantique non déclarée à jour.
+- Examiner surtout la frontière registre/index, le refus de toute réécriture incompatible, le sous-ensemble natif et ses schémas, la durée du garde face au retour du registre et les chemins API/Ollama. Un échec de registre apparu après la configuration normale du tour reste une erreur terminale stable plutôt qu'un changement silencieux des outils déjà actifs.
+- Les modifications préexistantes de docs/beaver-site et les captures fast-mode-dark.png / fast-mode-light.png sont exclues du commit et préservées.
+
+Le plan est versionné dans docs/superpowers/plans/2026-09-06-extension-startup-resilience.md (ajout ciblé forcé car /docs est ignoré par défaut). Ses deux dernières cases étaient volontairement en attente au gel du document ; le commit auquel cette note est rattachée et cette note matérialisent leur livraison.

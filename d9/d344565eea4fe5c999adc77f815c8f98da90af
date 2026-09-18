@@ -1,0 +1,19 @@
+Tâche: Identité épinglée et protocole temporaire
+
+Preuves TDD:
+- Rouge arguments: module launch_args absent; cargo test launch_args échouait E0583.
+- Vert arguments: 4 tests, version canonique, asset OS exact, taille 1..=2 Gio, SHA/run_id hex minuscules, chemin absolu sans parent, doublons/inconnus/contrôles refusés.
+- Rouge temporaires: module temp_ownership absent; cargo test échouait E0583.
+- Vert temporaires: 4 tests, marqueurs absent/falsifié/divergent, candidats et enfants symboliques refusés, sentinelle extérieure conservée, cinq crashs purgés.
+- Rouge téléchargement: module download absent; puis compression gzip non sollicitée acceptée par le premier code.
+- Vert téléchargement: succès avec/sans Content-Length, tailles/SHA/statuts/compression/en-têtes refusés, .part nettoyé, annulation, délais idle/total courts, 5xx réessayés trois fois, 4xx non réessayé.
+- Rouge trace: module trace absent; cargo test échouait E0583.
+- Vert trace: champs fermés uniquement, plafond 256 Kio, fichiers 0600, dossier 0700, lien symbolique refusé, rotation à trois échecs.
+- Validation finale: cargo test -> 20 réussis, 0 échec; cargo clippy --all-targets -- -D warnings -> vert; graphify update . terminé.
+
+Décisions:
+- URL de release reconstruite depuis version+nom; aucune URL CLI acceptée.
+- SHA-256 comparé en temps constant; redirections manuelles limitées à release-assets.githubusercontent.com.
+- Les helpers fichier/politique/stockage sont séparés uniquement pour respecter la limite de 230 lignes; aucune abstraction produit ajoutée.
+- Le propriétaire Windows reste vérifié seulement quand les API standard exposent cette donnée; liens/reparse points restent refusés.
+- review-dark.png est resté hors commit.

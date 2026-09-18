@@ -1,0 +1,13 @@
+PR CI follow-up for preserve-thinking (2026-08-27).
+
+GitHub PR #36 exposed two integration gates not exercised by the prior local review: the standalone formatter for Rust include fragments and the full repository brand-boundary contract.
+
+Rust formatting: applied the exact CI rustfmt policy to every Rust source changed since base 2848a17e. This is mechanical formatting. The two non-test sources pushed above the 230-line project limit were split by responsibility: agent_loop_tool_turn owns the complete post-model tool turn, and conversation_journal_validation owns journal tool-id validation. Structural tests prove agent_loop still invokes the new tool-turn authority before tool execution and preserves control-batch wait ordering.
+
+Brand contract: moved the OAuth key compatibility assertion to its real single authority, api_keys_credential_scope_wire.rs; raised the bounded text scan from 5,000 to 6,000 because the final tracked text corpus is 5,057 files; updated the exact cl_go_dash internal reference count from 45 to 46.
+
+Fresh local proof: standalone included-source rustfmt check, cargo fmt --check, cargo clippy --all-targets -- -D warnings, TypeScript, lint, brand boundaries, reasoning fixture validator and git diff --check all exit 0. npm test passes 476 Vitest files / 2,578 tests plus build, CI, CEF, E2E, extension-host and reasoning-fixture suites. cargo test passes 4,192 tests, 0 failed, 7 ignored, plus 1 integration test. Graphify updated.
+
+GitGuardian failure 36632470/36632471 is a false positive in intermediate commit 9fb6f2a9: routing tuples ("moonshot", "oauth") and ("codex", "oauth") were classified as authentication tuples. No credential is present. The final source no longer contains that table; squash removes the flagged intermediate commit from main history.
+
+MERGE REQUIREMENT remains unchanged: Squash and merge only. Copy the deliberate exclusions, active-stream refusal decision, and DeepSeek single-tool-turn fixture rationale from the PR body into the squash commit message.

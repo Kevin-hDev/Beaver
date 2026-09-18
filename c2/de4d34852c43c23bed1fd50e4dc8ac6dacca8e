@@ -1,0 +1,30 @@
+Checkup follow-up: restore active file preview across session switches
+
+Reason:
+The preview workspace retained the active tab and fullscreen flag per session, but useFilePreview discarded its operation fallback on every session change. During a return to a session, operations can reload after the workspace; the pruning hook then treated the active operation as missing and reset the tab to the summary.
+
+Change:
+- retain bounded fallback operation snapshots per session (32 sessions, 6 tabs each)
+- keep live operations authoritative when they are available
+- add a hook-level regression test for A -> B -> A with late operation reload
+
+Validation on final code:
+- npx vitest run src/hooks/__tests__/use-file-preview.test.tsx: 7/7 passed
+- npx tsc --noEmit: passed
+- npm run lint: passed
+- npm test: 638 files, 3488 tests passed; all chained script suites passed
+- Knip production files/exports/types scan: no issues
+- git diff --check: passed
+- graphify update .: passed (47410 nodes, 107661 edges)
+- manual Beaver UI, dark and light: session A restored the active DOCX preview and fullscreen state after A -> B -> A; session B inherited neither
+
+Broader checkup before this commit:
+- cargo fmt --all -- --check: passed
+- cargo check --all-targets: passed
+- cargo clippy --all-targets -- -D warnings: passed
+- cargo test --quiet -- --test-threads=1: passed (5877 main-suite tests, 34 ignored; auxiliary suites passed)
+- npm run contracts:check: passed
+- npm run test:persistence-migration: 10/10 passed
+
+Limits:
+Windows/Linux CI was not available because the branch remains local. Destructive or environment-dependent manual scenarios from report 08 (forced browser renderer failure, reduced-motion OS setting, external file watcher, and live-provider late-state timing) were not exercised in this checkup.

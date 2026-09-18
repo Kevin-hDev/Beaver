@@ -1,0 +1,16 @@
+Task: make the voice language control match the selected engine's real capabilities.
+
+Root cause: the catalog correctly declared Parakeet and Qwen as automatic-only, but the frontend still exposed their supported-language metadata as selectable values. Their explicit selections and Follow interface were silently converted to automatic in the pipeline. The persisted default was also Follow interface while Parakeet is the default model.
+
+Implementation: centralize persisted language normalization in Rust. Parakeet and Qwen always store Automatic; Cohere converts Automatic to FollowInterface and keeps explicit values. Apply normalization both when old settings are loaded and after every settings patch/model change. The frontend shows Automatic detection as a plain state for automatic-only engines and keeps the real Follow interface plus explicit-language selector for Cohere. Dictation and trial dispatches normalize through the same helper. The advanced panel no longer duplicates model-switch normalization.
+
+Validation:
+- cargo test services::voice::settings_tests --lib: 4 passed
+- cargo clippy --all-targets -- -D warnings: passed
+- focused Vitest suites: 3 files, 7 tests passed
+- npm run lint: passed
+- npx tsc --noEmit: passed
+- git diff --check: passed
+- graphify update .: completed
+
+The local ignored SPEC, prototype evidence, validation report and vocal mockup were aligned. The live Beaver screen could not be reached because macOS displayed an active Keychain authorization dialog after the dev process restarted; no authorization choice was made. review-dark.png remained untouched.

@@ -1,0 +1,28 @@
+M32 — Ranger les extensions par domaines
+
+Décision
+- Les fichiers d’extensions sont rangés physiquement dans huit domaines : contract, installation, host, permissions, events, storage, tools et ui.
+- mod.rs reste le seul fichier à la racine du domaine.
+- Les 236 modules logiques, leurs portées Rust et les exports SDK sont conservés ; les inventaires inclus ne portent aucune logique d’exécution.
+- Les huit inventaires font de 9 à 71 lignes, sous le seuil de 230 lignes.
+- Les références de code, tests, contrats, scripts de persistance et documentation active suivent les nouveaux chemins.
+- Les tests de persistance comparent désormais leur inventaire par chemin, sans dépendre de l’ordre physique des dossiers ; l’attestation locale déjà modifiée par M07 est alignée sur son profil courant.
+
+Validation
+- Contrôle structurel : 236 déclarations, 236 uniques ; seul mod.rs reste à plat ; huit manifestes <= 71 lignes.
+- cargo check : OK
+- cargo clippy --all-targets -- -D warnings : OK
+- cargo fmt --all -- --check : OK
+- cargo test --quiet -- --test-threads=1 : 5 874 réussis, 34 ignorés ; CLI 51 réussis ; intégrations 1 + 2 réussies, 1 ignorée.
+- npm test : 636 fichiers et 3 485 tests frontend réussis ; scripts build/CI/fichiers/CEF/e2e/extensions/fixtures/contrats réussis ; hôte d’extensions 144 réussis.
+- npm run lint : OK
+- npx tsc --noEmit : OK
+- npm run contracts:check : OK
+- Tests de persistance : 10 réussis.
+- git diff --check : OK
+- graphify update . : OK
+
+Incidents de validation
+- La première suite Rust parallèle a trouvé un chemin de test M32 ancien ; il a été corrigé et le test exact a réussi.
+- Deux exécutions parallèles ont aussi rencontré l’échec intermittent préexistant « Outil de fixture indisponible » dans app_storage_repairs_the_forecast_notes_directory. Le test exact a réussi ; la suite complète exécutée avec un seul thread a ensuite réussi. Aucun résultat rouge n’est compté comme validation.
+- La mise à jour sémantique /graphify --update n’est pas disponible dans ce harnais ; elle n’a pas été simulée.

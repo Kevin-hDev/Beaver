@@ -1,0 +1,23 @@
+September models — complete adoption of mandatory Ollama thinking
+
+Scope: second retry seam discovered during the parent review, after 33d043cb.
+The thinking-only retry now consults the existing reasoning_ollama profile.
+It must not turn mandatory cloud thinking into false; optional models retain
+the historical workaround. No new model table, production activation or paid call.
+
+Evidence: thinking_only_retry_respects_mandatory_model_profiles failed with
+exit 101 (one executed test), then ollama_thinking_retry passed 9 tests.
+Additional executed filters: agent_loop_thinking_retry 1, ollama_stream_retry 2,
+reasoning_ollama 3, ollama_wire 6; all exit 0. Existing ts-rs/linker warnings remain.
+Scoped rustfmt and git diff --check passed. Parent reviewed the whole file diff.
+
+The global provider-boundary guard is currently RED on two uncommitted runner
+files being implemented in parallel (reasoning_fixture.rs and
+reasoning_fixture_live_vision.rs, one unowned decision each). Neither belongs
+to this commit; their resolution is required in the runner lot before completion.
+No full-suite or live success is claimed. Graphify AST update succeeded:
+41406 nodes, 92191 edges; semantic community labels not refreshed.
+
+Plan and local execution journal:
+/Users/kevinh/Projects/Beaver/docs/superpowers/plans/2026-09-07-ajout-gemini-glm-astra.md
+/Users/kevinh/Projects/Beaver/docs/providers/validation-modeles-2026-09-07.md

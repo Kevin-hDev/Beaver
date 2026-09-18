@@ -1,0 +1,5 @@
+CI root cause: the macOS process-tree timeout fixture allowed only 50 ms for Python to start and publish its owned PIDs, so a loaded runner timed out before exercising tree cleanup.
+
+Correction: PROCESS_START_TIMEOUT now uses the existing 2-second cross-platform startup budget already proven on Windows. Production timeouts and process termination code are unchanged; the test now reaches the behavior it claims to verify on every OS.
+
+Evidence: failing CI job 99037571559 observed zero PIDs; targeted test passed repeatedly; the complete SearXNG runtime-command module passed 18/18; cargo fmt --all -- --check, cargo clippy --all-targets -- -D warnings, and git diff --check passed; graphify update completed.

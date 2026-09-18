@@ -1,0 +1,1 @@
+R2 — Le test install.sh simule désormais une réinstallation depuis un second bundle et vérifie que le lien beaver existant pointe vers le nouveau binaire. Mutation probante : remplacement temporaire de ln -sfn par ln -sn, test rouge avec ancienne cible observée (exit 1), restauration immédiate, puis scripts/test-install-sh.sh vert. Aucun changement de production.

@@ -1,0 +1,9 @@
+Parent review correction: mandatory Ollama thinking survives feature retries
+
+Plan task 3 follow-up, found while preparing task 4 live safety. The existing feature retry could turn GLM-5.3-Flash cloud's mandatory thinking off after a server capability rejection. This contradicted the newly admitted mandatory profile. The retry now consults the existing reasoning_ollama authority; no model list is duplicated. It refuses a weakened feature retry, including a combined thinking/tools refusal. Ordinary bounded server retries and optional-thinking/other-feature fallback behavior remain unchanged.
+
+Genuine RED observed before fix: cargo test --lib ollama_stream_retry::tests, 1 pass / 1 fail, exit 101; failing assertion demanded no weaker retry for the mandatory model. GREEN after fix and repeated after the usage interruption: same 2 tests pass, reasoning_ollama 3 pass, ollama_wire 6 pass, all exit 0. Tests cover case-insensitive exact profile matching, combined refusals, GPT-OSS/Qwen/unknown optional behavior, tool-only fallback and unrelated errors.
+
+Parent read complete diff, rustfmt --check on the three scoped files exit 0, routing boundaries 57 unchanged and diff check clean. Graphify AST updated successfully after resumption: 41370 nodes / 92099 edges / 2103 communities; semantic labels not regenerated. No paid call or app restart. This does NOT claim task 4 runner, task 5 metrics/UI or task 6 live activation complete.
+
+Only the three Ollama source/test files are staged. Luna's concurrent unfinished runner test and unrelated site/mockup/screenshots are excluded. Prior commits carry their own notes; branch remains unpushed, no PR/merge.

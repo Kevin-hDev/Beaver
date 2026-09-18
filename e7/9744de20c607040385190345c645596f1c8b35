@@ -1,0 +1,35 @@
+J1 follow-up — 2026-09-08
+
+Base: fc040ec5. Authority: docs/superpowers/plans/2026-09-08-review-fc040ec5-suivi-correctifs.md.
+Kevin authorized the focused J1 correction, targeted tests, self-review, commit and note.
+
+Change: stream_diagnostics_payload::record_payload now passes safe_summary through
+support::clip, exactly like its event and neighboring model/tool diagnostics.
+No new sanitizer, no counter change, no provider request or reasoning change.
+
+Inventory: searched safe_summary assignments and initializers across src-tauri/src.
+All dynamic diagnostic producers now use support::clip directly or the failure
+summary helper, whose dynamic branches also clip. The remaining unfiltered
+producer values are fixed start/completed/cancelled/Plan Mode sentences; summary
+projection merely copies the already stored value. No unrelated migration added.
+
+Regression: payload_summary_is_bounded_like_its_persisted_event calls the real
+recording function with large numeric counters, saves and reloads the session,
+then checks phase, summary prefix, truncation, <=203 characters, and agreement
+with the event. The test removes its own generated session before assertions.
+RED on the old line: 1 executed, 1 failed (missing truncation suffix), exit 101.
+GREEN after the one-line fix: cargo test --lib stream_diagnostics, 36 passed,
+0 failed, 0 ignored. This test proves bounded persistence; it does not claim
+to simulate a leaked provider secret or perform a live API test.
+
+Self-review: no change to event content (already clipped), payload statistics,
+session format, routes, credentials, UI, or other review observations K1/J2/J3/J4.
+Existing work on notices, website/mockup, screenshots and microphone asset is
+preserved and excluded. No application restart, paid request, push or merge.
+
+Verification: cargo clippy --all-targets -- -D warnings exited 0 (the pre-existing
+ts-rs deny_unknown_fields diagnostic still prints). cargo fmt -- --check and
+git diff --check passed. Graphify AST
+update exited 0 (41583 nodes, 92529 edges); no semantic-document refresh claimed.
+Full Rust/frontend suites were not repeated for this localized one-line change;
+the executed scope is the 36 diagnostic tests and strict all-target Rust lint.

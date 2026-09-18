@@ -1,0 +1,5 @@
+CI correction: format the three extension test modules that are loaded through test_modules.inc.rs and therefore are not traversed by cargo fmt, but are checked individually by scripts/build/check-rust-format.mjs.
+
+Root cause: the pull-request Backend job passed cargo fmt --check, then the changed-file rustfmt gate rejected the standalone formatting of fingerprint_tests.rs and subsequently exposed the same issue in ui_artifact_tests.rs and ui_protocol_tests.rs. No runtime or test behavior changed.
+
+Validation: RUSTFMT_BASE_SHA=335c3959d5ca9a3c1b9a90e7aad50d75a2cf3a61 node scripts/build/check-rust-format.mjs; cd src-tauri && cargo fmt --check; 19 fingerprint tests, 4 UI artifact tests, and 4 UI protocol tests passed; git diff --check; graphify update . completed.

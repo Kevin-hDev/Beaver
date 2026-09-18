@@ -1,0 +1,3 @@
+Review correction: actions/attest SHA is identified as v4.2.2, verified against the official tag. The boundary test name now states its actual build/backend scope. Git note bf96b514 was amended separately to correct the byte-for-byte Linux claim.
+
+Proof: git ls-remote actions/attest refs/tags/v4.2.2 returned the pinned SHA; 20 boundary/workflow tests passed; git diff --check passed.

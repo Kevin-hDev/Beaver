@@ -1,0 +1,33 @@
+Task 8 — validate real gaps and close local implementation
+
+Decision:
+- Unknown opaque media now yields no token count and no capacity proof; zero or a partial numeric estimate would allow unsafe local compression.
+- read_file results above 200,000 characters are kept outside the transcript with a bounded UTF-8-safe preview; the full result stays pageable through its stored file.
+- Ollama compression precount uses the native Ollama wire shape for tool results instead of the cloud converter.
+- Historical accumulated_tokens never overrides an identified provider measurement.
+
+Observed UI:
+- Beaver Dev opened successfully in dark and light themes.
+- Existing session displayed 7.1K / 258.4K as "Estimation reconstruite" / "Estimation Beaver" and kept "Répartition estimée · 15.2K" separate.
+- After a complete app stop and restart, the same session displayed the same values and labels.
+- The original dark theme was restored.
+
+Validation:
+- npm run contracts:check: pass.
+- npx tsc --noEmit: pass.
+- npm run lint: pass, including provider routing boundaries.
+- npm test: pass; 3343 Vitest tests, 60 build-script tests, 21 CI-script tests, 3 filesystem tests, 45 CEF tests with one Windows-only skip, 100 E2E tests, 120 extension-host tests, and 12 reasoning fixtures.
+- cargo fmt --check, cargo check, cargo clippy --all-targets -- -D warnings: pass.
+- cargo test: pass; 5513 library tests with 21 ignored, 51 CLI tests, and the prelogger integration test.
+- targeted final tests: agent-token-estimate 12/12 and Ollama native wire 1/1.
+- graphify update . and git diff --check: pass.
+
+Corrections found by validation:
+- Updated two frontend mocks that still targeted removed hooks.
+- Fixed the Ollama compression precount panic on native tool-role messages.
+- One bash_control timing test failed on the first full Rust run and passed alone and in the complete second run.
+
+Local private evidence:
+- The three ignored docs/bug/number-turn source documents were updated with actual results and limitations.
+- No paid multi-provider corpus was sent. Provider accuracy is proven by transport fixtures and remains labeled as an estimate when usage is absent.
+- No paid real-provider compression/restart was run; the atomic compression transaction and two reloads are covered by the Rust end-to-end journey.

@@ -1,0 +1,1 @@
+Cause: both provider loops used a hard 200-turn range and rejected child follow-up at the same boundary. Validation: real cloud and Ollama loops consumed 201 scripted fixture tool turns before cancellation; parent/child follow-up requested turn 202; metric, orchestration, support, request replay, and cargo check passed.

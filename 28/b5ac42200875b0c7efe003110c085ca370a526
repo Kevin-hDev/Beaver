@@ -1,0 +1,7 @@
+Task 3 / Ollama Cloud — exact GLM Flash reasoning profile
+
+The exact glm-5.3-flash:cloud profile owns the effort set, mandatory flag and Beaver default. The UI constructor, normalization and native think payload reuse it. Beaver explicitly selects max, aligned with the upstream documented default; Ollama's public model page confirms low/high/max and mandatory reasoning, not a separate documented gateway default. No capabilities are invented without /api/show.
+
+Parent review reproduced an inconsistent metadata case: /api/show with completion but without thinking was silently accepted with think:false. The new test failed (exit 101); admission now rejects that contradiction for this mandatory exact profile only. Existing optional models retain their behavior. Native image and assistant thinking fields are tested, with no Alibaba/OpenAI fields.
+
+Parent task-3 verification: cargo test --lib reasoning (199 passed), cargo test --lib codex_client (exit 0), cargo test --lib services::llm:: (442 passed), cargo test --lib ollama_wire (5 passed). Format and diff checks green; routing guard green with 57 files. Code/fixture tests are offline, not live provider proof. Unrelated site/mockup changes excluded. No daemon start, credentials, paid calls or continuity activation. AST graph maintained separately.

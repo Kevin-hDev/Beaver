@@ -1,0 +1,23 @@
+Tâche M06 — Produire les diagnostics depuis la requête réelle et regrouper les écritures.
+
+Raison
+Le diagnostic reconstruisait une approximation avant le transport. Il omettait notamment les outils des requêtes Responses et appliquait une politique chat sans modèle. Ollama persistait en plus un événement par ancien message d'outil.
+
+Changement
+- Les transports chat, Responses, Anthropic, Codex OAuth, xAI OAuth et Ollama transmettent leur payload final au même compteur.
+- Le diagnostic ne conserve que des nombres ; aucun contenu du payload n'est persisté.
+- Les outils disponibles sont distingués des appels d'outils historiques.
+- Une tentative produit une seule mise à jour de session, y compris avec 50 anciens résultats d'outils.
+- Les anciens wrappers utilisés uniquement par les tests sont exclus des builds de production.
+
+Validation
+- cargo test stream_diagnostics_payload --lib : 5 réussis, 0 échec.
+- cargo test reasoning_fixture_live --lib : 11 réussis, 0 échec.
+- cargo check : réussi sans avertissement.
+- cargo clippy --all-targets -- -D warnings : réussi.
+- cargo fmt --all -- --check : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi, graphe reconstruit.
+
+Limite volontaire
+Le relevé est écrit juste avant l'envoi réseau et inclut donc aussi une tentative dont l'appel HTTP échoue ensuite. Cela correspond à la requête finale préparée et conserve les diagnostics de panne.

@@ -1,0 +1,29 @@
+API-P7 review note — expanded extension API acceptance
+
+State validated in this commit
+- Adds the offline Beryl fixture with two typed tools, one skill, one text resource, one image resource, and rich artifact output.
+- Adds a real Host smoke that executes both tools, writes the artifact and preview, resets the Host, proves Beryl is gone, then reloads and calls a second healthy extension.
+- Adds the packaged WebDriver journey to the existing single native acceptance group. It covers the real extension detail, seven locales, six themes at 900x600, keyboard access, ARIA labelling, Host reload, disable, and the absence of plugin shortcuts or the extension name in Chat mode.
+- Adds an OpenRouter groq payload fixture and runs it through the production tool filter. Regular groq models retain only native tools; compound retains no tools.
+- Updates the public SDK and user documentation without announcing new core methods, events, subagent access, Chat access, or native publication.
+
+Root review corrections
+- Fixed a false-positive smoke assertion that inspected an old in-memory extension after Host reset instead of loading and calling the healthy neighbour again.
+- Fixed a production UI regression from API-P5: an empty ToolArtifacts React child suppressed the historical bash/read_file result. ToolArtifacts is now mounted only for a non-empty artifact list.
+- Updated the use-extensions fixture to the canonical registry projection instead of asserting an obsolete partial shape.
+- Updated four stale Rust assertions found by the first complete suite: subagent wiring now follows run_tool_turn and the shared batch module, compression expects the current session v5, and an error result carrying a file is refused as one invalid result.
+- The embedded contribution-snapshot and tool-result-snapshot utilities both have production callers in loader.mjs; neither is dead test-only code.
+- package.json and ci.yml were intentionally not changed: test:e2e:packaged is already the single owner used by the three native jobs, and wdio.conf.ts is its collected spec authority.
+
+Executed verification
+- npm run contracts:check: 14 exact contract tests collected and passed.
+- npm test: exit 0; Vitest 3010/3010, build scripts 57/57, CI scripts 21/21, CEF 45 passed plus 1 platform skip, E2E runner 79/79, extension Host 114/114, reasoning fixtures 10/10.
+- npm run test:extensions-runtime-smoke: 2/2.
+- npm run test:persistence-migration: 10/10.
+- cargo test --lib: exit 0; 4984 passed, 17 ignored, 0 failed (5001 collected).
+- cargo fmt --all -- --check, cargo clippy --all-targets -- -D warnings, npm run lint, and npx tsc --noEmit: exit 0.
+- graphify update .: exit 0; code graph rebuilt. The tool explicitly reports that semantic document extraction requires the assistant command; private ignored documents are not represented as a completed semantic update.
+
+Honest remaining acceptance boundary
+- No packaged macOS, Linux, or Windows binary was launched locally. The new WebDriver assertions are statically collected by all three existing native jobs, but those runs and their visible screens must be observed on this exact commit before the vertical is declared published multiplatform.
+- The artifact path is proven across the real Host smoke and Rust persistence, revalidation, rendering, replay, and provider projection tests. P7 deliberately does not add a privileged E2E command or a live provider request solely to collapse those proofs into one test.

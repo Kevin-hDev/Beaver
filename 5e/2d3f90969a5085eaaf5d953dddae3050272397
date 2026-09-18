@@ -1,0 +1,48 @@
+PR #61 CI corrections — 2026-09-08
+
+Kevin requested cancellation, root-cause correction and a fresh CI run.
+Cancelled CI 34222031513 and CodeQL 34222031470; dependency audit had succeeded.
+Paused the heartbeat during correction. No merge of the PR into main authorized.
+
+Root causes verified from GitHub job logs:
+1. Frontend Brand boundaries contract: corpus exceeded the text-only 6000-file
+   cap while still fitting the admitted Git inventory (10000 entries). Reuse the
+   inventory bound for its text subset rather than repeatedly inventing smaller
+   growth thresholds. File byte, path, occurrence and inventory caps remain.
+   Added test admits a fully-text inventory at its boundary; existing overflow
+   tests remain. New test was RED before the change, GREEN after.
+   Once scanning resumed, one legacy-path reference was missing in the expected
+   internal count: docs/fonctionnalites/extension/CHECKLIST_STARTUP_RESILIENCE_WINDOWS_LINUX.md
+   line 17, tracked since 57fe5e41, cites .local/share/cl-go-dash for compatibility.
+   Count becomes 262, with rationale. Visible/unknown contracts are unchanged.
+2. Backend format check: cargo fmt does not visit all include-style Rust sources.
+   Reproduced the separate CI command with the actual main base SHA. Ran rustfmt
+   individually on changed sources; four test files changed only formatting and
+   import ordering. Did not weaken or bypass the existing CI guard.
+3. Both Windows jobs: E0432 portable_pty in terminal/shell_environment.rs and its
+   tests. Two terminal commits had landed on main after this branch diverged;
+   GitHub tests the merged state. Merged origin/main (84229e58) into this branch
+   as 28f1f8bc, without conflicts or unrelated local changes. portable-pty is a
+   Unix-only Cargo dependency; qualify its adapter/import and Unix-specific tests
+   with cfg(unix). Keep the shared ordering test on both platforms and keep the
+   Windows windows_spawn adapter/Job-owned ConPTY architecture unchanged. No new
+   Windows portable-pty dependency and no bypass of Windows jobs.
+
+Local verification on the corrected integrated source:
+- cargo test --lib: 5233 passed, 0 failed, 19 ignored (includes five new main tests).
+- cargo clippy --all-targets -- -D warnings: exit 0; existing ts-rs attribute
+  diagnostic still printed. cargo fmt -- --check: exit 0.
+- RUSTFMT_BASE_SHA=84229e585100d659176695f2cc4c4e654d11c85a node
+  scripts/build/check-rust-format.mjs: passed against all branch Rust sources.
+- npm test: exit 0, including Vitest 597 files / 3241 tests, plus build/CI/CEF/
+  E2E-runner/extension-host/reasoning-fixture/contract script suites.
+- npm run lint and npx tsc --noEmit: exit 0; provider boundaries remain 61.
+- npm run test:brand-boundaries: 15 passed; clean staged-tree snapshot also 15/15.
+  The first temporary snapshot missed tracked-but-ignored docs because git add
+  honors ignore rules; corrected by adding the original index paths with -f.
+  The final snapshot includes that checklist. No falsely green snapshot claimed.
+- Self-reviewed scoped diff; git diff --check passed. Graphify AST refreshed.
+
+Native Windows compilation/execution is NOT locally proven on this Mac: the
+fresh GitHub Windows jobs are required. No paid API test or application restart.
+Unrelated website/mockup/notices/assets preserved and excluded from commits.

@@ -1,0 +1,14 @@
+Corrects the new Windows extension-host diagnostic job after its first real CI execution.
+
+Observed evidence:
+- Bundled Node protocol smoke passed on windows-latest.
+- Rust probe did not reach the extension host: cef-dll-sys tried to use the intentionally absent native CEF archive, then failed on an external DNS lookup.
+
+Correction:
+- Runs the exact Rust probe with the existing windows-tests feature, the project's authoritative compile-only CEF profile already used by the green complete Windows backend suite.
+- Updates the workflow contract test to require this feature.
+
+Local validation:
+- E2E process contracts: 27 passed.
+- Exact prepared-runtime OwnedProcess smoke with --features windows-tests: 1 passed, 4822 filtered.
+- graphify update .: no topology changes.

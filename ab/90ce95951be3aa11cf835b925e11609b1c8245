@@ -1,0 +1,7 @@
+Review 08 — Portée du rangement M07/M32.
+
+Décision : les dossiers agent_local et extensions améliorent volontairement la navigation sans créer de nouvelles frontières Rust. Les chemins et le comportement restent stables. Une migration vers de vrais sous-modules n’est justifiée que par des défauts croisés répétés ou des cycles mesurés qui bloquent une évolution.
+
+Changement : la décision et sa condition de dépassement sont écrites aux deux points d’entrée ; le registre local de suivi reprend la même règle.
+
+Validation : cargo check ; cargo fmt --check ; git diff --check ; graphify update . Le renouvellement sémantique de la documentation a aussi été demandé, mais le CLI Graphify l’a refusé faute de backend LLM configuré ; aucune réussite n’est revendiquée pour cette étape.

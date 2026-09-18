@@ -1,0 +1,19 @@
+Authenticated catalogue correction — 2026-09-07
+
+Actual list_oauth_provider_models in running Beaver returned GPT-6-Astra with
+low/medium/high/xhigh/max/ultra, default medium, context 258400, tools and
+vision. The initial plan covered only five efforts. This is an account/OAuth
+contract, NOT evidence that OpenAI's public API or OpenRouter accepts Ultra.
+
+Add exact Codex Ultra user/tool continuation candidates, initially Disabled,
+and the bounded live fixture selection. Other routes unchanged. No capability
+is marked proven from catalogue availability. The existing transport and
+ReasoningModeId already support Ultra; no duplicate effort translation.
+
+RED: expanded registry test fails on missing candidate policy, exit 101
+(/tmp/beaver-codex-ultra-red.log). GREEN: 216 reasoning_ tests incl. registry
+and exact fixture modes, strict all-target Clippy exit 0. Live Ultra remains
+pending next grouped build and its report must accompany activation later.
+
+Scope four files, no push/PR/merge/release. Parent final validation owned the
+change and reviewed it; unrelated site/mockup/assets left untouched.

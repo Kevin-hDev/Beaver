@@ -1,0 +1,24 @@
+M27 — état vivant du navigateur séparé du document durable.
+
+Changement :
+- le format de session v2 ne sauvegarde que id, titre, URL, onglet actif, ordre et génération ;
+- chargement, navigation arrière/avant et état released restent dans un registre mémoire borné à 64 sessions ;
+- les documents v1 restent lisibles et leurs champs transitoires sont reconstruits dans un état sûr ;
+- les mises à jour runtime conservent le filtrage par révision et n’écrivent que quand titre ou URL durable change ;
+- les mutations sont restaurées en mémoire si validation ou écriture échoue.
+
+Mesure : navigation reproductible = 4 appels runtime acceptés, 2 sauvegardes demandées au lieu de 4. Les mises à jour uniquement loading/back/forward/released ne demandent aucune sauvegarde.
+
+Validation :
+- cargo test : 5867 tests principaux réussis, 34 ignorés ; 51 tests CLI réussis ; intégrations réussies ;
+- cargo check : réussi ;
+- cargo clippy --all-targets -- -D warnings : réussi ;
+- cargo fmt --all -- --check : réussi après application du formatage ;
+- npm run lint : réussi ;
+- npx tsc --noEmit : réussi ;
+- npm run contracts:check : réussi ;
+- tests frontend navigateur ciblés : 15 fichiers, 79 tests réussis ;
+- graphify update . : réussi ;
+- git diff --check : réussi.
+
+Incident de validation : le premier test de politique de build cherchait encore les méthodes runtime dans session_service.rs après leur extraction ; son assertion a été mise à jour puis le test et la suite complète ont réussi.

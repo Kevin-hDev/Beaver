@@ -1,0 +1,17 @@
+Provider correction review closure — 2026-08-29
+
+Source: docs/superpowers/plans/2026-08-29-re-review-corrections-providers.md. The two new major findings and all minor follow-ups were addressed in one bounded correction lot.
+
+Decision R1: the live-fixture registry no longer filters the model catalog for all 15 routes. Third-party providers keep their advertised reasoning modes. Anthropic and Qwen combine one live-validated route transport contract with the exact model capability record from the embedded or authenticated runtime catalog. Unknown models and unadvertised modes remain fail-closed. Qwen3.8 Max now exposes and transports low, medium, and xhigh from its own dated registry entry. Anthropic adaptive thinking activates only when the exact runtime model advertises auto, then emits thinking.type=adaptive and output_config.effort.
+
+Restart decision: Anthropic/Qwen dynamic reasoning catalogs are declared in the centralized route profile. A scheduled or background turn reloads the non-generative catalog when the selected model contract is absent from memory. Failure to reload or recover exact modes blocks admission instead of silently downgrading reasoning.
+
+Decision R2: provider-aware tool collision aliases now use the same hash seed in both directions; a non-Qwen MCP-style collision regression test proves round-trip restoration.
+
+Minor closures: Qwen edit-dialog rejection is covered; vision reports declare runner versus session_export provenance; future runner request counts derive from observed request IDs; checked-in reports remain anonymous; Anthropic direct-image input uses the conservative decimal 10,000,000-byte base64 limit. Integrated provider docs were updated in the ignored main-repository docs tree.
+
+Official authorities used: Anthropic Models API and adaptive/effort documentation on platform.claude.com; Alibaba Cloud Model Studio OpenAI-compatible Chat Completions documentation for Qwen3.8 effort levels.
+
+Validation observed: npm run lint green with routing boundary ratchet still at 54 files; npx tsc --noEmit green; npm test green with 488 files and 2628 Vitest tests plus every chained script suite; cargo fmt --check green; cargo clippy --all-targets -- -D warnings green; cargo test green with 4336 passed, 0 failed, 7 ignored plus 1 integration test; graphify update completed. Focused regressions for Anthropic adaptive payload, Qwen Flash/Max effort payloads, unknown-model closure, tool alias round-trip, image limit, report provenance, and Qwen dialog rejection all passed.
+
+Manual observation: the Qwen edit dialog was not reopened visually because the user explicitly requested no repetitive application restarts or keychain prompts; its five component tests pass. No application restart was performed for this correction.

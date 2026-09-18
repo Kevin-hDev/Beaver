@@ -1,0 +1,26 @@
+Correction de la contre-revue vocale du 16/09/2026.
+
+Décisions et corrections :
+- Échap abandonne sans récupération uniquement lorsque la dictée reçoit la touche ; dialogues, recherche et terminal gardent leur action focalisée.
+- L'abandon est idempotent, nettoie une récupération en préparation et préserve toute récupération précédente déjà prête.
+- Les URL de téléchargement avec identifiants intégrés sont refusées.
+- La suppression d'un modèle orphelin causée par un reçu corrompu produit une trace générique sans donnée non fiable.
+- La capture complète uniquement la queue audio manquante jusqu'à 250 ms pour protéger les mots courts.
+- Le manque d'espace disque exact traverse le contrat Rust/TypeScript et s'affiche dans les sept langues.
+- Le test de démarrage suit le déplacement réel de l'initialisation dans app_setup.rs.
+- Le seed E2E de progression a été extrait afin de garder les fichiers source sous 230 lignes.
+
+Validation locale :
+- npm test : 635 fichiers / 3516 tests frontend, puis suites complémentaires vertes.
+- npx tsc --noEmit : vert.
+- npm run lint : vert.
+- npm run contracts:check : vert.
+- cargo check : vert.
+- cargo clippy --all-targets -- -D warnings : vert.
+- VOICE_TEST_CORPUS_DIR=/Users/kevinh/Documents/Beaver-tests/vocal cargo test : 5745 tests lib + 51 tests CLI, 0 échec ; intégration et doc tests verts.
+- Tests vocaux ciblés : 108 réussis, 5 ignorés.
+- Tests téléchargements ciblés : 18 réussis, 2 ignorés.
+- Tests progression ciblés : 11 réussis, 1 ignoré.
+- graphify update . : vert, aucune modification de topologie.
+
+CI volontairement différée et branche non poussée, conformément à la décision produit : la CI sera lancée après la clôture de toutes les corrections locales.

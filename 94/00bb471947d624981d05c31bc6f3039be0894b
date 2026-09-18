@@ -1,0 +1,25 @@
+Tâche 8 — validation traversante, reprise et nettoyage
+
+Implémentation:
+- Deux tests traversants passent par le dispatcher réel: cycle resume_session complet jusqu'à l'auto-suppression, et cron new_session sans écriture dans la session créatrice.
+- La finalisation et la réconciliation partagent un verrou unique sans appel réseau ou Agent sous verrou.
+- Une réservation durable bornée conserve l'identité d'une automatisation supprimée pendant son exécution jusqu'à la résolution du conflit. À saturation (128), la suppression échoue avant mutation.
+- Le test concurrent couvre les deux ordres d'acquisition du verrou; aucune réimportation ne reçoit l'ancre de l'exécution supprimée.
+- Suppression des anciens adaptateurs scheduler/log, du calcul daily/weekly mort et des anciens résumés Rust. Les lectures legacy de config.json, heartbeat-runtime.json et wakeups.jsonl restent uniquement pour migration et compatibilité.
+- Le contrat TypeScript généré inclut désormais message_kind=automation.
+
+Validation observée:
+- cargo test --no-fail-fast: 5425 réussis, 0 échec, 21 ignorés.
+- npm test: 606 fichiers et 3331 tests Vitest réussis, puis tous les scripts de contrat réussis.
+- npx tsc --noEmit: réussi.
+- npm run lint: réussi.
+- cargo clippy --all-targets -- -D warnings: réussi.
+- cargo fmt --all -- --check et git diff --check: réussis.
+- graphify update .: réussi.
+- Tests automation ciblés: 15 réussis, dont cycle complet, nouvelle session, concurrence dans les deux ordres et saturation fail-closed.
+
+Incident corrigé pendant validation:
+- Le premier cargo test complet a détecté le contrat TypeScript non régénéré pour message_kind=automation. npm run contracts:generate:agent l'a remis à jour, puis le cargo test complet a réussi.
+
+Limite d'environnement:
+- L'essai natif avec un vrai modèle n'a pas été répété: le lancement CEF isolé tenté à la tâche 7 s'arrête localement sur GPU process isn't usable. La preuve de cette tâche est donc traversante automatisée et isolée, sans consommation fournisseur ni donnée utilisateur.

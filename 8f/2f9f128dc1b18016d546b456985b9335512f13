@@ -1,0 +1,1 @@
+Coverage: direct and reloaded report roles, two-child wakeup ordering, acknowledgement failures and context-budget preservation. Validation: all eight planned Rust test filters passed with one test executed each; compress and context_budget_prune were unchanged.

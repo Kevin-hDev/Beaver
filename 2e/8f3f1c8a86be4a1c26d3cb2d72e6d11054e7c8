@@ -1,0 +1,27 @@
+Review corrections — events, models, memory and usage (B1-B7)
+
+What changed:
+- A terminal event now removes its tracked flow even when the last subscribed extension was removed mid-turn, preventing the 64-flow deadlock.
+- Rust counts event.emit as delivered only when the Host explicitly returns queued:true; false or malformed acknowledgements are counted as dropped.
+- All event activity counters, including activeHandlers, are clamped before crossing the JavaScript boundary.
+- The provider usage migration test now decodes a complete pre-extension provider-usage.json fixture and asserts historical totals plus the default Extension workload.
+- The memory budget test creates a real topic, spends the shared native budget, then proves memory.read omits content and memory.list returns a continuation cursor.
+- Ollama done_reason is propagated to the shared finish-reason mapping, so token-limit completion is reported as length.
+- Invalid model size/token bounds now surface as request failures, not permission denials, with a discriminating unit test.
+
+Root-cause choices:
+- Empty delivery routing consumes only an existing terminal sequence; it never creates a flow when nobody is subscribed.
+- The Host acknowledgement is fail-closed: missing queued is not treated as success.
+- Event sequence logic moved to a focused child module because event_delivery.rs crossed the 230-line source limit.
+
+Validation executed:
+- cargo test event_delivery_tests (6 passed)
+- cargo test legacy_provider_usage_file_preserves_history_and_defaults_extension (1 passed)
+- cargo test memory_api_shares_turn_budget_with_native_tools (1 passed)
+- cargo test core_model_generation (4 passed)
+- cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
+- git diff --check
+- graphify update .
+
+Known unrelated warnings:
+- Existing ts-rs serde attribute parsing warnings and macOS linker compact-unwind warning were emitted by Rust test compilation; all targeted tests passed.

@@ -1,0 +1,16 @@
+Cause: la boucle de capture vérifiait l'état Transcribing avant son prochain poll. Un clic rapide sur Valider pouvait donc quitter la boucle en laissant jusqu'à un intervalle de poll dans InputRing. CaptureSession::finish ne vidait que le resampler, pas le tampon du périphérique. La perte était peu visible sur une longue phrase mais pouvait supprimer la fin décisive d'un mot court.
+
+Correction: CaptureStream::finish ferme d'abord le flux puis effectue le dernier drain. CaptureSession normalise ce dernier bloc avec flush=true, conserve son compteur de pertes et le remet aussi au VAD avant transcription. Normalizer::finish, devenu une seconde voie de finalisation incomplète, est supprimé.
+
+Preuve rouge/verte: native_capture_finish_keeps_pending_microphone_samples échouait avant la correction avec "pending microphone samples were discarded", puis réussit après.
+
+Latence mesurée sur le vrai micro macOS: VAD 16 ms, flux démarré 200 ms, premier échantillon 212 ms, ASR prêt 1819 ms. Il n'existe donc qu'environ 12 ms entre le démarrage effectif du flux et le premier échantillon; l'ondulation Listening n'est publiée qu'après le démarrage du flux.
+
+Validation:
+- cargo test --lib services::voice avec VOICE_TEST_CORPUS_DIR=/Users/kevinh/Documents/Beaver-tests/vocal: 85 réussis, 4 ignorés, 0 échec
+- native_parakeet_opens_microphone_under_two_seconds: réussi
+- native_capture_finish_keeps_pending_microphone_samples: réussi
+- cargo clippy --all-targets -- -D warnings: réussi
+- graphify update .: réussi
+
+Limite de la preuve: le test natif garantit la conservation de la fin du tampon et le délai du premier échantillon. Le comportement acoustique avec la voix de l'utilisateur doit encore être retesté dans l'application reconstruite.

@@ -1,0 +1,1 @@
+Final self-review correction. Decision: keep the existing public admission error code after extracting its implementation, because moving code must not narrow the public contract even when the repository has no current internal caller.

@@ -1,0 +1,15 @@
+Review correction:
+- Added the shared src/i18n directory to the installer Vite development allowlist.
+- Added a source contract for that exact dependency boundary.
+
+Reason: installer-i18n imports the seven shared locale files and Vite rejects imports outside an explicit allowlist during installer:dev.
+
+Red proof:
+- node --test scripts/release/installer-frontend-security.test.mjs failed because src/i18n was absent.
+
+Validation:
+- installer frontend security: 3 passed
+- npm run installer:build-ui passed
+- live Vite dev requests for index, main.tsx, and shared en.json passed
+- git diff --check
+- graphify update . completed.

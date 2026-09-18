@@ -1,0 +1,30 @@
+CI diagnostic hardening after repeated Windows CEF failures.
+
+Observed evidence:
+- Windows CEF failed after about 60 seconds in set_extension_enabled with extensions_host_unavailable; later acceptance failures were cascading.
+- The previous Windows smoke proved only host.hello, so it could not detect a host.load failure.
+- Dependency audit failed because the npm advisory endpoint returned HTTP 503; RustSec and the extension-host npm audit were green.
+
+Changes and reasons:
+- The Windows smoke now loads the real standard UI fixture through both the prepared Node runtime and Rust HostProcess, including import/activate/register. This is the earliest faithful boundary for the failing operation.
+- Backend Windows CEF depends on that smoke so a runtime load failure stops within the short job instead of consuming another 79-minute packaged run.
+- Acceptance fixture setup moved into the suite hook, so a setup failure skips dependent locale/theme cases instead of producing a misleading cascade.
+- Activation failures report the bounded loading-marker stage and extension id for the next diagnosis.
+- npm audit retries only recognized service/network failures once; a real advisory fails immediately and repeated service failure remains red. Output capture is bounded to 64 KiB.
+- E2E workflow contracts were split because the original test file exceeded the 230-line project limit.
+
+Executed validation:
+- npm run test:extensions-runtime-smoke: 2 passed, including real extension load.
+- prepared Rust runtime filter: 4 passed, 4823 filtered out.
+- npm run test:e2e-runner: 77 passed.
+- npm run test:ci-scripts: 20 passed.
+- targeted JavaScript set: 33 passed.
+- npm exec tsc -- --noEmit: passed.
+- npm run lint: passed.
+- cargo fmt --check: passed.
+- cargo clippy --all-targets --features windows-tests -- -D warnings: passed.
+- Real frontend audit: first request timed out, bounded retry returned 0 vulnerabilities.
+- Real extension-host audit: 0 vulnerabilities.
+
+Scope note:
+This commit does not claim the Windows-only host.load cause is fixed. It makes that exact boundary executable before CEF and records the stage if the packaged journey still differs.

@@ -1,0 +1,3 @@
+Review correction: Beaver-running snapshots are now polled serially with one timeout and a disposal guard, eliminating overlapping stale responses. Initial/polling snapshot failures are handled and keep the installer blocked instead of surfacing internal errors.
+
+Proof: installer app tests 6 passed; npx tsc --noEmit passed; installer UI production build passed with only the existing chunk-size warning.

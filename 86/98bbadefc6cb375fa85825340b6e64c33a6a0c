@@ -1,0 +1,19 @@
+Changelog coverage for the maintenance audit branch
+
+Reason:
+Version 1.2.3 already documents the release's user-facing work. This commit adds the reliability, security, UI-state, streaming, Ollama, contract-centralization, and dead-path cleanup delivered by codex/maintenance-audit-execution without turning the changelog into a commit-by-commit implementation log.
+
+Scope:
+- CHANGELOG.md only
+- English v1.2.3 section
+- no version bump and no app-release-notes mutation
+
+Validation:
+- git diff --check: passed before commit
+- package.json, Cargo.toml, and tauri.conf.json remain consistently versioned 1.2.2
+- npm run release:prepare-notes -- 1.2.3 --check was run and correctly reported that 1.2.3 is not yet present in active app release notes; release preparation is outside this changelog-only commit
+
+Graph maintenance:
+- graphify . --update was attempted as required for documentation changes
+- it stopped before writing tracked output because no semantic LLM backend is configured and the existing manifest requested an unrelated full source re-extraction
+- no graphify files were included in this commit

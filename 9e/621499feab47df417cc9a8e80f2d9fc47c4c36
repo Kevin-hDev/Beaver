@@ -1,0 +1,1 @@
+CI correction: the automation file-watcher tests add three net references to the persisted cl-go-dash data directory. Updated the bounded internal brand-reference inventory from 484 to 487 with the reason documented beside the authority. Validation: npm run test:brand-boundaries 15/15 passed; git diff --check passed; graphify update . passed.

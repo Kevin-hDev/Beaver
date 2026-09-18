@@ -1,0 +1,13 @@
+Reviewer note — real compression failure
+
+Reproduction: session 7bc0d2a4-9efa-449b-9833-62bd3297d193 failed first with an invalid summary, then the new structural diagnostics identified a duplicated summary envelope. No model output or conversation content was logged.
+
+Decision: the retry policy is unchanged. Beaver only normalizes an unambiguous result: two byte-identical summary bodies are compared in constant time and deduplicated; literal inner summary markers are escaped. Two different envelopes, trailing text, truncation, tool calls, cancellation, missing sections, or over-budget output still fail closed.
+
+User-facing behavior: stable compression error codes survive diagnostics and the redundant technical subtitle containing unknown is hidden when the localized compression error is already displayed.
+
+Real validation: the same session later compressed successfully from 102 to 20 persisted messages, compression_count became 1, and its last two records are structured compression_checkpoint and compression_boundary messages.
+
+Verification: cargo test compress --lib (214 passed, 1 ignored); cargo test --lib (4491 passed, 8 ignored); npm test -- --run (502 Vitest files / 2679 tests plus build, CI, CEF, extension-host and reasoning checks passed); cargo clippy --all-targets -- -D warnings; npm run lint; npx tsc --noEmit; cargo fmt --check; git diff --check. Graphify AST graph refreshed with graphify update .
+
+Personal planning SPEC was updated with the bounded normalization decision but remains intentionally gitignored and is not part of this commit.

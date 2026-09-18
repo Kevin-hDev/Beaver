@@ -1,0 +1,7 @@
+Decision: close tool calls orphaned by a proven older execution with synthetic cancelled results, and never rerun them.
+
+Reason: a process crash can persist an assistant tool-call checkpoint before its result. Strict admission then rejects every later send and permanently blocks the session. A different valid current execution UUID proves that the pending call belongs to an older request; its external outcome remains unknown.
+
+Scope: manual sessions, heartbeat sessions, subagents, and legacy migration share one synthetic-result authority. The same execution, absent or malformed identities, invalid histories, and capacity overflow fail closed. Recovery is atomic and marks the interrupted tool non-retryable.
+
+Validation: the full Rust suite passed with 5,535 library tests and 51 binary tests; clippy passed with warnings denied. Focused tests cover manual and heartbeat admission, same-request refusal, capacity, migration, and the real session shape. Beaver Dev launched and opened EXTENSIONS-BUG with its composer available.

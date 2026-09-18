@@ -1,0 +1,10 @@
+Review correction B-M1 — tolerant context usage reload
+
+Decision:
+context_usage is diagnostic state. During session reads, a malformed or semantically invalid record is removed from the JSON value before strict AgentSession decoding, so serde applies the field default. The rest of the session remains strictly validated, and writers still reject invalid records.
+
+Proof:
+- The semantic-invalid fixture failed with "Session invalide" before the fix.
+- Semantic-invalid and malformed-shape v6 records now reload with an empty context record while retaining the transcript.
+- All 32 session_migration tests pass.
+- A bounded structured warning session_context_usage_invalid_reset records the degradation without exposing session data.

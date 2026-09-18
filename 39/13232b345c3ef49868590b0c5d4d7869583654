@@ -1,0 +1,1 @@
+Coverage: active registry matrix plus native assistant and subagent report scenarios for Responses, Chat, Anthropic and Ollama. Validation: all nine planned Rust test filters passed with one test executed each.

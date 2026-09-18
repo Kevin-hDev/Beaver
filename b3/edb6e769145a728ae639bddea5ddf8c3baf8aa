@@ -1,0 +1,12 @@
+Cause: the two native-tool stack regression tests assumed that a cold Windows shell always finishes inside the default 10-second yield. CI observed the supported running-session result after 10,013 ms, so the test failed even though dispatch remained healthy.
+
+Change: make both Ollama and cloud sibling tests request the existing supported 30-second yield. Product behavior and production defaults are unchanged.
+
+Validation:
+- cargo fmt --all -- --check
+- cargo test --lib services::agent_local::agent_loop_unbounded_tests::ollama_native_tool_dispatch_fits_the_production_worker_stack -- --exact --nocapture
+- cargo test --lib services::llm::agent_loop_native_tool_stack_tests::native_tool_dispatch_fits_the_production_worker_stack -- --exact --nocapture
+- cargo clippy --all-targets -- -D warnings
+- RUSTFMT_BASE_SHA=$(git merge-base main HEAD) node scripts/build/check-rust-format.mjs
+- git diff --check
+- graphify update . (no topology change)

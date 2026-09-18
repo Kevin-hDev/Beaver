@@ -1,0 +1,9 @@
+Implementation review round 3 candidate after c818af92
+
+Resolved R2-MAJ-1 and R2-MIN-1: shared automations/text_validation.rs is the single character and length validation implementation used by both the service and manage_automation. Prompt and description allow CR/LF/tab; names, models, project ids and resume-session ids remain single-line. Dispatcher create and update now preserve multiline instructions.
+
+Resolved R2-MIN-2 through R2-MIN-4: the external-instruction test also proves the name remains CI; useTranslation is back in the import block; the test-only RuntimeAdmission/admit_* classification was deleted. Scheduler and end-to-end tests now create occurrences through the production scan_and_advance path.
+
+TDD evidence: dispatcher multiline test failed with invalid_input before the fix; single-line identity test failed because the newline name was accepted. After the fix: services::automations 57/57, tool_automation_tests 7/7, scheduler runtime 11/11.
+
+Final validation: cargo test --no-fail-fast => 5437 passed, 0 failed, 21 ignored, plus prelogger integration 1/1; npm test => 607 files and 3334 Vitest tests passed plus every script suite, exit 0; cargo clippy --all-targets -- -D warnings, npx tsc --noEmit, npm run lint, cargo fmt --all -- --check and git diff --check all exit 0; graphify update . exit 0.

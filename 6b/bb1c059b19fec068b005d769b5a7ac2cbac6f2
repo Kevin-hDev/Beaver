@@ -1,0 +1,1 @@
+Counter-review N3: moved download-only test helpers into a dedicated test support module and kept environment-facing runtime queries with the environment implementation. Production behavior is unchanged.\n\nValidation: full installer Rust suite passed (47 passed, 2 ignored), strict Clippy passed, and all four touched source files are below 230 lines.

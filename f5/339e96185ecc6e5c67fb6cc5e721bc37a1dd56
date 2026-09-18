@@ -1,0 +1,7 @@
+Correction M3 — journal de progression
+
+Décision : le backend émet la clé de journal seulement lors de l'entrée dans une phase. Les ticks de pourcentage gardent la progression sans dupliquer la ligne.
+
+TDD :
+- Rouge : le second tick downloading portait encore installer.log.downloading.
+- Vert : premier tick journalisé, second sans clé.

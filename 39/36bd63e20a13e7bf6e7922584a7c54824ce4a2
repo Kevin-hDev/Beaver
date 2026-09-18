@@ -1,0 +1,11 @@
+B9 — Interception restrictive avant effet.
+
+État validé : une extension peut enregistrer un seul intercepteur ; la chaîne est bornée à 8, ordonnée depuis le catalogue de découverte et capturée par requête modèle. Les cinq chemins Agent (séquentiel, lectures parallèles, écritures, délégation en lot, exécution anticipée) appellent la même frontière après les gardes natives et avant confirmation/effet. Chat reste exclu.
+
+Sécurité : snapshots immuables côté Node, identité et génération revérifiées avant chaque gestionnaire, délais absolus 250 ms / 1 000 ms, égalité attribuée au délai collectif, aucune relance automatique. Erreur/résultat invalide/délai individuel retire l’intercepteur, révoque sa génération, persiste Error, nettoie permissions et marqueurs ; le délai collectif refuse sans désactiver. Une réponse tardive ne reprend jamais l’effet.
+
+Revue propre : ajout des deux nouveaux modules Node à la préparation du runtime embarqué ; maintien de la compatibilité avec un ancien contexte hôte sans intercepteur ; capacité toolInterception alignée dans Rust, handshake Node et tests. Le chemin complet vers l’hôte est borné, pas seulement l’attente de sa réponse.
+
+Preuves exécutées : cargo test --lib extensions -- --quiet => 547 réussis, 10 ignorés ; cargo test --lib tool_executor => 9 réussis ; cargo test --lib eager_dispatch => 2 réussis ; npm run test:extensions-host => 139 réussis ; npm run contracts:check vert ; npx tsc --noEmit vert ; npm run lint vert ; cargo clippy --all-targets -- -D warnings vert ; cargo fmt --check et git diff --check verts ; graphify update . terminé.
+
+Limites assumées du plan : l’interception reste restrictive et facultative, ne constitue pas une sandbox Node, ne rejoue jamais un appel refusé et une désactivation non persistable reste garantie fermée seulement pour le processus courant.

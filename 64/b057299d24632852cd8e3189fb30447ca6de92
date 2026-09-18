@@ -1,0 +1,7 @@
+Correction M6 — fermeture de la fenêtre de progression
+
+Décision : seuls une nouvelle opération vivante ou le redémarrage d'une opération terminale ouvrent la fenêtre. Les ticks d'une opération déjà vivante ne la rouvrent plus après fermeture utilisateur.
+
+TDD :
+- Rouge : should_show_window n'existait pas.
+- Vert : quatre transitions absent/vivant/terminal vérifiées par le test Rust exact.

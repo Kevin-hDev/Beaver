@@ -1,0 +1,14 @@
+Correction CI Linux, commit amende avant validation finale.
+
+Premiere sortie CI: Clippy strict signalait les modules du moteur favicon CEF compiles sans appel natif sous Linux.
+Seconde sortie CI: elle a precise deux dependances residuelles, BrowserViewKey dans la bibliotheque Linux et le constructeur natif DownloadWatchdog dans les tests Linux.
+
+Correction finale: le moteur favicon et BrowserViewKey sont compiles uniquement avec CEF ou pendant les tests; le constructeur et le RAII du watchdog restent CEF-only tandis que son test de delai reste portable. Le contrat IPC Linux reste disponible et retourne un snapshot vide apres validation de l identifiant. Un test de politique preserve ces gardes.
+
+Validations executees:
+- cargo fmt --check: succes
+- cargo clippy --all-targets -- -D warnings: succes sur macOS
+- test de politique natif/favicon: 1 passe, 0 echec
+- cargo test services::browser:: --lib avant le dernier resserrement: 199 passes, 0 echec, 1 export explicite ignore
+- graphify update .: succes
+- compilation croisee Linux locale bloquee en amont par l absence du sysroot GTK; la CI Ubuntu reste l autorite pour ce point.

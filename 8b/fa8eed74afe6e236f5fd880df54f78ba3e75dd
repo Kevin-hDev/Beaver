@@ -1,0 +1,10 @@
+Review correction C-B1 — opaque context fields
+
+Decision:
+Opaque provider data is recognized only in its wire context. Tool schemas and tool arguments are counted as ordinary semantic data even when their business fields are named signature or images. Reasoning blocks, provider extra_content signatures, remote images, and other unbounded media still remove the capacity proof.
+
+Proof:
+- The regression test with a signature field in an MCP-style schema and signature/images arguments failed as Unknown before the fix.
+- prepared_context_count: 4/4 tests pass after the fix.
+- Counter-tests keep Responses encrypted_content, Google thought_signature in extra_content, and remote images Unknown.
+- Source file remains 181 lines; cargo fmt --check and git diff --check pass.

@@ -1,0 +1,15 @@
+Compression context revision — reviewer notes
+
+Product decisions: keep the global automatic-compression switch; it gates automatic and realtime interruption only, while /compress remains available. Keep three independent window bands. Keep the strict nine-section summary contract. Default threshold is 90%. Beaver defaults are 2 messages/2K summary/5 tools/3 files/2 images below 64K, 4/4K/10/5/4 from 64K to below 128K, and 4/6K/10/5/4 at 128K+. Below 64K stays disabled by default.
+
+Checkpoint target authority: system head plus min(20% of the compressible context, band cap 10K/20K/28K). The target is a ceiling, not a fill objective. Recent messages are whole-or-nothing and capped at 8. The summary remains mandatory and its effective limit is capped by remaining target capacity. Automatic retries are guarded persistently and suspend after three consecutive failures; explicit /compress remains available.
+
+Migration: profile document schema v2 resets legacy band detail to the simpler Beaver values while preserving profile identity, name, revision, prompts, threshold, under-64K permission and the global automatic switch. Session schema v4 adds the bounded automatic guard. Both migrations keep the documented backups and remain fail-closed.
+
+Automated verification: npm run lint passed; npx tsc --noEmit passed; npm test passed (502 Vitest files, 2680 tests, then build-script, CI-script, CEF, E2E-runner, extension-host and reasoning-fixture suites); cargo fmt --check passed; cargo check passed; all four Rust-to-TypeScript contract checks passed; cargo test compress --lib passed (182 passed, 1 ignored); the full Rust suite passed before the final frontend-only popover positioning change, with zero Rust changes afterwards. git diff --check passed. graphify update . completed.
+
+Real cloud acceptance: session 7bc0d2a4-9efa-449b-9833-62bd3297d193 compressed successfully with codex-oauth GPT-5.6-Luna, from 64.1K/258.4K to 17.4K/258.4K on the ring (messages 50.3K to 3.6K), persisted as schema v4 with checkpoint and boundary; approximately 73% reduction.
+
+Real Ollama acceptance at num_ctx 16K: qwen3.5:4b and deepseek-r1:latest-derived 8.2B both returned invalid_summary because they did not satisfy the strict nine-heading contract. Beaver failed closed: the session stayed unchanged and no compression loop occurred. This is an explicit compatibility observation, not a successful Ollama compression. The temporary model was deleted, qwen num_ctx was restored, the Beaver under-64K flag was restored to false, and the test session was returned to Beaver/qwen3.5:4b.
+
+Manual UI verification: simplified Advanced panel rendered in the running app; warning is limited to the below-64K page; Enter/Escape and post-Escape Tab behavior work without reopening the ring; clicking the help badge opens a second bubble. A final overlap found on screen was fixed by anchoring that bubble before the ring panel, with a regression test, and rechecked visually as fully visible without overlap or clipping.

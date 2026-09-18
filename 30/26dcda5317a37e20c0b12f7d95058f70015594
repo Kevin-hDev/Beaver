@@ -1,0 +1,5 @@
+CI correction: update the single brand-boundary authority for internal compatibility references introduced by the extension UI work.
+
+Root cause: the new packaged desktop E2E paths add two explicit references to the historical cl-go-dash executable name, while extension theme persistence and its UI/E2E proofs add eleven net references to historical clgo storage keys. These identifiers must remain stable and are classified internal, not user-visible branding.
+
+Validation: npm run test:brand-boundaries passed 14/14 with zero unknown references; npm run lint passed; git diff --check; graphify update . completed.

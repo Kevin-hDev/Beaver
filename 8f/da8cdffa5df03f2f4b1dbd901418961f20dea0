@@ -1,0 +1,9 @@
+Result: Beaver-generated subagent reports are classified as user input. Strict validation of native assistant reasoning remains enabled for Responses, Chat and Anthropic. The provider matrix is derived from the active registry. No compress source or dependency file changed.
+
+Validation:
+- Seven targeted Rust suites passed: 9 + 17 + 3 + 24 + 37 + 13 + 3 tests.
+- cargo test --lib in parallel was run twice: each run passed 5470 tests, ignored 21, and failed only services::private_store::tests::app_storage_repairs_the_forecast_notes_directory with "Outil de fixture indisponible". The exact test passed 1/1 in isolation.
+- cargo test --lib -- --test-threads=1 passed: 5471 passed, 0 failed, 21 ignored.
+- cargo clippy --all-targets -- -D warnings exited 0.
+- npx vitest run src/lib/agent-error-codes.test.ts passed 11/11.
+- graphify update . exited 0; the plan semantic graph was refreshed separately because docs require semantic extraction.

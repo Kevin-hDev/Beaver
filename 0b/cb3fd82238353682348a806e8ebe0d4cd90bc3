@@ -1,0 +1,1 @@
+CI correction: the favicon E2E scenario reused literal historical theme storage keys, increasing the protected internal-brand count from 128 to 130. It now calls the existing extension-presentation authority. Verified before commit: npm run test:brand-boundaries passed; ESLint on the changed E2E file passed with only the three existing non-literal proof-path warnings.

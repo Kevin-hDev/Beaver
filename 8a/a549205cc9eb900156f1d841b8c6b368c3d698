@@ -1,0 +1,1 @@
+Review follow-ups N1-m1, N1-m2, and N2-m1. Decision: keep admission errors in their own small module so the admission boundary stays below 230 lines; test the shared Responses converter once because OpenAI Responses, xAI OAuth, and Codex use that authority; include only a validated UUID in corrupt-context diagnostics so recovery is attributable without logging an untrusted path.

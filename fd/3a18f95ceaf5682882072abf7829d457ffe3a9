@@ -1,0 +1,12 @@
+Decision: recovered stream messages are appended only through conversation_interrupted_tail, the existing canonical authority for interrupted history repair. Test-only session construction lives in a test-named module so the production-writer audit remains exact.
+
+Reason: allowing recovery validation to mutate session history created a second write authority and weakened the audit that prevents late or unordered durable writes. The large recovery enums remain inline because one bounded record is processed at a time; boxing would add an allocation to every journal write without reducing retained memory.
+
+Validation:
+- cargo fmt --manifest-path Cargo.toml
+- node ../scripts/ci/run-rust-test-filter.mjs --filter production_session_message_writes_stay_behind_canonical_owners (1 passed)
+- node ../scripts/ci/run-rust-test-filter.mjs --filter stream_recovery_apply (7 passed)
+- node ../scripts/ci/run-rust-test-filter.mjs --filter stream_recovery_process (2 passed)
+- cargo clippy --all-targets -- -D warnings
+- cargo test (5642 passed total across targets, 0 failed, 22 ignored)
+- graphify update .

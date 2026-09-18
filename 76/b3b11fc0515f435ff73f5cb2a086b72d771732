@@ -1,0 +1,18 @@
+CI correction after PR #77 run 35042047491.
+
+Resolved:
+- Rust-to-TypeScript contracts now run in the backend job that already owns Rust and Linux Tauri dependencies
+- frontend voice tests remain isolated to Node and Vitest
+- persistence startup contract follows the extracted app_setup authority
+- reviewed voice data-dir accesses are recorded in the bounded persistence allowlist
+
+Validation:
+- npm run contracts:check: 19 exact Rust contracts passed
+- voice script tests: 5 passed
+- focused voice Vitest: 12 files / 30 tests passed
+- npm run test:persistence-migration: 10 passed
+- npm run test:release-workflow: 53 passed
+- git diff --check: passed
+- graphify update .: passed
+
+Untracked review-dark.png intentionally left untouched.

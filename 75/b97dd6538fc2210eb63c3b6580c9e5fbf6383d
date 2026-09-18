@@ -1,0 +1,11 @@
+B10 — SDK utilisable, diagnostics et documentation de l’état livré.
+
+Livré : fixture TypeScript exécutable chargée par le vrai Hôte/Jiti ; documentation des API contextualisées et des reprises sûres ; activité Hôte bornée sans payload ni chemin ; provenance et raisons d’inactivité des automatisations ; réapprobation humaine explicite ; liste des erreurs d’automatisation générée depuis Rust ; traductions dans les sept langues.
+
+Sécurité : les opérations contextualisées restent refusées hors appel Agent ; les réveils d’extension naissent inactifs ; la réapprobation vérifie l’identité courante avant activation ; les compteurs sont saturants et bornés à l’entier JavaScript exact ; Linux ne reçoit pas la nouvelle surface UI ; aucun secret ou chemin personnel dans la fixture.
+
+Preuves exécutées : préparation Hôte avec npm validé (0 vulnérabilité) ; node --test core-api-examples 1/1 ; Vitest ciblé 20/20 ; cargo check ; cargo clippy --all-targets -D warnings ; tests Rust activité 1/1 et provenance 1/1 ; npm run contracts:check avec le nouveau test exact collecté ; npx tsc --noEmit ; npm run lint ; git diff --check ; graphify update .
+
+Revue locale : les types d’activité ont été séparés pour rester sous 230 lignes ; aucun nouveau package ; une première préparation Hôte sans BEAVER_NPM_CLI_PATH avait refusé le runtime npm, puis le chemin npm canonique a été fourni et la préparation a réussi.
+
+Non déclaré comme validé : contrôle visuel manuel sur chaque thème/langue/petite fenêtre et acceptation empaquetée Windows/Linux. Ces preuves restent dans B11.

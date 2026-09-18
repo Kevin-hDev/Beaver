@@ -1,0 +1,14 @@
+Cause observée sur le vrai trajet micro macOS: un mot isolé arrivait bien au moteur mais Parakeet pouvait rendre une chaîne vide ou basculer vers l'anglais faute de contexte final. Une capture de « Oui » a produit raw="We" puis trailing-250ms="Oui." sur exactement les mêmes échantillons. La perte du tampon corrigée dans 2aeac4c3 était donc réelle mais pas l'unique cause.
+
+Correction: chaque tranche reçoit 250 ms de silence uniquement après le signal avant l'inférence. Le silence final laisse le transducteur finaliser le dernier mot. Il n'est pas ajouté au son conservé, ne modifie pas les réglages et ne décale pas les timestamps comme le ferait un préfixe silencieux. L'allocation reste bornée et le tampon temporaire est zéroïsé après le décodage.
+
+Référence locale vérifiée: Murmure 1.11.3 applique le même principe pour corriger les chunks que Parakeet ne décodait pas; son implémentation utilise 250 ms de silence. Beaver garde seulement la queue nécessaire afin de préserver ses repères temporels.
+
+Validation:
+- test inference_gets_a_quarter_second_to_finalize_its_last_word: réussi
+- trajet micro natif avec « Oui » et queue silencieuse: transcription « Oui. » observée
+- cargo test --lib services::voice avec le corpus local: 86 réussis, 4 ignorés, 0 échec
+- cargo clippy --all-targets -- -D warnings: réussi
+- graphify update .: réussi
+
+Limite: avec le réglage « détection automatique », un seul mot reste intrinsèquement plus ambigu pour identifier sa langue qu'une phrase. Ce correctif vise le résultat vide causé par la finalisation du transducteur; il ne prétend pas rendre l'identification de langue parfaite.

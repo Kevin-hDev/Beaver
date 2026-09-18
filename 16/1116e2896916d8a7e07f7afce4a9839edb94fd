@@ -1,0 +1,28 @@
+Task 8 — Interface exacte de la fenêtre de mise à jour
+
+Décisions:
+- Réutilise OperationProgressBar comme primitive unique de progression.
+- Le SVG canonique est chargé comme asset local; les états figés utilisent ses fragments via <use>, sans injection HTML.
+- La CSP reste fermée et ajoute seulement les transports IPC Tauri ipc: et http://ipc.localhost.
+- La position est mémorisée dès WindowEvent::Moved, car la destruction peut rendre outer_position indisponible.
+- Le hook de reprise et ses types ont été extraits pour garder use-update-checker.ts sous 230 lignes.
+- Linux conserve l’ancienne progression dans la bulle; macOS/Windows utilisent la fenêtre dédiée.
+
+Preuves:
+- 35 tests frontend ciblés verts.
+- npx tsc --noEmit vert.
+- npm run lint vert.
+- npm run build vert.
+- node --test scripts/ci/update-progress-window-security.test.mjs: 2/2 verts.
+- cargo test services::update_progress: 6 verts, 1 export volontairement ignoré.
+- cargo check --features e2e vert.
+- cargo clippy --features e2e --all-targets -- -D warnings vert.
+- Scénario natif WebDriver ciblé: 1/1 vert; 4 opérations, IPC sensible refusé, fermeture/réouverture, position conservée et état terminal reçu.
+- Capture réelle inspectée: /tmp/beaver-update-progress-window.png.
+- graphify update . terminé.
+
+Écarts et incidents:
+- Le premier essai E2E avec CARGO_TARGET_DIR normal a été refusé par l’isolation CEF; relance dans target/e2e.
+- Le scénario natif a révélé puis fait corriger une CSP IPC incomplète et une sauvegarde de position trop tardive.
+- La suite E2E complète présente des échecs préexistants d’initialisation des tests extensions/onboarding; le scénario update isolé est vert.
+- review-dark.png est resté non suivi et hors commit.

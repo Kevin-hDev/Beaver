@@ -1,0 +1,1 @@
+Fixes the CodeQL TOCTOU finding in packaged voice catalogue validation by reusing the repository's single-handle bounded regular-file reader. Adds a symlink rejection regression test. Verified with node --test scripts/voice/check-packaged-resources.test.mjs (4/4), npm run lint, git diff --check, and graphify update .

@@ -1,0 +1,7 @@
+Correction B3 — postconditions macOS privilégiées
+
+Décision : aucun succès n'est déduit du seul lancement d'AuthorizationExecuteWithPrivileges. Chaque déplacement/suppression vérifie son effet sur disque ; le bundle staged et le bundle publié doivent porter la version épinglée avant Completed.
+
+TDD :
+- Rouge : swap_unprivileged acceptait une version attendue différente.
+- Vert : 39 tests Rust passés, 2 ignorés attendus ; vrai test DMG local 1/1 ; fmt et clippy strict verts.

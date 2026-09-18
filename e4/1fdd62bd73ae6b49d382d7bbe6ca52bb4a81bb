@@ -1,0 +1,7 @@
+Correction B1 — asset castor suivi
+
+Décision : src/assets/QPXAq01-anime.svg devient l'autorité partagée suivie par Git ; docs reste privé. Les deux builds importent ce fichier.
+
+TDD :
+- Rouge : le test de frontière échouait avec ENOENT sur l'asset suivi.
+- Vert : test frontière 3/3, build installateur et build Beaver réussis.

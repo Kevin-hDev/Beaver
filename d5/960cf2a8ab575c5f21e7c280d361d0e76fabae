@@ -1,0 +1,5 @@
+CI correction: close the append-only recovery-log handle before reopening the test file with explicit write access to create a sparse oversized fixture.
+
+Reason: Unix permits set_len through the append handle used by production, while Windows correctly rejects it with access denied. Production keeps its least-privilege append-only handle; only the test fixture requests write access.
+
+Validation: Rust 1.98.1 exact rustfmt check; targeted oversized-log regression passed; all 7 stream recovery store tests passed; git diff --check; graphify update . The Windows CI run remains the cross-platform proof for the original failure.

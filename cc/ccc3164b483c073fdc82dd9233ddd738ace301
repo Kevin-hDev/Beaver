@@ -1,0 +1,28 @@
+Tâche M01 — Respecter les données volontairement envoyées au modèle.
+
+Décision : le contenu de conversation appartient à l'utilisateur et doit parvenir au modèle choisi sans réécriture. Les secrets internes de Beaver restent dans le coffre et les en-têtes ; le masquage des index, journaux et diagnostics reste séparé.
+
+Changements :
+- suppression du masquage propre à la boucle Ollama ;
+- sauvegarde et nettoyage de sécurité des sessions sans altérer messages, résultats d'outils ni champs opaques/signés ;
+- conservation du bornage context_tokens et du masquage de l'index ;
+- tests de payload Google/OpenAI Responses/Ollama et de sauvegarde-rechargement-second tour ;
+- models.generate vérifié : le prompt passe directement à text_generation::collect côté cloud et à ollama_collect::collect_extension_text côté Ollama.
+
+Preuve avant correction :
+- cargo test next_turn_preserves_sensitive_content_voluntarily_saved_by_the_user --lib -- --nocapture
+  Échec attendu observé : le message rechargé ne contenait plus la valeur factice.
+
+Validation après correction :
+- cargo test services::agent_local::conversation_history_tests --lib : 30 réussis ;
+- cargo test services::agent_local::session_migration_tests --lib : 32 réussis ;
+- cargo test services::agent_local::ollama_wire::tests --lib : 10 réussis ;
+- cargo test services::llm::stream_silent::stream_silent_request_tests --lib : 6 réussis ;
+- cargo test services::security_cleanup::tests --lib : 9 réussis ;
+- cargo test services::extensions::core_model_generation --lib : 4 réussis ;
+- cargo check : réussi ;
+- cargo clippy --all-targets -- -D warnings : réussi ;
+- cargo fmt --all -- --check et git diff --check : réussis ;
+- graphify update . : réussi, 47 442 nœuds et 107 809 arêtes.
+
+Limite : aucun corps de requête réel ni aucune donnée utilisateur réelle n'a été journalisé ; les preuves utilisent uniquement des valeurs factices construites dans les tests.

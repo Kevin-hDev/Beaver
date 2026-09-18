@@ -1,0 +1,19 @@
+M28 — libération native de vue unifiée.
+
+Changement :
+- fermeture explicite, éviction, panne du renderer et rappel final CEF passent par cef_state_bridge::release_view ;
+- cette opération invalide immédiatement la favicon, puis publie la session released avec le tampon de révision disponible ;
+- les déclencheurs restent tous présents, y compris le chemin de panne qui ne dépend pas de on_before_close ;
+- les appels répétés et callbacks tardifs restent rejetés par RuntimeRevisionCache.
+
+Validation :
+- cargo test services::browser:: : 204 réussis, 2 ignorés ;
+- tests exacts runtime_revision : 5 réussis ; browser_slot : 3 réussis ; favicon_state : 6 réussis ;
+- npm run test:cef : 45 réussis, 1 ignoré car PowerShell Windows indisponible sur macOS ;
+- cargo check : réussi ;
+- cargo clippy --all-targets -- -D warnings : réussi ;
+- cargo fmt --all -- --check : réussi ;
+- git diff --check : réussi ;
+- graphify update . : réussi.
+
+Corrections de validation : une première commande cargo test avec trois filtres a été refusée par Cargo ; deux filtres sans le préfixe test_modules ont ensuite exécuté zéro test. Les chemins exacts ont été obtenus avec cargo test -- --list, puis les tests exacts et la suite navigateur complète ont réussi.

@@ -1,0 +1,28 @@
+Task: M13 — Unifier les deux points d'entrée de compression automatique
+
+Raison:
+Les hooks Ollama et cloud construisaient la même CompressionRunRequest. Ils recevaient aussi native_context et le dernier comptage de contexte sans jamais les lire.
+
+Changements:
+- Ajout de services::compress::automatic_run comme unique constructeur et lanceur de compression automatique.
+- Suppression des deux compress_hook et de leurs tests de présence fondés sur le texte source.
+- Conservation explicite des seules différences fournisseur: provider_id, modèle et FastModeRequest.
+- Suppression de native_context et last_context_tokens dans toute la chaîne devenue inutile.
+- Suppression du champ ContextWindows.native, devenu sans consommateur; la résolution du contexte Ollama continue d'utiliser la limite native pour calculer configured.
+- Conservation des compteurs de fin de tour, de context_usage, des migrations et des événements de compression.
+
+Validation:
+- cargo test compress --lib: 196 réussis, 1 test générateur ignoré
+- cargo test agent_loop_unbounded --lib: 4 réussis
+- cargo test context_usage --lib: 30 réussis
+- cargo test session_migration_tests --lib: 32 réussis
+- cargo test stream_recovery --lib: 31 réussis
+- cargo test context_resolve --lib: 3 réussis
+- cargo check: réussi
+- cargo clippy --all-targets -- -D warnings: réussi
+- cargo fmt --all -- --check: réussi
+- git diff --check: réussi
+- graphify update .: réussi
+
+Décision:
+Le partage s'arrête à la construction et au lancement automatique. Les boucles Ollama/cloud gardent leurs politiques d'interruption, leurs compteurs et leurs chemins de fin de tour.

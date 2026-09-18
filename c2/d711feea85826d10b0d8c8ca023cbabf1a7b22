@@ -1,0 +1,9 @@
+CI follow-up after PR #36.
+
+Reason: the preserve-thinking IPC boundary changed chat_stream to accept a strict Tauri request, while the isolated child-session E2E command still passed the typed payload directly. The live fixture runner also called the production-only vault initializer under the e2e feature.
+
+Decision: production IPC decoding and internal typed admission share chat_stream_from_input; E2E uses the same admission path. Live fixtures initialize through init_for_runtime, and production-only key migration/prewarming helpers are not compiled into the ephemeral E2E runtime. Test-only migration helpers remain available to unit tests.
+
+Validated locally: cargo fmt --check; standalone included-source rustfmt gate; cargo clippy --all-targets -- -D warnings; cargo clippy --all-targets --features e2e -- -D warnings; npm run test:e2e (2 passing); cargo test --all --features e2e (4197 passed, 0 failed, 7 ignored, plus integration test).
+
+Merge requirement unchanged: use GitHub Squash and merge only. Copy all preserve-thinking decisions from the PR body/git notes into the squash commit message because git notes do not survive squash.

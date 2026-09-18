@@ -1,0 +1,3 @@
+Review correction: cancel_install now returns a sequenced InstallerEvent and the frontend feeds it through the same stale-event guard as channel updates. Installation start also emits the previously missing checking log exactly once.
+
+Proof: npx vitest run installer/src/installer-app.test.tsx (6 passed); cargo test runtime_tests (7 passed); cargo fmt --check (exit 0); npm run installer:build-ui (exit 0, only existing chunk-size warning). An earlier invalid npm --prefix installer command failed because installer intentionally has no package.json; the repository root script was then used.

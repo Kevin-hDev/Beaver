@@ -1,0 +1,9 @@
+Task 7 — commandes Tauri et interface Automatisations
+
+Portée: contrat IPC canonique CRUD/get/history/migration, pause globale sans réécriture des définitions, UI once/cron/after_completion, new_session/resume_session, prochaine échéance backend, historique paginé, erreurs stables, modèles du même fournisseur et parité des 7 langues.
+
+Validation: npm test (605 fichiers, 3329 tests); vitest ciblé Automatisations (8 fichiers, 31 tests); npx tsc --noEmit; npm run lint; cargo test --lib commands::heartbeat --no-fail-fast (3 tests); cargo test --lib automations --no-fail-fast (37 tests); cargo check; cargo clippy --all-targets -- -D warnings; cargo fmt --all -- --check; git diff --check; graphify update .
+
+Visuel: rendu inspecté en thèmes sombre et clair; formulaires once/cron/after_completion; pause globale; ligne, détail, erreur target_session_missing et historique. Le lancement Tauri CEF isolé a accepté le profil temporaire mais le helper GPU local a arrêté CEF avec GPU process isn't usable; le contrôle visuel a donc été terminé dans le navigateur Vite avec données temporaires, ensuite entièrement retirées. Aucun fichier utilisateur n'a été modifié.
+
+Relecture: aucun source hors tests ne dépasse 230 lignes; aucun harnais automation-visual ni processus de dev ne reste; l'état de migration TypeScript suit les trois formes sérialisées; le toggle individuel est bloqué pendant la pause globale.

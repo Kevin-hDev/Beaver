@@ -1,0 +1,1 @@
+Cause: a download flush or sync error could finish after cancellation and overwrite the terminal state with Failed. Fix: resolve Cancelling + Failed to Cancelled while holding the existing progress-store mutex, clearing retry and error metadata. Proof: cargo test services::update_progress::tests --lib (11 passed, 1 ignored); cargo clippy --all-targets -- -D warnings.

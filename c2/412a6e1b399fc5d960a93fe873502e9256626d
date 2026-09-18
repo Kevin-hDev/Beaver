@@ -1,0 +1,8 @@
+Task: Restore PR #80 CI compatibility by preserving the validated Office runtime dependency pins.
+
+Reason: @cantoo/pdf-lib 2.11.0 fails under the project Node 24 ESM path because its JSON imports lack type attributes; @napi-rs/canvas 1.0.9 also violates the exact production Office dependency contract.
+
+Validation:
+- npm ci (pass, 0 vulnerabilities)
+- npm run test:extensions-host (144 passed, 0 failed)
+- git diff --check (pass)

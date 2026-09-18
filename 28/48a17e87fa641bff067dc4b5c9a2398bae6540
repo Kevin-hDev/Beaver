@@ -1,0 +1,9 @@
+Release publication notes fix discovered after successful v1.1.5 asset build.
+
+Observed proof: release workflow 32852903664 completed 8/8 green and uploaded the DMG, DEB, NSIS installer, and update manifest, but GitHub API returned an empty release body.
+
+Root cause: scripts/app-release-notes.mjs writes to GITHUB_OUTPUT whenever that environment variable exists. The publish step also redirected stdout into NOTES_FILE. On GitHub Actions, GITHUB_OUTPUT always exists, so the script wrote its body to the step output and left NOTES_FILE empty; gh release edit then correctly consumed that empty file and erased the public notes.
+
+Fix: add an explicit --stdout mode, use it when preparing NOTES_FILE, execute the generator contract from npm run test:release-workflow, and test default GitHub-output behavior, explicit stdout behavior with GITHUB_OUTPUT present, and unknown-mode rejection.
+
+Verification: npm run test:release-workflow 43/43 green; npm run test:package-migration 6/6 green; explicit GITHUB_OUTPUT plus --stdout printed all six English notes; git diff --check green; graphify update . completed.

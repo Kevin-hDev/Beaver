@@ -1,0 +1,29 @@
+Task: M16 - Centralize rejected HTTP response handling
+
+Reason:
+Five provider paths independently bounded and read error bodies, interpreted Retry-After, recorded diagnostics, sanitized logs, and classified equivalent HTTP failures. The copies had already diverged.
+
+Change:
+- Route Chat Completions, OpenAI Responses, Anthropic, xAI OAuth, and Codex rejected responses through one shared helper.
+- Keep provider-specific behavior explicit through the existing ErrorPolicy: xAI quota handling and Codex temporary body codes/service-tier handling remain distinct.
+- Keep error bodies bounded and wrapped in Zeroizing<String>; logs contain only the status and safe public error code.
+- Reuse one request-route error mapper and remove the obsolete Anthropic error module and dead route display name.
+- Codex HTTP 402 now follows the common payment-required classification.
+
+Validation:
+- cargo fmt --check
+- cargo check
+- cargo clippy --all-targets -- -D warnings
+- cargo test 'stream_http::classification_tests' -- --nocapture (10 passed)
+- cargo test xai_oauth_transport_tests -- --nocapture (10 passed)
+- cargo test 'services::codex_client::http_error' -- --nocapture (9 passed)
+- cargo test 'anthropic::transport_tests' -- --nocapture (3 passed)
+- cargo test stream_http_send_tests -- --nocapture (7 passed)
+- cargo test provider_error -- --nocapture
+- cargo test provider_diagnostics -- --nocapture
+- cargo test --lib --quiet -- --test-threads=1 (5860 passed, 0 failed, 32 ignored)
+- graphify update .
+- Production search: one record_http_failure call and one Retry-After header read remain.
+
+Observed unrelated suite instability:
+Parallel full-suite runs exposed shared-fixture/process races. Two process/fixture tests passed in isolation. A deterministic cancellation race in the M15 stream consumer was fixed separately in commit 7f1ac261 before the final sequential green run.

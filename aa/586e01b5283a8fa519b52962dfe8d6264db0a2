@@ -1,0 +1,17 @@
+Tâche: Socle léger de Beaver Installer
+
+Preuves TDD:
+- Rouge: node --test scripts/release/installer-project-boundary.test.mjs -> ENOENT sur installer/src-tauri/Cargo.toml.
+- Rouge de régression: capability attendue ["default"], configuration initiale ["capabilities/default.json"].
+- Vert: npm run test:installer -> build Vite réussi, 1 test Rust réussi, 2 tests Node réussis.
+- Vert: cargo fmt --check && cargo clippy --all-targets -- -D warnings dans installer/src-tauri.
+- Vert: npx tsc --noEmit && npx eslint installer/src.
+- Vert: cargo test services::paths::tests --lib -> 4 réussis; avertissements ts-rs et linker existants, aucun échec.
+- Maintenance: graphify update . terminé.
+
+Décisions:
+- Capability référencée par son identifiant Tauri default; le fichier reste capabilities/default.json.
+- tsconfig inclut installer/src pour que le check TypeScript racine couvre ce frontend.
+- --passWithNoTests est temporaire jusqu’aux tests UI de la tâche Interface exacte.
+- Les schémas Tauri générés sont ignorés; aucun workspace Cargo racine ajouté.
+- review-dark.png est resté hors commit.

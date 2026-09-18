@@ -1,0 +1,28 @@
+Review context: closes R1 from docs/superpowers/plans/2026-08-30-cloture-review-257fdc83.md.
+
+Root cause:
+- conversation_transition treated a required multi-assistant turn as replayable when any assistant had a Complete compatible envelope.
+- Anthropic and required chat replay adapters reject the request when any assistant in the compatible window lacks an envelope.
+- The transition and transport therefore disagreed: partial envelope loss bypassed Fallback and the next user send remained permanently blocked.
+
+Decision and implementation:
+- Required UserContinuation now creates ContinuityBarrier::Fallback when at least one historical assistant lacks a Complete target-compatible envelope.
+- Existing guards are unchanged: the current user-only turn cannot trigger Fallback, ToolContinuation remains fail-closed, Optional policies remain tolerant, and provenance/legacy/compaction barriers retain priority.
+- The pre-existing OpenAI restart fixture was corrected instead of weakening production behavior. Its final assistant now carries a valid Complete ResponsesLocal message envelope, matching a genuinely complete required-replay tool turn.
+
+TDD evidence:
+- required_turn_with_one_missing_envelope_falls_back_as_a_whole failed before production change: observed barrier None, expected Some(Fallback).
+- After the one-condition production change, that test passed and fixture_candidate_reloads_canonical_tool_links_after_restart failed at the missing envelope, proving the fixture inconsistency.
+- After completing the fixture, both targeted tests and all conversation_transition tests passed.
+
+Verification:
+- cargo fmt --check: pass.
+- cargo test: 4358 passed, 0 failed, 7 ignored; integration test 1 passed.
+- cargo clippy --all-targets -- -D warnings: pass.
+- npx tsc --noEmit: pass.
+- npm run lint: pass; provider routing boundaries stable at 56 authorized files.
+- npm test: pass; Vitest 488 files / 2631 tests plus build, CI, CEF, E2E-runner, extension-host and reasoning-fixture suites.
+- git diff --check: pass.
+- graphify update .: completed; graph rebuilt to 39132 nodes / 81481 edges.
+
+No application restart and no live or paid provider call were needed for this deterministic replay-boundary correction.

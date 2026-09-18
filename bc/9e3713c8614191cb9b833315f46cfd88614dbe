@@ -1,0 +1,1 @@
+Self-review correction for I2: the regression fixture now puts a symlink inside an old result directory, matching the actual global-abort path. Mutation proof: restoring result_tree_size error propagation made the test fail with InvalidInput; after restoration the tool_result_budget suite passed 15/15. fmt and diff checks passed.

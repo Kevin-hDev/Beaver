@@ -1,0 +1,29 @@
+P1.4 controller review — closed backend extension error boundaries
+
+Validated scope
+- All 19 Tauri extension commands now cross one bounded command boundary: 14 historical commands and 5 recovery commands.
+- Public errors are admitted only from the generated backend error-code authority. Unknown values fail closed as extensions_operation_failed.
+- Specific generated codes remain intact for activation confirmation, missing extensions and incompatible hosts.
+- registry_sync is the only place where host_unavailable became the canonical extensions_host_unavailable lastError. The private OperationFailure reason host_unavailable and runtime diagnostic load_failed were intentionally preserved.
+- Private operation logs accept only bounded safe categories and never retain raw paths, URLs, stack traces or hostile values.
+- Frontend resolution covers generated backend codes plus host/runtime diagnostics from the executable contract, with a generic fallback for unknown values.
+- The seven locales were checked for exactly one non-empty translation per declared code.
+
+Controller correction after implementer delivery
+- The first implementation still recognized two legacy French sentences as special public errors. That recreated a second mapping authority outside the generated contract.
+- A red/green regression test now proves that legacy sentences use the generic closed fallback. Services emit canonical codes directly; only generated codes pass through unchanged.
+
+Verification observed on this commit
+- Exact Rust filters: error_codes 3/3; commands::extensions 7/7.
+- Exact frontend/i18n filter: 2 files, 9/9 tests.
+- Full cargo test: library 4709 passed, 0 failed, 10 ignored; integration 1/1; binary and doc-test targets green.
+- Full npm test: Vitest 526 files and 2837 tests; build scripts 56, CI scripts 16, E2E 70, extension host 57 and reasoning 10 all green.
+- contracts:check, npm lint, TypeScript noEmit, strict Clippy, cargo fmt check and git diff check all exited 0.
+- Graphify update exited 0: 42203 nodes, 88146 edges, 2436 communities.
+
+Known non-blocking output
+- macOS emitted the existing linker warning about the oversized __eh_frame compact-unwind table.
+- jsdom emitted its known Canvas getContext warnings; no test failed.
+
+Deliberately unchanged
+- Office capabilities, MCP, the 10 percent complete-plugin selection policy, external applications, P1.5 UI behavior and command event semantics.

@@ -1,0 +1,8 @@
+Motif: corréler les refus HTTP à la requête et au plafond réellement sérialisé, y compris Grok OAuth Responses, sans journaliser les corps libres.
+Cause: le journal commun n avait ni request_id ni limite de sortie; ses quatre appelants perdaient ce contexte et la branche Grok Responses ne journalisait rien.
+Avant/après: contexte borné optionnel, champs de plafond en liste fermée, propagation des payloads réels Codex/OpenAI/Anthropic/chat, lecture Grok bornée et zéroïsée; metadata.raw OpenRouter est ignoré tandis que provider_name structuré est extrait.
+Autorités: services/llm/provider_diagnostics.rs pour le schéma/rotation; provider_error.rs pour l extraction sûre; chaque transport fournit seulement son payload réellement envoyé.
+RED: le test contexte initial ne compilait pas avant ProviderDiagnosticContext; openrouter_details_keep_provider_name... échouait avec upstream_provider null. Le test round-trip était déjà vert contre la première implémentation du contexte.
+GREEN: provider_error 22/22; provider_diagnostics 4/4; xai_oauth_transport 9/9; request_http 3/3; codex_http_consumer 1/1; openai_responses 18/18; anthropic::transport 2/2.
+Avertissements: ts-rs deny_unknown_fields et ld __eh_frame préexistants.
+Non exécuté: aucun appel provider/live; vérifications communes et clippy regroupés après la correction de revue parent.

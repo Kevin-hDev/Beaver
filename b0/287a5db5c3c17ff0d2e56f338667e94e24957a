@@ -1,0 +1,4 @@
+Decision: give read_file the full 200,000-character result envelope while retaining its complete oversized source once.
+Reason: a one-character overflow must not collapse a requested file from 200,000 characters to a 2,000-character preview; other tools keep their existing previews.
+Test setup: the first changed test run failed during inventory because the test had already been adapted to the planned borrowed persistence API. The final behavior is covered by the dedicated 707,488-character regression, the one-character overflow, UTF-8, retained-source deduplication, errors, Bash and grep cases.
+Validation: cargo fmt -- --check (status 0); oversized_log_read_uses_the_full_read_file_envelope (1 test, status 0); tool_result_truncate (11 tests, status 0); tool_files (11 tests, status 0); cargo check (status 0).

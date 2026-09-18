@@ -1,0 +1,94 @@
+Review corrections after 656d5bd3 — 2026-09-07
+
+All commands below completed with exit 0 after fixes. Three RED tests were observed before the E1/E2/C1 fixes. One intermediate compile failed because the moved test qualified RequestConfig at the wrong module; corrected before all reported GREEN runs. No paid calls, no credentials retrieved, no application launch command, no new live activation, no push/merge.
+
+The complete local developer report follows because docs/ is Git-ignored. Unrelated UI/mockup/notices changes were not staged. Diff reviewed directly, no subagents. Cargo full --lib: 5207 pass / 0 fail / 19 ignored; clippy --all-targets -D warnings; fmt --check; provider guard 60 files; tsc --noEmit; four targeted Vitest files 22 pass. Graphify AST exit 0, semantic community names remain a separate refresh.
+
+# Corrections de la review — Gemini, GLM Flash et Astra
+
+Date : 7 septembre 2026. Base de ce lot : `656d5bd3`.
+Référence : `2026-09-07-review-implementation-ajout-gemini-glm-astra.md`.
+
+## Périmètre et décisions
+
+Lot exécuté directement, sans sous-agent, sans appel payant, sans lecture des clés et sans relance de Beaver. Ce lot corrige les mineurs ; il ne constitue pas l'activation des nouvelles politiques de continuité, toujours désactivées. La fin de la tâche 6 reste distincte.
+
+| Constat | Traitement et raison |
+| --- | --- |
+| E1 | Corrigé : le dispatch fixture consulte aussi `supports_bounded_fixture`, la même autorité que l'admission. Anthropic est refusé uniquement dans ce banc non raccordé à son budget ; ses invocations normales restent autorisées et testées. |
+| E2 | Corrigé : sélection refusée immédiatement avec `fixture transport budget unavailable` si une route sélectionnée n'a pas de transport borné. Une sélection mixte échoue intégralement. Les anciennes specs restent disponibles pour identifier les rapports historiques. |
+| C1 | Corrigé : l'alias Ollama historique `xhigh → high` ne concerne plus les profils obligatoires. GLM Flash Cloud converge vers `max` dans `payload` et `resolve`, GPT-OSS conserve son comportement. Aucun cloud activé. |
+| C3 | Option documentaire du reviewer retenue : le repli `medium` d'un modèle Codex totalement inconnu reste une compatibilité des appelants renvoyant une chaîne, pas une garantie d'admission. Commentaire corrigé et test ajouté, sans inventer d'entrée catalogue. |
+| C2 | Corrigé : test HTTP local traversant le vrai `post_codex_stream`/`send_request`, catalogue synthétique isolé par tâche, modèle Astra dans le registre runtime, capture de `reasoning.effort = max` sur le POST tandis que le mode logique reste `ultra`. Le catalogue réel et le trousseau ne sont pas sollicités. |
+| F1 | Corrigé : tests de lecture des métriques xAI OAuth Chat, Moonshot OAuth Chat et Anthropic Messages, avec refus d'un fournisseur canonique incohérent. |
+| A1 | Corrigé : trois voisins inconnus explicitement refusés par le registre (`gemini-3.9-flash`, `glm-5.3-flash-air`, `gpt-6-astra-mini`). |
+| B1 | Corrigé : test des profils obligatoires déplacé dans `stream_reasoning_tests.rs`, avec configuration de conversation manuelle, sans réutiliser le constructeur silencieux. |
+| D1 | Option documentaire du reviewer retenue, code inchangé : `{}` reste transformé en schéma chaîne. Le correctif live concernait l'objet explicitement typé, déjà préservé. Un schéma sans contrainte peut décrire autre chose qu'un objet d'arguments ; cette dette préexistante doit être traitée avec les contrats des outils concernés, pas assimilée silencieusement à un outil sans arguments. Ce constat n'est pas annoncé comme corrigé dans le code. |
+| D2 | Restriction de sécurité assumée : seuls les détails de raisonnement dont le type est reconnu sont affichés. Un détail opaque ou sans type n'est pas promu en texte utilisateur ; le repli sur les alias textuels reste disponible. Tests existants conservés. |
+| D3 | Dette préexistante explicitement différée : deux alias textuels simultanés peuvent encore se concaténer. Aucun cas réel observé ; ne pas supposer que deux fragments de même contenu sont nécessairement un doublon. Une correction future doit disposer d'un flux reproduisant la sémantique réelle. |
+| B2 | Arbitrage utilisateur encore ouvert : sur un modèle à raisonnement obligatoire, `thinking=false` avec un ancien `low` mémorisé donne actuellement le défaut (`max` pour GLM Flash). Pas de migration silencieuse ni de validation produit inventée dans ce lot. Le test conserve et rend visible l'existant. |
+| F2 | Écart d'exécution reconnu : plusieurs relances ont été nécessaires durant les validations précédentes, contrairement à l'objectif d'une relance coordonnée. Les notes antérieures en donnent le détail ; aucune approbation rétroactive attribuée à Kevin. Aucune relance dans ce lot. |
+
+## Vérifications et relecture
+
+- Trois reproductions rouges observées avant correction : désaccord Ollama `high/max`, sélection non bornée acceptée, dispatch fixture Anthropic accepté.
+- `cargo test --lib` : **5 207 réussis, 0 échec, 19 ignorés**, après correction d'une erreur de qualification de `RequestConfig` lors du déplacement du test. Les ignorés ne sont pas présentés comme validés.
+- `cargo clippy --all-targets -- -D warnings` et `cargo fmt --check` : réussis. Avertissements préexistants du parseur ts-rs et de l'éditeur de liens visibles dans les journaux ; aucune erreur masquée.
+- `npm run lint:provider-boundaries` : **60 fichiers autorisés**, budget inchangé.
+- `npx tsc --noEmit` : réussi.
+- Vitest ciblé raisonnement, sélecteur, mutation de session et traductions : **22 tests réussis dans 4 fichiers**.
+- Graphify AST : réussi, **41 539 nœuds, 92 454 liens, 2 114 communautés**. Les noms sémantiques de certaines communautés nécessitent un rafraîchissement distinct, non annoncé comme fait. Ce nouveau rapport est ignoré par Git et absent du graphe ; la git note porte le bilan transportable.
+- Relecture du diff complet du lot : aucune nouvelle table de routage, aucun changement des modes de production Codex, aucune modification du vault, des budgets, des preuves ou de l'admission de continuité.
+- La capture HTTP reste un parseur brut borné et zéroïsant ; seul le vocabulaire fermé des efforts est conservé. Tests supplémentaires sur les clés sensibles, les doublons, l'effort inconnu et le raisonnement imbriqué dans un message (non capturé).
+- Les fichiers source modifiés restent sous 230 lignes ; les fichiers de tests restent organisés par unité.
+
+Journaux locaux : `/tmp/beaver-review-minors-rust.log`, `/tmp/beaver-review-minors-clippy.log`, `/tmp/beaver-review-minors-frontend.log`, `/tmp/beaver-review-minors-graph.log`. Les résultats finaux complémentaires et le commit sont consignés dans la git note.
+
+## Suite, distincte de ce lot
+
+L'ancien script demandant une clé en clair a déjà été remplacé dans `656d5bd3`. Ollama Cloud direct n'est pas intégré : son ajout reste un chantier prévu, et Kevin n'a pas de crédits actuellement. Le blocage historique du relais local n'est pas une décision de confidentialité de Kevin.
+
+Finaliser les preuves live manquantes dans les budgets restants, vérifier les rapports exacts et n'activer que les politiques prouvées avec leurs rapports dans le même commit. Ne pas confondre les 5 207 tests hors ligne avec cette validation réelle. B2 reste une décision produit ; D1 et D3 sont de la dette explicitement conservée, pas des constats de code éteints.
+
+Validation live complémentaire du 8 septembre 2026 (heure de Paris), sur 187deee8.
+
+Aucun changement source, aucune reconstruction ni relance de l'application.
+Rapport détaillé local : docs/superpowers/plans/2026-09-07-validation-live-complementaire.md,
+addendum du 8 septembre. Docs ignoré par Git, à lire dans le dépôt principal.
+
+Preuves nouvelles relues et assertées :
+- Z.AI GLM 5.3 Flash low : rappel de l'image réussi, réponse Red, session
+  1f342f2a-2fc0-42de-85da-97b05336937b ; ancien timeout conservé.
+- Astra OpenAI low : cache écrit 3789 puis lu 3789, session
+  ddaff719-01dd-423c-8493-d2a25c95422a.
+- Astra OpenAI low : image 256x256, write_note/read_note, nouveau tour sans
+  image -> green ; session cc1200e7-a0fd-4fd2-bdd9-d14975681648. Deux tours
+  completed, quatre requêtes, rapport de continuité exporté et contrôlé.
+- Astra OpenRouter low : image 256x256, outils puis rappel green, session
+  8eda364f-6186-4c87-90f1-8e887b399698 ; preuve exportée et contrôlée.
+  Attention : son premier essai 64x64 inversait deux couleurs. L'export de
+  continuité ne prouve pas à lui seul la justesse des réponses visuelles.
+- Session finale directe ouverte et vue à l'écran avec image et réponses.
+
+Échecs non masqués : image 64x64 non reconnue en direct ; un rappel refusé
+dans la session préliminaire 9f308c7c-ac50-4e96-ba8a-046f4935ceb5. Sa requête
+reconstituée mesure environ 8254 octets contre 8192 dans le banc ; pas de
+réponse HTTP commencée. Le scénario court passe sans relever la borne.
+La cause exacte des erreurs de perception du 64x64 n'est pas prouvée.
+
+Budget : chiffres dashboard Kevin (.06 USD OpenAI, .08 USD ZAI) remplacent
+les provisions historiques excessives. Nouvelle passe OpenAI .099919 USD
+estimés selon usages, ZAI .00005355 USD estimés ; OR .031940 USD exacts.
+Pas de secret extrait, aucun budget d'API attribué à OAuth.
+
+Google : écart persisté de 30 puis 25 tokens entre total et entrée+sortie.
+Chemin identifié : request_usage -> stream_consume/stream_silent_consume ->
+eval_count/pricing/ledger. Omission amont probable, signalée historiquement
+sur l'API compatible OpenAI ; aucune capture brute actuelle ne permet encore
+d'exclure un champ inconnu perdu. Aucun correctif Google appliqué : prochain
+contrôle = compteurs numériques seuls à réception, puis normalisation propre
+à Google ou estimation marquée incomplète, sans modifier les autres routes.
+
+Pas de re-exécution des suites hors ligne inchangées, pas de nouvelles
+politiques activées. Tâche 6 entière non déclarée close : Google et les limites
+de preuve cache/expiration restent explicitement documentés. Aucun push.

@@ -1,0 +1,3 @@
+CI root-cause correction for PR 42. The project has a differential rustfmt gate because cargo fmt does not traverse every source connected through custom module paths. Applied the exact CI rustfmt authority to every Rust file changed since main, not only the first reported file. Three files required normalization; no executable logic changed.
+
+Verification: exact RUSTFMT_BASE_SHA differential check passed; cargo fmt check passed; cargo clippy all targets passed; tool result compact tests 3 passed; API key tests 55 passed; the full Rust suite had already passed on the identical syntax tree before this formatting-only correction.

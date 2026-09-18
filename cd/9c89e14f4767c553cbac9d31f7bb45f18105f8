@@ -1,0 +1,7 @@
+Review correction: restore production file reread edge coverage removed with the obsolete capsule module.
+
+Decision: tests now exercise checkpoint_files::collect_with_budget, the live compression path, instead of recreating the deleted legacy test module.
+
+Covered: a UTF-8 code point cut at the byte budget retains the valid prefix and truncation marker; binary input yields only the generic unavailable marker and never cached tool content.
+
+Validation: 8 checkpoint source/file tests passed; cargo test compress --lib passed (185 passed, 1 ignored); cargo clippy --all-targets -- -D warnings passed; git diff --check passed; graphify update . passed.

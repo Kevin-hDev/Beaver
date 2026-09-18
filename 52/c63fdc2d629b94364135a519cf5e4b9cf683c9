@@ -1,0 +1,59 @@
+Tâche 4b2 — fixtures bornées et contexte synthétique
+
+Base du lot : 82057608. Branche codex/ajout-gemini-glm-astra.
+Plan : docs/superpowers/plans/2026-09-07-ajout-gemini-glm-astra.md.
+Luna xHigh a implémenté le lot ; le parent a revu le diff et corrigé les
+régressions avant ce commit. Pas de changement du registre LiveValidated.
+
+Conception et décisions :
+- Budget debug task-local lié au vrai FixtureRunContext, pas au statut candidat.
+  Sortie par appel 512 tokens par défaut (override 1..8192), 4 envois maximum
+  par tour (override 1..4), body 8192 octets (override 1..65536), délai 240 s.
+  Ce sont des bornes techniques, pas une autorisation monétaire automatique.
+- Plafond au vrai payload Chat/Responses et options.num_predict natif ; les
+  plafonds normaux et les petits plafonds existants sont conservés.
+- Comptage avant les envois API, natifs et chaque envoi Codex, y compris 401.
+  Codex n'accepte pas un champ max_output_tokens inventé : HTTP borné en taille,
+  nombre et durée seulement. Les fixtures Codex ne passent jamais en WebSocket.
+- Le profil refuse les fixtures Anthropic et OAuth tiers dont les bornes ne
+  sont pas raccordées. Ce refus ne concerne PAS leurs chats normaux ; il pourra
+  disparaître lorsque leurs points d'envoi et limites seront couverts.
+- Annulation et deadline abandonnent la future réelle ; supprimer ActiveStreams
+  seul n'est pas une preuve de fin. Aucun arrêt de facturation distante garanti.
+- Comptage JSON sans copie intégrale supplémentaire ; hors fixture, pas de
+  sérialisation ajoutée. Les variables invalides échouent fermé.
+- Prompt synthétique avant lectures de mémoire/personnalité/AGENTS/git/skills,
+  outils fermés existants, images et historique conservés, seeds sans catégories
+  privées. La durée de vie du garde mémoire des conversations normales demeure.
+- Un helper plan-mode dupliqué est remplacé par l'existant, pas de nouveau
+  moteur de test, transport, table de modèles ou réglage de production.
+
+Revue et corrections parent, preuve rouge-verte :
+1. Hors fixture output_limit perdait Some(128) et rendait None.
+2. Une annulation explicite laissait la future pendante jusqu'au timeout.
+Les deux tests ont échoué réellement (exit 101, 5 verts/2 rouges), puis les
+7 tests budget sont passés après correction. Tests complétés ensuite pour
+isolation concurrente, admission des transports et véritables envois loopback.
+Les tests de payload ne pré-appliquent plus eux-mêmes le plafond qu'ils testent.
+
+Vérifications parent sur le contenu final de ce lot, toutes exit 0 :
+- cargo test --lib fixture_scope -- --nocapture : 6 tests, dont Chat et Ollama
+  loopback, refus d'un appel supplémentaire, et reprise HTTP Codex comptée.
+- cargo test --lib reasoning_fixture -- --nocapture : 42 tests.
+- cargo test --lib services::llm:: : 451 tests.
+- cargo test --lib codex_client : 95 tests.
+- cargo test --lib agent_chat_task : 23 tests.
+- cargo clippy --lib -- -D warnings ; cargo fmt --all -- --check.
+- npm run test:reasoning-fixtures : 10 tests + validation des rapports.
+- npm run lint:provider-boundaries : vert, 59 fichiers ; git diff --check.
+Avertissements préexistants ts-rs deny_unknown_fields et linker macOS conservés
+dans les sorties, non présentés comme nouveaux échecs.
+
+Graphify AST : commande exécutée, exit 0 ; 41465 nœuds, 92301 arêtes,
+2074 communautés. Labels sémantiques non recalculés. Journal docs/providers/
+validation-modeles-2026-09-07.md local/ignoré, section 13.
+
+Aucun accès au coffre, lancement d'app, génération live ou dépense par ce lot.
+Les suites globales, la preuve disque/API et les activations restent tâche 6.
+La tâche 5 (compteurs et sélecteur) reste à exécuter. Les modifications étrangères
+THIRD_PARTY_NOTICES, site/mockup, captures et icône mic restent hors commit.

@@ -1,0 +1,3 @@
+Counter-review C1: after the retry request and backend dismissal resolve, useUpdateOperations now removes the failed id from React state. A backend false dismissal is intentionally accepted here because the retry request was already accepted and the old row is no longer authoritative.
+
+Proof: new hook regression test covers backend removed/local stale state; 13 targeted Vitest tests passed; npx tsc --noEmit exited 0.

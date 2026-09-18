@@ -1,0 +1,34 @@
+Review corrections — owned automations and subagent attribution (C1-C13)
+
+Closed root causes:
+- Only extension_unavailable revokes durable automation consent; transient model, project, target and capacity failures remain retryable.
+- Native missing ResumeSession targets continue to the existing disabling fire path.
+- Extension disable/startup revocation no longer fails open when automation persistence is unavailable; in-memory admissions stay closed.
+- Per-automation admission remains blocked after a failed disable/delete until explicit successful reactivation or deletion.
+- Activation confirmation now summarizes the exact schedule, prompt, provider, model and target covered by consent.
+- Malformed subagent ownership is preserved byte-for-byte as Invalid and never becomes native ownership.
+- The per-extension automation limit counts prior versions by stable extension id.
+- Unknown child permission modes normalize to chat, and a persisted-parent integration test proves the real load path.
+- Scheduler notification now occurs even when post-mutation audit completion fails.
+- The shared official Host identity is documented in code and the private API document as an intentional collective consent boundary.
+
+Structure:
+- Read-only owned-automation queries moved to service_owned_queries.rs to keep production files below 230 lines.
+- AGENTS.md and CLAUDE.md local ignored copies now inventory automations.pre-v2.json and .automations-v2-migrated; they are intentionally not part of this commit.
+
+Validation executed:
+- cargo check --lib
+- cargo test --lib service_owned_tests (8 passed)
+- cargo test --lib occurrence_cancellation_tests (5 passed)
+- cargo test --lib extension_admission_tests (3 passed)
+- cargo test --lib core_automations_tests (4 passed)
+- cargo test --lib core_subagents_tests (4 passed)
+- cargo test --lib session_migration_v7_tests (2 passed)
+- cargo test --lib subagent_runtime_context::tests (2 passed)
+- cargo fmt --all -- --check
+- git diff --check
+- graphify update .
+
+Review boundary:
+- This commit adds a real persisted-parent permission test. The remaining B8 catalog and full AppHandle scheduler acceptance gaps are handled separately rather than introducing a synthetic scheduler abstraction here.
+- Existing ts-rs attribute and macOS compact-unwind linker warnings remain unrelated; all listed tests passed.

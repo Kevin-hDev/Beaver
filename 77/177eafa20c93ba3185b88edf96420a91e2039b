@@ -1,0 +1,15 @@
+Review note — JavaScript fixture-validator alignment
+
+Correction commit: 77177eaf, following DeepSeek correction d9e4de4f.
+
+Reproduced blocker before implementation: npm run test:reasoning-fixtures failed in checked-in reports validate through the default CLI directory at validate-fixture-report.mjs:44 because the JavaScript fixtureId authority omitted the optional reasoning-mode variant used by Rust.
+
+Correction: fixtureId accepts one optional canonical variant inserted after the model. validateReport accepts the historical canonical ID or the canonical ID varied by the report's exact reasoning_mode. The filename must still equal fixture_id, so a low filename paired with a max report remains rejected. No DeepSeek-specific route exception was introduced.
+
+TDD evidence: the new variant-ID and variant-report tests failed before the implementation. After the correction, npm run test:reasoning-fixtures passes 10/10 and validates every checked-in report.
+
+Full validation: npm test passed. Vitest: 483 files and 2614 tests passed. Build-script tests: 56 passed. CI-script tests: 16 passed. CEF tests: 45 passed and 1 platform-specific skip. E2E-runner tests: 70 passed. Extension-host tests: 53 passed. Fixture-validator tests: 10 passed. The known jsdom Canvas messages appeared but caused no failures.
+
+Manual product check: Kevin confirmed that the previously broken DeepSeek session c116826c-2e6f-4508-ac33-2c0cea9ce45f now works, closing the manual recovery check from the prior note.
+
+Scope: two JavaScript validator/test files only. No provider runtime, fixture contents, release, push, or active-stream policy change.

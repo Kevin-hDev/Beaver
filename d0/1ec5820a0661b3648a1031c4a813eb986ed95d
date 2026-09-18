@@ -1,0 +1,9 @@
+Task: finish the requested voice settings and recording controls.
+
+Root causes: the gain copy described clipping that Beaver cannot replay; the trial reused only the globally selected model; the shortcut was a read-only field with an undiscoverable key handler and still had an implicit Alt+Mod+V fallback; Enter validation lived only in the CodeMirror event path, so clicking the microphone could move focus away from it.
+
+Implementation: shortened the gain copy in all seven locales; added the existing SettingsSelect beside Start trial for installed models and locked it during a trial; replaced the field with explicit Create/Modify/Cancel capture while preserving collision checks; removed the implicit default shortcut; moved voice key handling to document capture so Enter validates the active draft recording from any focused control and is consumed before message sending. The shortcut capture remains on window capture so its keystroke cannot trigger the voice controller.
+
+Validation: npm test -- --run passed (632 Vitest files / 3505 tests plus build, CI, filesystem, CEF, E2E-runner, extension-host, reasoning and contract suites); npm run lint passed; npx tsc --noEmit passed; JSON and git diff checks passed. The advanced panel, model selector and shortcut capture were inspected in the running Beaver Dev app in dark and light themes, then dark was restored.
+
+Documentation: local ignored authorities docs/fonctionnalites/vocal/SPEC.md, docs/superpowers/plans/2026-09-15-brief-preparation-micro.md and docs/mokup/vocal were aligned with gain, selector, shortcut and Enter decisions. review-dark.png was left untouched.

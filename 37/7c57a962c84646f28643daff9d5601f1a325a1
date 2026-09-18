@@ -1,0 +1,15 @@
+M26 — Générer les types, constantes et artefacts depuis le contrat qui fait foi
+
+Résultat : les contrats navigateur et terminal sont générés depuis les types et limites Rust. Les limites de lecture Node des extensions sont générées depuis extension_contract_shared. Les parseurs React redondants de sorties Rust ont été supprimés ; les validations des entrées tierces et le routage des événements restent en place.
+
+Validation :
+- npm run contracts:check : succès
+- npm run lint : succès
+- npx tsc --noEmit : succès
+- npm test -- --run : succès, 636 fichiers / 3485 tests Vitest et toutes les suites Node, dont 144 tests extension-host
+- cargo check : succès
+- cargo clippy --all-targets -- -D warnings : succès
+- graphify update . : succès
+- git diff --check : succès
+
+Incident de validation : la première suite complète a trouvé qu'une fixture temporaire copiait contract.mjs sans son nouvel artefact généré. La fixture a été corrigée, son test ciblé a réussi, puis la suite complète a été relancée avec succès.

@@ -1,0 +1,30 @@
+B3 — Modèles configurés et génération texte attribuée
+
+État validé
+- Ajoute models.list/models.generate au SDK et à l'Hôte avec capacité annoncée seulement quand raccordée.
+- Réutilise exclusivement les catalogues et transports Beaver existants; aucune clé, URL privée ou nouveau client fournisseur n'est exposé.
+- Génération limitée à 25 s, prompt/résultat bornés, annulation propagée et quotas globaux/par extension.
+- xAI OAuth reste explicitement non pris en charge; Plan, Explorer et Chat refusent models.generate.
+- UsageWorkload::Extension migre les historiques existants sans perte et apparaît dans les sept langues.
+- La compression reste un adaptateur du collecteur partagé sans hériter de la limite 256 Kio des extensions.
+- Les raisons de fin viennent du contrat unique et sont générées pour Rust/Node/TypeScript/SDK.
+
+Revue rapide
+- Corrigé pendant validation: fixture TS d'usage incomplète, handshake Node obsolète, export Node des raisons de fin, course d'annulation avant lecture.
+- Découpage effectué pour maintenir les fichiers modifiés sous 230 lignes.
+
+Validations exécutées
+- cargo test --lib services::extensions: 500 pass, 10 ignored
+- cargo test --lib services::provider_usage: 96 pass
+- npm run test:extensions-host: 132 pass
+- tests exacts génération bornée/annulée, compression inchangée, matrice routes: pass
+- npm run contracts:check: pass
+- npx tsc --noEmit: pass
+- npm run lint: pass
+- cargo check: pass
+- cargo clippy --all-targets -- -D warnings: pass
+- git diff --check: pass
+- graphify update .: pass
+
+Notes
+- Les avertissements ts-rs existants et le warning linker macOS __eh_frame restent inchangés.

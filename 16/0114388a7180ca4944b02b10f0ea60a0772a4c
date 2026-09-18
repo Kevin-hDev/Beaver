@@ -1,0 +1,1 @@
+Review B1/M4: canonicalize the CLI executable before installation validation, derive macOS Resources from the canonical app bundle, and preserve the real cl-go-dash neighbor guard. Red-green proof: the new symlink bundle-path test first failed because cli_update_paths_for did not exist, then app_update_helper tests passed 12/12. cargo fmt --check and git diff --check passed.

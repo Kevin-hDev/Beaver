@@ -1,0 +1,28 @@
+Update notifications and cancellation implementation
+
+Product behavior:
+- Update notifications can be hidden for one exact Beaver, Ollama binary, or Ollama model version; a future version appears again.
+- Forecast DEV notifications remain permanent and unchanged.
+- Settings now has an Updates page with permanent installed versions, only available Beaver and Ollama binary updates, and manual refresh.
+- Active downloads reuse the existing progress, Cancel, and success toast patterns.
+
+Backend decisions:
+- Dismissals are validated, bounded to 128 entries, persisted atomically in update-notifications.json, and fail open when the store is invalid.
+- Beaver download cancellation targets only the active generation and removes the partial temporary update.
+- Ollama cancellation is registered before the release manifest request. A bounded admission wait and late-token cancellation close the immediate-click race while transaction recovery remains authoritative after mutation.
+- Ollama model update identity includes the exact remote digest.
+
+UI and assets:
+- Beaver reuses the existing splash SVG masks and the established light/dark color-role swap.
+- Ollama uses the supplied selfh.st SVGs with CC BY 4.0 attribution in THIRD_PARTY_NOTICES.md.
+- Internal row separators were removed and version values align to the right.
+- All user-facing text is translated in the seven supported languages.
+
+Validation:
+- Live Ollama update cancelled at 0 percent and returned to the update action in 617 ms; installed version remained 0.32.15 and no partial, temporary, staging, or delete path remained.
+- npm test passed, including 480 Vitest files and 2620 tests plus build, CI, CEF, E2E runner, extension-host, and reasoning-fixture checks.
+- npm run lint, TypeScript check, cargo fmt check, cargo check, cargo clippy strict, and targeted Rust update, cancellation, cleanup, setup, and persistence tests passed.
+- The full Rust suite was not rerun because its deferred-updater helper failure and Terminal PTY failures are documented pre-existing scope.
+
+Commit scope:
+- Unrelated Beaver website mockups and fast-mode images were intentionally excluded.

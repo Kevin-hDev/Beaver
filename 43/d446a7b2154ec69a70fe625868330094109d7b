@@ -1,0 +1,35 @@
+Lot P1.1 — cycle de vie autoritatif des Hôtes d’extensions
+
+Portée validée
+- Chaque génération d’Hôte porte son état stopping/restarting et classe sa fin en Requested ou Unexpected.
+- Le lecteur publie un avis borné au propriétaire RuntimeHosts; il ne modifie jamais directement le registre, les permissions ou l’état global.
+- Une fin spontanée rend immédiatement l’erreur visible, invalide uniquement les contributions et permissions de l’identité concernée, puis récolte son arbre.
+- Une fin demandée ne produit pas de faux Error. Une identité ne peut être libérée ou remplacée avant confirmation de la disparition du parent et de ses descendants.
+- Les budgets de redémarrage sont indépendants par identité et le redémarrage manuel global les remet à zéro.
+- Les commandes d’installation, mise à jour, suppression, activation et relance créent une seule échéance absolue et la propagent.
+- Un arrêt non confirmé conserve le canal autoritatif, persiste l’extension désactivée, expose extensions_stop_unconfirmed et recommande de quitter puis relancer Beaver dans les sept langues.
+- host_started est écrit dans le journal borné extension-access.jsonl avec uniquement l’identité, la génération et le PID.
+
+Corrections ajoutées par la revue indépendante du contrôleur
+1. Une révocation volontaire confirmée oublie maintenant son budget de redémarrage. Sans cela, des extensions désactivées pouvaient saturer les 32 entrées historiques et bloquer une autre identité active.
+2. Après récolte d’un parent Unix, le nettoyage refuse fermé si le PID racine existe de nouveau. Sans cette garde, un ancien numéro de groupe réutilisé pouvait viser un processus étranger.
+3. Le moniteur permanent des sorties possède désormais un superviseur de cycle de vie dédié d’une place. Il ne consomme plus l’un des 64 emplacements contractuels réservés aux opérations utilisateur, ni une place de lecteur ou d’appel cœur.
+
+Preuves ajoutées par le contrôleur
+- confirmed_user_revocation_releases_its_restart_budget : rouge avant correction, vert après libération du budget.
+- reused_root_pid_blocks_old_group_cleanup : rouge avant ajout de la frontière, vert après refus fermé.
+- lifecycle_monitor_does_not_consume_user_operation_capacity : rouge avant superviseur dédié, vert avec 64 admissions utilisateur encore disponibles.
+
+Validation finale observée
+- cargo test --manifest-path src-tauri/Cargo.toml --lib services::extensions::runtime_lifecycle -- --nocapture : 6 réussis, 0 échec.
+- cargo test --manifest-path src-tauri/Cargo.toml --lib services::process_tree -- --nocapture : 8 réussis, 0 échec.
+- cargo test --manifest-path src-tauri/Cargo.toml : bibliothèque 4660 réussis, 0 échec, 10 ignorés; binaires, intégration 1/1 et doc-tests verts.
+- npm test : exit 0; Vitest 526 fichiers / 2835 tests, build 56, CI 16, CEF 45 avec 1 test Windows ignoré, E2E runner 70, Hôte d’extensions 57, raisonnement 10.
+- npm run lint, npx tsc --noEmit, cargo clippy --all-targets -- -D warnings, cargo fmt --check et git diff --check : exit 0.
+- graphify update . : exit 0, aucune dérive de topologie.
+
+Limite connue
+- Le chemin Job Object Windows est implémenté avec confirmation ActiveProcesses, mais son exécution native reste à confirmer par la CI Windows : le Mac de développement possède les cibles Rust Windows mais pas les en-têtes du SDK nécessaires aux dépendances C.
+
+Hors portée conservé
+- Aucun changement Office, MCP, sélection des outils à 10 %, applications externes ou extension d’interface.

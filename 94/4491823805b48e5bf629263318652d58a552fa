@@ -1,0 +1,7 @@
+Decision: exercise the Ollama agent loop on the same 2 MiB worker stack used by production before treating the shared dispatcher fix as covered on both loop implementations.
+
+Reason: cloud and Ollama share dispatch_with_progress, but each loop has a different parent async state machine. A dedicated Ollama regression proves that its parent can execute a real native grep tool without overflowing instead of inferring safety only from the shared boundary size.
+
+The interactive ask_user_choice and plan_mode paths remain intentionally outside this test because they do not construct dispatch_inner, the large future implicated by the crash.
+
+Validation: the focused Ollama stack regression passes on a 2 MiB thread and verifies the real grep output.

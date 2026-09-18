@@ -1,0 +1,17 @@
+CI correction after native Windows run 35046857944.
+
+The Windows backend compiled and then failed five voice installation/removal tests. The shared root cause was the Silero catalog revision `sha256:<digest>` being used directly as a directory name; `:` is illegal in Windows path components.
+
+Fix:
+- Catalog revision validation is now the single authority for the portable directory component.
+- Commit revisions keep their 40-hex directory name.
+- sha256 revisions retain the exact `sha256:<digest>` value in receipts but use only the 64-hex digest on disk.
+- Installation, receipt lookup, and startup cleanup all use that same normalized component.
+- Invalid receipt revisions remain rejected and resolve only to a closed fallback path if constructed outside the loader.
+
+Validation:
+- Voice download tests: 36 passed
+- cargo clippy --all-targets -- -D warnings: green
+- git diff --check: green
+- graphify update .: completed
+- Native Windows run 35046857944 proved compilation and exposed the five path failures after 5562 passing tests.

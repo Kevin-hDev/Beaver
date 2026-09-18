@@ -1,0 +1,1 @@
+Previous probe 34036566639: macOS/Linux simple launcher succeeds; Windows reaches worker-boot then times out; Linux pipe-only death test reports both PIDs absent and stable writes. New probe includes the actual Linux kernel parent-death setting and the candidate Windows no-worker launch for controlled comparison. No full CI or production change.

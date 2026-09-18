@@ -1,0 +1,31 @@
+M22 — Propriétaire unique de l’état des panneaux
+
+Décision
+- Le workspace de navigation est l’unique autorité pour l’ouverture, le plein écran et l’onglet actif de Preview, ainsi que pour l’ouverture de l’arborescence et du terminal.
+- Raison : supprimer les copies locales et les effets de resynchronisation qui pouvaient diverger lors d’un changement de session.
+
+Changements
+- useFilePreview consomme directement l’état contrôlé et publie ses mutations vers le workspace.
+- useFileTree consomme directement fileTreeOpen ; le démarrage et l’arrêt du watcher suivent cette valeur.
+- Le terminal dérive sa visibilité de l’état durable chargé et ferme le workspace uniquement lors de la fermeture explicite du dernier onglet courant.
+- Suppression de use-agent-local-preview-sync et use-agent-local-panel-nav avec leurs tests devenus sans objet.
+- 226 lignes nettes supprimées ; tous les fichiers source modifiés restent sous 230 lignes.
+
+Validation exécutée
+- 42 tests ciblés : changement/restauration de session, état Preview contrôlé, plein écran, dernier onglet terminal, groupes terminal et watcher fichier.
+- npm test : 633 fichiers, 3 492 tests Vitest, puis tous les contrats build/CI/fichiers/CEF/e2e/extensions/reasoning réussis.
+- npm run lint : réussi.
+- npx tsc --noEmit : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.
+
+Limite de validation
+- La vérification visuelle clair/sombre reste à faire : le Mac était verrouillé. Le serveur Vite seul ne peut pas rendre l’application complète car les API Tauri natives sont absentes. Aucun changement CSS n’est inclus dans ce commit.
+
+Validation visuelle complémentaire — 17 septembre 2026
+- Beaver Dev lancé avec les API Tauri natives.
+- Thème sombre : changement de session, disparition de l’état propre à l’autre session, restauration du panneau Preview au retour, fermeture puis réouverture du panneau de fichiers, ouverture du terminal et fermeture explicite de son dernier onglet.
+- Plein écran : entrée observée avec disparition des contrôles de fenêtre, interface et panneau Preview conservés ; retour en fenêtre via Affichage > Toggle Full Screen.
+- Thème clair : réglage activé et observé dans les paramètres puis dans une session avec Preview ; changement de session et restauration du panneau confirmés.
+- Le thème sombre initial a été rétabli.
+- Aucun défaut visuel ou comportemental constaté.

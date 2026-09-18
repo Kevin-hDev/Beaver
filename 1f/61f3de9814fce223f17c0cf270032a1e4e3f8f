@@ -1,0 +1,3 @@
+Review correction: failures while finalizing the shared progress UI no longer replace the real app/Ollama operation result. They produce one generic warning while the primary success or error remains authoritative.
+
+Proof: cargo test app_update_progress --lib (2 passed); cargo test ollama_setup_progress --lib (2 passed); cargo clippy --all-targets -- -D warnings (exit 0; existing ts-rs parse warning emitted outside Clippy diagnostics). Source files remain <=230 lines.

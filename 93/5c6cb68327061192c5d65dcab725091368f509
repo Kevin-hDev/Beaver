@@ -1,0 +1,27 @@
+B8 — Découverte et capacités des sous-agents
+
+État validé
+- Les définitions explicites des sous-agents ne contournent plus le masque ni le budget de découverte, sur les routes API cloud et Ollama.
+- Explorer et Coder reçoivent les points de découverte et de ressource, mais le profil filtre les contributions avant le catalogue. Explorer reste limité aux effets read-only et ne reçoit toujours pas load_skill.
+- Un remplacement d’outil ne peut pas réintroduire une capacité native retirée du profil ou désactivée dans les réglages ; le repli natif est restauré lorsqu’un remplacement incompatible est écarté.
+- L’état de découverte reste propre à chaque session enfant. Un changement de version du catalogue invalide les découvertes persistées, ce qui ferme les réactivations après désactivation, retrait ou mise à jour.
+- Les restrictions de route et le repli natif restent appliqués avant la sélection dynamique ; une inspection ne peut donc pas restaurer un outil filtré.
+
+Choix et raison
+- Réutilisation d’ExtensionToolSet, du seuil de 10 %, du catalogue, de child_extension_decision et des politiques de route existants : aucune seconde logique de sélection n’a été créée.
+- preserve_dynamic_tools reste disponible pour les appels explicites ordinaires, mais jamais pour un sous-agent : ses outils natifs explicites et sa découverte dynamique sont deux autorités distinctes.
+
+Validation exécutée
+- Tests exacts requis B8 : child_discovery_cannot_restore_filtered_tools, child_catalog_preserves_ten_percent_rule, child_inspection_respects_route_policy_and_native_fallback, child_and_parent_do_not_share_discovery_authority — verts.
+- Tests supplémentaires : contournement preserve_dynamic_tools, remplacement natif filtré, invalidation au changement de catalogue — verts.
+- cargo test --lib extensions : 537 réussis, 10 ignorés intentionnellement, 0 échec.
+- cargo check : vert.
+- cargo clippy --all-targets -- -D warnings : vert (les avertissements ts-rs existants sont émis pendant la génération mais Clippy termine avec succès).
+- npm run lint : vert.
+- cargo fmt --all et git diff --check : verts.
+- graphify update . exécuté.
+
+Relecture rapide
+- Aucun nouveau contrat, dépendance ou sélection lexicale.
+- Les fichiers source modifiés restent sous le plafond du dépôt ou étaient des frontières de flux existantes ; les ajouts importants sont dans les tests.
+- Aucun changement UI, i18n ou stockage de secret.

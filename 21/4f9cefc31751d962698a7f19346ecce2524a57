@@ -1,0 +1,5 @@
+Task: align persistence inventories with the shared installer data path and theme-sync event.
+
+Evidence:
+- npm run test:persistence-migration (10 passed)
+- git diff --check (passed)

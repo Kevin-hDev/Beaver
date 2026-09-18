@@ -1,0 +1,8 @@
+Correction M5 — lecteur Windows local
+
+Décision : la grammaire reste l'autorité textuelle, puis validate_destination et revalidate exigent GetDriveTypeW == DRIVE_FIXED avant NSIS.
+
+TDD :
+- Rouge : aucun contrat de type de lecteur n'existait.
+- Vert local : seuls les codes de lecteur fixe sont admis ; fmt et clippy strict verts.
+- Preuve Windows native encore requise par la CI.

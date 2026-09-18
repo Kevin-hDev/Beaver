@@ -1,0 +1,48 @@
+Correction de la review d'implementation Anthropic + Qwen
+
+Plage corrigee : 573c4dd7..1e3ae072
+Rapport traite : docs/superpowers/plans/2026-08-29-review-implementation-providers.md
+
+Decision directrice
+-------------------
+Le catalogue distant reste l'autorite de disponibilite : aucun modele n'est cache par une allowlist embarquee. En revanche, un mode de raisonnement n'est propose et transporte que si le tuple exact route/modele/mode possede deux politiques LiveValidated, pour la continuation utilisateur et la continuation tool. Sans cette double preuve, seul le raisonnement est desactive ; le modele reste utilisable avec ses capacites explicites de texte, tools et vision. La meme autorite alimente le selecteur et le registre runtime.
+
+Corrections principales
+-----------------------
+- I1/I2/I4/I26/I29/I34 : ajout de l'autorite centrale effective_reasoning_modes/reasoning_mode_is_live. Les modeles Claude non valides n'activent plus le thinking. Qwen envoie explicitement enable_thinking=false et preserve_thinking=false quand aucun mode valide n'existe. qwen3.8-max retrouve son enrichissement date tools/vision/contexte, reste visible quand le catalogue le renvoie, et porte des politiques Disabled explicites pour le reasoning.
+- I3 : le cache Qwen marque le prefixe system/developer stable dans les 20 premiers messages ; un message system tardif n'est jamais marque.
+- I5/I6/I7 : la sonde d'une cle Qwen enregistree reutilise le meme repli regional que la sonde avant enregistrement ; les cles sk-sp- sont refusees a la frontiere d'ecriture ; l'edition recharge atomiquement region/workspace et echoue fermee si cette connexion est absente ou illisible.
+- I8 : alias provider-aware et reversible search -> beaver_search, collision-safe, avec restauration avant execution.
+- I9 : le runner vision produit des rapports anonymises au schema versionne. Deux rapports issus des validations reelles Anthropic Haiku 4.5 et Qwen 3.8 Flash du 2026-08-29 sont commites ; ils prouvent entree image, continuite au second tour et absence de base64 dans les diagnostics.
+- I10-I20 : catalogue Anthropic tolerant entree par entree, capacites inconnues fail-closed, mode off adaptatif, detection d'erreur tool centralisee, suppression de thinking_text mort, validation metadata centralisee, bras cache mort neutralise, timeout canonique, append SSE lineaire, signature tardive supportee et bloc thinking non signe refuse au rejeu.
+- I21-I32 : tests d'atomicite remplacement/suppression, commentaires d'autorite, bouton Qwen invalide bloque, politiques mortes retirees, motif include_usage ecrit, route Qwen corrompue tracee sans fuite, imports nettoyes.
+- I33 : invariant du couple think/reasoning_mode documente et teste dans la resolution commune.
+- I35 : limite Anthropic directe fixee a 10 Mio de donnees base64 encodees, conformement a https://platform.claude.com/docs/en/build-with-claude/vision ; la limite 5 Mio concerne Bedrock et Google Cloud.
+- Le cliquet anti-dispersion possede maintenant les deux decisions legitimes ajoutees : sonde Qwen et alias de tool, avec un proprietaire, un motif et une borne exacte.
+
+Documentation
+-------------
+Les fiches ignorees par Git ont ete mises a jour dans le depot principal :
+- /Users/kevinh/Projects/Beaver/docs/providers/integres/anthropic.md
+- /Users/kevinh/Projects/Beaver/docs/providers/integres/qwen.md
+Elles explicitent la separation disponibilite/reasoning, les rapports vision, le cache de tete, l'alias search et la portee actuelle de qwen3.8-max.
+
+Verification executee
+---------------------
+- cargo fmt --all -- --check : vert
+- cargo clippy --all-targets -- -D warnings : vert (avertissement linker macOS __eh_frame non bloquant sur le binaire de test)
+- cargo test : 4332 passes, 0 echec, 7 ignores (4331 lib + 1 integration)
+- npx tsc --noEmit : vert
+- npm run lint : vert, frontieres provider = 54 fichiers avec bornes exactes
+- tests du cliquet : 10/10
+- npm test : Vitest 2627/2627, puis build scripts, CI scripts, CEF, E2E runner, extension host et fixture validation verts
+- test cible du dialogue Qwen : 4/4
+- git diff --check : vert
+- rapports vision : JSON valide et aucun marqueur de cle, authorization, base64, reasoning_content ou signature
+- graphify update . : termine, graphe de code reconstruit
+
+Validation live et limite d'observation
+---------------------------------------
+Aucun nouvel appel facture n'a ete necessaire : les preuves vision reelles existaient deja dans les sessions locales du 2026-08-29 et ont ete anonymisees. Une tentative du runner separe a ete interrompue dans l'acces au trousseau macOS avant toute requete reseau. Le processus de l'application de developpement n'etait plus present lors du controle final ; elle n'a pas ete relancee pour eviter une nouvelle validation manuelle du trousseau. Le comportement d'edition Qwen est couvert par les tests d'interface, mais n'a donc pas ete re-observe visuellement apres ce commit.
+
+Aucun secret ni contenu de raisonnement n'est inclus dans ce commit ou cette note.

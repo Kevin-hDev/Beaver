@@ -1,0 +1,18 @@
+M24 — Politique explicite de saturation des abonnements
+
+Décision
+- Une inscription au-delà du plafond échoue explicitement avant insertion ; aucun abonné actif n’est retiré.
+- Raison : une éviction silencieuse figeait une vue encore affichée et rendait le défaut impossible à diagnostiquer.
+
+Changements
+- Une admission bornée commune remplace les évictions et refus silencieux dans les flux, indicateurs de session, résumés clonés, brouillons et voix.
+- Les limites existantes restent inchangées et les collections de données restent bornées.
+- Le démontage libère immédiatement une place ; les paramètres inutilisés du suivi d’activité sont supprimés.
+
+Validation exécutée
+- 40 tests ciblés sur les six registres : dépassement de chaque plafond, conservation du premier abonné et réadmission après libération.
+- npm test : 636 fichiers et 3 503 tests Vitest, puis toutes les suites build, CI, fichiers, CEF, e2e, extensions et raisonnement réussies.
+- npx tsc --noEmit : réussi.
+- npm run lint : réussi.
+- git diff --check : réussi.
+- graphify update . : réussi.

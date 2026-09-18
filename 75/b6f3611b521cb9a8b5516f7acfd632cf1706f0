@@ -1,0 +1,1 @@
+First-review minor 1: orphan candidates matching the bounded installer naming pattern now emit a generic stderr trace when ownership or tree validation rejects cleanup, then remain untouched. Validated removal failures keep their separate generic trace.\n\nValidation: temp ownership suite 5/5 and strict installer Clippy passed.

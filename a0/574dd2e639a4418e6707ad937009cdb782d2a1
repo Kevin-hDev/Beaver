@@ -1,0 +1,19 @@
+Reviewer note — voice UI correction after real-app feedback
+
+Behavior:
+- Listening now visually replaces the composer contents with a full-width microphone-level waveform, cancel, and Beaver's existing stop control. The draft remains stored and returns after capture.
+- The waveform amplitude is driven by the real Rust microphone level; silence stays as a thin line and no decorative loop runs.
+- The saved voice language is now applied directly (language: null delegates to VoiceSettings); the per-dictation language modal and component were removed. The first-use explanation remains.
+
+Validation:
+- 9 targeted Vitest tests passed, including direct start with language: null and level-to-waveform scaling.
+- npx tsc --noEmit passed.
+- npm run lint passed.
+- git diff --check passed.
+- Beaver Dev was opened and inspected during real microphone listening in dark and light themes: ordinary composer controls were hidden, waveform/cancel/stop remained visible, and no language chooser appeared.
+- graphify update . completed.
+
+Local documentation aligned outside Git:
+- docs/fonctionnalites/vocal/SPEC.md
+- docs/mokup/vocal/ecoute.html
+- docs/mokup/vocal/voc-composer.css

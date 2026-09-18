@@ -1,0 +1,4 @@
+Task: keep cancelling model downloads pending in every install control.
+Reason: cancellation is asynchronous; offering install or uninstall before terminal cleanup races the worker.
+Changes: centralize the pending-state predicate, keep Ollama and Forecast cancellation rows visible, disable their cancel action, and block Forecast uninstall during any cancellation.
+Evidence: targeted tests 14/14 passed; npm test 620 files and 3466 tests passed; TypeScript and lint passed; graphify update completed.
