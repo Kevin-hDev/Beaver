@@ -1378,7 +1378,7 @@ afin de ne pas transformer une CI verte en preuve d’un comportement qu’aucun
 n’a observé :
 
 - acceptation fonctionnelle Windows/Linux : suivi interne, non publié dans ce dépôt ;
-- [résilience du démarrage Windows/Linux](./docs/fonctionnalites/extension/CHECKLIST_STARTUP_RESILIENCE_WINDOWS_LINUX.md).
+- résilience du démarrage Windows/Linux : suivi interne, non publié dans ce dépôt.
 
 Chaque colonne Windows et Linux se ferme indépendamment. Un succès macOS, Vite ou CI
 n’est pas recopié manuellement dans une case qui exige un paquet installé.

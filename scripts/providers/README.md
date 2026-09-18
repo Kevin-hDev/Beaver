@@ -32,4 +32,5 @@ input/output/cache tokens and costs. Keep absent counters distinct from zero.
 Export sanitized continuation evidence with `export_reasoning_fixture_report`;
 this export alone does **not** prove usage accounting. Record usage observations
 separately, tied to the actual session/request and with no secret or opaque
-reasoning payload. Follow `docs/providers/plan-de-tests.md` for the full matrix.
+reasoning payload. The full validation matrix is maintained in the local,
+unpublished provider notes.
