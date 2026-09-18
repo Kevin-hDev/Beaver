@@ -151,7 +151,8 @@ function productionFiles(rootDirectory) {
       }
       const absolute = path.join(directory, entry.name);
       if (entry.isDirectory()) pending.push(absolute);
-      else files.push(path.relative(rootDirectory, absolute));
+      // L'autorité des exceptions utilise des chemins Git, identiques sur chaque OS.
+      else files.push(path.relative(rootDirectory, absolute).split(path.sep).join("/"));
     }
   }
   return files.filter(isProductionSource).sort();

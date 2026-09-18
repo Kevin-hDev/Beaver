@@ -57,6 +57,7 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
         super::tool_delegate_child::prepare_existing_child(
             &restart_child,
             &restart_parent,
+            None,
             "explorer",
             "Nouvelle mission",
             "Geminitor",

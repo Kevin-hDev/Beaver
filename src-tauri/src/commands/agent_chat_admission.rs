@@ -34,8 +34,6 @@ pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
     .await
     .map_err(|_| BackgroundAdmissionError::Unavailable)?;
     let streams = app.state::<ActiveStreams>();
-    let session_guard =
-        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     {
         let map = streams.0.lock().await;
         if map.contains_key(session_id) {
@@ -54,13 +52,17 @@ pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
     let request_id =
         crate::services::agent_local::stream_diagnostics::start_request(session_id, generation)
             .await;
-    let inserted = {
+    // The diagnostic takes this same session lock; finish it before admission owns the lease.
+    let session_guard =
+        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
+    let insertion = {
         let mut map = streams.0.lock().await;
-        if map.contains_key(session_id)
-            || map.len()
-                >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
+        if map.contains_key(session_id) {
+            Err(BackgroundAdmissionError::Busy)
+        } else if map.len()
+            >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
         {
-            false
+            Err(BackgroundAdmissionError::Unavailable)
         } else {
             map.insert(
                 session_id.to_string(),
@@ -71,10 +73,10 @@ pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
                     parent_message_inbox.clone(),
                 ),
             );
-            true
+            Ok(())
         }
     };
-    if !inserted {
+    if let Err(error) = insertion {
         drop(session_guard);
         crate::services::agent_local::stream_diagnostics::record_failure(
             session_id,
@@ -83,7 +85,7 @@ pub(crate) async fn admit_background_if_idle<R: tauri::Runtime>(
             false,
         )
         .await;
-        return Err(BackgroundAdmissionError::Unavailable);
+        return Err(error);
     }
     drop(session_guard);
     crate::services::agent_local::subagent_registry::adopt_children_for_parent_stream(
@@ -176,3 +178,7 @@ where
         request_id,
     })
 }
+
+#[cfg(test)]
+#[path = "agent_chat_background_admission_tests.rs"]
+mod background_tests;

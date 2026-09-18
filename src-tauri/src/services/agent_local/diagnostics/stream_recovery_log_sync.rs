@@ -19,7 +19,7 @@ impl StreamRecoveryLog {
 
     pub(crate) async fn clear_committed(&self) -> Result<(), String> {
         let inner = self.inner.clone();
-        tokio::task::spawn_blocking(move || rewrite(&inner, Vec::new()))
+        tokio::task::spawn_blocking(move || clear_checkpoint(&inner))
             .await
             .map_err(|_| error())?
     }
@@ -66,9 +66,11 @@ fn rewrite_messages(
     rewrite_locked(inner, &mut state, records)
 }
 
-fn rewrite(inner: &Arc<Inner>, records: Vec<StreamRecoveryRecord>) -> Result<(), String> {
+fn clear_checkpoint(inner: &Arc<Inner>) -> Result<(), String> {
     let mut state = lock(inner);
-    rewrite_locked(inner, &mut state, records)
+    // New deltas must not reuse an assistant identity already committed to the session.
+    state.header.assistant_message_id = uuid::Uuid::new_v4().to_string();
+    rewrite_locked(inner, &mut state, Vec::new())
 }
 
 fn rewrite_locked(

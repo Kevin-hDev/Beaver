@@ -1,7 +1,5 @@
 use crate::services::agent_local::model_customizations;
-use crate::services::agent_local::ollama_model_helpers::{
-    build_model_from_tags, dedupe_by_digest, parse_show_response,
-};
+use crate::services::agent_local::ollama_model_helpers::{build_model_from_tags, dedupe_by_digest};
 use crate::services::agent_local::types_ollama::{
     ModelInfo, OllamaModel, OllamaModelEditorData, OllamaParameter,
 };
@@ -9,6 +7,9 @@ use crate::services::ollama_manager::OllamaManager;
 use reqwest::Client;
 use std::time::Duration;
 use tauri::Manager;
+#[path = "ollama_model_request.rs"]
+mod model_request;
+pub(crate) use model_request::OllamaModelError;
 const TIMEOUT: Duration = Duration::from_secs(5);
 const MAX_RUNTIME_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
 
@@ -203,28 +204,10 @@ impl OllamaClient {
     }
 
     pub async fn show_model(&self, name: &str) -> Result<ModelInfo, String> {
+        // Keep endpoint error codes used by existing callers while sharing response validation.
         let base_url = self.base_url().await?;
-        let resp = self
-            .client
-            .post(format!("{base_url}/api/show"))
-            .json(&serde_json::json!({ "model": name }))
-            .send()
+        self.inspect_model_at(&base_url, name)
             .await
-            .map_err(|e| {
-                ::log::warn!("[ollama] /api/show: {e}");
-                "ollama-show-error".to_string()
-            })?;
-        if !resp.status().is_success() {
-            return Err("ollama-show-error".to_string());
-        }
-        let body = crate::services::secure_http::read_bounded(
-            resp,
-            super::ollama_model_helpers::MAX_SHOW_RESPONSE_BYTES,
-        )
-        .await
-        .map_err(|_| "ollama-show-error".to_string())?;
-        let json: serde_json::Value =
-            serde_json::from_slice(&body).map_err(|_| "ollama-show-error".to_string())?;
-        parse_show_response(name, &json).map_err(str::to_string)
+            .map_err(|_| "ollama-show-error".to_string())
     }
 }

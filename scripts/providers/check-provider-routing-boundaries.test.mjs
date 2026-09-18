@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   compareDecisionCounts,
@@ -12,6 +16,30 @@ import {
 function count(path, source) {
   return scanSource({ path, source }).length;
 }
+
+test("le scan réel compare les chemins natifs à l'autorité portable", () => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), "beaver-routing-"));
+  const checker = fileURLToPath(new URL("./check-provider-routing-boundaries.mjs", import.meta.url));
+  try {
+    fs.mkdirSync(path.join(root, "src"));
+    fs.mkdirSync(path.join(root, "scripts/providers"), { recursive: true });
+    fs.writeFileSync(path.join(root, "src/owned.ts"), 'providerId === "openai";');
+    fs.writeFileSync(path.join(root, "scripts/providers/provider-branch-allowlist.json"), JSON.stringify([{
+      path: "src/owned.ts",
+      owner: "route_profile",
+      reason: "La fixture possède une décision de routage.",
+      max_decisions: 1,
+    }]));
+    const result = spawnSync(process.execPath, [checker], {
+      cwd: root, encoding: "utf8", timeout: 30_000, maxBuffer: 64 * 1024, windowsHide: true,
+    });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Provider routing boundaries: 1 fichiers autorisés\./u);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("refuse les nouvelles décisions Rust par identifiant de route", () => {
   assert.equal(count("src-tauri/src/new.rs", 'if provider_id == "openai" {}'), 1);

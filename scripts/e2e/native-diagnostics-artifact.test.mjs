@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -30,7 +30,7 @@ test("the persisted native report contains only bounded safe categories", async 
   }
 });
 
-test("a pre-created temporary symlink cannot redirect the diagnostic report", async () => {
+test("a pre-created temporary file link cannot redirect the diagnostic report", async () => {
   const { persistNativeDiagnostics } = await import("./native-diagnostics-artifact.mjs");
   const root = await mkdtemp(join(tmpdir(), "beaver-native-artifact-"));
   const logs = join(root, "logs");
@@ -45,7 +45,9 @@ test("a pre-created temporary symlink cannot redirect the diagnostic report", as
       "utf8",
     );
     await writeFile(protectedFile, "unchanged\n", "utf8");
-    await symlink(protectedFile, join(output, ".native-diagnostics.tmp"));
+    // A hard link preserves the overwrite threat on Windows without symlink privileges.
+    const createLink = process.platform === "win32" ? link : symlink;
+    await createLink(protectedFile, join(output, ".native-diagnostics.tmp"));
 
     await persistNativeDiagnostics(logs, output);
 

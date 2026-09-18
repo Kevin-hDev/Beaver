@@ -102,6 +102,8 @@ pub mod subagent_prompts;
 pub mod subagent_prompts_tests;
 #[cfg(test)]
 mod subagent_redeploy_atomic_tests;
+#[cfg(test)]
+mod subagent_redeployment_tests;
 pub mod subagent_registry;
 #[cfg(test)]
 mod subagent_registry_test_support;

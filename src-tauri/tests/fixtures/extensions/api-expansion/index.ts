@@ -1,14 +1,13 @@
 import { copyFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { BeaverMemoryApi, BeaverModelsApi } from "../../../../resources/extension-host/sdk/core-api";
 
 interface BeaverFixtureApi {
   capabilities?: readonly string[];
-  models?: { generate(input: { prompt: string }): Promise<{ text: string; finishReason: string }> };
-  memory?: {
-    write(input: { scope: "global"; content: string }): Promise<{ topic: { id: string } }>;
-    read(input: { scope: "global"; topicId: string }): Promise<{ topic: { content: string } }>;
-  };
+  // Share the public SDK result types so the fixture cannot invent another wire shape.
+  models?: BeaverModelsApi;
+  memory?: BeaverMemoryApi;
   registerTool(tool: unknown): void;
   registerSkill(skill: unknown): void;
   registerResource(resource: unknown): void;
@@ -51,7 +50,7 @@ export default function activate(beaver: BeaverFixtureApi) {
         const model = await beaver.models!.generate({ prompt });
         const written = await beaver.memory!.write({ scope: "global", content: model.text });
         const reread = await beaver.memory!.read({ scope: "global", topicId: written.topic.id });
-        await writeFile(join(context.workingDirectory, "contextual-receipt.txt"), reread.topic.content);
+        await writeFile(join(context.workingDirectory, "contextual-receipt.txt"), reread.content);
         return {
           content: [
             { type: "text", text: JSON.stringify({ finishReason: model.finishReason, topicId: written.topic.id }) },

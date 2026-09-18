@@ -48,6 +48,7 @@ pub(super) async fn persist_delegate_prompt(
 pub(super) async fn prepare_existing_child(
     child_id: &str,
     parent_session_id: &str,
+    expected_owner: Option<&super::types_session::SubagentExtensionOwner>,
     subagent_type: &str,
     prompt: &str,
     name: &str,
@@ -73,6 +74,21 @@ pub(super) async fn prepare_existing_child(
         }
     };
     if child.parent_session_id.as_deref() != Some(parent_session_id) {
+        return Err(ToolResult::not_found(
+            "subagent_not_found",
+            "Sous-agent introuvable.",
+        ));
+    }
+    // Ownership never transfers implicitly: revocation must only cancel the owner's work.
+    // Check under the session lock before mutating any persisted execution state.
+    let owner_matches = match (&child.subagent_extension_owner, expected_owner) {
+        (None, None) => true,
+        (Some(super::types_session::SubagentExtensionOwnership::Valid(owner)), Some(expected)) => {
+            owner == expected
+        }
+        _ => false,
+    };
+    if !owner_matches {
         return Err(ToolResult::not_found(
             "subagent_not_found",
             "Sous-agent introuvable.",
@@ -175,6 +191,8 @@ pub(super) async fn inherit_parent_context(
     let lock = session_store::lock_session(&child.id).await;
     let _guard = lock.lock().await;
     let mut current = session_store::get(&child.id).await?;
+    // Keep the prepared owner durable so extension revocation can find this child.
+    current.subagent_extension_owner = child.subagent_extension_owner.clone();
     current.model = parent.model.clone();
     current.provider = parent.provider.clone();
     current.thinking_enabled = parent.thinking_enabled;

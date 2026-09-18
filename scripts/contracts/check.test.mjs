@@ -1,6 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { assertExactSuccess } from "./check.mjs";
+import { assertExactSuccess, contractArguments } from "./check.mjs";
+
+test("Windows contracts use the native test profile without changing exact collection", () => {
+  assert.deepEqual(contractArguments("wanted", "win32"), [
+    "test", "--lib", "--features", "windows-tests", "wanted", "--", "--test-threads=1", "--exact",
+  ]);
+  for (const platform of ["linux", "darwin"]) {
+    assert.deepEqual(contractArguments("wanted", platform), [
+      "test", "--lib", "wanted", "--", "--test-threads=1", "--exact",
+    ]);
+  }
+  assert.throws(() => contractArguments("--ignored", "win32"));
+});
 
 test("zero collected, ignored, renamed, failed and interrupted tests cannot pass", () => {
   for (const result of [

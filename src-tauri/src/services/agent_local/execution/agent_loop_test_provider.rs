@@ -7,6 +7,12 @@ use tokio_util::sync::CancellationToken;
 const MAX_SCRIPTS: usize = 8;
 const MAX_RESPONSES: usize = 256;
 
+// Exercise the platform's real shell while preserving the exact output assertion.
+#[cfg(windows)]
+pub const NATIVE_SHELL_COMMAND: &str = "[Console]::Write('stack-proof-shell')";
+#[cfg(not(windows))]
+pub const NATIVE_SHELL_COMMAND: &str = "printf stack-proof-shell";
+
 struct Script {
     request_id: String,
     responses: VecDeque<StreamResult>,

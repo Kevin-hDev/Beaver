@@ -29,7 +29,8 @@ test("an attributed tool composes model, memory replay and a rich result without
         return { result: { topic: { id: "topic-1" }, applied: true, indexUpdated: true } };
       }
       if (message.method === "memory.read") {
-        return { result: { topic: { id: "topic-1", content: topics.get("topic-1") } } };
+        // memory.read returns a topic directly; only mutations wrap it in `topic`.
+        return { result: { id: "topic-1", content: topics.get("topic-1") } };
       }
       return { error: { code: -32_601, message: "core_method_unavailable" } };
     },

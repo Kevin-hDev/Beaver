@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { test } from "node:test";
 
 import {
@@ -51,21 +51,28 @@ test("lit uniquement le fichier de version contrôlé du dépôt", async () => {
   const repoRoot = await mkdtemp(join(tmpdir(), "searxng-python-runtime-"));
   const versionDirectory = join(repoRoot, "scripts", "build");
   const versionFile = join(versionDirectory, "searxng-python-version.txt");
-  const internalTarget = join(repoRoot, "internal-version.txt");
+  const internalDirectory = join(repoRoot, "internal-version");
   const externalRoot = await mkdtemp(join(tmpdir(), "searxng-external-version-"));
-  const externalTarget = join(externalRoot, "version.txt");
   try {
     await mkdir(versionDirectory, { recursive: true });
     await writeFile(versionFile, "3.14\n");
     assert.deepEqual(readSupportedPythonVersion(repoRoot), EXPECTED_VERSION);
     await rm(versionFile);
-    await writeFile(internalTarget, "3.14\n");
-    await symlink("../../internal-version.txt", versionFile);
-    assert.throws(() => readSupportedPythonVersion(repoRoot), /Python runtime unavailable/);
-    await rm(versionFile);
-    await writeFile(externalTarget, "3.14\n");
-    await symlink(externalTarget, versionFile);
-    assert.throws(() => readSupportedPythonVersion(repoRoot), /Python runtime unavailable/);
+    await mkdir(internalDirectory);
+    // Parent junctions exercise real linked paths on Windows without elevated privileges.
+    if (process.platform === "win32") await rm(versionDirectory, { recursive: true });
+    for (const targetDirectory of [internalDirectory, externalRoot]) {
+      const target = join(targetDirectory, "searxng-python-version.txt");
+      await writeFile(target, "3.14\n");
+      const linkPath = process.platform === "win32" ? versionDirectory : versionFile;
+      await symlink(
+        process.platform === "win32" ? targetDirectory : relative(versionDirectory, target),
+        linkPath,
+        process.platform === "win32" ? "junction" : "file",
+      );
+      assert.throws(() => readSupportedPythonVersion(repoRoot), /Python runtime unavailable/);
+      await rm(linkPath);
+    }
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
     await rm(externalRoot, { recursive: true, force: true });

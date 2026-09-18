@@ -56,6 +56,7 @@ async fn message_between_terminal_save_and_registry_completion_is_never_stranded
         tool_delegate_child::prepare_existing_child(
             &restart_child,
             &restart_parent,
+            None,
             "explorer",
             prompt,
             "Geminitor",
