@@ -141,7 +141,7 @@
     "webdriverio": "9.31.5"
   },
   "overrides": {
-    "devalue": "5.8.1",
+    "devalue": "5.9.2",
     "svelte": "5.55.7",
     "undici": "7.29.0",
     "js-yaml": "4.3.2",
