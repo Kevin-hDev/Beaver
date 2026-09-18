@@ -71,7 +71,9 @@ function findDirectComponentCalls(file) {
 }
 
 function findExtensionUiBoundaryViolations(file) {
-  if (!file.startsWith("src/features/extension-ui/") || file.includes("/__tests__/")) return [];
+  // Boundary membership must use the same separators on every supported OS.
+  const portablePath = file.replaceAll("\\", "/");
+  if (!portablePath.startsWith("src/features/extension-ui/") || portablePath.includes("/__tests__/")) return [];
   const source = readFileSync(file, "utf8");
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
   const findings = [];

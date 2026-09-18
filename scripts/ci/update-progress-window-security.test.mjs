@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("../../", import.meta.url).pathname;
+// Decode file URLs through Node so Windows drive letters remain valid paths.
+const root = fileURLToPath(new URL("../../", import.meta.url));
 const capabilityPath = join(root, "src-tauri/capabilities/update-progress.json");
 const htmlPath = join(root, "update-window.html");
 const mainPath = join(root, "src/update-window-main.tsx");

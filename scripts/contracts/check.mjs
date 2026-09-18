@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { CONTRACT_TESTS } from "./test-list.mjs";
+import { buildCargoCommands } from "../ci/run-rust-test-filter.mjs";
 
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 
@@ -12,8 +13,17 @@ export function assertExactSuccess(name, result) {
   }
 }
 
+export function contractArguments(name, platform = process.platform) {
+  // Use the same Windows profile as the full suite; contracts do not need to load CEF.
+  return buildCargoCommands({
+    filter: name,
+    features: platform === "win32" ? "windows-tests" : undefined,
+    exact: true,
+  }).execute;
+}
+
 export function runExactTest(name) {
-  const result = spawnSync("cargo", ["test", "--lib", name, "--", "--exact"], {
+  const result = spawnSync("cargo", contractArguments(name), {
     cwd: fileURLToPath(new URL("../../src-tauri", import.meta.url)),
     encoding: "utf8", maxBuffer: MAX_OUTPUT_BYTES,
   });

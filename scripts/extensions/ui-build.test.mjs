@@ -68,8 +68,14 @@ test("rejects Node imports, traversal, symlinks and unknown output types", async
   await writeFile(join(root, "outside.ts"), "export default 1;");
   await assert.rejects(() => buildExtensionUi({ inputRoot, outputRoot, entry: "../outside.ts" }), /Extension UI build failed/u);
 
-  await symlink(join(root, "outside.ts"), join(inputRoot, "linked.ts"));
-  await assert.rejects(() => buildExtensionUi({ inputRoot, outputRoot, entry: "linked.ts" }), /Extension UI build failed/u);
+  // Windows junctions exercise the real escape without requiring symlink privileges.
+  const linkedEntry = process.platform === "win32" ? "linked/outside.ts" : "linked.ts";
+  await symlink(
+    process.platform === "win32" ? root : join(root, "outside.ts"),
+    join(inputRoot, process.platform === "win32" ? "linked" : "linked.ts"),
+    process.platform === "win32" ? "junction" : "file",
+  );
+  await assert.rejects(() => buildExtensionUi({ inputRoot, outputRoot, entry: linkedEntry }), /Extension UI build failed/u);
 
   await writeFile(join(inputRoot, "icon.svg"), "<svg/>");
   await writeFile(join(inputRoot, "svg.ts"), 'import icon from "./icon.svg"; export default icon;');

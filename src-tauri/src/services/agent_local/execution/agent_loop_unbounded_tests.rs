@@ -128,7 +128,7 @@ fn run_native_tool() {
                         tool_calls: vec![(
                             "bash".into(),
                             json!({
-                                "command": "printf stack-proof-shell",
+                                "command": agent_loop_test_provider::NATIVE_SHELL_COMMAND,
                                 "yield_time_ms": 30_000,
                             }),
                         )],
