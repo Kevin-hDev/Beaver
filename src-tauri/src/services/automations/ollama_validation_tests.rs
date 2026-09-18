@@ -30,7 +30,7 @@ async fn ollama_validation_fails_closed_on_absent_invalid_or_unsupported_models(
             json!({"capabilities": ["tools"]}),
             AutomationError::ModelUnavailable,
         ),
-        (200, json!({}), AutomationError::ModelUnavailable),
+        (200, json!({}), AutomationError::ProviderUnavailable),
         (
             200,
             json!({"capabilities": ["completion"]}),

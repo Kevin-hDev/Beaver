@@ -19,10 +19,11 @@ pub(super) async fn validate_model(
             AutomationError::ProviderUnavailable
         })?
         .map_err(|error| match error {
-            OllamaModelError::Unavailable => AutomationError::ProviderUnavailable,
-            OllamaModelError::NotFound | OllamaModelError::InvalidResponse => {
-                AutomationError::ModelUnavailable
+            // An unreadable engine response does not establish that the model is absent.
+            OllamaModelError::Unavailable | OllamaModelError::InvalidResponse => {
+                AutomationError::ProviderUnavailable
             }
+            OllamaModelError::NotFound => AutomationError::ModelUnavailable,
         })?;
     if !info
         .capabilities

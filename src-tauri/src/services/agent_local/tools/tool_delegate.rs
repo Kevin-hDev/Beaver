@@ -111,7 +111,15 @@ pub async fn prepare_delegate(
             )
             .await
             {
-                Ok(session) => session,
+                Ok(mut session) => {
+                    // Assign ownership only at creation; reused children retain their verified owner.
+                    if let Some(owner) = extension_owner {
+                        session.subagent_extension_owner = Some(
+                            super::types_session::SubagentExtensionOwnership::Valid(owner),
+                        );
+                    }
+                    session
+                }
                 Err(result) => {
                     subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
                     return Err(result);
@@ -119,12 +127,6 @@ pub async fn prepare_delegate(
             }
         }
     };
-
-    if let Some(owner) = extension_owner {
-        child.subagent_extension_owner = Some(
-            super::types_session::SubagentExtensionOwnership::Valid(owner),
-        );
-    }
 
     if super::tool_delegate_child::inherit_parent_context(&mut child, &parent)
         .await

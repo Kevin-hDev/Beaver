@@ -57,6 +57,31 @@ async fn unavailable_ollama_client_is_not_reported_as_a_missing_model() {
 }
 
 #[tokio::test]
+async fn malformed_ollama_responses_are_provider_failures_through_production_routing() {
+    use crate::services::agent_local::ollama_model_helpers::MAX_SHOW_RESPONSE_BYTES;
+
+    for body in [
+        "{".to_string(),
+        "{}".to_string(),
+        " ".repeat(MAX_SHOW_RESPONSE_BYTES + 1),
+    ] {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/show"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(body))
+            .mount(&server)
+            .await;
+        assert_eq!(
+            validate_model_with_ollama("ollama", "installed:latest", &|| {
+                OllamaClient::with_base_url(&server.uri())
+            })
+            .await,
+            Err(AutomationError::ProviderUnavailable)
+        );
+    }
+}
+
+#[tokio::test]
 async fn other_routes_do_not_request_an_ollama_client() {
     assert_eq!(
         validate_model_with_ollama("codex-oauth", "gpt-5.6-luna", &|| {
