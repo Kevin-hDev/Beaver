@@ -1,0 +1,7 @@
+PR #82 : correction du lint frontend observé en CI (run 35394598261, job 105760438126).
+
+Cause : le correctif de validation Ollama a ajouté une seconde décision légitime dans l'autorité automations/validation.rs ; le registre ne décrivait encore qu'une décision, avec une raison périmée. Échec reproduit localement : validation.rs: 2 > 1.
+
+Le registre déclare exactement deux décisions : contrôle d'identité canonique et choix des capacités locales Ollama. Le propriétaire reste automations. Le scanner et ses refus de décisions supplémentaires ou d'autorisations obsolètes ne changent pas ; aucun test désactivé, aucune exclusion ajoutée.
+
+Validation : npm run lint sortie 0 ; 12 tests check-provider-routing-boundaries réussis, 0 échec ; git diff --check sortie 0 ; graphify update . sortie 0 (topologie inchangée, avertissements existants conservés). Pas de changement du code métier ni de nouvelle compilation Rust nécessaire. Preuves locales : .validation/2026-09-18/pr82-frontend.log, pr82-lint.log, pr82-routing-tests.log, pr82-graphify.log. La CI du nouveau commit reste à valider avant fusion.
