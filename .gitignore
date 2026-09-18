@@ -24,6 +24,12 @@ src-tauri/resources/extension-host/ui-build.mjs
 # exceptions ci-dessous. Toute nouvelle exception ici rend public un dossier
 # destiné à rester local — on n'en ajoute pas sans raison.
 /docs/*
+# Preserve the already-public Forecast threat model as a versioned historical archive.
+!/docs/securite/
+/docs/securite/*
+!/docs/securite/archive/
+/docs/securite/archive/*
+!/docs/securite/archive/2026-09-18-forecast-threat-model.md
 # Maquettes du site : le code et les assets sont suivis, pas les captures
 # d'écran, qui se régénèrent et pèsent plus lourd que tout le reste.
 !/docs/beaver-site/

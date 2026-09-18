@@ -28,11 +28,11 @@ Beaver fonctionne sur ton ordinateur ; le modèle choisi peut fonctionner dans l
 - **Planification et permissions** : explore en sécurité avec le mode Plan, enregistre des plans Markdown, valide leur mise en œuvre et choisis des permissions automatiques, manuelles ou propres à chaque chat
 - **Sous-agents contrôlés par le parent** : coordonne des sessions enfant isolées, suis leur activité, corrige-les ou réutilise-les, examine leurs changements et nettoie leurs worktrees en sécurité
 - **Mémoire persistante** : conserve une mémoire globale et une mémoire par projet, avec modes manuel ou automatique, résumés limités, fichiers par sujet, activité visible et accès en lecture seule pour les sous-agents
-- **Raisonnement et continuité multimodale** : utilise les réglages de raisonnement et les images validées pour chaque modèle pendant que Beaver conserve le raisonnement natif du fournisseur entre les messages et les appels d'outils sans exposer son état privé
+- **Raisonnement et continuité multimodale** : utilise les réglages de raisonnement et les images validées pour chaque modèle pendant que Beaver conserve le raisonnement natif du fournisseur entre les messages et les appels d'outils pour les combinaisons de modèle et de connexion prises en charge, sans exposer son état privé
 
 ### L'espace de travail
 
-- **Conversations et projets** : gère les discussions en onglets, les pièces jointes, les favoris, les messages en attente, les branches de conversation, les archives, les résumés cachés et les dossiers de projet
+- **Conversations et projets** : gère les discussions en onglets, les pièces jointes, les favoris, les brouillons conservés pendant une réponse, les branches de conversation, les archives, les résumés cachés et les dossiers de projet
 - **Navigateur intégré** : navigue dans dix onglets maximum par conversation, conserve les connexions web, détecte les sites locaux et partage le panneau latéral avec les aperçus et Forecast. Disponible sur macOS et Windows
 - **Workflow Git complet** : crée, change, fusionne et supprime des branches ou worktrees ; crée des commits et pousse-les ; parcours les changements et consulte les différences récentes ou historiques
 - **Espace de travail desktop** : utilise le terminal à onglets, l'arbre de fichiers, les aperçus enrichis et Office, les liens, le détail du contexte, six thèmes visuels et le compagnon Beaver interactif
@@ -75,9 +75,10 @@ Le guide **[EXTENSIONS.md](EXTENSIONS.md)** détaille l'utilisation et la créat
 curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
 ```
 
-Télécharge la dernière release, installe l'app et la lance automatiquement.
-- **macOS** : installe dans `/Applications/`
-- **Linux** : installe le paquet Debian via `apt-get` (Ubuntu/Debian uniquement)
+Télécharge la dernière release pour ton système.
+
+- **macOS** : ouvre Beaver Installer ; clique sur **Installer** pour installer dans `/Applications/`, puis sur **Lancer Beaver**.
+- **Linux** : installe le paquet Debian via `apt-get` et lance Beaver automatiquement (Ubuntu/Debian uniquement).
 
 L'installateur Linux utilise le fichier `.deb` de la release pour rendre l'app visible dans le menu système.
 
@@ -151,11 +152,12 @@ Beaver inclut un espace Forecast dédié à l'analyse des séries temporelles :
 
 - macOS (Apple Silicon), Linux ou Windows
 - Node.js 24 LTS — pour le développement et les outils externes nécessitant une installation système
-- CPython 3.14 — uniquement pour la solution locale SearXNG
+- CPython 3.14 — pour la solution locale SearXNG
+- CPython 3.12 — pour les modèles Forecast locaux
 
-L'application distribuée embarque Node.js et npm pour son hôte d'extensions ; utiliser les extensions ne demande donc pas, à lui seul, d'installer Node.js séparément. Ce runtime embarqué n'installe pas Node.js globalement pour les autres programmes. CPython 3.14 reste un prérequis externe uniquement pour la solution locale SearXNG.
+L'application distribuée embarque Node.js et npm pour son hôte d'extensions ; utiliser les extensions ne demande donc pas, à lui seul, d'installer Node.js séparément. Ce runtime embarqué n'installe pas Node.js globalement pour les autres programmes. SearXNG local nécessite une installation externe de CPython 3.14. Forecast local nécessite une installation externe de CPython 3.12 ; Beaver crée ensuite ses environnements gérés et installe les dépendances verrouillées des modèles.
 
-Utilise les instructions suivantes lorsque tu as besoin de ces runtimes externes : ce ne sont pas des étapes obligatoires pour toute installation de Beaver.
+Utilise les instructions suivantes lorsque tu as besoin de ces runtimes externes : ce ne sont pas des étapes obligatoires pour toute installation de Beaver. Les commandes Python ci-dessous installent la version 3.14 pour SearXNG. Pour Forecast local, exécute les mêmes commandes d’installation et de vérification Python avec `3.12` à la place de `3.14` ; installe les deux versions si tu utilises les deux fonctions.
 
 Les commandes ci-dessous ont été vérifiées le 31 août 2026 avec la [page officielle de téléchargement de Node.js](https://nodejs.org/en/download) (Node.js 24.20.0 LTS) et la [documentation d'Astral uv](https://docs.astral.sh/uv/getting-started/installation/). Elles évitent de dépendre d'un gestionnaire de paquets propre à une distribution Linux.
 
@@ -268,7 +270,7 @@ Rust (via [`rustup`](https://rustup.rs/)) est nécessaire uniquement pour compil
 
 ## Développement
 
-Installe d'abord Node.js depuis la section des runtimes externes ci-dessus. CPython est nécessaire uniquement pour SearXNG local. Installe ensuite les dépendances du projet :
+Installe d'abord Node.js depuis la section des runtimes externes ci-dessus. CPython 3.14 est nécessaire pour SearXNG local et CPython 3.12 pour Forecast local. Installe ensuite les dépendances du projet :
 
 ```bash
 # 1. Cloner le repo
@@ -355,7 +357,8 @@ identifiant historique pour rester compatible avec les installations existantes 
 |---|---|
 | `secrets.enc` | Identifiants API et OAuth chiffrés |
 | `configured-providers.json`, `provider-usage.json` | Fournisseurs connectés et historique local de consommation |
-| `config.json`, `heartbeat-runtime.json` | Réglages de l'application et état des réveils |
+| `config.json` | Réglages de l'application |
+| `automations.json`, `automation-runtime.json` | Définitions des réveils et état d'exécution durable |
 | `agent-sessions/*.json` | Conversations de l'Agent |
 | `agent-settings.json`, `session-tabs.json` | Permissions et onglets de conversation ouverts |
 | `compression-profiles.json` | Profils réutilisables de compression du contexte et sélection globale |
@@ -369,17 +372,17 @@ identifiant historique pour rester compatible avec les installations existantes 
 | `mcp-connectors.json`, `mcp-runtime/` | Configuration et données des connecteurs MCP |
 | `extensions.json`, `extension-installs/` | Registre des extensions et installations gérées |
 | `extension-discovery-preferences.json`, `extension-session-state/` | Préférences de découverte des extensions et état par conversation |
-| `gateway-session-map.json`, `logs/gateway-audit.jsonl` | Liens des sessions Gateway et historique d'audit |
+| `agent-sessions/gateway-session-map.json`, `logs/gateway-audit.jsonl` | Liens des sessions Gateway et historique d'audit |
 | `forecast-*` | Analyses, profils de données, modèles, réglages, brouillons, notes et exports Forecast |
 | `ollama-*` | Runtime Ollama, métadonnées des modèles et instructions personnalisées |
 | `searxng-sidecar/` | Runtime local de recherche SearXNG |
-| `logs/` | Journaux limités des réveils, de Gateway, Ollama, SearXNG et des outils |
+| `logs/` | Journaux limités de l’application, des réveils, de Gateway, SearXNG et des outils ; événements de gestion Ollama dans `beaver.log`, sans journal dédié au moteur Ollama |
 
 ## Ollama — runtime géré
 
 Pour les modèles locaux, Beaver gère **Ollama** afin d'éviter une installation manuelle séparée. Les requêtes aux modèles cloud passent par leurs fournisseurs, pas par Ollama :
 
-- Au premier lancement, un écran de setup télécharge Ollama automatiquement dans `~/.local/share/cl-go-dash/ollama-bundle/`
+- Au premier lancement, un écran propose de télécharger Ollama dans `~/.local/share/cl-go-dash/ollama-bundle/` ; tu peux ignorer cette étape et l’installer plus tard depuis Réglages → Ollama
 - Beaver vérifie la disponibilité du runtime et gère le lancement ou la réutilisation d'un service Ollama
 - Le runtime géré dispose d'un démarrage, d'un arrêt et d'une récupération supervisés ; un service lancé indépendamment n'est pas traité comme un processus enfant appartenant à Beaver
 - Sur Linux, détection GPU automatique (AMD → archive ROCm, Nvidia → archive standard avec CUDA)
@@ -393,7 +396,7 @@ Pour les modèles locaux, Beaver gère **Ollama** afin d'éviter une installatio
 - **Frontière des identifiants** : l'interface intégrée de gestion des clés ne propose pas de commande pour lire les clés API enregistrées. Les extensions approuvées peuvent demander les secrets pris en charge par l'API d'extensions ; cette frontière de confiance est détaillée dans [EXTENSIONS.md](EXTENSIONS.md)
 - **Protection des chemins** : les chemins demandés par l'interface sont validés, normalisés et maintenus dans leurs dossiers autorisés
 - **Collections bornées** : ActiveStreams (32), PTY sessions (16), messages par session (2000), profondeur/taille JSON MCP limitées
-- **HTTP sécurisé pour les credentials** : redirections bloquées, HTTPS imposé, messages d'erreur sanitizés
+- **HTTP sécurisé pour les credentials** : redirections bloquées, HTTPS imposé pour les services distants, exception explicite pour Forecast local authentifié, messages d'erreur sanitizés
 - **Durcissement MCP** : allowlist de programmes, pas de shell, validation des arguments, isolation de l'environnement
 - **Navigateur protégé** : processus isolés, navigation limitée, permissions sensibles bloquées, profil privé et onglets restaurés sous forme chiffrée
 - **Mises à jour vérifiées** : métadonnées strictes, téléchargements limités, manifestes SHA-256, contrôle de santé et installation bloquée en cas d'échec

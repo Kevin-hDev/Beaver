@@ -38,7 +38,7 @@ The controls below protect Beaver's own interfaces and managed execution paths. 
 
 API keys (LLM, search, forecast, MCP, gateway) are the most sensitive data handled by the app.
 
-- **Encrypted vault**: keys are stored in `secrets.enc`, encrypted with **XChaCha20-Poly1305** (authenticated encryption, random nonce per write via `OsRng`).
+- **Encrypted vault**: keys are stored in `secrets.enc`, encrypted with **XChaCha20-Poly1305** (authenticated encryption, random nonce per write from the OS CSPRNG via `SysRng`).
 - **Master key in the OS keyring**: the encryption key lives in macOS Keychain, Windows DPAPI, or the Linux Secret Service — never on disk, never in the source code.
 - **One keyring access at startup**: the master key is loaded once and kept in memory only.
 - **Zeroization boundary**: Rust uses zeroizing containers for stored keys and sensitive transport buffers. This is not a guarantee that every copy is erased: once an approved extension receives a JavaScript string, Beaver cannot guarantee immediate erasure or prevent the extension from retaining it.
@@ -99,7 +99,7 @@ Extension protocol and interface limits are documented in [EXTENSIONS.md](EXTENS
 Beaver's `AuthenticatedClient` protects the credential-bearing requests routed through it:
 
 - Blocks HTTP redirects (`Policy::none()`) — prevents credential leakage via malicious 302 redirects to attacker-controlled URLs.
-- Enforces HTTPS for secret-bearing requests.
+- Enforces HTTPS for requests to remote services. An explicit loopback client also permits HTTP to literal loopback IP addresses, including the local Forecast service authenticated with an ephemeral token.
 - Bounds response bodies to prevent memory DoS.
 - Sanitizes error messages so no internal path, stack trace, or raw body reaches the UI.
 
@@ -120,8 +120,8 @@ MCP connectors can spawn local processes (`npx`, `uvx`, `deno`). To prevent comm
 The optional Gateway lets external channels (Telegram, Slack, Discord) reach a local agent. Controls include:
 
 - **Conversation isolation**: per-conversation locks prevent cross-talk; channel and message IDs are validated against a restricted charset (no `/` or `..`).
-- **Rate limiting**: per-user token buckets bound request frequency.
-- **Audit logging**: all inbound messages are hashed and logged to a rolling JSONL file. Log forging (newline injection) is rejected.
+- **Rate limiting**: counters per channel, account, and user bound request frequency within a time window; each counter resets when its window expires.
+- **Audit logging**: when enabled, the rolling JSONL audit records gateway events with an HMAC-derived user identifier, not a hash or copy of the message content. Auditing is enabled by default but can be disabled. Log forging (newline injection) is rejected.
 - **Credential isolation**: channel tokens are namespaced by channel, account, and token kind (`gateway.<channel>.<account>` with a kind suffix where applicable), separately from MCP credentials.
 
 ## Safe diagnostics and logs

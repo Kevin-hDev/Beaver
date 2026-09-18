@@ -1,6 +1,6 @@
 # Extensions Beaver
 
-> Guide utilisateur et auteur — état de l’implémentation au 17 septembre 2026.
+> Guide utilisateur et auteur — état de l’implémentation au 18 septembre 2026.
 >
 > Ce guide décrit les extensions hébergées par Beaver. Les contrats JSON restent les
 > autorités exécutables lorsque leur détail diffère d’un exemple humain.
@@ -167,10 +167,12 @@ ne rejoint un fournisseur que si sa route le permet ; les autres routes reçoive
 référence textuelle. Le mode Chat classique ne reçoit aucune capacité d’extension.
 
 Les sous-agents utilisent un catalogue distinct, filtré avant la découverte. Explorer
-reste limité aux outils `read-only`, peut inspecter les extensions et charger leurs
-ressources, mais ne reçoit pas `load_skill`. Coder reçoit seulement ce que son profil,
-sa route et son budget de contexte autorisent. Une inspection ne peut jamais restaurer
-un outil ou une capacité retirés par ce filtrage.
+reste limité aux outils `read-only`, peut inspecter les extensions, mais ne reçoit pas
+`load_skill`. Coder reçoit seulement ce que son profil, sa route et son budget de
+contexte autorisent. Le chargement des ressources d’extension est actuellement refusé
+aux deux profils, même si `load_extension_resource` apparaît dans leur catalogue.
+Une inspection ne lève pas ce refus et ne peut jamais restaurer un outil ou une
+capacité retirés par le filtrage.
 
 À l’ouverture d’une conversation, la vérification automatique des fichiers dispose
 d’un budget total de 64 Mio. Chaque lecture réserve son coût maximal, y compris le
@@ -547,11 +549,14 @@ doit désigner une connexion déjà configurée et un modèle connu dont
 ```ts
 const page = await beaver.models!.list();
 const candidate = page.items.find((model) => model.generationSupported);
+if (!candidate) {
+  return "Aucun modèle compatible dans cette page du catalogue.";
+}
 
 const result = await beaver.models!.generate({
   prompt: "Résume ce texte en trois phrases.",
-  connectionId: candidate?.connectionId,
-  modelId: candidate?.modelId,
+  connectionId: candidate.connectionId,
+  modelId: candidate.modelId,
   maxOutputTokens: 512,
 });
 
@@ -881,9 +886,11 @@ pas être retiré ou remplacé dans la navigation principale, et `beaver.extensi
 peut pas être retiré ou remplacé des réglages. Elles garantissent que l’utilisateur peut
 revenir en arrière.
 
-L’ordre final est déterministe : `order`, puis identifiant d’extension, puis identifiant
-de contribution. Si plusieurs extensions déplacent, retirent ou remplacent le même
-occupant, Beaver refuse les mutations conflictuelles et conserve l’original. Une cible
+L’ordre final est déterministe : `order`, puis occupants Beaver avant extensions à
+ordre égal. Les occupants Beaver sont départagés par identifiant ; les extensions,
+par identifiant d’extension puis de contribution. Si plusieurs extensions déplacent,
+retirent ou remplacent le même occupant, Beaver refuse les mutations conflictuelles et
+conserve l’original. Une cible
 absente ou incompatible produit un diagnostic sans supprimer les contributions saines.
 Pour modifier seulement une partie interne d’un composant Beaver, il faut soit demander
 un nouvel emplacement public dans le contrat, soit utiliser le mode avancé. Le contrat
@@ -922,9 +929,10 @@ const unregisterTheme = beaver.ui.register({
 });
 ```
 
-Un jeton inconnu ou une valeur invalide refuse l’ensemble des contributions d’interface
-de l’extension, thème compris, avec un diagnostic. Conservez les fonctions
-`unregisterTab`, `stopAction` et `unregisterTheme` pour le nettoyage.
+Un jeton inconnu ou une valeur invalide refuse la contribution concernée avec un
+diagnostic ; les autres contributions valides restent enregistrées. Une exception
+non interceptée pendant l’activation fait échouer le chargement complet. Conservez les
+fonctions `unregisterTab`, `stopAction` et `unregisterTheme` pour le nettoyage.
 
 ### Mode avancé
 
@@ -1369,7 +1377,7 @@ Les essais manuels avec paquets installés Windows et Linux restent suivis sépa
 afin de ne pas transformer une CI verte en preuve d’un comportement qu’aucun testeur
 n’a observé :
 
-- [acceptation fonctionnelle Windows/Linux](./docs/fonctionnalites/extension/CHECKLIST_ACCEPTATION_EXTENSIONS_WINDOWS_LINUX.md) ;
+- acceptation fonctionnelle Windows/Linux : suivi interne, non publié dans ce dépôt ;
 - [résilience du démarrage Windows/Linux](./docs/fonctionnalites/extension/CHECKLIST_STARTUP_RESILIENCE_WINDOWS_LINUX.md).
 
 Chaque colonne Windows et Linux se ferme indépendamment. Un succès macOS, Vite ou CI

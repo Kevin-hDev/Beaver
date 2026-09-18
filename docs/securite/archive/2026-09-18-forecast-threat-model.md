@@ -1,5 +1,10 @@
 # Modèle de menace Forecast
 
+Dernière mise à jour : 2026-09-18 (archivage uniquement).
+Statut : document historique — ne décrit plus les garanties actuelles de Beaver.
+
+Archive de l’analyse présente dans le dépôt depuis le 26 juillet 2026. Le texte ci-dessous est conservé sans correction pour garder le contexte des décisions. Les contrôles de téléchargement, les dépendances Python et l’authentification du serveur local ont évolué ; cette analyse ne doit donc plus servir de référence de sécurité actuelle. Consulter [SECURITY.md](../../../SECURITY.md) pour la politique maintenue.
+
 ## Executive summary
 
 Forecast expose trois zones de risque principales : les datasets locaux qui peuvent contenir des données business sensibles, les téléchargements et l'exécution de modèles locaux depuis Hugging Face/GitHub, et les tools LLM capables de lancer Forecast librement en mode auto-permissions. Les contrôles existants sont solides sur plusieurs points importants : validation des requêtes, limites de taille, stockage dans `data_dir()`, chemins normalisés, commandes système sans shell, rendu Markdown sanitizé, token local éphémère pour le sidecar, et logs Forecast sans body HTTP brut. Les risques les plus importants restent la future ouverture aux modèles custom, la chaîne d'approvisionnement des modèles/runtimes Python, et l'abus automatisé par agent.

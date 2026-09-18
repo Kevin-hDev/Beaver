@@ -28,11 +28,11 @@ Beaver runs on your computer; the selected model can run in the cloud or locally
 - **Planning and permissions**: explore safely in Plan mode, save Markdown plans, approve implementation, and choose automatic, manual, or per-chat tool permissions
 - **Parent-controlled subagents**: coordinate isolated child sessions, follow their live status, correct or reuse them, review their changes, and clean up their worktrees safely
 - **Persistent memory**: keep optional global and per-project memory with manual or automatic modes, bounded summaries, topic files, live activity, and read-only access for subagents
-- **Reasoning and multimodal continuity**: use the reasoning controls and image inputs validated for each model while Beaver preserves provider-native reasoning across messages and tool continuations without exposing private provider state
+- **Reasoning and multimodal continuity**: use the reasoning controls and image inputs validated for each model while Beaver preserves provider-native reasoning across messages and tool continuations on supported model and connection combinations, without exposing private provider state
 
 ### The workspace
 
-- **Conversations and projects**: manage tabbed chats, attachments, favorites, queued messages, session branches, archived chats, hidden summaries, and project folders
+- **Conversations and projects**: manage tabbed chats, attachments, favorites, preserved drafts during active responses, session branches, archived chats, hidden summaries, and project folders
 - **Embedded browser**: browse in up to ten tabs per conversation, keep signed-in sessions, detect local development sites, and share the side panel with previews and Forecast. Available on macOS and Windows
 - **Complete Git workflow**: create, switch, merge, and delete branches or worktrees; commit and push; browse uncommitted changes; and inspect recent or historical diffs
 - **Desktop workspace**: use the cross-platform tabbed terminal, file tree, rich text and Office previews, link previews, context usage breakdown, six visual themes, and the interactive Beaver companion
@@ -75,9 +75,10 @@ See **[EXTENSIONS.md](EXTENSIONS.md)** for the complete user and author guide, i
 curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
 ```
 
-Downloads the latest release, installs the app, and launches it automatically.
-- **macOS**: installs into `/Applications/`
-- **Linux**: installs the Debian package through `apt-get` (Ubuntu/Debian only)
+Downloads the latest release for your system.
+
+- **macOS**: opens Beaver Installer; click **Install** to install into `/Applications/`, then **Launch Beaver**.
+- **Linux**: installs the Debian package through `apt-get` and launches Beaver automatically (Ubuntu/Debian only).
 
 The Linux installer uses the `.deb` release asset so the app is visible in the system application menu.
 
@@ -151,11 +152,12 @@ Beaver includes a dedicated Forecast workspace for time-series analysis:
 
 - macOS (Apple Silicon), Linux, or Windows
 - Node.js 24 LTS — for development and external tools that require a system installation
-- CPython 3.14 — only the local SearXNG fallback
+- CPython 3.14 — for the local SearXNG fallback
+- CPython 3.12 — for local Forecast models
 
-Packaged Beaver includes Node.js and npm for its extension host; using extensions does not itself require installing Node.js separately. This bundled runtime does not install Node.js globally for other programs. CPython 3.14 remains an external requirement only for the local SearXNG fallback.
+Packaged Beaver includes Node.js and npm for its extension host; using extensions does not itself require installing Node.js separately. This bundled runtime does not install Node.js globally for other programs. Local SearXNG requires an external CPython 3.14 installation. Local Forecast requires an external CPython 3.12 installation; Beaver then creates its managed environments and installs the locked model dependencies.
 
-Use the following installation instructions when you need these external runtimes, not as mandatory steps for every Beaver installation.
+Use the following installation instructions when you need these external runtimes, not as mandatory steps for every Beaver installation. The Python commands below install 3.14 for SearXNG. For local Forecast, run the same Python installation and verification commands with `3.12` instead of `3.14`; install both versions if you use both features.
 
 The commands below were checked on August 31, 2026 against the official [Node.js download page](https://nodejs.org/en/download) (Node.js 24.20.0 LTS) and [Astral uv documentation](https://docs.astral.sh/uv/getting-started/installation/). They avoid a Linux package manager tied to one distribution.
 
@@ -268,7 +270,7 @@ Rust (via [`rustup`](https://rustup.rs/)) is required only to build or develop B
 
 ## Development
 
-Install Node.js from the external runtimes section above first. CPython is only needed for local SearXNG. Then install the project dependencies:
+Install Node.js from the external runtimes section above first. CPython 3.14 is needed for local SearXNG and CPython 3.12 for local Forecast. Then install the project dependencies:
 
 ```bash
 # 1. Clone the repo
@@ -355,7 +357,8 @@ historical identifier for compatibility with existing installations:
 |---|---|
 | `secrets.enc` | Encrypted API and OAuth credentials |
 | `configured-providers.json`, `provider-usage.json` | Connected providers and local usage history |
-| `config.json`, `heartbeat-runtime.json` | Application settings and wakeup runtime state |
+| `config.json` | Application settings |
+| `automations.json`, `automation-runtime.json` | Wakeup definitions and durable execution state |
 | `agent-sessions/*.json` | Agent conversations |
 | `agent-settings.json`, `session-tabs.json` | Permissions and open conversation tabs |
 | `compression-profiles.json` | Reusable context-compression profiles and global selection |
@@ -369,17 +372,17 @@ historical identifier for compatibility with existing installations:
 | `mcp-connectors.json`, `mcp-runtime/` | MCP connector configuration and runtime data |
 | `extensions.json`, `extension-installs/` | Extension registry and managed installations |
 | `extension-discovery-preferences.json`, `extension-session-state/` | Extension discovery preferences and per-conversation state |
-| `gateway-session-map.json`, `logs/gateway-audit.jsonl` | Gateway session links and audit history |
+| `agent-sessions/gateway-session-map.json`, `logs/gateway-audit.jsonl` | Gateway session links and audit history |
 | `forecast-*` | Forecast analyses, data profiles, models, settings, drafts, notes, and exports |
 | `ollama-*` | Managed Ollama runtime, model metadata, and system prompt overrides |
 | `searxng-sidecar/` | Local SearXNG search runtime |
-| `logs/` | Bounded wakeup, gateway, Ollama, SearXNG, and tool logs |
+| `logs/` | Bounded application, wakeup, gateway, SearXNG, and tool logs; Ollama management events appear in `beaver.log`, with no dedicated Ollama engine log |
 
 ## Ollama — managed runtime
 
 For local models, Beaver manages **Ollama** so a separate manual installation is not required. Cloud model requests run through their providers, not through Ollama:
 
-- On first launch, a setup screen downloads Ollama automatically into `~/.local/share/cl-go-dash/ollama-bundle/`
+- On first launch, a setup screen offers to download Ollama into `~/.local/share/cl-go-dash/ollama-bundle/`; you can skip it and install it later from Settings → Ollama
 - Beaver checks runtime availability and manages launching or reusing an Ollama service
 - The managed runtime has supervised startup, shutdown, and recovery; an independently running service is not treated as a child process owned by Beaver
 - On Linux, automatic GPU detection (AMD → ROCm archive, Nvidia → standard archive with CUDA)
@@ -393,7 +396,7 @@ For local models, Beaver manages **Ollama** so a separate manual installation is
 - **Credential boundary**: the built-in credential interface does not expose a command to read stored API keys. Approved extensions can request supported secrets through the extension API; that trusted-code boundary is described in [EXTENSIONS.md](EXTENSIONS.md)
 - **Path traversal protection**: paths requested through the frontend are validated, canonicalized, and kept inside their allowed roots
 - **Bounded collections**: ActiveStreams (32), PTY sessions (16), messages per session (2000), capped MCP JSON depth/size
-- **Secure HTTP for credentials**: redirects blocked, HTTPS enforced, error messages sanitized
+- **Secure HTTP for credentials**: redirects blocked, HTTPS enforced for remote services, explicit authenticated local Forecast exception, error messages sanitized
 - **MCP hardening**: program allowlist, no shell, argument validation, environment isolation
 - **Protected browser**: sandboxed helpers, restricted navigation, blocked sensitive permissions, private profile, and encrypted restored tabs
 - **Verified updates**: strict release metadata, bounded downloads, SHA-256 manifests, health checks, and fail-closed installation
