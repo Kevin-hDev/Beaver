@@ -4,11 +4,10 @@ import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type {
   ModelDownloadKind,
-  ModelDownloadPhase,
   ModelDownloadState,
 } from "@/types/model-download.generated";
 
-export type { ModelDownloadKind, ModelDownloadPhase, ModelDownloadState };
+export type { ModelDownloadKind, ModelDownloadState };
 
 export function isModelDownloadPending(download: Pick<ModelDownloadState, "status">): boolean {
   return download.status === "queued"

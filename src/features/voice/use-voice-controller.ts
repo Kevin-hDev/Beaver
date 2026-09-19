@@ -16,7 +16,6 @@ export function useVoiceController(draftKey: string) {
   const surfaceActive = useAppSurfaceActive();
   const snapshot = useVoiceSnapshot();
   const downloads = useModelDownloads();
-  const cancelModelDownload = downloads.cancelDownload;
   const resumeModelDownload = downloads.resumeDownload;
   const [settings, setSettings] = useState<VoiceSettings | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
@@ -112,12 +111,11 @@ export function useVoiceController(draftKey: string) {
   return useMemo(() => ({
     snapshot, settings, origin, activeElsewhere: Boolean(snapshot?.operation && !origin),
     available: !IS_LINUX && settings?.enabled !== false && deviceCount !== 0,
-    checkingDevices: deviceCount === null, dialog, pending, begin, acceptExplanation,
-    closeDialog: () => setDialog(null), start, refreshDevices,
+    dialog, pending, begin, acceptExplanation,
+    closeDialog: () => setDialog(null),
     modelDownload,
-    cancelDownload: (id: string) => cancelModelDownload(id).catch(() => showToast(i18n.t("errors.operationFailed"), "error")),
     resumeDownload: (id: string) => resumeModelDownload(id).catch(() => showToast(i18n.t("errors.operationFailed"), "error")),
     validate: () => operationId && run({ action: "validate", operation_id: operationId }),
     cancel: () => operationId && run({ action: "cancel-insertion", operation_id: operationId }),
-  }), [snapshot, settings, origin, deviceCount, dialog, pending, begin, acceptExplanation, start, refreshDevices, modelDownload, cancelModelDownload, resumeModelDownload, operationId, run]);
+  }), [snapshot, settings, origin, deviceCount, dialog, pending, begin, acceptExplanation, modelDownload, resumeModelDownload, operationId, run]);
 }

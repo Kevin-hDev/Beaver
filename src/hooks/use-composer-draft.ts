@@ -11,7 +11,7 @@ import {
   type ComposerDraftSkill,
 } from "./composer-draft-store";
 
-export type { ComposerDraftSkill, ComposerDraftSnapshot };
+export type { ComposerDraftSkill };
 export function sessionComposerDraftKey(sessionId: string): string { return `session:${sessionId}`; }
 
 export function useComposerDraft(draftKey: string) {

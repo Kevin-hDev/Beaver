@@ -87,7 +87,7 @@ pub fn open_input_stream_if(
         SampleFormat::U16 => InputSampleFormat::U16,
         _ => return Err(VoiceError::configuration_unavailable()),
     };
-    let ring = InputRing::new(capacity, sample_rate, channels, format)?;
+    let ring = InputRing::new(capacity, sample_rate, channels)?;
     let stream = match format {
         InputSampleFormat::F32 => build::<f32>(&device, &config, &ring, &disconnected),
         InputSampleFormat::I16 => build::<i16>(&device, &config, &ring, &disconnected),

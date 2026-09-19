@@ -2,7 +2,7 @@ import type { VoicePhase } from "@/types/voice.generated";
 import type { VoiceSnapshot } from "@/types/voice.generated";
 import { dispatchVoiceAction } from "./voice-client";
 
-export type VoiceKeyboardDecision = "none" | "consume" | "validate" | "discard" | "toggle";
+type VoiceKeyboardDecision = "none" | "consume" | "validate" | "discard";
 
 interface VoiceKeyboardInput {
   key: string;

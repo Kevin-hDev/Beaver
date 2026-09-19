@@ -7,7 +7,7 @@ import { dispatchVoiceAction } from "./voice-client";
 import { acceptVoiceSnapshot } from "./voice-store";
 import { IS_LINUX } from "@/lib/platform";
 
-export async function closeVoiceDraft(draftKey: string): Promise<void> {
+async function closeVoiceDraft(draftKey: string): Promise<void> {
   closeComposerDraft(draftKey);
   if (IS_LINUX) return;
   const next = await dispatchVoiceAction({

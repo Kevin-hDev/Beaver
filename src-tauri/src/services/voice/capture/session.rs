@@ -69,7 +69,7 @@ impl CaptureSession {
             .saturating_add(u64::try_from(pcm.len().saturating_sub(remaining)).unwrap_or(u64::MAX));
         pcm.truncate(remaining);
         self.audio.append(&pcm, lost_samples)?;
-        let level = LevelFrame::from_pcm(&pcm, lost_samples);
+        let level = LevelFrame::from_pcm(&pcm);
         let mut waveform: Vec<f32> = pcm
             .iter()
             .map(|sample| f32::from(*sample) / i16::MAX as f32)

@@ -65,7 +65,6 @@ impl InputRing {
         capacity_samples: usize,
         sample_rate: u32,
         channels: u16,
-        _format: InputSampleFormat,
     ) -> Result<Self, VoiceError> {
         let bytes = capacity_samples
             .checked_mul(size_of::<f32>())
@@ -158,7 +157,7 @@ mod tests {
 
     #[test]
     fn overwrites_oldest_and_counts_each_loss() {
-        let ring = InputRing::new(3, 48_000, 1, InputSampleFormat::F32).unwrap();
+        let ring = InputRing::new(3, 48_000, 1).unwrap();
         ring.push([1.0, 2.0, 3.0, 4.0].into_iter(), 4);
         let chunk = ring.drain();
         assert_eq!(chunk.samples, [2.0, 3.0, 4.0]);
@@ -166,22 +165,21 @@ mod tests {
     }
 
     #[test]
-    fn refuses_unbounded_or_invalid_formats() {
-        assert!(InputRing::new(0, 48_000, 1, InputSampleFormat::F32).is_err());
-        assert!(InputRing::new(1, 1, 1, InputSampleFormat::F32).is_err());
-        assert!(InputRing::new(1, 48_000, 9, InputSampleFormat::F32).is_err());
+    fn refuses_unbounded_or_invalid_capture_parameters() {
+        assert!(InputRing::new(0, 48_000, 1).is_err());
+        assert!(InputRing::new(1, 1, 1).is_err());
+        assert!(InputRing::new(1, 48_000, 9).is_err());
         assert!(InputRing::new(
             limits::MAX_INPUT_RING_BYTES / size_of::<f32>() + 1,
             48_000,
             1,
-            InputSampleFormat::F32,
         )
         .is_err());
     }
 
     #[test]
     fn a_busy_consumer_counts_every_rejected_sample() {
-        let ring = InputRing::new(3, 48_000, 1, InputSampleFormat::F32).unwrap();
+        let ring = InputRing::new(3, 48_000, 1).unwrap();
         let guard = ring.inner.lock().unwrap();
         ring.push([1.0, 2.0].into_iter(), 2);
         drop(guard);

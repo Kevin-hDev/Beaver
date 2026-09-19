@@ -4,7 +4,7 @@ import { APP_SHORTCUTS, matchesAppShortcut } from "@/lib/app-shortcuts";
 import { ALT_LABEL, IS_MAC } from "@/lib/platform";
 import { isReservedVoiceShortcut, voiceShortcutValue } from "@/features/voice/voice-keyboard";
 
-export function formatVoiceShortcut(value: string): string {
+function formatVoiceShortcut(value: string): string {
   return value.split("+").map((part) => {
     if (part === "Meta") return IS_MAC ? "⌘" : "Meta";
     if (part === "Control") return "Ctrl";

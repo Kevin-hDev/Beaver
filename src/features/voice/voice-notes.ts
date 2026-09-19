@@ -1,7 +1,7 @@
 import type { VoiceSnapshot } from "@/types/voice.generated";
 
-export type VoiceNoteKind = "activity" | "recovery" | "error";
-export interface VoiceNote { kind: VoiceNoteKind; key: string }
+type VoiceNoteKind = "recovery" | "error";
+interface VoiceNote { kind: VoiceNoteKind; key: string }
 
 // Les statuts d'activité (préparation, transcription…) ne sont pas des notes :
 // ils s'affichent dans le placeholder ou la rangée de contrôles, sans ajouter
