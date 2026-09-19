@@ -1,0 +1,11 @@
+Validation Windows locale du 18 septembre 2026 — candidat final corrigé.
+
+Source : 4ddbea21c18bdd50cff7c507346be240104657fd. Correction du verrou réentrant à l'admission des réveils et de l'identité de récupération réutilisée après checkpoint. Inclut les corrections de propriété enfant et de validation Ollama du prédécesseur c44d5978.
+
+Vérifications : 5703 tests Rust réussis, 0 échoué, 35 ignorés ; Clippy strict sortie 0 ; Graphify actualisé. Build installateur sortie 0. SHA-256 44A8A4A1F18FC31D89450F231987D3AC3DDCB699BE2E44964ADA9E480438FC29, 325060668 octets.
+
+Rejeux dans ce paquet : vrai scheduler admet les deux réveils, révocation annule celui possédé, voisin termine normalement ; Stop natif annule parent et enfant, les deux conversations restent lisibles et une autre extension fonctionne ; parcours contexte/modèle/mémoire/fichier attribué réussi. Seules les réponses HTTP du modèle sont contrôlées dans ces trois cas. Suite officielle complète : 73 réussis, 0 échoué, 3 cas Linux ignorés, CEF inclus, sortie 0. Le premier lancement de cette dernière suite avait un argument de dossier invalide ; son journal rouge est conservé séparément du rejeu.
+
+Réserves conservées : délai réel Qwen 25 s sur le paquet précédent, intermittence CEF historique non expliquée, couverture exhaustive CL-2/CL-3 et focus clavier H07 distincts. Aucun succès contrôlé ne remplace ces limites. Pas de validation macOS des nouveaux correctifs, de CI, push, PR, merge, tag ou release ; B11 global non clos. Profils finaux supprimés, processus possédés absents, port 11434 libre. Modification startup préexistante exclue.
+
+Autorité détaillée : C:/Users/huynh/projects/Beaver/docs/fonctionnalites/extension/VALIDATION_API_PART_2_WINDOWS_2026-09-18.md. Journaux ignorés : .validation/2026-09-18 ; JUnit final : .e2e-artifacts/windows-final-candidate/wdio-results.xml dans le worktree isolé.

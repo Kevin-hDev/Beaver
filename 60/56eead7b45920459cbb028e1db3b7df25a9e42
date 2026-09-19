@@ -1,0 +1,12 @@
+Windows validation, 2026-09-18; base b2fb6ddc7bb99807ca64cccb65fb4d42568ee58a.
+
+Reason: Windows path separators bypassed the extension UI boundary check and broke routing allowlists; privilege-dependent links, shell commands, file URL conversion and CRLF checkout prevented portable verification. Contract checks now reuse the existing windows-tests argument builder with exact collection guards intact.
+
+Executed: npm test exit 0 (638 frontend files / 3488 tests; extension host 144/144 and other script suites recorded); full Rust library suite 5696 passed / 35 ignored; Windows private store 29/29; explicitly executed prepared host 5/5, lifecycle 1/1, AppContainer 1/1; lint, TypeScript and strict all-target Clippy exit 0; exact contracts 25/25. Last contract runner edit additionally verified with 3 Node tests and all 25 contracts. Graphify maintenance exit 0.
+
+Native NSIS E2E package built and installed in an isolated profile. First packaged run: 72 passed, 1 failed, 3 skipped, browser_surface stage-timeout after 10007 ms. Unchanged replay: 73 passed, 0 failed, 3 skipped, including real CEF page loading and owned-process shutdown. No timeout raised or assertion disabled. Initial intermittent failure remains unexplained and is NOT claimed fixed. Model-backed H01-H07 acceptance and CL-2/CL-3 remain open; Ollama unavailable. No B11 closure.
+
+Installer SHA256: 265011A97957F8F65448650183B192FD4AA417584EF7CEBA1CB95A151BC4221E.
+Private report: C:/Users/huynh/projects/Beaver/docs/fonctionnalites/extension/VALIDATION_API_PART_2_WINDOWS_2026-09-18.md.
+Evidence in worktree: .validation/2026-09-18 and .e2e-artifacts/windows-cef-validation plus windows-cef-replay.
+Both native profiles removed and no executable remains under their paths. Original checkout and pre-existing document status preserved. Local commit only: no push, PR, merge, release or CI launch.

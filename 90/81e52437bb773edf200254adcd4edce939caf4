@@ -1,0 +1,9 @@
+Corrections de review Windows — erreur d'admission et nettoyage des tests, 18 septembre 2026.
+
+La seconde vérification d'admission retourne Busy si la session est devenue occupée et Unavailable si la capacité globale est épuisée. Le verrou, le second contrôle et le comportement du scheduler restent conservés ; seule la classification incorrecte est corrigée.
+
+Les tests annulent le diagnostic puis passent par finish_active_stream ; ils vérifient l'état cancelled et la disparition du flux, au lieu de vider la collection directement. Avant correction : le test d'admission concurrente échoue en demandant Busy. Après : les quatre tests sélectionnés par background_tests passent, dont les deux tests d'admission.
+
+Validation du lot complet dans son état final 9081e52437bb773edf200254adcd4edce939caf4 : 5714 tests Rust réussis, 0 échoué, 35 ignorés ; Clippy strict toutes cibles sortie 0 ; Graphify actualisé (53868 nœuds, 111812 relations, 2994 communautés). Les avertissements préexistants ts-rs et Graphify restent conservés. La revue du diff est locale, sans nouvel agent de review indépendant.
+
+Autorité détaillée : C:/Users/huynh/.codex/worktrees/extensions-api-part-2-windows-validation/Beaver/docs/fonctionnalites/extension/CORRECTIONS_REVIEW_API_PART_2_WINDOWS_2026-09-18.md. Journaux privés ignorés : .validation/2026-09-18/review-*. Le paquet de la campagne précédente n'a pas été reconstruit et n'est pas une preuve d'exécution de ce lot. Aucun push, PR, CI, merge, tag ou release ; modification startup préexistante exclue. Les observations mineures de maintenance sur les deux normalisations de chemins et la couverture des symlinks Windows restent documentées.

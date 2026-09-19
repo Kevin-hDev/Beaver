@@ -1,0 +1,9 @@
+Clôture de deux remarques mineures de la review des corrections, 18 septembre 2026.
+
+InvalidResponse est désormais ProviderUnavailable : une réponse illisible du moteur ne prouve pas l'absence du modèle. HTTP 404 reste ModelUnavailable. Nouveau test sur le vrai routage : JSON invalide, champs absents, corps trop volumineux. Échec constaté avant correction (ModelUnavailable au lieu de ProviderUnavailable), réussite après.
+
+L'attribution du propriétaire ne se fait qu'à la création ; la réutilisation conserve le propriétaire déjà contrôlé sous verrou. Les tests existants de refus sans mutation et de conservation passent.
+
+Validation exécutée : 82 tests automatisations réussis / 1 ignoré ; 280 tests filtrés subagent_ réussis ; 11 tests client Ollama réussis. Total 373 réussis, 0 échec, 1 ignoré. Clippy toutes cibles -D warnings sortie 0 ; diff --check sortie 0 ; graphify update . sortie 0. Avertissements préexistants conservés dans les journaux.
+
+Autorité détaillée locale : docs/fonctionnalites/extension/CLOTURE_MINEURS_API_PART_2_WINDOWS_2026-09-18.md. Preuves privées : .validation/2026-09-18/minor-*. Suite complète précédente non relancée, installateur non reconstruit, aucun nouveau parcours UI ou macOS. Aucun push, PR, merge, CI, tag ou release. Modification startup préexistante exclue.
