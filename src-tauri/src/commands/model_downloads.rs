@@ -3,7 +3,6 @@ use crate::services::model_downloads::{
     emit_states, run_download_queue, ModelDownloadKind, ModelDownloadManager, ModelDownloadState,
 };
 use tauri::AppHandle;
-#[cfg(any(target_os = "macos", windows))]
 use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
