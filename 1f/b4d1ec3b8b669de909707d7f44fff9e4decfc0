@@ -1,0 +1,1 @@
+Cause: after restoring Linux compilation, strict Clippy rejected the active voice model helper as unused in Linux production. Fix: compile the helper on macOS/Windows and in tests. Verified locally: Windows cargo check and fmt; PR CI validation continues.
