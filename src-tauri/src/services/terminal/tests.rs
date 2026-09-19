@@ -462,6 +462,8 @@ mod tests {
     #[test]
     #[cfg(windows)]
     fn windows_full_output_pipe_does_not_block_pty_close() {
+        let (ready, started) = std::sync::mpsc::sync_channel(1);
+        let (close, requested) = std::sync::mpsc::sync_channel(1);
         let (finished, result) = std::sync::mpsc::sync_channel(1);
         std::thread::spawn(move || {
             let (session, _unread_output) =
@@ -471,10 +473,17 @@ mod tests {
                 .write(b"1..10000 | % { 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }\r\n")
                 .expect("start output flood");
             std::thread::sleep(Duration::from_millis(250));
+            ready.send(()).expect("report full output pipe");
+            requested.recv().expect("wait for close request");
             drop(session);
             finished.send(pid).expect("report bounded close");
         });
 
+        // Shell startup must not consume the deadline reserved for closing ConPTY.
+        started
+            .recv_timeout(Duration::from_secs(10))
+            .expect("flooding shell must start");
+        close.send(()).expect("request ConPTY close");
         let pid = result
             .recv_timeout(Duration::from_secs(3))
             .expect("closing a full ConPTY pipe must stay bounded");
