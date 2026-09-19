@@ -117,6 +117,17 @@ test("construit les deux installateurs après leur interface sans toucher Linux"
   assert.match(workflow, /Beaver_\$\{VERSION\}_installer-x64\.exe/u);
 });
 
+test("récupère aussi les dépendances du correctif d'emballage Windows", () => {
+  const checkout = workflowDocument.jobs.build.steps.find(
+    ({ name }) => name === "Checkout v1.2.3 Windows packaging fix",
+  );
+  assert.ok(checkout);
+  assert.deepEqual(
+    checkout.with["sparse-checkout"].trim().split("\n").map((line) => line.trim()),
+    ["scripts/release", "scripts/file-system"],
+  );
+});
+
 test("construit les roues SearXNG avec la version Python contrôlée", () => {
   const steps = workflowDocument.jobs.build.steps;
   const checkoutIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/checkout@"));

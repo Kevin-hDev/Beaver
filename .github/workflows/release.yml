@@ -329,7 +329,9 @@ jobs:
         with:
           ref: 8ba0bf80dbb2b3c6e3408e775c3ad08e0ab8a45d
           path: .release-packaging-v123
-          sparse-checkout: scripts/release
+          sparse-checkout: |
+            scripts/release
+            scripts/file-system
           persist-credentials: false
 
       - name: Package installer artifact
