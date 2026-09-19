@@ -9,7 +9,10 @@ use zeroize::Zeroize;
 
 use super::{
     audio_buffer::AudioBuffer,
-    capture::{activity::SpeechClock, session::CaptureSession, stream::open_input_stream},
+    capture::{
+        activity::SpeechClock, session::CaptureSession, stream::open_input_stream,
+        window_events::WindowEventState,
+    },
     download::{
         download_archive, ensure_disk_available, install_archive, installed_receipt, load_catalog,
         verify_file, VoiceCatalogEntry, VoiceEngine, VoiceModelRole,
@@ -20,7 +23,9 @@ use super::{
         recognizer::{recognize_probe, EffectiveLanguage, ExecutionProfile},
     },
     transcription::transcribe,
-    types::{VoiceInputDevice, VoiceInputGain, VoiceUnloadDelay},
+    types::{
+        VoiceInputDevice, VoiceInputGain, VoiceMaxDuration, VoiceSilenceTimeout, VoiceUnloadDelay,
+    },
 };
 
 const DATA_ENV: &str = "VOICE_PROTOTYPE_DATA_DIR";
@@ -249,6 +254,73 @@ async fn native_model_matrix() {
             corpus_revision: manifest.dataset_revision,
             models: reports,
         },
+    );
+}
+
+#[tokio::test]
+#[ignore = "loads locally installed Cohere and Parakeet while the microphone is open"]
+async fn native_model_switch_from_cohere_to_parakeet() {
+    let data_dir =
+        PathBuf::from(std::env::var(DATA_ENV).expect("VOICE_PROTOTYPE_DATA_DIR is required"));
+    let catalog = load_catalog(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let vad = catalog
+        .entries
+        .iter()
+        .find(|entry| entry.role == VoiceModelRole::Vad)
+        .unwrap();
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let lifecycle = ModelLifecycle::new(coordinator.work_supervisor());
+    for model_id in [
+        "cohere-transcribe-int8",
+        "parakeet-tdt-v3-int8",
+        "cohere-transcribe-int8",
+        "parakeet-tdt-v3-int8",
+    ] {
+        let asr = catalog
+            .entries
+            .iter()
+            .find(|entry| entry.id == model_id)
+            .unwrap();
+        let started = Instant::now();
+        let preparation = lifecycle
+            .acquire_for_capture(
+                &data_dir,
+                asr,
+                vad,
+                ExecutionProfile::cpu(8).unwrap(),
+                VoiceUnloadDelay::OnExit,
+            )
+            .unwrap();
+        let mut capture = CaptureSession::open(
+            &VoiceInputDevice::SystemDefault,
+            VoiceInputGain::Six,
+            false,
+            true,
+        )
+        .unwrap();
+        let mut preparation = preparation;
+        for _ in 0..40 {
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            preparation.poll_loading().unwrap();
+            capture
+                .poll(
+                    preparation.vad(),
+                    &WindowEventState::default(),
+                    VoiceSilenceTimeout::Never,
+                    VoiceMaxDuration::Thirty,
+                )
+                .unwrap();
+        }
+        let lease = preparation.into_ready().unwrap();
+        eprintln!("model={model_id} load_ms={}", elapsed_ms(started));
+        drop(capture);
+        drop(lease);
+    }
+    lifecycle.begin_closing();
+    assert!(
+        lifecycle
+            .stop_and_wait(Instant::now() + std::time::Duration::from_secs(5))
+            .await
     );
 }
 

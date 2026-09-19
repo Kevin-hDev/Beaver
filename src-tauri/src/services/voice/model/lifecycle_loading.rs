@@ -129,11 +129,11 @@ impl LoadingModelLease {
     }
 
     fn poll(&mut self) -> Result<(), VoiceError> {
-        if self.finished {
-            return Err(VoiceError::configuration_unavailable());
-        }
         if self.ready.is_some() {
             return Ok(());
+        }
+        if self.finished {
+            return Err(VoiceError::configuration_unavailable());
         }
         let received = match self
             .result
@@ -155,11 +155,13 @@ impl LoadingModelLease {
     }
 
     fn finish(mut self) -> Result<ModelLease, VoiceError> {
-        if self.finished {
-            return Err(VoiceError::configuration_unavailable());
-        }
+        // The receiver is finished once a model arrives, but that ready lease
+        // remains valid for every later capture poll and validation.
         if let Some(ready) = self.ready.take() {
             return Ok(ready);
+        }
+        if self.finished {
+            return Err(VoiceError::configuration_unavailable());
         }
         let received = self
             .result

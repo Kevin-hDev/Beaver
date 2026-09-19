@@ -9,6 +9,7 @@ fn state(
         id: "model-1".into(),
         kind,
         model_id: "model".into(),
+        active_model_id: None,
         is_update: true,
         status,
         phase,
@@ -18,6 +19,18 @@ fn state(
         error_key: None,
         missing_bytes: None,
     }
+}
+
+#[test]
+fn voice_projection_names_the_component_being_downloaded() {
+    let mut source = state(
+        ModelDownloadKind::Voice,
+        ModelDownloadStatus::Running,
+        ModelDownloadPhase::Downloading,
+    );
+    source.model_id = "cohere-transcribe-int8".into();
+    source.active_model_id = Some("silero-vad".into());
+    assert_eq!(project_state(&source, None).label, "silero-vad");
 }
 
 #[test]

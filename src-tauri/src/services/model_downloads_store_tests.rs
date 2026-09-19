@@ -17,6 +17,32 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn shared_voice_download_keeps_the_requested_model_separate_from_the_active_file() {
+        let manager = test_manager();
+        let (request, _) = manager
+            .start(
+                ModelDownloadKind::Voice,
+                "cohere-transcribe-int8".into(),
+                false,
+            )
+            .await
+            .unwrap();
+        let states = manager
+            .try_set_active_model(&request.id, "silero-vad")
+            .unwrap();
+        assert_eq!(states[0].model_id, "cohere-transcribe-int8");
+        assert_eq!(states[0].active_model_id.as_deref(), Some("silero-vad"));
+        assert_eq!(
+            crate::services::model_downloads_projection::project_state(&states[0], None).label,
+            "silero-vad"
+        );
+        assert!(serde_json::to_value(&states[0])
+            .unwrap()
+            .get("activeModelId")
+            .is_none());
+    }
+
+    #[tokio::test]
     async fn queues_a_second_download_while_one_is_running() {
         let manager = test_manager();
         let (first, first_runner) = manager

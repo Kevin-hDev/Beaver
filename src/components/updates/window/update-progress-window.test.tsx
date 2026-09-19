@@ -82,6 +82,13 @@ describe("UpdateProgressWindow", () => {
     expect(screen.queryByText("updates.window.title")).toBeNull();
   });
 
+  it("names the shared voice download without exposing Silero as a transcription model", () => {
+    mocks.operations = [{ ...base, kind: "voice-model", label: "silero-vad", isUpdate: false }];
+    render(<UpdateProgressWindow />);
+    expect(screen.getByText("voice.settings.title")).toBeTruthy();
+    expect(screen.queryByText("silero-vad")).toBeNull();
+  });
+
   it("reports a completed model installation without calling it an update", () => {
     mocks.operations = [{ ...base, kind: "voice-model", isUpdate: false, status: "completed", phase: "completed", canCancel: false }];
     render(<UpdateProgressWindow />);

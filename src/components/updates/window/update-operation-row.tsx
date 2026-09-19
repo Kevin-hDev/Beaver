@@ -25,7 +25,9 @@ export function UpdateOperationRow({ operation, onDismiss, onRetry }: {
       <div className="upw-body">
         <span className="upw-name">
           {operation.status === "failed" && <Warning className="upw-state-icon upw-error-icon" aria-hidden="true" />}
-          {operation.label}
+          {operation.kind === "voice-model" && operation.label === "silero-vad"
+            ? t("voice.settings.title")
+            : operation.label}
         </span>
         <OperationState operation={operation} phaseLabel={phaseLabel} />
       </div>

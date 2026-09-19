@@ -43,6 +43,9 @@ pub struct ModelDownloadState {
     pub id: String,
     pub kind: ModelDownloadKind,
     pub model_id: String,
+    #[serde(skip)]
+    #[cfg_attr(test, ts(skip))]
+    pub active_model_id: Option<String>,
     pub is_update: bool,
     pub status: ModelDownloadStatus,
     pub phase: ModelDownloadPhase,
@@ -92,6 +95,7 @@ impl ModelDownloadState {
             id,
             kind,
             model_id,
+            active_model_id: None,
             is_update,
             status,
             phase: ModelDownloadPhase::Starting,

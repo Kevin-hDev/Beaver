@@ -86,7 +86,11 @@ pub(crate) fn project_state(
             ModelDownloadKind::Forecast => UpdateOperationKind::ForecastModel,
             ModelDownloadKind::Voice => UpdateOperationKind::VoiceModel,
         },
-        label: state.model_id.clone(),
+        label: state
+            .active_model_id
+            .as_ref()
+            .unwrap_or(&state.model_id)
+            .clone(),
         status,
         phase,
         progress_mode,

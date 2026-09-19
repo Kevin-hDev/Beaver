@@ -140,6 +140,16 @@ impl ModelDownloadManager {
         Some(list_locked(&store))
     }
 
+    pub fn try_set_active_model(
+        &self,
+        id: &str,
+        model_id: &str,
+    ) -> Option<Vec<ModelDownloadState>> {
+        let mut store = self.inner.lock().ok()?;
+        store.entries.get_mut(id)?.state.active_model_id = Some(model_id.to_owned());
+        Some(list_locked(&store))
+    }
+
     pub async fn finish(
         &self,
         id: &str,
