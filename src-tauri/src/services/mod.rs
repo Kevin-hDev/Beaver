@@ -54,6 +54,8 @@ mod model_downloads_store_tests;
 pub mod model_downloads_types;
 #[cfg(any(target_os = "macos", windows))]
 mod model_downloads_voice;
+// Voice checkpoint recovery uses downloads supported only on macOS and Windows.
+#[cfg(any(target_os = "macos", windows))]
 mod model_downloads_voice_restore;
 #[cfg(all(test, any(target_os = "macos", windows)))]
 mod model_downloads_voice_tests;

@@ -140,6 +140,8 @@ impl ModelDownloadManager {
         Some(list_locked(&store))
     }
 
+    // Production callers exist only where voice downloads are supported.
+    #[cfg(any(test, target_os = "macos", windows))]
     pub fn try_set_active_model(
         &self,
         id: &str,
