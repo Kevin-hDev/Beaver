@@ -35,6 +35,11 @@ test("les paquets livrent la licence sans dialogue bloquant dans le DMG", () => 
   assert.equal(windows.bundle.resources["../LICENSE"], "LICENSE.txt");
 });
 
+test("le paquet Windows embarque le catalogue vocal", () => {
+  const windows = JSON.parse(readBounded("src-tauri/tauri.windows.conf.json"));
+  assert.equal(windows.bundle.resources["resources/voice-catalog.json"], "resources/voice-catalog.json");
+});
+
 test("le bundle Windows utilise le hook de migration dédié", () => {
   const config = JSON.parse(readBounded("src-tauri/tauri.conf.json"));
 

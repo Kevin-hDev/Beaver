@@ -10,7 +10,10 @@ pub fn load_catalog(resource_dir: &Path) -> Result<VoiceCatalog, VoiceError> {
     ]
     .into_iter()
     .find(|candidate| candidate.is_file())
-    .ok_or_else(VoiceError::configuration_unavailable)?;
+    .ok_or_else(|| {
+        ::log::warn!("[voice] step=catalog-resource-missing");
+        VoiceError::configuration_unavailable()
+    })?;
 
     let metadata = fs::metadata(&path).map_err(|_| VoiceError::configuration_unavailable())?;
     if metadata.len() == 0 || metadata.len() > limits::MAX_CATALOG_BYTES {
