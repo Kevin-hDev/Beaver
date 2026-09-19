@@ -1,60 +1,60 @@
 {
-  "1.2.2": {
+  "1.2.3": {
     "fr": [
-      "Gemini 3.8 Flash, GLM 5.3 Flash et GPT 6 Astra sont disponibles via les fournisseurs compatibles, y compris Astra avec la connexion ChatGPT.",
-      "Les réglages de raisonnement suivent chaque connexion, avec une meilleure gestion du cache et des compteurs de consommation.",
-      "Les extensions peuvent proposer des skills, des ressources et des résultats enrichis avec images, chargés à la demande par l’Agent.",
-      "Les extensions personnalisent l’interface, avec un mode avancé soumis à approbation et un mode sans échec pour récupérer l’application.",
-      "Le navigateur gagne des onglets réorganisables, une barre d’adresse améliorée et les icônes des sites sur macOS et Windows.",
-      "Les installations continuent en arrière-plan, restent visibles après rechargement et disposent d’une annulation et d’une reprise sécurisées."
+      "Dictez vos messages sur macOS et Windows avec trois modèles de transcription locaux et des réglages de langue, de gain et de silence.",
+      "Un nouvel installateur guidé et une fenêtre de progression commune simplifient les installations et mises à jour sur macOS et Windows.",
+      "L’Agent peut gérer les tâches programmées, et la commande beaver permet de vérifier et entretenir l’application depuis le terminal.",
+      "Les extensions approuvées disposent de nouvelles fonctions pour les modèles, la mémoire, les automatisations et les sous-agents.",
+      "Les aperçus de fichiers et de liens sont plus lisibles, et la documentation officielle est disponible en français et en anglais.",
+      "La sécurité et la stabilité sont renforcées ; Linux reste maintenu, tandis que les futures nouveautés viseront macOS et Windows."
     ],
     "en": [
-      "Gemini 3.8 Flash, GLM 5.3 Flash, and GPT 6 Astra are available through supported providers, including Astra with ChatGPT sign-in.",
-      "Reasoning controls match each connection, with improved prompt caching and usage accounting.",
-      "Extensions can offer skills, resources, and rich results with images that the Agent loads on demand.",
-      "Extensions can customize the interface, with an approved advanced mode and safe mode for application recovery.",
-      "The browser gains reorderable tabs, an improved address bar, and site icons on macOS and Windows.",
-      "Installations continue in the background, remain visible after reload, and support safe cancellation and recovery."
+      "Dictate messages on macOS and Windows with three local transcription models and controls for language, gain, and silence.",
+      "A guided installer and shared progress window simplify installation and updates on macOS and Windows.",
+      "The Agent can manage scheduled tasks, and the beaver command helps inspect and maintain the app from a terminal.",
+      "Approved extensions gain scoped access to models, memory, automations, and subagents.",
+      "File and link previews are clearer, and the official documentation is available in English and French.",
+      "Security and reliability improve; Linux remains maintained, while future features will target macOS and Windows."
     ],
     "es": [
-      "Gemini 3.8 Flash, GLM 5.3 Flash y GPT 6 Astra están disponibles con proveedores compatibles, incluido Astra con inicio de sesión de ChatGPT.",
-      "Los ajustes de razonamiento se adaptan a cada conexión, con mejoras en la caché y el cálculo del consumo.",
-      "Las extensiones pueden ofrecer skills, recursos y resultados con imágenes que el Agente carga bajo demanda.",
-      "Las extensiones pueden personalizar la interfaz, con un modo avanzado autorizado y un modo seguro para recuperar la aplicación.",
-      "El navegador incorpora pestañas reordenables, una barra de direcciones mejorada e iconos de sitios en macOS y Windows.",
-      "Las instalaciones continúan en segundo plano, siguen visibles tras recargar y permiten cancelación y recuperación seguras."
+      "Dicta mensajes en macOS y Windows con tres modelos de transcripción locales y ajustes de idioma, ganancia y silencio.",
+      "Un instalador guiado y una ventana de progreso común facilitan las instalaciones y actualizaciones en macOS y Windows.",
+      "El Agente puede gestionar tareas programadas, y el comando beaver permite revisar y mantener la aplicación desde la terminal.",
+      "Las extensiones aprobadas obtienen acceso limitado a modelos, memoria, automatizaciones y subagentes.",
+      "Las vistas previas de archivos y enlaces son más claras, y la documentación oficial está disponible en inglés y francés.",
+      "Mejoran la seguridad y la estabilidad; Linux sigue recibiendo mantenimiento, mientras que las futuras funciones se centrarán en macOS y Windows."
     ],
     "de": [
-      "Gemini 3.8 Flash, GLM 5.3 Flash und GPT 6 Astra sind über unterstützte Anbieter verfügbar, Astra auch mit ChatGPT-Anmeldung.",
-      "Die Denkoptionen passen zur jeweiligen Verbindung; Prompt-Cache und Verbrauchserfassung wurden verbessert.",
-      "Erweiterungen können Skills, Ressourcen und Ergebnisse mit Bildern anbieten, die der Agent bei Bedarf lädt.",
-      "Erweiterungen können die Oberfläche anpassen, mit einem genehmigten erweiterten Modus und einem abgesicherten Modus zur Wiederherstellung.",
-      "Der Browser bietet sortierbare Tabs, eine verbesserte Adressleiste und Website-Symbole unter macOS und Windows.",
-      "Installationen laufen im Hintergrund weiter, bleiben nach dem Neuladen sichtbar und lassen sich sicher abbrechen und wiederherstellen."
+      "Diktiere Nachrichten unter macOS und Windows mit drei lokalen Transkriptionsmodellen und Einstellungen für Sprache, Verstärkung und Stille.",
+      "Ein geführter Installer und ein gemeinsames Fortschrittsfenster vereinfachen Installation und Updates unter macOS und Windows.",
+      "Der Agent kann geplante Aufgaben verwalten; der Befehl beaver hilft beim Prüfen und Warten der App im Terminal.",
+      "Genehmigte Erweiterungen erhalten begrenzten Zugriff auf Modelle, Speicher, Automationen und Unteragenten.",
+      "Datei- und Linkvorschauen sind übersichtlicher; die offizielle Dokumentation ist auf Englisch und Französisch verfügbar.",
+      "Sicherheit und Stabilität wurden verbessert; Linux wird weiter gepflegt, künftige Funktionen richten sich an macOS und Windows."
     ],
     "it": [
-      "Gemini 3.8 Flash, GLM 5.3 Flash e GPT 6 Astra sono disponibili tramite provider compatibili, incluso Astra con accesso ChatGPT.",
-      "Le opzioni di ragionamento seguono ogni connessione, con miglioramenti alla cache dei prompt e al conteggio dei consumi.",
-      "Le estensioni possono offrire skill, risorse e risultati con immagini che l’Agente carica su richiesta.",
-      "Le estensioni possono personalizzare l’interfaccia, con una modalità avanzata approvata e una modalità sicura per ripristinare l’applicazione.",
-      "Il browser offre schede riordinabili, una barra degli indirizzi migliorata e icone dei siti su macOS e Windows.",
-      "Le installazioni continuano in background, restano visibili dopo il ricaricamento e offrono annullamento e ripristino sicuri."
+      "Detta messaggi su macOS e Windows con tre modelli di trascrizione locali e impostazioni per lingua, guadagno e silenzio.",
+      "Un programma di installazione guidato e una finestra di avanzamento comune semplificano installazioni e aggiornamenti su macOS e Windows.",
+      "L’Agente può gestire le attività pianificate e il comando beaver aiuta a controllare e mantenere l’app dal terminale.",
+      "Le estensioni approvate ottengono accesso limitato a modelli, memoria, automazioni e sottoagenti.",
+      "Le anteprime di file e link sono più chiare e la documentazione ufficiale è disponibile in inglese e francese.",
+      "Sicurezza e stabilità migliorano; Linux resta supportato, mentre le nuove funzioni future riguarderanno macOS e Windows."
     ],
     "zh": [
-      "现可通过受支持的服务商使用 Gemini 3.8 Flash、GLM 5.3 Flash 和 GPT 6 Astra，Astra 也支持通过 ChatGPT 登录使用。",
-      "推理选项与各连接的能力保持一致，并改进了提示词缓存和用量统计。",
-      "扩展可提供技能、资源及带图片的丰富结果，由智能体按需加载。",
-      "扩展可自定义界面，并提供需经批准的高级模式和用于恢复应用的安全模式。",
-      "浏览器新增可调整顺序的标签页和改进的地址栏，并在 macOS 和 Windows 上显示网站图标。",
-      "安装可在后台继续，重新加载后仍可查看进度，并支持安全取消和恢复。"
+      "现在可在 macOS 和 Windows 上使用三个本地转写模型输入语音，并调整语言、增益和静音检测。",
+      "新的引导式安装程序和统一进度窗口让 macOS 与 Windows 上的安装及更新更清晰。",
+      "智能体现在可以管理计划任务，beaver 命令则可在终端中检查和维护应用。",
+      "已获批准的扩展可以在限定权限内使用模型、记忆、自动化和子智能体功能。",
+      "文件与链接预览更加清晰，官方文档现提供英语和法语版本。",
+      "安全性与稳定性得到提升；Linux 将继续维护，未来的新功能将面向 macOS 和 Windows。"
     ],
     "ja": [
-      "対応プロバイダーで Gemini 3.8 Flash、GLM 5.3 Flash、GPT 6 Astra を利用でき、Astra は ChatGPT ログインにも対応します。",
-      "接続ごとに適切な推論設定を提供し、プロンプトキャッシュと使用量の集計を改善しました。",
-      "拡張機能からスキル、リソース、画像付きの結果を提供でき、エージェントが必要に応じて読み込みます。",
-      "拡張機能で画面をカスタマイズでき、承認が必要な詳細モードとアプリを復旧するセーフモードを備えています。",
-      "ブラウザーのタブを並べ替えられるようになり、アドレスバーを改善し、macOS と Windows でサイトアイコンを表示します。",
-      "インストールはバックグラウンドで継続し、再読み込み後も進捗を確認でき、安全なキャンセルと復旧に対応します。"
+      "macOS と Windows で、3 つのローカル文字起こしモデルを使って音声入力でき、言語、ゲイン、無音検出を設定できます。",
+      "新しい案内付きインストーラーと共通の進行状況ウィンドウにより、macOS と Windows での導入と更新が分かりやすくなりました。",
+      "エージェントが予定されたタスクを管理でき、beaver コマンドでターミナルからアプリを確認・保守できます。",
+      "承認済みの拡張機能は、制限された権限でモデル、メモリ、自動化、サブエージェントを利用できます。",
+      "ファイルとリンクのプレビューが見やすくなり、公式ドキュメントは英語とフランス語で利用できます。",
+      "安全性と安定性を改善しました。Linux の保守は継続し、今後の新機能は macOS と Windows 向けになります。"
     ]
   }
 }

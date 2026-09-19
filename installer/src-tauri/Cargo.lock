@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "beaver-installer"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "beaver-data-path",
  "futures-util",
