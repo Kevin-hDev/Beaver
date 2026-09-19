@@ -55,16 +55,15 @@ async fn non_zero_command_keeps_both_bounded_output_tails() {
 #[tokio::test]
 async fn timeout_terminates_the_owned_process_and_bounds_the_log() {
     let _guard = LOG_GUARD.lock().await;
-    let started = std::time::Instant::now();
     let pid_file = tempfile::NamedTempFile::new().expect("pid file");
     let code = format!(
         "import os,sys,time; open({:?}, 'w').write(str(os.getpid())); print('x' * 50000); time.sleep(30)",
         pid_file.path()
     );
-    let result = run_fixture(&code, PROCESS_START_TIMEOUT).await;
+    let (result, elapsed) = run_fixture_timed(&code, PROCESS_START_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
-    assert!(started.elapsed() < PROCESS_START_TIMEOUT + PROCESS_CLEANUP_BOUND);
+    assert!(elapsed < PROCESS_START_TIMEOUT + PROCESS_CLEANUP_BOUND);
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("child pid")
         .parse::<u32>()
@@ -128,14 +127,12 @@ async fn inherited_pipes_from_a_descendant_obey_the_global_deadline() {
         "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, close_fds=False)\nopen({:?}, 'w').write(str(child.pid))",
         pid_file.path()
     );
-    let started = std::time::Instant::now();
-
     // Loaded CI runners need enough time to start Python before the inherited-pipe
     // deadline itself can be exercised.
-    let result = run_fixture(&parent, INHERITED_PIPE_TIMEOUT).await;
+    let (result, elapsed) = run_fixture_timed(&parent, INHERITED_PIPE_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
-    assert!(started.elapsed() < INHERITED_PIPE_TIMEOUT + Duration::from_millis(900));
+    assert!(elapsed < INHERITED_PIPE_TIMEOUT + Duration::from_millis(900));
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("descendant pid")
         .parse::<u32>()
@@ -151,12 +148,10 @@ async fn successful_parent_closes_inherited_pipes_without_consuming_the_deadline
         "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, close_fds=False)\nopen({:?}, 'w').write(str(child.pid))\nraise SystemExit(0)",
         pid_file.path()
     );
-    let started = std::time::Instant::now();
-
-    let result = run_fixture(&parent, SUCCESSFUL_PIPE_GLOBAL_TIMEOUT).await;
+    let (result, elapsed) = run_fixture_timed(&parent, SUCCESSFUL_PIPE_GLOBAL_TIMEOUT).await;
 
     assert!(result.is_ok());
-    assert!(started.elapsed() < SUCCESSFUL_PIPE_COMPLETION_BOUND);
+    assert!(elapsed < SUCCESSFUL_PIPE_COMPLETION_BOUND);
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("descendant pid")
         .parse::<u32>()
@@ -408,17 +403,30 @@ async fn run_fixture(
     code: &str,
     timeout: Duration,
 ) -> Result<(), super::runtime_command::RuntimeCommandError> {
+    run_fixture_timed(code, timeout).await.0
+}
+
+async fn run_fixture_timed(
+    code: &str,
+    timeout: Duration,
+) -> (
+    Result<(), super::runtime_command::RuntimeCommandError>,
+    Duration,
+) {
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
     let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
     let admission = supervisor.try_admit().expect("runtime admission");
     let mut command = fixture_command(code);
-    run_runtime_command(
+    // Measure the operation whose deadline is asserted, after fixture setup.
+    let started = std::time::Instant::now();
+    let result = run_runtime_command(
         &mut command,
         RuntimeStage::ValidateImports,
         tokio::time::Instant::now() + timeout,
         &admission.cancellation(),
     )
-    .await
+    .await;
+    (result, started.elapsed())
 }
 
 fn fixture_command(code: &str) -> Command {
