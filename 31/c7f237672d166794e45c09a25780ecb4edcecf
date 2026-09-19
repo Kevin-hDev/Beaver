@@ -1,0 +1,1 @@
+Cause: the voice checkpoint restore module and tauri Manager import were gated inconsistently, breaking Linux compilation at 9e89d80f. Fix: gate the restore module to macOS/Windows and import Manager for the compiled command. Verified locally: Windows cargo check and fmt; PR CI validation continues.
