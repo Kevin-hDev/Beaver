@@ -115,12 +115,14 @@ async function validateWindowsExe(path) {
     await handle.close();
   }
   if (process.platform === "win32") {
+    // PowerShell -Command treats trailing arguments as command text, so pass the path through the environment.
     const { stdout } = await execFile(
       "powershell.exe",
-      ["-NoProfile", "-NonInteractive", "-Command", "(Get-Item -LiteralPath $args[0]).Attributes.value__", path],
-      { encoding: "utf8", maxBuffer: 1_024, timeout: 10_000 },
+      ["-NoProfile", "-NonInteractive", "-Command", "(Get-Item -LiteralPath $env:BEAVER_INSTALLER_CHECK_PATH -ErrorAction Stop).Attributes.value__"],
+      { encoding: "utf8", maxBuffer: 1_024, timeout: 10_000, env: { ...process.env, BEAVER_INSTALLER_CHECK_PATH: path } },
     );
-    if ((Number.parseInt(stdout.trim(), 10) & 0x400) !== 0) throw invalid();
+    const attributes = stdout.trim();
+    if (!/^\d+$/u.test(attributes) || (Number.parseInt(attributes, 10) & 0x400) !== 0) throw invalid();
   }
 }
 
