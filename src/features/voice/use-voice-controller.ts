@@ -67,9 +67,18 @@ export function useVoiceController(draftKey: string) {
   }, [draftKey, languageMode, run, settings?.language]);
 
   const begin = useCallback(() => {
-    if (!settings?.explanation_accepted) setDialog("first-use");
-    else void start();
-  }, [settings?.explanation_accepted, start]);
+    if (!settings?.explanation_accepted) {
+      setDialog("first-use");
+      return;
+    }
+    void getVoiceCatalog().then((catalog) => {
+      const selected = catalog.find((item) => item.id === selectedModelId);
+      if (selected && !selected.installed) {
+        return run({ action: "install", model_id: selected.id });
+      }
+      return start();
+    }).catch(() => showToast(i18n.t("voice.settings.catalogUnavailable"), "error"));
+  }, [settings?.explanation_accepted, selectedModelId, run, start]);
 
   const acceptExplanation = useCallback(async () => {
     try {

@@ -32,6 +32,7 @@ vi.mock("../voice-client", () => ({
 
 describe("useVoiceController", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.snapshot = { revision: 1, phase: "idle", operation: null, recovery: null, delivery: null, trialResult: null, error: null };
     mocks.settings.mockResolvedValue({ enabled: true, model: "parakeet-tdt-v3", explanation_accepted: true, shortcut: null, language: { kind: "follow-interface" } });
     mocks.catalog.mockResolvedValue([{ id: "parakeet", model: "parakeet-tdt-v3", installed: true, languageMode: "automatic-only" }]);
@@ -75,5 +76,16 @@ describe("useVoiceController", () => {
 
     await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(expect.objectContaining({ action: "start", language: { kind: "automatic" } })));
     expect(view.result.current.dialog).toBeNull();
+  });
+
+  it("repairs a missing voice dependency instead of starting a broken capture", async () => {
+    mocks.catalog.mockResolvedValue([{ id: "parakeet", model: "parakeet-tdt-v3", installed: false, languageMode: "automatic-only" }]);
+    const view = renderHook(() => useVoiceController("draft:one"));
+    await waitFor(() => expect(view.result.current.settings?.explanation_accepted).toBe(true));
+
+    act(() => view.result.current.begin());
+
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith({ action: "install", model_id: "parakeet" }));
+    expect(mocks.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ action: "start" }));
   });
 });

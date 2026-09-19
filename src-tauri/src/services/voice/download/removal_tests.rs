@@ -34,6 +34,26 @@ fn startup_removes_model_revisions_not_named_by_the_receipt() {
     assert!(receipt.install_dir(data.path()).is_dir());
 }
 
+#[cfg(unix)]
+#[test]
+fn startup_preserves_the_installed_legacy_silero_revision() {
+    let data = tempfile::tempdir().unwrap();
+    let receipt: super::InstallationReceipt =
+        serde_json::from_str(include_str!("fixtures/silero-vad-legacy-receipt.json")).unwrap();
+    super::receipt::save_receipt(data.path(), &receipt).unwrap();
+    let legacy = data
+        .path()
+        .join("voice-models/models/silero-vad")
+        .join(&receipt.revision);
+    std::fs::create_dir_all(&legacy).unwrap();
+    std::fs::write(legacy.join("silero_vad.onnx"), b"legacy model").unwrap();
+
+    resume_incomplete_removals(data.path()).unwrap();
+
+    assert_eq!(receipt.install_dir(data.path()), legacy);
+    assert!(legacy.join("silero_vad.onnx").is_file());
+}
+
 #[test]
 fn busy_model_is_untouched_then_free_model_loses_receipt_before_files() {
     let data = tempfile::tempdir().unwrap();

@@ -32,8 +32,17 @@ pub fn voice_get_catalog(
     let data_dir = crate::services::paths::data_dir();
     let threads = std::thread::available_parallelism().map_or(1, |count| count.get().min(8)) as i32;
     let profile = crate::services::voice::model::recognizer::ExecutionProfile::cpu(threads)?;
-    crate::services::voice::download::load_catalog(&resource_dir)?
-        .entries
+    let entries = crate::services::voice::download::load_catalog(&resource_dir)?.entries;
+    let vad_installed = entries
+        .iter()
+        .find(|entry| entry.role == crate::services::voice::download::VoiceModelRole::Vad)
+        .ok_or_else(VoiceError::configuration_unavailable)
+        .and_then(|entry| {
+            crate::services::voice::download::installed_receipt(entry, &data_dir)
+                .map(|receipt| receipt.is_some())
+                .map_err(|_| VoiceError::configuration_unavailable())
+        })?;
+    entries
         .into_iter()
         .map(|entry| {
             use crate::services::voice::{download::VoiceEngine, types::VoiceModel};
@@ -45,7 +54,8 @@ pub fn voice_get_catalog(
             };
             let installed = crate::services::voice::download::installed_receipt(&entry, &data_dir)
                 .map_err(|_| VoiceError::configuration_unavailable())?
-                .is_some();
+                .is_some()
+                && (model.is_none() || vad_installed);
             let speed_multiplier = match voice.models().current_benchmark(
                 &data_dir,
                 &entry.id,
@@ -94,7 +104,7 @@ pub async fn voice_dispatch(
             )
             .await
             .map_err(|_| VoiceError::configuration_unavailable())?;
-            voice.snapshot()
+            voice.coordinator_for_command().clear_error()
         }
         VoiceAction::Resume { transfer_id } => {
             super::resume_model_download(app.clone(), transfer_id, downloads)

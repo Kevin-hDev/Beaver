@@ -5,7 +5,6 @@ use crate::services::private_store::rename_durable;
 use crate::services::private_store::sync_directory;
 
 use super::{
-    catalog_validation::revision_directory_name,
     models_root,
     receipt::{load_receipt, receipt_path},
 };
@@ -49,8 +48,8 @@ pub fn resume_incomplete_removals(data_dir: &Path) -> Result<(), String> {
         }
         match load_receipt(data_dir, &id) {
             Ok(Some(receipt)) if receipt.entry_id == id => {
-                let revision =
-                    revision_directory_name(&receipt.revision).ok_or_else(storage_error)?;
+                let installation = receipt.install_dir(data_dir);
+                let revision = installation.file_name().ok_or_else(storage_error)?;
                 cleanup_obsolete_revisions(&entry.path(), revision)?;
             }
             _ => {
@@ -81,7 +80,7 @@ pub(super) fn remove_receipt_file(data_dir: &Path, model_id: &str) -> Result<(),
     }
 }
 
-fn cleanup_obsolete_revisions(model_dir: &Path, current: &str) -> Result<(), String> {
+fn cleanup_obsolete_revisions(model_dir: &Path, current: &std::ffi::OsStr) -> Result<(), String> {
     let Ok(entries) = fs::read_dir(model_dir) else {
         return Ok(());
     };
@@ -89,9 +88,7 @@ fn cleanup_obsolete_revisions(model_dir: &Path, current: &str) -> Result<(), Str
         .take(crate::services::voice::limits::MAX_CATALOG_FILES_PER_ENTRY)
         .filter_map(Result::ok)
     {
-        if entry.file_name() != std::ffi::OsStr::new(current)
-            && entry.file_type().is_ok_and(|kind| kind.is_dir())
-        {
+        if entry.file_name() != current && entry.file_type().is_ok_and(|kind| kind.is_dir()) {
             fs::remove_dir_all(entry.path()).map_err(|_| storage_error())?;
         }
     }

@@ -18,16 +18,32 @@ pub async fn start_model_download(
     downloads: tauri::State<'_, ModelDownloadManager>,
 ) -> Result<ModelDownloadState, String> {
     let voice_entry = validate_download_request(&app, kind, &model_id)?;
+    let data_dir = crate::services::paths::data_dir();
+    let prepare_entry = match voice_entry {
+        Some(entry)
+            if entry.role == crate::services::voice::download::VoiceModelRole::Asr
+                && crate::services::voice::download::installed_receipt(&entry, &data_dir)?
+                    .is_some() =>
+        {
+            let resource_dir = app
+                .path()
+                .resource_dir()
+                .map_err(|_| "model-download-invalid-model".to_string())?;
+            Some(
+                crate::services::voice::download::find_catalog_entry(&resource_dir, "silero-vad")
+                    .map_err(|_| "model-download-invalid-model".to_string())?,
+            )
+        }
+        entry => entry,
+    };
     let manager = downloads.inner_clone();
     let (state, runner) = manager
         .start(kind, model_id, is_update.unwrap_or(false))
         .await?;
-    if let Some(entry) = voice_entry {
-        if let Err(error) = crate::services::voice::download::prepare_download(
-            &entry,
-            &state.model_id,
-            &crate::services::paths::data_dir(),
-        ) {
+    if let Some(entry) = prepare_entry {
+        if let Err(error) =
+            crate::services::voice::download::prepare_download(&entry, &state.model_id, &data_dir)
+        {
             if runner.is_some() {
                 manager.worker_start_failed(&state.id).await;
             } else {

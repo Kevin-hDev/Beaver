@@ -46,10 +46,18 @@ impl InstallationReceipt {
     }
 
     pub fn install_dir(&self, data_dir: &Path) -> PathBuf {
-        models_root(data_dir)
-            .join("models")
-            .join(&self.entry_id)
-            .join(revision_directory_name(&self.revision).unwrap_or("invalid-revision"))
+        let parent = models_root(data_dir).join("models").join(&self.entry_id);
+        let portable =
+            parent.join(revision_directory_name(&self.revision).unwrap_or("invalid-revision"));
+        // Older macOS builds stored sha256 revisions with the prefix in the directory name.
+        // Keep reading that installation so startup cleanup cannot delete the only VAD model.
+        if cfg!(unix) && !portable.is_dir() && self.revision.starts_with("sha256:") {
+            let legacy = parent.join(&self.revision);
+            if legacy.is_dir() {
+                return legacy;
+            }
+        }
+        portable
     }
 }
 
