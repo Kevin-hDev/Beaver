@@ -1,0 +1,1 @@
+Windows CI follow-up for voice PR #83: the ConPTY close test started its 3-second deadline before shell readiness; this commit separates bounded setup (10 seconds) from the close itself (3 seconds). Local targeted test passed 20/20 runs; PR #84 Windows backend run confirmed this test passed, while an independent stream-recovery test failed. No production behavior changed.
