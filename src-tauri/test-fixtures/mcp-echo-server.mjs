@@ -15,28 +15,50 @@ input.on("line", (line) => {
   } catch {
     process.exit(1);
   }
-  if (request.method === "notifications/initialized") return;
+  if (request.method === "notifications/initialized" || request.id === undefined) return;
 
-  let result = {};
-  if (request.method === "tools/list") {
-    result = {
-      tools: [{
-        name: "echo",
-        description: "Echo a bounded test value",
-        inputSchema: {
-          type: "object",
-          properties: { value: { type: "string" } },
-          required: ["value"],
-        },
-      }],
-    };
-  }
-  if (request.method === "tools/call") {
-    const value = String(request.params?.arguments?.value ?? "").slice(0, 1024);
-    result = { content: [{ type: "text", text: value }] };
+  let result;
+  let error;
+  switch (request.method) {
+    case "initialize":
+      if (request.params?.protocolVersion !== "2025-03-26") {
+        error = { code: -32602, message: "Unsupported protocol version" };
+        break;
+      }
+      result = {
+        protocolVersion: "2025-03-26",
+        capabilities: { tools: {} },
+        serverInfo: { name: "beaver-test-echo", version: "1.0.0" },
+      };
+      break;
+    case "tools/list":
+      result = {
+        tools: [{
+          name: "echo",
+          description: "Echo a bounded test value",
+          inputSchema: {
+            type: "object",
+            properties: { value: { type: "string" } },
+            required: ["value"],
+          },
+        }],
+      };
+      break;
+    case "tools/call":
+      if (request.params?.name !== "echo") {
+        error = { code: -32602, message: "Unknown tool" };
+        break;
+      }
+      result = { content: [{
+        type: "text",
+        text: String(request.params?.arguments?.value ?? "").slice(0, 1024),
+      }] };
+      break;
+    default:
+      error = { code: -32601, message: "Method not found" };
   }
   const respond = () => {
-    process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id: request.id, result })}\n`);
+    process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id: request.id, ...(error ? { error } : { result }) })}\n`);
   };
   if (request.method === "initialize" && initDelayMs > 0) {
     setTimeout(respond, initDelayMs);
