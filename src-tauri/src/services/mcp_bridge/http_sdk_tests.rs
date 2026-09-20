@@ -39,24 +39,25 @@ impl BeaverHttpClient {
 fn http_sdk_binds_token_to_exact_endpoint() {
     let client = BeaverHttpClient::new(
         "github",
-        "https://api.githubcopilot.com/mcp",
+        "https://api.githubcopilot.com/mcp/",
         "fixture-token",
     )
     .expect("trusted endpoint");
-    assert!(client.accepts("https://api.githubcopilot.com/mcp"));
+    assert!(client.accepts("https://api.githubcopilot.com/mcp/"));
     for target in [
         "https://mcp.notion.com/mcp",
+        "https://api.githubcopilot.com/mcp",
         "https://api.githubcopilot.com/other",
-        "https://api.githubcopilot.com:444/mcp",
-        "https://api.githubcopilot.com/mcp?x=1",
-        "https://api.githubcopilot.com/mcp#fragment",
-        "https://user@api.githubcopilot.com/mcp",
+        "https://api.githubcopilot.com:444/mcp/",
+        "https://api.githubcopilot.com/mcp/?x=1",
+        "https://api.githubcopilot.com/mcp/#fragment",
+        "https://user@api.githubcopilot.com/mcp/",
     ] {
         assert!(!client.accepts(target), "unexpected accepted destination");
     }
     assert!(BeaverHttpClient::new(
         "github",
-        "https://user@api.githubcopilot.com/mcp",
+        "https://user@api.githubcopilot.com/mcp/",
         "fixture-token",
     )
     .is_err());
