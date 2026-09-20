@@ -1605,7 +1605,9 @@
     },
     "sidebar": {
       "empty": "No connector configured",
-      "loadError": "Unable to load connectors"
+      "loadError": "Unable to load connectors",
+      "repairRequired": "A connector address is invalid. Remove the marked connector to repair the configuration.",
+      "invalidEndpoint": "Invalid address — remove this connector"
     },
     "detail": {
       "connected": "Connected",

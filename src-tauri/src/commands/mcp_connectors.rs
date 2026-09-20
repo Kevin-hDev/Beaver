@@ -4,7 +4,7 @@ use tauri::Emitter;
 
 #[tauri::command]
 pub async fn list_mcp_connectors() -> Result<Vec<config::StoredConnector>, String> {
-    config::load()
+    config::load_for_repair()
 }
 
 #[tauri::command]
@@ -25,7 +25,7 @@ pub async fn remove_mcp_connector(
     connector_id: String,
 ) -> Result<(), String> {
     registry::mutate_identity(&connector_id, |_| {
-        let connector = config::find(&connector_id)?;
+        let connector = config::preview_remove(&connector_id)?;
         delete_connector_secrets(&connector_id, connector.as_ref())?;
         config::remove(&connector_id).map(|_| ())
     })?;

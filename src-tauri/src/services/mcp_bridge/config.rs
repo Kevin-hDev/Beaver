@@ -4,10 +4,11 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 pub use super::env_keys::validated_env_keys;
-use super::{config_migration, stdio_catalog, stdio_cmd, trusted};
+use super::{config_migration, config_repair, stdio_catalog, stdio_cmd, trusted};
 
 pub const MAX_CONNECTORS: usize = 32;
 const FILENAME: &str = "mcp-connectors.json";
+pub(super) const ENDPOINT_NOT_ALLOWED: &str = "endpoint MCP non autorisé";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct StoredConnector {
@@ -22,6 +23,23 @@ pub struct StoredConnector {
 
 pub fn load() -> Result<Vec<StoredConnector>, String> {
     load_from_path(&storage_path())
+}
+
+// The settings list may expose an invalid endpoint so its owner can delete it.
+// Business paths continue to use strict load() and cannot activate that file.
+pub fn load_for_repair() -> Result<Vec<StoredConnector>, String> {
+    load_for_repair_from_path(&storage_path())
+}
+
+pub(crate) fn load_for_repair_from_path(path: &Path) -> Result<Vec<StoredConnector>, String> {
+    match load_from_path(path) {
+        Err(error) if error == ENDPOINT_NOT_ALLOWED => config_repair::load_from_path(path),
+        result => result,
+    }
+}
+
+pub fn preview_remove(connector_id: &str) -> Result<Option<StoredConnector>, String> {
+    config_repair::preview_remove_from_path(&storage_path(), connector_id)
 }
 
 pub fn migrate_at_startup() -> Result<(), String> {
@@ -74,19 +92,7 @@ pub fn upsert(connector: StoredConnector) -> Result<(), String> {
 }
 
 pub fn remove(connector_id: &str) -> Result<bool, String> {
-    validate_connector_id(connector_id)?;
-    let path = storage_path();
-    let before = load_from_path(&path)?;
-    let after: Vec<StoredConnector> = before
-        .iter()
-        .filter(|c| c.id != connector_id)
-        .cloned()
-        .collect();
-    let removed = before.len() != after.len();
-    if removed {
-        save_to_path(&path, &after)?;
-    }
-    Ok(removed)
+    config_repair::remove_from_path(&storage_path(), connector_id)
 }
 
 pub(crate) fn restore(connector_id: &str, previous: Option<StoredConnector>) -> Result<(), String> {
@@ -110,7 +116,7 @@ pub fn validate_connector(c: &StoredConnector) -> Result<(), String> {
     validate_status(&c.status)?;
     if let Some(endpoint) = &c.endpoint {
         if !trusted::is_trusted_endpoint_for_connector(&c.id, endpoint) {
-            return Err("endpoint MCP non autorisé".to_string());
+            return Err(ENDPOINT_NOT_ALLOWED.to_string());
         }
     }
     if let Some(cmd) = install_command_for(c) {

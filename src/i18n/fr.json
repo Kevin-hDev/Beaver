@@ -1657,7 +1657,9 @@
     },
     "sidebar": {
       "empty": "Aucun connecteur configuré",
-      "loadError": "Impossible de charger les connecteurs"
+      "loadError": "Impossible de charger les connecteurs",
+      "repairRequired": "Une adresse de connecteur est invalide. Supprimez le connecteur signalé pour réparer la configuration.",
+      "invalidEndpoint": "Adresse invalide — à supprimer"
     },
     "detail": {
       "connected": "Connecté",

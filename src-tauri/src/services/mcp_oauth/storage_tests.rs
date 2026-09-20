@@ -42,6 +42,44 @@ async fn legacy_token_requires_reauthentication_before_use() {
     );
 }
 
+#[tokio::test]
+async fn corrupt_stored_token_requests_reauthentication_but_missing_token_does_not() {
+    let read_corrupt = |_: &str| OAuthTokens::from_json("{");
+    let read_missing = |_: &str| Err("token non trouvé".to_string());
+    let read_current = |_: &str, _: u64| Err("unused".to_string());
+    let save = |_: &str, _: &OAuthTokens, _: u64| Ok(());
+    let generation = || Ok(1);
+    let validate = |_: &str, _: &str| Ok(());
+    let client = |_: &str, _: &str| {
+        Box::pin(async { Err("unused".to_string()) }) as super::storage::DestinationFuture
+    };
+    let dependencies = RefreshDependencies {
+        read: &read_corrupt,
+        read_current: &read_current,
+        save: &save,
+        generation: &generation,
+        validate: &validate,
+        validate_issuer: &validate,
+        client: &client,
+    };
+    assert_eq!(
+        get_valid_token_with("github", &dependencies)
+            .await
+            .unwrap_err(),
+        super::types::REAUTHENTICATION_REQUIRED
+    );
+    let missing_dependencies = RefreshDependencies {
+        read: &read_missing,
+        ..dependencies
+    };
+    assert_eq!(
+        get_valid_token_with("github", &missing_dependencies)
+            .await
+            .unwrap_err(),
+        "token non trouvé"
+    );
+}
+
 #[test]
 fn stale_refresh_generation_never_writes() {
     let wrote = AtomicBool::new(false);

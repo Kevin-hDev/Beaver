@@ -13,7 +13,7 @@ fn late_oauth_commit_cannot_revive_an_old_generation() {
         wrote.fetch_add(1, Ordering::SeqCst);
         Ok(())
     });
-    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), "identité MCP modifiée");
     assert_eq!(wrote.load(Ordering::SeqCst), 0);
 }
 

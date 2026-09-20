@@ -1558,7 +1558,9 @@
     },
     "sidebar": {
       "empty": "Kein Connector konfiguriert",
-      "loadError": "Connectors konnten nicht geladen werden"
+      "loadError": "Connectors konnten nicht geladen werden",
+      "repairRequired": "Eine Connector-Adresse ist ungültig. Entferne den markierten Connector, um die Konfiguration zu reparieren.",
+      "invalidEndpoint": "Ungültige Adresse — Connector entfernen"
     },
     "detail": {
       "connected": "Verbunden",

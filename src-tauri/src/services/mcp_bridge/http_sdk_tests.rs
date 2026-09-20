@@ -489,6 +489,52 @@ async fn http_sdk_refuses_negative_or_string_ttl_before_sdk_normalizes_it() {
 }
 
 #[tokio::test]
+async fn http_sdk_negotiates_2025_11_25_without_legacy_initialize() {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(|request: &wiremock::Request| {
+            let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
+            let id = &body["id"];
+            match body["method"].as_str() {
+                Some("server/discover") => ResponseTemplate::new(200).set_body_json(json!({
+                    "jsonrpc":"2.0", "id":id, "result":{
+                        "resultType":"complete", "supportedVersions":["2025-11-25"],
+                        "capabilities":{}, "ttlMs":0, "cacheScope":"private"
+                    }
+                })),
+                Some("tools/list") => ResponseTemplate::new(200).set_body_json(json!({
+                    "jsonrpc":"2.0", "id":id, "result":{
+                        "resultType":"complete", "tools":[{
+                            "name":"echo", "inputSchema":{"type":"object"}
+                        }]
+                    }
+                })),
+                _ => ResponseTemplate::new(400),
+            }
+        })
+        .mount(&server)
+        .await;
+    let endpoint = format!("{}/mcp", server.uri());
+    let client = BeaverHttpClient::new_loopback(&endpoint, "fixture-token");
+    let mut service = start_with_client(client, &endpoint)
+        .await
+        .expect("discovery");
+    assert_eq!(list(&service).await.expect("tools").tools[0].name, "echo");
+    service.close().await.expect("closed");
+    let methods: Vec<_> = server
+        .received_requests()
+        .await
+        .unwrap()
+        .into_iter()
+        .filter_map(|request| serde_json::from_slice::<serde_json::Value>(&request.body).ok())
+        .filter_map(|body| body["method"].as_str().map(str::to_owned))
+        .collect();
+    assert!(methods.contains(&"server/discover".to_string()));
+    assert!(methods.contains(&"tools/list".to_string()));
+    assert!(!methods.contains(&"initialize".to_string()));
+}
+
+#[tokio::test]
 async fn http_sdk_auth_and_busy_servers_never_fall_back_to_legacy() {
     for status in [401, 429, 503] {
         let server = MockServer::start().await;
@@ -559,6 +605,74 @@ async fn http_sdk_invalid_discovery_error_never_falls_back() {
 
     assert!(start_with_client(client, &endpoint).await.is_err());
     assert_eq!(server.received_requests().await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn http_sdk_sse_discovery_error_never_falls_back() {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(|request: &wiremock::Request| {
+            let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
+            ResponseTemplate::new(200).set_body_raw(
+                format!(
+                    "event: message\ndata: {}\n\n",
+                    json!({"jsonrpc":"2.0", "id":body["id"],
+                        "error":{"code":-32603,"message":"boom"}})
+                ),
+                "text/event-stream",
+            )
+        })
+        .mount(&server)
+        .await;
+    let endpoint = format!("{}/mcp", server.uri());
+    let client = BeaverHttpClient::new_loopback(&endpoint, "fixture-token");
+    let discover: rmcp::model::ClientJsonRpcMessage = serde_json::from_value(json!({
+        "jsonrpc":"2.0", "id":1, "method":"server/discover", "params":{}
+    }))
+    .unwrap();
+
+    assert!(client
+        .post_message(
+            Arc::from(endpoint.as_str()),
+            discover,
+            None,
+            None,
+            Default::default()
+        )
+        .await
+        .is_err());
+    assert_eq!(server.received_requests().await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn http_sdk_keeps_sse_for_non_discovery_requests() {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(ResponseTemplate::new(200).set_body_raw(
+            "data: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}\n\n",
+            "text/event-stream",
+        ))
+        .mount(&server)
+        .await;
+    let endpoint = format!("{}/mcp", server.uri());
+    let client = BeaverHttpClient::new_loopback(&endpoint, "fixture-token");
+    let request: rmcp::model::ClientJsonRpcMessage = serde_json::from_value(json!({
+        "jsonrpc":"2.0", "id":1, "method":"ping"
+    }))
+    .unwrap();
+
+    assert!(matches!(
+        client
+            .post_message(
+                Arc::from(endpoint.as_str()),
+                request,
+                None,
+                None,
+                Default::default()
+            )
+            .await,
+        Ok(StreamableHttpPostResponse::Sse(_, _))
+    ));
 }
 
 #[tokio::test]

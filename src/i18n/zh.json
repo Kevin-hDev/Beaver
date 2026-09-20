@@ -1557,7 +1557,9 @@
     },
     "sidebar": {
       "empty": "没有已配置的连接器",
-      "loadError": "无法加载连接器"
+      "loadError": "无法加载连接器",
+      "repairRequired": "某个连接器的地址无效。请移除标记的连接器以修复配置。",
+      "invalidEndpoint": "地址无效 — 请移除此连接器"
     },
     "detail": {
       "connected": "已连接",

@@ -51,6 +51,10 @@ impl McpTransport for HttpTransport {
             "params": { "name": name, "arguments": args }
         });
 
+        if let Some(generation) = self.generation {
+            super::registry::authorize_business_send(&self.connector_id, generation)?;
+        }
+
         let resp = mcp_post(&self.endpoint, token.as_str(), session_id.as_deref(), &body)
             .await
             .map_err(|_| McpCallError::Transport)?;

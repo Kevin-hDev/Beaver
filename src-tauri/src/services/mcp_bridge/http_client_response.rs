@@ -97,6 +97,9 @@ pub(super) async fn post(
         return Ok(StreamableHttpPostResponse::Json(message, session));
     }
     if status.is_success() && content_type(&response, "text/event-stream") {
+        if is_discovery {
+            return Err(unexpected());
+        }
         return Ok(StreamableHttpPostResponse::Sse(
             super::http_limits::sse(response, event_limit, remaining),
             session,

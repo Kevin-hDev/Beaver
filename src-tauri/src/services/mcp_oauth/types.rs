@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, Zeroizing};
 
 pub const REAUTHENTICATION_REQUIRED: &str = "mcp_reauthentication_required";
+pub const INVALID_AUTH_DATA: &str = "données d'authentification invalides";
 
 #[derive(Deserialize)]
 pub struct TokenResponse {
@@ -109,8 +110,8 @@ impl OAuthTokens {
     }
 
     pub fn from_json(json: &str) -> Result<Self, String> {
-        let mut raw: OAuthTokensSerde = serde_json::from_str(json)
-            .map_err(|_| "données d'authentification invalides".to_string())?;
+        let mut raw: OAuthTokensSerde =
+            serde_json::from_str(json).map_err(|_| INVALID_AUTH_DATA.to_string())?;
         if raw.access_token.is_empty()
             || raw.access_token.len() > 16_384
             || raw
@@ -122,7 +123,7 @@ impl OAuthTokens {
             || raw.client_id.len() > 2048
             || raw.token_endpoint.len() > 2048
         {
-            return Err("données d'authentification invalides".to_string());
+            return Err(INVALID_AUTH_DATA.to_string());
         }
         let tokens = Self {
             issuer: if raw.version == 2 {

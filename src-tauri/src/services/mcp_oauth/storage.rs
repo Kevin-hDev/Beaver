@@ -122,7 +122,7 @@ pub(crate) async fn get_valid_token_with(
     connector_id: &str,
     dependencies: &RefreshDependencies<'_>,
 ) -> Result<Zeroizing<String>, String> {
-    let tokens = (dependencies.read)(connector_id)?;
+    let tokens = (dependencies.read)(connector_id).map_err(reauth_if_corrupt)?;
     let issuer = tokens
         .issuer
         .as_deref()
@@ -140,7 +140,8 @@ pub(crate) async fn get_valid_token_with(
         let lock = get_refresh_lock(connector_id)?;
         let _guard = lock.lock().await;
         let generation = (dependencies.generation)()?;
-        let fresh = (dependencies.read_current)(connector_id, generation)?;
+        let fresh =
+            (dependencies.read_current)(connector_id, generation).map_err(reauth_if_corrupt)?;
         if fresh.issuer.as_deref() != Some(issuer) {
             return Err(super::types::REAUTHENTICATION_REQUIRED.to_string());
         }
@@ -163,4 +164,12 @@ pub(crate) async fn get_valid_token_with(
         .await;
     }
     Ok(result)
+}
+
+fn reauth_if_corrupt(error: String) -> String {
+    if error == super::types::INVALID_AUTH_DATA {
+        super::types::REAUTHENTICATION_REQUIRED.to_string()
+    } else {
+        error
+    }
 }

@@ -204,10 +204,11 @@ fn mutate_identity_checked<T>(
     let mut state = CACHE_STATE
         .lock()
         .map_err(|_| "registre MCP indisponible")?;
-    if state.is_closed()
-        || expected_generation.is_some_and(|expected| state.generation() != expected)
-    {
+    if state.is_closed() {
         return Err("registre MCP indisponible".to_string());
+    }
+    if expected_generation.is_some_and(|expected| state.generation() != expected) {
+        return Err("identité MCP modifiée".to_string());
     }
     state.invalidate(connector_id);
     action(&IdentityMutation(()))

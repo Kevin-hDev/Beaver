@@ -1562,7 +1562,9 @@
     },
     "sidebar": {
       "empty": "Ningún conector configurado",
-      "loadError": "No se pudieron cargar los conectores"
+      "loadError": "No se pudieron cargar los conectores",
+      "repairRequired": "La dirección de un conector no es válida. Elimina el conector señalado para reparar la configuración.",
+      "invalidEndpoint": "Dirección no válida — eliminar conector"
     },
     "detail": {
       "connected": "Conectado",

@@ -1558,7 +1558,9 @@
     },
     "sidebar": {
       "empty": "Nessun connettore configurato",
-      "loadError": "Impossibile caricare i connettori"
+      "loadError": "Impossibile caricare i connettori",
+      "repairRequired": "L'indirizzo di un connettore non è valido. Rimuovi il connettore indicato per riparare la configurazione.",
+      "invalidEndpoint": "Indirizzo non valido — rimuovi il connettore"
     },
     "detail": {
       "connected": "Connesso",

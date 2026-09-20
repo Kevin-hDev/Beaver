@@ -68,22 +68,20 @@ fn resolution_failure(error: &str) -> ToolResult {
 fn transport_failure(error: crate::services::mcp_bridge::transport::McpCallError) -> ToolResult {
     use crate::services::mcp_bridge::transport::McpCallError;
 
-    if error == McpCallError::ReauthenticationRequired {
-        return ToolResult::error(
-            error.message(),
-            crate::services::mcp_oauth::types::REAUTHENTICATION_REQUIRED,
-            ToolErrorCategory::Unavailable,
-            false,
-        );
-    }
-
     let (code, category, retryable) = match error {
         McpCallError::Unavailable => (
             "mcp_service_unavailable",
             ToolErrorCategory::Unavailable,
             true,
         ),
-        McpCallError::ReauthenticationRequired => unreachable!(),
+        McpCallError::ReauthenticationRequired => {
+            return ToolResult::error(
+                error.message(),
+                crate::services::mcp_oauth::types::REAUTHENTICATION_REQUIRED,
+                ToolErrorCategory::Unavailable,
+                false,
+            );
+        }
         McpCallError::Server => ("mcp_server_error", ToolErrorCategory::External, false),
         McpCallError::InvalidResponse => {
             ("mcp_invalid_response", ToolErrorCategory::External, false)

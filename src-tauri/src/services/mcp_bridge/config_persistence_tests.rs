@@ -6,6 +6,7 @@
 //! est validée via load_from_path (qui rejette > MAX à la lecture).
 
 use super::config::{self, StoredConnector, MAX_CONNECTORS};
+use super::config_repair;
 
 /// Connecteur notion valide (endpoint trusted du catalog).
 fn notion() -> StoredConnector {
@@ -216,4 +217,57 @@ fn unexpected_lucid_url_is_never_migrated_during_load_or_startup() {
     config::migrate_at_path(&path, config::save_to_path).unwrap();
     assert_eq!(std::fs::read(&path).unwrap(), raw);
     assert!(config::load_from_path(&path).is_err());
+}
+
+#[test]
+fn invalid_endpoint_can_be_listed_for_repair_and_removed_without_weakening_load() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut invalid = notion();
+    invalid.endpoint = Some("https://mcp.notion.com/mcp/".to_string());
+    std::fs::write(&path, serde_json::to_vec(&[invalid, sentry()]).unwrap()).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    let visible = config::load_for_repair_from_path(&path).expect("repair list");
+    assert_eq!(visible.len(), 2);
+    assert_eq!(visible[0].id, "notion");
+    assert_eq!(
+        config_repair::preview_remove_from_path(&path, "notion")
+            .unwrap()
+            .unwrap()
+            .id,
+        "notion"
+    );
+    assert!(config_repair::preview_remove_from_path(&path, "sentry").is_err());
+    assert!(config_repair::remove_from_path(&path, "notion").expect("remove"));
+    assert_eq!(config::load_from_path(&path).unwrap(), vec![sentry()]);
+}
+
+#[test]
+fn repair_list_does_not_mask_other_configuration_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut invalid = notion();
+    invalid.status = "pending".to_string();
+    std::fs::write(&path, serde_json::to_vec(&[invalid]).unwrap()).unwrap();
+
+    assert_eq!(
+        config::load_for_repair_from_path(&path).unwrap_err(),
+        "statut invalide"
+    );
+}
+
+#[test]
+fn real_persisted_connector_file_survives_startup_migration_and_reload() {
+    // Copie expurgée du fichier Beaver local avant ce chantier : aucun jeton ni clé.
+    const PREVIOUS_FILE: &str = r#"[{"id":"context7","status":"connected","enabled_in_chat":true,"endpoint":null,"install_command":"npx @upstash/context7-mcp@2.2.5","env_keys":null}]"#;
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    std::fs::write(&path, PREVIOUS_FILE).unwrap();
+
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), PREVIOUS_FILE);
+    assert_eq!(config::load_from_path(&path).unwrap()[0].id, "context7");
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), PREVIOUS_FILE);
 }

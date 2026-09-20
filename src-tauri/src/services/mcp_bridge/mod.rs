@@ -5,6 +5,7 @@ pub mod config;
 mod config_migration;
 #[cfg(test)]
 mod config_persistence_tests;
+mod config_repair;
 #[cfg(test)]
 mod config_tests;
 pub mod env_keys;
