@@ -293,7 +293,7 @@ test("le parcours Windows résout et valide sans Bash", () => {
 });
 
 test("assemble les cinq assets puis revérifie le manifeste séparément", () => {
-  assert.match(workflow, /\n  manifest:\n    needs: build\n/);
+  assert.match(workflow, /\n  manifest:\n    needs: \[validate, build\]\n/);
   assert.match(workflow, /\n  verify_release:\n    needs: manifest\n/);
   assert.match(workflow, /\n  attest_release:\n    needs: verify_release\n/);
   assert.match(workflow, /\n  publish_release:\n    needs: attest_release\n/);
@@ -317,6 +317,26 @@ test("assemble les cinq assets puis revérifie le manifeste séparément", () =>
   assert.equal(workflowDocument.jobs.attest_release.permissions.contents, "read");
   assert.equal(workflowDocument.jobs.publish_release.permissions.contents, "write");
   assert.equal(workflowDocument.jobs.publish_release.permissions.attestations, undefined);
+});
+
+test("reprend v1.2.3 depuis les seuls artefacts déjà construits et relance la validation", () => {
+  assert.equal(workflowDocument.jobs.build.if, "${{ !inputs.reuse_v123 }}");
+  assert.match(workflowDocument.jobs.gate.steps[0].run, /RELEASE_TAG" != "v1\.2\.3"/u);
+  assert.match(workflowDocument.jobs.manifest.if, /needs\.validate\.result == 'success'/u);
+  assert.equal(workflowDocument.jobs.manifest.permissions.actions, "read");
+  const recovery = workflowDocument.jobs.manifest.steps.find(
+    ({ name }) => name === "Download recovered v1.2.3 artifacts",
+  );
+  assert.ok(recovery);
+  assert.equal(recovery.if, "inputs.reuse_v123");
+  assert.match(recovery.run, /gh run download 35471762472/u);
+  assert.match(recovery.run, /gh run download 35477748109/u);
+  for (const artifact of [
+    "beaver-macos-arm64", "beaver-linux-x64", "beaver-windows-x64",
+    "beaver-macos-arm64-installer", "beaver-windows-x64-installer",
+  ]) {
+    assert.ok(recovery.run.includes(artifact));
+  }
 });
 
 test("publie Beaver une seule fois après attestation et refuse de remplacer un asset", () => {
