@@ -100,7 +100,7 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
 
     <p>The parameter schema is validated strictly. Its root <b>must</b> carry <code>"type": "object"</code>, otherwise "A tool schema must describe an object." Only <b>38 keywords</b> are accepted at all levels — <code>$ref</code> and <code>$defs</code> are not among them, so a schema that references a definition is refused. The maximum depth is <b>16</b> and the total is <b>256 nodes</b>.</p>
 
-    <p>Your <code>execute</code> function receives the model's arguments and, in second position, a <b>frozen context containing a single field</b>: <code>workingDirectory</code>. There is no session identifier, no language, no model — do not look for them. You can return a string, or an object <code>{ content, isError?, displaySummary?, truncated? }</code>. A string <code>content</code> is truncated at <b>1,048,576</b> units and <code>displaySummary</code> at <b>1,024</b> characters; truncation is silent, it raises the <code>truncated</code> flag without failing. The call is rejected after <b>55 seconds</b> with <code>tool_timeout</code> — careful, the race rejects the promise but <b>does not interrupt your code</b>: your work carries on in the background with nobody reading the result.</p>
+    <p>Your <code>execute</code> function receives the model's arguments and, in second position, a <b>frozen context containing a single field</b>: <code>workingDirectory</code>. There is no session identifier, no language, no model — do not look for them: Beaver keeps its business context on its own side and the SDK carries it for you when you call <code>models</code>, <code>memory</code>, <code>automations</code> or <code>subagents</code> from inside <code>execute</code>. You can return a string, or an object <code>{ content, isError?, displaySummary?, truncated? }</code>. A string <code>content</code> is truncated at <b>1,048,576</b> units and <code>displaySummary</code> at <b>1,024</b> characters; truncation is silent, it raises the <code>truncated</code> flag without failing. The call is rejected after <b>55 seconds</b> with <code>tool_timeout</code> — careful, the race rejects the promise but <b>does not interrupt your code</b>: your work carries on in the background with nobody reading the result.</p>
 
     <h2 id="la-classe-deffet">The effect class</h2>
     <p>It is the declaration with the most consequences, and it is a single word in an object. A missing or misspelled value is <b>not</b> refused: <code>"readonly"</code> instead of <code>"read-only"</code> becomes <code>unknown</code>, the most restrictive class — the tool works, but it asks for confirmation on every call and becomes unusable in Plan mode, with no message explaining why.</p>
@@ -117,7 +117,7 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
       <tr><td><code>unknown</code></td><td>Yes</td><td>No</td><td>Refused</td><td>No</td></tr>
     </table>
 
-    <p><b>Full access</b> mode bypasses the permission gate for every row: your effect class therefore only protects users of the stricter modes — all the more reason to declare it accurately. On the subagent side, an "explorer" profile only receives extension tools declared <code>read-only</code>, while the "coder" profile receives them all.</p>
+    <p><b>Full access</b> mode bypasses the permission gate for every row: your effect class therefore only protects users of the stricter modes — all the more reason to declare it accurately. On the subagent side, an "explorer" profile only receives extension tools declared <code>read-only</code>, while the "coder" profile receives what its profile, its route and its context budget allow.</p>
 
     <div class="callout">
       <span class="t">Warning</span>
@@ -129,9 +129,40 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
       <code>secret</code>: what you take away does not come back. Once a vault value has been handed to your JavaScript code, <b>Beaver can no longer guarantee it is erased from memory</b>. Disabling or removing the extension does not take back a copy already obtained: the only answer to a leak is to revoke the secret at its provider. Never write it into a tool result, an error message or a diagnostic file.
     </div>
 
-    <h2 id="evenements-et-interface">Events and interface</h2>
-    <p><b>Only one public event exists today</b>: <code>session.turn.started</code>. Its payload contains exactly two fields, <code>sessionId</code> and <code>mode</code>. <code>beaver.on</code> returns an unsubscribe function to call in <code>deactivate()</code>. The bounds: <b>64 handlers per extension</b>, <b>64 handlers in flight</b> at once, and a budget of <b>5 seconds</b> per handler — once it expires, Beaver stops waiting but <b>does not interrupt</b> your code, which keeps running unsupervised. An exception in one handler does not block delivery to the other extensions.</p>
+    <h2 id="les-evenements">The nine events</h2>
+    <p>Nine public events exist, in four families. Turn and tool events only concern <b>Agent mode</b>; automation and subagent events are only sent to the <b>extension that owns</b> the automation or the subagent. An event is an observation, never a hook: it arrives after the decision has been taken, and nothing a handler does changes what Beaver is doing.</p>
 
+    <table>
+      <caption class="crumb">The nine public events and what their payload carries</caption>
+      <tr><th>Event</th><th>Observed moment</th><th>Payload</th></tr>
+      <tr><td><code>session.turn.started</code></td><td>An admitted Agent turn begins</td><td><code>status</code></td></tr>
+      <tr><td><code>session.turn.completed</code></td><td>The Agent turn ended normally</td><td><code>status</code></td></tr>
+      <tr><td><code>session.turn.failed</code></td><td>The Agent turn ended in error</td><td><code>status</code></td></tr>
+      <tr><td><code>session.turn.cancelled</code></td><td>The Agent turn was cancelled</td><td><code>status</code></td></tr>
+      <tr><td><code>tool.execution.started</code></td><td>A tool admitted, just before it runs</td><td><code>name</code>, <code>toolCallId</code>, <code>status</code>, <code>errorCode</code>, <code>truncated</code>, <code>domain</code></td></tr>
+      <tr><td><code>tool.execution.finished</code></td><td>The tool's execution is over</td><td>the same fields</td></tr>
+      <tr><td><code>automation.execution.started</code></td><td>A wake-up of the extension actually started</td><td><code>automationId</code>, <code>status</code>, <code>errorCode</code></td></tr>
+      <tr><td><code>automation.execution.finished</code></td><td>That wake-up reached a terminal state</td><td><code>automationId</code>, <code>status</code>, <code>errorCode</code></td></tr>
+      <tr><td><code>subagent.status.changed</code></td><td>A subagent of the extension changed state</td><td><code>subagentId</code>, <code>status</code>, <code>errorCode</code></td></tr>
+    </table>
+
+    <p>Around that payload, the envelope carries <code>id</code>, <code>sequence</code>, <code>occurredAt</code>, <code>type</code>, <code>sessionId</code> and <code>requestId</code>. What you will <b>never</b> find there: a tool's result, its full arguments, a path, a file or a secret. Subscriptions are frozen at the end of loading — a <code>beaver.on</code> added later creates no new routing on the core side. The function it returns unsubscribes and is called in <code>deactivate()</code>.</p>
+
+    <p>Delivery is asynchronous, ordered per flow, with <b>no durable replay and no "exactly once" guarantee</b>: a full queue, an error or an expired deadline loses an observation without blocking the Agent turn. The bounds: <b>64 handlers per extension</b>, <b>64 handlers in flight</b> at once, a queue of <b>32 events per host process</b>, <b>16 KiB</b> per event, and a budget of <b>5 seconds</b> per handler — once it expires, Beaver stops waiting but <b>does not interrupt</b> your code, which keeps running and keeps occupying its slot. An exception in one handler does not block delivery to the other extensions. <b>Settings › Extensions › Host</b> shows the admitted, delivered, lost, expired and still-active counters.</p>
+
+    <h2 id="intercepter-un-appel-doutil">Intercepting a tool call</h2>
+    <p>An extension can register <b>at most one</b> interceptor, during <code>activate()</code>, through <code>beaver.interceptTool(...)</code>. It receives the canonical name of the tool, its effect class, the current permission mode and, when there is one, a bounded summary of the arguments. It returns <code>{ decision: "continue" }</code> or <code>{ decision: "deny", reason? }</code>, and nothing else. <b>It cannot modify the arguments, run the tool itself, or grant a permission Beaver refused</b>: an interceptor only takes away, it never adds.</p>
+
+    <p>Native protections run before it, the real effect only after it. Active interceptors are called one after another in a deterministic order, with a ceiling of <b>eight</b> across the whole host and a budget of <b>250 ms per handler</b> and <b>1 second for the chain</b>. An error, an invalid answer or an expired individual deadline <b>refuses the tool</b> and puts the offending extension in error until it is re-enabled; if the whole chain's budget runs out, the tool is refused without any extension being blamed. A late answer can never take back an effect that was cancelled. Your handler holds no business context, which rules out re-entrancy: models, memory, automations and subagents cannot be called from there.</p>
+
+    <h2 id="automatisations-et-sous-agents">Wake-ups and subagents of your own</h2>
+    <p>From a tool's <code>execute</code>, an extension can create its own wake-ups with <code>beaver.automations</code> — <b>eight</b> at most — and only handles those it created. A created wake-up is always <b>inactive</b>: <code>setActive(true)</code> always asks the user for an explicit agreement, including in automatic mode, and a change to its executable content or to the approved code invalidates that agreement. Its target is imposed: a new conversation in the current project, with the current model and provider. The three schedule shapes are <code>once</code>, <code>cron</code> and <code>after_completion</code>, the same ones as on the <a href="automatisation-reveils.html">Scheduled wakeups</a> page. <code>update</code>, <code>setActive</code> and <code>delete</code> require the latest <code>revision</code>, which is what refuses a concurrent write.</p>
+
+    <p>Still from a tool, <code>beaver.subagents.spawn</code> starts an <code>explorer</code> or <code>coder</code> child, attached to the same extension and the same parent conversation. The API is refused in Chat mode, in Plan mode and from another subagent, and <code>send</code> and <code>cancel</code> only drive the children this extension owns in the current parent. The end of the brief <code>spawn</code> call does not kill the child: what cancels it is the parent flow stopping, the extension being revoked, or Beaver stopping.</p>
+
+    <p>These two APIs, like <code>models</code>, <code>memory</code> and tool interception, are <b>optional capabilities</b>. Always check both <code>beaver.capabilities</code> and the presence of the method, and carry on without them: since Beaver 1.2.3, Linux is in maintenance only and does not announce them.</p>
+
+    <h2 id="linterface">The interface</h2>
     <p>To place a view, you first have to declare a <code>ui</code> block in the manifest — without it, every interface registration is refused. In <b>standard mode</b>, you describe data and Beaver draws: four contribution types (<code>tab</code>, <code>settingsTab</code>, <code>action</code>, <code>theme</code>), five placement operations (<code>before</code>, <code>after</code>, <code>replace</code>, <code>move</code>, <code>remove</code>), eleven view primitives, twenty named icons, forty-seven redefinable theme tokens and seven languages plus <code>default</code>. No CSS, no JSX.</p>
 
     <p>Eight public placements exist: <code>app.navigation.primary</code> for an application tab; <code>settings.navigation.preferences</code>, <code>settings.navigation.agent</code>, <code>settings.navigation.models</code>, <code>settings.navigation.integrations</code> and <code>settings.navigation.application</code> for a settings tab; <code>app.toolbar.primary</code> for a toolbar action; and <code>agent.composer.leading</code> for an action in the input field, the only one restricted to the Agent conversation and excluded from third-party chat.</p>
@@ -139,14 +170,14 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
     <p>Two behavioral differences not to miss. <code>registerTool</code> <b>throws</b> when refused; interface registrations, on the other hand, <b>do not throw</b>: they return an empty function and add a diagnostic. Your extension loads, its tools work, and the interface is simply absent — you have to go and read the diagnostic to find out. And two occupants are <b>protected</b> against <code>remove</code> and <code>replace</code>: <code>beaver.settings</code> in the main navigation and <code>beaver.extensions</code> in the Integrations settings. That is what guarantees a user can always come back and disable your extension.</p>
 
     <h2 id="les-niveaux-dapi">The API levels</h2>
-    <p>Mind the vocabulary: the manifest carries <b>two different fields</b>, with two sets of values. <code>apiLevel</code> accepts <code>stable</code> or <code>advanced</code>; <code>ui.mode</code> accepts <code>standard</code> or <code>advanced</code>. There is <b>no</b> API level named <code>standard</code> — that is an interface mode. In practice, three combinations: <code>apiLevel: "stable"</code> without a <code>ui</code> block, which gives you tools, events, skills and resources, and remains the right default choice; <code>apiLevel: "stable"</code> with <code>ui.mode: "standard"</code>, which adds tabs, settings, actions and themes described as data; and <code>apiLevel: "advanced"</code> with <code>ui.mode: "advanced"</code>, a JavaScript module loaded into the same WebView as Beaver.</p>
+    <p>Mind the vocabulary: the manifest carries <b>two different fields</b>, with two sets of values. <code>apiLevel</code> accepts <code>stable</code> or <code>advanced</code>; <code>ui.mode</code> accepts <code>standard</code> or <code>advanced</code>. There is <b>no</b> API level named <code>standard</code> — that is an interface mode. In practice, three combinations: <code>apiLevel: "stable"</code> without a <code>ui</code> block, which gives you tools, events, skills, resources and — when the capability is announced — models, memory, wake-ups, subagents and tool interception, and remains the right default choice; <code>apiLevel: "stable"</code> with <code>ui.mode: "standard"</code>, which adds tabs, settings, actions and themes described as data; and <code>apiLevel: "advanced"</code> with <code>ui.mode: "advanced"</code>, a JavaScript module loaded into the same WebView as Beaver.</p>
 
     <div class="callout">
       <span class="t">Warning</span>
       The advanced interface shares Beaver's page, with the same rights as it. There is no sandbox, and a synchronous loop in that module blocks the whole application: the only way out is then to restart, possibly with <code>--safe-mode</code>. That is why Beaver asks for an extra confirmation at activation. Only go there if standard mode is not enough.
     </div>
 
-    <p>The advanced level is required in two cases only: manipulating the DOM or mounting an interface the standard primitives do not allow, and <a href="integrations-remplacer-un-outil.html">replacing a native tool</a>. What it does <b>not</b> give: <code>beaver.unstable.call(...)</code> can only call methods declared advanced in the contract, and the current contract publishes none — the bridge's twelve methods are all stable. So any call fails today with <code>core_method_unavailable</code>. It is not a back door into the backend.</p>
+    <p>The advanced level is required in two cases only: manipulating the DOM or mounting an interface the standard primitives do not allow, and <a href="integrations-remplacer-un-outil.html">replacing a native tool</a>. What it does <b>not</b> give: <code>beaver.unstable.call(...)</code> can only call methods declared advanced in the contract, and the current contract publishes none — the bridge's twenty-seven request methods are all stable. So any call fails today with <code>core_method_unavailable</code>. It is not a back door into the backend.</p>
 
     <h2 id="distribuer-depuis-git">Distributing from a Git repository</h2>
     <p>Beaver accepts two address shapes: an <code>https</code> or <code>ssh</code> scheme URL — the <code>git+</code> prefix is tolerated and stripped —, and the SCP form <code>user@host:path</code>. Refused are any other scheme, so plain <code>http://</code>, a URL without a host, a password in the URL, a query string, a username over HTTPS, and an empty path.</p>
@@ -183,6 +214,9 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
       <tr><th>Resource</th><th>Limit</th></tr>
       <tr><td>Tools per extension, and across the whole host</td><td><b>64</b> and <b>256</b></td></tr>
       <tr><td>Event handlers, per extension and in flight</td><td><b>64</b> and <b>64</b></td></tr>
+      <tr><td>Event queue per host process; size of an event</td><td><b>32</b> and <b>16 KiB</b></td></tr>
+      <tr><td>Interceptors, per extension and in total; individual and chain deadline</td><td><b>1</b> and <b>8</b>; <b>250 ms</b> and <b>1 s</b></td></tr>
+      <tr><td>Wake-ups owned per extension</td><td><b>8</b></td></tr>
       <tr><td>Skills and resources per extension</td><td><b>32</b> and <b>64</b></td></tr>
       <tr><td>Identifier, including the public tool name; tool description</td><td><b>96</b> and <b>2,000</b> characters</td></tr>
       <tr><td>Depth and nodes of a tool schema; <code>workingDirectory</code></td><td><b>16</b>, <b>256</b>, <b>1,024 characters</b></td></tr>
@@ -197,7 +231,10 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
     <ul>
       <li>Write its entry point in a language other than JavaScript or TypeScript — it can launch a third-party program, but it has to supply it.</li>
       <li>Print anything, or read the account's environment: console and standard output neutralized, environment emptied.</li>
-      <li>Listen to anything other than <code>session.turn.started</code>, or call a core method outside the contract.</li>
+      <li>Call a core method outside the contract, or step into a turn through an event: the nine events are observations delivered after the fact, and one of them may be lost.</li>
+      <li>Modify a tool's arguments, or run the tool itself: an interceptor only lets it through or refuses it, and it never grants a permission Beaver refused.</li>
+      <li>Activate one of its own wake-ups on its own: creating one is allowed, the agreement to run belongs to the user, in every permission mode.</li>
+      <li>Drive a native subagent, one belonging to another extension, or one from a revoked version of itself.</li>
       <li>Remove or replace <code>beaver.settings</code> and <code>beaver.extensions</code>, or touch Beaver's internal components in standard mode.</li>
       <li>Work in Chatbot mode: extension tools are only available in Agent mode.</li>
       <li>Make itself known to every model: Groq models through OpenRouter do not receive extension tools, and <code>groq/compound</code> receives no tool at all.</li>
@@ -217,6 +254,8 @@ beaver-extension.json   index.ts   package.json   package-lock.json</pre>
       <tr><td>The model cannot find the tool under the name written in the code</td><td>Beaver prefixes the name with the extension's identifier</td><td>Look for <code>&lt;id&gt;.&lt;name&gt;</code></td></tr>
       <tr><td>The tools work, the interface does not appear</td><td><code>ui</code> block missing, or contribution refused without an exception being thrown</td><td>Read the interface diagnostics on the entry</td></tr>
       <tr><td>A <code>process.env</code> value is <code>undefined</code></td><td>The process environment is emptied at launch</td><td>Pass the value through a configuration file of the extension</td></tr>
+      <tr><td>Error <code>core_context_required</code> or <code>core_context_revoked</code></td><td>A business call made outside an active Agent tool, after Stop, or after the turn ended</td><td>Call from <code>execute</code>, and never keep the context in a timer</td></tr>
+      <tr><td>Wake-up created but inactive</td><td>Intended behavior: an extension cannot schedule a future run on its own</td><td>Have the user confirm <code>setActive(true)</code> in Beaver</td></tr>
       <tr><td>You have to re-approve after every change</td><td>The fingerprint covers the sources, the manifest and the interface artifact</td><td>Intended behavior: group your changes before reloading</td></tr>
     </table>
 
