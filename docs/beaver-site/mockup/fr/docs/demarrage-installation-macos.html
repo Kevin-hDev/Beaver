@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Installation macOS</title>
-<meta name="description" content="Installer Beaver sur un Mac Apple Silicon par le script d'installation ou par le fichier .dmg, et comprendre l'avertissement de Gatekeeper.">
+<meta name="description" content="Installer Beaver sur un Mac Apple Silicon par le script d'installation et son installateur graphique, ou par le fichier .dmg, et comprendre l'avertissement de Gatekeeper.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Beaver">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://kevin-hdev.github.io/Beaver/fr/docs/demarrage-installation-macos.html">
 <meta property="og:title" content="Beaver Docs — Installation macOS">
-<meta property="og:description" content="Installer Beaver sur un Mac Apple Silicon par le script d'installation ou par le fichier .dmg, et comprendre l'avertissement de Gatekeeper.">
+<meta property="og:description" content="Installer Beaver sur un Mac Apple Silicon par le script d'installation et son installateur graphique, ou par le fichier .dmg, et comprendre l'avertissement de Gatekeeper.">
 <meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -46,8 +46,9 @@
   <main class="doc">
     <h1>Installation sur <em>macOS</em></h1>
     <p>Deux méthodes : le script d'installation, qui vérifie l'empreinte du
-    fichier et évite l'avertissement de Gatekeeper, ou le <code>.dmg</code>
-    téléchargé à la main. Le script est le chemin recommandé.</p>
+    fichier, évite l'avertissement de Gatekeeper et ouvre l'installateur Beaver,
+    ou le <code>.dmg</code> téléchargé à la main. Le script est le chemin
+    recommandé.</p>
 
     <div class="callout">
       <span class="t">Apple Silicon uniquement</span>
@@ -74,38 +75,88 @@
     le script dans un fichier temporaire au lieu de le passer directement à
     <code>bash</code>, et ce fichier est supprimé à la sortie quoi qu'il arrive.
     Et elle impose <b>HTTPS</b> et <b>TLS 1.2</b> au minimum.</p>
-    <p><b>Le script est réservé à une première installation.</b> Il refuse de
-    remplacer une installation existante.</p>
+    <p><b>Le script n'installe rien par lui-même.</b> Il récupère l'installateur
+    Beaver, le vérifie et l'ouvre. L'installateur est la fenêtre qui demande où
+    installer et qui fait le travail. Une première installation et une
+    réinstallation passent toutes les deux par lui.</p>
 
     <h2 id="ce-que-fait-le-script">Ce que fait le script</h2>
-    <p>Il demande le mot de passe administrateur pour écrire dans
-    <code>/Applications</code> : tu as le droit de savoir ce qu'il exécute.</p>
+    <p>Il s'exécute avec ton propre compte et ne demande aucun mot de passe
+    administrateur : c'est l'installateur qui demandera cette autorisation plus
+    tard, et seulement si le dossier choisi l'exige.</p>
     <ul>
       <li>Il détecte le système et l'architecture, et n'accepte que
       <code>Darwin:arm64</code> ou <code>Darwin:aarch64</code>. Tout le reste
       échoue avec « Système non pris en charge ».</li>
       <li>Il interroge l'API GitHub Releases, avec une réponse plafonnée à
       <b>512 Kio</b>.</li>
-      <li>Il exige la présence de l'asset Beaver et du fichier
+      <li>Il exige trois fichiers dans la release : l'installateur
+      <code>Beaver_X.Y.Z_installer-aarch64.tar.gz</code>, l'application
+      <code>Beaver_X.Y.Z_aarch64.dmg</code>, et
       <code>update-manifest.json</code>.</li>
       <li>Il suit <b>trois redirections au maximum</b>, et uniquement vers
       <code>release-assets.githubusercontent.com</code>.</li>
-      <li>Il télécharge le <code>.dmg</code> avec un plafond de <b>2 Gio</b>,
-      puis vérifie sa taille et son <b>SHA-256</b> contre le manifeste.</li>
-      <li>Il demande le dossier d'installation, <code>/Applications</code> par
-      défaut.</li>
-      <li>Il monte le <code>.dmg</code> en lecture seule, sans l'afficher dans le
-      Finder.</li>
-      <li>Il vérifie le contenu du bundle avant de l'installer : présence de
-      <code>Contents/Info.plist</code> et de
-      <code>Contents/MacOS/cl-go-dash</code>, absence de liens symboliques,
-      identifiant <code>com.clgo.dash</code>, exécutable
-      <code>cl-go-dash</code>.</li>
-      <li>Il copie vers un dossier temporaire à nom aléatoire, revérifie le
-      bundle copié, puis le déplace en place. En cas d'échec à n'importe quelle
-      étape, tout est nettoyé.</li>
-      <li>Il démonte le <code>.dmg</code> et lance l'application.</li>
+      <li>Il télécharge l'archive de l'installateur avec un plafond de
+      <b>2 Gio</b>, puis vérifie sa taille et son <b>SHA-256</b> contre le
+      manifeste.</li>
+      <li>Il inspecte l'archive avant de la décompresser : rien en dehors de
+      <code>Beaver Installer.app</code>, aucun segment <code>..</code>, aucun
+      lien symbolique, aucun fichier de type inhabituel.</li>
+      <li>Il vérifie l'installateur décompressé : identifiant
+      <code>com.clgo.dash.installer</code>, présence de
+      <code>Contents/Info.plist</code>, présence de l'exécutable déclaré.</li>
+      <li>Il ouvre l'installateur en lui remettant le nom, la taille et le
+      <b>SHA-256</b> du <code>.dmg</code>, lus dans le manifeste. L'installateur
+      n'acceptera aucun autre fichier.</li>
+      <li>Il termine par « L'installateur Beaver s'est ouvert. » et te rend le
+      Terminal. La suite se passe dans la fenêtre.</li>
     </ul>
+
+    <h2 id="installateur-beaver">L'installateur Beaver</h2>
+    <p>Une fenêtre, un écran à la fois. En haut, la version sur le point d'être
+    installée ; en dessous, le <b>Dossier d'installation</b>, réglé sur
+    <code>/Applications</code>, avec un bouton <b>Parcourir</b> pour en changer.</p>
+    <p>Deux situations sont annoncées avant que quoi que ce soit démarre. Si
+    Beaver est déjà dans ce dossier, l'installateur le dit — « Beaver est déjà
+    installé ici », avec la version remplacée — le bouton affiche
+    <b>Réinstaller</b>, et tes conversations, tes clés et tes réglages ne sont
+    pas touchés. Si Beaver tourne, l'installateur te demande de le fermer d'abord
+    et garde le bouton désactivé tant que c'est le cas : une application ne peut
+    pas être remplacée pendant son exécution.</p>
+    <p>Une fois lancée, l'installation affiche <b>cinq étapes</b>, chacune avec
+    sa barre et, une fois terminée, le temps qu'elle a pris.</p>
+
+    <table>
+      <caption class="crumb">Les cinq étapes de l'installation</caption>
+      <tr><th>Étape</th><th>Ce qui se passe</th></tr>
+      <tr><td>Vérification du système</td><td>Le dossier est revérifié, et Beaver ne doit pas tourner</td></tr>
+      <tr><td>Téléchargement de Beaver</td><td>Le <code>.dmg</code> est téléchargé, avec le pourcentage affiché</td></tr>
+      <tr><td>Vérification d'intégrité</td><td>Taille et <b>SHA-256</b> comparés aux valeurs remises par le script</td></tr>
+      <tr><td>Installation dans le dossier choisi</td><td>Le <code>.dmg</code> est monté en lecture seule, le bundle vérifié, la copie préparée, puis basculée</td></tr>
+      <tr><td>Finitions</td><td>Les fichiers temporaires sont supprimés</td></tr>
+    </table>
+
+    <p>Les vérifications du bundle sont les mêmes qu'avant, elles ont simplement
+    lieu dans l'installateur désormais : identifiant <code>com.clgo.dash</code>,
+    exécutable <code>cl-go-dash</code>, absence de liens symboliques. La version
+    précédente est gardée de côté jusqu'à ce que la bascule ait réussi.</p>
+    <p><b>Afficher les détails</b> ouvre le journal de ce qui se passe, pour qui
+    veut le lire. <b>Annuler</b> reste disponible jusqu'à la bascule elle-même ;
+    après, l'installateur indique « L'installation ne peut plus être annulée »,
+    parce que s'arrêter au milieu d'un remplacement est la seule chose qui
+    pourrait te laisser sans application.</p>
+    <p>À la fin, « Beaver est prêt » et un bouton <b>Lancer Beaver</b>. En cas
+    d'échec, « Installation interrompue », la raison en mots simples, et un
+    bouton <b>Réessayer</b> ; l'ancienne installation reste intacte. En cas
+    d'annulation, « Installation annulée — Rien n'a été installé : le dossier
+    d'installation est intact. »</p>
+
+    <div class="callout">
+      <span class="t">Une installation interrompue ne laisse rien derrière</span>
+      Si la machine s'éteint en pleine installation, la fois suivante remet la
+      copie gardée de côté en place et supprime les restes avant de
+      recommencer.
+    </div>
 
     <h2 id="dmg">La méthode alternative : le fichier .dmg</h2>
     <p>Le <code>.dmg</code> est attaché à chaque release GitHub, sous le nom
@@ -119,11 +170,12 @@
     <table>
       <caption class="crumb">Ce qui distingue les deux méthodes</caption>
       <tr><th></th><th>Script <code>install.sh</code></th><th>Fichier <code>.dmg</code></th></tr>
-      <tr><td>Vérification SHA-256</td><td>Automatique</td><td>À faire soi-même</td></tr>
+      <tr><td>Vérification SHA-256</td><td>Automatique, deux fois : sur l'installateur, puis sur l'application</td><td>À faire soi-même</td></tr>
       <tr><td>Avertissement Gatekeeper</td><td>Évité</td><td>À contourner manuellement</td></tr>
-      <tr><td>Choix du dossier</td><td>Proposé</td><td>Libre</td></tr>
-      <tr><td>Remplace une installation existante</td><td>Non, refuse</td><td>Oui</td></tr>
-      <tr><td>Lance l'application à la fin</td><td>Oui</td><td>Non</td></tr>
+      <tr><td>Choix du dossier</td><td>Dans l'installateur, avec un bouton Parcourir</td><td>Libre</td></tr>
+      <tr><td>Remplace une installation existante</td><td>Oui, avec l'ancienne version gardée de côté jusqu'à la fin</td><td>Oui</td></tr>
+      <tr><td>Progression affichée</td><td>Cinq étapes, avec un journal</td><td>La copie du Finder</td></tr>
+      <tr><td>Lance l'application à la fin</td><td>Oui, sur un bouton</td><td>Non</td></tr>
     </table>
 
     <h2 id="gatekeeper">Gatekeeper et l'absence de signature</h2>
@@ -143,19 +195,25 @@
     </div>
 
     <h2 id="autre-dossier">Choisir un autre dossier d'installation</h2>
-    <p>Le script propose <code>/Applications</code> et attend une confirmation
-    par Entrée. Tu peux saisir un autre chemin absolu ; <code>~</code> et
-    <code>~/…</code> sont acceptés et développés. Le chemin est refusé s'il
-    dépasse 1024 caractères, s'il n'est pas absolu, s'il contient des caractères
-    de contrôle ou un segment <code>..</code>.</p>
+    <p>L'installateur propose <code>/Applications</code> et le bouton
+    <b>Parcourir</b> ouvre le sélecteur de dossier de macOS. Le dossier est
+    refusé s'il n'existe pas, s'il est un lien symbolique, ou s'il se trouve
+    ailleurs que sur un disque rattaché à ce Mac.</p>
+    <p>Une différence mérite d'être connue : <code>/Applications</code> est le
+    seul dossier pour lequel l'installateur peut demander une autorisation
+    administrateur à macOS, et seulement quand ton compte ne peut pas y écrire.
+    Tout autre dossier doit déjà t'être accessible en écriture, sinon il est
+    refusé d'emblée.</p>
 
     <h2 id="mettre-a-jour">Mettre à jour</h2>
-    <p><b>Le script d'installation ne met pas à jour.</b> Il échoue avec « Une
-    application est déjà installée. Utilise sa mise à jour intégrée. » La
-    détection couvre <code>Beaver.app</code> <b>et</b> <code>CL-GO.app</code> —
-    l'ancien nom de l'application — y compris sous forme de lien symbolique.</p>
-    <p>Les mises à jour passent par la fonction intégrée à l'application :
-    <a href="demarrage-mise-a-jour.html">Mise à jour</a>.</p>
+    <p><b>Le chemin normal est la mise à jour intégrée à l'application :</b>
+    <a href="demarrage-mise-a-jour.html">Mise à jour</a>. C'est celui à
+    utiliser.</p>
+    <p>Relancer le script n'est plus refusé pour autant. Il ouvre l'installateur
+    sur le dossier où Beaver se trouve déjà, annonce la version remplacée, et le
+    bouton affiche <b>Réinstaller</b>. C'est la porte de sortie quand la mise à
+    jour intégrée ne peut pas s'exécuter — une installation abîmée, par
+    exemple.</p>
 
     <h2 id="desinstaller">Désinstaller</h2>
     <p>L'application se supprime en jetant <code>Beaver.app</code> du dossier
@@ -168,9 +226,12 @@
       <caption class="crumb">Messages rencontrés, cause et résolution</caption>
       <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
       <tr><td>« Système non pris en charge »</td><td>Mac Intel, ou architecture non reconnue</td><td>Aucune : il n'existe pas de build Intel</td></tr>
-      <tr><td>« Une application est déjà installée »</td><td><code>Beaver.app</code> ou <code>CL-GO.app</code> présent</td><td>Utiliser la mise à jour intégrée, ou supprimer l'ancienne installation</td></tr>
+      <tr><td>« Ferme Beaver avant de continuer »</td><td>L'application est ouverte dans le dossier visé</td><td>Quitter Beaver ; le bouton se débloque tout seul</td></tr>
       <tr><td>Avertissement de développeur non identifié</td><td><code>.dmg</code> téléchargé par navigateur, attribut de quarantaine</td><td>Clic droit › Ouvrir, ou passer par le script</td></tr>
-      <tr><td>« Installation impossible »</td><td>Échec de vérification du bundle, du montage ou de la copie</td><td>Relancer ; si ça persiste, vérifier l'espace disque et les droits sur le dossier choisi</td></tr>
+      <tr><td>« Installation interrompue », téléchargement échoué</td><td>Connexion perdue pendant le téléchargement</td><td>Réessayer ; rien n'a été installé</td></tr>
+      <tr><td>« Installation interrompue », fichier non vérifié</td><td>SHA-256 différent sur le fichier téléchargé</td><td>Réessayer ; si ça persiste, la release est en cause, signaler le problème</td></tr>
+      <tr><td>« Installation interrompue », installation échouée</td><td>Échec de vérification du bundle, du montage ou de la copie</td><td>Réessayer ; si ça persiste, vérifier l'espace disque et les droits sur le dossier choisi</td></tr>
+      <tr><td>Le bouton Parcourir refuse un dossier</td><td>Dossier absent, lien symbolique, volume externe, ou pas accessible en écriture</td><td>Choisir un dossier de ce Mac qui t'appartient, ou <code>/Applications</code></td></tr>
       <tr><td>« Impossible de récupérer la version »</td><td>API GitHub injoignable</td><td>Vérifier la connexion et un éventuel proxy</td></tr>
     </table>
 

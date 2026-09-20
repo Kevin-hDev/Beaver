@@ -53,7 +53,8 @@
     <p>Beaver queries the <b>latest published release of the official GitHub
     repository</b>, <b>at launch and then every hour</b>, and compares your local
     version to the release tag. When an update exists, a notification appears,
-    with a progress bar during the download.</p>
+    and starting it opens the progress window described
+    <a href="#fenetre">further down</a>.</p>
     <p>This check works without authentication because the repository is public:
     that is a deliberate constraint of the project.</p>
 
@@ -94,31 +95,62 @@
     but 1.2.3 is the last version that brings new features to that system:
     <a href="demarrage-installation-linux.html">Linux installation</a>.</p>
 
+    <h2 id="fenetre">One window for everything that downloads</h2>
+    <p>The application, the Ollama engine, an Ollama model, a Forecast model, a
+    voice-dictation model: on macOS and Windows they all report into the
+    <b>same progress window</b>. One line per operation, and the window grows or
+    shrinks to fit what is running. A first download uses that window too, and
+    simply reads “Download” rather than “Update”.</p>
+    <p>Each line says where it stands.</p>
+
+    <table>
+      <caption class="crumb">What a line can say</caption>
+      <tr><th>State</th><th>What it means</th></tr>
+      <tr><td>Queued · position 2</td><td>Waiting its turn behind another operation</td></tr>
+      <tr><td>Downloading, Verifying integrity, Extracting, Installing, Restarting…</td><td>Under way; the stage is named, and the bar fills when the size is known</td></tr>
+      <tr><td>Cancelling…</td><td>You pressed Cancel; it stops at the next safe point</td></tr>
+      <tr><td>Updated</td><td>Done; the line disappears on its own after a few seconds</td></tr>
+      <tr><td>Cancelled</td><td>Stopped at your request; the line disappears the same way</td></tr>
+      <tr><td>The update failed…</td><td>The line stays, with a <b>Retry</b> button</td></tr>
+    </table>
+
+    <p><b>Closing the window stops nothing.</b> The work carries on, and the
+    window comes back by itself when there is something new to show. The one
+    moment it cannot be closed is while Beaver restarts after its own
+    update.</p>
+    <p>This window belongs to macOS and Windows. On Linux, updates work as they
+    always have, without it.</p>
+
     <h2 id="si-ca-echoue">If the installation fails</h2>
     <p>If the application does not restart after an update, manually reinstall
     the last version you knew to be working, from its GitHub release. <b>Your
     data is not touched</b> and is picked up by the reinstalled version.</p>
 
     <div class="callout">
-      <span class="t">Do not use the install script</span>
-      The first-installation script refuses to replace an existing installation.
-      Go through the built-in update.
+      <span class="t">The install script is the way out, not the usual route</span>
+      On macOS and Windows, running the install script again opens the Beaver
+      installer, which replaces the version in place without touching your data.
+      Keep it for the day the built-in update cannot run. On Linux, the script
+      still refuses to replace an existing installation.
     </div>
 
-    <h2 id="modeles-ollama">Ollama model updates</h2>
-    <p>This is a mechanism separate from the application's, not to be confused
-    with it. Beaver lists the installed models and queries the registry for each
-    family; the comparison is on <b>digests</b>, not on a version number. Models
-    with an update available are flagged, and the check is run again after every
-    model download.</p>
+    <h2 id="modeles-ollama">Application or model: one window, two mechanisms</h2>
+    <p>Sharing a window does not make them the same thing, and the distinction
+    still matters. Beaver lists the installed Ollama models and queries the
+    registry for each family; the comparison is on <b>digests</b>, not on a
+    version number. Models with an update available are flagged, and the check is
+    run again after every model download.</p>
+    <p>So a line in the window tells you what is progressing, and this table
+    tells you what is behind it.</p>
 
     <table>
-      <caption class="crumb">Two update systems, not to be confused</caption>
+      <caption class="crumb">What separates an application update from a model update</caption>
       <tr><th></th><th>Application</th><th>Ollama models</th></tr>
       <tr><td>Source</td><td>GitHub releases</td><td>Ollama registry</td></tr>
       <tr><td>Comparison</td><td>Version number</td><td>Digest</td></tr>
       <tr><td>Frequency</td><td>At launch, then every hour</td><td>At launch and after every download</td></tr>
       <tr><td>Restart</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Progress window</td><td>Shared</td><td>Shared</td></tr>
     </table>
 
     <h2 id="ce-qui-n-est-pas-touche">What is never touched</h2>
@@ -142,7 +174,9 @@
       <tr><td>The check fails every time</td><td>GitHub API unreachable, proxy or firewall</td><td>Check network access to <code>api.github.com</code></td></tr>
       <tr><td>The application does not restart after an update</td><td>Faulty installation</td><td>Manually reinstall the last working version</td></tr>
       <tr><td>Two versions installed</td><td>Should not happen: the update replaces the running installation</td><td>Report the problem</td></tr>
-      <tr><td>A model update notification mistaken for the application's</td><td>Two separate mechanisms</td><td>See the table above</td></tr>
+      <tr><td>A model line mistaken for the application's</td><td>One shared window, two mechanisms behind it</td><td>Read the line's label; see the table above</td></tr>
+      <tr><td>The progress window disappeared mid-download</td><td>It was closed, which stops nothing</td><td>Nothing to do: the work carries on and the window comes back</td></tr>
+      <tr><td>A line stays on “The update failed”</td><td>Download, verification or installation failed</td><td>Use the Retry button on that line</td></tr>
     </table>
 
     <p>The installation procedures per system are in

@@ -46,9 +46,9 @@
   <main class="doc">
     <h1>Installing on <em>Windows</em></h1>
     <p>Beaver is distributed as an NSIS installer for Windows x64. The PowerShell
-    script checks every redirect, the size and the fingerprint of the file before
-    starting the installation. Windows is going to react: this page says why and
-    what to do.</p>
+    script checks every redirect, the size and the fingerprint of the file, then
+    opens the Beaver installer, which asks where to install and shows what it is
+    doing. Windows is going to react: this page says why and what to do.</p>
 
     <h2 id="script">The recommended method: the script</h2>
     <p>To paste into <b>PowerShell</b>, not into the classic command
@@ -66,6 +66,8 @@
     </div>
 
     <h2 id="ce-que-fait-le-script">What the script does</h2>
+    <p>The script goes as far as opening the Beaver installer, and no further.
+    The installation itself happens in the window that appears.</p>
     <ul>
       <li>It checks that the processor architecture is <b>AMD64</b>. Any other
       value stops the installation.</li>
@@ -73,8 +75,10 @@
       every redirect is examined before being followed.</li>
       <li>It queries the GitHub Releases API, with the response capped at
       <b>512 KiB</b>.</li>
-      <li>It requires the asset named exactly
-      <code>Beaver_&lt;version&gt;_x64-setup.exe</code>.</li>
+      <li>It requires three assets named exactly: the installer
+      <code>Beaver_&lt;version&gt;_installer-x64.exe</code>, the application
+      <code>Beaver_&lt;version&gt;_x64-setup.exe</code>, and
+      <code>update-manifest.json</code>.</li>
       <li>It downloads <code>update-manifest.json</code>, capped at
       <b>64 KiB</b>, and checks that its size matches the announced one.</li>
       <li>It checks that the manifest carries the expected version, and that
@@ -85,12 +89,11 @@
       exactly.</li>
       <li>It computes the file's <b>SHA-256</b> and compares it to the one in the
       manifest. On any mismatch, the installation stops.</li>
-      <li>It offers the installation folder,
-      <code>%LOCALAPPDATA%\Beaver</code> by default.</li>
-      <li>It runs the NSIS installer in silent mode, window hidden.</li>
-      <li>It checks that <code>cl-go-dash.exe</code> exists in the installation
-      folder and that it is not a reparse point — a protection against
-      substitution by link.</li>
+      <li>It starts the installer and hands it the name, the size and the
+      <b>SHA-256</b> of <code>Beaver_&lt;version&gt;_x64-setup.exe</code>, read
+      from the manifest. The installer will accept no other file.</li>
+      <li>It ends with “The Beaver installer has opened.” and gives PowerShell
+      back to you.</li>
     </ul>
 
     <table>
@@ -100,13 +103,44 @@
       <tr><td>Transport</td><td>TLS 1.2, redirects not followed automatically</td></tr>
       <tr><td>API response</td><td>512 KiB maximum</td></tr>
       <tr><td>Manifest</td><td>64 KiB maximum, size and version verified</td></tr>
-      <tr><td>Asset name</td><td><code>Beaver_&lt;version&gt;_x64-setup.exe</code> exactly</td></tr>
+      <tr><td>Asset names</td><td><code>Beaver_&lt;version&gt;_installer-x64.exe</code> and <code>Beaver_&lt;version&gt;_x64-setup.exe</code> exactly</td></tr>
       <tr><td>Fingerprint</td><td>SHA-256 over 64 hexadecimal characters, compared to the manifest</td></tr>
       <tr><td>Asset size</td><td>Must match the manifest exactly</td></tr>
-      <tr><td>Installed binary</td><td><code>cl-go-dash.exe</code> present and not a link</td></tr>
     </table>
 
-    <h2 id="installeur">The alternative method: the installer</h2>
+    <h2 id="installateur-beaver">The Beaver installer</h2>
+    <p>One window, one screen at a time. At the top, the version about to be
+    installed; underneath, the <b>Installation folder</b>, set to
+    <code>%LOCALAPPDATA%\Beaver</code>, with a <b>Browse</b> button to change
+    it.</p>
+    <p>If Beaver is running, the installer asks you to close it first and keeps
+    the button disabled until you do. Once started, the installation shows
+    <b>five steps</b>, each with its own bar and, once done, the time it
+    took.</p>
+
+    <table>
+      <caption class="crumb">The five steps of the installation</caption>
+      <tr><th>Step</th><th>What happens</th></tr>
+      <tr><td>Checking the system</td><td>The folder is checked again, and Beaver must not be running</td></tr>
+      <tr><td>Downloading Beaver</td><td><code>Beaver_X.Y.Z_x64-setup.exe</code> is downloaded, with the percentage shown</td></tr>
+      <tr><td>Verifying integrity</td><td>Size and <b>SHA-256</b> compared to the values handed over by the script</td></tr>
+      <tr><td>Installing in the chosen folder</td><td>The NSIS installer runs in silent mode, window hidden, into that folder</td></tr>
+      <tr><td>Finishing</td><td><code>cl-go-dash.exe</code> is checked in place, then temporary files are removed</td></tr>
+    </table>
+
+    <p>That last check is the one that protects against substitution by link:
+    <code>cl-go-dash.exe</code> must be present in the installation folder and
+    must not be a reparse point.</p>
+    <p><b>Show details</b> opens the log of what is happening. <b>Cancel</b>
+    stays available until the silent installer is launched; after that the window
+    says “The installation can no longer be cancelled”. At the end, “Beaver is
+    ready” and a <b>Launch Beaver</b> button. On failure, “Installation
+    interrupted”, the reason in plain words, and a <b>Retry</b> button; the
+    previous installation remains intact. On cancellation, “Installation
+    cancelled — Nothing was installed: the installation folder is
+    unchanged.”</p>
+
+    <h2 id="installeur">The alternative method: the setup file</h2>
     <p>The <code>Beaver_X.Y.Z_x64-setup.exe</code> installer is attached to every
     GitHub release: double-click and the usual flow. Its downside: SmartScreen
     steps in on an unsigned executable downloaded through a browser, and the
@@ -143,26 +177,31 @@
     </div>
 
     <h2 id="autre-dossier">Choosing another installation folder</h2>
-    <p>The default is <code>%LOCALAPPDATA%\Beaver</code>. Another path can be
-    entered, with strict checks; a non-conforming path stops the
-    installation.</p>
+    <p>The default is <code>%LOCALAPPDATA%\Beaver</code>, and the <b>Browse</b>
+    button lets you pick another one. The checks are strict; a non-conforming
+    folder is refused instead of being installed into.</p>
 
     <table>
       <caption class="crumb">Constraints on the installation folder</caption>
       <tr><th>Rule</th><th>Detail</th></tr>
       <tr><td>Format</td><td>Starts with a drive letter followed by <code>:\</code></td></tr>
+      <tr><td>Drive</td><td>A fixed drive on this PC — no network drive, no removable drive</td></tr>
+      <tr><td>Network paths</td><td>A path beginning with <code>\\</code> is refused</td></tr>
       <tr><td>Length</td><td>1024 characters maximum</td></tr>
       <tr><td>Forbidden characters</td><td><code>*</code> <code>?</code> <code>&lt;</code> <code>&gt;</code> <code>|</code> <code>"</code> and control characters</td></tr>
       <tr><td>Colons</td><td>Forbidden beyond the first three characters</td></tr>
-      <tr><td>Traversal</td><td>No <code>..</code> segment</td></tr>
+      <tr><td>Traversal</td><td>No <code>.</code> or <code>..</code> segment, and no segment ending with a dot or a space</td></tr>
     </table>
 
     <h2 id="mettre-a-jour">Updating</h2>
-    <p>Unlike macOS and Linux, where the script stops if an installation is
-    detected, the Windows script does not perform that check: the NSIS installer
-    handles the replacement itself. The normal route remains the <b>built-in
-    update</b> in the application:
-    <a href="demarrage-mise-a-jour.html">Updating</a>.</p>
+    <p>The Windows script never refused to run over an existing installation, and
+    that has not changed: the NSIS installer handles the replacement itself, and
+    your conversations, keys and settings are not touched. Unlike macOS, the
+    window does not read the version already in place, so it says “Install” and
+    not “Reinstall” — it will replace all the same.</p>
+    <p>The normal route remains the <b>built-in update</b> in the application:
+    <a href="demarrage-mise-a-jour.html">Updating</a>. Going back through the
+    script is the way out when that update cannot run.</p>
 
     <h2 id="desinstaller">Uninstalling</h2>
     <p>The NSIS installer lays down an uninstaller: removal goes through
@@ -177,6 +216,9 @@
       <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
       <tr><td>The script stops immediately</td><td>Architecture other than AMD64</td><td>None: there is no ARM build</td></tr>
       <tr><td>“Windows protected your PC”</td><td>Unsigned executable</td><td>More info › Run anyway</td></tr>
+      <tr><td>“Close Beaver before continuing”</td><td>The application is open in the target folder</td><td>Quit Beaver; the button unlocks on its own</td></tr>
+      <tr><td>“Installation interrupted” in the installer window</td><td>Download failed, fingerprint mismatch, or silent installation failed</td><td>Retry; the previous installation remains intact</td></tr>
+      <tr><td>The Browse button refuses a folder</td><td>Network or removable drive, or a path that breaks one of the rules above</td><td>Pick a folder on a fixed drive of this PC</td></tr>
       <tr><td>The model download fails with no clear message</td><td>Controlled folder access is blocking <code>ollama.exe</code></td><td>Click “Allow” in the Windows notification</td></tr>
       <tr><td>The application does not start after installation</td><td>WebView2 or the Visual C++ runtime is missing</td><td>Known caveat, with no documented fix to date</td></tr>
       <tr><td>The installation stops without explanation</td><td>A check failed: fingerprint, size or path</td><td>Run it again; if it persists, report the problem</td></tr>

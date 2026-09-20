@@ -53,8 +53,8 @@
     <p>Beaver interroge la <b>dernière release publiée du dépôt GitHub
     officiel</b>, <b>au lancement puis toutes les heures</b>, et compare ta
     version locale au tag de la release. Quand une mise à jour existe, une
-    notification apparaît, avec une barre de progression pendant le
-    téléchargement.</p>
+    notification apparaît, et la lancer ouvre la fenêtre de progression décrite
+    <a href="#fenetre">plus bas</a>.</p>
     <p>Cette vérification fonctionne sans authentification parce que le dépôt est
     public : c'est une contrainte assumée du projet.</p>
 
@@ -98,6 +98,33 @@
     fonctionnalités à ce système :
     <a href="demarrage-installation-linux.html">Installation Linux</a>.</p>
 
+    <h2 id="fenetre">Une seule fenêtre pour tout ce qui se télécharge</h2>
+    <p>L'application, le moteur Ollama, un modèle Ollama, un modèle Forecast, un
+    modèle de dictée vocale : sur macOS et Windows, tout rend compte dans la
+    <b>même fenêtre de progression</b>. Une ligne par opération, et la fenêtre
+    grandit ou rétrécit selon ce qui tourne. Un premier téléchargement passe par
+    cette fenêtre lui aussi, et affiche simplement « Téléchargement » plutôt que
+    « Mise à jour ».</p>
+    <p>Chaque ligne dit où elle en est.</p>
+
+    <table>
+      <caption class="crumb">Ce qu'une ligne peut dire</caption>
+      <tr><th>État</th><th>Ce que ça veut dire</th></tr>
+      <tr><td>En attente · position 2</td><td>Attend son tour derrière une autre opération</td></tr>
+      <tr><td>Téléchargement, Vérification d'intégrité, Extraction, Installation, Redémarrage…</td><td>En cours ; l'étape est nommée, et la barre se remplit quand la taille est connue</td></tr>
+      <tr><td>Annulation en cours…</td><td>Tu as appuyé sur Annuler ; ça s'arrête au prochain point sûr</td></tr>
+      <tr><td>Mis à jour</td><td>Terminé ; la ligne disparaît d'elle-même au bout de quelques secondes</td></tr>
+      <tr><td>Annulé</td><td>Arrêté à ta demande ; la ligne disparaît de la même façon</td></tr>
+      <tr><td>La mise à jour a échoué…</td><td>La ligne reste, avec un bouton <b>Réessayer</b></td></tr>
+    </table>
+
+    <p><b>Fermer la fenêtre n'arrête rien.</b> Le travail continue, et la fenêtre
+    revient d'elle-même quand il y a du nouveau à montrer. Le seul moment où elle
+    ne peut pas être fermée, c'est pendant le redémarrage de Beaver après sa
+    propre mise à jour.</p>
+    <p>Cette fenêtre appartient à macOS et Windows. Sous Linux, les mises à jour
+    fonctionnent comme avant, sans elle.</p>
+
     <h2 id="si-ca-echoue">Si l'installation échoue</h2>
     <p>Si l'application ne redémarre pas après une mise à jour, réinstalle
     manuellement la dernière version que tu savais fonctionnelle, depuis sa
@@ -105,26 +132,32 @@
     la version réinstallée.</p>
 
     <div class="callout">
-      <span class="t">Ne pas utiliser le script d'installation</span>
-      Le script de première installation refuse de remplacer une installation
-      existante. Passe par la mise à jour intégrée.
+      <span class="t">Le script d'installation est la porte de sortie, pas la voie normale</span>
+      Sur macOS et Windows, relancer le script d'installation ouvre
+      l'installateur Beaver, qui remplace la version en place sans toucher à tes
+      données. Garde-le pour le jour où la mise à jour intégrée ne peut pas
+      s'exécuter. Sous Linux, le script refuse toujours de remplacer une
+      installation existante.
     </div>
 
-    <h2 id="modeles-ollama">Les mises à jour des modèles Ollama</h2>
-    <p>C'est un mécanisme distinct de celui de l'application, à ne pas confondre
-    avec lui. Beaver liste les modèles installés et interroge le registre pour
-    chaque famille ; la comparaison porte sur les <b>empreintes</b>, pas sur un
-    numéro de version. Les modèles ayant une mise à jour disponible sont
+    <h2 id="modeles-ollama">Application ou modèle : une fenêtre, deux mécanismes</h2>
+    <p>Partager une fenêtre n'en fait pas la même chose, et la distinction compte
+    toujours. Beaver liste les modèles Ollama installés et interroge le registre
+    pour chaque famille ; la comparaison porte sur les <b>empreintes</b>, pas sur
+    un numéro de version. Les modèles ayant une mise à jour disponible sont
     signalés, et la vérification est relancée après chaque téléchargement de
     modèle.</p>
+    <p>Une ligne de la fenêtre te dit donc ce qui avance, et ce tableau te dit ce
+    qu'il y a derrière.</p>
 
     <table>
-      <caption class="crumb">Deux systèmes de mise à jour, à ne pas confondre</caption>
+      <caption class="crumb">Ce qui sépare une mise à jour d'application d'une mise à jour de modèle</caption>
       <tr><th></th><th>Application</th><th>Modèles Ollama</th></tr>
       <tr><td>Source</td><td>Releases GitHub</td><td>Registre Ollama</td></tr>
       <tr><td>Comparaison</td><td>Numéro de version</td><td>Empreinte</td></tr>
       <tr><td>Fréquence</td><td>Au lancement, puis chaque heure</td><td>Au lancement et après chaque téléchargement</td></tr>
       <tr><td>Redémarrage</td><td>Oui</td><td>Non</td></tr>
+      <tr><td>Fenêtre de progression</td><td>Partagée</td><td>Partagée</td></tr>
     </table>
 
     <h2 id="ce-qui-n-est-pas-touche">Ce qui n'est jamais touché</h2>
@@ -147,7 +180,9 @@
       <tr><td>La vérification échoue systématiquement</td><td>API GitHub injoignable, proxy ou pare-feu</td><td>Vérifier l'accès réseau à <code>api.github.com</code></td></tr>
       <tr><td>L'application ne redémarre pas après mise à jour</td><td>Installation défaillante</td><td>Réinstaller manuellement la dernière version fonctionnelle</td></tr>
       <tr><td>Deux versions installées</td><td>Ne devrait pas arriver : la mise à jour remplace l'installation lancée</td><td>Signaler le problème</td></tr>
-      <tr><td>Notification de mise à jour de modèle confondue avec celle de l'application</td><td>Deux mécanismes distincts</td><td>Voir le tableau ci-dessus</td></tr>
+      <tr><td>Ligne de modèle confondue avec celle de l'application</td><td>Une fenêtre partagée, deux mécanismes derrière</td><td>Lire le libellé de la ligne ; voir le tableau ci-dessus</td></tr>
+      <tr><td>La fenêtre de progression a disparu en plein téléchargement</td><td>Elle a été fermée, ce qui n'arrête rien</td><td>Rien à faire : le travail continue et la fenêtre revient</td></tr>
+      <tr><td>Une ligne reste sur « La mise à jour a échoué »</td><td>Téléchargement, vérification ou installation en échec</td><td>Utiliser le bouton Réessayer de cette ligne</td></tr>
     </table>
 
     <p>Les procédures d'installation par système sont dans

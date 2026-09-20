@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — macOS installation</title>
-<meta name="description" content="Install Beaver on an Apple Silicon Mac through the install script or the .dmg file, and understand the Gatekeeper warning.">
+<meta name="description" content="Install Beaver on an Apple Silicon Mac through the install script and its graphical installer, or through the .dmg file, and understand the Gatekeeper warning.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Beaver">
 <meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://kevin-hdev.github.io/Beaver/docs/demarrage-installation-macos.html">
 <meta property="og:title" content="Beaver Docs — macOS installation">
-<meta property="og:description" content="Install Beaver on an Apple Silicon Mac through the install script or the .dmg file, and understand the Gatekeeper warning.">
+<meta property="og:description" content="Install Beaver on an Apple Silicon Mac through the install script and its graphical installer, or through the .dmg file, and understand the Gatekeeper warning.">
 <meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -45,9 +45,9 @@
 
   <main class="doc">
     <h1>Installing on <em>macOS</em></h1>
-    <p>Two methods: the install script, which verifies the file's fingerprint and
-    avoids the Gatekeeper warning, or the <code>.dmg</code> downloaded by hand.
-    The script is the recommended path.</p>
+    <p>Two methods: the install script, which verifies the file's fingerprint,
+    avoids the Gatekeeper warning and opens the Beaver installer, or the
+    <code>.dmg</code> downloaded by hand. The script is the recommended path.</p>
 
     <div class="callout">
       <span class="t">Apple Silicon only</span>
@@ -74,38 +74,85 @@
     script into a temporary file instead of piping it straight to
     <code>bash</code>, and that file is deleted on exit no matter what. And it
     enforces <b>HTTPS</b> and <b>TLS 1.2</b> as a minimum.</p>
-    <p><b>The script is meant for a first installation only.</b> It refuses to
-    replace an existing installation.</p>
+    <p><b>The script does not install anything by itself.</b> It fetches the
+    Beaver installer, verifies it, and opens it. The installer is the window that
+    asks where to install and does the work. A first installation and a
+    reinstallation both go through it.</p>
 
     <h2 id="ce-que-fait-le-script">What the script does</h2>
-    <p>It asks for the administrator password in order to write to
-    <code>/Applications</code>: you have every right to know what it runs.</p>
+    <p>It runs with your own account and asks for no administrator password: the
+    installer requests that authorization later, and only if the chosen folder
+    needs it.</p>
     <ul>
       <li>It detects the system and the architecture, and accepts only
       <code>Darwin:arm64</code> or <code>Darwin:aarch64</code>. Everything else
       fails with “Unsupported system”.</li>
       <li>It queries the GitHub Releases API, with the response capped at
       <b>512 KiB</b>.</li>
-      <li>It requires the Beaver asset and the
-      <code>update-manifest.json</code> file to be present.</li>
+      <li>It requires three files in the release: the installer
+      <code>Beaver_X.Y.Z_installer-aarch64.tar.gz</code>, the application
+      <code>Beaver_X.Y.Z_aarch64.dmg</code>, and
+      <code>update-manifest.json</code>.</li>
       <li>It follows <b>three redirects at most</b>, and only towards
       <code>release-assets.githubusercontent.com</code>.</li>
-      <li>It downloads the <code>.dmg</code> with a <b>2 GiB</b> cap, then checks
+      <li>It downloads the installer archive with a <b>2 GiB</b> cap, then checks
       its size and its <b>SHA-256</b> against the manifest.</li>
-      <li>It asks for the installation folder, <code>/Applications</code> by
-      default.</li>
-      <li>It mounts the <code>.dmg</code> read-only, without showing it in the
-      Finder.</li>
-      <li>It verifies the contents of the bundle before installing it:
-      <code>Contents/Info.plist</code> and
-      <code>Contents/MacOS/cl-go-dash</code> present, no symbolic links,
-      identifier <code>com.clgo.dash</code>, executable
-      <code>cl-go-dash</code>.</li>
-      <li>It copies to a temporary folder with a random name, re-checks the
-      copied bundle, then moves it into place. If any step fails, everything is
-      cleaned up.</li>
-      <li>It unmounts the <code>.dmg</code> and launches the application.</li>
+      <li>It inspects the archive before unpacking it: nothing outside
+      <code>Beaver Installer.app</code>, no <code>..</code> segment, no symbolic
+      link, no file of an unusual kind.</li>
+      <li>It verifies the unpacked installer: identifier
+      <code>com.clgo.dash.installer</code>, <code>Contents/Info.plist</code>
+      present, declared executable present.</li>
+      <li>It opens the installer and hands it the name, the size and the
+      <b>SHA-256</b> of the <code>.dmg</code>, read from the manifest. The
+      installer will accept no other file.</li>
+      <li>It ends with “The Beaver installer has opened.” and gives the Terminal
+      back to you. The rest happens in the window.</li>
     </ul>
+
+    <h2 id="installateur-beaver">The Beaver installer</h2>
+    <p>One window, one screen at a time. At the top, the version about to be
+    installed; underneath, the <b>Installation folder</b>, set to
+    <code>/Applications</code>, with a <b>Browse</b> button to change it.</p>
+    <p>Two situations are announced before anything starts. If Beaver is already
+    in that folder, the installer says so — “Beaver is already installed here”,
+    and the version being replaced — the button reads <b>Reinstall</b>, and your
+    conversations, keys and settings are not touched. If Beaver is running, the
+    installer asks you to close it first and keeps the button disabled until you
+    do: an application cannot be replaced while it is running.</p>
+    <p>Once started, the installation shows <b>five steps</b>, each with its own
+    bar and, once done, the time it took.</p>
+
+    <table>
+      <caption class="crumb">The five steps of the installation</caption>
+      <tr><th>Step</th><th>What happens</th></tr>
+      <tr><td>Checking the system</td><td>The folder is checked again, and Beaver must not be running</td></tr>
+      <tr><td>Downloading Beaver</td><td>The <code>.dmg</code> is downloaded, with the percentage shown</td></tr>
+      <tr><td>Verifying integrity</td><td>Size and <b>SHA-256</b> compared to the values handed over by the script</td></tr>
+      <tr><td>Installing in the chosen folder</td><td>The <code>.dmg</code> is mounted read-only, the bundle verified, the copy prepared, then swapped in</td></tr>
+      <tr><td>Finishing</td><td>Temporary files are removed</td></tr>
+    </table>
+
+    <p>The bundle checks are the same as before, they simply happen inside the
+    installer now: identifier <code>com.clgo.dash</code>, executable
+    <code>cl-go-dash</code>, no symbolic links. The previous version is kept
+    aside until the swap has succeeded.</p>
+    <p><b>Show details</b> opens the log of what is happening, for those who want
+    to read it. <b>Cancel</b> stays available until the swap itself; after that
+    the installer says “The installation can no longer be cancelled”, because
+    stopping in the middle of a replacement is the one thing that could leave you
+    without an application.</p>
+    <p>At the end, “Beaver is ready” and a <b>Launch Beaver</b> button. On
+    failure, “Installation interrupted”, the reason in plain words, and a
+    <b>Retry</b> button; the previous installation remains intact. On
+    cancellation, “Installation cancelled — Nothing was installed: the
+    installation folder is unchanged.”</p>
+
+    <div class="callout">
+      <span class="t">An interrupted installation leaves nothing behind</span>
+      If the machine is shut down mid-installation, the next run puts the kept
+      copy back in place and removes the leftovers before starting again.
+    </div>
 
     <h2 id="dmg">The alternative method: the .dmg file</h2>
     <p>The <code>.dmg</code> is attached to every GitHub release, under the name
@@ -119,11 +166,12 @@
     <table>
       <caption class="crumb">What separates the two methods</caption>
       <tr><th></th><th><code>install.sh</code> script</th><th><code>.dmg</code> file</th></tr>
-      <tr><td>SHA-256 verification</td><td>Automatic</td><td>Up to you</td></tr>
+      <tr><td>SHA-256 verification</td><td>Automatic, twice: on the installer, then on the application</td><td>Up to you</td></tr>
       <tr><td>Gatekeeper warning</td><td>Avoided</td><td>To work around manually</td></tr>
-      <tr><td>Choice of folder</td><td>Offered</td><td>Free</td></tr>
-      <tr><td>Replaces an existing installation</td><td>No, refuses</td><td>Yes</td></tr>
-      <tr><td>Launches the application at the end</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Choice of folder</td><td>In the installer, with a Browse button</td><td>Free</td></tr>
+      <tr><td>Replaces an existing installation</td><td>Yes, with the previous version kept aside until the end</td><td>Yes</td></tr>
+      <tr><td>Progress shown</td><td>Five steps, with a log</td><td>The Finder copy</td></tr>
+      <tr><td>Launches the application at the end</td><td>Yes, on a button</td><td>No</td></tr>
     </table>
 
     <h2 id="gatekeeper">Gatekeeper and the missing signature</h2>
@@ -143,19 +191,24 @@
     </div>
 
     <h2 id="autre-dossier">Choosing another installation folder</h2>
-    <p>The script offers <code>/Applications</code> and waits for confirmation
-    with Enter. You can enter another absolute path; <code>~</code> and
-    <code>~/…</code> are accepted and expanded. The path is refused if it exceeds
-    1024 characters, if it is not absolute, or if it contains control characters
-    or a <code>..</code> segment.</p>
+    <p>The installer proposes <code>/Applications</code> and the <b>Browse</b>
+    button opens the macOS folder picker. The folder is refused if it does not
+    exist, if it is a symbolic link, or if it sits on anything other than a disk
+    attached to this Mac.</p>
+    <p>One difference worth knowing: <code>/Applications</code> is the only
+    folder for which the installer may ask macOS for an administrator
+    authorization, and only when your account cannot write there. Any other
+    folder must already be writable by you, otherwise it is refused straight
+    away.</p>
 
     <h2 id="mettre-a-jour">Updating</h2>
-    <p><b>The install script does not update.</b> It fails with “An application
-    is already installed. Use its built-in update.” Detection covers
-    <code>Beaver.app</code> <b>and</b> <code>CL-GO.app</code> — the application's
-    former name — including as a symbolic link.</p>
-    <p>Updates go through the function built into the application:
-    <a href="demarrage-mise-a-jour.html">Updating</a>.</p>
+    <p><b>The normal route is the update built into the application:</b>
+    <a href="demarrage-mise-a-jour.html">Updating</a>. It is the one to use.</p>
+    <p>Running the script again is no longer refused, though. It opens the
+    installer on the folder where Beaver already lives, announces the version
+    being replaced, and the button reads <b>Reinstall</b>. This is the way back
+    when the built-in update cannot run — a broken installation, for
+    instance.</p>
 
     <h2 id="desinstaller">Uninstalling</h2>
     <p>The application is removed by throwing <code>Beaver.app</code> out of the
@@ -168,9 +221,12 @@
       <caption class="crumb">Messages you may hit, cause and resolution</caption>
       <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
       <tr><td>“Unsupported system”</td><td>Intel Mac, or unrecognized architecture</td><td>None: there is no Intel build</td></tr>
-      <tr><td>“An application is already installed”</td><td><code>Beaver.app</code> or <code>CL-GO.app</code> present</td><td>Use the built-in update, or remove the old installation</td></tr>
+      <tr><td>“Close Beaver before continuing”</td><td>The application is open in the target folder</td><td>Quit Beaver; the button unlocks on its own</td></tr>
       <tr><td>Unidentified developer warning</td><td><code>.dmg</code> downloaded through a browser, quarantine attribute</td><td>Right-click › Open, or go through the script</td></tr>
-      <tr><td>“Installation failed”</td><td>Bundle verification, mounting or copy failed</td><td>Run it again; if it persists, check disk space and permissions on the chosen folder</td></tr>
+      <tr><td>“Installation interrupted”, download failed</td><td>Connection lost during the download</td><td>Retry; nothing was installed</td></tr>
+      <tr><td>“Installation interrupted”, file not verified</td><td>SHA-256 mismatch on the downloaded file</td><td>Retry; if it persists, the release is at fault, report the problem</td></tr>
+      <tr><td>“Installation interrupted”, installation failed</td><td>Bundle verification, mounting or copy failed</td><td>Retry; if it persists, check disk space and permissions on the chosen folder</td></tr>
+      <tr><td>The Browse button refuses a folder</td><td>Folder missing, symbolic link, external volume, or not writable by you</td><td>Pick a folder on this Mac that belongs to you, or <code>/Applications</code></td></tr>
       <tr><td>“Could not retrieve the version”</td><td>GitHub API unreachable</td><td>Check the connection and any proxy</td></tr>
     </table>
 
