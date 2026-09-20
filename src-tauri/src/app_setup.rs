@@ -17,6 +17,9 @@ pub(super) fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Erro
         .clone();
     crate::runtime_state::initialize_agent_runtime(app.handle())?;
     crate::storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
+    if crate::services::mcp_bridge::config::migrate_at_startup().is_err() {
+        ::log::warn!("[mcp] connector migration unavailable");
+    }
     #[cfg(any(target_os = "macos", windows))]
     if let Some(downloads) =
         app.try_state::<crate::services::model_downloads::ModelDownloadManager>()

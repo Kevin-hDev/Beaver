@@ -1,11 +1,12 @@
 import type { McpConnectorSpec } from "@/types/mcp";
+import endpoints from "@/config/mcp-endpoints.json";
 
 export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
   {
     id: "gmail", display_name: "Gmail", category: "communication", auth_type: "oauth",
     short_descriptions: { fr: "Accès sécurisé à Gmail : brouillons, labels, recherche.", en: "Secure Gmail access: drafts, labels, search.", es: "Acceso seguro a Gmail: borradores, etiquetas y búsqueda.", de: "Sicherer Gmail-Zugriff: Entwürfe, Labels und Suche.", it: "Accesso sicuro a Gmail: bozze, etichette e ricerca.", zh: "安全访问 Gmail：草稿、标签和搜索。", ja: "Gmail への安全なアクセス：下書き、ラベル、検索。" },
     author: "Google Cloud", url: "https://mail.google.com",
-    endpoint: "https://gmailmcp.googleapis.com/mcp/v1",
+    endpoint: endpoints.gmail,
     tools: ["draft_create", "read_mail", "search_mail", "label_manage"],
     coming_soon: true,
   },
@@ -21,7 +22,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Google Drive ファイルの検索、読み取り、書き込み。",
     },
     author: "Google Cloud", url: "https://drive.google.com",
-    endpoint: "https://drivemcp.googleapis.com/mcp/v1",
+    endpoint: endpoints["google-drive"],
     tools: ["list_files", "search_files", "read_doc", "write_doc", "file_ops"],
     coming_soon: true,
   },
@@ -37,7 +38,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "予定、空き時間、会議を管理。",
     },
     author: "Google Cloud", url: "https://calendar.google.com",
-    endpoint: "https://calendarmcp.googleapis.com/mcp/v1",
+    endpoint: endpoints["google-calendar"],
     tools: ["list_calendars", "create_event", "update_event", "delete_event", "check_freebusy"],
     coming_soon: true,
   },
@@ -53,7 +54,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Canva デザインの作成、編集、書き出し。",
     },
     author: "Canva", url: "https://www.canva.com",
-    endpoint: "https://mcp.canva.com/mcp",
+    endpoint: endpoints.canva,
     tools: ["generate_design", "search_designs", "get_design", "update_design", "export_design"],
   },
   {
@@ -68,7 +69,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Figma デザイン、トークン、コード生成にアクセス。",
     },
     author: "Figma", url: "https://www.figma.com",
-    endpoint: "https://mcp.figma.com/mcp",
+    endpoint: endpoints.figma,
     tools: ["use_figma", "search_design_system", "create_file", "get_variables", "get_code_connect"],
   },
   {
@@ -83,7 +84,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Notion ページとデータベースの読み書き、検索。",
     },
     author: "Notion Labs", url: "https://www.notion.so",
-    endpoint: "https://mcp.notion.com/mcp",
+    endpoint: endpoints.notion,
     tools: ["create_page", "update_page", "search", "query_database", "add_comment", "manage_blocks"],
   },
   {
@@ -98,8 +99,9 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Slack メッセージの検索、送信、チャンネル管理。",
     },
     author: "Slack API", url: "https://slack.com",
-    endpoint: "https://mcp.slack.com/mcp",
+    endpoint: endpoints.slack,
     tools: ["search_messages", "send_message", "manage_canvases", "get_user_info", "get_channel_info"],
+    coming_soon: true,
   },
   {
     id: "linear", display_name: "Linear", category: "devtools", auth_type: "oauth",
@@ -113,7 +115,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Linear の課題、プロジェクト、スプリントを管理。",
     },
     author: "Linear", url: "https://linear.app",
-    endpoint: "https://mcp.linear.app/mcp",
+    endpoint: endpoints.linear,
     tools: ["find_issues", "create_issue", "update_issue", "get_projects", "create_comment"],
   },
   {
@@ -128,7 +130,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Lucidchart 図と Lucidspark ボードにアクセス。",
     },
     author: "Lucid Software", url: "https://lucid.app",
-    endpoint: "https://mcp.lucid.app",
+    endpoint: endpoints.lucid,
     tools: ["search_documents", "get_document", "create_diagram", "edit_document", "share_document"],
   },
   {
@@ -143,7 +145,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "エラー検索、課題詳細、Seer 分析。",
     },
     author: "Sentry", url: "https://sentry.io",
-    endpoint: "https://mcp.sentry.dev/mcp",
+    endpoint: endpoints.sentry,
     tools: ["search_issues", "get_issue_details", "search_events", "find_projects", "find_releases"],
   },
   {
@@ -158,7 +160,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Vercel のデプロイ、ログ、ドメインを管理。",
     },
     author: "Vercel", url: "https://vercel.com",
-    endpoint: "https://mcp.vercel.com",
+    endpoint: endpoints.vercel,
     tools: ["list_projects", "list_deployments", "get_build_logs", "get_runtime_logs", "deploy"],
   },
   {
@@ -173,7 +175,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "Apify のスクレイパーとクローラーで Web データを抽出。",
     },
     author: "Apify", url: "https://apify.com",
-    endpoint: "https://mcp.apify.com",
+    endpoint: endpoints.apify,
     tools: ["search_actors", "call_actor", "fetch_actor_details", "dataset_retrieval"],
   },
   {
@@ -188,7 +190,7 @@ export const MCP_CATALOG_CLOUD: McpConnectorSpec[] = [
       ja: "GitHub を包括管理：リポジトリ、課題、PR、CI/CD。",
     },
     author: "GitHub", url: "https://github.com",
-    endpoint: "https://api.githubcopilot.com/mcp/",
+    endpoint: endpoints.github,
     tools: ["list_repos", "create_issue", "create_pr", "get_file", "search_code", "list_workflows"],
   },
 ];

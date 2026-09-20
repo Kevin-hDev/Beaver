@@ -1,5 +1,24 @@
 use super::config::StoredConnector;
-use super::stdio_catalog;
+use super::{stdio_catalog, trusted};
+
+pub fn normalize_legacy_lucid(connectors: &mut [StoredConnector]) -> bool {
+    let Some(canonical) = trusted::canonical_endpoint("lucid") else {
+        return false;
+    };
+    let mut changed = false;
+    for connector in connectors {
+        if connector.id == "lucid"
+            && matches!(
+                connector.endpoint.as_deref(),
+                Some("https://mcp.lucid.app" | "https://mcp.lucid.app/")
+            )
+        {
+            connector.endpoint = Some(canonical.to_string());
+            changed = true;
+        }
+    }
+    changed
+}
 
 pub fn normalize_list(connectors: &mut [StoredConnector]) -> bool {
     let mut changed = false;

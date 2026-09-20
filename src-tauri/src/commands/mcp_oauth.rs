@@ -4,6 +4,20 @@ fn validate_connector_id(id: &str) -> Result<(), String> {
     crate::services::mcp_bridge::config::validate_connector_id(id)
 }
 
+fn validate_start(connector_id: &str, endpoint: &str) -> Result<(), String> {
+    validate_connector_id(connector_id)?;
+    if connector_id == "slack" {
+        return Err("connexion MCP indisponible".to_string());
+    }
+    if endpoint.is_empty() || !endpoint.starts_with("https://") {
+        return Err("endpoint MCP non HTTPS".to_string());
+    }
+    if !crate::services::mcp_bridge::registry::is_trusted_endpoint_pub(connector_id, endpoint) {
+        return Err("endpoint non autorisé pour OAuth".to_string());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn start_mcp_oauth(
     app: tauri::AppHandle,
@@ -11,15 +25,18 @@ pub async fn start_mcp_oauth(
     connector_id: String,
     endpoint: String,
 ) -> Result<(), String> {
-    validate_connector_id(&connector_id)?;
-    if endpoint.is_empty() || !endpoint.starts_with("https://") {
-        return Err("endpoint MCP non HTTPS".to_string());
-    }
-    if !crate::services::mcp_bridge::registry::is_trusted_endpoint_pub(&connector_id, &endpoint) {
-        return Err("endpoint non autorisé pour OAuth".to_string());
-    }
+    validate_start(&connector_id, &endpoint)?;
     work.spawn(move |cancel| flow::run(app, connector_id, endpoint, cancel))
         .map_err(|_| "Connexion impossible".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn slack_oauth_cannot_start_without_app_identity() {
+        assert!(super::validate_start("slack", "https://mcp.slack.com/mcp").is_err());
+        assert!(super::validate_start("lucid", "https://mcp.lucid.app/mcp").is_ok());
+    }
 }
 
 #[tauri::command]

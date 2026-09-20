@@ -161,3 +161,59 @@ fn normalize_list_is_idempotent() {
         "une 2e passe de normalisation ne doit rien changer"
     );
 }
+
+#[test]
+fn lucid_startup_migration_preserves_other_connectors_and_is_idempotent() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut lucid = notion();
+    lucid.id = "lucid".to_string();
+    lucid.endpoint = Some("https://mcp.lucid.app/".to_string());
+    lucid.enabled_in_chat = false;
+    let original = vec![lucid, sentry()];
+    std::fs::write(&path, serde_json::to_vec(&original).unwrap()).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    let first = std::fs::read(&path).unwrap();
+    let loaded = config::load_from_path(&path).unwrap();
+    assert_eq!(
+        loaded[0].endpoint.as_deref(),
+        Some("https://mcp.lucid.app/mcp")
+    );
+    assert!(!loaded[0].enabled_in_chat);
+    assert_eq!(loaded[1], original[1]);
+
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), first);
+}
+
+#[test]
+fn failed_lucid_migration_keeps_file_and_refuses_entire_list() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut lucid = notion();
+    lucid.id = "lucid".to_string();
+    lucid.endpoint = Some("https://mcp.lucid.app".to_string());
+    let raw = serde_json::to_vec(&[lucid, sentry()]).unwrap();
+    std::fs::write(&path, &raw).unwrap();
+
+    assert!(config::migrate_at_path(&path, |_, _| Err("test write failed".to_string())).is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), raw);
+    assert!(config::load_from_path(&path).is_err());
+}
+
+#[test]
+fn unexpected_lucid_url_is_never_migrated_during_load_or_startup() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut lucid = notion();
+    lucid.id = "lucid".to_string();
+    lucid.endpoint = Some("https://mcp.lucid.app/unknown".to_string());
+    let raw = serde_json::to_vec(&[lucid]).unwrap();
+    std::fs::write(&path, &raw).unwrap();
+
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), raw);
+    assert!(config::load_from_path(&path).is_err());
+}

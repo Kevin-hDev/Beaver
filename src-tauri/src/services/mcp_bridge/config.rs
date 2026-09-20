@@ -24,6 +24,33 @@ pub fn load() -> Result<Vec<StoredConnector>, String> {
     load_from_path(&storage_path())
 }
 
+pub fn migrate_at_startup() -> Result<(), String> {
+    migrate_at_path(&storage_path(), save_to_path)
+}
+
+pub(crate) fn migrate_at_path(
+    path: &Path,
+    save: impl FnOnce(&Path, &[StoredConnector]) -> Result<(), String>,
+) -> Result<(), String> {
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(_) => return Err("lecture connecteurs impossible".to_string()),
+    };
+    let mut connectors: Vec<StoredConnector> =
+        serde_json::from_str(&content).map_err(|_| "configuration MCP invalide".to_string())?;
+    if connectors.len() > MAX_CONNECTORS {
+        return Err("limite de connecteurs atteinte".to_string());
+    }
+    if config_migration::normalize_legacy_lucid(&mut connectors) {
+        for connector in &connectors {
+            validate_connector(connector)?;
+        }
+        save(path, &connectors)?;
+    }
+    Ok(())
+}
+
 pub fn find(connector_id: &str) -> Result<Option<StoredConnector>, String> {
     validate_connector_id(connector_id)?;
     Ok(load()?
