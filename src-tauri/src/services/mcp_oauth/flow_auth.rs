@@ -2,6 +2,7 @@
     clippy::too_many_arguments,
     reason = "orchestration boundary keeps related runtime context explicit"
 )]
+use subtle::{Choice, ConstantTimeEq};
 use zeroize::{Zeroize, Zeroizing};
 
 use super::network_guard::{self, DestinationRole};
@@ -71,12 +72,11 @@ pub fn verify_state_constant_time(expected: &str, received: &str) -> Result<(), 
     const STATE_LEN: usize = 43;
     let mut expected_fixed = [0_u8; STATE_LEN];
     let mut received_fixed = [0_u8; STATE_LEN];
-    let mut diff = copy_fixed_state(expected, &mut expected_fixed)
+    let invalid = copy_fixed_state(expected, &mut expected_fixed)
         | copy_fixed_state(received, &mut received_fixed);
-    for index in 0..STATE_LEN {
-        diff |= expected_fixed[index] ^ received_fixed[index];
-    }
-    let matches = diff == 0;
+    let matches = bool::from(
+        Choice::from(invalid ^ 1) & expected_fixed.as_slice().ct_eq(received_fixed.as_slice()),
+    );
     expected_fixed.zeroize();
     received_fixed.zeroize();
     if !matches {

@@ -258,6 +258,44 @@ fn repair_list_does_not_mask_other_configuration_errors() {
 }
 
 #[test]
+fn unknown_connector_with_invalid_endpoint_is_not_hidden_in_repair_list() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut unknown = notion();
+    unknown.id = "manual-connector".to_string();
+    std::fs::write(&path, serde_json::to_vec(&[unknown]).unwrap()).unwrap();
+
+    assert_eq!(
+        config::load_for_repair_from_path(&path).unwrap_err(),
+        "endpoint MCP non autorisé"
+    );
+}
+
+#[test]
+fn duplicate_ids_are_rejected_by_both_readers_and_the_writer() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let duplicate = [notion(), notion()];
+    std::fs::write(&path, serde_json::to_vec(&duplicate).unwrap()).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    assert!(config::load_for_repair_from_path(&path).is_err());
+    assert!(config::save_to_path(&path, &duplicate).is_err());
+}
+
+#[test]
+fn oversized_file_is_rejected_by_both_readers() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut oversized = serde_json::to_vec(&[notion()]).unwrap();
+    oversized.resize(256 * 1024 + 1, b' ');
+    std::fs::write(&path, oversized).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    assert!(config::load_for_repair_from_path(&path).is_err());
+}
+
+#[test]
 fn real_persisted_connector_file_survives_startup_migration_and_reload() {
     // Copie expurgée du fichier Beaver local avant ce chantier : aucun jeton ni clé.
     const PREVIOUS_FILE: &str = r#"[{"id":"context7","status":"connected","enabled_in_chat":true,"endpoint":null,"install_command":"npx @upstash/context7-mcp@2.2.5","env_keys":null}]"#;
