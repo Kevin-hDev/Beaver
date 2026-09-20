@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Scheduled wakeups</title>
-<meta name="description" content="Putting Beaver to work on a schedule: the three rhythms, the form, the conversation created with full access, the master pause, and what happens when the app wasn't running.">
+<meta name="description" content="Putting Beaver to work on a schedule: the three schedules, the form, the conversation created with full access, the master pause, and what happens when the app wasn't running.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Beaver">
 <meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://kevin-hdev.github.io/Beaver/docs/automatisation-reveils.html">
 <meta property="og:title" content="Beaver Docs — Scheduled wakeups">
-<meta property="og:description" content="Putting Beaver to work on a schedule: the three rhythms, the form, the conversation created with full access, the master pause, and what happens when the app wasn't running.">
+<meta property="og:description" content="Putting Beaver to work on a schedule: the three schedules, the form, the conversation created with full access, the master pause, and what happens when the app wasn't running.">
 <meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -56,19 +56,21 @@
     <p>It is not a notification. It is <b>a full agent turn</b>, with its tools: the scheduler has no second engine, it borrows the agent's. Anything a normal conversation can do, a wakeup can do — read a folder, run a command, write a file, query a model.</p>
     <p>The screen is called <b>“Wakeups”</b>, and its subtitle reads <b>“Automate scheduled tasks for any LLM”</b>. The tab that leads there still carries the name <b>“Heartbeat”</b> — it's the same place.</p>
 
-    <h2 id="les-trois-rythmes">The three possible rhythms</h2>
-    <p>The form offers three tabs.</p>
+    <h2 id="les-trois-rythmes">The three possible schedules</h2>
+    <p>The <b>“Schedule”</b> field offers three tabs.</p>
 
     <table>
-      <caption class="crumb">The three rhythms and what they ask for</caption>
-      <tr><th>Rhythm</th><th>What you enter</th><th>What it gives</th></tr>
-      <tr><td><b>“Once”</b></td><td>A date and a time</td><td>A single firing, then the wakeup disables itself</td></tr>
-      <tr><td><b>“Daily”</b></td><td>A time</td><td>Every day at that time</td></tr>
-      <tr><td><b>“Weekly”</b></td><td>A day of the week and a time</td><td>Once a week, from “Monday” to “Sunday”</td></tr>
+      <caption class="crumb">The three schedules and what they ask for</caption>
+      <tr><th>Schedule</th><th>What you enter</th><th>What it gives</th></tr>
+      <tr><td><b>“Once”</b></td><td>A date and a time</td><td>A single firing, after which the wakeup is marked <b>“Completed”</b></td></tr>
+      <tr><td><b>“Cron”</b></td><td>A five-field cron expression</td><td>Every recurrence that expression describes — every day at 8 a.m., every Monday, every hour</td></tr>
+      <tr><td><b>“After completion”</b></td><td>A number of minutes, from <b>1</b> to <b>525,600</b></td><td>A new firing that many minutes after the end of the previous one</td></tr>
     </table>
 
-    <p><b>Everything is in your machine's local time.</b> A daily wakeup at 8 a.m. stays at 8 a.m. after a daylight-saving change or a move to another time zone: the time shown by the computer is what counts, not a frozen offset.</p>
-    <p><b>The form's starting value is “Daily” at 08:00.</b> Switching tabs resets the time: “Once” lands on the present moment, “Daily” and “Weekly” on 08:00, and “Weekly” on Monday.</p>
+    <p><b>“Cron” has replaced the old “Daily” and “Weekly” tabs</b>, which no longer exist: one expression covers both, and everything they could not express. The field expects the five standard fields — minute, hour, day of the month, month, day of the week — and its placeholder shows one: <b>“Example: 0 8 * * *”</b>.</p>
+    <p><b>“After completion” chains rather than schedules.</b> It has no clock of its own: it counts from the moment the previous run ended. A run that took two hours therefore pushes the next one back by two hours. That's the shape for a job that must never overlap with itself.</p>
+    <p><b>“Once” and “Cron” are in your machine's local time</b>, and the time zone in use is written next to the field. A cron wakeup at 8 a.m. stays at 8 a.m. after a daylight-saving change or a move to another time zone: the time shown by the computer is what counts, not a frozen offset. <b>“After completion”</b> carries no time zone — a delay counted in minutes has no use for one.</p>
+    <p><b>The form opens on “Once”, set to the same time tomorrow.</b> Switching tabs resets the value: “Once” lands one minute from now, “Cron” on <code>0 8 * * *</code>, and “After completion” on 10 minutes.</p>
 
     <h2 id="creer-un-reveil">Creating a wakeup, field by field</h2>
     <p>The button is called <b>“New wakeup”</b>, and the form is titled <b>“New wakeup”</b> or <b>“Edit wakeup”</b> depending on the case.</p>
@@ -77,7 +79,7 @@
       <caption class="crumb">The seven fields of the form</caption>
       <tr><th>Field</th><th>Required</th><th>Maximum length</th></tr>
       <tr><td><b>“Name”</b></td><td>Yes</td><td><b>120 characters</b></td></tr>
-      <tr><td><b>“Description”</b></td><td>No</td><td><b>200 characters</b></td></tr>
+      <tr><td><b>“Description”</b></td><td>No</td><td><b>300 characters</b></td></tr>
       <tr><td><b>“Provider”</b></td><td>Yes</td><td><b>64 characters</b></td></tr>
       <tr><td><b>“Model”</b></td><td>Yes</td><td><b>160 characters</b></td></tr>
       <tr><td><b>“Project”</b></td><td>No</td><td>—</td></tr>
@@ -89,16 +91,19 @@
     <p><b>Only models capable of using tools are offered.</b> The model list is filtered on that capability; when none fits, the field is disabled and shows <b>“No tool-capable model”</b>. That's logical: a wakeup without tools could only produce text, never read a file or run a command.</p>
     <p><b>Some providers are not accepted.</b> The rule fits in one sentence: the provider has to be usable for automation. The OpenAI web account qualifies; the <b>Grok</b> and <b>Kimi</b> web accounts are reserved for manual conversations and are refused. For those two, you need an API key from the same provider — see <a href="modeles-connexion-par-compte.html">Account connection</a>.</p>
     <p><b>The “Project” field</b> attaches the wakeup to a saved project, whose folder becomes the working directory of the conversation created. Without a project, the wakeup works in the default space, offered under the label <b>“Beaver workspace”</b>.</p>
-    <p><b>A one-off wakeup whose date is already past is refused</b> at creation time, as long as it is enabled.</p>
+    <p><b>A one-off wakeup whose date is already past is refused</b> at creation time.</p>
+
+    <p><b>The form is not the only way in.</b> The agent has a tool of its own, <code>manage_automation</code>, which lets it list, inspect, create, modify and delete wakeups and read their history straight from the conversation — “remind me to check the dependencies every Monday” is enough. What it creates lands in this very list. See <a href="outils-skills-et-automatisations.html">Skills and automations</a>.</p>
+    <p><b>A wakeup can also belong to an extension.</b> It then carries the origin <b>“Extension”</b>, the extension that owns it is the only one allowed to change it, and an extension may not hold more than <b>8</b>. Any change to its instruction, its schedule, its model or its target voids the approval you had given: the wakeup is switched off and states <b>“This automation must be reapproved after its change.”</b>, with a <b>“Reapprove and activate”</b> button. If the owning extension goes away, it stops firing and says so — <b>“The owning extension is no longer available.”</b></p>
 
     <h2 id="a-lheure-dite">What happens at the appointed time</h2>
     <p>The scheduler does not wake every second: it computes the next useful moment and sleeps until then, with a ceiling of <b>one hour</b>. It is also woken immediately whenever a wakeup is created, edited, enabled or deleted — you never have to wait for a change to be taken into account.</p>
-    <p><b>The next moment is always strictly in the future.</b> A daily wakeup at 8 a.m. looked up at exactly 8 a.m. therefore points to the next day, not to the present moment.</p>
+    <p><b>The next moment is always strictly in the future.</b> A cron wakeup at 8 a.m. looked up at exactly 8 a.m. therefore points to the next day, not to the present moment.</p>
     <p><b>Wakeups due in the same minute go off together</b>, and <b>the same occurrence cannot fire twice</b>: each firing reserves its slot and a duplicate is discarded silently.</p>
     <p>A firing can be refused for two reasons, and that refusal is written to the log: <b>Beaver is shutting down</b>, or <b>too many operations are already in flight</b> — the capacity is <b>64 wakeups at once</b>.</p>
 
     <h2 id="la-conversation-creee">The conversation created by a wakeup</h2>
-    <p>Each firing <b>creates a fresh conversation</b>. It never reuses the previous firing's: a daily report produces thirty conversations in thirty days, not one conversation of thirty messages.</p>
+    <p>Each firing <b>creates a fresh conversation</b>. It never reuses the previous firing's: a report that runs every morning produces thirty conversations in thirty days, not one conversation of thirty messages.</p>
     <p>Its name is built automatically, from the wakeup's name, the provider and the model. It always starts with <code>Heartbeat •</code>, which makes these conversations easy to spot in the list. On a local model, the name takes the form <code>Heartbeat • &lt;wakeup name&gt; • &lt;model&gt;</code>; elsewhere, the provider's name is inserted in between.</p>
     <p>What a wakeup spends is counted separately: in the usage screen, everything coming from a wakeup is filed under the origin <b>“Automation”</b>. See <a href="modeles-usage-et-couts.html">Usage and costs</a>.</p>
 
@@ -115,7 +120,7 @@
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>A one-off wakeup does not delete itself.</b> After its single run, it stays in the list, marked <b>“Inactive”</b>. That's useful for finding what it produced; remember to delete it once it's no longer needed.
+      <b>A one-off wakeup does not delete itself.</b> After its single run, it stays in the list, marked <b>“Completed”</b>. That's useful for finding what it produced; remember to delete it once it's no longer needed.
     </div>
 
     <p>A one-off wakeup interrupted by the application closing is written to the log with the status <b>“Cancelled”</b>, and stays disabled: it will not fire again on the next startup.</p>
@@ -139,7 +144,7 @@
 
     <div class="callout">
       <span class="t">Warning</span>
-      <b>A missed occurrence is never caught up.</b> It is noted and recorded, not run. A missed 8 a.m. daily report will not be produced at 10 a.m. when the application launches: it will be flagged as missed, and the next one will be tomorrow's.
+      <b>A missed occurrence is never caught up.</b> It is noted and recorded, not run. A missed 8 a.m. morning report will not be produced at 10 a.m. when the application launches: it will be flagged as missed, and the next one will be tomorrow's.
     </div>
 
     <p><b>A five-minute tolerance</b> separates “late” from “missed”. A wakeup fired four minutes late — machine coming out of sleep, disk busy — runs normally. Beyond five minutes, it is classified as missed.</p>
@@ -164,7 +169,7 @@
       <tr><td>Wakeups running at the same time</td><td><b>64</b></td></tr>
       <tr><td>Instruction length</td><td><b>12,000 characters</b></td></tr>
       <tr><td>Name length</td><td><b>120 characters</b></td></tr>
-      <tr><td>Description length</td><td><b>200 characters</b></td></tr>
+      <tr><td>Description length</td><td><b>300 characters</b></td></tr>
       <tr><td>Lateness tolerance before “Missed”</td><td><b>5 minutes</b></td></tr>
       <tr><td>Maximum scheduler sleep</td><td><b>60 minutes</b></td></tr>
     </table>

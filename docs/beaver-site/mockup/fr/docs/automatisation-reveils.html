@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Réveils programmés</title>
-<meta name="description" content="Faire travailler Beaver à heure fixe : les trois rythmes, le formulaire, la conversation créée en accès complet, la pause générale et ce qui se passe quand l'application n'était pas lancée.">
+<meta name="description" content="Faire travailler Beaver à heure fixe : les trois planifications, le formulaire, la conversation créée en accès complet, la pause générale et ce qui se passe quand l'application n'était pas lancée.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Beaver">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://kevin-hdev.github.io/Beaver/fr/docs/automatisation-reveils.html">
 <meta property="og:title" content="Beaver Docs — Réveils programmés">
-<meta property="og:description" content="Faire travailler Beaver à heure fixe : les trois rythmes, le formulaire, la conversation créée en accès complet, la pause générale et ce qui se passe quand l'application n'était pas lancée.">
+<meta property="og:description" content="Faire travailler Beaver à heure fixe : les trois planifications, le formulaire, la conversation créée en accès complet, la pause générale et ce qui se passe quand l'application n'était pas lancée.">
 <meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -56,19 +56,21 @@
     <p>Ce n'est pas une notification. C'est <b>un tour d'agent complet</b>, avec ses outils : le planificateur n'a pas de second moteur, il emprunte celui de l'agent. Tout ce qu'une conversation normale peut faire, un réveil peut le faire — lire un dossier, lancer une commande, écrire un fichier, interroger un modèle.</p>
     <p>L'écran s'appelle <b>« Réveils »</b>, et son sous-titre annonce <b>« Créer des réveils automatisés pour planifier différentes tâches »</b>. L'onglet qui y mène, lui, porte encore le nom <b>« Heartbeat »</b> — c'est le même endroit.</p>
 
-    <h2 id="les-trois-rythmes">Les trois rythmes possibles</h2>
-    <p>Le formulaire propose trois onglets.</p>
+    <h2 id="les-trois-rythmes">Les trois planifications possibles</h2>
+    <p>Le champ <b>« Planification »</b> propose trois onglets.</p>
 
     <table>
-      <caption class="crumb">Les trois rythmes et ce qu'ils demandent</caption>
-      <tr><th>Rythme</th><th>Ce que tu saisis</th><th>Ce que ça donne</th></tr>
-      <tr><td><b>« Ponctuel »</b></td><td>Une date et une heure</td><td>Un seul déclenchement, puis le réveil se désactive</td></tr>
-      <tr><td><b>« Journalier »</b></td><td>Une heure</td><td>Tous les jours à cette heure</td></tr>
-      <tr><td><b>« Hebdo »</b></td><td>Un jour de la semaine et une heure</td><td>Une fois par semaine, de « Lundi » à « Dimanche »</td></tr>
+      <caption class="crumb">Les trois planifications et ce qu'elles demandent</caption>
+      <tr><th>Planification</th><th>Ce que tu saisis</th><th>Ce que ça donne</th></tr>
+      <tr><td><b>« Ponctuel »</b></td><td>Une date et une heure</td><td>Un seul déclenchement, après quoi le réveil est marqué <b>« Terminé »</b></td></tr>
+      <tr><td><b>« Cron »</b></td><td>Une expression cron à cinq champs</td><td>Toute la récurrence que cette expression décrit — chaque jour à 8 h, chaque lundi, chaque heure</td></tr>
+      <tr><td><b>«&#160;Après exécution&#160;»</b></td><td>Un nombre de minutes, de <b>1</b> à <b>525 600</b></td><td>Un nouveau déclenchement ce nombre de minutes après la fin du précédent</td></tr>
     </table>
 
-    <p><b>Tout est en heure locale de ta machine.</b> Un réveil quotidien à 8 h reste à 8 h après un changement d'heure ou un déplacement dans un autre fuseau : c'est l'heure affichée par l'ordinateur qui fait foi, pas un décalage figé.</p>
-    <p><b>La valeur de départ du formulaire est « Journalier » à 08:00.</b> Changer d'onglet réinitialise l'heure : « Ponctuel » se pose sur l'instant présent, « Journalier » et « Hebdo » sur 08:00, et « Hebdo » sur lundi.</p>
+    <p><b>« Cron » a remplacé les anciens onglets « Journalier » et « Hebdo »</b>, qui n'existent plus : une seule expression couvre les deux, et tout ce qu'ils ne savaient pas exprimer. Le champ attend les cinq champs standard — minute, heure, jour du mois, mois, jour de la semaine — et son texte d'aide en montre un : <b>« Exemple : 0 8 * * * »</b>.</p>
+    <p><b>« Après exécution » enchaîne au lieu de planifier.</b> Elle n'a pas d'horloge à elle : elle compte à partir du moment où l'exécution précédente s'est terminée. Une exécution qui a duré deux heures repousse donc la suivante de deux heures. C'est la forme à prendre pour une tâche qui ne doit jamais se chevaucher elle-même.</p>
+    <p><b>« Ponctuel » et « Cron » sont en heure locale de ta machine</b>, et le fuseau utilisé est écrit à côté du champ. Un réveil cron à 8 h reste à 8 h après un changement d'heure ou un déplacement dans un autre fuseau : c'est l'heure affichée par l'ordinateur qui fait foi, pas un décalage figé. <b>« Après exécution »</b> ne porte aucun fuseau — un délai compté en minutes n'en a pas besoin.</p>
+    <p><b>Le formulaire s'ouvre sur « Ponctuel », à la même heure demain.</b> Changer d'onglet réinitialise la valeur : « Ponctuel » se pose dans une minute, « Cron » sur <code>0 8 * * *</code>, et « Après exécution » sur 10 minutes.</p>
 
     <h2 id="creer-un-reveil">Créer un réveil, champ par champ</h2>
     <p>Le bouton s'appelle <b>« Nouveau réveil »</b>, et le formulaire porte le titre <b>« Nouveau réveil »</b> ou <b>« Modifier le réveil »</b> selon le cas.</p>
@@ -77,7 +79,7 @@
       <caption class="crumb">Les sept champs du formulaire</caption>
       <tr><th>Champ</th><th>Obligatoire</th><th>Longueur maximale</th></tr>
       <tr><td><b>« Nom »</b></td><td>Oui</td><td><b>120 caractères</b></td></tr>
-      <tr><td><b>« Description »</b></td><td>Non</td><td><b>200 caractères</b></td></tr>
+      <tr><td><b>« Description »</b></td><td>Non</td><td><b>300 caractères</b></td></tr>
       <tr><td><b>« Fournisseur »</b></td><td>Oui</td><td><b>64 caractères</b></td></tr>
       <tr><td><b>« Modèle »</b></td><td>Oui</td><td><b>160 caractères</b></td></tr>
       <tr><td><b>« Projet »</b></td><td>Non</td><td>—</td></tr>
@@ -89,16 +91,19 @@
     <p><b>Seuls les modèles capables d'utiliser des outils sont proposés.</b> La liste des modèles est filtrée sur cette capacité ; quand aucun ne convient, le champ est désactivé et affiche <b>« Aucun modèle tool-capable »</b>. C'est logique : un réveil sans outils ne pourrait que produire du texte, jamais lire un fichier ni exécuter une commande.</p>
     <p><b>Certains fournisseurs ne sont pas acceptés.</b> La règle tient en une phrase : le fournisseur doit être utilisable pour de l'automatisation. Le compte web OpenAI convient ; les comptes web <b>Grok</b> et <b>Kimi</b>, eux, sont réservés aux conversations manuelles et sont refusés. Pour ces deux-là, il faut passer par une clé API du même fournisseur — voir <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.</p>
     <p><b>Le champ « Projet »</b> rattache le réveil à un projet enregistré, dont le dossier devient le dossier de travail de la conversation créée. Sans projet, le réveil travaille dans l'espace par défaut, proposé sous le libellé <b>« Espace de travail Beaver »</b>.</p>
-    <p><b>Un réveil ponctuel dont la date est déjà passée est refusé</b> à la création, tant qu'il est actif.</p>
+    <p><b>Un réveil ponctuel dont la date est déjà passée est refusé</b> à la création.</p>
+
+    <p><b>Le formulaire n'est pas la seule porte d'entrée.</b> L'agent dispose d'un outil à lui, <code>manage_automation</code>, qui lui permet de lister, consulter, créer, modifier et supprimer des réveils et de lire leur historique directement depuis la conversation — « rappelle-moi de vérifier les dépendances tous les lundis » suffit. Ce qu'il crée atterrit dans cette même liste. Voir <a href="outils-skills-et-automatisations.html">Skills et automatisations</a>.</p>
+    <p><b>Un réveil peut aussi appartenir à une extension.</b> Il porte alors l'origine <b>« Extension »</b>, l'extension propriétaire est la seule à pouvoir le modifier, et une extension n'en détient pas plus de <b>8</b>. Toute modification de sa consigne, de sa planification, de son modèle ou de sa cible annule l'approbation que tu avais donnée : le réveil est éteint et affiche <b>« Cette automatisation doit être réapprouvée après sa modification. »</b>, avec un bouton <b>« Réapprouver et activer »</b>. Si l'extension propriétaire disparaît, il cesse de se déclencher et le dit — <b>« L’extension propriétaire n’est plus disponible. »</b></p>
 
     <h2 id="a-lheure-dite">Ce qui se passe à l'heure dite</h2>
     <p>Le planificateur ne se réveille pas toutes les secondes : il calcule le prochain instant utile et dort jusque-là, avec un plafond d'<b>une heure</b>. Il est aussi réveillé sur-le-champ dès qu'un réveil est créé, modifié, activé ou supprimé — tu n'as jamais à attendre pour qu'un changement soit pris en compte.</p>
-    <p><b>Le prochain instant est toujours strictement futur.</b> Un réveil quotidien à 8 h consulté à 8 h précises pointe donc sur le lendemain, pas sur l'instant présent.</p>
+    <p><b>Le prochain instant est toujours strictement futur.</b> Un réveil cron à 8 h consulté à 8 h précises pointe donc sur le lendemain, pas sur l'instant présent.</p>
     <p><b>Les réveils dus à la même minute partent ensemble</b>, et <b>une même occurrence ne peut pas partir deux fois</b> : chaque déclenchement réserve sa place et un doublon est écarté sans bruit.</p>
     <p>Un déclenchement peut être refusé pour deux raisons, et ce refus est inscrit au journal : <b>Beaver est en train de fermer</b>, ou <b>trop d'opérations sont déjà en cours</b> — la capacité est de <b>64 réveils en même temps</b>.</p>
 
     <h2 id="la-conversation-creee">La conversation créée par un réveil</h2>
-    <p>Chaque déclenchement <b>crée une conversation neuve</b>. Il ne réutilise jamais celle du déclenchement précédent : un rapport quotidien produit trente conversations en trente jours, pas une conversation de trente messages.</p>
+    <p>Chaque déclenchement <b>crée une conversation neuve</b>. Il ne réutilise jamais celle du déclenchement précédent : un rapport lancé chaque matin produit trente conversations en trente jours, pas une conversation de trente messages.</p>
     <p>Son nom est construit tout seul, à partir du nom du réveil, du fournisseur et du modèle. Il commence toujours par <code>Heartbeat •</code>, ce qui permet de repérer ces conversations dans la liste. Sur un modèle local, le nom prend la forme <code>Heartbeat • &lt;nom du réveil&gt; • &lt;modèle&gt;</code> ; ailleurs, le nom du fournisseur s'intercale.</p>
     <p>Ce qu'un réveil dépense est compté à part : dans l'écran de consommation, tout ce qui vient d'un réveil est rangé sous l'origine <b>« Automatisation »</b>. Voir <a href="modeles-usage-et-couts.html">Usage et coûts</a>.</p>
 
@@ -115,7 +120,7 @@
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>Un réveil ponctuel ne se supprime pas tout seul.</b> Après son unique exécution, il reste dans la liste, marqué <b>« Inactif »</b>. C'est utile pour retrouver ce qu'il a produit ; pense à le supprimer quand il ne sert plus.
+      <b>Un réveil ponctuel ne se supprime pas tout seul.</b> Après son unique exécution, il reste dans la liste, marqué <b>« Terminé »</b>. C'est utile pour retrouver ce qu'il a produit ; pense à le supprimer quand il ne sert plus.
     </div>
 
     <p>Un réveil ponctuel interrompu par la fermeture de l'application est inscrit au journal avec le statut <b>« Annulé »</b>, et il reste désactivé : il ne repartira pas au prochain démarrage.</p>
@@ -139,7 +144,7 @@
 
     <div class="callout">
       <span class="t">Attention</span>
-      <b>Une occurrence ratée n'est jamais rattrapée.</b> Elle est constatée et enregistrée, pas exécutée. Un rapport quotidien de 8 h manqué ne sera pas produit à 10 h au lancement de l'application : il sera signalé raté, et le prochain sera celui du lendemain.
+      <b>Une occurrence ratée n'est jamais rattrapée.</b> Elle est constatée et enregistrée, pas exécutée. Un rapport matinal de 8 h manqué ne sera pas produit à 10 h au lancement de l'application : il sera signalé raté, et le prochain sera celui du lendemain.
     </div>
 
     <p><b>Une tolérance de cinq minutes</b> sépare « en retard » de « raté ». Un réveil déclenché avec quatre minutes de retard — machine sortie de veille, disque occupé — s'exécute normalement. Au-delà de cinq minutes, il est classé raté.</p>
@@ -164,7 +169,7 @@
       <tr><td>Réveils exécutés en même temps</td><td><b>64</b></td></tr>
       <tr><td>Longueur de la consigne</td><td><b>12 000 caractères</b></td></tr>
       <tr><td>Longueur du nom</td><td><b>120 caractères</b></td></tr>
-      <tr><td>Longueur de la description</td><td><b>200 caractères</b></td></tr>
+      <tr><td>Longueur de la description</td><td><b>300 caractères</b></td></tr>
       <tr><td>Tolérance de retard avant « Raté »</td><td><b>5 minutes</b></td></tr>
       <tr><td>Sommeil maximal du planificateur</td><td><b>60 minutes</b></td></tr>
     </table>

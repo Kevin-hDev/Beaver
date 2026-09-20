@@ -115,7 +115,7 @@
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>Il n'y a pas de durée de conservation en jours.</b> La borne est un nombre de lignes, partagé par tous tes réveils : avec un seul réveil quotidien tu gardes des mois d'historique, avec vingt réveils quelques semaines. Et quand la limite est atteinte, la moitié la plus ancienne disparaît <b>d'un coup</b>, pas ligne par ligne. Si tu veux conserver au-delà, copie le fichier <code>wakeups.jsonl</code> ailleurs.
+      <b>Il n'y a pas de durée de conservation en jours.</b> La borne est un nombre de lignes, partagé par tous tes réveils : avec un seul réveil qui part une fois par jour tu gardes des mois d'historique, avec vingt réveils quelques semaines. Et quand la limite est atteinte, la moitié la plus ancienne disparaît <b>d'un coup</b>, pas ligne par ligne. Si tu veux conserver au-delà, copie le fichier <code>wakeups.jsonl</code> ailleurs.
     </div>
 
     <p><b>La réécriture est atomique</b> : fichier temporaire puis renommage. Une coupure de courant pendant une rotation laisse soit l'ancien journal entier, soit le nouveau, jamais un mélange.</p>

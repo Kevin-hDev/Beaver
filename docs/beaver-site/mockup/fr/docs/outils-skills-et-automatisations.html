@@ -110,11 +110,11 @@
     <table>
       <caption class="crumb">Trois formes de déclencheur, et trois seulement</caption>
       <tr><th>Forme</th><th>Ce qu'il faut préciser</th></tr>
-      <tr><td>Une fois</td><td>Une date et une heure, au format <code>AAAA-MM-JJTHH:MM</code></td></tr>
-      <tr><td>Chaque jour</td><td>Une heure, au format <code>HH:MM</code></td></tr>
-      <tr><td>Chaque semaine</td><td>Un jour de la semaine (<b>0 à 6</b>) et une heure</td></tr>
+      <tr><td>Ponctuel</td><td>Une date et une heure, plus le fuseau horaire</td></tr>
+      <tr><td>Cron</td><td>Une expression cron à cinq champs, plus le fuseau horaire</td></tr>
+      <tr><td>Après exécution</td><td>Un délai en minutes, de <b>1</b> à <b>525 600</b>, compté depuis la fin de l'exécution précédente</td></tr>
     </table>
-    <p>Il n'y a <b>pas d'expression de planification libre</b> : une syntaxe de type cron est refusée. Une date ponctuelle <b>déjà passée</b> est refusée si l'automatisation est créée active.</p>
+    <p>Ce sont exactement les trois formes que propose le formulaire des réveils, décrites dans <a href="automatisation-reveils.html">Réveils programmés</a>. Une date ponctuelle <b>déjà passée</b> est refusée.</p>
 
     <h2 id="ce-quelle-fige">Ce qu'une automatisation fige</h2>
     <p>Au moment de sa création, elle reprend de la conversation en cours et fige <b>le modèle</b>, <b>le fournisseur</b> et <b>le projet</b> s'il y en a un. Elle enregistre en plus son nom, sa description, son instruction, son déclencheur, son état actif et sa date de création — et rien d'autre.</p>
@@ -150,10 +150,10 @@
       <tr><td>Identifiant de skill invalide</td><td>Identifiant contenant un séparateur de chemin ou <code>..</code></td></tr>
       <tr><td>Skill introuvable</td><td>Identifiant absent du catalogue</td></tr>
       <tr><td>Skill indisponible</td><td>Fichier illisible ou trop volumineux</td></tr>
-      <tr><td>Action d'automatisation invalide</td><td>Action autre que lister, créer, modifier, supprimer</td></tr>
+      <tr><td>Action d'automatisation invalide</td><td>Action autre que lister, consulter, créer, modifier, lire l'historique, supprimer</td></tr>
       <tr><td>Déclencheur requis</td><td>Aucune planification fournie à la création</td></tr>
-      <tr><td>Déclencheur invalide</td><td>Forme non supportée, par exemple une syntaxe cron</td></tr>
-      <tr><td>Champ requis, champ trop long, heure ou jour invalides, date déjà passée, fournisseur non supporté</td><td>Contrôles de validité à la création</td></tr>
+      <tr><td>Déclencheur invalide</td><td>Forme hors des trois, expression cron illisible, ou délai hors de 1 à 525 600 minutes</td></tr>
+      <tr><td>Champ requis, champ trop long, expression cron ou fuseau invalides, date déjà passée, fournisseur non supporté</td><td>Contrôles de validité à la création</td></tr>
       <tr><td>Création impossible</td><td>Plafond de 64 réveils atteint, ou écriture refusée</td></tr>
       <tr><td>Modification impossible</td><td>Identifiant inconnu, ou valeur devenue invalide</td></tr>
       <tr><td>Confirmation requise</td><td>Suppression sans confirmation explicite</td></tr>
@@ -172,8 +172,8 @@
       <tr><td>L'automatisation ne se déclenche pas</td><td>Réveils globalement en pause</td><td>Vérifier la pause globale dans l'écran des réveils</td></tr>
       <tr><td>« Maximum 64 réveils »</td><td>Plafond commun aux automatisations et aux réveils simples</td><td>Supprimer un réveil devenu inutile</td></tr>
       <tr><td>« Provider non supporté »</td><td>Le fournisseur de la conversation n'accepte pas les requêtes d'automatisation</td><td>Créer l'automatisation depuis une conversation utilisant un autre fournisseur</td></tr>
-      <tr><td>« Date ponctuelle déjà passée »</td><td>Déclencheur unique fixé dans le passé, avec l'état actif</td><td>Choisir une date à venir</td></tr>
-      <tr><td>Tu voulais une planification toutes les deux heures</td><td>Seuls une fois, chaque jour et chaque semaine existent</td><td>Créer plusieurs automatisations quotidiennes</td></tr>
+      <tr><td>« Date ponctuelle déjà passée »</td><td>Déclencheur ponctuel fixé dans le passé</td><td>Choisir une date à venir</td></tr>
+      <tr><td>Tu voulais une planification toutes les deux heures</td><td>Tu cherchais un onglet tout fait</td><td>L'écrire en expression cron : <code>0 */2 * * *</code></td></tr>
     </table>
 
     <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>

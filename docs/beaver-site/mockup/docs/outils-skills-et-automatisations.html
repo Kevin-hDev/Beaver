@@ -110,11 +110,11 @@
     <table>
       <caption class="crumb">Three trigger shapes, and only three</caption>
       <tr><th>Shape</th><th>What has to be specified</th></tr>
-      <tr><td>Once</td><td>A date and a time, in the format <code>YYYY-MM-DDTHH:MM</code></td></tr>
-      <tr><td>Daily</td><td>A time, in the format <code>HH:MM</code></td></tr>
-      <tr><td>Weekly</td><td>A day of the week (<b>0 to 6</b>) and a time</td></tr>
+      <tr><td>Once</td><td>A date and a time, plus the time zone</td></tr>
+      <tr><td>Cron</td><td>A five-field cron expression, plus the time zone</td></tr>
+      <tr><td>After completion</td><td>A delay in minutes, from <b>1</b> to <b>525,600</b>, counted from the end of the previous run</td></tr>
     </table>
-    <p>There is <b>no free-form scheduling expression</b>: a cron-style syntax is refused. A one-off date <b>already in the past</b> is refused if the automation is created active.</p>
+    <p>These are the very three shapes the wakeups form offers, described in <a href="automatisation-reveils.html">Scheduled wakeups</a>. A one-off date <b>already in the past</b> is refused.</p>
 
     <h2 id="ce-quelle-fige">What an automation freezes</h2>
     <p>At creation time, it takes from the current conversation and freezes <b>the model</b>, <b>the provider</b> and <b>the project</b> if there is one. It additionally records its name, its description, its instruction, its trigger, its active state and its creation date — and nothing else.</p>
@@ -150,10 +150,10 @@
       <tr><td>Invalid skill identifier</td><td>Identifier containing a path separator or <code>..</code></td></tr>
       <tr><td>Skill not found</td><td>Identifier absent from the catalogue</td></tr>
       <tr><td>Skill unavailable</td><td>File unreadable or too large</td></tr>
-      <tr><td>Invalid automation action</td><td>Action other than list, create, modify, delete</td></tr>
+      <tr><td>Invalid automation action</td><td>Action other than list, inspect, create, modify, read the history, delete</td></tr>
       <tr><td>Trigger required</td><td>No schedule supplied at creation</td></tr>
-      <tr><td>Invalid trigger</td><td>Unsupported shape, a cron syntax for instance</td></tr>
-      <tr><td>Required field, field too long, invalid time or day, date already past, provider not supported</td><td>Validity checks at creation</td></tr>
+      <tr><td>Invalid trigger</td><td>A shape outside the three, an unreadable cron expression, or a delay outside 1 to 525,600 minutes</td></tr>
+      <tr><td>Required field, field too long, invalid cron expression or time zone, date already past, provider not supported</td><td>Validity checks at creation</td></tr>
       <tr><td>Cannot create</td><td>Ceiling of 64 wake-ups reached, or write refused</td></tr>
       <tr><td>Cannot modify</td><td>Unknown identifier, or a value that has become invalid</td></tr>
       <tr><td>Confirmation required</td><td>Deletion without explicit confirmation</td></tr>
@@ -172,8 +172,8 @@
       <tr><td>The automation does not trigger</td><td>Wake-ups globally paused</td><td>Check the global pause on the wake-ups screen</td></tr>
       <tr><td>"Maximum 64 wake-ups"</td><td>Ceiling shared by automations and plain wake-ups</td><td>Delete a wake-up that has become useless</td></tr>
       <tr><td>"Provider not supported"</td><td>The conversation's provider does not accept automation requests</td><td>Create the automation from a conversation using another provider</td></tr>
-      <tr><td>"One-off date already past"</td><td>One-off trigger set in the past, with the active state</td><td>Choose a future date</td></tr>
-      <tr><td>You wanted a schedule every two hours</td><td>Only once, daily and weekly exist</td><td>Create several daily automations</td></tr>
+      <tr><td>"One-off date already past"</td><td>One-off trigger set in the past</td><td>Choose a future date</td></tr>
+      <tr><td>You wanted a schedule every two hours</td><td>You were looking for a fixed tab</td><td>Write it as a cron expression: <code>0 */2 * * *</code></td></tr>
     </table>
 
     <h2 id="pour-aller-plus-loin">Going further</h2>

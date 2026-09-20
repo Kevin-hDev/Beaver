@@ -115,7 +115,7 @@
 
     <div class="callout">
       <span class="t">Note</span>
-      <b>There is no retention period in days.</b> The bound is a number of lines, shared by all your wakeups: with a single daily wakeup you keep months of history, with twenty wakeups a few weeks. And when the limit is reached, the older half disappears <b>all at once</b>, not line by line. If you want to keep more than that, copy the <code>wakeups.jsonl</code> file elsewhere.
+      <b>There is no retention period in days.</b> The bound is a number of lines, shared by all your wakeups: with a single wakeup firing once a day you keep months of history, with twenty wakeups a few weeks. And when the limit is reached, the older half disappears <b>all at once</b>, not line by line. If you want to keep more than that, copy the <code>wakeups.jsonl</code> file elsewhere.
     </div>
 
     <p><b>The rewrite is atomic</b>: temporary file then rename. A power cut during a rotation leaves either the old log whole, or the new one, never a mix.</p>
