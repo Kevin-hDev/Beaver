@@ -1,11 +1,16 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use zeroize::Zeroizing;
 
-use super::types::{OAuthTokens, TokenResponse};
+use super::types::OAuthTokens;
 use crate::services::api_keys;
-use crate::services::secure_http::AuthenticatedClient;
+use crate::services::secure_http_destination::FixedDestination;
+
+pub(crate) type DestinationFuture =
+    Pin<Box<dyn Future<Output = Result<FixedDestination, String>> + Send>>;
 
 static REFRESH_LOCKS: std::sync::LazyLock<
     std::sync::Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
@@ -40,6 +45,9 @@ pub(super) fn store_connection_tokens(
     connector_id: &str,
     tokens: &OAuthTokens,
 ) -> Result<(), String> {
+    if tokens.issuer.is_none() {
+        return Err(super::types::REAUTHENTICATION_REQUIRED.to_string());
+    }
     write_tokens(connector_id, tokens)
 }
 
@@ -82,9 +90,19 @@ pub async fn get_valid_token(connector_id: &str) -> Result<Zeroizing<String>, St
         save: &store_refreshed_tokens_if_generation,
         generation: &crate::services::mcp_bridge::registry::current_generation,
         validate: &super::trusted_oauth::validate_endpoint,
-        client: &|| {
-            AuthenticatedClient::new(std::time::Duration::from_secs(15))
-                .map_err(|_| "erreur interne".to_string())
+        validate_issuer: &super::trusted_oauth::validate_issuer,
+        client: &|id, url| {
+            let id = id.to_string();
+            let url = url.to_string();
+            Box::pin(async move {
+                super::network_guard::destination(
+                    &id,
+                    "",
+                    super::network_guard::DestinationRole::OAuth,
+                    &url,
+                )
+                .await
+            })
         },
     };
     get_valid_token_with(connector_id, &dependencies).await
@@ -96,7 +114,8 @@ pub(crate) struct RefreshDependencies<'a> {
     pub save: &'a (dyn Fn(&str, &OAuthTokens, u64) -> Result<(), String> + Send + Sync),
     pub generation: &'a (dyn Fn() -> Result<u64, String> + Send + Sync),
     pub validate: &'a (dyn Fn(&str, &str) -> Result<(), String> + Send + Sync),
-    pub client: &'a (dyn Fn() -> Result<AuthenticatedClient, String> + Send + Sync),
+    pub validate_issuer: &'a (dyn Fn(&str, &str) -> Result<(), String> + Send + Sync),
+    pub client: &'a (dyn Fn(&str, &str) -> DestinationFuture + Send + Sync),
 }
 
 pub(crate) async fn get_valid_token_with(
@@ -104,6 +123,14 @@ pub(crate) async fn get_valid_token_with(
     dependencies: &RefreshDependencies<'_>,
 ) -> Result<Zeroizing<String>, String> {
     let tokens = (dependencies.read)(connector_id)?;
+    let issuer = tokens
+        .issuer
+        .as_deref()
+        .ok_or(super::types::REAUTHENTICATION_REQUIRED)?;
+    (dependencies.validate_issuer)(connector_id, issuer)
+        .map_err(|_| super::types::REAUTHENTICATION_REQUIRED.to_string())?;
+    (dependencies.validate)(connector_id, &tokens.token_endpoint)
+        .map_err(|_| super::types::REAUTHENTICATION_REQUIRED.to_string())?;
     let result = tokens.access_token.clone();
     if let Some(exp) = tokens.expires_at {
         let now = chrono::Utc::now().timestamp();
@@ -114,6 +141,9 @@ pub(crate) async fn get_valid_token_with(
         let _guard = lock.lock().await;
         let generation = (dependencies.generation)()?;
         let fresh = (dependencies.read_current)(connector_id, generation)?;
+        if fresh.issuer.as_deref() != Some(issuer) {
+            return Err(super::types::REAUTHENTICATION_REQUIRED.to_string());
+        }
         if let Some(fexp) = fresh.expires_at {
             if chrono::Utc::now().timestamp() < fexp.saturating_sub(30) {
                 return Ok(fresh.access_token.clone());
@@ -122,8 +152,8 @@ pub(crate) async fn get_valid_token_with(
         let refresh = fresh
             .refresh_token
             .as_ref()
-            .ok_or("token expiré et pas de refresh_token")?;
-        return refresh_access_token(
+            .ok_or(super::types::REAUTHENTICATION_REQUIRED)?;
+        return super::storage_refresh::refresh_access_token(
             connector_id,
             &fresh,
             refresh.as_str(),
@@ -132,54 +162,5 @@ pub(crate) async fn get_valid_token_with(
         )
         .await;
     }
-    Ok(result)
-}
-
-async fn refresh_access_token(
-    connector_id: &str,
-    old: &OAuthTokens,
-    refresh_token: &str,
-    generation: u64,
-    dependencies: &RefreshDependencies<'_>,
-) -> Result<Zeroizing<String>, String> {
-    (dependencies.validate)(connector_id, &old.token_endpoint)?;
-    let client = (dependencies.client)()?;
-
-    let mut params: Vec<(&str, &str)> = vec![
-        ("grant_type", "refresh_token"),
-        ("refresh_token", refresh_token),
-        ("client_id", old.client_id.as_str()),
-    ];
-    let secret_ref = old
-        .client_secret
-        .as_ref()
-        .map(|s| Zeroizing::new(s.as_str().to_string()));
-    if let Some(ref secret) = secret_ref {
-        params.push(("client_secret", secret.as_str()));
-    }
-
-    let request = client
-        .post(&old.token_endpoint)
-        .header("Accept", "application/json")
-        .form(&params);
-    let resp = client
-        .send_success(request)
-        .await
-        .map_err(|_| "échec du rafraîchissement du token".to_string())?;
-
-    let mut raw: TokenResponse = super::bounded_json(resp).await?;
-
-    if raw.access_token.is_empty() {
-        return Err("token manquant dans la réponse".to_string());
-    }
-
-    if raw.refresh_token.is_none() {
-        raw.refresh_token = Some(refresh_token.to_string());
-    }
-
-    let cs = old.client_secret.as_ref().map(|s| s.as_str());
-    let new_tokens = OAuthTokens::from_response(&mut raw, &old.token_endpoint, &old.client_id, cs);
-    let result = new_tokens.access_token.clone();
-    (dependencies.save)(connector_id, &new_tokens, generation)?;
     Ok(result)
 }

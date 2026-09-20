@@ -1617,7 +1617,8 @@
       "cancel": "Cancelar",
       "successTitle": "Conexión correcta",
       "successMessage": "El conector se añadió correctamente.",
-      "errorGeneric": "La conexión falló. Inténtalo de nuevo."
+      "errorGeneric": "La conexión falló. Inténtalo de nuevo.",
+      "reauthenticationRequired": "Vuelve a conectar este conector para continuar."
     }
   },
   "vision": {

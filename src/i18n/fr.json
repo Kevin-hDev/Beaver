@@ -1712,7 +1712,8 @@
       "cancel": "Annuler",
       "successTitle": "Connexion réussie",
       "successMessage": "Le connecteur a été ajouté avec succès.",
-      "errorGeneric": "Échec de la connexion. Réessayez."
+      "errorGeneric": "Échec de la connexion. Réessayez.",
+      "reauthenticationRequired": "Reconnectez ce connecteur pour continuer."
     }
   },
   "linkPreview": {

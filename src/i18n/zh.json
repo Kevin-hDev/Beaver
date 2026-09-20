@@ -1612,7 +1612,8 @@
       "cancel": "取消",
       "successTitle": "连接成功",
       "successMessage": "连接器已成功添加。",
-      "errorGeneric": "连接失败。请重试。"
+      "errorGeneric": "连接失败。请重试。",
+      "reauthenticationRequired": "请重新连接此连接器以继续。"
     }
   },
   "vision": {

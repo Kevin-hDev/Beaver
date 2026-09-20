@@ -1,8 +1,21 @@
-use super::registry::{call_enabled_tool, select_exact_tool, EnabledConnector};
+use super::registry::{
+    call_enabled_tool, mutate_identity_if_generation, select_exact_tool, EnabledConnector,
+};
 use super::transport::{McpCallError, McpToolCatalog, McpToolDef, McpToolResult, McpTransport};
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+
+#[test]
+fn late_oauth_commit_cannot_revive_an_old_generation() {
+    let wrote = AtomicUsize::new(0);
+    let result = mutate_identity_if_generation("test-late-oauth", u64::MAX, |_| {
+        wrote.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    });
+    assert!(result.is_err());
+    assert_eq!(wrote.load(Ordering::SeqCst), 0);
+}
 
 struct CountingTransport(Arc<AtomicUsize>);
 

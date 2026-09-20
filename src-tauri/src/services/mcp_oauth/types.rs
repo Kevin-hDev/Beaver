@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, Zeroizing};
 
+pub const REAUTHENTICATION_REQUIRED: &str = "mcp_reauthentication_required";
+
 #[derive(Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
@@ -8,6 +10,25 @@ pub struct TokenResponse {
     pub expires_in: Option<i64>,
     #[serde(default = "default_bearer")]
     pub token_type: String,
+}
+
+impl TokenResponse {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.access_token.is_empty()
+            || self.access_token.len() > 16_384
+            || self
+                .refresh_token
+                .as_ref()
+                .is_some_and(|token| token.is_empty() || token.len() > 16_384)
+            || !self.token_type.eq_ignore_ascii_case("Bearer")
+            || self
+                .expires_in
+                .is_some_and(|seconds| !(1..=315_360_000).contains(&seconds))
+        {
+            return Err("réponse OAuth invalide".to_string());
+        }
+        Ok(())
+    }
 }
 
 fn default_bearer() -> String {
@@ -26,6 +47,10 @@ impl Drop for TokenResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct OAuthTokensSerde {
+    #[serde(default = "legacy_version")]
+    pub version: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issuer: Option<String>,
     pub access_token: String,
     pub refresh_token: Option<String>,
     pub expires_at: Option<i64>,
@@ -34,6 +59,10 @@ pub struct OAuthTokensSerde {
     pub client_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
+}
+
+fn legacy_version() -> u8 {
+    1
 }
 
 impl Drop for OAuthTokensSerde {
@@ -52,6 +81,7 @@ impl Drop for OAuthTokensSerde {
 }
 
 pub struct OAuthTokens {
+    pub issuer: Option<String>,
     pub access_token: Zeroizing<String>,
     pub refresh_token: Option<Zeroizing<String>>,
     pub expires_at: Option<i64>,
@@ -64,6 +94,8 @@ pub struct OAuthTokens {
 impl OAuthTokens {
     pub fn to_json(&self) -> Result<Zeroizing<String>, String> {
         let raw = OAuthTokensSerde {
+            version: 2,
+            issuer: self.issuer.clone(),
             access_token: self.access_token.as_str().to_string(),
             refresh_token: self.refresh_token.as_ref().map(|s| s.as_str().to_string()),
             expires_at: self.expires_at,
@@ -79,7 +111,25 @@ impl OAuthTokens {
     pub fn from_json(json: &str) -> Result<Self, String> {
         let mut raw: OAuthTokensSerde = serde_json::from_str(json)
             .map_err(|_| "données d'authentification invalides".to_string())?;
+        if raw.access_token.is_empty()
+            || raw.access_token.len() > 16_384
+            || raw
+                .refresh_token
+                .as_ref()
+                .is_some_and(|token| token.is_empty() || token.len() > 16_384)
+            || !raw.token_type.eq_ignore_ascii_case("Bearer")
+            || raw.client_id.is_empty()
+            || raw.client_id.len() > 2048
+            || raw.token_endpoint.len() > 2048
+        {
+            return Err("données d'authentification invalides".to_string());
+        }
         let tokens = Self {
+            issuer: if raw.version == 2 {
+                raw.issuer.take()
+            } else {
+                None
+            },
             access_token: Zeroizing::new(std::mem::take(&mut raw.access_token)),
             refresh_token: raw.refresh_token.take().map(Zeroizing::new),
             expires_at: raw.expires_at,
@@ -93,11 +143,13 @@ impl OAuthTokens {
 
     pub fn from_response(
         resp: &mut TokenResponse,
+        issuer: &str,
         token_endpoint: &str,
         client_id: &str,
         client_secret: Option<&str>,
     ) -> Self {
         Self {
+            issuer: Some(issuer.to_string()),
             access_token: Zeroizing::new(std::mem::take(&mut resp.access_token)),
             refresh_token: resp.refresh_token.take().map(Zeroizing::new),
             expires_at: resp.expires_in.map(|d| chrono::Utc::now().timestamp() + d),
@@ -119,6 +171,9 @@ impl Drop for OAuthTokens {
 
 #[derive(Deserialize)]
 pub struct AuthServerMetadata {
+    pub issuer: String,
+    #[serde(default)]
+    pub authorization_response_iss_parameter_supported: bool,
     pub authorization_endpoint: String,
     pub token_endpoint: String,
     pub registration_endpoint: Option<String>,
@@ -150,4 +205,9 @@ impl Drop for DcrResponse {
 pub struct CallbackResult {
     pub code: Zeroizing<String>,
     pub state: Zeroizing<String>,
+    pub iss: Option<String>,
 }
+
+#[cfg(test)]
+#[path = "types_tests.rs"]
+mod tests;

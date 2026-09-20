@@ -41,10 +41,7 @@ impl McpTransport for HttpTransport {
     }
 
     async fn call_tool(&self, name: &str, args: Value) -> Result<McpToolResult, McpCallError> {
-        let token = self
-            .resolve_token()
-            .await
-            .map_err(|_| McpCallError::Unavailable)?;
+        let token = self.resolve_token_for_call().await?;
         let session_id = initialize(&self.endpoint, token.as_str())
             .await
             .map_err(|_| McpCallError::Unavailable)?;

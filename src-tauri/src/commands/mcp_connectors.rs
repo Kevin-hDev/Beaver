@@ -110,16 +110,15 @@ fn commit_after_probe(
     store_secrets: impl FnOnce() -> Result<(), String>,
     rollback_config: impl FnOnce(Option<config::StoredConnector>) -> Result<(), String>,
 ) -> Result<(), String> {
-    probe?;
-    registry::mutate_identity(connector_id, |_| {
-        let previous = load_previous()?;
-        store_config()?;
-        if let Err(error) = store_secrets() {
-            rollback_config(previous).map_err(|_| "configuration MCP indisponible")?;
-            return Err(error);
-        }
-        Ok(())
-    })
+    crate::services::mcp_bridge::registry_commit::commit_after_probe(
+        connector_id,
+        None,
+        probe,
+        load_previous,
+        store_config,
+        |_| store_secrets(),
+        rollback_config,
+    )
 }
 
 fn delete_connector_secrets(

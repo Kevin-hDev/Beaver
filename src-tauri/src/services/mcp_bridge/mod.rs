@@ -44,6 +44,7 @@ pub mod registry;
 mod registry_cache;
 #[cfg(test)]
 mod registry_cache_tests;
+pub(crate) mod registry_commit;
 #[cfg(test)]
 mod registry_tests;
 #[cfg(target_os = "linux")]

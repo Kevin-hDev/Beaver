@@ -1612,7 +1612,8 @@
       "cancel": "キャンセル",
       "successTitle": "接続に成功しました",
       "successMessage": "コネクターが正常に追加されました。",
-      "errorGeneric": "接続に失敗しました。もう一度お試しください。"
+      "errorGeneric": "接続に失敗しました。もう一度お試しください。",
+      "reauthenticationRequired": "続行するには、このコネクターを再接続してください。"
     }
   },
   "vision": {

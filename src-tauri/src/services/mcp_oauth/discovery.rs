@@ -1,26 +1,36 @@
-use std::time::Duration;
-
 use super::types::{AuthServerMetadata, ProtectedResourceMetadata};
-use crate::services::secure_http::AuthenticatedClient;
+use super::{issuer, network_guard, trusted_oauth};
+use network_guard::DestinationRole;
 
-const TIMEOUT: Duration = Duration::from_secs(15);
-
-pub async fn discover_auth_server(endpoint: &str) -> Result<AuthServerMetadata, String> {
+pub async fn discover_auth_server(
+    connector_id: &str,
+    endpoint: &str,
+) -> Result<AuthServerMetadata, String> {
+    if !crate::services::mcp_bridge::trusted::is_trusted_endpoint_for_connector(
+        connector_id,
+        endpoint,
+    ) {
+        return Err("serveur MCP non autorisé".to_string());
+    }
     if let Some(meta) = hardcoded_override(endpoint) {
+        trusted_oauth::validate_metadata_endpoints(connector_id, &meta)?;
         return Ok(meta);
     }
 
-    let client = AuthenticatedClient::new(TIMEOUT).map_err(|_| "erreur interne".to_string())?;
-
-    let issuer = discover_issuer(&client, endpoint).await?;
-    fetch_auth_server_metadata(&client, &issuer).await
+    let expected_issuer = discover_issuer(connector_id, endpoint).await?;
+    trusted_oauth::validate_issuer(connector_id, &expected_issuer)?;
+    let meta = fetch_auth_server_metadata(connector_id, endpoint, &expected_issuer).await?;
+    issuer::verify_metadata_issuer(&expected_issuer, &meta.issuer)?;
+    trusted_oauth::validate_metadata_endpoints(connector_id, &meta)?;
+    Ok(meta)
 }
 
-async fn discover_issuer(client: &AuthenticatedClient, endpoint: &str) -> Result<String, String> {
-    let endpoint_host = extract_host(endpoint).unwrap_or_default();
-
+async fn discover_issuer(connector_id: &str, endpoint: &str) -> Result<String, String> {
+    let client =
+        network_guard::destination(connector_id, endpoint, DestinationRole::McpProbe, endpoint)
+            .await?;
     let request = client
-        .post(endpoint)
+        .post()
         .header("Content-Type", "application/json")
         .body(r#"{"jsonrpc":"2.0","method":"initialize","id":1}"#);
     let resp = client
@@ -28,20 +38,23 @@ async fn discover_issuer(client: &AuthenticatedClient, endpoint: &str) -> Result
         .await
         .map_err(|_| "impossible de contacter le serveur MCP".to_string())?;
 
-    let status = resp.status().as_u16();
-
-    if status == 401 || status == 403 {
+    let status = resp.status();
+    if status == reqwest::StatusCode::UNAUTHORIZED {
         if let Some(header) = resp
             .headers()
             .get("www-authenticate")
             .and_then(|v| v.to_str().ok())
         {
-            if let Some(url) = extract_resource_metadata_url(header, &endpoint_host) {
-                if let Ok(issuer) = fetch_issuer_from_resource_meta(client, &url).await {
+            if let Some(url) = extract_resource_metadata_url(header) {
+                if let Some(issuer) =
+                    fetch_issuer_from_resource_meta(connector_id, endpoint, &url).await?
+                {
                     return Ok(issuer);
                 }
             }
         }
+    } else if !status.is_success() {
+        return Err("sonde MCP refusée".to_string());
     }
 
     let base_url = endpoint_base_url(endpoint)?;
@@ -52,98 +65,87 @@ async fn discover_issuer(client: &AuthenticatedClient, endpoint: &str) -> Result
     ];
 
     for url in &candidates {
-        if let Ok(issuer) = fetch_issuer_from_resource_meta(client, url).await {
+        if let Some(issuer) = fetch_issuer_from_resource_meta(connector_id, endpoint, url).await? {
             return Ok(issuer);
         }
     }
 
-    let auth_candidates = [
-        format!("{base_url}/.well-known/oauth-authorization-server"),
-        format!("{base_url}/.well-known/openid-configuration"),
-    ];
-
-    for url in &auth_candidates {
-        let resp = client.send(client.get(url)).await;
-        if let Ok(r) = resp {
-            if r.status().is_success() {
-                return Ok(base_url);
-            }
-        }
-    }
-
-    Err("serveur d'autorisation non trouvé pour ce service".to_string())
+    Ok(base_url)
 }
 
-fn extract_resource_metadata_url(header: &str, endpoint_host: &str) -> Option<String> {
+fn extract_resource_metadata_url(header: &str) -> Option<String> {
+    if header.len() > 2048 {
+        return None;
+    }
     let mut found = None;
     for segment in header.split([',', ' ']) {
         let trimmed = segment.trim();
         if let Some(rest) = trimmed.strip_prefix("resource_metadata=") {
             let url = rest.trim_matches('"').trim();
-            if url.starts_with("https://") && is_same_domain(url, endpoint_host) {
-                found = Some(url.to_string());
+            if found.is_some() {
+                return None;
             }
+            found = Some(url.to_string());
         }
     }
     found
 }
 
-fn extract_host(url: &str) -> Option<String> {
-    reqwest::Url::parse(url)
-        .ok()
-        .and_then(|u| u.host_str().map(|h| h.to_string()))
-}
-
-fn is_same_domain(url: &str, reference_host: &str) -> bool {
-    let Some(url_host) = extract_host(url) else {
-        return false;
-    };
-    url_host == reference_host || url_host.ends_with(&format!(".{reference_host}"))
-}
-
 async fn fetch_issuer_from_resource_meta(
-    client: &AuthenticatedClient,
+    connector_id: &str,
+    endpoint: &str,
     url: &str,
-) -> Result<String, String> {
+) -> Result<Option<String>, String> {
+    let client = network_guard::destination(
+        connector_id,
+        endpoint,
+        DestinationRole::ResourceMetadata,
+        url,
+    )
+    .await?;
     let resp = client
-        .send(client.get(url))
+        .send(client.get())
         .await
         .map_err(|_| "serveur non disponible".to_string())?;
+    if resp.status() == reqwest::StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
     if !resp.status().is_success() {
-        return Err("not found".to_string());
+        return Err("métadonnées OAuth refusées".to_string());
     }
     let meta: ProtectedResourceMetadata = super::bounded_json(resp).await?;
-    meta.authorization_servers
-        .and_then(|s| s.into_iter().next())
-        .ok_or("no auth server".to_string())
+    let servers = meta
+        .authorization_servers
+        .ok_or("serveur d'autorisation absent".to_string())?;
+    if servers.is_empty() || servers.len() > 8 {
+        return Err("serveurs d'autorisation invalides".to_string());
+    }
+    for issuer in &servers {
+        trusted_oauth::validate_issuer(connector_id, issuer)?;
+    }
+    Ok(servers.into_iter().next())
 }
 
 async fn fetch_auth_server_metadata(
-    client: &AuthenticatedClient,
+    connector_id: &str,
+    endpoint: &str,
     issuer: &str,
 ) -> Result<AuthServerMetadata, String> {
     let issuer_clean = issuer.trim_end_matches('/');
-
+    let parsed = reqwest::Url::parse(issuer).map_err(|_| "émetteur OAuth invalide")?;
+    let inserted = format!(
+        "{}/.well-known/oauth-authorization-server{}",
+        parsed.origin().ascii_serialization(),
+        parsed.path().trim_end_matches('/')
+    );
     let candidates = [
+        inserted,
         format!("{issuer_clean}/.well-known/oauth-authorization-server"),
         format!("{issuer_clean}/.well-known/openid-configuration"),
     ];
-
-    if let Ok(parsed) = reqwest::Url::parse(issuer) {
-        if !parsed.path().is_empty() && parsed.path() != "/" {
-            let base = format!("{}://{}", parsed.scheme(), parsed.host_str().unwrap_or(""));
-            let with_path = format!(
-                "{base}/.well-known/oauth-authorization-server{}",
-                parsed.path().trim_end_matches('/')
-            );
-            if let Ok(meta) = try_fetch_metadata(client, &with_path).await {
-                return Ok(meta);
-            }
-        }
-    }
-
     for url in &candidates {
-        if let Ok(meta) = try_fetch_metadata(client, url).await {
+        if let Some(meta) = try_fetch_metadata(connector_id, endpoint, url).await? {
+            issuer::verify_metadata_issuer(issuer, &meta.issuer)?;
             return Ok(meta);
         }
     }
@@ -152,17 +154,23 @@ async fn fetch_auth_server_metadata(
 }
 
 async fn try_fetch_metadata(
-    client: &AuthenticatedClient,
+    connector_id: &str,
+    endpoint: &str,
     url: &str,
-) -> Result<AuthServerMetadata, String> {
+) -> Result<Option<AuthServerMetadata>, String> {
+    let client =
+        network_guard::destination(connector_id, endpoint, DestinationRole::OAuth, url).await?;
     let resp = client
-        .send(client.get(url))
+        .send(client.get())
         .await
         .map_err(|_| "serveur non disponible".to_string())?;
-    if !resp.status().is_success() {
-        return Err("not found".to_string());
+    if resp.status() == reqwest::StatusCode::NOT_FOUND {
+        return Ok(None);
     }
-    super::bounded_json(resp).await
+    if !resp.status().is_success() {
+        return Err("métadonnées OAuth refusées".to_string());
+    }
+    super::bounded_json(resp).await.map(Some)
 }
 
 fn endpoint_base_url(endpoint: &str) -> Result<String, String> {
@@ -175,8 +183,10 @@ fn endpoint_base_url(endpoint: &str) -> Result<String, String> {
 fn hardcoded_override(endpoint: &str) -> Option<AuthServerMetadata> {
     let host = reqwest::Url::parse(endpoint).ok()?.host_str()?.to_string();
 
-    if host == "api.githubcopilot.com" || host.ends_with(".githubcopilot.com") {
+    if host == "api.githubcopilot.com" {
         return Some(AuthServerMetadata {
+            issuer: "https://github.com/login/oauth".to_string(),
+            authorization_response_iss_parameter_supported: false,
             authorization_endpoint: "https://github.com/login/oauth/authorize".to_string(),
             token_endpoint: "https://github.com/login/oauth/access_token".to_string(),
             registration_endpoint: None,
@@ -184,8 +194,13 @@ fn hardcoded_override(endpoint: &str) -> Option<AuthServerMetadata> {
         });
     }
 
-    if host.ends_with(".googleapis.com") {
+    if matches!(
+        host.as_str(),
+        "gmailmcp.googleapis.com" | "drivemcp.googleapis.com" | "calendarmcp.googleapis.com"
+    ) {
         return Some(AuthServerMetadata {
+            issuer: "https://accounts.google.com".to_string(),
+            authorization_response_iss_parameter_supported: false,
             authorization_endpoint: "https://accounts.google.com/o/oauth2/v2/auth".to_string(),
             token_endpoint: "https://oauth2.googleapis.com/token".to_string(),
             registration_endpoint: None,
@@ -195,3 +210,7 @@ fn hardcoded_override(endpoint: &str) -> Option<AuthServerMetadata> {
 
     None
 }
+
+#[cfg(test)]
+#[path = "discovery_tests.rs"]
+mod tests;

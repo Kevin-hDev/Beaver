@@ -1,5 +1,13 @@
 use super::*;
 
+#[test]
+fn callback_rejects_duplicate_issuer_parameters() {
+    assert!(parse_callback(
+        "GET /callback?code=abc&state=xyz&iss=https%3A%2F%2Fa.example&iss=https%3A%2F%2Fb.example HTTP/1.1"
+    )
+    .is_none());
+}
+
 async fn send_callback(port: u16, state: &str) {
     let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
         .await

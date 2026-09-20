@@ -184,11 +184,29 @@ pub(crate) fn mutate_identity<T>(
     connector_id: &str,
     action: impl FnOnce(&IdentityMutation) -> Result<T, String>,
 ) -> Result<T, String> {
+    mutate_identity_checked(connector_id, None, action)
+}
+
+pub(crate) fn mutate_identity_if_generation<T>(
+    connector_id: &str,
+    expected_generation: u64,
+    action: impl FnOnce(&IdentityMutation) -> Result<T, String>,
+) -> Result<T, String> {
+    mutate_identity_checked(connector_id, Some(expected_generation), action)
+}
+
+fn mutate_identity_checked<T>(
+    connector_id: &str,
+    expected_generation: Option<u64>,
+    action: impl FnOnce(&IdentityMutation) -> Result<T, String>,
+) -> Result<T, String> {
     config::validate_connector_id(connector_id)?;
     let mut state = CACHE_STATE
         .lock()
         .map_err(|_| "registre MCP indisponible")?;
-    if state.is_closed() {
+    if state.is_closed()
+        || expected_generation.is_some_and(|expected| state.generation() != expected)
+    {
         return Err("registre MCP indisponible".to_string());
     }
     state.invalidate(connector_id);

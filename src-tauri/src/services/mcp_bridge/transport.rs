@@ -37,6 +37,7 @@ pub struct McpToolCatalog {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum McpCallError {
     Unavailable,
+    ReauthenticationRequired,
     Server,
     InvalidResponse,
     Transport,
@@ -46,6 +47,7 @@ impl McpCallError {
     pub fn message(self) -> &'static str {
         match self {
             Self::Unavailable => "service MCP indisponible avant l'appel de l'outil",
+            Self::ReauthenticationRequired => "reconnexion MCP nécessaire",
             Self::Server => "erreur MCP retournée par le connecteur",
             Self::InvalidResponse => "réponse MCP invalide",
             Self::Transport => "résultat MCP non confirmé après l'appel",

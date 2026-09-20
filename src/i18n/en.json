@@ -1660,7 +1660,8 @@
       "cancel": "Cancel",
       "successTitle": "Connection successful",
       "successMessage": "The connector has been added successfully.",
-      "errorGeneric": "Connection failed. Please try again."
+      "errorGeneric": "Connection failed. Please try again.",
+      "reauthenticationRequired": "Reconnect this connector to continue."
     }
   },
   "linkPreview": {

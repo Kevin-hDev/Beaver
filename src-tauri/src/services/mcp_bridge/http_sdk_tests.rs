@@ -321,6 +321,7 @@ async fn same_account_refresh_preserves_inflight_call() {
         .await;
 
     let old = OAuthTokens {
+        issuer: Some(oauth_server.uri()),
         access_token: Zeroizing::new("old-access".to_string()),
         refresh_token: Some(Zeroizing::new("old-refresh".to_string())),
         expires_at: Some(chrono::Utc::now().timestamp().saturating_sub(60)),
@@ -389,18 +390,25 @@ async fn same_account_refresh_preserves_inflight_call() {
     let generation_state = identity.clone();
     let generation = move || Ok(generation_state.lock().unwrap().0);
     let trusted_endpoint = token_endpoint.clone();
+    let trusted_issuer = oauth_server.uri();
     let validate = move |id: &str, url: &str| {
-        if id == "test-refresh-inflight" && url == trusted_endpoint {
+        if id == "test-refresh-inflight" && (url == trusted_endpoint || url == trusted_issuer) {
             Ok(())
         } else {
             Err("endpoint OAuth refusé".to_string())
         }
     };
-    let oauth_client = || {
-        crate::services::secure_http::AuthenticatedClient::new_loopback(
-            std::time::Duration::from_secs(2),
-        )
-        .map_err(|_| "client test indisponible".to_string())
+    let expected_destination = token_endpoint.clone();
+    let oauth_client = move |id: &str, url: &str| {
+        let id = id.to_string();
+        let url = url.to_string();
+        let expected = expected_destination.clone();
+        Box::pin(async move {
+            crate::services::mcp_oauth::network_guard::destination_loopback_for_test(
+                &id, &expected, &url,
+            )
+            .await
+        }) as crate::services::mcp_oauth::storage::DestinationFuture
     };
     let dependencies = RefreshDependencies {
         read: &read,
@@ -408,6 +416,7 @@ async fn same_account_refresh_preserves_inflight_call() {
         save: &save,
         generation: &generation,
         validate: &validate,
+        validate_issuer: &validate,
         client: &oauth_client,
     };
     let refreshed = get_valid_token_with("test-refresh-inflight", &dependencies)

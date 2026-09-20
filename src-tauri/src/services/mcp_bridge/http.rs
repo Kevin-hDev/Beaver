@@ -18,10 +18,7 @@ impl super::transport::McpTransport for HttpTransport {
         name: &str,
         args: serde_json::Value,
     ) -> Result<super::transport::McpToolResult, super::transport::McpCallError> {
-        let token = self
-            .resolve_token()
-            .await
-            .map_err(|_| super::transport::McpCallError::Unavailable)?;
+        let token = self.resolve_token_for_call().await?;
         match self.generation {
             Some(generation) => {
                 super::http_lifecycle::call_tool_checked(

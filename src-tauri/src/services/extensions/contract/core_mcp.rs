@@ -25,7 +25,8 @@ pub(super) async fn call(params: &Value) -> Result<CoreResponse, ExtensionBridge
     )
     .await
     .map_err(|error| match error {
-        crate::services::mcp_bridge::transport::McpCallError::Unavailable => {
+        crate::services::mcp_bridge::transport::McpCallError::Unavailable
+        | crate::services::mcp_bridge::transport::McpCallError::ReauthenticationRequired => {
             ExtensionBridgeError::Backend("core_mcp_unavailable")
         }
         _ => ExtensionBridgeError::Backend("core_mcp_result_unconfirmed"),

@@ -1613,7 +1613,8 @@
       "cancel": "Abbrechen",
       "successTitle": "Verbindung erfolgreich",
       "successMessage": "Der Connector wurde erfolgreich hinzugefügt.",
-      "errorGeneric": "Verbindung fehlgeschlagen. Bitte erneut versuchen."
+      "errorGeneric": "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
+      "reauthenticationRequired": "Verbinde diesen Konnektor erneut, um fortzufahren."
     }
   },
   "vision": {

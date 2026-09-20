@@ -1613,7 +1613,8 @@
       "cancel": "Annulla",
       "successTitle": "Connessione riuscita",
       "successMessage": "Il connettore è stato aggiunto correttamente.",
-      "errorGeneric": "Connessione non riuscita. Riprova."
+      "errorGeneric": "Connessione non riuscita. Riprova.",
+      "reauthenticationRequired": "Ricollega questo connettore per continuare."
     }
   },
   "vision": {
