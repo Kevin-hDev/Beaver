@@ -2,9 +2,15 @@ name: Beaver v1.2.3 Windows installer recovery
 
 on:
   workflow_dispatch:
+    inputs:
+      reuse_raw:
+        description: "Retry packaging with the installer EXE from run 35477748109"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   installer:
@@ -16,6 +22,7 @@ jobs:
           persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        if: ${{ !inputs.reuse_raw }}
         with:
           targets: x86_64-pc-windows-msvc
 
@@ -25,22 +32,27 @@ jobs:
           cache: npm
 
       - name: Install npm dependencies
+        if: ${{ !inputs.reuse_raw }}
         run: npm ci
 
       - name: Configure Windows Cargo target
+        if: ${{ !inputs.reuse_raw }}
         shell: pwsh
         run: |
           $target = [IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "target"))
           "CARGO_TARGET_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build installer UI
+        if: ${{ !inputs.reuse_raw }}
         run: npm run installer:build-ui
 
       - name: Build installer application
+        if: ${{ !inputs.reuse_raw }}
         working-directory: installer
         run: npx --no-install tauri build --target x86_64-pc-windows-msvc --no-bundle
 
       - name: Preserve raw installer for targeted retries
+        if: ${{ !inputs.reuse_raw }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: beaver-v123-installer-raw
@@ -48,6 +60,17 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 3
+
+      - name: Reuse raw installer from targeted build
+        if: inputs.reuse_raw
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 35477748109 --repo Kevin-hDev/Beaver --name beaver-v123-installer-raw --dir target/x86_64-pc-windows-msvc/release
+
+      - name: Inspect installer filesystem metadata
+        shell: pwsh
+        run: |
+          node -e "const fs = require('node:fs'); const s = fs.statSync('target/x86_64-pc-windows-msvc/release/beaver-installer.exe', { bigint: true }); console.log(JSON.stringify({ size: String(s.size), links: String(s.nlink), inode: String(s.ino) }));"
 
       - name: Checkout packaging fix and its dependencies
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
