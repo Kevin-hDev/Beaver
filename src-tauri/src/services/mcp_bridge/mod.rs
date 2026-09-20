@@ -13,6 +13,22 @@ pub mod env_tokens;
 mod env_tokens_tests;
 pub mod http;
 mod http_auth;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod http_catalog;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod http_client;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod http_client_request;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod http_client_response;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod http_lifecycle;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod http_limits;
+#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
+mod http_sdk_tests;
+#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
+mod http_test_server;
 pub(crate) mod identity;
 #[cfg(test)]
 mod identity_tests;
@@ -23,6 +39,7 @@ mod process_pool;
 mod process_pool_tests;
 mod process_spawn;
 pub mod registry;
+mod registry_cache;
 #[cfg(test)]
 mod registry_tests;
 pub mod response;

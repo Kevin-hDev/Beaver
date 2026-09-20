@@ -8,7 +8,6 @@ use super::transport::{McpToolDef, McpTransport};
 use super::{config, process_manager, token_validation, trusted};
 
 const MAX_CACHE: usize = 32;
-const CACHE_TTL_SECS: u64 = 300;
 const TEST_TIMEOUT_SECS: u64 = 20;
 
 struct CachedTools {
@@ -120,7 +119,7 @@ pub fn invalidate_cache(connector_id: &str) {
 fn get_cached(connector_id: &str) -> Option<Vec<McpToolDef>> {
     let cache = TOOL_CACHE.lock().ok()?;
     let entry = cache.get(connector_id)?;
-    if entry.fetched_at.elapsed().as_secs() > CACHE_TTL_SECS {
+    if entry.fetched_at.elapsed().as_secs() > super::registry_cache::FALLBACK_TTL.as_secs() {
         return None;
     }
     Some(entry.tools.clone())

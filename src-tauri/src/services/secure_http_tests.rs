@@ -98,6 +98,37 @@ async fn redirects_never_forward_credentials_or_bodies() {
 }
 
 #[tokio::test]
+async fn delete_uses_the_same_url_and_redirect_guards() {
+    let client = AuthenticatedClient::new(Duration::from_secs(2)).unwrap();
+    let refused = client
+        .delete("http://127.0.0.1:1/private")
+        .bearer_auth("fixture");
+    assert_eq!(
+        client.send(refused).await.unwrap_err(),
+        SecureHttpError::InsecureUrl
+    );
+
+    let destination = MockServer::start().await;
+    let origin = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(
+            ResponseTemplate::new(307)
+                .insert_header("Location", format!("{}/sink", destination.uri())),
+        )
+        .mount(&origin)
+        .await;
+    let loopback = AuthenticatedClient::new_loopback(Duration::from_secs(2)).unwrap();
+    let request = loopback
+        .delete(format!("{}/session", origin.uri()))
+        .bearer_auth("fixture");
+    assert_eq!(
+        loopback.send(request).await.unwrap_err(),
+        SecureHttpError::Redirect
+    );
+    assert!(destination.received_requests().await.unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn chunked_response_without_length_is_stopped_at_the_limit() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();

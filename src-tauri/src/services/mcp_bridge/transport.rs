@@ -29,6 +29,11 @@ pub struct McpToolResult {
     pub is_error: bool,
 }
 
+pub struct McpToolCatalog {
+    pub tools: Vec<McpToolDef>,
+    pub cache_ttl: Option<std::time::Duration>,
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum McpCallError {
     Unavailable,
