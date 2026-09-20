@@ -73,6 +73,7 @@
       The descriptions of active tools and connectors take up context permanently. With many connectors enabled, the available room shrinks before the first message.
     </div>
     <p>One detail worth knowing: for one of the remote providers, the model's reasoning is not counted in the usage. The estimate can therefore differ from one provider to another.</p>
+    <p><b>An attached image counts as an image, not as text.</b> To travel to the model, an image is turned into a very long string of characters — that encoding is transport, not something the model reads as text. Beaver therefore counts a fixed estimate of <b>1,100 tokens</b> per attached image, and that same number is used by the usage screen and by the automatic-compression decision. An image the model has to fetch from a web address is the exception: its size cannot be known ahead of time, so Beaver states no total rather than announcing a false one.</p>
 
     <h2 id="reserve">The answer reserve</h2>
     <p>Beaver never fills the window entirely: a share is reserved for the answer.</p>

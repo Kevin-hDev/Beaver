@@ -73,6 +73,7 @@
       Les descriptions des outils et des connecteurs actifs occupent du contexte en permanence. Avec beaucoup de connecteurs activés, la place disponible se réduit avant le premier message.
     </div>
     <p>Détail à connaître : pour l'un des fournisseurs distants, le raisonnement du modèle n'est pas compté dans l'occupation. L'estimation peut donc différer d'un fournisseur à l'autre.</p>
+    <p><b>Une image jointe compte comme une image, pas comme du texte.</b> Pour voyager jusqu'au modèle, une image est transformée en une très longue suite de caractères — ce codage est du transport, pas quelque chose que le modèle lit comme du texte. Beaver compte donc une estimation fixe de <b>1 100 jetons</b> par image jointe, et c'est ce même nombre qu'utilisent l'écran d'usage et la décision de compression automatique. Exception : une image que le modèle doit aller chercher à une adresse web, dont la taille ne peut pas être connue d'avance — Beaver n'annonce alors aucun total plutôt qu'un total faux.</p>
 
     <h2 id="reserve">La réserve de réponse</h2>
     <p>Beaver ne remplit jamais la fenêtre entièrement : une part est réservée à la réponse.</p>
