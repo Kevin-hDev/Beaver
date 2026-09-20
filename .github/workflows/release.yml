@@ -445,6 +445,7 @@ jobs:
 
   verify_release:
     needs: manifest
+    if: ${{ always() && needs.manifest.result == 'success' }}
     runs-on: ubuntu-22.04
 
     steps:
@@ -469,6 +470,7 @@ jobs:
 
   attest_release:
     needs: verify_release
+    if: ${{ always() && needs.verify_release.result == 'success' }}
     runs-on: ubuntu-22.04
     permissions:
       id-token: write
@@ -489,6 +491,7 @@ jobs:
 
   publish_release:
     needs: attest_release
+    if: ${{ always() && needs.attest_release.result == 'success' }}
     runs-on: ubuntu-22.04
     permissions:
       contents: write

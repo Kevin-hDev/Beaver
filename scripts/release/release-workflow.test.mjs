@@ -331,6 +331,9 @@ test("reprend v1.2.3 depuis les seuls artefacts déjà construits et relance la 
   assert.equal(recovery.if, "inputs.reuse_v123");
   assert.match(recovery.run, /gh run download 35471762472/u);
   assert.match(recovery.run, /gh run download 35478129815/u);
+  assert.equal(workflowDocument.jobs.verify_release.if, "${{ always() && needs.manifest.result == 'success' }}");
+  assert.equal(workflowDocument.jobs.attest_release.if, "${{ always() && needs.verify_release.result == 'success' }}");
+  assert.equal(workflowDocument.jobs.publish_release.if, "${{ always() && needs.attest_release.result == 'success' }}");
   for (const artifact of [
     "beaver-macos-arm64", "beaver-linux-x64", "beaver-windows-x64",
     "beaver-macos-arm64-installer", "beaver-windows-x64-installer",
