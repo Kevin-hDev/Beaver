@@ -26,6 +26,9 @@ pub mod registry;
 #[cfg(test)]
 mod registry_tests;
 pub mod response;
+pub mod result;
+#[cfg(test)]
+mod result_tests;
 mod schema;
 mod schema_definition;
 mod schema_limits;
