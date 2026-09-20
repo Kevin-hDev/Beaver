@@ -21,6 +21,8 @@ mod http_client;
 mod http_client_request;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod http_client_response;
+#[cfg(target_os = "linux")]
+mod http_legacy;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod http_lifecycle;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -41,7 +43,10 @@ mod process_spawn;
 pub mod registry;
 mod registry_cache;
 #[cfg(test)]
+mod registry_cache_tests;
+#[cfg(test)]
 mod registry_tests;
+#[cfg(target_os = "linux")]
 pub mod response;
 pub mod result;
 #[cfg(test)]

@@ -103,6 +103,6 @@ pub fn extract_tool_result(resp: &Value) -> Result<McpToolResult, McpCallError> 
 
 #[async_trait]
 pub trait McpTransport: Send + Sync {
-    async fn list_tools(&self) -> Result<Vec<McpToolDef>, String>;
+    async fn list_tools(&self) -> Result<McpToolCatalog, String>;
     async fn call_tool(&self, name: &str, args: Value) -> Result<McpToolResult, McpCallError>;
 }

@@ -127,9 +127,16 @@ async fn run_inner(
         tokens.access_token.clone(),
     )
     .await?;
-    storage::store_tokens(connector_id, &tokens)?;
-    crate::services::mcp_bridge::config::upsert(connector)?;
-    crate::services::mcp_bridge::registry::invalidate_cache(connector_id);
+    crate::services::mcp_bridge::registry::mutate_identity(connector_id, |mutation| {
+        let previous = crate::services::mcp_bridge::config::find(connector_id)?;
+        crate::services::mcp_bridge::config::upsert(connector)?;
+        if let Err(error) = storage::store_connection_tokens(mutation, connector_id, &tokens) {
+            crate::services::mcp_bridge::config::restore(connector_id, previous)
+                .map_err(|_| "configuration MCP indisponible")?;
+            return Err(error);
+        }
+        Ok(())
+    })?;
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
 }

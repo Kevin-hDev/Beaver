@@ -83,7 +83,23 @@ async fn execute(
     if budget.is_zero() {
         return Err(ExtensionBridgeError::Timeout);
     }
-    await_unrevoked(context, budget, dispatch(context, method, params)).await
+    let result = await_unrevoked(context, budget, dispatch(context, method, params)).await;
+    map_mcp_interruption(method, result)
+}
+
+fn map_mcp_interruption(
+    method: &str,
+    result: Result<CoreResponse, ExtensionBridgeError>,
+) -> Result<CoreResponse, ExtensionBridgeError> {
+    if method == "mcp.tool.call"
+        && matches!(
+            &result,
+            Err(ExtensionBridgeError::Timeout | ExtensionBridgeError::Revoked)
+        )
+    {
+        return Err(ExtensionBridgeError::Backend("core_mcp_result_unconfirmed"));
+    }
+    result
 }
 
 async fn await_unrevoked<F>(
@@ -130,6 +146,9 @@ async fn dispatch(
     if method.starts_with("subagents.") {
         return super::core_subagents::call(context, method, params).await;
     }
+    if method == "mcp.tool.call" {
+        return super::core_mcp::call(params).await;
+    }
     dispatch_legacy(method, params)
         .await
         .map_err(|()| ExtensionBridgeError::Failed)
@@ -172,7 +191,6 @@ async fn dispatch_legacy(method: &str, params: &Value) -> Result<CoreResponse, (
             let connectors = crate::services::mcp_bridge::config::load().map_err(|_| ())?;
             json_response(connectors)
         }
-        "mcp.tool.call" => call_mcp_tool(params).await,
         "channels.config.get" => {
             let config = crate::services::config::read_config().map_err(|_| ())?;
             json_response(config.gateway)
@@ -190,31 +208,6 @@ fn validate_request_params(params: &Value) -> Result<(), ExtensionBridgeError> {
         return Err(ExtensionBridgeError::Denied);
     }
     Ok(())
-}
-
-async fn call_mcp_tool(params: &Value) -> Result<CoreResponse, ()> {
-    let connector_id = string_param(params, "connectorId")?;
-    let tool_name = string_param(params, "toolName")?;
-    let arguments = params
-        .get("arguments")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    super::validation::message(&arguments).map_err(|_| ())?;
-    let (connector, tool) =
-        crate::services::mcp_bridge::registry::resolve_enabled_tool(connector_id, tool_name)
-            .await
-            .map_err(|_| ())?;
-    crate::services::mcp_bridge::arguments::validate(&arguments, tool.input_schema.as_ref())
-        .map_err(|_| ())?;
-    let result = connector
-        .transport
-        .call_tool(&tool.name, arguments)
-        .await
-        .map_err(|_| ())?;
-    if result.is_error {
-        return Err(());
-    }
-    Ok(CoreResponse::Json(Value::String(result.content)))
 }
 
 pub(super) fn string_param<'a>(params: &'a Value, key: &str) -> Result<&'a str, ()> {

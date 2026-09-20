@@ -1,11 +1,13 @@
 use super::http_catalog::list;
 use super::http_client::BeaverHttpClient;
 use super::http_lifecycle::start_with_client;
+use super::transport::McpCallError;
 use futures_util::StreamExt;
 use rmcp::transport::streamable_http_client::StreamableHttpClient;
 use rmcp::transport::streamable_http_client::StreamableHttpPostResponse;
 use serde_json::json;
 use std::sync::Arc;
+use subtle::ConstantTimeEq;
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
 impl BeaverHttpClient {
@@ -274,6 +276,164 @@ async fn http_sdk_never_replays_tool_call() {
 }
 
 #[tokio::test]
+async fn http_sdk_rechecks_identity_after_handshake_before_tool_send() {
+    let server = super::http_test_server::legacy_session_server(200).await;
+    let endpoint = format!("{}/mcp", server.uri());
+    let client = BeaverHttpClient::new_loopback(&endpoint, "fixture-token");
+    let result =
+        super::http_lifecycle::call_tool_with_client(client, endpoint, "echo", json!({}), || {
+            Err(McpCallError::Unavailable)
+        })
+        .await;
+    assert!(matches!(result, Err(McpCallError::Unavailable)));
+    let requests = server.received_requests().await.unwrap();
+    assert!(requests.iter().any(|request| {
+        serde_json::from_slice::<serde_json::Value>(&request.body)
+            .ok()
+            .is_some_and(|body| body["method"] == "initialize")
+    }));
+    assert!(!requests.iter().any(|request| {
+        serde_json::from_slice::<serde_json::Value>(&request.body)
+            .ok()
+            .is_some_and(|body| body["method"] == "tools/call")
+    }));
+}
+
+#[tokio::test]
+async fn same_account_refresh_preserves_inflight_call() {
+    use crate::services::mcp_oauth::storage::{get_valid_token_with, RefreshDependencies};
+    use crate::services::mcp_oauth::types::OAuthTokens;
+    use std::sync::Mutex;
+    use zeroize::Zeroizing;
+
+    let mcp_server = super::http_test_server::legacy_slow_initialize_server().await;
+    let endpoint = format!("{}/mcp", mcp_server.uri());
+    let oauth_server = MockServer::start().await;
+    let token_endpoint = format!("{}/token", oauth_server.uri());
+    Mock::given(wiremock::matchers::method("POST"))
+        .and(wiremock::matchers::path("/token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "access_token":"new-access", "refresh_token":"new-refresh",
+            "expires_in":3600, "token_type":"Bearer"
+        })))
+        .expect(1)
+        .mount(&oauth_server)
+        .await;
+
+    let old = OAuthTokens {
+        access_token: Zeroizing::new("old-access".to_string()),
+        refresh_token: Some(Zeroizing::new("old-refresh".to_string())),
+        expires_at: Some(chrono::Utc::now().timestamp().saturating_sub(60)),
+        token_type: "Bearer".to_string(),
+        token_endpoint: token_endpoint.clone(),
+        client_id: "fixture-client".to_string(),
+        client_secret: None,
+    };
+    let identity = Arc::new(Mutex::new((7u64, old.to_json().unwrap(), 0usize)));
+    let authorization = identity.clone();
+    let client = BeaverHttpClient::new_loopback(&endpoint, "fixture-token");
+    let call_endpoint = endpoint.clone();
+    let call = tokio::spawn(async move {
+        super::http_lifecycle::call_tool_with_client(
+            client,
+            call_endpoint,
+            "echo",
+            json!({}),
+            move || {
+                if authorization.lock().unwrap().0 == 7 {
+                    Ok(())
+                } else {
+                    Err(McpCallError::Unavailable)
+                }
+            },
+        )
+        .await
+    });
+
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            let requests = mcp_server.received_requests().await.unwrap();
+            if requests.iter().any(|request| {
+                serde_json::from_slice::<serde_json::Value>(&request.body)
+                    .ok()
+                    .is_some_and(|body| body["method"] == "initialize")
+            }) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("MCP handshake reached");
+
+    let read_state = identity.clone();
+    let read = move |_: &str| OAuthTokens::from_json(read_state.lock().unwrap().1.as_str());
+    let current_state = identity.clone();
+    let read_current = move |_: &str, generation: u64| {
+        let state = current_state.lock().unwrap();
+        if state.0 != generation {
+            return Err("identité MCP modifiée".to_string());
+        }
+        OAuthTokens::from_json(state.1.as_str())
+    };
+    let save_state = identity.clone();
+    let save = move |_: &str, tokens: &OAuthTokens, generation: u64| {
+        let mut state = save_state.lock().unwrap();
+        if state.0 != generation {
+            return Err("identité MCP modifiée".to_string());
+        }
+        state.1 = tokens.to_json()?;
+        state.2 += 1;
+        Ok(())
+    };
+    let generation_state = identity.clone();
+    let generation = move || Ok(generation_state.lock().unwrap().0);
+    let trusted_endpoint = token_endpoint.clone();
+    let validate = move |id: &str, url: &str| {
+        if id == "test-refresh-inflight" && url == trusted_endpoint {
+            Ok(())
+        } else {
+            Err("endpoint OAuth refusé".to_string())
+        }
+    };
+    let oauth_client = || {
+        crate::services::secure_http::AuthenticatedClient::new_loopback(
+            std::time::Duration::from_secs(2),
+        )
+        .map_err(|_| "client test indisponible".to_string())
+    };
+    let dependencies = RefreshDependencies {
+        read: &read,
+        read_current: &read_current,
+        save: &save,
+        generation: &generation,
+        validate: &validate,
+        client: &oauth_client,
+    };
+    let refreshed = get_valid_token_with("test-refresh-inflight", &dependencies)
+        .await
+        .expect("same-account refresh");
+    assert!(bool::from(refreshed.as_bytes().ct_eq(b"new-access")));
+    assert!(call.await.unwrap().is_ok());
+    {
+        let state = identity.lock().unwrap();
+        assert_eq!(state.0, 7);
+        assert_eq!(state.2, 1);
+    }
+    assert_eq!(oauth_server.received_requests().await.unwrap().len(), 1);
+    let requests = mcp_server.received_requests().await.unwrap();
+    let calls = requests
+        .iter()
+        .filter(|request| {
+            serde_json::from_slice::<serde_json::Value>(&request.body)
+                .ok()
+                .is_some_and(|body| body["method"] == "tools/call")
+        })
+        .count();
+    assert_eq!(calls, 1);
+}
+
+#[tokio::test]
 async fn http_sdk_modern_catalog_uses_server_ttl_only_when_valid() {
     for (ttl, scope, expected) in [
         (None, None, None),
@@ -433,7 +593,7 @@ async fn http_sdk_reads_fragmented_sse_without_buffering_the_whole_response() {
     let server = tokio::spawn(async move {
         let (mut socket, _) = listener.accept().await.unwrap();
         let mut request = [0u8; 2048];
-        socket.read(&mut request).await.unwrap();
+        assert!(socket.read(&mut request).await.unwrap() > 0);
         let chunks = [
             b"data: {\"ok".as_slice(),
             b"\":true}\n".as_slice(),

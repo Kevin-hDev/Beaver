@@ -205,6 +205,44 @@ fn sensitive_resource_scope_never_falls_back_to_another_requested_name() {
 }
 
 #[test]
+fn interrupted_mcp_call_is_never_reported_as_safe_to_retry() {
+    for error in [ExtensionBridgeError::Timeout, ExtensionBridgeError::Revoked] {
+        assert!(matches!(
+            map_mcp_interruption("mcp.tool.call", Err(error)),
+            Err(ExtensionBridgeError::Backend("core_mcp_result_unconfirmed"))
+        ));
+        assert!(matches!(
+            map_mcp_interruption("app.info", Err(error)),
+            Err(actual) if actual == error
+        ));
+    }
+    assert!(matches!(
+        map_mcp_interruption(
+            "mcp.tool.call",
+            Err(ExtensionBridgeError::Backend("core_mcp_unavailable"))
+        ),
+        Err(ExtensionBridgeError::Backend("core_mcp_unavailable"))
+    ));
+}
+
+#[tokio::test]
+async fn mcp_permission_refusal_stops_before_connector_resolution() {
+    let context = super::super::core_api_permissions_tests::scoped_context(
+        true,
+        tokio_util::sync::CancellationToken::new(),
+    );
+    let result = execute(
+        &context,
+        "mcp.tool.call",
+        Some(&json!({
+            "connectorId":"notion", "toolName":"echo", "arguments":{}
+        })),
+    )
+    .await;
+    assert!(matches!(result, Err(ExtensionBridgeError::Denied)));
+}
+
+#[test]
 fn successful_sensitive_access_marks_only_the_bound_record_in_memory() {
     let mut records = super::super::builtin::records().unwrap();
     records[0].kind = super::super::types::ExtensionKind::Local;

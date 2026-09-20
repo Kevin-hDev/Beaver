@@ -62,10 +62,15 @@ pub fn remove(connector_id: &str) -> Result<bool, String> {
     Ok(removed)
 }
 
-pub fn set_status(connector_id: &str, status: &str) -> Result<(), String> {
-    if !is_valid_status(status) {
-        return Err("statut invalide".to_string());
+pub(crate) fn restore(connector_id: &str, previous: Option<StoredConnector>) -> Result<(), String> {
+    match previous {
+        Some(connector) => upsert(connector),
+        None => remove(connector_id).map(|_| ()),
     }
+}
+
+pub fn set_status(connector_id: &str, status: &str) -> Result<(), String> {
+    validate_status(status)?;
     update(connector_id, |c| c.status = status.to_string())
 }
 
@@ -75,9 +80,7 @@ pub fn set_chat_enabled(connector_id: &str, enabled: bool) -> Result<(), String>
 
 pub fn validate_connector(c: &StoredConnector) -> Result<(), String> {
     validate_connector_id(&c.id)?;
-    if !is_valid_status(&c.status) {
-        return Err("statut invalide".to_string());
-    }
+    validate_status(&c.status)?;
     if let Some(endpoint) = &c.endpoint {
         if !trusted::is_trusted_endpoint_for_connector(&c.id, endpoint) {
             return Err("endpoint MCP non autorisé".to_string());
@@ -165,4 +168,12 @@ fn storage_path() -> PathBuf {
 
 fn is_valid_status(status: &str) -> bool {
     status == "connected" || status == "disconnected"
+}
+
+pub(crate) fn validate_status(status: &str) -> Result<(), String> {
+    if is_valid_status(status) {
+        Ok(())
+    } else {
+        Err("statut invalide".to_string())
+    }
 }

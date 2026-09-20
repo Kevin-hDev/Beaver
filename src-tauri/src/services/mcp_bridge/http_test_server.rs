@@ -3,20 +3,25 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use wiremock::{matchers::any, Mock, MockServer, Request, ResponseTemplate};
 
 pub(super) async fn legacy_session_server(call_status: u16) -> MockServer {
-    legacy_server(call_status, None, None).await
+    legacy_server(call_status, None, None, None).await
 }
 
 pub(super) async fn legacy_slow_discover_server() -> MockServer {
-    legacy_server(200, Some(std::time::Duration::from_secs(11)), None).await
+    legacy_server(200, Some(std::time::Duration::from_secs(11)), None, None).await
 }
 
 pub(super) async fn legacy_slow_list_server() -> MockServer {
-    legacy_server(200, None, Some(std::time::Duration::from_secs(11))).await
+    legacy_server(200, None, None, Some(std::time::Duration::from_secs(11))).await
+}
+
+pub(super) async fn legacy_slow_initialize_server() -> MockServer {
+    legacy_server(200, None, Some(std::time::Duration::from_millis(300)), None).await
 }
 
 async fn legacy_server(
     call_status: u16,
     discover_delay: Option<std::time::Duration>,
+    initialize_delay: Option<std::time::Duration>,
     list_delay: Option<std::time::Duration>,
 ) -> MockServer {
     let server = MockServer::start().await;
@@ -44,12 +49,18 @@ async fn legacy_server(
                         None => response,
                     }
                 }
-                Some("initialize") => ResponseTemplate::new(200)
-                    .set_body_json(json!({"jsonrpc":"2.0","id":id,"result":{
-                        "protocolVersion":"2025-03-26", "capabilities":{},
-                        "serverInfo":{"name":"test-server","version":"1.0.0"}
-                    }}))
-                    .insert_header("Mcp-Session-Id", "fixture-session"),
+                Some("initialize") => {
+                    let response = ResponseTemplate::new(200)
+                        .set_body_json(json!({"jsonrpc":"2.0","id":id,"result":{
+                            "protocolVersion":"2025-03-26", "capabilities":{},
+                            "serverInfo":{"name":"test-server","version":"1.0.0"}
+                        }}))
+                        .insert_header("Mcp-Session-Id", "fixture-session");
+                    match initialize_delay {
+                        Some(delay) => response.set_delay(delay),
+                        None => response,
+                    }
+                }
                 Some("notifications/initialized") => ResponseTemplate::new(202),
                 Some("tools/list") => {
                     let response = ResponseTemplate::new(200).set_body_json(json!({

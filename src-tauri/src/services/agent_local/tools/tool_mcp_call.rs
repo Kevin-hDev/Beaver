@@ -42,7 +42,7 @@ pub(super) async fn call(args: &Value) -> ToolResult {
 
     match tokio::time::timeout(
         MCP_CALL_TIMEOUT,
-        connector.transport.call_tool(&tool.name, arguments.clone()),
+        registry::call_enabled_tool(&connector, &tool.name, arguments.clone()),
     )
     .await
     {

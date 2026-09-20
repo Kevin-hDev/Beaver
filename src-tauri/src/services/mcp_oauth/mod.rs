@@ -5,6 +5,8 @@ pub mod flow_auth;
 pub mod pkce;
 pub mod static_credentials;
 pub mod storage;
+#[cfg(test)]
+mod storage_tests;
 pub mod trusted_oauth;
 pub mod types;
 

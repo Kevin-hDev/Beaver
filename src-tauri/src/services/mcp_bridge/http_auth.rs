@@ -8,6 +8,7 @@ impl HttpTransport {
             connector_id,
             endpoint,
             transient_token: None,
+            generation: None,
         }
     }
 
@@ -20,6 +21,7 @@ impl HttpTransport {
             connector_id,
             endpoint,
             transient_token: Some(token),
+            generation: None,
         }
     }
 

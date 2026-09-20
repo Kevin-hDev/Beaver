@@ -20,21 +20,10 @@ const OPERATION_TIMEOUT: Duration = Duration::from_secs(30);
 // Keep shutdown inside the operation budget, even when the request uses its full allowance.
 const SHUTDOWN_RESERVE: Duration = Duration::from_secs(5);
 
-async fn start(
-    connector_id: &str,
-    endpoint: &str,
-    token: &str,
-) -> Result<RunningService<RoleClient, ClientConfig>, String> {
-    let client = BeaverHttpClient::new(connector_id, endpoint, token)?;
-    start_with_client(client, endpoint)
-        .await
-        .map_err(|_| "connexion MCP indisponible".to_string())
-}
-
 pub(super) async fn start_with_client(
     client: BeaverHttpClient,
     endpoint: &str,
-) -> Result<RunningService<RoleClient, ClientConfig>, rmcp::service::ClientInitializeError> {
+) -> Result<RunningService<RoleClient, ClientConfig>, Box<rmcp::service::ClientInitializeError>> {
     let cancel_client_on_drop = client.cancellation.clone().drop_guard();
     let mut transport_config = StreamableHttpClientTransportConfig::with_uri(endpoint);
     transport_config.auth_header = None;
@@ -53,7 +42,10 @@ pub(super) async fn start_with_client(
         preferred_versions: vec![ProtocolVersion::V_2026_07_28, ProtocolVersion::V_2025_11_25],
         legacy_version: Some(ProtocolVersion::V_2025_03_26),
     };
-    let service = identity.serve_with_lifecycle(transport, lifecycle).await?;
+    let service = identity
+        .serve_with_lifecycle(transport, lifecycle)
+        .await
+        .map_err(Box::new)?;
     cancel_client_on_drop.disarm();
     service
         .set_response_cache_config(ClientCacheConfig::disabled())
@@ -112,6 +104,44 @@ pub(super) async fn call_tool(
     name: &str,
     args: Value,
 ) -> Result<McpToolResult, McpCallError> {
+    call_tool_checked(connector_id, endpoint, token, name, args, None).await
+}
+
+pub(super) async fn call_tool_checked(
+    connector_id: &str,
+    endpoint: &str,
+    token: Option<&str>,
+    name: &str,
+    args: Value,
+    generation: Option<u64>,
+) -> Result<McpToolResult, McpCallError> {
+    let token = zeroize::Zeroizing::new(token.ok_or(McpCallError::Unavailable)?.to_owned());
+    let client = BeaverHttpClient::new(connector_id, endpoint, &token)
+        .map_err(|_| McpCallError::Unavailable)?;
+    let checked_id = connector_id.to_owned();
+    call_tool_with_client(
+        client,
+        endpoint.to_owned(),
+        name,
+        args,
+        move || match generation {
+            Some(generation) => super::registry::authorize_business_send(&checked_id, generation),
+            None => Ok(()),
+        },
+    )
+    .await
+}
+
+pub(super) async fn call_tool_with_client<F>(
+    client: BeaverHttpClient,
+    endpoint: String,
+    name: &str,
+    args: Value,
+    authorize: F,
+) -> Result<McpToolResult, McpCallError>
+where
+    F: Fn() -> Result<(), McpCallError> + Send + Sync + 'static,
+{
     if name.is_empty()
         || name.len() > 64
         || !name
@@ -125,9 +155,6 @@ pub(super) async fn call_tool(
         .as_object()
         .cloned()
         .ok_or(McpCallError::InvalidResponse)?;
-    let token = zeroize::Zeroizing::new(token.ok_or(McpCallError::Unavailable)?.to_owned());
-    let connector_id = connector_id.to_owned();
-    let endpoint = endpoint.to_owned();
     let name = name.to_owned();
     let (mut sender, receiver) = tokio::sync::oneshot::channel();
     tokio::spawn(async move {
@@ -139,23 +166,27 @@ pub(super) async fn call_tool(
                 _ = sender.closed() => return Err(McpCallError::Transport),
                 result = tokio::time::timeout_at(
                     tokio::time::Instant::from_std(deadline),
-                    start(&connector_id, &endpoint, &token),
+                    start_with_client(client, &endpoint),
                 ) => result.map_err(|_| McpCallError::Transport)?
                     .map_err(|_| McpCallError::Unavailable)?,
             };
             let mut params = CallToolRequestParams::new(name);
             params.arguments = Some(arguments);
-            let result = tokio::select! {
-                _ = sender.closed() => Err(McpCallError::Transport),
-                result = tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), service.call_tool_once(params)) => {
-                    match result {
-                        Ok(Ok(CallToolResponse::Complete(value))) => {
-                            serde_json::to_value(value)
-                                .map_err(|_| McpCallError::InvalidResponse)
-                                .and_then(|value| super::result::complete(&value))
+            let result = if authorize().is_err() {
+                Err(McpCallError::Unavailable)
+            } else {
+                tokio::select! {
+                    _ = sender.closed() => Err(McpCallError::Transport),
+                    result = tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), service.call_tool_once(params)) => {
+                        match result {
+                            Ok(Ok(CallToolResponse::Complete(value))) => {
+                                serde_json::to_value(value)
+                                    .map_err(|_| McpCallError::InvalidResponse)
+                                    .and_then(|value| super::result::complete(&value))
+                            }
+                            Ok(Ok(_)) => Err(McpCallError::InvalidResponse),
+                            _ => Err(McpCallError::Transport),
                         }
-                        Ok(Ok(_)) => Err(McpCallError::InvalidResponse),
-                        _ => Err(McpCallError::Transport),
                     }
                 }
             };
