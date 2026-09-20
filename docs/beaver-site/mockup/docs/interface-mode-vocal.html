@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Voice mode</title>
+<meta name="description" content="Dictate into the composer on macOS and Windows. Transcription runs entirely on your machine, with three models to choose from, resumable downloads and recovery for an interrupted dictation.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Beaver">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://kevin-hdev.github.io/Beaver/docs/interface-mode-vocal.html">
+<meta property="og:title" content="Beaver Docs — Voice mode">
+<meta property="og:description" content="Dictate into the composer on macOS and Windows. Transcription runs entirely on your machine, with three models to choose from, resumable downloads and recovery for an interrupted dictation.">
+<meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Beaver mascot with the wordmark BEAVER. and the tagline Build your dam. Open source — macOS, Linux, Windows.">
+<meta name="twitter:card" content="summary_large_image">
+<script src="../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Voice mode</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/interface-mode-vocal.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="interface-mode-vocal.html" hreflang="en" aria-current="true">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Speak instead of <em>typing</em></h1>
+    <p><b>Voice mode exists on macOS and Windows only.</b> On Linux it is not shown at all: no microphone button in the composer, no section in the settings — the feature is absent rather than displayed broken. Everything on this page therefore concerns macOS and Windows.</p>
+    <p>A microphone button sits in the composer's action row. You press it, you speak, the text lands in the draft. The transcription runs on your machine, using a model you install once.</p>
+
+    <h2 id="rien-ne-part">Nothing leaves the machine</h2>
+    <p>The audio is captured, converted and transcribed locally. No recording is sent to any server, and nothing is sent to your model provider either: what reaches the agent is the text you have validated, exactly as if you had typed it.</p>
+    <p>The first time you open voice mode, a short dialog says it in the application's own words: <b>“Audio is processed locally on this device and is never sent automatically.”</b> You accept it once.</p>
+    <p>The only thing that travels over the network is the <b>one-off download of the transcription model</b>, from the public repository where it is published. After that, dictation works with no internet connection.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      The audio itself is never written to a permanent file. Only the resulting text is kept, and only long enough to be inserted into your draft — or to be offered for recovery, as described below.
+    </div>
+
+    <h2 id="les-modeles">The three models</h2>
+    <p>Beaver ships a fixed catalog of three transcription models. You pick one, it is downloaded, and it becomes the engine for your dictations. You can install several and switch between them.</p>
+
+    <table>
+      <caption class="crumb">The transcription models available, and what separates them</caption>
+      <tr><th>Model</th><th>Languages</th><th>Language choice</th><th>Download</th><th>On disk</th><th>License</th></tr>
+      <tr><td><b>Parakeet TDT v3</b></td><td>25, European</td><td>Automatic only</td><td>487 MB</td><td>670 MB</td><td>CC-BY-4.0</td></tr>
+      <tr><td><b>Qwen3-ASR 0.6B</b></td><td>30, worldwide</td><td>Automatic only</td><td>879 MB</td><td>987 MB</td><td>Apache-2.0</td></tr>
+      <tr><td><b>Cohere Transcribe</b></td><td>14</td><td>Explicit, you pick it</td><td>1.70 GB</td><td>2.89 GB</td><td>Apache-2.0</td></tr>
+    </table>
+
+    <p>The column that matters most is the third one, and it is not a preference — it is a property of the engine.</p>
+    <ul>
+      <li><b>Parakeet TDT v3</b> and <b>Qwen3-ASR 0.6B</b> detect the spoken language by themselves. The language setting is then fixed on “Automatic detection” and cannot be changed: forcing a language on an engine that cannot consume one would be a lie in the interface.</li>
+      <li><b>Cohere Transcribe</b> works the other way round: it needs to be told which language it is listening to. When you select it, the language setting becomes a real choice, with “Follow interface” as its starting point.</li>
+    </ul>
+
+    <p>Qwen3-ASR 0.6B is also the only one to declare <b>22 regional variants</b> on top of its thirty languages — Chinese provincial accents, Cantonese from Hong Kong and Guangdong, Wu, Min Nan.</p>
+
+    <p>Alongside your chosen model, Beaver installs a fourth, much smaller one: a <b>644 KB voice-activity detector</b>. It is what tells silence from speech, so the dictation can stop by itself when you stop talking. It is not a transcription model and it is not something you choose.</p>
+
+    <h2 id="telechargement">Downloading a model, and resuming it</h2>
+    <p>These are large files, and a large file gets interrupted. The download is built for that.</p>
+    <ul>
+      <li>Progress is written to a checkpoint on disk — <b>every 4 MB, and at most every 5 seconds</b>. What the checkpoint records is only what is genuinely durable on the disk, not what has merely been received.</li>
+      <li>After an interruption, the transfer <b>restarts from that point</b>, not from zero. A closed application, a lost connection or a machine going to sleep costs you the last few megabytes, not the last gigabyte.</li>
+      <li>The server's file fingerprint is stored with the checkpoint. If the published file has changed in the meantime, the partial download is thrown away and started again instead of being stitched onto a different file.</li>
+      <li>The archive and each of its files carry a <b>pinned SHA-256</b>. A file that does not match is not installed.</li>
+      <li>Before starting, Beaver checks the free space for the archive, the installed model and a 64 MB margin. If it is not there, the download is refused with a clear message rather than filling your disk.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Where it lands</span>
+      Installed models go into <code>voice-models/</code> inside the data folder, and a download in progress into <code>voice-models/partials/</code>. Removing a model frees the whole thing.
+    </div>
+
+    <h2 id="les-reglages">The settings</h2>
+    <p><b>Settings › Advanced › Voice mode.</b> The section gives the on/off switch and the model; the <b>Advanced</b> button opens the full panel, with the installed models, the microphone and the memory setting.</p>
+
+    <table>
+      <caption class="crumb">Every voice setting, its options and its starting value</caption>
+      <tr><th>Setting</th><th>Options</th><th>Default</th></tr>
+      <tr><td>Voice dictation</td><td>On or off</td><td>On</td></tr>
+      <tr><td>Transcription model</td><td>The three models above</td><td>Parakeet TDT v3</td></tr>
+      <tr><td>Input device</td><td>System microphone, or one of the detected inputs</td><td>System microphone</td></tr>
+      <tr><td>Microphone gain</td><td>0 dB, +3 dB, +6 dB, +9 dB</td><td><b>+6 dB</b></td></tr>
+      <tr><td>Silence before stop</td><td>3, 5, 10, 20, 30 seconds, or never</td><td><b>5 seconds</b></td></tr>
+      <tr><td>Maximum duration</td><td>2, 5, 10, 20, 30 minutes</td><td><b>10 minutes</b></td></tr>
+      <tr><td>Dictation language</td><td>Depends on the model — see above</td><td>Automatic detection</td></tr>
+      <tr><td>Keyboard shortcut</td><td>Any combination you press</td><td>None</td></tr>
+      <tr><td>Unload model</td><td>Immediately, after 1, 2, 5 or 15 minutes, or when Beaver closes</td><td><b>After 2 minutes</b></td></tr>
+    </table>
+
+    <p>Two of them deserve a word.</p>
+    <ul>
+      <li><b>Microphone gain</b> amplifies the signal before transcription, for a voice the machine hears too faintly. It starts at +6 dB rather than 0: a laptop microphone at arm's length is usually below what the model wants.</li>
+      <li><b>Unload model</b> decides how long the model stays in memory after a dictation. Keeping it loaded makes the next dictation start instantly; unloading it immediately gives the memory back. Two minutes is the middle ground.</li>
+    </ul>
+
+    <p>The panel also has a <b>Try</b> button, which runs a dictation that goes nowhere: the text is displayed for you to judge, along with the compute time and the delay before the text appears. It is the honest way to compare two models on your own voice and your own microphone, since the panel otherwise only shows the last measured speed, as a multiple of real time.</p>
+
+    <h2 id="raccourcis">The keyboard</h2>
+    <p>Two different things, and they do not work the same way.</p>
+
+    <table>
+      <caption class="crumb">The keys, and when they apply</caption>
+      <tr><th>Key</th><th>What it does</th><th>When</th></tr>
+      <tr><td><b>Your shortcut</b></td><td>Starts a dictation; during one, ends it and transcribes</td><td>Anywhere in the application, once you have set one</td></tr>
+      <tr><td><b>Enter</b></td><td>Ends the dictation and transcribes</td><td>While listening only</td></tr>
+      <tr><td><b>Escape</b></td><td>Cancels the dictation in progress</td><td>At any stage other than idle</td></tr>
+    </table>
+
+    <p>There is <b>no shortcut by default</b>: you create one yourself, in the voice panel, by pressing the combination you want. Beaver refuses it if it collides with one of its own shortcuts, or with the seven system combinations it will not take over: <b>⌘/Ctrl</b> plus <b>A, C, V, X, Z, Q, W</b>.</p>
+    <p>Enter and Escape are ignored when Shift is held, while a Chinese, Japanese or Korean input method is composing, and when the cursor is in a dialog or in the integrated terminal — so they keep their usual meaning wherever they already had one.</p>
+
+    <h2 id="recuperation">Recovering an interrupted dictation</h2>
+    <p>You have spoken for two minutes and something goes wrong: you hit Escape by mistake, or you close the conversation the text was going into. The words are not lost.</p>
+    <ul>
+      <li><b>Past 30 seconds of actual speech</b>, a cancelled dictation is not thrown away: its text is put aside, and a line appears under the composer offering to restore it, with the length of what was captured.</li>
+      <li>Below that threshold it is discarded straight away. A three-second false start is not worth a recovery prompt.</li>
+      <li>The offer stands for <b>10 minutes</b>, then it expires on its own. You can also dismiss it yourself.</li>
+      <li>The same thing happens when the text was ready but its destination had gone: closing the draft during transcription turns the result into a recovery instead of losing it.</li>
+    </ul>
+
+    <h2 id="les-limites">The limits</h2>
+
+    <table>
+      <caption class="crumb">What voice mode caps, and at what value</caption>
+      <tr><th>Limit</th><th>Value</th></tr>
+      <tr><td>Dictations at the same time</td><td><b>One</b>, across the whole application</td></tr>
+      <tr><td>Absolute capture length</td><td><b>30 minutes</b>, whatever the duration setting says</td></tr>
+      <tr><td>Silence with nothing said at all</td><td>Stops after <b>2 minutes</b></td></tr>
+      <tr><td>Length of a transcript</td><td><b>100,000 characters</b></td></tr>
+      <tr><td>Audio sample rate</td><td>16 kHz</td></tr>
+    </table>
+
+    <p>The single-dictation rule is why the button in another tab says the dictation is active elsewhere and offers to take you there, rather than starting a second one.</p>
+
+    <h2 id="pieges">Common pitfalls</h2>
+
+    <table>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>No microphone button, no voice section in the settings</td><td>You are on Linux, or dictation is switched off, or no input device was found</td><td>On macOS and Windows, check the switch and the input device; on Linux the feature does not exist</td></tr>
+      <tr><td>The language setting cannot be changed</td><td>Parakeet and Qwen detect the language themselves</td><td>Switch to Cohere Transcribe if you need to force a language</td></tr>
+      <tr><td>“Another voice operation is running”</td><td>A dictation is already in progress, possibly in another tab</td><td>Finish or cancel it; the button offers to take you to it</td></tr>
+      <tr><td>The dictation stops while you are still thinking</td><td>Silence before stop is at 5 seconds</td><td>Raise it, or set it to never</td></tr>
+      <tr><td>Nothing was transcribed after a long wait</td><td>No speech at all was detected for two minutes</td><td>Check the input device and the gain</td></tr>
+      <tr><td>The transcription is patchy on a quiet voice</td><td>The signal is too weak for the model</td><td>Raise the microphone gain, up to +9 dB</td></tr>
+      <tr><td>The download refuses to start</td><td>Not enough free space for the archive, the model and its margin</td><td>Free some disk space, or choose a smaller model</td></tr>
+      <tr><td>The first dictation after a pause is slow to start</td><td>The model was unloaded from memory</td><td>Push back the unload delay, or set it to when Beaver closes</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Going further</h2>
+    <ul>
+      <li><a href="reference-confidentialite.html">Privacy</a> — what does and does not leave the machine</li>
+      <li><a href="reference-raccourcis-clavier.html">Keyboard shortcuts</a></li>
+      <li><a href="reglages-application.html">Settings · Application</a></li>
+      <li><a href="interface-conversations.html">Conversations</a> — the composer the dictation writes into</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

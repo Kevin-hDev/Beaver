@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Mode vocal</title>
+<meta name="description" content="Dicter dans le composeur, sur macOS et Windows. La transcription se fait entièrement sur ta machine, avec trois modèles au choix, des téléchargements reprenables et la récupération d'une dictée interrompue.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Beaver">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://kevin-hdev.github.io/Beaver/fr/docs/interface-mode-vocal.html">
+<meta property="og:title" content="Beaver Docs — Mode vocal">
+<meta property="og:description" content="Dicter dans le composeur, sur macOS et Windows. La transcription se fait entièrement sur ta machine, avec trois modèles au choix, des téléchargements reprenables et la récupération d'une dictée interrompue.">
+<meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La mascotte Beaver avec le wordmark BEAVER. et la devise Build your dam. Open source — macOS, Linux, Windows.">
+<meta name="twitter:card" content="summary_large_image">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Mode vocal</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-mode-vocal.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/interface-mode-vocal.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Parler plutôt que <em>taper</em></h1>
+    <p><b>Le mode vocal n'existe que sur macOS et Windows.</b> Sur Linux, il n'est pas affiché du tout : pas de bouton micro dans le composeur, pas de section dans les réglages — la fonctionnalité est absente plutôt que montrée cassée. Tout ce qui suit concerne donc macOS et Windows.</p>
+    <p>Un bouton micro se trouve dans la barre d'actions du composeur. Tu appuies, tu parles, le texte arrive dans le brouillon. La transcription se fait sur ta machine, avec un modèle que tu installes une fois.</p>
+
+    <h2 id="rien-ne-part">Rien ne quitte la machine</h2>
+    <p>Le son est capté, converti et transcrit localement. Aucun enregistrement n'est envoyé sur un serveur, et rien ne part non plus vers ton fournisseur de modèle : ce qui arrive à l'agent, c'est le texte que tu as validé, exactement comme si tu l'avais tapé.</p>
+    <p>La première fois que tu ouvres le mode vocal, une courte fenêtre le dit avec les mots de l'application : <b>« Le son est traité localement sur cet appareil et n'est jamais envoyé automatiquement. »</b> Tu l'acceptes une fois.</p>
+    <p>La seule chose qui passe par le réseau, c'est le <b>téléchargement du modèle de transcription</b>, une fois, depuis le dépôt public où il est publié. Ensuite, la dictée fonctionne sans connexion.</p>
+
+    <div class="callout">
+      <span class="t">Remarque</span>
+      Le son lui-même n'est jamais écrit dans un fichier permanent. Seul le texte obtenu est conservé, et seulement le temps d'être inséré dans ton brouillon — ou d'être proposé en récupération, comme décrit plus bas.
+    </div>
+
+    <h2 id="les-modeles">Les trois modèles</h2>
+    <p>Beaver embarque un catalogue figé de trois modèles de transcription. Tu en choisis un, il se télécharge, et il devient le moteur de tes dictées. Tu peux en installer plusieurs et passer de l'un à l'autre.</p>
+
+    <table>
+      <caption class="crumb">Les modèles de transcription disponibles, et ce qui les sépare</caption>
+      <tr><th>Modèle</th><th>Langues</th><th>Choix de la langue</th><th>Téléchargement</th><th>Sur le disque</th><th>Licence</th></tr>
+      <tr><td><b>Parakeet TDT v3</b></td><td>25, européennes</td><td>Automatique seulement</td><td>487 Mo</td><td>670 Mo</td><td>CC-BY-4.0</td></tr>
+      <tr><td><b>Qwen3-ASR 0.6B</b></td><td>30, mondiales</td><td>Automatique seulement</td><td>879 Mo</td><td>987 Mo</td><td>Apache-2.0</td></tr>
+      <tr><td><b>Cohere Transcribe</b></td><td>14</td><td>Explicite, tu la choisis</td><td>1,70 Go</td><td>2,89 Go</td><td>Apache-2.0</td></tr>
+    </table>
+
+    <p>La colonne qui compte le plus est la troisième, et ce n'est pas une préférence — c'est une propriété du moteur.</p>
+    <ul>
+      <li><b>Parakeet TDT v3</b> et <b>Qwen3-ASR 0.6B</b> détectent seuls la langue parlée. Le réglage de langue est alors figé sur « Détection automatique » et ne peut pas être changé : imposer une langue à un moteur incapable de s'en servir serait un mensonge dans l'interface.</li>
+      <li><b>Cohere Transcribe</b> fonctionne à l'inverse : il faut lui dire quelle langue il écoute. Quand tu le sélectionnes, le réglage de langue devient un vrai choix, avec « Suivre l'interface » comme point de départ.</li>
+    </ul>
+
+    <p>Qwen3-ASR 0.6B est aussi le seul à déclarer <b>22 variantes régionales</b> en plus de ses trente langues — accents provinciaux chinois, cantonais de Hong Kong et du Guangdong, wu, min nan.</p>
+
+    <p>À côté du modèle que tu choisis, Beaver en installe un quatrième, bien plus petit : un <b>détecteur d'activité vocale de 644 Ko</b>. C'est lui qui distingue le silence de la parole, pour que la dictée s'arrête d'elle-même quand tu te tais. Ce n'est pas un modèle de transcription, et il ne se choisit pas.</p>
+
+    <h2 id="telechargement">Télécharger un modèle, et reprendre</h2>
+    <p>Ce sont de gros fichiers, et un gros fichier se fait interrompre. Le téléchargement est conçu pour ça.</p>
+    <ul>
+      <li>L'avancement est écrit sur le disque sous forme de point de reprise — <b>tous les 4 Mo, et au plus toutes les 5 secondes</b>. Ce que ce point enregistre, c'est uniquement ce qui est réellement durable sur le disque, pas ce qui a simplement été reçu.</li>
+      <li>Après une interruption, le transfert <b>repart de ce point</b>, pas de zéro. Une application fermée, une connexion perdue ou une machine mise en veille te coûtent les derniers mégaoctets, pas le dernier gigaoctet.</li>
+      <li>L'empreinte du fichier côté serveur est conservée avec le point de reprise. Si le fichier publié a changé entre-temps, le téléchargement partiel est jeté et recommencé, au lieu d'être recollé à un autre fichier.</li>
+      <li>L'archive et chacun de ses fichiers portent une <b>empreinte SHA-256 fixée d'avance</b>. Un fichier qui ne correspond pas n'est pas installé.</li>
+      <li>Avant de démarrer, Beaver vérifie la place libre pour l'archive, le modèle installé et une marge de 64 Mo. Si elle n'y est pas, le téléchargement est refusé avec un message clair plutôt que de remplir ton disque.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Où ça se range</span>
+      Les modèles installés vont dans <code>voice-models/</code>, à l'intérieur du dossier de données, et un téléchargement en cours dans <code>voice-models/partials/</code>. Supprimer un modèle libère l'ensemble.
+    </div>
+
+    <h2 id="les-reglages">Les réglages</h2>
+    <p><b>Réglages › Avancé › Mode vocal.</b> La section donne l'interrupteur et le modèle ; le bouton <b>Avancé</b> ouvre le panneau complet, avec les modèles installés, le micro et le réglage de mémoire.</p>
+
+    <table>
+      <caption class="crumb">Chaque réglage vocal, ses options et sa valeur de départ</caption>
+      <tr><th>Réglage</th><th>Options</th><th>Par défaut</th></tr>
+      <tr><td>Dictée vocale</td><td>Activée ou non</td><td>Activée</td></tr>
+      <tr><td>Modèle de transcription</td><td>Les trois modèles ci-dessus</td><td>Parakeet TDT v3</td></tr>
+      <tr><td>Périphérique d'entrée</td><td>Micro du système, ou une des entrées détectées</td><td>Micro du système</td></tr>
+      <tr><td>Gain du microphone</td><td>0 dB, +3 dB, +6 dB, +9 dB</td><td><b>+6 dB</b></td></tr>
+      <tr><td>Silence avant arrêt</td><td>3, 5, 10, 20, 30 secondes, ou jamais</td><td><b>5 secondes</b></td></tr>
+      <tr><td>Durée maximale</td><td>2, 5, 10, 20, 30 minutes</td><td><b>10 minutes</b></td></tr>
+      <tr><td>Langue de dictée</td><td>Dépend du modèle — voir plus haut</td><td>Détection automatique</td></tr>
+      <tr><td>Raccourci clavier</td><td>N'importe quelle combinaison que tu appuies</td><td>Aucun</td></tr>
+      <tr><td>Décharger le modèle</td><td>Immédiatement, après 1, 2, 5 ou 15 minutes, ou à la fermeture de Beaver</td><td><b>Après 2 minutes</b></td></tr>
+    </table>
+
+    <p>Deux d'entre eux méritent un mot.</p>
+    <ul>
+      <li><b>Le gain du microphone</b> amplifie le signal avant la transcription, pour une voix que la machine entend trop faiblement. Il démarre à +6 dB et non à 0 : un micro d'ordinateur portable, à bout de bras, est en général en dessous de ce que le modèle attend.</li>
+      <li><b>Décharger le modèle</b> décide du temps pendant lequel le modèle reste en mémoire après une dictée. Le garder chargé fait démarrer la dictée suivante instantanément ; le décharger tout de suite rend la mémoire. Deux minutes est l'entre-deux.</li>
+    </ul>
+
+    <p>Le panneau a aussi un bouton <b>Essayer</b>, qui lance une dictée qui ne va nulle part : le texte s'affiche pour que tu le juges, avec le temps de calcul et le délai avant l'apparition du texte. C'est la façon honnête de comparer deux modèles sur ta propre voix et ton propre micro, puisque le panneau n'affiche sinon que la dernière vitesse mesurée, sous forme de multiple du temps réel.</p>
+
+    <h2 id="raccourcis">Le clavier</h2>
+    <p>Deux choses différentes, et elles ne fonctionnent pas pareil.</p>
+
+    <table>
+      <caption class="crumb">Les touches, et quand elles s'appliquent</caption>
+      <tr><th>Touche</th><th>Ce qu'elle fait</th><th>Quand</th></tr>
+      <tr><td><b>Ton raccourci</b></td><td>Démarre une dictée ; pendant une dictée, l'arrête et transcrit</td><td>Partout dans l'application, une fois que tu en as défini un</td></tr>
+      <tr><td><b>Entrée</b></td><td>Arrête la dictée et transcrit</td><td>Pendant l'écoute uniquement</td></tr>
+      <tr><td><b>Échap</b></td><td>Annule la dictée en cours</td><td>À toute étape autre que le repos</td></tr>
+    </table>
+
+    <p>Il n'y a <b>aucun raccourci par défaut</b> : tu le crées toi-même, dans le panneau vocal, en appuyant sur la combinaison que tu veux. Beaver la refuse si elle entre en conflit avec un de ses propres raccourcis, ou avec les sept combinaisons système qu'il ne reprend jamais : <b>⌘/Ctrl</b> plus <b>A, C, V, X, Z, Q, W</b>.</p>
+    <p>Entrée et Échap sont ignorées quand Maj est enfoncée, pendant la saisie d'une méthode d'entrée chinoise, japonaise ou coréenne, et quand le curseur est dans une fenêtre de dialogue ou dans le terminal intégré — elles y gardent donc le sens qu'elles avaient déjà.</p>
+
+    <h2 id="recuperation">Récupérer une dictée interrompue</h2>
+    <p>Tu as parlé deux minutes et quelque chose tourne mal : tu appuies sur Échap par erreur, ou tu fermes la conversation dans laquelle le texte allait. Les mots ne sont pas perdus.</p>
+    <ul>
+      <li><b>Au-delà de 30 secondes de parole réelle</b>, une dictée annulée n'est pas jetée : son texte est mis de côté, et une ligne apparaît sous le composeur pour proposer de le restaurer, avec la durée de ce qui a été capté.</li>
+      <li>En dessous de ce seuil, elle est écartée tout de suite. Un faux départ de trois secondes ne mérite pas une proposition de récupération.</li>
+      <li>La proposition tient <b>10 minutes</b>, puis elle expire d'elle-même. Tu peux aussi la supprimer toi-même.</li>
+      <li>La même chose se produit quand le texte était prêt mais que sa destination avait disparu : fermer le brouillon pendant la transcription transforme le résultat en récupération au lieu de le perdre.</li>
+    </ul>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Ce que le mode vocal borne, et à quelle valeur</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Dictées en même temps</td><td><b>Une seule</b>, dans toute l'application</td></tr>
+      <tr><td>Durée de capture absolue</td><td><b>30 minutes</b>, quoi que dise le réglage de durée</td></tr>
+      <tr><td>Silence sans avoir rien dit du tout</td><td>Arrêt après <b>2 minutes</b></td></tr>
+      <tr><td>Longueur d'une transcription</td><td><b>100 000 caractères</b></td></tr>
+      <tr><td>Fréquence d'échantillonnage</td><td>16 kHz</td></tr>
+    </table>
+
+    <p>La règle de la dictée unique explique pourquoi le bouton, dans un autre onglet, indique que la dictée est active ailleurs et propose de t'y emmener, plutôt que d'en démarrer une seconde.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Pas de bouton micro, pas de section vocale dans les réglages</td><td>Tu es sur Linux, ou la dictée est désactivée, ou aucune entrée n'a été trouvée</td><td>Sur macOS et Windows, vérifie l'interrupteur et le périphérique d'entrée ; sur Linux la fonctionnalité n'existe pas</td></tr>
+      <tr><td>Le réglage de langue ne se change pas</td><td>Parakeet et Qwen détectent la langue eux-mêmes</td><td>Passe à Cohere Transcribe s'il te faut imposer une langue</td></tr>
+      <tr><td>« Une autre opération vocale est en cours. »</td><td>Une dictée tourne déjà, peut-être dans un autre onglet</td><td>Termine-la ou annule-la ; le bouton propose de t'y emmener</td></tr>
+      <tr><td>La dictée s'arrête pendant que tu réfléchis encore</td><td>Le silence avant arrêt est à 5 secondes</td><td>Augmente-le, ou mets-le sur jamais</td></tr>
+      <tr><td>Rien n'a été transcrit après une longue attente</td><td>Aucune parole n'a été détectée pendant deux minutes</td><td>Vérifie le périphérique d'entrée et le gain</td></tr>
+      <tr><td>La transcription est trouée sur une voix basse</td><td>Le signal est trop faible pour le modèle</td><td>Monte le gain du microphone, jusqu'à +9 dB</td></tr>
+      <tr><td>Le téléchargement refuse de démarrer</td><td>Pas assez de place pour l'archive, le modèle et sa marge</td><td>Libère de l'espace disque, ou choisis un modèle plus petit</td></tr>
+      <tr><td>La première dictée après une pause est longue à démarrer</td><td>Le modèle avait été déchargé de la mémoire</td><td>Recule le délai de déchargement, ou mets-le à la fermeture de Beaver</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="reference-confidentialite.html">Confidentialité</a> — ce qui quitte la machine et ce qui n'en sort pas</li>
+      <li><a href="reference-raccourcis-clavier.html">Raccourcis clavier</a></li>
+      <li><a href="reglages-application.html">Réglages · Application</a></li>
+      <li><a href="interface-conversations.html">Conversations</a> — le composeur dans lequel la dictée écrit</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

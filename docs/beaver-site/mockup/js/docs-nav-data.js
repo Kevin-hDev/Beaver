@@ -27,6 +27,7 @@ var BEAVER_DOCS_NAV = [
     pages: [
       { slug: 'interface-vue-densemble', label: "Vue d'ensemble", label_en: 'Overview' },
       { slug: 'interface-conversations', label: 'Conversations', label_en: 'Conversations' },
+      { slug: 'interface-mode-vocal', label: 'Mode vocal', label_en: 'Voice mode' },
       { slug: 'interface-panneau-lateral', label: 'Panneau latéral', label_en: 'Side panel' },
       { slug: 'interface-fichiers-et-previews', label: 'Fichiers et prévisualisations', label_en: 'Files and previews' },
       { slug: 'interface-terminal', label: 'Terminal intégré', label_en: 'Built-in terminal' },
@@ -159,6 +160,7 @@ var BEAVER_DOCS_NAV = [
       { slug: 'reference-raccourcis-clavier', label: 'Raccourcis clavier', label_en: 'Keyboard shortcuts' },
       { slug: 'reference-themes', label: 'Thèmes et apparence', label_en: 'Themes and appearance' },
       { slug: 'reference-langues', label: 'Langues', label_en: 'Languages' },
+      { slug: 'reference-cli', label: 'La commande beaver', label_en: 'The beaver command' },
       { slug: 'reference-modele-de-securite', label: 'Modèle de sécurité', label_en: 'Security model' },
       { slug: 'reference-coffre-et-cles', label: 'Le coffre et les clés API', label_en: 'The vault and API keys' },
       { slug: 'reference-confidentialite', label: 'Confidentialité', label_en: 'Privacy' },

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — La commande beaver</title>
+<meta name="description" content="Une commande d'appoint livrée avec l'application : où sont tes données, ce qui tourne, ce qui cloche, ce que disent les journaux, comment mettre à jour et comment nettoyer.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Beaver">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://kevin-hdev.github.io/Beaver/fr/docs/reference-cli.html">
+<meta property="og:title" content="Beaver Docs — La commande beaver">
+<meta property="og:description" content="Une commande d'appoint livrée avec l'application : où sont tes données, ce qui tourne, ce qui cloche, ce que disent les journaux, comment mettre à jour et comment nettoyer.">
+<meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La mascotte Beaver avec le wordmark BEAVER. et la devise Build your dam. Open source — macOS, Linux, Windows.">
+<meta name="twitter:card" content="summary_large_image">
+<script src="../../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/nav.css">
+<link rel="stylesheet" href="../../css/forecast.css">
+<link rel="stylesheet" href="../../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Référence / La commande beaver</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reference-cli.html" hreflang="fr" aria-current="true">FR</a>
+      <a class="lang-opt" href="../../docs/reference-cli.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Beaver depuis un <em>terminal</em></h1>
+    <p>Une petite commande d'appoint, <code>beaver</code>, est livrée avec l'application. Elle ne pilote pas l'agent et n'ouvre pas de conversation : elle répond aux questions qu'on se pose quand quelque chose cloche. Où sont mes fichiers ? Est-ce que quelque chose tourne ? Qu'est-ce qui est cassé ? Que disent les journaux ? Y a-t-il une nouvelle version ? Qu'est-ce qu'on peut supprimer sans risque ?</p>
+    <p>Elle lit le même dossier de données que l'application, et elle n'a jamais besoin que celle-ci soit ouverte — deux de ses commandes exigent même qu'elle soit fermée.</p>
+
+    <h2 id="ou-il-est">Où elle se trouve</h2>
+    <p>Elle est embarquée dans l'application, à côté du programme principal. Il n'y a pas d'installation séparée, et <b>rien n'est ajouté à ton <code>PATH</code></b> : tu l'appelles par son chemin complet, ou tu te fabriques toi-même un raccourci.</p>
+
+    <table>
+      <caption class="crumb">Où se trouve la commande sur chaque système</caption>
+      <tr><th>Système</th><th>Chemin</th></tr>
+      <tr><td>macOS</td><td><code>/Applications/Beaver.app/Contents/MacOS/beaver</code></td></tr>
+      <tr><td>Windows</td><td><code>beaver.exe</code>, dans le dossier d'installation de Beaver</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Pour faire plus court</span>
+      Sur macOS, une ligne dans le fichier de configuration de ton shell suffit :
+      <code>alias beaver="/Applications/Beaver.app/Contents/MacOS/beaver"</code>. Rien dans Beaver n'en dépend — c'est purement pour ton confort.
+    </div>
+
+    <h2 id="les-commandes">Les commandes</h2>
+    <p>Lancer <code>beaver</code> sans argument, ou avec <code>--help</code>, affiche la liste.</p>
+
+    <table>
+      <caption class="crumb">Les sept commandes, et ce que chacune fait réellement</caption>
+      <tr><th>Commande</th><th>Ce qu'elle fait</th></tr>
+      <tr><td><code>beaver --version</code></td><td>Affiche la version installée, puis le chemin complet du programme qui a répondu. Utile quand tu soupçonnes d'appeler une vieille copie.</td></tr>
+      <tr><td><code>beaver paths</code></td><td>Liste dix emplacements sur le disque — le dossier de données, la configuration, le coffre, les conversations, les journaux, les projets, les skills, les résultats d'outils, les connecteurs MCP et le moteur Ollama — et signale ceux qui n'existent pas encore.</td></tr>
+      <tr><td><code>beaver status</code></td><td>Dit si l'application est ouverte, si un processus Ollama est présent, combien de modèles sont installés et ce qu'ils pèsent, la taille totale du dossier de données et ses trois plus gros sous-dossiers.</td></tr>
+      <tr><td><code>beaver doctor</code></td><td>Passe neuf vérifications locales et affiche chacune comme réussie ou échouée, avec une ligne de résolution pour chaque échec.</td></tr>
+      <tr><td><code>beaver logs</code></td><td>Affiche la fin d'un des trois fichiers de journal. Par défaut, le journal de l'application, 50 dernières lignes.</td></tr>
+      <tr><td><code>beaver update</code></td><td>Cherche une nouvelle version et, si l'application est fermée et que tu confirmes, la télécharge et l'installe.</td></tr>
+      <tr><td><code>beaver cleanup</code></td><td>Liste ce qui peut être supprimé sans rien perdre, puis le supprime après confirmation. Exige que l'application soit fermée.</td></tr>
+    </table>
+
+    <h2 id="paths">paths</h2>
+    <p>Tout ce que Beaver écrit vit sous un seul dossier, et cette commande te dit où, sans que tu aies à connaître la convention. Chaque ligne qui pointe vers quelque chose de pas encore créé le dit explicitement — c'est la réponse à « ma configuration a disparu, ou je ne l'ai simplement jamais changée ? ».</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> beaver paths
+Dossier des données : /Users/toi/.local/share/cl-go-dash
+Configuration : /Users/toi/.local/share/cl-go-dash/config.json
+Coffre : /Users/toi/.local/share/cl-go-dash/secrets.enc (pas encore créé)</pre>
+    </div>
+
+    <h2 id="status">status</h2>
+    <p>Un instantané de la machine, pas des serveurs. Elle regarde les processus qui tournent vraiment et les dossiers réellement présents sur le disque — elle ne demande rien au réseau, et elle n'affirme pas que le service Ollama répond, seulement que son processus est là.</p>
+    <p>Les trois plus gros sous-dossiers sont listés parce que la réponse à « pourquoi Beaver prend-il autant de place ? » est presque toujours l'un d'eux.</p>
+
+    <h2 id="doctor">doctor</h2>
+    <p>Neuf vérifications, dans cet ordre. Une vérification échouée affiche une flèche et la chose à faire.</p>
+
+    <table>
+      <caption class="crumb">Ce que doctor vérifie, et ce qu'un échec signifie</caption>
+      <tr><th>Vérification</th><th>Elle échoue quand</th></tr>
+      <tr><td>Dossier de données</td><td>Le dossier n'est pas accessible en écriture</td></tr>
+      <tr><td>Fichier de configuration</td><td><code>config.json</code> existe mais n'est pas valide</td></tr>
+      <tr><td>Coffre de clés API</td><td>Des fournisseurs sont enregistrés mais le fichier du coffre a disparu</td></tr>
+      <tr><td>Téléchargement Ollama interrompu</td><td>Un téléchargement a été coupé en cours de route</td></tr>
+      <tr><td>Bundle Ollama</td><td>Le moteur est là mais incomplet</td></tr>
+      <tr><td>Préparations Ollama</td><td>Des dossiers de préparation abandonnés traînent</td></tr>
+      <tr><td>Taille des journaux actifs</td><td>Un journal a dépassé sa propre borne</td></tr>
+      <tr><td>Fichiers temporaires</td><td>Des fichiers <code>.tmp</code> restent à la racine du dossier de données</td></tr>
+      <tr><td>Espace disque disponible</td><td>Moins de 2 Go sont disponibles</td></tr>
+    </table>
+
+    <p>Un fichier absent n'est pas un échec : une machine où Beaver n'a jamais été lancé passe. La commande ressort avec le code <code>1</code> dès qu'une vérification échoue, ce qui la rend utilisable dans un script.</p>
+
+    <h2 id="logs">logs</h2>
+    <p><code>beaver logs [app|gateway|reveils] [-n N]</code></p>
+
+    <table>
+      <caption class="crumb">Les trois sources de journal</caption>
+      <tr><th>Source</th><th>Fichier</th><th>Ce qu'il contient</th></tr>
+      <tr><td><code>app</code></td><td><code>logs/beaver.log</code></td><td>Le journal principal de l'application. C'est la valeur par défaut.</td></tr>
+      <tr><td><code>gateway</code></td><td><code>logs/gateway-audit.jsonl</code></td><td>La piste d'audit des canaux externes</td></tr>
+      <tr><td><code>reveils</code></td><td><code>logs/wakeups.jsonl</code></td><td>L'historique des exécutions de réveils programmés</td></tr>
+    </table>
+
+    <p><code>-n</code> prend un nombre entier entre <b>1 et 5 000</b> ; sans lui, les <b>50</b> dernières lignes sont affichées. Une source qui n'existe pas encore n'est pas une erreur : la commande le dit et ressort normalement.</p>
+    <p>Les caractères de contrôle du journal sont remplacés par <code>?</code> avant l'affichage, et une ligne est coupée à 16 384 caractères. Ce n'est pas de la cosmétique : une ligne de journal peut contenir n'importe quoi, et n'importe quoi affiché brut dans un terminal peut en prendre le contrôle.</p>
+
+    <h2 id="update">update</h2>
+    <p>Elle vérifie la version publiée, te dit laquelle est disponible, et demande avant d'agir. Trois réponses sont possibles : à jour, une mise à jour est disponible, ou la vérification n'a pas pu se faire.</p>
+    <ul>
+      <li><b>L'application doit être fermée.</b> Si elle est ouverte, la commande le dit et s'arrête. Elle revérifie aussi après ta réponse : ouvrir Beaver pendant qu'elle attend ta confirmation annule la mise à jour plutôt que de l'appliquer sous tes pieds.</li>
+      <li>La confirmation est explicite — <code>o</code> pour y aller, tout le reste annule.</li>
+      <li>Le téléchargement est vérifié contre le manifeste signé, sa taille et son empreinte SHA-256 avant d'être appliqué.</li>
+      <li>L'installation se poursuit ensuite en arrière-plan. Relance <code>beaver --version</code> une minute plus tard pour vérifier que c'est passé.</li>
+    </ul>
+
+    <h2 id="cleanup">cleanup</h2>
+    <p>La prudente. Elle ne touche jamais à tes conversations, à tes projets, à tes réglages ni à ton coffre. Elle ne liste que quatre familles de restes, qui sont des débris et non des données.</p>
+
+    <table>
+      <caption class="crumb">Ce que cleanup considère comme supprimable</caption>
+      <tr><th>Famille</th><th>Critère</th></tr>
+      <tr><td>Rotations du journal de l'application</td><td>Plus vieilles que 30 jours</td></tr>
+      <tr><td>Téléchargements Ollama interrompus</td><td>Fichiers partiels laissés par un transfert coupé</td></tr>
+      <tr><td>Préparations Ollama abandonnées</td><td>Dossiers de préparation qu'aucune installation n'utilise</td></tr>
+      <tr><td>Résultats d'outils</td><td>Plus vieux que 24 heures</td></tr>
+    </table>
+
+    <p>Elle affiche chaque élément avec sa taille et un total, puis demande. <code>beaver cleanup --dry-run</code> s'arrête là : elle montre la liste et ne supprime rien, et c'est la version à lancer en premier. Comme <code>update</code>, elle refuse de tourner pendant que Beaver est ouvert, et revérifie après ta réponse.</p>
+    <p>C'est aussi la commande vers laquelle <code>doctor</code> te renvoie quand il trouve des préparations abandonnées ou des fichiers temporaires égarés.</p>
+
+    <h2 id="langue-et-codes">Langue et codes de sortie</h2>
+    <p>La commande parle français ou anglais, et elle décide seule : elle lit <code>LC_ALL</code>, puis <code>LC_MESSAGES</code>, puis <code>LANG</code>, et retombe sur la langue du système. Tout ce qui n'est pas du français donne de l'anglais. C'est aussi comme ça qu'on la force dans un script — <code>LANG=en_US.UTF-8 beaver doctor</code>.</p>
+
+    <table>
+      <caption class="crumb">Ce que veut dire le code de sortie</caption>
+      <tr><th>Code</th><th>Signification</th></tr>
+      <tr><td><code>0</code></td><td>Tout s'est passé comme prévu — y compris « rien à nettoyer » et « déjà à jour »</td></tr>
+      <tr><td><code>1</code></td><td>Un problème a été trouvé, ou l'opération a échoué</td></tr>
+      <tr><td><code>2</code></td><td>La ligne de commande elle-même était fausse : commande inconnue, source inconnue, nombre de lignes invalide</td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td><code>command not found</code></td><td>La commande n'est pas dans ton <code>PATH</code> ; elle n'y est jamais</td><td>Appelle-la par son chemin complet, ou ajoute un alias</td></tr>
+      <tr><td>« Fermez Beaver d'abord. »</td><td><code>cleanup</code> et <code>update</code> exigent que l'application soit fermée</td><td>Quitte Beaver — fermer la fenêtre peut ne pas suffire, vérifie la barre de menus ou la zone de notification</td></tr>
+      <tr><td>« Journal pas encore créé. »</td><td>Ce journal n'a jamais été écrit sur cette machine</td><td>Rien à faire ; il apparaît dès que la fonctionnalité sert</td></tr>
+      <tr><td>« Vérification impossible. Réessayez plus tard. »</td><td>Pas de réseau, ou l'information de version n'a pas pu être lue</td><td>Réessaie plus tard ; le détail part sur la sortie d'erreur</td></tr>
+      <tr><td><code>status</code> dit que le processus Ollama est absent alors que l'app s'en sert</td><td>La commande a été lancée à un moment où le moteur n'était pas démarré</td><td>Relance-la avec Beaver ouvert et un modèle chargé</td></tr>
+      <tr><td>La sortie est dans la mauvaise langue</td><td>Les variables de langue du terminal diffèrent de celles du système</td><td>Fixe <code>LANG</code> le temps de la commande</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="demarrage-mise-a-jour.html">Mise à jour</a> — la même mise à jour, depuis l'application</li>
+      <li><a href="depannage-faq.html">Questions fréquentes</a> — où sont les données, et la désinstallation</li>
+      <li><a href="reference-depannage-installation.html">Dépannage · Installation</a></li>
+      <li><a href="interface-terminal.html">Terminal intégré</a> — un shell dans l'application</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../../js/theme.js"></script>
+<script src="../../js/docs-nav-data.js"></script>
+<script src="../../js/docs-nav.js"></script>
+</body>
+</html>

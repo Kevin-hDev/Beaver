@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — The beaver command</title>
+<meta name="description" content="A companion command shipped with the application: where your data is, what is running, what is wrong, what the logs say, how to update and how to clean up.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Beaver">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://kevin-hdev.github.io/Beaver/docs/reference-cli.html">
+<meta property="og:title" content="Beaver Docs — The beaver command">
+<meta property="og:description" content="A companion command shipped with the application: where your data is, what is running, what is wrong, what the logs say, how to update and how to clean up.">
+<meta property="og:image" content="https://kevin-hdev.github.io/Beaver/assets/social-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Beaver mascot with the wordmark BEAVER. and the tagline Build your dam. Open source — macOS, Linux, Windows.">
+<meta name="twitter:card" content="summary_large_image">
+<script src="../js/lang-redirect.js"></script>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Reference / The beaver command</span>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../fr/docs/reference-cli.html" hreflang="fr">FR</a>
+      <a class="lang-opt" href="reference-cli.html" hreflang="en" aria-current="true">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Documentation contents" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Beaver from a <em>terminal</em></h1>
+    <p>A small companion command, <code>beaver</code>, ships with the application. It does not drive the agent and it does not open conversations: it answers the questions you ask when something is off. Where are my files? Is anything running? What is broken? What do the logs say? Is there a new version? What can be deleted safely?</p>
+    <p>It reads the same data folder as the application, and it never needs the application to be open — two of its commands actually require it to be closed.</p>
+
+    <h2 id="ou-il-est">Where it lives</h2>
+    <p>It is bundled inside the application, beside the main executable. There is no separate installation, and <b>nothing is added to your <code>PATH</code></b>: you call it by its full path, or you make a shortcut to it yourself.</p>
+
+    <table>
+      <caption class="crumb">Where the command sits on each system</caption>
+      <tr><th>System</th><th>Path</th></tr>
+      <tr><td>macOS</td><td><code>/Applications/Beaver.app/Contents/MacOS/beaver</code></td></tr>
+      <tr><td>Windows</td><td><code>beaver.exe</code>, in the Beaver installation folder</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Making it shorter</span>
+      On macOS, one line in your shell's configuration file is enough:
+      <code>alias beaver="/Applications/Beaver.app/Contents/MacOS/beaver"</code>. Nothing in Beaver depends on it — it is purely for your own comfort.
+    </div>
+
+    <h2 id="les-commandes">The commands</h2>
+    <p>Running <code>beaver</code> with no argument, or with <code>--help</code>, prints the list.</p>
+
+    <table>
+      <caption class="crumb">The seven commands, and what each one actually does</caption>
+      <tr><th>Command</th><th>What it does</th></tr>
+      <tr><td><code>beaver --version</code></td><td>Prints the installed version, then the full path of the binary that answered. Useful when you suspect you are calling an old copy.</td></tr>
+      <tr><td><code>beaver paths</code></td><td>Lists ten places on disk — the data folder, the configuration, the vault, the conversations, the logs, the projects, the skills, the tool results, the MCP connectors and the Ollama engine — and marks the ones that do not exist yet.</td></tr>
+      <tr><td><code>beaver status</code></td><td>Says whether the application is open, whether an Ollama process is present, how many models are installed and how much they weigh, the total size of the data folder and its three largest subfolders.</td></tr>
+      <tr><td><code>beaver doctor</code></td><td>Runs nine local checks and prints each one as passed or failed, with a one-line fix for every failure.</td></tr>
+      <tr><td><code>beaver logs</code></td><td>Prints the end of one of the three log files. Defaults to the application log, last 50 lines.</td></tr>
+      <tr><td><code>beaver update</code></td><td>Checks for a new version and, if the application is closed and you confirm, downloads and installs it.</td></tr>
+      <tr><td><code>beaver cleanup</code></td><td>Lists what can be deleted without losing anything, then deletes it after you confirm. Requires the application to be closed.</td></tr>
+    </table>
+
+    <h2 id="paths">paths</h2>
+    <p>Everything Beaver writes lives under one folder, and this command tells you where, without you having to know the convention. Each line that points at something not yet created says so explicitly, which is the answer to “is my configuration missing, or have I simply never changed it?”</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> beaver paths
+Data directory : /Users/you/.local/share/cl-go-dash
+Configuration : /Users/you/.local/share/cl-go-dash/config.json
+Vault : /Users/you/.local/share/cl-go-dash/secrets.enc (not created yet)</pre>
+    </div>
+
+    <h2 id="status">status</h2>
+    <p>A snapshot of the machine, not of the servers. It looks at the processes actually running and at the folders actually on disk — it does not ask anything over the network, and it does not claim the Ollama service is answering, only that its process is there.</p>
+    <p>The three largest subfolders are listed because the answer to “why is Beaver taking so much room?” is almost always one of them.</p>
+
+    <h2 id="doctor">doctor</h2>
+    <p>Nine checks, in this order. A failed check prints an arrow and the thing to do.</p>
+
+    <table>
+      <caption class="crumb">What doctor checks, and what a failure means</caption>
+      <tr><th>Check</th><th>It fails when</th></tr>
+      <tr><td>Data directory</td><td>The folder cannot be written to</td></tr>
+      <tr><td>Configuration file</td><td><code>config.json</code> exists but is not valid</td></tr>
+      <tr><td>API key vault</td><td>Providers are registered but the vault file has gone</td></tr>
+      <tr><td>Interrupted Ollama download</td><td>A download was cut off partway</td></tr>
+      <tr><td>Ollama bundle</td><td>The engine is there but incomplete</td></tr>
+      <tr><td>Ollama staging</td><td>Abandoned preparation folders are left over</td></tr>
+      <tr><td>Active log limits</td><td>A log file has grown past its own cap</td></tr>
+      <tr><td>Root temporary files</td><td><code>.tmp</code> files are left at the top of the data folder</td></tr>
+      <tr><td>Free disk space</td><td>Less than 2 GB is available</td></tr>
+    </table>
+
+    <p>An absent file is not a failure: a machine where Beaver has never been launched passes. The command exits with <code>1</code> as soon as one check fails, which is what makes it usable in a script.</p>
+
+    <h2 id="logs">logs</h2>
+    <p><code>beaver logs [app|gateway|reveils] [-n N]</code></p>
+
+    <table>
+      <caption class="crumb">The three log sources</caption>
+      <tr><th>Source</th><th>File</th><th>What is in it</th></tr>
+      <tr><td><code>app</code></td><td><code>logs/beaver.log</code></td><td>The application's main log. This is the default.</td></tr>
+      <tr><td><code>gateway</code></td><td><code>logs/gateway-audit.jsonl</code></td><td>The audit trail of the external channels</td></tr>
+      <tr><td><code>reveils</code></td><td><code>logs/wakeups.jsonl</code></td><td>The history of scheduled wake-up runs</td></tr>
+    </table>
+
+    <p><code>-n</code> takes a whole number between <b>1 and 5,000</b>; without it, the last <b>50</b> lines are printed. A source that does not exist yet is not an error: the command says so and exits normally.</p>
+    <p>Control characters in the log are replaced with <code>?</code> before printing, and a line is cut at 16,384 characters. The reason is not cosmetic: a log line can contain anything, and anything printed raw into a terminal can take control of it.</p>
+
+    <h2 id="update">update</h2>
+    <p>It checks the published version, tells you which one is available, and asks before doing anything. Three answers are possible: up to date, an update is available, or the check could not be made.</p>
+    <ul>
+      <li><b>The application must be closed.</b> If it is open, the command says so and stops. It also checks again after your answer: opening Beaver while it waits for your confirmation cancels the update rather than applying it underneath you.</li>
+      <li>The confirmation is explicit — <code>y</code> to go ahead, anything else cancels.</li>
+      <li>The download is verified against the signed manifest, its size and its SHA-256 fingerprint before being applied.</li>
+      <li>The install then continues in the background. Run <code>beaver --version</code> again a minute later to check it went through.</li>
+    </ul>
+
+    <h2 id="cleanup">cleanup</h2>
+    <p>The careful one. It never touches your conversations, your projects, your settings or your vault. It only lists four families of leftovers, all of which are debris rather than data.</p>
+
+    <table>
+      <caption class="crumb">What cleanup considers deletable</caption>
+      <tr><th>Family</th><th>Criterion</th></tr>
+      <tr><td>Rotated application logs</td><td>Older than 30 days</td></tr>
+      <tr><td>Interrupted Ollama downloads</td><td>Partial files left behind by a cut-off transfer</td></tr>
+      <tr><td>Abandoned Ollama staging</td><td>Preparation folders no installation is using</td></tr>
+      <tr><td>Tool results</td><td>Older than 24 hours</td></tr>
+    </table>
+
+    <p>It prints each item with its size and a total, then asks. <code>beaver cleanup --dry-run</code> stops right there: it shows the list and deletes nothing, which is the version to run first. Like <code>update</code>, it refuses to run while Beaver is open, and re-checks after your answer.</p>
+    <p>It is also the command <code>doctor</code> points you to when it finds abandoned staging folders or stray temporary files.</p>
+
+    <h2 id="langue-et-codes">Language and exit codes</h2>
+    <p>The command speaks French or English, and it decides on its own: it reads <code>LC_ALL</code>, then <code>LC_MESSAGES</code>, then <code>LANG</code>, and falls back to the system locale. Anything that is not French gives English. That is also how you force it in a script — <code>LANG=en_US.UTF-8 beaver doctor</code>.</p>
+
+    <table>
+      <caption class="crumb">What the exit code means</caption>
+      <tr><th>Code</th><th>Meaning</th></tr>
+      <tr><td><code>0</code></td><td>Everything went as expected — including “nothing to clean” and “already up to date”</td></tr>
+      <tr><td><code>1</code></td><td>A problem was found, or the operation failed</td></tr>
+      <tr><td><code>2</code></td><td>The command line itself was wrong: unknown command, unknown source, bad line count</td></tr>
+    </table>
+
+    <h2 id="pieges">Common pitfalls</h2>
+
+    <table>
+      <caption class="crumb">Symptom, cause, fix</caption>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td><code>command not found</code></td><td>The command is not on your <code>PATH</code>; it never is</td><td>Call it by its full path, or add an alias</td></tr>
+      <tr><td>“Close Beaver first.”</td><td><code>cleanup</code> and <code>update</code> require the application to be closed</td><td>Quit Beaver — closing the window may not be enough, check the menu bar or the tray</td></tr>
+      <tr><td>“Log not created yet.”</td><td>That log has never been written on this machine</td><td>Nothing to do; it appears when the feature is used</td></tr>
+      <tr><td>“Unable to check for updates.”</td><td>No network, or the release information could not be read</td><td>Try again later; the details go to the error output</td></tr>
+      <tr><td><code>status</code> says the Ollama process is absent while the app uses it</td><td>The command was run at a moment when the engine was not started</td><td>Relaunch it with Beaver open and a model loaded</td></tr>
+      <tr><td>The output is in the wrong language</td><td>The terminal's locale variables differ from the system's</td><td>Set <code>LANG</code> for that command</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Going further</h2>
+    <ul>
+      <li><a href="demarrage-mise-a-jour.html">Updating</a> — the same update, from inside the application</li>
+      <li><a href="depannage-faq.html">Frequently asked questions</a> — where the data is, and uninstalling</li>
+      <li><a href="reference-depannage-installation.html">Troubleshooting · Installation</a></li>
+      <li><a href="interface-terminal.html">Integrated terminal</a> — a shell inside the application</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>
