@@ -45,7 +45,7 @@
 
   <main class="doc">
     <h1>Comment l'agent <em>travaille</em></h1>
-    <p>Quand tu envoies un message, Beaver ne répond pas en un coup : il tourne en boucle jusqu'à ce que le travail soit fait. Cette page décrit ce cycle, les cinq façons dont il se termine, et pourquoi il s'arrête parfois tout seul alors que rien n'a échoué.</p>
+    <p>Quand tu envoies un message, Beaver ne répond pas en un coup : il tourne en boucle jusqu'à ce que le travail soit fait. Cette page décrit ce cycle, les quatre façons dont il se termine, et pourquoi il s'arrête parfois tout seul alors que rien n'a échoué.</p>
 
     <h2 id="la-boucle">La boucle</h2>
     <p>À chaque tour :</p>
@@ -60,17 +60,16 @@
     <p>La boucle est la même en mode Chatbot. Elle n'est pas ramenée à un seul tour : c'est le catalogue d'outils qui est réduit à la recherche web et à la lecture d'une page. Un tour de Chatbot peut donc enchaîner une recherche, la lecture d'une page, puis la réponse. Voir <a href="agent-permissions.html">Modes de permission</a>.</p>
 
     <h2 id="conditions-arret">Les conditions d'arrêt</h2>
-    <p>Cinq façons pour un tour de conversation de se terminer.</p>
+    <p>Quatre façons pour un tour de conversation de se terminer.</p>
     <table>
-      <caption class="crumb">Les cinq fins possibles d'un tour</caption>
+      <caption class="crumb">Les quatre fins possibles d'un tour</caption>
       <tr><th>Cause</th><th>Ce qui se passe</th></tr>
       <tr><td>Le modèle a fini</td><td>Plus d'appel d'outil : c'est la sortie normale</td></tr>
       <tr><td>Tu as annulé</td><td>L'annulation est vérifiée à chaque tour et avant chaque outil</td></tr>
-      <tr><td>200 tours atteints</td><td>Limite dure ; l'approche de la fin est signalée au modèle avant le dernier tour</td></tr>
       <tr><td>Boucle détectée</td><td>Six appels d'outils identiques d'affilée</td></tr>
       <tr><td>Erreur bloquante</td><td>Contexte saturé, modèle indisponible, échec réseau non récupérable</td></tr>
     </table>
-    <p>La limite de <b>200 tours</b> est généreuse : elle sert de filet contre une boucle infinie, pas de plafond de travail. Le modèle est prévenu avant d'y arriver, ce qui lui permet de conclure proprement plutôt que d'être coupé net.</p>
+    <p><b>Il n'y a pas de plafond de tours.</b> Un long travail n'est plus arrêté pour avoir enchaîné trop de tours : la boucle tourne jusqu'à l'une des quatre fins ci-dessus. Ce qui reste borné, c'est la conversation elle-même — à <b>2&#160;000 messages</b>, elle atteint sa capacité de stockage et Beaver demande d'en ouvrir une nouvelle.</p>
     <p>Un cas à connaître : si des sous-agents travaillent encore, la boucle peut se poursuivre au-delà du moment où le modèle n'appelle plus d'outil, le temps qu'ils rendent leur résultat. Voir <a href="agent-sous-agents.html">Sous-agents</a>.</p>
 
     <h2 id="garde-fou">Le garde-fou anti-boucle</h2>
@@ -114,7 +113,7 @@
     <table>
       <caption class="crumb">Valeurs de référence</caption>
       <tr><th>Limite</th><th>Valeur</th></tr>
-      <tr><td>Tours par message</td><td><b>200</b></td></tr>
+      <tr><td>Messages par conversation</td><td><b>2&#160;000</b></td></tr>
       <tr><td>Appels d'outils identiques consécutifs</td><td><b>6</b></td></tr>
       <tr><td>Outils de lecture en parallèle</td><td><b>10</b> par vague</td></tr>
       <tr><td>Outils de lecture démarrés pendant le flux de réponse</td><td><b>10</b> au maximum</td></tr>
@@ -126,7 +125,7 @@
       <caption class="crumb">Symptôme, cause, résolution</caption>
       <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
       <tr><td>La conversation s'arrête sans erreur apparente</td><td>Six appels d'outils identiques détectés</td><td>Reformuler, ou changer de modèle</td></tr>
-      <tr><td>L'agent s'arrête après un long travail</td><td>200 tours atteints</td><td>Découper la tâche, ou relancer</td></tr>
+      <tr><td>La conversation refuse les nouveaux messages</td><td>Capacité de stockage de 2&#160;000 messages atteinte</td><td>Ouvrir une nouvelle conversation</td></tr>
       <tr><td>L'annulation ne semble pas immédiate</td><td>Elle prend effet entre deux étapes</td><td>Elle est vérifiée à chaque tour et avant chaque outil</td></tr>
       <tr><td>L'agent continue après avoir répondu</td><td>Des sous-agents travaillent encore</td><td>Attendre leur résultat</td></tr>
       <tr><td>Des balises de raisonnement apparaissent dans la réponse</td><td>Modèle local produisant un format inattendu</td><td>Un mécanisme de reprise existe ; essayer un autre modèle</td></tr>

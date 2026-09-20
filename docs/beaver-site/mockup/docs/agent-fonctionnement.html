@@ -45,7 +45,7 @@
 
   <main class="doc">
     <h1>How the agent <em>works</em></h1>
-    <p>When you send a message, Beaver does not answer in one shot: it loops until the work is done. This page describes that cycle, the five ways it ends, and why it sometimes stops on its own when nothing has failed.</p>
+    <p>When you send a message, Beaver does not answer in one shot: it loops until the work is done. This page describes that cycle, the four ways it ends, and why it sometimes stops on its own when nothing has failed.</p>
 
     <h2 id="la-boucle">The loop</h2>
     <p>On every turn:</p>
@@ -60,17 +60,16 @@
     <p>The loop is the same in Chatbot mode. It is not reduced to a single turn: what is reduced is the tool catalog, cut down to web search and reading a page. A Chatbot turn can therefore chain a search, the reading of a page, then the answer. See <a href="agent-permissions.html">Permission modes</a>.</p>
 
     <h2 id="conditions-arret">The stopping conditions</h2>
-    <p>Five ways for a conversation turn to end.</p>
+    <p>Four ways for a conversation turn to end.</p>
     <table>
-      <caption class="crumb">The five possible endings of a turn</caption>
+      <caption class="crumb">The four possible endings of a turn</caption>
       <tr><th>Cause</th><th>What happens</th></tr>
       <tr><td>The model is done</td><td>No more tool calls: this is the normal exit</td></tr>
       <tr><td>You cancelled</td><td>Cancellation is checked on every turn and before every tool</td></tr>
-      <tr><td>200 turns reached</td><td>Hard limit; the model is told the end is near before the last turn</td></tr>
       <tr><td>Loop detected</td><td>Six identical tool calls in a row</td></tr>
       <tr><td>Blocking error</td><td>Context full, model unavailable, unrecoverable network failure</td></tr>
     </table>
-    <p>The <b>200-turn</b> limit is generous: it is a safety net against an infinite loop, not a work ceiling. The model is warned before reaching it, which lets it wrap up cleanly rather than being cut off.</p>
+    <p><b>There is no turn ceiling.</b> A long piece of work is no longer stopped for having chained too many turns: the loop runs until one of the four endings above. What remains bounded is the conversation itself — at <b>2,000 messages</b> it reaches its storage capacity, and Beaver asks you to open a new one.</p>
     <p>One case worth knowing: if subagents are still working, the loop may continue past the point where the model stops calling tools, until they hand back their result. See <a href="agent-sous-agents.html">Subagents</a>.</p>
 
     <h2 id="garde-fou">The anti-loop guard</h2>
@@ -114,7 +113,7 @@
     <table>
       <caption class="crumb">Reference values</caption>
       <tr><th>Limit</th><th>Value</th></tr>
-      <tr><td>Turns per message</td><td><b>200</b></td></tr>
+      <tr><td>Messages per conversation</td><td><b>2,000</b></td></tr>
       <tr><td>Consecutive identical tool calls</td><td><b>6</b></td></tr>
       <tr><td>Read tools in parallel</td><td><b>10</b> per wave</td></tr>
       <tr><td>Read tools started during the response stream</td><td><b>10</b> at most</td></tr>
@@ -126,7 +125,7 @@
       <caption class="crumb">Symptom, cause, fix</caption>
       <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
       <tr><td>The conversation stops with no visible error</td><td>Six identical tool calls detected</td><td>Rephrase, or switch models</td></tr>
-      <tr><td>The agent stops after a long stretch of work</td><td>200 turns reached</td><td>Split the task, or start it again</td></tr>
+      <tr><td>The conversation refuses new messages</td><td>2,000-message storage capacity reached</td><td>Open a new conversation</td></tr>
       <tr><td>Cancellation does not seem immediate</td><td>It takes effect between two steps</td><td>It is checked on every turn and before every tool</td></tr>
       <tr><td>The agent keeps going after answering</td><td>Subagents are still working</td><td>Wait for their result</td></tr>
       <tr><td>Reasoning tags appear in the answer</td><td>A local model producing an unexpected format</td><td>A recovery mechanism exists; try another model</td></tr>

@@ -159,11 +159,11 @@
     <p>The numbers displayed are checked on both sides before they appear: the sum must be exact, each value below <b>16,777,216</b>, and the input limit less than or equal to the window. If a counter is inconsistent, Beaver shows <b>no number at all</b> rather than a wrong one.</p>
     <p>How the context itself works is described on <a href="agent-contexte.html">Context</a>.</p>
 
-    <h2 id="limite-de-tours">The agent reached its turn limit</h2>
-    <p>A turn is one model-then-tools round trip. The limit is <b>200 turns per answer</b>: the stop is decided at turn 199, and Beaver uses the opportunity to unload the model from graphics memory before handing back control.</p>
-    <p><b>What you read at the moment of the stop is generic</b> — “Stream was interrupted.” —, with no mention of the 200 turns. The precise sentence, <b>“The agent reached its turn limit. Continue in a new message.”</b>, appears when you <b>reopen the conversation</b>. The same incident therefore produces two different messages depending on when you look: it is the second one that names the real cause.</p>
-    <p>The same limit serves in a second case, unrelated to the 200 turns: when a subagent is still active, when a report has not been delivered, or when a fix is still queued. The turn is then refused to let the child finish.</p>
-    <p>In both cases, the course of action is the same: <b>start again in a new message</b>.</p>
+    <h2 id="reponse-interrompue">The answer stopped before the end</h2>
+    <p>A turn is one model-then-tools round trip, and <b>their number is not capped</b>: an answer is never stopped just for having chained many turns. When it stops before the model is done, the cause is elsewhere — a cut stream, a provider failure, the anti-loop guard described below, or a crash of the application.</p>
+    <p>When the stream is cut, <b>what was already received is kept</b>, and the message displayed is <b>“The response stream was interrupted. Try again.”</b></p>
+    <p>After a crash of the application or of one of its processes, the work in progress — reasoning, messages, tool activity and results — is restored from a bounded recovery journal when the conversation starts up again, rather than being lost.</p>
+    <p>In every case, the course of action is the same: <b>start again in a new message</b>.</p>
 
     <h2 id="boucle">The agent was going round in circles</h2>
     <p>Beaver counts <b>strictly identical</b> tool calls that follow one another — same tool name, same arguments. At the <b>sixth in a row</b>, it stops the answer. The message displayed is <b>“The response stream was interrupted. Try again.”</b></p>
@@ -171,7 +171,7 @@
 
     <div class="callout">
       <span class="t">Warning</span>
-      <b>A single changing argument resets the counter to zero.</b> A loop where the agent rereads the same file with a different offset each time will therefore not be cut by this mechanism: it is the 200-turn limit that eventually takes care of it, several minutes later. If you see that, stop the answer by hand.
+      <b>A single changing argument resets the counter to zero.</b> A loop where the agent rereads the same file with a different offset each time will therefore not be cut by this mechanism — and no turn ceiling will take care of it either, since there is none. If you see that, stop the answer by hand.
     </div>
 
     <h2 id="sous-agents">A failed subagent</h2>
@@ -229,7 +229,7 @@
       <tr><td>“Lecture / Écriture interdite hors des zones autorisées”</td><td>Path outside the configured folders</td><td>Settings &gt; Advanced &gt; File Access</td></tr>
       <tr><td>“Folder not allowed” when opening a conversation</td><td>The working folder is not in the list</td><td>Add the folder in the settings</td></tr>
       <tr><td>“The required context exceeds the model capacity”</td><td>Instructions, reports and active tools exceed the input limit before any message</td><td>Disable connectors or extensions, or change model. <b>The app does not suggest it</b></td></tr>
-      <tr><td>“The answer stops with no explanation after a long piece of work”</td><td>200 turns reached — the immediate message is generic</td><td>Start again in a new message; reopening the conversation names the cause</td></tr>
+      <tr><td>“The answer stops with no explanation after a long piece of work”</td><td>Cut stream, provider failure or crash — never a turn ceiling, there is none</td><td>Start again in a new message: what was received is kept</td></tr>
       <tr><td>“The agent repeated the same thing six times then stopped”</td><td>Circuit breaker at six identical calls</td><td>Reword the request, or give it the missing information</td></tr>
       <tr><td>“The agent repeats the same action and never stops”</td><td>One argument changes each time: the circuit breaker does not trigger</td><td>Stop the answer by hand</td></tr>
       <tr><td>“The tool result is missing after the stream ended.”</td><td>The stream ended before the tool returned its result</td><td>Check the resulting state before retrying: the action may have taken place</td></tr>

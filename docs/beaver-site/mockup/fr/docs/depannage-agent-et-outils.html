@@ -159,11 +159,11 @@
     <p>Les chiffres affichés sont vérifiés des deux côtés avant d'apparaître : la somme doit être exacte, chaque valeur inférieure à <b>16 777 216</b>, et la limite d'entrée inférieure ou égale à la fenêtre. Si un compteur est incohérent, Beaver n'affiche <b>aucun chiffre</b> plutôt qu'un chiffre faux.</p>
     <p>Le fonctionnement du contexte lui-même est décrit sur <a href="agent-contexte.html">Contexte</a>.</p>
 
-    <h2 id="limite-de-tours">L'agent a atteint sa limite de tours</h2>
-    <p>Un tour, c'est un aller-retour modèle puis outils. La limite est de <b>200 tours par réponse</b> : l'arrêt est décidé au tour 199, et Beaver en profite pour décharger le modèle de la mémoire graphique avant de rendre la main.</p>
-    <p><b>Ce que tu lis au moment de l'arrêt est générique</b> — « Le flux s'est interrompu. » —, sans mention des 200 tours. La phrase précise, <b>« L'agent a atteint sa limite de tours. Continue dans un nouveau message. »</b>, apparaît quand tu <b>rouvres la conversation</b>. Le même incident produit donc deux messages différents selon le moment où tu regardes : c'est le second qui nomme la vraie cause.</p>
-    <p>La même limite sert dans un second cas, sans rapport avec les 200 tours : quand un sous-agent est encore actif, qu'un rapport n'a pas été remis, ou qu'une correction reste en file. Le tour est alors refusé pour laisser l'enfant finir.</p>
-    <p>Dans les deux cas, la conduite à tenir est la même : <b>relancer dans un nouveau message</b>.</p>
+    <h2 id="reponse-interrompue">La réponse s'est arrêtée avant la fin</h2>
+    <p>Un tour, c'est un aller-retour modèle puis outils, et <b>leur nombre n'est pas plafonné</b> : une réponse n'est jamais arrêtée pour avoir enchaîné beaucoup de tours. Quand elle s'arrête avant que le modèle ait fini, la cause est ailleurs — un flux coupé, une panne du fournisseur, le garde-fou anti-boucle décrit plus bas, ou un plantage de l'application.</p>
+    <p>Quand le flux est coupé, <b>ce qui a déjà été reçu est conservé</b>, et le message affiché est <b>« Le flux de réponse a été interrompu. Réessaye. »</b></p>
+    <p>Après un plantage de l'application ou d'un de ses processus, le travail en cours — raisonnement, messages, activité des outils et résultats — est restauré depuis un journal de reprise borné quand la conversation repart, plutôt que perdu.</p>
+    <p>Dans tous les cas, la conduite à tenir est la même : <b>relancer dans un nouveau message</b>.</p>
 
     <h2 id="boucle">L'agent tournait en rond</h2>
     <p>Beaver compte les appels d'outils <b>strictement identiques</b> qui se suivent — même nom d'outil, mêmes arguments. Au <b>sixième d'affilée</b>, il arrête la réponse. Le message affiché est <b>« Le flux de réponse a été interrompu. Réessaye. »</b></p>
@@ -171,7 +171,7 @@
 
     <div class="callout">
       <span class="t">Attention</span>
-      <b>Un seul argument qui change remet le compteur à zéro.</b> Une boucle où l'agent relit le même fichier avec un décalage différent à chaque fois ne sera donc pas coupée par ce mécanisme : c'est la limite des 200 tours qui finit par s'en charger, plusieurs minutes plus tard. Si tu vois ça, arrête la réponse à la main.
+      <b>Un seul argument qui change remet le compteur à zéro.</b> Une boucle où l'agent relit le même fichier avec un décalage différent à chaque fois ne sera donc pas coupée par ce mécanisme — et aucun plafond de tours ne s'en chargera non plus, puisqu'il n'y en a pas. Si tu vois ça, arrête la réponse à la main.
     </div>
 
     <h2 id="sous-agents">Un sous-agent en échec</h2>
@@ -229,7 +229,7 @@
       <tr><td>« Lecture / Écriture interdite hors des zones autorisées »</td><td>Chemin hors des dossiers configurés</td><td>Réglages &gt; Avancé &gt; Accès fichiers</td></tr>
       <tr><td>« Dossier non autorisé » à l'ouverture d'une conversation</td><td>Le dossier de travail n'est pas dans la liste</td><td>Ajouter le dossier dans les réglages</td></tr>
       <tr><td>« Le contexte obligatoire dépasse la capacité du modèle »</td><td>Instructions, rapports et outils actifs dépassent la limite d'entrée avant tout message</td><td>Désactiver des connecteurs ou des extensions, ou changer de modèle. <b>L'application ne le suggère pas</b></td></tr>
-      <tr><td>« La réponse s'arrête sans explication après un long travail »</td><td>200 tours atteints — le message immédiat est générique</td><td>Relancer dans un nouveau message ; rouvrir la conversation nomme la cause</td></tr>
+      <tr><td>« La réponse s'arrête sans explication après un long travail »</td><td>Flux coupé, panne du fournisseur ou plantage — jamais un plafond de tours, il n'y en a pas</td><td>Relancer dans un nouveau message : ce qui a été reçu est conservé</td></tr>
       <tr><td>« L'agent a répété six fois la même chose puis s'est arrêté »</td><td>Coupe-circuit à six appels identiques</td><td>Reformuler la demande, ou lui fournir l'information qui manque</td></tr>
       <tr><td>« L'agent répète la même action sans jamais s'arrêter »</td><td>Un argument change à chaque fois : le coupe-circuit ne se déclenche pas</td><td>Arrêter la réponse à la main</td></tr>
       <tr><td>« Le résultat de l'outil manque après la fin du flux. »</td><td>Le flux s'est terminé avant que l'outil rende son résultat</td><td>Vérifier l'état obtenu avant de relancer : l'action a peut-être eu lieu</td></tr>
