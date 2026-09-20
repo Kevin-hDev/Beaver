@@ -427,7 +427,7 @@ jobs:
           for NAME in beaver-macos-arm64 beaver-linux-x64 beaver-windows-x64 beaver-macos-arm64-installer; do
             gh run download 35471762472 --repo Kevin-hDev/Beaver --name "$NAME" --dir release-candidate
           done
-          gh run download 35477748109 --repo Kevin-hDev/Beaver --name beaver-windows-x64-installer --dir release-candidate
+          gh run download 35478129815 --repo Kevin-hDev/Beaver --name beaver-windows-x64-installer --dir release-candidate
 
       - name: Create and validate update manifest
         run: |
