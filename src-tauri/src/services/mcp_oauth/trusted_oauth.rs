@@ -62,6 +62,7 @@ pub fn validate_endpoint(connector_id: &str, url: &str) -> Result<(), String> {
 }
 
 fn trusted_hosts(connector_id: &str) -> &'static [&'static str] {
+    // These exact hosts follow each provider's published OAuth metadata; never trust whole domains.
     match connector_id {
         "gmail" => &[
             "gmailmcp.googleapis.com",
@@ -79,14 +80,24 @@ fn trusted_hosts(connector_id: &str) -> &'static [&'static str] {
             "oauth2.googleapis.com",
         ],
         "canva" => &["mcp.canva.com", "www.canva.com", "canva.com"],
-        "figma" => &["mcp.figma.com", "www.figma.com", "figma.com"],
+        "figma" => &[
+            "mcp.figma.com",
+            "www.figma.com",
+            "figma.com",
+            "api.figma.com",
+        ],
         "notion" => &["mcp.notion.com", "api.notion.com", "notion.com"],
         "slack" => &["mcp.slack.com", "slack.com"],
         "linear" => &["mcp.linear.app", "linear.app"],
         "lucid" => &["mcp.lucid.app", "lucid.app", "lucid.co"],
         "sentry" => &["mcp.sentry.dev", "sentry.io", "sentry.dev"],
-        "vercel" => &["mcp.vercel.com", "vercel.com"],
-        "apify" => &["mcp.apify.com", "apify.com"],
+        "vercel" => &["mcp.vercel.com", "vercel.com", "api.vercel.com"],
+        "apify" => &[
+            "mcp.apify.com",
+            "apify.com",
+            "console.apify.com",
+            "console-backend.apify.com",
+        ],
         "github" => &["github.com"],
         _ => &[],
     }
@@ -95,6 +106,60 @@ fn trusted_hosts(connector_id: &str) -> &'static [&'static str] {
 #[cfg(test)]
 mod tests {
     use super::{validate_endpoint, validate_issuer};
+
+    #[test]
+    fn accepts_vercel_figma_and_apify_oauth_metadata() {
+        use crate::services::mcp_oauth::types::AuthServerMetadata;
+
+        let providers = [
+            (
+                "vercel",
+                "https://vercel.com",
+                "https://vercel.com/oauth/authorize",
+                "https://api.vercel.com/login/oauth/token",
+                "https://api.vercel.com/login/oauth/register",
+                false,
+            ),
+            (
+                "figma",
+                "https://api.figma.com",
+                "https://www.figma.com/oauth/mcp",
+                "https://api.figma.com/v1/oauth/token",
+                "https://api.figma.com/v1/oauth/mcp/register",
+                true,
+            ),
+            (
+                "apify",
+                "https://console-backend.apify.com",
+                "https://console.apify.com/authorize/oauth",
+                "https://console-backend.apify.com/oauth/apps/token",
+                "https://console-backend.apify.com/oauth/apps",
+                true,
+            ),
+        ];
+        for (
+            id,
+            issuer,
+            authorization_endpoint,
+            token_endpoint,
+            registration_endpoint,
+            emits_iss,
+        ) in providers
+        {
+            let meta = AuthServerMetadata {
+                issuer: issuer.to_string(),
+                authorization_response_iss_parameter_supported: emits_iss,
+                authorization_endpoint: authorization_endpoint.to_string(),
+                token_endpoint: token_endpoint.to_string(),
+                registration_endpoint: Some(registration_endpoint.to_string()),
+                code_challenge_methods_supported: Some(vec!["S256".to_string()]),
+            };
+            assert!(
+                super::validate_metadata_endpoints(id, &meta).is_ok(),
+                "{id}"
+            );
+        }
+    }
 
     #[test]
     fn metadata_method_list_is_bounded_and_requires_pkce_s256() {

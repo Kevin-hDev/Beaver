@@ -1616,6 +1616,7 @@
       "successTitle": "Verbindung erfolgreich",
       "successMessage": "Der Connector wurde erfolgreich hinzugefügt.",
       "errorGeneric": "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
+      "errorUntrusted": "Beaver erkennt die Anmeldeadresse dieses Dienstes nicht. Aktualisiere Beaver und versuche es erneut.",
       "reauthenticationRequired": "Verbinde diesen Konnektor erneut, um fortzufahren."
     }
   },

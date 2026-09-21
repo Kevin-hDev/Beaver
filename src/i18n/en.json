@@ -1663,6 +1663,7 @@
       "successTitle": "Connection successful",
       "successMessage": "The connector has been added successfully.",
       "errorGeneric": "Connection failed. Please try again.",
+      "errorUntrusted": "Beaver does not recognize this service's sign-in address. Update Beaver, then try again.",
       "reauthenticationRequired": "Reconnect this connector to continue."
     }
   },

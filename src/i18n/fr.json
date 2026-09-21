@@ -1715,6 +1715,7 @@
       "successTitle": "Connexion réussie",
       "successMessage": "Le connecteur a été ajouté avec succès.",
       "errorGeneric": "Échec de la connexion. Réessayez.",
+      "errorUntrusted": "Beaver ne reconnaît pas l'adresse de connexion de ce service. Mettez Beaver à jour, puis réessayez.",
       "reauthenticationRequired": "Reconnectez ce connecteur pour continuer."
     }
   },

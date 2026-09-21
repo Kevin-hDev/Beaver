@@ -1615,6 +1615,7 @@
       "successTitle": "接続に成功しました",
       "successMessage": "コネクターが正常に追加されました。",
       "errorGeneric": "接続に失敗しました。もう一度お試しください。",
+      "errorUntrusted": "Beaver はこのサービスのログイン先を認識できません。Beaver を更新してから再試行してください。",
       "reauthenticationRequired": "続行するには、このコネクターを再接続してください。"
     }
   },

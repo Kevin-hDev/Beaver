@@ -1620,6 +1620,7 @@
       "successTitle": "Conexión correcta",
       "successMessage": "El conector se añadió correctamente.",
       "errorGeneric": "La conexión falló. Inténtalo de nuevo.",
+      "errorUntrusted": "Beaver no reconoce la dirección de acceso de este servicio. Actualiza Beaver y vuelve a intentarlo.",
       "reauthenticationRequired": "Vuelve a conectar este conector para continuar."
     }
   },

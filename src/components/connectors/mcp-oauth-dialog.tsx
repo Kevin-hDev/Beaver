@@ -50,7 +50,9 @@ export function McpOauthDialog({ connector, onClose, onConnected }: McpOauthDial
         setTimeout(() => onConnected(), 600);
       } else {
         setState("error");
-        setError(t("connectors.oauth.errorGeneric"));
+        setError(t(p.error === "endpoint OAuth non autorisé"
+          ? "connectors.oauth.errorUntrusted"
+          : "connectors.oauth.errorGeneric"));
       }
     });
     return () => {
