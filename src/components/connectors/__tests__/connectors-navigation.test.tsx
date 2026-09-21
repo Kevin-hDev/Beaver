@@ -1,11 +1,12 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_APP_NAV, type SettingsNavState } from "@/types/navigation";
-import type { ConfiguredMcpFull } from "@/types/mcp";
+import type { ConfiguredMcpFull, McpConnectorSpec } from "@/types/mcp";
 import { useConnectorsTabContent } from "../connectors-tab";
 
 const mocks = vi.hoisted(() => ({
   configured: [] as ConfiguredMcpFull[],
+  catalog: [] as McpConnectorSpec[],
   onNavChange: vi.fn(),
   onNavReplace: vi.fn(),
 }));
@@ -16,7 +17,7 @@ vi.mock("react-i18next", () => ({
 
 vi.mock("@/hooks/use-connectors", () => ({
   useConnectors: () => ({
-    catalog: [],
+    catalog: mocks.catalog,
     configured: mocks.configured,
     configuredIds: mocks.configured.map((item) => item.id),
     loadError: false,
@@ -72,6 +73,7 @@ describe("Navigation des connecteurs", () => {
 
   beforeEach(() => {
     mocks.configured = [connector("canva", "connected"), connector("notion", "disconnected")];
+    mocks.catalog = [];
     mocks.onNavChange.mockClear();
     mocks.onNavReplace.mockClear();
   });
@@ -90,6 +92,17 @@ describe("Navigation des connecteurs", () => {
     const rows = screen.getAllByRole("button").filter((row) => row.textContent?.includes("notion"));
 
     expect(rows[0].getAttribute("aria-label")).toBe("notion — connectors.detail.disconnected");
+  });
+
+  it("montre quel connecteur supprimer si son adresse rend la configuration invalide", () => {
+    mocks.catalog = [{ ...connector("notion", "connected"), endpoint: "https://mcp.notion.com/mcp" }];
+    mocks.configured = [{ ...connector("notion", "connected"), endpoint: "https://mcp.notion.com/mcp/" }];
+    render(<ConnectorsHarness navState={{ ...DEFAULT_APP_NAV.settings, connectorId: null }} />);
+
+    expect(screen.getByText("connectors.sidebar.repairRequired")).toBeTruthy();
+    expect(screen.getByRole("button", {
+      name: "notion — connectors.sidebar.invalidEndpoint",
+    })).toBeTruthy();
   });
 
   it("revient à la liste depuis la fiche", () => {

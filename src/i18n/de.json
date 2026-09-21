@@ -1558,7 +1558,9 @@
     },
     "sidebar": {
       "empty": "Kein Connector konfiguriert",
-      "loadError": "Connectors konnten nicht geladen werden"
+      "loadError": "Connectors konnten nicht geladen werden",
+      "repairRequired": "Eine Connector-Adresse ist ungültig. Entferne den markierten Connector, um die Konfiguration zu reparieren.",
+      "invalidEndpoint": "Ungültige Adresse — Connector entfernen"
     },
     "detail": {
       "connected": "Verbunden",
@@ -1613,7 +1615,9 @@
       "cancel": "Abbrechen",
       "successTitle": "Verbindung erfolgreich",
       "successMessage": "Der Connector wurde erfolgreich hinzugefügt.",
-      "errorGeneric": "Verbindung fehlgeschlagen. Bitte erneut versuchen."
+      "errorGeneric": "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
+      "errorUntrusted": "Beaver erkennt die Anmeldeadresse dieses Dienstes nicht. Aktualisiere Beaver und versuche es erneut.",
+      "reauthenticationRequired": "Verbinde diesen Konnektor erneut, um fortzufahren."
     }
   },
   "vision": {

@@ -10,6 +10,7 @@ impl StdioTransport {
             install_command,
             env_key_names,
             transient_env: None,
+            generation: None,
             #[cfg(test)]
             test_init_delay_ms: 0,
         }
@@ -26,6 +27,7 @@ impl StdioTransport {
             install_command,
             env_key_names,
             transient_env: Some(transient_env),
+            generation: None,
             #[cfg(test)]
             test_init_delay_ms: 0,
         }
@@ -38,6 +40,7 @@ impl StdioTransport {
             install_command: String::new(),
             env_key_names: Vec::new(),
             transient_env: None,
+            generation: None,
             test_init_delay_ms: 0,
         }
     }
@@ -49,6 +52,7 @@ impl StdioTransport {
             install_command: String::new(),
             env_key_names: Vec::new(),
             transient_env: None,
+            generation: None,
             test_init_delay_ms: delay_ms,
         }
     }

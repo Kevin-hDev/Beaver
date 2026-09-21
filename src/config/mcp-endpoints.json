@@ -1,0 +1,15 @@
+{
+  "gmail": "https://gmailmcp.googleapis.com/mcp/v1",
+  "google-drive": "https://drivemcp.googleapis.com/mcp/v1",
+  "google-calendar": "https://calendarmcp.googleapis.com/mcp/v1",
+  "canva": "https://mcp.canva.com/mcp",
+  "figma": "https://mcp.figma.com/mcp",
+  "notion": "https://mcp.notion.com/mcp",
+  "slack": "https://mcp.slack.com/mcp",
+  "linear": "https://mcp.linear.app/mcp",
+  "lucid": "https://mcp.lucid.app/mcp",
+  "sentry": "https://mcp.sentry.dev/mcp",
+  "vercel": "https://mcp.vercel.com",
+  "apify": "https://mcp.apify.com",
+  "github": "https://api.githubcopilot.com/mcp/"
+}

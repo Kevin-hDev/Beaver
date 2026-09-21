@@ -1558,7 +1558,9 @@
     },
     "sidebar": {
       "empty": "Nessun connettore configurato",
-      "loadError": "Impossibile caricare i connettori"
+      "loadError": "Impossibile caricare i connettori",
+      "repairRequired": "L'indirizzo di un connettore non è valido. Rimuovi il connettore indicato per riparare la configurazione.",
+      "invalidEndpoint": "Indirizzo non valido — rimuovi il connettore"
     },
     "detail": {
       "connected": "Connesso",
@@ -1613,7 +1615,9 @@
       "cancel": "Annulla",
       "successTitle": "Connessione riuscita",
       "successMessage": "Il connettore è stato aggiunto correttamente.",
-      "errorGeneric": "Connessione non riuscita. Riprova."
+      "errorGeneric": "Connessione non riuscita. Riprova.",
+      "errorUntrusted": "Beaver non riconosce l'indirizzo di accesso di questo servizio. Aggiorna Beaver e riprova.",
+      "reauthenticationRequired": "Ricollega questo connettore per continuare."
     }
   },
   "vision": {

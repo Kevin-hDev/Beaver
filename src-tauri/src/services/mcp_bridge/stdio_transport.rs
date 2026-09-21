@@ -82,6 +82,9 @@ impl StdioTransport {
             "jsonrpc": "2.0", "method": "tools/call", "id": id,
             "params": { "name": name, "arguments": args }
         });
+        if let Some(generation) = self.generation {
+            super::registry::authorize_business_send(&self.connector_id, generation)?;
+        }
         let response = session
             .request(&body, id, cancel)
             .await
@@ -92,11 +95,14 @@ impl StdioTransport {
 
 #[async_trait]
 impl super::transport::McpTransport for StdioTransport {
-    async fn list_tools(&self) -> Result<Vec<super::transport::McpToolDef>, String> {
+    async fn list_tools(&self) -> Result<super::transport::McpToolCatalog, String> {
         let admission = process_manager::try_admit_operation()
             .map_err(|_| "connecteur MCP indisponible".to_string())?;
         let cancel = admission.cancellation();
-        admission.run(self.list_tools_inner(&cancel)).await
+        Ok(super::transport::McpToolCatalog {
+            tools: admission.run(self.list_tools_inner(&cancel)).await?,
+            cache_ttl: Some(super::registry_cache::FALLBACK_TTL),
+        })
     }
 
     async fn call_tool(

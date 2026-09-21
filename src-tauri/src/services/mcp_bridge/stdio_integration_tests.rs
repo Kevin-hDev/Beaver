@@ -6,7 +6,11 @@ use super::transport::McpTransport;
 async fn stdio_transport_handshakes_and_calls_a_real_child_process() {
     let transport = StdioTransport::for_test_fixture();
 
-    let tools = transport.list_tools().await.expect("tools/list response");
+    let tools = transport
+        .list_tools()
+        .await
+        .expect("tools/list response")
+        .tools;
     assert_eq!(tools.len(), 1);
     assert_eq!(tools[0].name, "echo");
 
@@ -46,7 +50,11 @@ async fn slow_ready_connector_uses_protocol_signal_instead_of_fixed_warmup() {
 
     let transport = StdioTransport::for_slow_test_fixture(650);
     let started = std::time::Instant::now();
-    let tools = transport.list_tools().await.expect("slow fixture tools");
+    let tools = transport
+        .list_tools()
+        .await
+        .expect("slow fixture tools")
+        .tools;
     let readiness = started.elapsed();
 
     assert_eq!(tools[0].name, "echo");

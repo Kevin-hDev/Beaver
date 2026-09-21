@@ -2,12 +2,11 @@
     clippy::too_many_arguments,
     reason = "orchestration boundary keeps related runtime context explicit"
 )]
-use std::time::Duration;
-
+use subtle::{Choice, ConstantTimeEq};
 use zeroize::{Zeroize, Zeroizing};
 
+use super::network_guard::{self, DestinationRole};
 use super::types::{DcrResponse, OAuthTokens, TokenResponse};
-use crate::services::secure_http::AuthenticatedClient;
 
 pub fn build_auth_url(
     auth_endpoint: &str,
@@ -37,10 +36,8 @@ pub fn build_auth_url(
     Ok(url.to_string())
 }
 
-pub fn open_browser(_app: &tauri::AppHandle, url: &str) -> Result<(), String> {
-    if !url.starts_with("https://") {
-        return Err("URL d'autorisation non HTTPS".to_string());
-    }
+pub fn open_browser(_app: &tauri::AppHandle, connector_id: &str, url: &str) -> Result<(), String> {
+    super::trusted_oauth::validate_endpoint(connector_id, url)?;
     open_url_native(url)
 }
 
@@ -75,12 +72,11 @@ pub fn verify_state_constant_time(expected: &str, received: &str) -> Result<(), 
     const STATE_LEN: usize = 43;
     let mut expected_fixed = [0_u8; STATE_LEN];
     let mut received_fixed = [0_u8; STATE_LEN];
-    let mut diff = copy_fixed_state(expected, &mut expected_fixed)
+    let invalid = copy_fixed_state(expected, &mut expected_fixed)
         | copy_fixed_state(received, &mut received_fixed);
-    for index in 0..STATE_LEN {
-        diff |= expected_fixed[index] ^ received_fixed[index];
-    }
-    let matches = diff == 0;
+    let matches = bool::from(
+        Choice::from(invalid ^ 1) & expected_fixed.as_slice().ct_eq(received_fixed.as_slice()),
+    );
     expected_fixed.zeroize();
     received_fixed.zeroize();
     if !matches {
@@ -105,12 +101,17 @@ fn copy_fixed_state(input: &str, output: &mut [u8; 43]) -> u8 {
 
 pub async fn register_client(
     connector_id: &str,
+    resource: &str,
     registration_url: &str,
     redirect_uri: &str,
 ) -> Result<String, String> {
-    super::trusted_oauth::validate_endpoint(connector_id, registration_url)?;
-    let client = AuthenticatedClient::new(Duration::from_secs(15))
-        .map_err(|_| "erreur interne".to_string())?;
+    let client = network_guard::destination(
+        connector_id,
+        resource,
+        DestinationRole::OAuth,
+        registration_url,
+    )
+    .await?;
 
     let body = serde_json::json!({
         "client_name": crate::services::mcp_bridge::identity::registration_name(connector_id),
@@ -121,7 +122,7 @@ pub async fn register_client(
         "token_endpoint_auth_method": "none",
     });
 
-    let request = client.post(registration_url).json(&body);
+    let request = client.post().json(&body);
     let resp = client
         .send_success(request)
         .await
@@ -129,11 +130,22 @@ pub async fn register_client(
 
     let dcr: DcrResponse = super::bounded_json(resp).await?;
 
+    if dcr.client_id.is_empty()
+        || dcr.client_id.len() > 2048
+        || dcr
+            .client_secret
+            .as_ref()
+            .is_some_and(|secret| secret.len() > 16_384)
+    {
+        return Err("enregistrement OAuth invalide".to_string());
+    }
+
     Ok(dcr.client_id.clone())
 }
 
 pub async fn exchange_code(
     connector_id: &str,
+    issuer: &str,
     token_endpoint: &str,
     code: &str,
     client_id: &str,
@@ -142,10 +154,13 @@ pub async fn exchange_code(
     redirect_uri: &str,
     resource: &str,
 ) -> Result<OAuthTokens, String> {
-    super::trusted_oauth::validate_endpoint(connector_id, token_endpoint)?;
-
-    let client = AuthenticatedClient::new(Duration::from_secs(15))
-        .map_err(|_| "erreur interne".to_string())?;
+    let client = network_guard::destination(
+        connector_id,
+        resource,
+        DestinationRole::OAuth,
+        token_endpoint,
+    )
+    .await?;
 
     let mut params: Vec<(&str, &str)> = vec![
         ("grant_type", "authorization_code"),
@@ -160,7 +175,7 @@ pub async fn exchange_code(
     }
 
     let request = client
-        .post(token_endpoint)
+        .post()
         .header("Accept", "application/json")
         .form(&params);
     let resp = client
@@ -169,13 +184,11 @@ pub async fn exchange_code(
         .map_err(|_| "échec de l'échange du code".to_string())?;
 
     let mut raw: TokenResponse = super::bounded_json(resp).await?;
-
-    if raw.access_token.is_empty() {
-        return Err("échec de l'authentification".to_string());
-    }
+    raw.validate()?;
 
     Ok(OAuthTokens::from_response(
         &mut raw,
+        issuer,
         token_endpoint,
         client_id,
         client_secret,

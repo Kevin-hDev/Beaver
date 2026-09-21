@@ -4,7 +4,7 @@ use tauri::Emitter;
 
 #[tauri::command]
 pub async fn list_mcp_connectors() -> Result<Vec<config::StoredConnector>, String> {
-    config::load()
+    config::load_for_repair()
 }
 
 #[tauri::command]
@@ -13,8 +13,8 @@ pub async fn add_mcp_connector(
     connector: config::StoredConnector,
 ) -> Result<(), String> {
     let connector_id = connector.id.clone();
-    config::upsert(connector)?;
-    registry::invalidate_cache(&connector_id);
+    config::validate_connector(&connector)?;
+    registry::mutate_identity(&connector_id, |_| config::upsert(connector))?;
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
 }
@@ -24,10 +24,11 @@ pub async fn remove_mcp_connector(
     app: tauri::AppHandle,
     connector_id: String,
 ) -> Result<(), String> {
-    let connector = config::find(&connector_id)?;
-    delete_connector_secrets(&connector_id, connector.as_ref())?;
-    config::remove(&connector_id)?;
-    registry::invalidate_cache(&connector_id);
+    registry::mutate_identity(&connector_id, |_| {
+        let connector = config::preview_remove(&connector_id)?;
+        delete_connector_secrets(&connector_id, connector.as_ref())?;
+        config::remove(&connector_id).map(|_| ())
+    })?;
     process_manager::shutdown_one(&connector_id).await;
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
@@ -39,8 +40,11 @@ pub async fn set_mcp_connector_status(
     connector_id: String,
     status: String,
 ) -> Result<(), String> {
-    config::set_status(&connector_id, &status)?;
-    registry::invalidate_cache(&connector_id);
+    config::validate_status(&status)?;
+    config::find(&connector_id)?.ok_or("connecteur introuvable")?;
+    registry::mutate_identity(&connector_id, |_| {
+        config::set_status(&connector_id, &status)
+    })?;
     if status == "disconnected" {
         process_manager::shutdown_one(&connector_id).await;
     }
@@ -54,8 +58,10 @@ pub async fn set_mcp_connector_chat_enabled(
     connector_id: String,
     enabled: bool,
 ) -> Result<(), String> {
-    config::set_chat_enabled(&connector_id, enabled)?;
-    registry::invalidate_cache(&connector_id);
+    config::find(&connector_id)?.ok_or("connecteur introuvable")?;
+    registry::mutate_identity(&connector_id, |_| {
+        config::set_chat_enabled(&connector_id, enabled)
+    })?;
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
 }
@@ -84,41 +90,35 @@ pub async fn configure_mcp_connector_tokens(
         .zip(&env_tokens)
         .map(|(key, token)| (key.as_str(), token.value.as_str()))
         .collect();
-    let previous = config::find(&connector.id)?;
     commit_after_probe(
+        &connector.id,
         probe,
+        || config::find(&connector.id),
         || config::upsert(connector.clone()),
         || api_keys::set_raw_batch(&entries),
-        || restore_connector(&connector.id, previous),
+        |previous| config::restore(&connector.id, previous),
     )?;
-    registry::invalidate_cache(&connector.id);
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
 }
 
 fn commit_after_probe(
+    connector_id: &str,
     probe: Result<(), String>,
+    load_previous: impl FnOnce() -> Result<Option<config::StoredConnector>, String>,
     store_config: impl FnOnce() -> Result<(), String>,
     store_secrets: impl FnOnce() -> Result<(), String>,
-    rollback_config: impl FnOnce() -> Result<(), String>,
+    rollback_config: impl FnOnce(Option<config::StoredConnector>) -> Result<(), String>,
 ) -> Result<(), String> {
-    probe?;
-    store_config()?;
-    if let Err(error) = store_secrets() {
-        let _ = rollback_config();
-        return Err(error);
-    }
-    Ok(())
-}
-
-fn restore_connector(
-    connector_id: &str,
-    previous: Option<config::StoredConnector>,
-) -> Result<(), String> {
-    match previous {
-        Some(connector) => config::upsert(connector),
-        None => config::remove(connector_id).map(|_| ()),
-    }
+    crate::services::mcp_bridge::registry_commit::commit_after_probe(
+        connector_id,
+        None,
+        probe,
+        load_previous,
+        store_config,
+        |_| store_secrets(),
+        rollback_config,
+    )
 }
 
 fn delete_connector_secrets(
@@ -147,7 +147,9 @@ mod tests {
         let secret_write = AtomicBool::new(false);
         let config_write = AtomicBool::new(false);
         let result = commit_after_probe(
+            "test-connector",
             Err("probe failed".to_string()),
+            || Ok(None),
             || {
                 secret_write.store(true, Ordering::SeqCst);
                 Ok(())
@@ -156,7 +158,7 @@ mod tests {
                 config_write.store(true, Ordering::SeqCst);
                 Ok(())
             },
-            || Ok(()),
+            |_| Ok(()),
         );
         assert!(result.is_err());
         assert!(!secret_write.load(Ordering::SeqCst));
@@ -167,15 +169,30 @@ mod tests {
     fn failed_secret_write_rolls_back_configuration() {
         let rollback = AtomicBool::new(false);
         let result = commit_after_probe(
+            "test-connector",
             Ok(()),
+            || Ok(None),
             || Ok(()),
             || Err("vault failed".to_string()),
-            || {
+            |_| {
                 rollback.store(true, Ordering::SeqCst);
                 Ok(())
             },
         );
         assert!(result.is_err());
         assert!(rollback.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn failed_rollback_is_reported_as_configuration_unavailable() {
+        let result = commit_after_probe(
+            "test-connector",
+            Ok(()),
+            || Ok(None),
+            || Ok(()),
+            || Err("vault failed".to_string()),
+            |_| Err("restore failed".to_string()),
+        );
+        assert_eq!(result.unwrap_err(), "configuration MCP indisponible");
     }
 }

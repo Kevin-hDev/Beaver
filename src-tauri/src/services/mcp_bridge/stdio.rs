@@ -5,6 +5,7 @@ pub struct StdioTransport {
     pub install_command: String,
     pub env_key_names: Vec<String>,
     pub transient_env: Option<Vec<(String, Zeroizing<String>)>>,
+    pub(super) generation: Option<u64>,
     #[cfg(test)]
     pub(super) test_init_delay_ms: u64,
 }

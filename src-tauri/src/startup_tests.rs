@@ -222,3 +222,21 @@ fn macos_engine_reuses_the_prevalidated_runtime_files() {
     assert!(source.contains("library.runtime_files()"));
     assert!(!source.contains("load_library("));
 }
+
+#[test]
+fn mcp_connector_migration_precedes_runtime_recovery() {
+    let setup = include_str!("app_setup.rs")
+        .split("fn configure_application")
+        .next()
+        .expect("setup body");
+    let storage = setup
+        .find("storage_migration::initialize(app.handle())")
+        .expect("storage initialization");
+    let mcp = setup
+        .find("mcp_bridge::config::migrate_at_startup()")
+        .expect("MCP migration");
+    let recovery = setup
+        .find("runtime_startup::start_recovery(&background, startup_cutoff)")
+        .expect("runtime recovery");
+    assert!(storage < mcp && mcp < recovery);
+}

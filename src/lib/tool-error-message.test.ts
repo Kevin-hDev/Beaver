@@ -7,6 +7,7 @@ import {
 } from "./tool-error-message";
 
 const translations: Record<string, string> = {
+  "connectors.oauth.reauthenticationRequired": "Reconnectez ce connecteur pour continuer.",
   "agentLocal.toolActivity.errorCategories.conflict": "L’état actuel empêche cette opération.",
   "agentLocal.toolActivity.errorCategories.unavailable": "L’outil est temporairement indisponible.",
   "agentLocal.toolActivity.interruptedUnknown": "Résultat interrompu",
@@ -19,6 +20,16 @@ const translations: Record<string, string> = {
 const t = ((key: string) => translations[key] ?? key) as TFunction;
 
 describe("toolErrorMessage", () => {
+  it("traduit la reconnexion MCP sans exposer son code", () => {
+    const error = {
+      code: "mcp_reauthentication_required",
+      category: "unavailable" as const,
+      retryable: false,
+    };
+    expect(toolErrorMessage("mcp_call", error.code, error, t))
+      .toBe("Reconnectez ce connecteur pour continuer.");
+    expect(toolErrorHasLocalizedMessage(error)).toBe(true);
+  });
   it("traduit une erreur structurée sans exposer son code technique", () => {
     const message = toolErrorMessage("memory_edit", "stale", {
       code: "memory_edit_stale",

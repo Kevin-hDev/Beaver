@@ -8,9 +8,7 @@ use zeroize::Zeroizing;
 
 use crate::services::work_registry::ServiceWorkCancellation;
 
-use super::{
-    callback_server, discovery, flow_auth, pkce, static_credentials, storage, trusted_oauth,
-};
+use super::{callback_server, discovery, flow_auth, pkce, static_credentials, storage};
 
 const MAX_PENDING: usize = 5;
 const CANCELLED_MSG: &str = "annulé";
@@ -55,9 +53,11 @@ async fn run_inner(
     endpoint: &str,
 ) -> Result<(), String> {
     let cancel = register_pending(connector_id)?;
+    // ponytail: the registry generation is global; an unrelated edit may require retrying OAuth.
+    // Use per-connector generations only if that becomes a real usability problem.
+    let expected_generation = crate::services::mcp_bridge::registry::current_generation()?;
 
-    let meta = discovery::discover_auth_server(endpoint).await?;
-    trusted_oauth::validate_metadata_endpoints(connector_id, &meta)?;
+    let meta = discovery::discover_auth_server(connector_id, endpoint).await?;
 
     let server = callback_server::CallbackServer::bind().await?;
     let port = server.port();
@@ -72,10 +72,7 @@ async fn run_inner(
             Some(creds.scopes),
         )
     } else if let Some(ref reg_url) = meta.registration_endpoint {
-        if !reg_url.starts_with("https://") {
-            return Err("endpoint d'enregistrement non HTTPS".to_string());
-        }
-        let id = flow_auth::register_client(connector_id, reg_url, &redirect_uri).await?;
+        let id = flow_auth::register_client(connector_id, endpoint, reg_url, &redirect_uri).await?;
         (id, None, None)
     } else {
         return Err("pas de credentials disponibles pour ce service".to_string());
@@ -94,15 +91,21 @@ async fn run_inner(
         scopes,
     )?;
 
-    flow_auth::open_browser(app, &auth_url)?;
+    flow_auth::open_browser(app, connector_id, &auth_url)?;
 
     let callback = server.wait(&state, &cancel).await?;
 
     flow_auth::verify_state_constant_time(&state, &callback.state)?;
+    super::issuer::verify_callback_issuer(
+        &meta.issuer,
+        callback.iss.as_deref(),
+        meta.authorization_response_iss_parameter_supported,
+    )?;
 
     let secret_ref = client_secret.as_ref().map(|s| s.as_str());
     let tokens = flow_auth::exchange_code(
         connector_id,
+        &meta.issuer,
         &meta.token_endpoint,
         &callback.code,
         &client_id,
@@ -127,9 +130,28 @@ async fn run_inner(
         tokens.access_token.clone(),
     )
     .await?;
-    storage::store_tokens(connector_id, &tokens)?;
-    crate::services::mcp_bridge::config::upsert(connector)?;
-    crate::services::mcp_bridge::registry::invalidate_cache(connector_id);
+    if cancel.is_cancelled() {
+        return Err(CANCELLED_MSG.to_string());
+    }
+    crate::services::mcp_bridge::registry_commit::commit_after_probe(
+        connector_id,
+        Some(expected_generation),
+        Ok(()),
+        || crate::services::mcp_bridge::config::find(connector_id),
+        || {
+            if cancel.is_cancelled() {
+                return Err(CANCELLED_MSG.to_string());
+            }
+            crate::services::mcp_bridge::config::upsert(connector)
+        },
+        |mutation| {
+            if cancel.is_cancelled() {
+                return Err(CANCELLED_MSG.to_string());
+            }
+            storage::store_connection_tokens(mutation, connector_id, &tokens)
+        },
+        |previous| crate::services::mcp_bridge::config::restore(connector_id, previous),
+    )?;
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
 }

@@ -99,6 +99,7 @@ pub mod scheduler;
 pub mod search;
 pub mod searxng;
 pub mod secure_http;
+pub(crate) mod secure_http_destination;
 pub mod secure_random;
 pub mod security_cleanup;
 mod security_cleanup_sessions;

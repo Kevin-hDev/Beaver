@@ -36,22 +36,30 @@ export function useConnectorsTabContent({ navState, onNavChange, onNavReplace }:
   );
 
   const entries = useMemo(
-    () => configured.map((connector) => ({
-      id: connector.id,
-      label: connector.display_name,
-      icon: (
-        <McpIcon
-          connectorId={connector.id}
-          displayName={connector.display_name}
-          size="var(--icon-lg)"
-        />
-      ),
-      offlineLabel: connector.status === "disconnected"
-        ? t("connectors.detail.disconnected")
-        : undefined,
-    })),
-    [configured, t],
+    () => configured.map((connector) => {
+      const canonical = catalog.find((spec) => spec.id === connector.id)?.endpoint;
+      const invalidEndpoint = Boolean(connector.endpoint && canonical && connector.endpoint !== canonical);
+      return {
+        id: connector.id,
+        label: connector.display_name,
+        icon: (
+          <McpIcon
+            connectorId={connector.id}
+            displayName={connector.display_name}
+            size="var(--icon-lg)"
+          />
+        ),
+        description: invalidEndpoint ? t("connectors.sidebar.invalidEndpoint") : undefined,
+        offlineLabel: invalidEndpoint
+          ? t("connectors.sidebar.invalidEndpoint")
+          : connector.status === "disconnected"
+            ? t("connectors.detail.disconnected")
+            : undefined,
+      };
+    }),
+    [catalog, configured, t],
   );
+  const repairRequired = entries.some((entry) => entry.description !== undefined);
 
   const handlePick = useCallback((spec: McpConnectorSpec) => {
     setConfirmAddError(false);
@@ -121,6 +129,7 @@ export function useConnectorsTabContent({ navState, onNavChange, onNavReplace }:
       ) : (
         <SettingsPanel title={t("settings.tabs.connectors")} action={browseButton}>
           <p className="settings-panel-description">{t("connectors.main.subtitle")}</p>
+          {repairRequired && <p role="alert" className="settings-panel-description">{t("connectors.sidebar.repairRequired")}</p>}
           <SettingsEntryList
             entries={entries}
             emptyMessage={t(loadError ? "connectors.sidebar.loadError" : "connectors.sidebar.empty")}
@@ -185,6 +194,7 @@ export function useConnectorsTabContent({ navState, onNavChange, onNavReplace }:
     loadError,
     onNavChange,
     onNavReplace,
+    repairRequired,
     selected,
     t,
     toggleStatus,

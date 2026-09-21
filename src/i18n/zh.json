@@ -1557,7 +1557,9 @@
     },
     "sidebar": {
       "empty": "没有已配置的连接器",
-      "loadError": "无法加载连接器"
+      "loadError": "无法加载连接器",
+      "repairRequired": "某个连接器的地址无效。请移除标记的连接器以修复配置。",
+      "invalidEndpoint": "地址无效 — 请移除此连接器"
     },
     "detail": {
       "connected": "已连接",
@@ -1612,7 +1614,9 @@
       "cancel": "取消",
       "successTitle": "连接成功",
       "successMessage": "连接器已成功添加。",
-      "errorGeneric": "连接失败。请重试。"
+      "errorGeneric": "连接失败。请重试。",
+      "errorUntrusted": "Beaver 无法识别此服务的登录地址。请更新 Beaver 后重试。",
+      "reauthenticationRequired": "请重新连接此连接器以继续。"
     }
   },
   "vision": {

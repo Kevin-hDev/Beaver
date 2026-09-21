@@ -139,12 +139,15 @@ fn parse_callback(request_line: &str) -> Option<CallbackResult> {
     let query = path_and_query.strip_prefix("/callback?")?;
     let mut code: Option<Zeroizing<String>> = None;
     let mut state: Option<Zeroizing<String>> = None;
+    let mut iss: Option<String> = None;
 
     for pair in query.split('&') {
         if let Some((k, v)) = pair.split_once('=') {
             match k {
-                "code" => code = Some(Zeroizing::new(urldecode(v))),
-                "state" => state = Some(Zeroizing::new(urldecode(v))),
+                "code" if code.is_none() => code = Some(Zeroizing::new(urldecode(v))),
+                "state" if state.is_none() => state = Some(Zeroizing::new(urldecode(v))),
+                "iss" if iss.is_none() => iss = Some(urldecode(v)),
+                "code" | "state" | "iss" => return None,
                 _ => {}
             }
         }
@@ -153,6 +156,7 @@ fn parse_callback(request_line: &str) -> Option<CallbackResult> {
     Some(CallbackResult {
         code: code?,
         state: state?,
+        iss,
     })
 }
 

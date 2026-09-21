@@ -1657,7 +1657,9 @@
     },
     "sidebar": {
       "empty": "Aucun connecteur configuré",
-      "loadError": "Impossible de charger les connecteurs"
+      "loadError": "Impossible de charger les connecteurs",
+      "repairRequired": "Une adresse de connecteur est invalide. Supprimez le connecteur signalé pour réparer la configuration.",
+      "invalidEndpoint": "Adresse invalide — à supprimer"
     },
     "detail": {
       "connected": "Connecté",
@@ -1712,7 +1714,9 @@
       "cancel": "Annuler",
       "successTitle": "Connexion réussie",
       "successMessage": "Le connecteur a été ajouté avec succès.",
-      "errorGeneric": "Échec de la connexion. Réessayez."
+      "errorGeneric": "Échec de la connexion. Réessayez.",
+      "errorUntrusted": "Beaver ne reconnaît pas l'adresse de connexion de ce service. Mettez Beaver à jour, puis réessayez.",
+      "reauthenticationRequired": "Reconnectez ce connecteur pour continuer."
     }
   },
   "linkPreview": {

@@ -1,13 +1,13 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 pub use super::env_keys::validated_env_keys;
-use super::{config_migration, stdio_catalog, stdio_cmd, trusted};
+use super::{config_migration, config_read, config_repair, stdio_catalog, stdio_cmd, trusted};
 
 pub const MAX_CONNECTORS: usize = 32;
 const FILENAME: &str = "mcp-connectors.json";
+pub(super) const ENDPOINT_NOT_ALLOWED: &str = "endpoint MCP non autorisé";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct StoredConnector {
@@ -22,6 +22,43 @@ pub struct StoredConnector {
 
 pub fn load() -> Result<Vec<StoredConnector>, String> {
     load_from_path(&storage_path())
+}
+
+// The settings list may expose an invalid endpoint so its owner can delete it.
+// Business paths continue to use strict load() and cannot activate that file.
+pub fn load_for_repair() -> Result<Vec<StoredConnector>, String> {
+    load_for_repair_from_path(&storage_path())
+}
+
+pub(crate) fn load_for_repair_from_path(path: &Path) -> Result<Vec<StoredConnector>, String> {
+    match load_from_path(path) {
+        Err(error) if error == ENDPOINT_NOT_ALLOWED => {
+            config_read::load(path, true).map(|(list, _)| list)
+        }
+        result => result,
+    }
+}
+
+pub fn preview_remove(connector_id: &str) -> Result<Option<StoredConnector>, String> {
+    config_repair::preview_remove_from_path(&storage_path(), connector_id)
+}
+
+pub fn migrate_at_startup() -> Result<(), String> {
+    migrate_at_path(&storage_path(), save_to_path)
+}
+
+pub(crate) fn migrate_at_path(
+    path: &Path,
+    save: impl FnOnce(&Path, &[StoredConnector]) -> Result<(), String>,
+) -> Result<(), String> {
+    let mut connectors = config_read::parse_file(path)?;
+    if config_migration::normalize_legacy_lucid(&mut connectors) {
+        for connector in &connectors {
+            validate_connector(connector)?;
+        }
+        save(path, &connectors)?;
+    }
+    Ok(())
 }
 
 pub fn find(connector_id: &str) -> Result<Option<StoredConnector>, String> {
@@ -47,25 +84,18 @@ pub fn upsert(connector: StoredConnector) -> Result<(), String> {
 }
 
 pub fn remove(connector_id: &str) -> Result<bool, String> {
-    validate_connector_id(connector_id)?;
-    let path = storage_path();
-    let before = load_from_path(&path)?;
-    let after: Vec<StoredConnector> = before
-        .iter()
-        .filter(|c| c.id != connector_id)
-        .cloned()
-        .collect();
-    let removed = before.len() != after.len();
-    if removed {
-        save_to_path(&path, &after)?;
+    config_repair::remove_from_path(&storage_path(), connector_id)
+}
+
+pub(crate) fn restore(connector_id: &str, previous: Option<StoredConnector>) -> Result<(), String> {
+    match previous {
+        Some(connector) => upsert(connector),
+        None => remove(connector_id).map(|_| ()),
     }
-    Ok(removed)
 }
 
 pub fn set_status(connector_id: &str, status: &str) -> Result<(), String> {
-    if !is_valid_status(status) {
-        return Err("statut invalide".to_string());
-    }
+    validate_status(status)?;
     update(connector_id, |c| c.status = status.to_string())
 }
 
@@ -75,12 +105,10 @@ pub fn set_chat_enabled(connector_id: &str, enabled: bool) -> Result<(), String>
 
 pub fn validate_connector(c: &StoredConnector) -> Result<(), String> {
     validate_connector_id(&c.id)?;
-    if !is_valid_status(&c.status) {
-        return Err("statut invalide".to_string());
-    }
+    validate_status(&c.status)?;
     if let Some(endpoint) = &c.endpoint {
         if !trusted::is_trusted_endpoint_for_connector(&c.id, endpoint) {
-            return Err("endpoint MCP non autorisé".to_string());
+            return Err(ENDPOINT_NOT_ALLOWED.to_string());
         }
     }
     if let Some(cmd) = install_command_for(c) {
@@ -127,20 +155,7 @@ fn update(connector_id: &str, apply: impl FnOnce(&mut StoredConnector)) -> Resul
 }
 
 pub(crate) fn load_from_path(path: &Path) -> Result<Vec<StoredConnector>, String> {
-    let content = match fs::read_to_string(path) {
-        Ok(c) => c,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(_) => return Err("lecture connecteurs impossible".to_string()),
-    };
-    let mut parsed: Vec<StoredConnector> =
-        serde_json::from_str(&content).map_err(|_| "configuration MCP invalide".to_string())?;
-    if parsed.len() > MAX_CONNECTORS {
-        return Err("limite de connecteurs atteinte".to_string());
-    }
-    let migrated = config_migration::normalize_list(&mut parsed);
-    for connector in &parsed {
-        validate_connector(connector)?;
-    }
+    let (parsed, migrated) = config_read::load(path, false)?;
     if migrated {
         save_to_path(path, &parsed)?;
     }
@@ -151,6 +166,7 @@ pub(crate) fn save_to_path(path: &Path, list: &[StoredConnector]) -> Result<(), 
     if list.len() > MAX_CONNECTORS {
         return Err("limite de connecteurs atteinte".to_string());
     }
+    config_read::validate_unique_ids(list)?;
     for connector in list {
         validate_connector(connector)?;
     }
@@ -165,4 +181,12 @@ fn storage_path() -> PathBuf {
 
 fn is_valid_status(status: &str) -> bool {
     status == "connected" || status == "disconnected"
+}
+
+pub(crate) fn validate_status(status: &str) -> Result<(), String> {
+    if is_valid_status(status) {
+        Ok(())
+    } else {
+        Err("statut invalide".to_string())
+    }
 }

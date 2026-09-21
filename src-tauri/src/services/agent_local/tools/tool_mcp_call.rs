@@ -22,14 +22,7 @@ pub(super) async fn call(args: &Value) -> ToolResult {
     let arguments = args.get("arguments").unwrap_or(&empty_arguments);
     let (connector, tool) = match registry::resolve_enabled_tool(connector_id, tool_name).await {
         Ok(resolved) => resolved,
-        Err(_) => {
-            return ToolResult::error(
-                "outil MCP indisponible",
-                "mcp_tool_unavailable",
-                ToolErrorCategory::Unavailable,
-                true,
-            )
-        }
+        Err(error) => return resolution_failure(&error),
     };
     if arguments::validate(arguments, tool.input_schema.as_ref()).is_err() {
         return ToolResult::error(
@@ -42,7 +35,7 @@ pub(super) async fn call(args: &Value) -> ToolResult {
 
     match tokio::time::timeout(
         MCP_CALL_TIMEOUT,
-        connector.transport.call_tool(&tool.name, arguments.clone()),
+        registry::call_enabled_tool(&connector, &tool.name, arguments.clone()),
     )
     .await
     {
@@ -55,6 +48,23 @@ pub(super) async fn call(args: &Value) -> ToolResult {
     }
 }
 
+fn resolution_failure(error: &str) -> ToolResult {
+    if error == crate::services::mcp_oauth::types::REAUTHENTICATION_REQUIRED {
+        return ToolResult::error(
+            "reconnexion MCP nécessaire",
+            crate::services::mcp_oauth::types::REAUTHENTICATION_REQUIRED,
+            ToolErrorCategory::Unavailable,
+            false,
+        );
+    }
+    ToolResult::error(
+        "outil MCP indisponible",
+        "mcp_tool_unavailable",
+        ToolErrorCategory::Unavailable,
+        true,
+    )
+}
+
 fn transport_failure(error: crate::services::mcp_bridge::transport::McpCallError) -> ToolResult {
     use crate::services::mcp_bridge::transport::McpCallError;
 
@@ -64,6 +74,14 @@ fn transport_failure(error: crate::services::mcp_bridge::transport::McpCallError
             ToolErrorCategory::Unavailable,
             true,
         ),
+        McpCallError::ReauthenticationRequired => {
+            return ToolResult::error(
+                error.message(),
+                crate::services::mcp_oauth::types::REAUTHENTICATION_REQUIRED,
+                ToolErrorCategory::Unavailable,
+                false,
+            );
+        }
         McpCallError::Server => ("mcp_server_error", ToolErrorCategory::External, false),
         McpCallError::InvalidResponse => {
             ("mcp_invalid_response", ToolErrorCategory::External, false)
@@ -137,6 +155,18 @@ mod tests {
     use super::*;
     use crate::services::agent_local::tool_result_contract::ToolResultStatus;
     use crate::services::mcp_bridge::transport::{McpCallError, McpToolResult};
+
+    #[test]
+    fn reauthentication_error_survives_cold_and_warm_catalogue_paths() {
+        let cold = resolution_failure("mcp_reauthentication_required");
+        let warm = transport_failure(McpCallError::ReauthenticationRequired);
+        for result in [cold, warm] {
+            let error = result.error.expect("structured MCP error");
+            assert_eq!(error.code.as_ref(), "mcp_reauthentication_required");
+            assert_eq!(error.category, ToolErrorCategory::Unavailable);
+            assert!(!error.retryable);
+        }
+    }
 
     #[test]
     fn server_tool_errors_are_not_promoted_to_success() {

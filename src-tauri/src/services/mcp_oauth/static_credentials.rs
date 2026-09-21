@@ -16,7 +16,10 @@ const VAULT_GITHUB_SECRET: &str = "_oauth_github_client_secret";
 pub fn for_endpoint(endpoint: &str) -> Option<StaticCredentials> {
     let host = reqwest::Url::parse(endpoint).ok()?.host_str()?.to_string();
 
-    if host.ends_with(".googleapis.com") {
+    if matches!(
+        host.as_str(),
+        "gmailmcp.googleapis.com" | "drivemcp.googleapis.com" | "calendarmcp.googleapis.com"
+    ) {
         let scopes = google_scopes_for_host(&host);
         let client_id = load_credential(VAULT_GOOGLE_ID, "CLGO_GOOGLE_CLIENT_ID")?;
         let client_secret = load_credential(VAULT_GOOGLE_SECRET, "CLGO_GOOGLE_CLIENT_SECRET")?;
@@ -27,7 +30,7 @@ pub fn for_endpoint(endpoint: &str) -> Option<StaticCredentials> {
         });
     }
 
-    if host == "api.githubcopilot.com" || host.ends_with(".githubcopilot.com") {
+    if host == "api.githubcopilot.com" {
         let client_id = load_credential(VAULT_GITHUB_ID, "CLGO_GITHUB_CLIENT_ID")?;
         let client_secret = load_credential(VAULT_GITHUB_SECRET, "CLGO_GITHUB_CLIENT_SECRET")?;
         return Some(StaticCredentials {

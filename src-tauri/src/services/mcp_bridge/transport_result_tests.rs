@@ -2,6 +2,20 @@ use super::transport::{extract_tool_result, McpCallError};
 use serde_json::json;
 
 #[test]
+fn non_final_results_never_become_success() {
+    for result_type in ["input_required", "task", "future_variant"] {
+        let reply = json!({"result": {
+            "resultType": result_type,
+            "content": [{"type": "text", "text": "not a final result"}]
+        }});
+        assert_eq!(
+            extract_tool_result(&reply),
+            Err(McpCallError::InvalidResponse)
+        );
+    }
+}
+
+#[test]
 fn connector_errors_are_generic() {
     for response in [
         json!({"error": {"message": "secret"}}),
@@ -30,6 +44,19 @@ fn structured_results_are_serialized() {
         .unwrap()
         .content
         .contains("42"));
+}
+
+#[test]
+fn structured_content_survives_a_text_block() {
+    let response = json!({"result": {
+        "resultType": "complete",
+        "content": [{"type": "text", "text": "summary"}],
+        "structuredContent": {"count": 2}
+    }});
+    let result = extract_tool_result(&response).expect("final result");
+    assert!(result.content.contains("summary"));
+    assert!(result.content.contains("structuredContent"));
+    assert!(result.content.contains("\"count\": 2"));
 }
 
 #[test]

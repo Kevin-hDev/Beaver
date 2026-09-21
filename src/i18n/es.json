@@ -1562,7 +1562,9 @@
     },
     "sidebar": {
       "empty": "Ningún conector configurado",
-      "loadError": "No se pudieron cargar los conectores"
+      "loadError": "No se pudieron cargar los conectores",
+      "repairRequired": "La dirección de un conector no es válida. Elimina el conector señalado para reparar la configuración.",
+      "invalidEndpoint": "Dirección no válida — eliminar conector"
     },
     "detail": {
       "connected": "Conectado",
@@ -1617,7 +1619,9 @@
       "cancel": "Cancelar",
       "successTitle": "Conexión correcta",
       "successMessage": "El conector se añadió correctamente.",
-      "errorGeneric": "La conexión falló. Inténtalo de nuevo."
+      "errorGeneric": "La conexión falló. Inténtalo de nuevo.",
+      "errorUntrusted": "Beaver no reconoce la dirección de acceso de este servicio. Actualiza Beaver y vuelve a intentarlo.",
+      "reauthenticationRequired": "Vuelve a conectar este conector para continuar."
     }
   },
   "vision": {

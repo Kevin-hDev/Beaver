@@ -6,6 +6,7 @@
 //! est validée via load_from_path (qui rejette > MAX à la lecture).
 
 use super::config::{self, StoredConnector, MAX_CONNECTORS};
+use super::config_repair;
 
 /// Connecteur notion valide (endpoint trusted du catalog).
 fn notion() -> StoredConnector {
@@ -160,4 +161,151 @@ fn normalize_list_is_idempotent() {
         !changed,
         "une 2e passe de normalisation ne doit rien changer"
     );
+}
+
+#[test]
+fn lucid_startup_migration_preserves_other_connectors_and_is_idempotent() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut lucid = notion();
+    lucid.id = "lucid".to_string();
+    lucid.endpoint = Some("https://mcp.lucid.app/".to_string());
+    lucid.enabled_in_chat = false;
+    let original = vec![lucid, sentry()];
+    std::fs::write(&path, serde_json::to_vec(&original).unwrap()).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    let first = std::fs::read(&path).unwrap();
+    let loaded = config::load_from_path(&path).unwrap();
+    assert_eq!(
+        loaded[0].endpoint.as_deref(),
+        Some("https://mcp.lucid.app/mcp")
+    );
+    assert!(!loaded[0].enabled_in_chat);
+    assert_eq!(loaded[1], original[1]);
+
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), first);
+}
+
+#[test]
+fn failed_lucid_migration_keeps_file_and_refuses_entire_list() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut lucid = notion();
+    lucid.id = "lucid".to_string();
+    lucid.endpoint = Some("https://mcp.lucid.app".to_string());
+    let raw = serde_json::to_vec(&[lucid, sentry()]).unwrap();
+    std::fs::write(&path, &raw).unwrap();
+
+    assert!(config::migrate_at_path(&path, |_, _| Err("test write failed".to_string())).is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), raw);
+    assert!(config::load_from_path(&path).is_err());
+}
+
+#[test]
+fn unexpected_lucid_url_is_never_migrated_during_load_or_startup() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut lucid = notion();
+    lucid.id = "lucid".to_string();
+    lucid.endpoint = Some("https://mcp.lucid.app/unknown".to_string());
+    let raw = serde_json::to_vec(&[lucid]).unwrap();
+    std::fs::write(&path, &raw).unwrap();
+
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), raw);
+    assert!(config::load_from_path(&path).is_err());
+}
+
+#[test]
+fn invalid_endpoint_can_be_listed_for_repair_and_removed_without_weakening_load() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut invalid = notion();
+    invalid.endpoint = Some("https://mcp.notion.com/mcp/".to_string());
+    std::fs::write(&path, serde_json::to_vec(&[invalid, sentry()]).unwrap()).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    let visible = config::load_for_repair_from_path(&path).expect("repair list");
+    assert_eq!(visible.len(), 2);
+    assert_eq!(visible[0].id, "notion");
+    assert_eq!(
+        config_repair::preview_remove_from_path(&path, "notion")
+            .unwrap()
+            .unwrap()
+            .id,
+        "notion"
+    );
+    assert!(config_repair::preview_remove_from_path(&path, "sentry").is_err());
+    assert!(config_repair::remove_from_path(&path, "notion").expect("remove"));
+    assert_eq!(config::load_from_path(&path).unwrap(), vec![sentry()]);
+}
+
+#[test]
+fn repair_list_does_not_mask_other_configuration_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut invalid = notion();
+    invalid.status = "pending".to_string();
+    std::fs::write(&path, serde_json::to_vec(&[invalid]).unwrap()).unwrap();
+
+    assert_eq!(
+        config::load_for_repair_from_path(&path).unwrap_err(),
+        "statut invalide"
+    );
+}
+
+#[test]
+fn unknown_connector_with_invalid_endpoint_is_not_hidden_in_repair_list() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut unknown = notion();
+    unknown.id = "manual-connector".to_string();
+    std::fs::write(&path, serde_json::to_vec(&[unknown]).unwrap()).unwrap();
+
+    assert_eq!(
+        config::load_for_repair_from_path(&path).unwrap_err(),
+        "endpoint MCP non autorisé"
+    );
+}
+
+#[test]
+fn duplicate_ids_are_rejected_by_both_readers_and_the_writer() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let duplicate = [notion(), notion()];
+    std::fs::write(&path, serde_json::to_vec(&duplicate).unwrap()).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    assert!(config::load_for_repair_from_path(&path).is_err());
+    assert!(config::save_to_path(&path, &duplicate).is_err());
+}
+
+#[test]
+fn oversized_file_is_rejected_by_both_readers() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    let mut oversized = serde_json::to_vec(&[notion()]).unwrap();
+    oversized.resize(256 * 1024 + 1, b' ');
+    std::fs::write(&path, oversized).unwrap();
+
+    assert!(config::load_from_path(&path).is_err());
+    assert!(config::load_for_repair_from_path(&path).is_err());
+}
+
+#[test]
+fn real_persisted_connector_file_survives_startup_migration_and_reload() {
+    // Copie expurgée du fichier Beaver local avant ce chantier : aucun jeton ni clé.
+    const PREVIOUS_FILE: &str = r#"[{"id":"context7","status":"connected","enabled_in_chat":true,"endpoint":null,"install_command":"npx @upstash/context7-mcp@2.2.5","env_keys":null}]"#;
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("mcp-connectors.json");
+    std::fs::write(&path, PREVIOUS_FILE).unwrap();
+
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), PREVIOUS_FILE);
+    assert_eq!(config::load_from_path(&path).unwrap()[0].id, "context7");
+    config::migrate_at_path(&path, config::save_to_path).unwrap();
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), PREVIOUS_FILE);
 }

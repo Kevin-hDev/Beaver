@@ -48,6 +48,7 @@ mod core_automations_params;
 mod core_automations_tests;
 mod core_bridge;
 mod core_call_quota;
+mod core_mcp;
 mod core_memory;
 mod core_memory_content;
 mod core_memory_mutations;

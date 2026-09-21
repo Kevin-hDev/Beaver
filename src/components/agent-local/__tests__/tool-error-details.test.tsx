@@ -13,6 +13,9 @@ vi.mock("react-i18next", () => ({
     if (key === "agentLocal.toolActivity.errorCategories.conflict") {
       return "L’état actuel empêche cette opération.";
     }
+    if (key === "connectors.oauth.reauthenticationRequired") {
+      return "Reconnectez ce connecteur pour continuer.";
+    }
     return key;
   } }),
 }));
@@ -34,6 +37,29 @@ vi.mock("../tool-result-markdown", () => ({
 }));
 
 describe("détails des erreurs d'outil", () => {
+  it("affiche la reconnexion MCP sans code brut", () => {
+    const { container, getByTestId } = render(
+      <ToolDetailRow
+        tool={{
+          name: "mcp_call",
+          summary: "notion.search",
+          result: "mcp_reauthentication_required",
+          is_error: true,
+          error: {
+            code: "mcp_reauthentication_required",
+            category: "unavailable",
+            retryable: false,
+          },
+        }}
+        previousTools={[]}
+      />,
+    );
+    expect(getByTestId("status-icon-error")).toHaveAttribute(
+      "data-message",
+      "Reconnectez ce connecteur pour continuer.",
+    );
+    expect(container.textContent).not.toContain("mcp_reauthentication_required");
+  });
   it("rend une erreur web dépliable sans secret ni chemin interne", () => {
     const { container, getByRole, getByTestId } = render(
       <ToolDetailRow

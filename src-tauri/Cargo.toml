@@ -187,6 +187,8 @@ cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
 [target.'cfg(any(target_os = "macos", windows))'.dependencies]
 cpal = "=0.18.2"
 sherpa-onnx = { version = "=1.13.8", default-features = false, features = ["static"] }
+rmcp = { version = "=3.4.0", default-features = false, features = ["client", "transport-streamable-http-client"] }
+sse-stream = "0.2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

@@ -1,17 +1,15 @@
 pub async fn test_connector(connector: config::StoredConnector) -> Result<(), String> {
     config::validate_connector(&connector)?;
     token_validation::validate_connector_tokens(&connector).await?;
-    let id = connector.id.clone();
-    let enabled = build_connector(connector).ok_or("connecteur MCP invalide")?;
-    invalidate_cache(&id);
-    let tools = tokio::time::timeout(
+    let enabled =
+        build_connector(connector, current_generation()?).ok_or("connecteur MCP invalide")?;
+    tokio::time::timeout(
         std::time::Duration::from_secs(TEST_TIMEOUT_SECS),
         enabled.transport.list_tools(),
     )
     .await
     .map_err(|_| "test MCP expiré".to_string())?
     .map_err(|_| "test MCP échoué".to_string())?;
-    set_cached(&id, &tools);
     Ok(())
 }
 
@@ -28,7 +26,6 @@ pub async fn test_connector_with_env(
     let transport = StdioTransport::new_with_env(id.clone(), command, env_keys, env_tokens);
     let result = run_probe(transport.list_tools()).await;
     process_manager::shutdown_one(&id).await;
-    cache_probe_result(&id, &result);
     result.map(|_| ())
 }
 
@@ -44,24 +41,15 @@ pub async fn test_connector_with_oauth_token(
     let id = connector.id.clone();
     let transport = HttpTransport::new_with_token(id.clone(), endpoint, token);
     let result = run_probe(transport.list_tools()).await;
-    cache_probe_result(&id, &result);
     result.map(|_| ())
 }
 
-async fn run_probe<F>(probe: F) -> Result<Vec<McpToolDef>, String>
+async fn run_probe<F>(probe: F) -> Result<super::transport::McpToolCatalog, String>
 where
-    F: std::future::Future<Output = Result<Vec<McpToolDef>, String>>,
+    F: std::future::Future<Output = Result<super::transport::McpToolCatalog, String>>,
 {
     tokio::time::timeout(std::time::Duration::from_secs(TEST_TIMEOUT_SECS), probe)
         .await
         .map_err(|_| "test MCP expiré".to_string())?
         .map_err(|_| "test MCP échoué".to_string())
-}
-
-fn cache_probe_result(id: &str, result: &Result<Vec<McpToolDef>, String>) {
-    if let Ok(tools) = result {
-        set_cached(id, tools);
-    } else {
-        invalidate_cache(id);
-    }
 }
