@@ -1,8 +1,8 @@
 pub async fn test_connector(connector: config::StoredConnector) -> Result<(), String> {
     config::validate_connector(&connector)?;
     token_validation::validate_connector_tokens(&connector).await?;
-    let enabled = build_connector(connector, current_generation()?)
-        .ok_or("connecteur MCP invalide")?;
+    let enabled =
+        build_connector(connector, current_generation()?).ok_or("connecteur MCP invalide")?;
     tokio::time::timeout(
         std::time::Duration::from_secs(TEST_TIMEOUT_SECS),
         enabled.transport.list_tools(),
