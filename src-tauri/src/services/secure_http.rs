@@ -101,6 +101,7 @@ impl AuthenticatedClient {
         self.client.post(url)
     }
 
+    #[cfg(any(target_os = "macos", target_os = "windows", test))]
     pub fn delete<U: IntoUrl>(&self, url: U) -> RequestBuilder {
         self.client.delete(url)
     }
