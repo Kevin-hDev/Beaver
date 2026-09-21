@@ -1,0 +1,1 @@
+Linux Clippy then found try_set_active_model unused in production. Keep it on macOS/Windows and in tests; Linux voice remains hidden. Verified: Windows cargo check, 2 focused Rust tests and the real Parakeet resume test (4,258,528 to 487,170,055 bytes, four files); PR #83 CI run 35441798220 passed all applicable checks.
