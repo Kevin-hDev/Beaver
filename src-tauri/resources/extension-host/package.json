@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@cantoo/pdf-lib": "2.9.1",
-    "@napi-rs/canvas": "1.0.8",
+    "@cantoo/pdf-lib": "2.11.1",
+    "@napi-rs/canvas": "1.0.9",
     "@xlsx/xlsx-populate": "0.2.2",
-    "docx": "9.7.1",
+    "docx": "9.7.2",
     "esbuild": "0.28.2",
     "fflate": "0.8.3",
     "fontkit": "2.0.4",
