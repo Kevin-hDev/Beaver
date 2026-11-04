@@ -100,7 +100,7 @@ dom_smoothie = { version = "0.18", features = ["aho-corasick"] }
 pdf-extract = "0.12"
 
 # DOCX
-zip = "8"
+zip = "9"
 quick-xml = "0.41"
 
 # XLSX / Spreadsheets
